@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import html
 import json
 import random
 from dataclasses import dataclass
@@ -21,6 +22,19 @@ settings = get_settings()
 
 
 @dataclass
+class AdminOrderNotification:
+    order_ref: str
+    customer_username: str
+    customer_telegram_id: int
+    item_name: str
+    quantity: int
+    total_amount: int
+    status: str
+    admin_chat_id: int | None = None
+    admin_message_id: int | None = None
+
+
+@dataclass
 class ReconcileResult:
     status: str
     message: str
@@ -28,6 +42,14 @@ class ReconcileResult:
     delivery_message: str | None
     checkout_chat_id: int | None = None
     checkout_message_id: int | None = None
+    admin_notification: AdminOrderNotification | None = None
+
+
+@dataclass
+class CancelOrderResult:
+    ok: bool
+    message: str
+    admin_notification: AdminOrderNotification | None = None
 
 
 def _generate_order_ref() -> str:
@@ -44,7 +66,94 @@ def _utcnow() -> datetime:
     return datetime.utcnow()
 
 
-def expire_pending_orders(session: Session) -> int:
+def _format_rupiah(amount: int) -> str:
+    return f"Rp{amount:,}".replace(",", ".")
+
+
+def _normalize_customer_name(customer: User | None) -> str:
+    if customer is None:
+        return "-"
+    if customer.username:
+        return f"@{customer.username}"
+    if customer.full_name:
+        return customer.full_name
+    return "-"
+
+
+def _build_admin_order_notification(
+    session: Session,
+    order: Order,
+    status_override: str | None = None,
+) -> AdminOrderNotification:
+    customer = session.get(User, order.customer_id)
+    customer_name = _normalize_customer_name(customer)
+    customer_telegram_id = int(customer.telegram_id) if customer is not None else 0
+
+    order_items = list(order.items)
+    total_qty = sum(item.quantity for item in order_items)
+    item_name = "-"
+    if order_items:
+        first_item = order_items[0]
+        product = session.get(Product, first_item.product_id)
+        item_name = product.name if product is not None else f"Produk #{first_item.product_id}"
+        if len(order_items) > 1:
+            item_name = f"{item_name} (+{len(order_items) - 1} item)"
+
+    return AdminOrderNotification(
+        order_ref=order.order_ref,
+        customer_username=customer_name,
+        customer_telegram_id=customer_telegram_id,
+        item_name=item_name,
+        quantity=total_qty,
+        total_amount=order.total_amount,
+        status=status_override or order.status,
+        admin_chat_id=order.admin_notify_chat_id,
+        admin_message_id=order.admin_notify_message_id,
+    )
+
+
+def build_admin_order_message(notification: AdminOrderNotification) -> str:
+    title_map: dict[str, tuple[str, str]] = {
+        "pending_payment": ("Pesanan baru diterima!", "Waiting for payment"),
+        "delivered": ("Pesanan telah selesai!", "Success delivered"),
+        "cancelled": ("Pesanan dibatalkan!", "Cancelled by customer"),
+        "expired": ("Pesanan kedaluwarsa!", "Payment timeout"),
+    }
+    title_text, status_text = title_map.get(
+        notification.status,
+        ("Update status pesanan", notification.status),
+    )
+
+    safe_name = html.escape(notification.customer_username)
+    safe_item = html.escape(notification.item_name)
+    safe_title = html.escape(title_text)
+    safe_status = html.escape(status_text)
+
+    return "\n".join(
+        [
+            f"<b><i>{safe_title}</i></b>",
+            f"Nama: {safe_name}, {notification.customer_telegram_id}",
+            f"Item; {safe_item}",
+            f"Qty: {notification.quantity}",
+            f"Pembayaran: {_format_rupiah(notification.total_amount)}",
+            "",
+            f"Status: <b><i>{safe_status}</i></b>",
+        ]
+    )
+
+
+def get_order_admin_notification(
+    session: Session,
+    order_ref: str,
+    status_override: str | None = None,
+) -> AdminOrderNotification | None:
+    order = session.scalar(select(Order).where(Order.order_ref == order_ref))
+    if order is None:
+        return None
+    return _build_admin_order_notification(session, order, status_override=status_override)
+
+
+def expire_pending_orders_with_notifications(session: Session) -> list[AdminOrderNotification]:
     now = _utcnow()
     orders = list(
         session.scalars(
@@ -55,6 +164,8 @@ def expire_pending_orders(session: Session) -> int:
             )
         ).all()
     )
+
+    notifications: list[AdminOrderNotification] = []
     for order in orders:
         order.status = "expired"
         order.cancelled_at = now
@@ -64,7 +175,13 @@ def expire_pending_orders(session: Session) -> int:
             payment.status = "expired"
             session.add(payment)
         session.add(order)
-    return len(orders)
+        notifications.append(_build_admin_order_notification(session, order, status_override="expired"))
+
+    return notifications
+
+
+def expire_pending_orders(session: Session) -> int:
+    return len(expire_pending_orders_with_notifications(session))
 
 
 def create_checkout(session: Session, customer: User, product_id: int, quantity: int) -> tuple[Order, Payment]:
@@ -310,6 +427,7 @@ def reconcile_payment(
             None,
             checkout_chat_id=order.checkout_chat_id,
             checkout_message_id=order.checkout_message_id,
+            admin_notification=_build_admin_order_notification(session, order),
         )
 
     if order.expires_at and order.expires_at <= _utcnow():
@@ -327,6 +445,7 @@ def reconcile_payment(
             None,
             checkout_chat_id=order.checkout_chat_id,
             checkout_message_id=order.checkout_message_id,
+            admin_notification=_build_admin_order_notification(session, order, status_override="expired"),
         )
 
     order_items = list(order.items)
@@ -366,6 +485,7 @@ def reconcile_payment(
         delivery_message,
         checkout_chat_id=order.checkout_chat_id,
         checkout_message_id=order.checkout_message_id,
+        admin_notification=_build_admin_order_notification(session, order, status_override="delivered"),
     )
 
 
@@ -378,7 +498,16 @@ def set_checkout_message_ref(session: Session, order_ref: str, chat_id: int, mes
     session.add(order)
 
 
-def cancel_order(session: Session, order_ref: str, customer_id: int) -> tuple[bool, str]:
+def set_admin_message_ref(session: Session, order_ref: str, chat_id: int, message_id: int) -> None:
+    order = session.scalar(select(Order).where(Order.order_ref == order_ref))
+    if order is None:
+        return
+    order.admin_notify_chat_id = chat_id
+    order.admin_notify_message_id = message_id
+    session.add(order)
+
+
+def cancel_order(session: Session, order_ref: str, customer_id: int) -> CancelOrderResult:
     expire_pending_orders(session)
     order = session.scalar(
         select(Order).where(
@@ -387,14 +516,14 @@ def cancel_order(session: Session, order_ref: str, customer_id: int) -> tuple[bo
         )
     )
     if order is None:
-        return False, "Order tidak ditemukan."
+        return CancelOrderResult(False, "Order tidak ditemukan.")
 
     if order.status == "delivered":
-        return False, "Order sudah delivered dan tidak bisa dibatalkan."
+        return CancelOrderResult(False, "Order sudah delivered dan tidak bisa dibatalkan.")
     if order.status == "cancelled":
-        return False, "Order sudah dibatalkan sebelumnya."
+        return CancelOrderResult(False, "Order sudah dibatalkan sebelumnya.")
     if order.status == "expired":
-        return False, "Order sudah kedaluwarsa."
+        return CancelOrderResult(False, "Order sudah kedaluwarsa.")
 
     order.status = "cancelled"
     order.cancelled_at = _utcnow()
@@ -415,4 +544,8 @@ def cancel_order(session: Session, order_ref: str, customer_id: int) -> tuple[bo
         detail=f"order_ref={order_ref}",
     )
 
-    return True, "✅ Pesanan berhasil dibatalkan."
+    return CancelOrderResult(
+        True,
+        "✅ Pesanan berhasil dibatalkan.",
+        admin_notification=_build_admin_order_notification(session, order, status_override="cancelled"),
+    )

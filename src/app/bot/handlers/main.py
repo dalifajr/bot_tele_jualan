@@ -22,6 +22,7 @@ from telegram.ext import (
 )
 
 from app.bot.services.broadcast_service import broadcast_to_customers
+from app.bot.services.admin_order_notification_service import upsert_admin_order_message
 from app.bot.services.catalog_service import (
     add_product,
     add_stock_block,
@@ -40,15 +41,18 @@ from app.bot.services.github_pack_service import (
     list_github_stocks,
 )
 from app.bot.services.order_service import (
+    build_admin_order_message,
     cancel_order,
     count_delivered_orders_by_customer,
     create_checkout,
+    get_order_admin_notification,
     list_recent_orders_by_customer,
+    set_admin_message_ref,
     set_checkout_message_ref,
 )
 from app.bot.services.user_service import get_user_by_telegram_id, upsert_user
 from app.common.config import get_settings
-from app.common.roles import is_admin
+from app.common.roles import get_primary_admin_id, is_admin
 from app.db.database import get_session
 
 logger = logging.getLogger(__name__)
@@ -492,6 +496,38 @@ async def _send_product_detail(update: Update, product_id: int, qty: int = 1) ->
     await _respond(update, text, keyboard)
 
 
+async def _upsert_admin_order_notification(update: Update, order_ref: str) -> None:
+    admin_id = get_primary_admin_id(settings.role_file_path)
+    if admin_id is None:
+        return
+
+    with get_session() as session:
+        notification = get_order_admin_notification(session, order_ref=order_ref)
+
+    if notification is None:
+        return
+
+    message_text = build_admin_order_message(notification)
+    upsert_result = await upsert_admin_order_message(
+        bot=update.get_bot(),
+        admin_chat_id=admin_id,
+        message_text=message_text,
+        existing_chat_id=notification.admin_chat_id,
+        existing_message_id=notification.admin_message_id,
+    )
+
+    if upsert_result is None:
+        return
+
+    with get_session() as session:
+        set_admin_message_ref(
+            session=session,
+            order_ref=order_ref,
+            chat_id=upsert_result[0],
+            message_id=upsert_result[1],
+        )
+
+
 async def _send_checkout_result(
     update: Update,
     telegram_id: int,
@@ -575,6 +611,8 @@ async def _send_checkout_result(
                 chat_id=int(sent_message.chat_id),
                 message_id=int(sent_message.message_id),
             )
+
+    await _upsert_admin_order_notification(update, order_ref)
 
 
 async def _run_update_script(action: str) -> str:
@@ -1214,10 +1252,13 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         order_ref = data.split(":", maxsplit=2)[2]
 
         with get_session() as session:
-            ok, message = cancel_order(session, order_ref=order_ref, customer_id=db_user.id)
+            cancel_result = cancel_order(session, order_ref=order_ref, customer_id=db_user.id)
 
-        keyboard = _back_keyboard("cus_cat") if ok else _back_keyboard("main")
-        await _respond(update, message, keyboard)
+        if cancel_result.ok:
+            await _upsert_admin_order_notification(update, order_ref)
+
+        keyboard = _back_keyboard("cus_cat") if cancel_result.ok else _back_keyboard("main")
+        await _respond(update, cancel_result.message, keyboard)
         return
 
     if data == "pay:upload":

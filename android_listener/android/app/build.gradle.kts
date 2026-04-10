@@ -6,6 +6,9 @@ plugins {
 }
 
 android {
+    val enableR8 = (findProperty("enableR8") as String?)?.toBoolean() == true ||
+        (System.getenv("ENABLE_R8")?.toBoolean() == true)
+
     namespace = "com.dalifajr.jualan_listener"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
@@ -32,6 +35,14 @@ android {
 
     buildTypes {
         release {
+            isMinifyEnabled = enableR8
+            isShrinkResources = enableR8
+            if (enableR8) {
+                proguardFiles(
+                    getDefaultProguardFile("proguard-android-optimize.txt"),
+                    "proguard-rules.pro"
+                )
+            }
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")

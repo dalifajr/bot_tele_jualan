@@ -21,7 +21,12 @@ from app.api.security import (
     request_hash,
     verify_signed_headers_or_raise,
 )
-from app.bot.services.order_service import reconcile_payment
+from app.bot.services.admin_order_notification_service import upsert_admin_order_message
+from app.bot.services.order_service import (
+    build_admin_order_message,
+    reconcile_payment,
+    set_admin_message_ref,
+)
 from app.common.config import get_settings
 from app.common.logging import configure_logging
 from app.common.roles import get_primary_admin_id
@@ -167,15 +172,22 @@ async def payment_listener(
 
         notify_sent = False
         notify_error = ""
+        admin_notify_sent = False
+        admin_notify_error = ""
 
-        if status == "paid" and customer_chat_id and delivery_message:
-            if not settings.bot_token:
+        bot: Bot | None = None
+        requires_customer_notify = status == "paid" and customer_chat_id and delivery_message
+        requires_admin_notify = reconcile_result.admin_notification is not None
+
+        if (requires_customer_notify or requires_admin_notify) and settings.bot_token:
+            bot = Bot(token=settings.bot_token)
+
+        if requires_customer_notify:
+            if bot is None:
                 logger.error("BOT_TOKEN kosong, tidak bisa kirim notifikasi sukses")
                 notify_error = "BOT_TOKEN kosong"
             else:
                 try:
-                    bot = Bot(token=settings.bot_token)
-
                     if reconcile_result.checkout_chat_id and reconcile_result.checkout_message_id:
                         try:
                             await bot.delete_message(
@@ -202,6 +214,38 @@ async def payment_listener(
                     logger.exception("Gagal kirim notifikasi ke customer: %s", exc)
                     notify_error = str(exc)
 
+        if requires_admin_notify:
+            admin_notification = reconcile_result.admin_notification
+            if bot is None:
+                admin_notify_error = "BOT_TOKEN kosong"
+            elif admin_notification is not None:
+                admin_id = get_primary_admin_id(settings.role_file_path)
+                if admin_id is None:
+                    admin_notify_error = "Admin utama belum diset di role file."
+                else:
+                    try:
+                        admin_message = build_admin_order_message(admin_notification)
+                        upsert_result = await upsert_admin_order_message(
+                            bot=bot,
+                            admin_chat_id=admin_id,
+                            message_text=admin_message,
+                            existing_chat_id=admin_notification.admin_chat_id,
+                            existing_message_id=admin_notification.admin_message_id,
+                        )
+                        if upsert_result is None:
+                            admin_notify_error = "Gagal kirim/edit notifikasi admin."
+                        else:
+                            set_admin_message_ref(
+                                session=session,
+                                order_ref=admin_notification.order_ref,
+                                chat_id=upsert_result[0],
+                                message_id=upsert_result[1],
+                            )
+                            admin_notify_sent = True
+                    except Exception as exc:
+                        logger.exception("Gagal upsert notifikasi admin order: %s", exc)
+                        admin_notify_error = str(exc)
+
         extras = {
             "idempotent_replay": False,
             "idempotency_key": idempotency_key,
@@ -210,6 +254,11 @@ async def payment_listener(
             extras.update({
                 "notify_sent": notify_sent,
                 "notify_error": notify_error,
+            })
+        if requires_admin_notify:
+            extras.update({
+                "admin_notify_sent": admin_notify_sent,
+                "admin_notify_error": admin_notify_error,
             })
 
         response_payload = make_response_payload(

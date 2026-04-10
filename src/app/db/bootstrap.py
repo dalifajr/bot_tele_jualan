@@ -25,6 +25,8 @@ def _run_compat_migrations() -> None:
         _ensure_column(conn, "orders", "cancel_reason", "cancel_reason TEXT")
         _ensure_column(conn, "orders", "checkout_chat_id", "checkout_chat_id BIGINT")
         _ensure_column(conn, "orders", "checkout_message_id", "checkout_message_id BIGINT")
+        _ensure_column(conn, "orders", "admin_notify_chat_id", "admin_notify_chat_id BIGINT")
+        _ensure_column(conn, "orders", "admin_notify_message_id", "admin_notify_message_id BIGINT")
 
         conn.execute(text(
             "UPDATE stock_units "

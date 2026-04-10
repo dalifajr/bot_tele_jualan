@@ -28,6 +28,34 @@ Payload minimum:
 }
 ```
 
+## Build Ringan (Release)
+
+Untuk APK lebih kecil:
+
+1. Build dengan split ABI:
+
+```bash
+flutter build apk --release --split-per-abi
+```
+
+2. Ambil file hasil di:
+
+- `build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk`
+- `build/app/outputs/flutter-apk/app-arm64-v8a-release.apk`
+- `build/app/outputs/flutter-apk/app-x86_64-release.apk`
+
+Catatan:
+- Konfigurasi release default dibuat stabil untuk mesin RAM menengah.
+- Untuk ukuran lebih kecil lagi, aktifkan R8 manual:
+
+```bash
+# PowerShell
+$env:ENABLE_R8='true'; flutter build apk --release --split-per-abi
+
+# bash/zsh
+ENABLE_R8=true flutter build apk --release --split-per-abi
+```
+
 ## Next
 
 1. Implement `NotificationListenerService` native Android.
