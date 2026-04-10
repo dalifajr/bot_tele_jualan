@@ -29,6 +29,12 @@ Implementasi awal bot Telegram untuk jualan digital dengan fitur:
 
 ## Quick Start (Ubuntu 25)
 
+Instalasi single line:
+
+```bash
+git clone https://github.com/dalifajr/bot_tele_jualan.git && cd bot_tele_jualan && chmod +x setup.sh && ./setup.sh && jualan config && jualan status
+```
+
 1. Clone repo lalu masuk folder proyek.
 2. Jalankan setup:
    ```bash
