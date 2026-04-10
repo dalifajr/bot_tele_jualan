@@ -25,6 +25,7 @@ def _run_compat_migrations() -> None:
         _ensure_column(conn, "orders", "cancel_reason", "cancel_reason TEXT")
         _ensure_column(conn, "orders", "checkout_chat_id", "checkout_chat_id BIGINT")
         _ensure_column(conn, "orders", "checkout_message_id", "checkout_message_id BIGINT")
+        _ensure_column(conn, "orders", "reminder_sent_at", "reminder_sent_at DATETIME")
         _ensure_column(conn, "orders", "admin_notify_chat_id", "admin_notify_chat_id BIGINT")
         _ensure_column(conn, "orders", "admin_notify_message_id", "admin_notify_message_id BIGINT")
 
@@ -46,6 +47,10 @@ def _run_compat_migrations() -> None:
         conn.execute(text(
             "CREATE INDEX IF NOT EXISTS ix_stock_units_username_key "
             "ON stock_units(username_key)"
+        ))
+        conn.execute(text(
+            "CREATE INDEX IF NOT EXISTS ix_orders_pending_reminder "
+            "ON orders(status, expires_at, reminder_sent_at)"
         ))
 
 

@@ -80,6 +80,29 @@ class CustomerOrderDetail:
     account_blocks: list[str]
 
 
+@dataclass
+class CustomerOrderStatusView:
+    order_ref: str
+    status: str
+    total_amount: int
+    payment_ref: str | None
+    expected_amount: int | None
+    created_at: datetime
+    expires_at: datetime | None
+    paid_at: datetime | None
+    delivered_at: datetime | None
+    cancelled_at: datetime | None
+
+
+@dataclass
+class PaymentReminderCandidate:
+    order_ref: str
+    customer_telegram_id: int
+    expected_amount: int
+    expires_at: datetime
+    remaining_seconds: int
+
+
 def _generate_order_ref() -> str:
     timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
     suffix = random.randint(100, 999)
@@ -142,30 +165,33 @@ def _build_admin_order_notification(
 
 def build_admin_order_message(notification: AdminOrderNotification) -> str:
     title_map: dict[str, tuple[str, str]] = {
-        "pending_payment": ("Pesanan baru diterima!", "Waiting for payment"),
-        "delivered": ("Pesanan telah selesai!", "Success delivered"),
-        "cancelled": ("Pesanan dibatalkan!", "Cancelled by customer"),
-        "expired": ("Pesanan kedaluwarsa!", "Payment timeout"),
+        "pending_payment": ("🆕 <b>Pesanan Baru</b>", "🟡 Menunggu Pembayaran"),
+        "delivered": ("✅ <b>Pesanan Selesai</b>", "✅ Berhasil Terkirim"),
+        "cancelled": ("❌ <b>Pesanan Dibatalkan</b>", "❌ Dibatalkan Customer"),
+        "expired": ("⌛ <b>Pesanan Kedaluwarsa</b>", "⌛ Melewati Batas Bayar"),
     }
     title_text, status_text = title_map.get(
         notification.status,
-        ("Update status pesanan", notification.status),
+        ("🔄 <b>Update Status Pesanan</b>", notification.status),
     )
 
     safe_name = html.escape(notification.customer_username)
     safe_item = html.escape(notification.item_name)
-    safe_title = html.escape(title_text)
+    safe_order_ref = html.escape(notification.order_ref)
+    safe_title = title_text
     safe_status = html.escape(status_text)
 
     return "\n".join(
         [
-            f"<b><i>{safe_title}</i></b>",
-            f"Nama: {safe_name}, {notification.customer_telegram_id}",
-            f"Item; {safe_item}",
+            safe_title,
+            f"Order Ref: <code>{safe_order_ref}</code>",
+            f"Customer: {safe_name} ({notification.customer_telegram_id})",
+            f"Item: {safe_item}",
             f"Qty: {notification.quantity}",
-            f"Pembayaran: {_format_rupiah(notification.total_amount)}",
+            f"Total Bayar: <b>{_format_rupiah(notification.total_amount)}</b>",
             "",
-            f"Status: <b><i>{safe_status}</i></b>",
+            f"Status: <b>{safe_status}</b>",
+            "🕒 Update ini dikirim otomatis dari sistem pembayaran.",
         ]
     )
 
@@ -375,6 +401,106 @@ def get_customer_order_detail(
     )
 
 
+def get_customer_order_status_by_ref(
+    session: Session,
+    customer_id: int,
+    order_ref: str,
+) -> CustomerOrderStatusView | None:
+    expire_pending_orders(session)
+
+    order = session.scalar(
+        select(Order).where(
+            Order.customer_id == customer_id,
+            Order.order_ref == order_ref,
+        )
+    )
+    if order is None:
+        return None
+
+    payment = order.payment
+    return CustomerOrderStatusView(
+        order_ref=order.order_ref,
+        status=order.status,
+        total_amount=order.total_amount,
+        payment_ref=(payment.payment_ref if payment is not None else None),
+        expected_amount=(payment.expected_amount if payment is not None else None),
+        created_at=order.created_at,
+        expires_at=order.expires_at,
+        paid_at=order.paid_at,
+        delivered_at=order.delivered_at,
+        cancelled_at=order.cancelled_at,
+    )
+
+
+def list_orders_for_payment_reminder(
+    session: Session,
+    minutes_before_expiry: int,
+    limit: int = 50,
+) -> list[PaymentReminderCandidate]:
+    expire_pending_orders(session)
+
+    now = _utcnow()
+    remind_before = max(1, int(minutes_before_expiry))
+    deadline = now + timedelta(minutes=remind_before)
+
+    rows = list(
+        session.execute(
+            select(Order.order_ref, User.telegram_id, Payment.expected_amount, Order.expires_at)
+            .join(User, User.id == Order.customer_id)
+            .join(Payment, Payment.order_id == Order.id)
+            .where(
+                Order.status == "pending_payment",
+                Payment.status == "pending",
+                Order.expires_at.is_not(None),
+                Order.expires_at > now,
+                Order.expires_at <= deadline,
+                Order.reminder_sent_at.is_(None),
+            )
+            .order_by(Order.expires_at.asc())
+            .limit(max(1, int(limit)))
+        ).all()
+    )
+
+    result: list[PaymentReminderCandidate] = []
+    for order_ref_val, telegram_id_val, expected_amount_val, expires_at_val in rows:
+        if expires_at_val is None:
+            continue
+        remaining_seconds = int((expires_at_val - now).total_seconds())
+        if remaining_seconds <= 0:
+            continue
+
+        result.append(
+            PaymentReminderCandidate(
+                order_ref=str(order_ref_val),
+                customer_telegram_id=int(telegram_id_val),
+                expected_amount=int(expected_amount_val),
+                expires_at=expires_at_val,
+                remaining_seconds=remaining_seconds,
+            )
+        )
+    return result
+
+
+def mark_payment_reminder_sent(
+    session: Session,
+    order_ref: str,
+    sent_at: datetime | None = None,
+) -> bool:
+    order = session.scalar(
+        select(Order).where(
+            Order.order_ref == order_ref,
+            Order.status == "pending_payment",
+            Order.reminder_sent_at.is_(None),
+        )
+    )
+    if order is None:
+        return False
+
+    order.reminder_sent_at = sent_at or _utcnow()
+    session.add(order)
+    return True
+
+
 def count_delivered_orders_by_customer(session: Session, customer_id: int) -> int:
     return (
         session.scalar(
@@ -416,13 +542,19 @@ def _allocate_stock_fifo(session: Session, product_id: int, quantity: int, order
 
 def _build_delivery_message(order: Order, units: list[StockUnit]) -> str:
     parts = [
-        "Pembayaran berhasil dikonfirmasi.",
-        f"Order: {order.order_ref}",
-        "Berikut data pesanan Anda:",
+        "✅ <b>Pembayaran Berhasil Dikonfirmasi</b>",
+        f"Order Ref: <code>{html.escape(order.order_ref)}</code>",
+        "",
+        "🔐 <b>Detail Akun Pesanan</b>",
     ]
 
     for idx, unit in enumerate(units, start=1):
-        parts.append(f"\n[{idx}]\n{unit.raw_text}")
+        parts.append(f"\n<b>Akun {idx}</b>")
+        parts.append(f"<pre>{html.escape(unit.raw_text)}</pre>")
+
+    parts.append("")
+    parts.append("📌 Simpan data akun ini dengan aman.")
+    parts.append("📲 Ketik /start kapan saja untuk kembali ke menu utama.")
 
     return "\n".join(parts)
 

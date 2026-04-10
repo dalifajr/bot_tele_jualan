@@ -68,6 +68,7 @@ class Order(Base):
     cancel_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     checkout_chat_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     checkout_message_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    reminder_sent_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     admin_notify_chat_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     admin_notify_message_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

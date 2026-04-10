@@ -48,6 +48,7 @@ from app.bot.services.order_service import (
     create_checkout,
     get_customer_order_detail,
     get_customer_orders_page,
+    get_customer_order_status_by_ref,
     get_order_admin_notification,
     set_admin_message_ref,
     set_checkout_message_ref,
@@ -312,6 +313,7 @@ async def _send_help(update: Update, role: str) -> None:
         common.append("🔐 Admin: kelola produk dari menu <b>📦 Katalog Admin</b>.")
     else:
         common.append("🛍️ Customer: pilih produk dari katalog lalu checkout lewat tombol.")
+        common.append("📌 Cek status cepat: <code>/order_status ORD20260101000123</code>.")
 
     await _respond(update, "\n".join(common), _back_keyboard("main"), parse_mode=ParseMode.HTML)
 
@@ -322,8 +324,13 @@ async def _send_admin_catalog_menu(update: Update) -> None:
 
     await _respond(
         update,
-        "📦 Menu Katalog Admin\nPilih tindakan yang ingin dilakukan.",
+        (
+            "📦 <b>Menu Katalog Admin</b>\n"
+            "Kelola katalog, stok, dan produk khusus dari panel ini.\n\n"
+            "👇 <i>Pilih aksi admin lewat tombol di bawah.</i>"
+        ),
         _admin_catalog_menu_keyboard(),
+        parse_mode=ParseMode.HTML,
     )
 
 
@@ -341,6 +348,34 @@ def _order_status_badge(status: str) -> str:
         "expired": "⌛ Kedaluwarsa",
     }
     return mapping.get(status, status)
+
+
+def _format_remaining_text(expires_at: datetime | None) -> str:
+    if expires_at is None:
+        return "-"
+
+    remaining_seconds = int((expires_at - datetime.utcnow()).total_seconds())
+    if remaining_seconds <= 0:
+        return "0 menit"
+
+    remaining_minutes = max(1, (remaining_seconds + 59) // 60)
+    return f"{remaining_minutes} menit"
+
+
+def _customer_footer_text() -> str:
+    return "👇 <i>Pilih aksi lewat tombol di bawah.</i>"
+
+
+def _admin_footer_text() -> str:
+    return "👇 <i>Pilih aksi admin lewat tombol di bawah.</i>"
+
+
+def _admin_access_denied_text() -> str:
+    return "🚫 <b>Akses Ditolak</b>\nMenu ini khusus admin."
+
+
+async def _respond_admin_only(update: Update, target: str = "main") -> None:
+    await _respond(update, _admin_access_denied_text(), _back_keyboard(target), parse_mode=ParseMode.HTML)
 
 
 def _customer_orders_keyboard(
@@ -420,7 +455,8 @@ async def _send_github_pack_menu(update: Update) -> None:
         (
             f"🎓 <b>{html.escape(product.name)}</b>\n"
             f"✅ Ready: <b>{ready_count}</b> akun\n"
-            f"⏳ Awaiting benefits: <b>{awaiting_count}</b> akun"
+            f"⏳ Awaiting benefits: <b>{awaiting_count}</b> akun\n\n"
+            f"{_admin_footer_text()}"
         ),
         _github_pack_menu_keyboard(),
         parse_mode=ParseMode.HTML,
@@ -432,11 +468,20 @@ async def _send_github_stock_picker(update: Update, mode: str) -> None:
         stocks = list_github_stocks(session)
 
     if not stocks:
-        await _respond(update, "📭 Belum ada stok GitHub Pack.", _github_pack_menu_keyboard())
+        await _respond(
+            update,
+            (
+                "📭 <b>Stok GitHub Pack Kosong</b>\n"
+                "Belum ada akun yang bisa ditampilkan.\n\n"
+                f"{_admin_footer_text()}"
+            ),
+            _github_pack_menu_keyboard(),
+            parse_mode=ParseMode.HTML,
+        )
         return
 
     prefix = "gh:view" if mode == "view" else "gh:del"
-    title = "👁️ Pilih akun untuk melihat detail:" if mode == "view" else "🗑️ Pilih akun yang ingin dihapus:"
+    title = "👁️ <b>Pilih Akun untuk Melihat Detail</b>" if mode == "view" else "🗑️ <b>Pilih Akun yang Ingin Dihapus</b>"
 
     keyboard_rows: list[list[InlineKeyboardButton]] = []
     for stock in stocks:
@@ -444,7 +489,12 @@ async def _send_github_stock_picker(update: Update, mode: str) -> None:
         keyboard_rows.append([InlineKeyboardButton(label, callback_data=f"{prefix}:{stock.id}")])
     keyboard_rows.append([InlineKeyboardButton("⬅️ Kembali", callback_data="ac:ghpack")])
 
-    await _respond(update, title, InlineKeyboardMarkup(keyboard_rows))
+    await _respond(
+        update,
+        f"{title}\n\n{_admin_footer_text()}",
+        InlineKeyboardMarkup(keyboard_rows),
+        parse_mode=ParseMode.HTML,
+    )
 
 
 async def _send_admin_catalog_list(update: Update) -> None:
@@ -453,20 +503,31 @@ async def _send_admin_catalog_list(update: Update) -> None:
         products = list_products(session=session, include_suspended=True)
 
     if not products:
-        await _respond(update, "📭 Belum ada produk.", _back_keyboard("adm_cat"))
+        await _respond(
+            update,
+            (
+                "📭 <b>Produk Belum Tersedia</b>\n"
+                "Tambahkan produk baru untuk mulai berjualan.\n\n"
+                f"{_admin_footer_text()}"
+            ),
+            _back_keyboard("adm_cat"),
+            parse_mode=ParseMode.HTML,
+        )
         return
 
-    lines = ["📋 Daftar produk:"]
+    lines = ["📋 <b>Daftar Produk</b>"]
     keyboard_rows: list[list[InlineKeyboardButton]] = []
     for product in products:
         status = "⏸️ Suspend" if product.is_suspended else "✅ Aktif"
         lines.append(
-            f"#{product.id} {product.name} | {_format_rupiah(product.price)} | stok {product.stock_available} | {status}"
+            f"• <b>#{product.id}</b> {html.escape(product.name)} | {_format_rupiah(product.price)} | stok {product.stock_available} | {status}"
         )
         keyboard_rows.append([InlineKeyboardButton(f"Buka #{product.id} {product.name}", callback_data=f"acp:{product.id}")])
 
+    lines.append("")
+    lines.append(_admin_footer_text())
     keyboard_rows.append([InlineKeyboardButton("⬅️ Kembali", callback_data="back:adm_cat")])
-    await _respond(update, "\n".join(lines), InlineKeyboardMarkup(keyboard_rows))
+    await _respond(update, "\n".join(lines), InlineKeyboardMarkup(keyboard_rows), parse_mode=ParseMode.HTML)
 
 
 async def _send_admin_product_picker(update: Update, action: str, title: str) -> None:
@@ -474,7 +535,16 @@ async def _send_admin_product_picker(update: Update, action: str, title: str) ->
         products = list_products(session=session, include_suspended=True)
 
     if not products:
-        await _respond(update, "📭 Tidak ada produk untuk dipilih.", _back_keyboard("adm_cat"))
+        await _respond(
+            update,
+            (
+                "📭 <b>Tidak Ada Produk untuk Dipilih</b>\n"
+                "Tambahkan produk terlebih dahulu atau ubah filter katalog.\n\n"
+                f"{_admin_footer_text()}"
+            ),
+            _back_keyboard("adm_cat"),
+            parse_mode=ParseMode.HTML,
+        )
         return
 
     keyboard_rows: list[list[InlineKeyboardButton]] = []
@@ -485,7 +555,12 @@ async def _send_admin_product_picker(update: Update, action: str, title: str) ->
         )
 
     keyboard_rows.append([InlineKeyboardButton("⬅️ Kembali", callback_data="back:adm_cat")])
-    await _respond(update, title, InlineKeyboardMarkup(keyboard_rows))
+    await _respond(
+        update,
+        f"<b>{html.escape(title)}</b>\n\n{_admin_footer_text()}",
+        InlineKeyboardMarkup(keyboard_rows),
+        parse_mode=ParseMode.HTML,
+    )
 
 
 async def _send_customer_catalog(update: Update) -> None:
@@ -495,7 +570,16 @@ async def _send_customer_catalog(update: Update) -> None:
         products = list_products(session=session, include_suspended=False)
 
     if not products:
-        await _respond(update, "📭 Katalog masih kosong.", _back_keyboard("main"))
+        await _respond(
+            update,
+            (
+                "📭 <b>Katalog Kosong</b>\n"
+                "Produk belum tersedia saat ini.\n\n"
+                f"{_customer_footer_text()}"
+            ),
+            _back_keyboard("main"),
+            parse_mode=ParseMode.HTML,
+        )
         return
 
     products = sorted(
@@ -513,7 +597,11 @@ async def _send_customer_catalog(update: Update) -> None:
     keyboard_rows.append([InlineKeyboardButton("⬅️ Kembali", callback_data="back:main")])
     await _respond(
         update,
-        "🛍️ <b>Katalog Produk</b>\nPilih produk favorit kamu untuk lihat detail dan checkout.",
+        (
+            "🛍️ <b>Katalog Produk</b>\n"
+            "Pilih produk favorit kamu untuk lihat detail dan checkout.\n\n"
+            f"{_customer_footer_text()}"
+        ),
         InlineKeyboardMarkup(keyboard_rows),
         parse_mode=ParseMode.HTML,
     )
@@ -523,7 +611,12 @@ async def _send_customer_orders(update: Update, telegram_id: int, page: int = 1)
     with get_session() as session:
         user = get_user_by_telegram_id(session, telegram_id)
         if user is None:
-            await _respond(update, "⚠️ User tidak ditemukan.", _back_keyboard("main"))
+            await _respond(
+                update,
+                "⚠️ <b>User tidak ditemukan</b>\nSilakan mulai ulang dari menu utama.",
+                _back_keyboard("main"),
+                parse_mode=ParseMode.HTML,
+            )
             return
         orders_page = get_customer_orders_page(
             session,
@@ -533,7 +626,16 @@ async def _send_customer_orders(update: Update, telegram_id: int, page: int = 1)
         )
 
     if orders_page.total_items <= 0:
-        await _respond(update, "📭 Belum ada pesanan.", _back_keyboard("main"))
+        await _respond(
+            update,
+            (
+                "📭 <b>Belum Ada Pesanan</b>\n"
+                "Kamu belum punya riwayat order. Yuk checkout produk dulu.\n\n"
+                f"{_customer_footer_text()}"
+            ),
+            _back_keyboard("main"),
+            parse_mode=ParseMode.HTML,
+        )
         return
 
     start_no = (orders_page.page - 1) * CUSTOMER_ORDERS_PAGE_SIZE + 1
@@ -544,7 +646,11 @@ async def _send_customer_orders(update: Update, telegram_id: int, page: int = 1)
 
     await _respond(
         update,
-        "📦 <b>Pesanan Saya</b>\nKlik tombol order untuk melihat detail akun pesanan.",
+        (
+            "📦 <b>Pesanan Saya</b>\n"
+            "Klik nomor order untuk lihat detail pesanan dan akun.\n\n"
+            f"{_customer_footer_text()}"
+        ),
         _customer_orders_keyboard(
             page=orders_page.page,
             total_pages=orders_page.total_pages,
@@ -558,7 +664,12 @@ async def _send_customer_order_detail(update: Update, telegram_id: int, order_re
     with get_session() as session:
         user = get_user_by_telegram_id(session, telegram_id)
         if user is None:
-            await _respond(update, "⚠️ User tidak ditemukan.", _back_keyboard("main"))
+            await _respond(
+                update,
+                "⚠️ <b>User tidak ditemukan</b>\nSilakan mulai ulang dari menu utama.",
+                _back_keyboard("main"),
+                parse_mode=ParseMode.HTML,
+            )
             return
         detail = get_customer_order_detail(
             session,
@@ -567,7 +678,12 @@ async def _send_customer_order_detail(update: Update, telegram_id: int, order_re
         )
 
     if detail is None:
-        await _respond(update, "⚠️ Pesanan tidak ditemukan.", _back_keyboard("main"))
+        await _respond(
+            update,
+            "⚠️ <b>Pesanan tidak ditemukan</b>\nPastikan nomor order sudah benar.",
+            _back_keyboard("main"),
+            parse_mode=ParseMode.HTML,
+        )
         return
 
     lines = [
@@ -589,12 +705,17 @@ async def _send_customer_order_detail(update: Update, telegram_id: int, order_re
         for idx, raw in enumerate(detail.account_blocks, start=1):
             lines.append(f"\n<b>Akun {idx}</b>")
             lines.append(f"<pre>{html.escape(raw)}</pre>")
+        lines.append("")
+        lines.append("📋 Gunakan tombol <b>Copy Akun</b> untuk menyalin data akun dengan cepat.")
     elif detail.status == "delivered":
         lines.append("")
         lines.append("⚠️ Status berhasil, tapi detail akun belum tersedia. Silakan hubungi admin.")
     else:
         lines.append("")
         lines.append("ℹ️ Detail akun akan muncul setelah pesanan berstatus berhasil.")
+
+    lines.append("")
+    lines.append(_customer_footer_text())
 
     await _respond(
         update,
@@ -608,7 +729,12 @@ async def _send_customer_order_copy(update: Update, telegram_id: int, order_ref:
     with get_session() as session:
         user = get_user_by_telegram_id(session, telegram_id)
         if user is None:
-            await _respond(update, "⚠️ User tidak ditemukan.", _back_keyboard("main"))
+            await _respond(
+                update,
+                "⚠️ <b>User tidak ditemukan</b>\nSilakan mulai ulang dari menu utama.",
+                _back_keyboard("main"),
+                parse_mode=ParseMode.HTML,
+            )
             return
         detail = get_customer_order_detail(
             session,
@@ -617,7 +743,12 @@ async def _send_customer_order_copy(update: Update, telegram_id: int, order_ref:
         )
 
     if detail is None:
-        await _respond(update, "⚠️ Pesanan tidak ditemukan.", _back_keyboard("main"))
+        await _respond(
+            update,
+            "⚠️ <b>Pesanan tidak ditemukan</b>\nPastikan nomor order sudah benar.",
+            _back_keyboard("main"),
+            parse_mode=ParseMode.HTML,
+        )
         return
     if detail.status != "delivered" or not detail.account_blocks:
         await _send_customer_order_detail(update, telegram_id, order_ref, page)
@@ -626,10 +757,87 @@ async def _send_customer_order_copy(update: Update, telegram_id: int, order_ref:
     payload = _build_accounts_copy_text(detail.order_ref, detail.account_blocks)
     query = update.callback_query
     if query is not None and query.message is not None:
+        await query.message.reply_text("✅ Data akun siap disalin. Berikut detail lengkapnya:")
         for chunk in _split_message_chunks(payload):
             await query.message.reply_text(chunk)
 
     await _send_customer_order_detail(update, telegram_id, order_ref, page)
+
+
+async def _send_customer_order_status(update: Update, telegram_id: int, order_ref: str) -> None:
+    with get_session() as session:
+        user = get_user_by_telegram_id(session, telegram_id)
+        if user is None:
+            await _respond(
+                update,
+                "⚠️ <b>User tidak ditemukan</b>\nSilakan mulai ulang dari menu utama.",
+                _back_keyboard("main"),
+                parse_mode=ParseMode.HTML,
+            )
+            return
+        status_view = get_customer_order_status_by_ref(
+            session,
+            customer_id=user.id,
+            order_ref=order_ref,
+        )
+
+    if status_view is None:
+        await _respond(
+            update,
+            "⚠️ <b>Order tidak ditemukan</b>\nCek kembali nomor order kamu atau buka menu Pesanan Saya.",
+            _back_keyboard("main"),
+            parse_mode=ParseMode.HTML,
+        )
+        return
+
+    lines = [
+        "📌 <b>Status Pesanan</b>",
+        f"Order Ref: <code>{html.escape(status_view.order_ref)}</code>",
+        f"Status: {_order_status_badge(status_view.status)}",
+        f"Total Bayar: <b>{_format_rupiah(status_view.total_amount)}</b>",
+    ]
+
+    if status_view.payment_ref:
+        lines.append(f"Payment Ref: <code>{html.escape(status_view.payment_ref)}</code>")
+
+    lines.extend(
+        [
+            "",
+            "🕒 <b>Timeline</b>",
+            f"• Dibuat: {_format_display_time(status_view.created_at)}",
+        ]
+    )
+
+    if status_view.status == "pending_payment":
+        if status_view.expires_at is not None:
+            lines.append(f"• Batas bayar: {_format_display_time(status_view.expires_at)}")
+            lines.append(f"• Sisa waktu: {_format_remaining_text(status_view.expires_at)}")
+        lines.append("• Aksi: lakukan pembayaran sesuai nominal sebelum waktu habis.")
+
+    if status_view.paid_at is not None:
+        lines.append(f"• Dibayar: {_format_display_time(status_view.paid_at)}")
+    if status_view.delivered_at is not None:
+        lines.append(f"• Dikirim: {_format_display_time(status_view.delivered_at)}")
+    if status_view.cancelled_at is not None:
+        lines.append(f"• Dibatalkan/Kedaluwarsa: {_format_display_time(status_view.cancelled_at)}")
+
+    lines.append("")
+    lines.append(_customer_footer_text())
+
+    keyboard_rows: list[list[InlineKeyboardButton]] = []
+    if status_view.status == "pending_payment":
+        keyboard_rows.append(
+            [InlineKeyboardButton("❌ Batalkan Pesanan", callback_data=f"ord:cancel:{status_view.order_ref}")]
+        )
+    keyboard_rows.append([InlineKeyboardButton("📦 Pesanan Saya", callback_data="cus:ord")])
+    keyboard_rows.append([InlineKeyboardButton("⬅️ Kembali", callback_data="back:main")])
+
+    await _respond(
+        update,
+        "\n".join(lines),
+        InlineKeyboardMarkup(keyboard_rows),
+        parse_mode=ParseMode.HTML,
+    )
 
 
 async def _send_product_detail(update: Update, product_id: int, qty: int = 1) -> None:
@@ -637,7 +845,12 @@ async def _send_product_detail(update: Update, product_id: int, qty: int = 1) ->
     with get_session() as session:
         product = get_product(session, product_id)
         if product is None or product.is_suspended:
-            await _respond(update, "⚠️ Produk tidak tersedia.", _back_keyboard("cus_cat"))
+            await _respond(
+                update,
+                "⚠️ <b>Produk tidak tersedia</b>\nPilih produk lain yang masih aktif.",
+                _back_keyboard("cus_cat"),
+                parse_mode=ParseMode.HTML,
+            )
             return
         stock = get_available_stock_count(session, product_id)
         product_name = product.name
@@ -650,7 +863,8 @@ async def _send_product_detail(update: Update, product_id: int, qty: int = 1) ->
         f"📦 Nama: <b>{html.escape(product_name)}</b>\n"
         f"💰 Harga: <b>{_format_rupiah(product_price)}</b>\n"
         f"📦 Stok: {stock}\n"
-        f"📝 Deskripsi: {html.escape(product_description)}"
+        f"📝 Deskripsi: {html.escape(product_description)}\n\n"
+        f"{_customer_footer_text()}"
     )
 
     if github_mode:
@@ -724,7 +938,12 @@ async def _send_checkout_result(
     with get_session() as session:
         user = get_user_by_telegram_id(session, telegram_id)
         if user is None:
-            await _respond(update, "⚠️ User tidak ditemukan. Jalankan /start lagi.", _back_keyboard("main"))
+            await _respond(
+                update,
+                "⚠️ <b>User tidak ditemukan</b>\nSilakan jalankan /start lalu coba lagi.",
+                _back_keyboard("main"),
+                parse_mode=ParseMode.HTML,
+            )
             return
         try:
             order, payment = create_checkout(
@@ -751,7 +970,14 @@ async def _send_checkout_result(
         f"🔖 Payment Ref: <code>{html.escape(payment_ref)}</code>",
         f"💰 Total Bayar: <b>{_format_rupiah(expected_amount)}</b>",
         f"⏱️ Batas bayar: <b>{expires_text}</b>",
-        "📲 Silakan transfer sesuai nominal. Sistem akan konfirmasi otomatis.",
+        "",
+        "🧭 <b>Langkah Berikutnya</b>",
+        "1. Transfer sesuai nominal di atas.",
+        "2. Pantau status order secara berkala.",
+        "3. Jika batal, gunakan tombol Batalkan Pesanan.",
+        f"🔎 Cek status cepat: <code>/order_status {html.escape(order_ref)}</code>",
+        "",
+        _customer_footer_text(),
     ]
     result_keyboard = InlineKeyboardMarkup(
         [
@@ -897,7 +1123,7 @@ async def admin_catalog_handler(update: Update, context: ContextTypes.DEFAULT_TY
     await _ensure_user(update)
 
     if not _ensure_admin(update):
-        await _respond(update, "🚫 Akses ditolak. Menu ini hanya untuk admin.", _back_keyboard("main"))
+        await _respond_admin_only(update)
         return
     _clear_flow(context)
     await _send_admin_catalog_menu(update)
@@ -906,20 +1132,26 @@ async def admin_catalog_handler(update: Update, context: ContextTypes.DEFAULT_TY
 async def product_add_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     _, _ = await _ensure_user(update)
     if not _ensure_admin(update):
-        await _respond(update, "🚫 Akses ditolak.", _back_keyboard("main"))
+        await _respond_admin_only(update)
         return
     _set_flow(context, FLOW_ADMIN_ADD_PRODUCT)
     await _respond(
         update,
-        "➕ Upsert Produk\nKirim data dengan format:\nNama|Harga|Deskripsi",
+        (
+            "➕ <b>Upsert Produk</b>\n"
+            "Kirim data dengan format:\n"
+            "<code>Nama|Harga|Deskripsi</code>\n\n"
+            f"{_admin_footer_text()}"
+        ),
         _back_keyboard("adm_cat"),
+        parse_mode=ParseMode.HTML,
     )
 
 
 async def stock_add_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await _ensure_user(update)
     if not _ensure_admin(update):
-        await _respond(update, "🚫 Akses ditolak.", _back_keyboard("main"))
+        await _respond_admin_only(update)
         return
 
     await _send_admin_product_picker(
@@ -932,7 +1164,7 @@ async def stock_add_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 async def product_suspend_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     _, _ = await _ensure_user(update)
     if not _ensure_admin(update):
-        await _respond(update, "🚫 Akses ditolak.", _back_keyboard("main"))
+        await _respond_admin_only(update)
         return
 
     await _send_admin_product_picker(
@@ -945,7 +1177,7 @@ async def product_suspend_handler(update: Update, context: ContextTypes.DEFAULT_
 async def product_unsuspend_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     _, _ = await _ensure_user(update)
     if not _ensure_admin(update):
-        await _respond(update, "🚫 Akses ditolak.", _back_keyboard("main"))
+        await _respond_admin_only(update)
         return
 
     await _send_admin_product_picker(
@@ -958,7 +1190,7 @@ async def product_unsuspend_handler(update: Update, context: ContextTypes.DEFAUL
 async def product_delete_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     _, _ = await _ensure_user(update)
     if not _ensure_admin(update):
-        await _respond(update, "🚫 Akses ditolak.", _back_keyboard("main"))
+        await _respond_admin_only(update)
         return
 
     await _send_admin_product_picker(
@@ -975,14 +1207,23 @@ async def buy_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         return
 
     if len(context.args) < 2:
-        await _respond(update, "Format: /buy <product_id> <qty>", _back_keyboard("cus_cat"))
+        await _respond(
+            update,
+            "Gunakan format: <code>/buy PRODUCT_ID QTY</code>\nContoh: <code>/buy 2 1</code>",
+            _back_keyboard("cus_cat"),
+            parse_mode=ParseMode.HTML,
+        )
         return
 
     try:
         product_id = int(context.args[0])
         qty = int(context.args[1])
     except ValueError:
-        await _respond(update, "product_id dan qty harus angka.", _back_keyboard("cus_cat"))
+        await _respond(
+            update,
+            "⚠️ PRODUCT_ID dan QTY harus berupa angka.",
+            _back_keyboard("cus_cat"),
+        )
         return
 
     await _send_checkout_result(update, db_user.telegram_id, product_id, qty)
@@ -993,38 +1234,71 @@ async def my_orders_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     await _send_customer_orders(update, db_user.telegram_id, page=1)
 
 
+async def order_status_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    db_user, role = await _ensure_user(update)
+    if role == "admin":
+        await _respond(update, "🚫 Admin tidak menggunakan command ini.", _back_keyboard("main"))
+        return
+
+    if not context.args:
+        await _respond(
+            update,
+            (
+                "📌 <b>Cek Status Pesanan</b>\n"
+                "Gunakan format: <code>/order_status ORDER_REF</code>\n"
+                "Contoh: <code>/order_status ORD20260101000123</code>"
+            ),
+            _back_keyboard("main"),
+            parse_mode=ParseMode.HTML,
+        )
+        return
+
+    order_ref = context.args[0].strip().upper()
+    await _send_customer_order_status(update, db_user.telegram_id, order_ref)
+
+
 async def broadcast_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     _, _ = await _ensure_user(update)
     if not _ensure_admin(update):
-        await _respond(update, "🚫 Akses ditolak.", _back_keyboard("main"))
+        await _respond_admin_only(update)
         return
 
     _set_flow(context, FLOW_ADMIN_BROADCAST)
     await _respond(
         update,
-        "📢 Kirim pesan broadcast sekarang.\nPesan Anda akan dikirim ke semua customer.",
+        (
+            "📢 <b>Broadcast ke Customer</b>\n"
+            "Kirim isi pesan sekarang, lalu bot akan kirim ke semua customer.\n\n"
+            f"{_admin_footer_text()}"
+        ),
         _back_keyboard("main"),
+        parse_mode=ParseMode.HTML,
     )
 
 
 async def set_qris_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await _ensure_user(update)
     if not _ensure_admin(update):
-        await _respond(update, "🚫 Akses ditolak.", _back_keyboard("main"))
+        await _respond_admin_only(update)
         return
 
     context.user_data[AWAIT_QRIS_IMAGE_KEY] = True
     await _respond(
         update,
-        "🖼️ Kirim gambar QRIS sekarang (sebagai foto).",
+        (
+            "🖼️ <b>Upload QRIS</b>\n"
+            "Kirim gambar QRIS sekarang dalam format foto.\n\n"
+            f"{_admin_footer_text()}"
+        ),
         _back_keyboard("pay"),
+        parse_mode=ParseMode.HTML,
     )
 
 
 async def update_check_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await _ensure_user(update)
     if not _ensure_admin(update):
-        await _respond(update, "🚫 Akses ditolak.", _back_keyboard("main"))
+        await _respond_admin_only(update)
         return
 
     output = await _run_update_script("check")
@@ -1034,7 +1308,7 @@ async def update_check_handler(update: Update, context: ContextTypes.DEFAULT_TYP
 async def update_apply_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await _ensure_user(update)
     if not _ensure_admin(update):
-        await _respond(update, "🚫 Akses ditolak.", _back_keyboard("main"))
+        await _respond_admin_only(update)
         return
 
     output = await _run_update_script("update")
@@ -1054,6 +1328,11 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     db_user, role = await _ensure_user(update)
     data = query.data or ""
 
+    admin_only_prefixes = ("adm:", "ac:", "acp:", "gh:", "ap:", "pay:", "up:")
+    if role != "admin" and any(data.startswith(prefix) for prefix in admin_only_prefixes):
+        await _respond_admin_only(update)
+        return
+
     if data.startswith("back:"):
         target = data.split(":", maxsplit=1)[1]
         _clear_flow(context)
@@ -1067,17 +1346,27 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             await _send_customer_catalog(update)
             return
         if target == "pay":
-            await _respond(update, "💳 Konfigurasi Payment", _payment_menu_keyboard())
+            await _respond(
+                update,
+                f"💳 <b>Konfigurasi Payment</b>\n\n{_admin_footer_text()}",
+                _payment_menu_keyboard(),
+                parse_mode=ParseMode.HTML,
+            )
             return
         if target == "upd":
-            await _respond(update, "🔄 Menu Update Bot", _update_menu_keyboard())
+            await _respond(
+                update,
+                f"🔄 <b>Menu Update Bot</b>\n\n{_admin_footer_text()}",
+                _update_menu_keyboard(),
+                parse_mode=ParseMode.HTML,
+            )
             return
         await _send_main_menu(update, role)
         return
 
     if data == "adm:cat":
         if role != "admin":
-            await _respond(update, "🚫 Hanya admin yang bisa akses menu ini.", _back_keyboard("main"))
+            await _respond_admin_only(update)
             return
         _clear_flow(context)
         await _send_admin_catalog_menu(update)
@@ -1085,30 +1374,45 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
     if data == "adm:bc":
         if role != "admin":
-            await _respond(update, "🚫 Hanya admin yang bisa akses menu ini.", _back_keyboard("main"))
+            await _respond_admin_only(update)
             return
         _set_flow(context, FLOW_ADMIN_BROADCAST)
         await _respond(
             update,
-            "📢 Kirim pesan broadcast sekarang.\nPesan Anda akan dikirim ke semua customer.",
+            (
+                "📢 <b>Broadcast ke Customer</b>\n"
+                "Kirim isi pesan sekarang, lalu bot akan kirim ke semua customer.\n\n"
+                f"{_admin_footer_text()}"
+            ),
             _back_keyboard("main"),
+            parse_mode=ParseMode.HTML,
         )
         return
 
     if data == "adm:pay":
         if role != "admin":
-            await _respond(update, "🚫 Hanya admin yang bisa akses menu ini.", _back_keyboard("main"))
+            await _respond_admin_only(update)
             return
         _clear_flow(context)
-        await _respond(update, "💳 Konfigurasi Payment", _payment_menu_keyboard())
+        await _respond(
+            update,
+            f"💳 <b>Konfigurasi Payment</b>\n\n{_admin_footer_text()}",
+            _payment_menu_keyboard(),
+            parse_mode=ParseMode.HTML,
+        )
         return
 
     if data == "adm:upd":
         if role != "admin":
-            await _respond(update, "🚫 Hanya admin yang bisa akses menu ini.", _back_keyboard("main"))
+            await _respond_admin_only(update)
             return
         _clear_flow(context)
-        await _respond(update, "🔄 Menu Update Bot", _update_menu_keyboard())
+        await _respond(
+            update,
+            f"🔄 <b>Menu Update Bot</b>\n\n{_admin_footer_text()}",
+            _update_menu_keyboard(),
+            parse_mode=ParseMode.HTML,
+        )
         return
 
     if data == "adm:help":
@@ -1138,7 +1442,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
     if data == "ac:ghpack":
         if role != "admin":
-            await _respond(update, "🚫 Hanya admin yang bisa akses menu ini.", _back_keyboard("main"))
+            await _respond_admin_only(update)
             return
         _clear_flow(context)
         await _send_github_pack_menu(update)
@@ -1146,7 +1450,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
     if data.startswith("acp:"):
         if role != "admin":
-            await _respond(update, "🚫 Hanya admin yang bisa akses menu ini.", _back_keyboard("main"))
+            await _respond_admin_only(update)
             return
         try:
             product_id = int(data.split(":", maxsplit=1)[1])
@@ -1180,61 +1484,84 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         await _respond(
             update,
             (
-                "🧾 Detail Produk\n"
-                f"Nama: {product_name}\n"
-                f"Harga: {_format_rupiah(product_price)}\n"
+                "🧾 <b>Detail Produk</b>\n"
+                f"Nama: <b>{html.escape(product_name)}</b>\n"
+                f"Harga: <b>{_format_rupiah(product_price)}</b>\n"
                 f"Stok Ready: {stock_count}\n"
                 f"Status: {status}\n"
-                f"Deskripsi: {product_desc}"
+                f"Deskripsi: {html.escape(product_desc)}\n\n"
+                f"{_admin_footer_text()}"
             ),
             _back_keyboard("adm_cat"),
+            parse_mode=ParseMode.HTML,
         )
         return
 
     if data == "gh:add:ready":
         if role != "admin":
-            await _respond(update, "🚫 Hanya admin yang bisa akses menu ini.", _back_keyboard("main"))
+            await _respond_admin_only(update)
             return
         _set_flow(context, FLOW_GH_ADD_READY)
         await _respond(
             update,
-            "📥 Kirim blok stok GitHub Pack (status READY).\nSatu pesan = satu akun.",
+            (
+                "📥 <b>Tambah Stok GitHub Pack (READY)</b>\n"
+                "Kirim blok data akun. Satu pesan = satu akun.\n\n"
+                f"{_admin_footer_text()}"
+            ),
             _back_keyboard("adm_cat"),
+            parse_mode=ParseMode.HTML,
         )
         return
 
     if data == "gh:add:await":
         if role != "admin":
-            await _respond(update, "🚫 Hanya admin yang bisa akses menu ini.", _back_keyboard("main"))
+            await _respond_admin_only(update)
             return
         _set_flow(context, FLOW_GH_ADD_AWAIT)
         await _respond(
             update,
-            "⏳ Kirim blok stok GitHub Pack (status AWAITING BENEFITS).\nStok akan otomatis pindah ke READY setelah 72 jam.",
+            (
+                "⏳ <b>Tambah Stok GitHub Pack (AWAITING)</b>\n"
+                "Kirim blok data akun. Stok otomatis pindah ke READY setelah 72 jam.\n\n"
+                f"{_admin_footer_text()}"
+            ),
             _back_keyboard("adm_cat"),
+            parse_mode=ParseMode.HTML,
         )
         return
 
     if data == "gh:list":
         if role != "admin":
-            await _respond(update, "🚫 Hanya admin yang bisa akses menu ini.", _back_keyboard("main"))
+            await _respond_admin_only(update)
             return
         with get_session() as session:
             stocks = list_github_stocks(session)
 
         if not stocks:
-            await _respond(update, "📭 Belum ada stok GitHub Pack.", _github_pack_menu_keyboard())
+            await _respond(
+                update,
+                (
+                    "📭 <b>Stok GitHub Pack Kosong</b>\n"
+                    "Belum ada akun yang bisa ditampilkan.\n\n"
+                    f"{_admin_footer_text()}"
+                ),
+                _github_pack_menu_keyboard(),
+                parse_mode=ParseMode.HTML,
+            )
             return
 
-        lines = ["📋 List akun GitHub Pack:"]
+        lines = ["📋 <b>List Akun GitHub Pack</b>"]
         for stock in stocks:
-            lines.append(f"#{stock.id} {stock.username} | {_stock_status_badge(stock.status)}")
-        await _respond(update, "\n".join(lines), _github_pack_menu_keyboard())
+            lines.append(f"• <b>#{stock.id}</b> {html.escape(stock.username)} | {_stock_status_badge(stock.status)}")
+        lines.append("")
+        lines.append(_admin_footer_text())
+        await _respond(update, "\n".join(lines), _github_pack_menu_keyboard(), parse_mode=ParseMode.HTML)
         return
 
     if data == "gh:price:set":
         if role != "admin":
-            await _respond(update, "🚫 Hanya admin yang bisa akses menu ini.", _back_keyboard("main"))
+            await _respond_admin_only(update)
             return
 
         with get_session() as session:
@@ -1256,21 +1583,21 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
     if data == "gh:view:list":
         if role != "admin":
-            await _respond(update, "🚫 Hanya admin yang bisa akses menu ini.", _back_keyboard("main"))
+            await _respond_admin_only(update)
             return
         await _send_github_stock_picker(update, mode="view")
         return
 
     if data == "gh:del:list":
         if role != "admin":
-            await _respond(update, "🚫 Hanya admin yang bisa akses menu ini.", _back_keyboard("main"))
+            await _respond_admin_only(update)
             return
         await _send_github_stock_picker(update, mode="delete")
         return
 
     if data.startswith("gh:view:"):
         if role != "admin":
-            await _respond(update, "🚫 Hanya admin yang bisa akses menu ini.", _back_keyboard("main"))
+            await _respond_admin_only(update)
             return
         try:
             stock_id = int(data.split(":", maxsplit=2)[2])
@@ -1288,18 +1615,20 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         await _respond(
             update,
             (
-                f"👤 Username: {detail.username}\n"
+                f"👤 Username: <b>{html.escape(detail.username)}</b>\n"
                 f"Status: {_stock_status_badge(detail.status)}\n"
-                f"ID Stok: {detail.id}\n\n"
-                f"{detail.raw_text}"
+                f"ID Stok: <b>{detail.id}</b>\n\n"
+                f"<pre>{html.escape(detail.raw_text)}</pre>\n\n"
+                f"{_admin_footer_text()}"
             ),
             _github_pack_menu_keyboard(),
+            parse_mode=ParseMode.HTML,
         )
         return
 
     if data.startswith("gh:del:"):
         if role != "admin":
-            await _respond(update, "🚫 Hanya admin yang bisa akses menu ini.", _back_keyboard("main"))
+            await _respond_admin_only(update)
             return
         try:
             stock_id = int(data.split(":", maxsplit=2)[2])
@@ -1321,8 +1650,14 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         _set_flow(context, FLOW_ADMIN_ADD_PRODUCT)
         await _respond(
             update,
-            "➕ Upsert Produk\nKirim data dengan format:\nNama|Harga|Deskripsi",
+            (
+                "➕ <b>Upsert Produk</b>\n"
+                "Kirim data dengan format:\n"
+                "<code>Nama|Harga|Deskripsi</code>\n\n"
+                f"{_admin_footer_text()}"
+            ),
             _back_keyboard("adm_cat"),
+            parse_mode=ParseMode.HTML,
         )
         return
 
@@ -1344,7 +1679,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
     if data.startswith("ap:"):
         if role != "admin":
-            await _respond(update, "🚫 Hanya admin yang bisa akses menu ini.", _back_keyboard("main"))
+            await _respond_admin_only(update)
             return
 
         parts = data.split(":")
@@ -1363,8 +1698,13 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             _set_flow(context, FLOW_ADMIN_ADD_STOCK, product_id=product_id)
             await _respond(
                 update,
-                f"📥 Kirim blok stok untuk produk #{product_id}.\nSatu pesan = satu unit stok.",
+                (
+                    f"📥 <b>Tambah Stok Produk #{product_id}</b>\n"
+                    "Kirim blok data stok. Satu pesan = satu unit stok.\n\n"
+                    f"{_admin_footer_text()}"
+                ),
                 _back_keyboard("adm_cat"),
+                parse_mode=ParseMode.HTML,
             )
             return
 
@@ -1393,7 +1733,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         try:
             product_id = int(data.split(":", maxsplit=1)[1])
         except ValueError:
-            await _respond(update, "⚠️ Produk tidak valid.", _back_keyboard("cus_cat"))
+            await _respond(update, "⚠️ Data produk tidak valid. Pilih ulang produk dari katalog.", _back_keyboard("cus_cat"))
             return
 
         await _send_product_detail(update, product_id)
@@ -1406,7 +1746,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
         parts = data.split(":")
         if len(parts) != 4:
-            await _respond(update, "⚠️ Aksi qty tidak valid.", _back_keyboard("cus_cat"))
+            await _respond(update, "⚠️ Aksi jumlah tidak valid. Buka lagi detail produk.", _back_keyboard("cus_cat"))
             return
 
         action = parts[1]
@@ -1414,7 +1754,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             product_id = int(parts[2])
             current_qty = int(parts[3])
         except ValueError:
-            await _respond(update, "⚠️ Aksi qty tidak valid.", _back_keyboard("cus_cat"))
+            await _respond(update, "⚠️ Aksi jumlah tidak valid. Buka lagi detail produk.", _back_keyboard("cus_cat"))
             return
 
         if action == "inc":
@@ -1432,14 +1772,14 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
         parts = data.split(":")
         if len(parts) != 3:
-            await _respond(update, "⚠️ Data checkout tidak valid.", _back_keyboard("cus_cat"))
+            await _respond(update, "⚠️ Data checkout tidak valid. Silakan pilih ulang dari detail produk.", _back_keyboard("cus_cat"))
             return
 
         try:
             product_id = int(parts[1])
             qty = int(parts[2])
         except ValueError:
-            await _respond(update, "⚠️ Data checkout tidak valid.", _back_keyboard("cus_cat"))
+            await _respond(update, "⚠️ Data checkout tidak valid. Silakan pilih ulang dari detail produk.", _back_keyboard("cus_cat"))
             return
 
         await _send_checkout_result(update, db_user.telegram_id, product_id, qty)
@@ -1454,7 +1794,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         try:
             product_id = int(data.split(":", maxsplit=1)[1])
         except ValueError:
-            await _respond(update, "⚠️ Produk tidak valid.", _back_keyboard("cus_cat"))
+            await _respond(update, "⚠️ Data produk tidak valid. Pilih ulang produk dari katalog.", _back_keyboard("cus_cat"))
             return
 
         _set_flow(context, FLOW_CUSTOMER_MANUAL_QTY, product_id=product_id)
@@ -1472,7 +1812,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         try:
             page = int(data.split(":", maxsplit=2)[2])
         except ValueError:
-            await _respond(update, "⚠️ Halaman pesanan tidak valid.", _back_keyboard("main"))
+            await _respond(update, "⚠️ Halaman pesanan tidak valid. Buka lagi menu Pesanan Saya.", _back_keyboard("main"))
             return
 
         await _send_customer_orders(update, db_user.telegram_id, page=page)
@@ -1484,7 +1824,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             return
         parts = data.split(":", maxsplit=3)
         if len(parts) != 4:
-            await _respond(update, "⚠️ Data pesanan tidak valid.", _back_keyboard("main"))
+            await _respond(update, "⚠️ Data pesanan tidak valid. Buka lagi menu Pesanan Saya.", _back_keyboard("main"))
             return
 
         order_ref = parts[2]
@@ -1502,7 +1842,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             return
         parts = data.split(":", maxsplit=3)
         if len(parts) != 4:
-            await _respond(update, "⚠️ Data pesanan tidak valid.", _back_keyboard("main"))
+            await _respond(update, "⚠️ Data pesanan tidak valid. Buka lagi menu Pesanan Saya.", _back_keyboard("main"))
             return
 
         order_ref = parts[2]
@@ -1532,23 +1872,33 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
     if data == "pay:upload":
         if role != "admin":
-            await _respond(update, "🚫 Hanya admin yang bisa akses menu ini.", _back_keyboard("main"))
+            await _respond_admin_only(update)
             return
         context.user_data[AWAIT_QRIS_IMAGE_KEY] = True
         await _respond(
             update,
-            "🖼️ Kirim gambar QRIS sekarang (sebagai foto).",
+            (
+                "🖼️ <b>Upload QRIS</b>\n"
+                "Kirim gambar QRIS sekarang dalam format foto.\n\n"
+                f"{_admin_footer_text()}"
+            ),
             _back_keyboard("pay"),
+            parse_mode=ParseMode.HTML,
         )
         return
 
     if data == "pay:status":
         if role != "admin":
-            await _respond(update, "🚫 Hanya admin yang bisa akses menu ini.", _back_keyboard("main"))
+            await _respond_admin_only(update)
             return
 
         if settings.qris_file_path.exists():
-            await _respond(update, "✅ QRIS sudah tersimpan.", _back_keyboard("pay"))
+            await _respond(
+                update,
+                f"✅ <b>QRIS sudah tersimpan</b>\n\n{_admin_footer_text()}",
+                _back_keyboard("pay"),
+                parse_mode=ParseMode.HTML,
+            )
             if query.message:
                 try:
                     with settings.qris_file_path.open("rb") as fh:
@@ -1556,23 +1906,38 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
                 except Exception as exc:
                     logger.warning("Gagal kirim preview QRIS: %s", exc)
         else:
-            await _respond(update, "⚠️ QRIS belum diupload.", _back_keyboard("pay"))
+            await _respond(
+                update,
+                f"⚠️ <b>QRIS belum diupload</b>\n\n{_admin_footer_text()}",
+                _back_keyboard("pay"),
+                parse_mode=ParseMode.HTML,
+            )
         return
 
     if data == "up:check":
         if role != "admin":
-            await _respond(update, "🚫 Hanya admin yang bisa akses menu ini.", _back_keyboard("main"))
+            await _respond_admin_only(update)
             return
         output = await _run_update_script("check")
-        await _respond(update, f"🔍 Hasil cek update:\n{output}", _back_keyboard("upd"))
+        await _respond(
+            update,
+            f"🔍 <b>Hasil Cek Update</b>\n{html.escape(output)}\n\n{_admin_footer_text()}",
+            _back_keyboard("upd"),
+            parse_mode=ParseMode.HTML,
+        )
         return
 
     if data == "up:apply":
         if role != "admin":
-            await _respond(update, "🚫 Hanya admin yang bisa akses menu ini.", _back_keyboard("main"))
+            await _respond_admin_only(update)
             return
         output = await _run_update_script("update")
-        await _respond(update, f"⬆️ Update dijalankan:\n{output}", _back_keyboard("main"))
+        await _respond(
+            update,
+            f"⬆️ <b>Update Dijalankan</b>\n{html.escape(output)}\n\n{_admin_footer_text()}",
+            _back_keyboard("main"),
+            parse_mode=ParseMode.HTML,
+        )
         return
 
     await _respond(update, "⚠️ Tombol tidak dikenali. Silakan kembali ke menu utama.", _back_keyboard("main"))
@@ -1596,7 +1961,7 @@ async def text_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
         if flow == FLOW_ADMIN_ADD_PRODUCT:
             if role != "admin":
-                await _respond(update, "🚫 Akses ditolak.", _back_keyboard("main"))
+                await _respond_admin_only(update)
                 _clear_flow(context)
                 return
 
@@ -1604,8 +1969,13 @@ async def text_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             if parsed is None:
                 await _respond(
                     update,
-                    "⚠️ Format salah. Gunakan: Nama|Harga|Deskripsi",
+                    (
+                        "⚠️ <b>Format tidak valid</b>\n"
+                        "Gunakan format: <code>Nama|Harga|Deskripsi</code>\n\n"
+                        f"{_admin_footer_text()}"
+                    ),
                     _back_keyboard("adm_cat"),
+                    parse_mode=ParseMode.HTML,
                 )
                 return
 
@@ -1617,14 +1987,19 @@ async def text_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             _clear_flow(context)
             await _respond(
                 update,
-                f"✅ Produk tersimpan (upsert) dengan ID #{product_id}.",
+                (
+                    f"✅ <b>Produk berhasil disimpan</b>\n"
+                    f"ID Produk: <b>#{product_id}</b>\n\n"
+                    f"{_admin_footer_text()}"
+                ),
                 _back_keyboard("adm_cat"),
+                parse_mode=ParseMode.HTML,
             )
             return
 
         if flow == FLOW_ADMIN_ADD_STOCK:
             if role != "admin":
-                await _respond(update, "🚫 Akses ditolak.", _back_keyboard("main"))
+                await _respond_admin_only(update)
                 _clear_flow(context)
                 return
 
@@ -1652,14 +2027,19 @@ async def text_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             _clear_flow(context)
             await _respond(
                 update,
-                f"✅ Stok berhasil ditambahkan. ID stok: {stock_id}",
+                (
+                    f"✅ <b>Stok berhasil ditambahkan</b>\n"
+                    f"ID Stok: <b>{stock_id}</b>\n\n"
+                    f"{_admin_footer_text()}"
+                ),
                 _back_keyboard("adm_cat"),
+                parse_mode=ParseMode.HTML,
             )
             return
 
         if flow in {FLOW_GH_ADD_READY, FLOW_GH_ADD_AWAIT}:
             if role != "admin":
-                await _respond(update, "🚫 Akses ditolak.", _back_keyboard("main"))
+                await _respond_admin_only(update)
                 _clear_flow(context)
                 return
 
@@ -1680,14 +2060,21 @@ async def text_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             status_text = "AWAITING BENEFITS" if awaiting else "READY"
             await _respond(
                 update,
-                f"✅ Stok GitHub Pack ditambahkan.\nID: {stock.id}\nUsername: {stock.username}\nStatus: {status_text}",
+                (
+                    "✅ <b>Stok GitHub Pack berhasil ditambahkan</b>\n"
+                    f"ID: <b>{stock.id}</b>\n"
+                    f"Username: <b>{html.escape(stock.username)}</b>\n"
+                    f"Status: <b>{status_text}</b>\n\n"
+                    f"{_admin_footer_text()}"
+                ),
                 _github_pack_menu_keyboard(),
+                parse_mode=ParseMode.HTML,
             )
             return
 
         if flow == FLOW_GH_SET_PRICE:
             if role != "admin":
-                await _respond(update, "🚫 Akses ditolak.", _back_keyboard("main"))
+                await _respond_admin_only(update)
                 _clear_flow(context)
                 return
 
@@ -1729,7 +2116,7 @@ async def text_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
         if flow == FLOW_ADMIN_BROADCAST:
             if role != "admin":
-                await _respond(update, "🚫 Akses ditolak.", _back_keyboard("main"))
+                await _respond_admin_only(update)
                 _clear_flow(context)
                 return
 
@@ -1744,8 +2131,14 @@ async def text_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             _clear_flow(context)
             await _respond(
                 update,
-                f"📢 Broadcast selesai.\n✅ Sent: {sent}\n❌ Failed: {failed}",
+                (
+                    "📢 <b>Broadcast selesai</b>\n"
+                    f"✅ Sent: <b>{sent}</b>\n"
+                    f"❌ Failed: <b>{failed}</b>\n\n"
+                    f"{_admin_footer_text()}"
+                ),
                 _back_keyboard("main"),
+                parse_mode=ParseMode.HTML,
             )
             return
 
@@ -1758,7 +2151,7 @@ async def text_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             try:
                 qty = int(text)
             except ValueError:
-                await _respond(update, "⚠️ Jumlah harus angka.", _back_keyboard("cus_cat"))
+                await _respond(update, "⚠️ Jumlah harus berupa angka, contoh: 2", _back_keyboard("cus_cat"))
                 return
 
             product_id_raw = flow_data.get("product_id")
@@ -1766,7 +2159,7 @@ async def text_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
                 product_id = int(str(product_id_raw))
             except ValueError:
                 _clear_flow(context)
-                await _respond(update, "⚠️ Data produk tidak valid.", _back_keyboard("cus_cat"))
+                await _respond(update, "⚠️ Data produk tidak valid. Pilih ulang produk dari katalog.", _back_keyboard("cus_cat"))
                 return
 
             _clear_flow(context)
@@ -1836,6 +2229,7 @@ def register_handlers(application: Application) -> None:
     application.add_handler(CommandHandler("catalog", catalog_handler))
     application.add_handler(CommandHandler("buy", buy_handler))
     application.add_handler(CommandHandler("myorders", my_orders_handler))
+    application.add_handler(CommandHandler("order_status", order_status_handler))
 
     application.add_handler(CommandHandler("admin_catalog", admin_catalog_handler))
     application.add_handler(CommandHandler("product_add", product_add_handler))

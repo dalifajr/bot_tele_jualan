@@ -8,6 +8,7 @@ from typing import Any
 from fastapi import FastAPI, Header, HTTPException, Request
 from pydantic import BaseModel, Field, ValidationError
 from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.constants import ParseMode
 
 from app.api.listener_events import (
     create_event,
@@ -211,6 +212,8 @@ async def payment_listener(
                         chat_id=customer_chat_id,
                         text=delivery_message,
                         reply_markup=reply_markup,
+                        parse_mode=ParseMode.HTML,
+                        disable_web_page_preview=True,
                     )
                     notify_sent = True
                 except Exception as exc:

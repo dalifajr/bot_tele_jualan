@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import html
 import logging
 
 from telegram.ext import Application
@@ -11,6 +12,8 @@ from app.bot.handlers.main import register_handlers
 from app.bot.services.order_service import (
     build_admin_order_message,
     expire_pending_orders_with_notifications,
+    list_orders_for_payment_reminder,
+    mark_payment_reminder_sent,
     set_admin_message_ref,
 )
 from app.common.config import get_settings
@@ -18,6 +21,27 @@ from app.common.roles import get_primary_admin_id
 from app.db.database import get_session
 
 logger = logging.getLogger(__name__)
+
+
+def _format_rupiah(amount: int) -> str:
+    return f"Rp{amount:,}".replace(",", ".")
+
+
+def _build_payment_reminder_message(order_ref: str, expected_amount: int, remaining_minutes: int) -> str:
+    safe_order_ref = html.escape(order_ref)
+    return "\n".join(
+        [
+            "⏰ <b>Pengingat Pembayaran</b>",
+            f"Order Ref: <code>{safe_order_ref}</code>",
+            f"Total Bayar: <b>{_format_rupiah(expected_amount)}</b>",
+            f"Sisa Waktu: <b>{remaining_minutes} menit</b>",
+            "",
+            "🧭 <b>Langkah Berikutnya</b>",
+            "1. Segera transfer sesuai nominal.",
+            f"2. Pantau status: <code>/order_status {safe_order_ref}</code>",
+            "3. Ketik /start untuk kembali ke menu utama.",
+        ]
+    )
 
 
 async def _promote_awaiting_stock_job(context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -59,6 +83,42 @@ async def _expire_pending_orders_job(context: ContextTypes.DEFAULT_TYPE) -> None
             )
 
 
+async def _payment_reminder_job(context: ContextTypes.DEFAULT_TYPE) -> None:
+    settings = get_settings()
+
+    with get_session() as session:
+        candidates = list_orders_for_payment_reminder(
+            session=session,
+            minutes_before_expiry=settings.payment_reminder_minutes_before_expiry,
+            limit=50,
+        )
+
+    for candidate in candidates:
+        remaining_minutes = max(1, candidate.remaining_seconds // 60)
+        text = _build_payment_reminder_message(
+            order_ref=candidate.order_ref,
+            expected_amount=candidate.expected_amount,
+            remaining_minutes=remaining_minutes,
+        )
+
+        try:
+            await context.bot.send_message(
+                chat_id=candidate.customer_telegram_id,
+                text=text,
+                parse_mode="HTML",
+            )
+        except Exception as exc:
+            logger.warning(
+                "Gagal kirim reminder payment untuk %s: %s",
+                candidate.order_ref,
+                exc,
+            )
+            continue
+
+        with get_session() as session:
+            mark_payment_reminder_sent(session, candidate.order_ref)
+
+
 def create_bot_application() -> Application:
     settings = get_settings()
     if not settings.bot_token:
@@ -78,6 +138,12 @@ def create_bot_application() -> Application:
             interval=60,
             first=30,
             name="expire-pending-orders",
+        )
+        application.job_queue.run_repeating(
+            _payment_reminder_job,
+            interval=max(10, settings.payment_reminder_job_interval_seconds),
+            first=20,
+            name="payment-reminder",
         )
     else:
         logger.warning(

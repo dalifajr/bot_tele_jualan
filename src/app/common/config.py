@@ -17,6 +17,14 @@ class Settings(BaseSettings):
     listener_require_reference: bool = Field(default=False, alias="LISTENER_REQUIRE_REFERENCE")
     listener_allow_legacy_secret: bool = Field(default=False, alias="LISTENER_ALLOW_LEGACY_SECRET")
     checkout_expiry_minutes: int = Field(default=5, alias="CHECKOUT_EXPIRY_MINUTES")
+    payment_reminder_minutes_before_expiry: int = Field(
+        default=2,
+        alias="PAYMENT_REMINDER_MINUTES_BEFORE_EXPIRY",
+    )
+    payment_reminder_job_interval_seconds: int = Field(
+        default=30,
+        alias="PAYMENT_REMINDER_JOB_INTERVAL_SECONDS",
+    )
     display_timezone: str = Field(default="Asia/Jakarta", alias="DISPLAY_TIMEZONE")
     github_pack_name: str = Field(default="GitHub Student Developer Pack", alias="GITHUB_PACK_NAME")
     qris_image_path: str = Field(default="./data/qris.png", alias="QRIS_IMAGE_PATH")
