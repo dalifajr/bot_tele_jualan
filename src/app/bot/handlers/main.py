@@ -281,15 +281,16 @@ async def _send_customer_orders(update: Update, telegram_id: int) -> None:
             await _respond(update, "⚠️ User tidak ditemukan.", _back_keyboard("main"))
             return
         orders = list_recent_orders_by_customer(session, customer_id=user.id, limit=10)
+        order_rows = [(order.order_ref, order.status, order.total_amount) for order in orders]
 
-    if not orders:
+    if not order_rows:
         await _respond(update, "📭 Belum ada pesanan.", _back_keyboard("main"))
         return
 
     lines = ["📦 Pesanan terbaru:"]
-    for order in orders:
+    for order_ref, status, total_amount in order_rows:
         lines.append(
-            f"• {order.order_ref} | {order.status} | {_format_rupiah(order.total_amount)}"
+            f"• {order_ref} | {status} | {_format_rupiah(total_amount)}"
         )
     await _respond(update, "\n".join(lines), _back_keyboard("main"))
 
@@ -301,13 +302,16 @@ async def _send_product_detail(update: Update, product_id: int) -> None:
             await _respond(update, "⚠️ Produk tidak tersedia.", _back_keyboard("cus_cat"))
             return
         stock = get_available_stock_count(session, product_id)
+        product_name = product.name
+        product_price = product.price
+        product_description = product.description or "-"
 
     text = (
         f"🧾 Detail Produk\n"
-        f"Nama: {product.name}\n"
-        f"Harga: {_format_rupiah(product.price)}\n"
+        f"Nama: {product_name}\n"
+        f"Harga: {_format_rupiah(product_price)}\n"
         f"Stok: {stock}\n"
-        f"Deskripsi: {product.description or '-'}"
+        f"Deskripsi: {product_description}"
     )
 
     keyboard = InlineKeyboardMarkup(
@@ -348,12 +352,15 @@ async def _send_checkout_result(
         except ValueError as exc:
             await _respond(update, f"❌ Checkout gagal: {exc}", _back_keyboard("cus_cat"))
             return
+        order_ref = order.order_ref
+        payment_ref = payment.payment_ref
+        expected_amount = payment.expected_amount
 
     lines = [
         "✅ Checkout berhasil dibuat.",
-        f"🧾 Order Ref: {order.order_ref}",
-        f"🔖 Payment Ref: {payment.payment_ref}",
-        f"💰 Total Bayar: {_format_rupiah(payment.expected_amount)}",
+        f"🧾 Order Ref: {order_ref}",
+        f"🔖 Payment Ref: {payment_ref}",
+        f"💰 Total Bayar: {_format_rupiah(expected_amount)}",
         "📲 Silakan transfer sesuai nominal. Konfirmasi dilakukan otomatis.",
     ]
     result_keyboard = InlineKeyboardMarkup(
@@ -895,11 +902,12 @@ async def text_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             name, price, description = parsed
             with get_session() as session:
                 product = add_product(session, name=name, price=price, description=description, actor_id=db_user.id)
+                product_id = int(product.id)
 
             _clear_flow(context)
             await _respond(
                 update,
-                f"✅ Produk tersimpan (upsert) dengan ID #{product.id}.",
+                f"✅ Produk tersimpan (upsert) dengan ID #{product_id}.",
                 _back_keyboard("adm_cat"),
             )
             return
@@ -926,6 +934,7 @@ async def text_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
                         raw_text=text,
                         actor_id=db_user.id,
                     )
+                    stock_id = int(stock.id)
                 except ValueError as exc:
                     await _respond(update, f"❌ Gagal menambah stok: {exc}", _back_keyboard("adm_cat"))
                     return
@@ -933,7 +942,7 @@ async def text_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             _clear_flow(context)
             await _respond(
                 update,
-                f"✅ Stok berhasil ditambahkan. ID stok: {stock.id}",
+                f"✅ Stok berhasil ditambahkan. ID stok: {stock_id}",
                 _back_keyboard("adm_cat"),
             )
             return
@@ -991,11 +1000,12 @@ async def text_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
                 name, price, description = parsed
                 with get_session() as session:
                     product = add_product(session, name=name, price=price, description=description, actor_id=db_user.id)
+                    product_id = int(product.id)
 
                 _clear_flow(context)
                 await _respond(
                     update,
-                    f"✅ Produk tersimpan (upsert fallback) dengan ID #{product.id}.",
+                    f"✅ Produk tersimpan (upsert fallback) dengan ID #{product_id}.",
                     _back_keyboard("adm_cat"),
                 )
                 return
