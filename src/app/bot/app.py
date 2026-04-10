@@ -294,8 +294,8 @@ def create_bot_application() -> Application:
         )
         application.job_queue.run_repeating(
             _notification_retry_job,
-            interval=max(10, settings.notification_retry_job_interval_seconds),
-            first=30,
+            interval=max(5, settings.notification_retry_job_interval_seconds),
+            first=5,
             name="notification-retry",
         )
         application.job_queue.run_repeating(

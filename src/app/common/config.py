@@ -26,9 +26,9 @@ class Settings(BaseSettings):
         alias="PAYMENT_REMINDER_JOB_INTERVAL_SECONDS",
     )
     notification_retry_max_attempts: int = Field(default=5, alias="NOTIFICATION_RETRY_MAX_ATTEMPTS")
-    notification_retry_backoff_seconds: int = Field(default=60, alias="NOTIFICATION_RETRY_BACKOFF_SECONDS")
+    notification_retry_backoff_seconds: int = Field(default=15, alias="NOTIFICATION_RETRY_BACKOFF_SECONDS")
     notification_retry_job_interval_seconds: int = Field(
-        default=30,
+        default=10,
         alias="NOTIFICATION_RETRY_JOB_INTERVAL_SECONDS",
     )
     notification_retry_batch_size: int = Field(default=50, alias="NOTIFICATION_RETRY_BATCH_SIZE")

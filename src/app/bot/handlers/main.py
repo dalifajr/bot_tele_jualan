@@ -7,11 +7,12 @@ from datetime import datetime, timezone
 import html
 import logging
 import subprocess
+import time
 from pathlib import Path
 from typing import TypeVar
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Message, Update
 from telegram.constants import ParseMode
 from telegram.error import BadRequest
 from telegram.ext import (
@@ -79,6 +80,8 @@ FLOW_GH_SET_PRICE = "gh_set_price"
 AWAIT_QRIS_IMAGE_KEY = "await_qris_image"
 CUSTOMER_ORDERS_PAGE_SIZE = 10
 ADMIN_LIST_PAGE_SIZE = 10
+CHECKOUT_LOCK_UNTIL_KEY = "checkout_lock_until"
+CHECKOUT_LOCK_SECONDS = 8.0
 
 ADMIN_PRODUCT_PICKER_TITLES: dict[str, str] = {
     "stk": "📥 Pilih produk untuk ditambah stok.",
@@ -275,6 +278,72 @@ async def _try_delete_callback_message(update: Update) -> None:
         logger.debug("Pesan callback tidak bisa dihapus.")
     except Exception as exc:
         logger.warning("Gagal menghapus pesan callback: %s", exc)
+
+
+async def _try_delete_message(message: Message | None) -> None:
+    if message is None:
+        return
+
+    try:
+        await message.delete()
+    except BadRequest:
+        logger.debug("Pesan loading tidak bisa dihapus.")
+    except Exception as exc:
+        logger.warning("Gagal menghapus pesan loading: %s", exc)
+
+
+def _acquire_checkout_lock(context: ContextTypes.DEFAULT_TYPE) -> bool:
+    now = time.monotonic()
+    lock_until = float(context.user_data.get(CHECKOUT_LOCK_UNTIL_KEY, 0.0))
+    if lock_until > now:
+        return False
+    context.user_data[CHECKOUT_LOCK_UNTIL_KEY] = now + CHECKOUT_LOCK_SECONDS
+    return True
+
+
+def _release_checkout_lock(context: ContextTypes.DEFAULT_TYPE) -> None:
+    context.user_data.pop(CHECKOUT_LOCK_UNTIL_KEY, None)
+
+
+async def _send_checkout_loading(update: Update) -> Message | None:
+    query = update.callback_query
+    if query is None or query.message is None:
+        return None
+
+    loading_text = (
+        "⏳ <b>Checkout sedang diproses...</b>\n"
+        "Mohon tunggu sebentar dan jangan tekan tombol berulang."
+    )
+
+    try:
+        await query.edit_message_text(
+            text=loading_text,
+            parse_mode=ParseMode.HTML,
+        )
+        return None
+    except BadRequest as exc:
+        if "message is not modified" not in str(exc).lower():
+            logger.debug("Gagal edit pesan produk ke loading: %s", exc)
+    except Exception as exc:
+        logger.warning("Gagal edit pesan produk ke loading: %s", exc)
+
+    try:
+        return await query.message.reply_text(
+            "⏳ Checkout sedang diproses, mohon tunggu sebentar..."
+        )
+    except Exception as exc:
+        logger.warning("Gagal kirim fallback loading message: %s", exc)
+    return None
+
+
+def _track_background_task(task: asyncio.Task[object], label: str) -> None:
+    def _on_done(done_task: asyncio.Task[object]) -> None:
+        try:
+            done_task.result()
+        except Exception as exc:
+            logger.warning("Background task '%s' gagal: %s", label, exc)
+
+    task.add_done_callback(_on_done)
 
 
 async def _send_main_menu(
@@ -1066,7 +1135,7 @@ async def _send_checkout_result(
     qty: int,
     source_order_ref: str | None = None,
     source_product_name: str | None = None,
-) -> None:
+) -> bool:
     with get_session() as session:
         user = get_user_by_telegram_id(session, telegram_id)
         if user is None:
@@ -1076,7 +1145,7 @@ async def _send_checkout_result(
                 _back_keyboard("main"),
                 parse_mode=ParseMode.HTML,
             )
-            return
+            return False
         try:
             order, payment = create_checkout(
                 session,
@@ -1086,13 +1155,19 @@ async def _send_checkout_result(
             )
         except ValueError as exc:
             await _respond(update, f"❌ Checkout gagal: {exc}", _back_keyboard("cus_cat"))
-            return
+            return False
         order_ref = order.order_ref
         payment_ref = payment.payment_ref
         expected_amount = payment.expected_amount
         expires_at = order.expires_at
         subtotal_amount = order.subtotal
         voucher_discount_amount = max(0, int(order.voucher_discount_amount or 0))
+
+    admin_task = asyncio.create_task(
+        _upsert_admin_order_notification(update, order_ref),
+        name=f"admin-checkout:{order_ref}",
+    )
+    _track_background_task(admin_task, f"admin-checkout:{order_ref}")
 
     expires_text = "-"
     if expires_at is not None:
@@ -1183,14 +1258,14 @@ async def _send_checkout_result(
                 message_id=int(sent_message.message_id),
             )
 
-    await _upsert_admin_order_notification(update, order_ref)
+    return True
 
 
 async def _send_quick_reorder_result(
     update: Update,
     telegram_id: int,
     source_order_ref: str,
-) -> None:
+) -> bool:
     with get_session() as session:
         user = get_user_by_telegram_id(session, telegram_id)
         if user is None:
@@ -1200,7 +1275,7 @@ async def _send_quick_reorder_result(
                 _back_keyboard("main"),
                 parse_mode=ParseMode.HTML,
             )
-            return
+            return False
 
         try:
             target = get_quick_reorder_target(
@@ -1210,9 +1285,9 @@ async def _send_quick_reorder_result(
             )
         except ValueError as exc:
             await _respond(update, f"⚠️ {exc}", _back_keyboard("main"))
-            return
+            return False
 
-    await _send_checkout_result(
+    return await _send_checkout_result(
         update,
         telegram_id=telegram_id,
         product_id=target.product_id,
@@ -1602,9 +1677,13 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     if query is None:
         return
 
-    await query.answer()
-    db_user, role = await _ensure_user(update)
     data = query.data or ""
+    if data.startswith("buy:") or data.startswith("ord:reorder:"):
+        await query.answer("⏳ Memproses checkout...", show_alert=False)
+    else:
+        await query.answer()
+
+    db_user, role = await _ensure_user(update)
 
     admin_only_prefixes = ("adm:", "ac:", "acp:", "gh:", "ap:", "pay:", "up:")
     if role != "admin" and any(data.startswith(prefix) for prefix in admin_only_prefixes):
@@ -2131,9 +2210,19 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             await _respond(update, "🚫 Admin tidak bisa checkout sebagai customer.", _back_keyboard("main"))
             return
 
+        if not _acquire_checkout_lock(context):
+            if query.message is not None:
+                await query.message.reply_text("⏳ Checkout sebelumnya masih diproses. Mohon tunggu sebentar.")
+            return
+
+        loading_message = await _send_checkout_loading(update)
+        checkout_ok = False
+
         parts = data.split(":")
         if len(parts) != 3:
             await _respond(update, "⚠️ Data checkout tidak valid. Silakan pilih ulang dari detail produk.", _back_keyboard("cus_cat"))
+            _release_checkout_lock(context)
+            await _try_delete_message(loading_message)
             return
 
         try:
@@ -2141,10 +2230,18 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             qty = int(parts[2])
         except ValueError:
             await _respond(update, "⚠️ Data checkout tidak valid. Silakan pilih ulang dari detail produk.", _back_keyboard("cus_cat"))
+            _release_checkout_lock(context)
+            await _try_delete_message(loading_message)
             return
 
-        await _send_checkout_result(update, db_user.telegram_id, product_id, qty)
-        await _try_delete_callback_message(update)
+        try:
+            checkout_ok = await _send_checkout_result(update, db_user.telegram_id, product_id, qty)
+        finally:
+            _release_checkout_lock(context)
+            await _try_delete_message(loading_message)
+
+        if checkout_ok:
+            await _try_delete_callback_message(update)
         return
 
     if data.startswith("buyq:"):
@@ -2219,13 +2316,31 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         if role == "admin":
             await _respond(update, "🚫 Admin tidak bisa checkout sebagai customer.", _back_keyboard("main"))
             return
+
+        if not _acquire_checkout_lock(context):
+            if query.message is not None:
+                await query.message.reply_text("⏳ Checkout sebelumnya masih diproses. Mohon tunggu sebentar.")
+            return
+
+        loading_message = await _send_checkout_loading(update)
+        checkout_ok = False
+
         parts = data.split(":", maxsplit=3)
         if len(parts) != 4:
             await _respond(update, "⚠️ Data quick reorder tidak valid.", _back_keyboard("main"))
+            _release_checkout_lock(context)
+            await _try_delete_message(loading_message)
             return
 
         order_ref = parts[2]
-        await _send_quick_reorder_result(update, db_user.telegram_id, order_ref)
+        try:
+            checkout_ok = await _send_quick_reorder_result(update, db_user.telegram_id, order_ref)
+        finally:
+            _release_checkout_lock(context)
+            await _try_delete_message(loading_message)
+
+        if checkout_ok:
+            await _try_delete_callback_message(update)
         return
 
     if data.startswith("ord:cancel:"):

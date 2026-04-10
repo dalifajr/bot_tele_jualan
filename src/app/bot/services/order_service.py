@@ -3,10 +3,12 @@ from __future__ import annotations
 import html
 import json
 import random
+import secrets
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
 from sqlalchemy import func, or_, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.bot.services.audit_service import append_audit
@@ -118,8 +120,9 @@ class PaymentReminderCandidate:
 
 
 def _generate_order_ref() -> str:
-    timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
-    suffix = random.randint(100, 999)
+    # Format: ORD + UTC timestamp (microsecond precision) + secure random tail.
+    timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S%f")
+    suffix = secrets.token_hex(4).upper()
     return f"ORD{timestamp}{suffix}"
 
 
@@ -268,7 +271,6 @@ def create_checkout(session: Session, customer: User, product_id: int, quantity:
     if available_stock < quantity:
         raise ValueError(f"Stok tidak cukup. Tersedia {available_stock} unit.")
 
-    order_ref = _generate_order_ref()
     subtotal = product.price * quantity
     voucher_discount = 0
 
@@ -280,57 +282,72 @@ def create_checkout(session: Session, customer: User, product_id: int, quantity:
     if voucher is not None:
         voucher_discount = min(voucher.discount_amount, max(0, subtotal - 1))
 
-    unique_code = _generate_unique_code()
-    total = (subtotal - voucher_discount) + unique_code
+    max_ref_attempts = 7
+    for _attempt in range(max_ref_attempts):
+        order_ref = _generate_order_ref()
+        unique_code = _generate_unique_code()
+        total = (subtotal - voucher_discount) + unique_code
 
-    order = Order(
-        order_ref=order_ref,
-        customer_id=customer.id,
-        subtotal=subtotal,
-        unique_code=unique_code,
-        total_amount=total,
-        applied_voucher_id=(voucher.id if voucher is not None else None),
-        voucher_discount_amount=voucher_discount,
-        status="pending_payment",
-        expires_at=_utcnow() + timedelta(minutes=max(1, settings.checkout_expiry_minutes)),
-    )
-    session.add(order)
-    session.flush()
+        try:
+            with session.begin_nested():
+                order = Order(
+                    order_ref=order_ref,
+                    customer_id=customer.id,
+                    subtotal=subtotal,
+                    unique_code=unique_code,
+                    total_amount=total,
+                    applied_voucher_id=(voucher.id if voucher is not None else None),
+                    voucher_discount_amount=voucher_discount,
+                    status="pending_payment",
+                    expires_at=_utcnow() + timedelta(minutes=max(1, settings.checkout_expiry_minutes)),
+                )
+                session.add(order)
+                session.flush()
 
-    if voucher is not None:
-        voucher.reserved_order_id = order.id
-        session.add(voucher)
+                if voucher is not None:
+                    voucher.reserved_order_id = order.id
+                    session.add(voucher)
 
-    item = OrderItem(
-        order_id=order.id,
-        product_id=product.id,
-        quantity=quantity,
-        unit_price=product.price,
-    )
-    session.add(item)
+                item = OrderItem(
+                    order_id=order.id,
+                    product_id=product.id,
+                    quantity=quantity,
+                    unit_price=product.price,
+                )
+                session.add(item)
 
-    payment = Payment(
-        order_id=order.id,
-        payment_ref=f"PAY-{order_ref}",
-        expected_amount=total,
-        status="pending",
-    )
-    session.add(payment)
+                payment = Payment(
+                    order_id=order.id,
+                    payment_ref=f"PAY-{order_ref}",
+                    expected_amount=total,
+                    status="pending",
+                )
+                session.add(payment)
 
-    append_audit(
-        session,
-        action="order_create",
-        actor_id=customer.id,
-        entity_type="order",
-        entity_id=str(order.id),
-        detail=(
-            f"product_id={product.id}; qty={quantity}; subtotal={subtotal}; "
-            f"voucher_discount={voucher_discount}; total={total}"
-        ),
-    )
+                append_audit(
+                    session,
+                    action="order_create",
+                    actor_id=customer.id,
+                    entity_type="order",
+                    entity_id=str(order.id),
+                    detail=(
+                        f"product_id={product.id}; qty={quantity}; subtotal={subtotal}; "
+                        f"voucher_discount={voucher_discount}; total={total}"
+                    ),
+                )
 
-    session.flush()
-    return order, payment
+                session.flush()
+                return order, payment
+        except IntegrityError as exc:
+            error_text = str(exc)
+            if (
+                "orders.order_ref" not in error_text
+                and "payments.payment_ref" not in error_text
+            ):
+                raise
+            continue
+
+    raise ValueError("Sistem sedang sibuk. Silakan coba lagi dalam beberapa detik.")
 
 
 def list_recent_orders_by_customer(session: Session, customer_id: int, limit: int = 10) -> list[Order]:
