@@ -1315,41 +1315,19 @@ async def _send_checkout_result(
     sent_message = None
     payload_text = "\n".join(lines)
 
-    qris_path = settings.qris_file_path
-    if qris_path.exists():
-        try:
-            if update.callback_query and update.callback_query.message:
-                with qris_path.open("rb") as fh:
-                    sent_message = await update.callback_query.message.reply_photo(
-                        photo=fh,
-                        caption=payload_text,
-                        reply_markup=result_keyboard,
-                        parse_mode=ParseMode.HTML,
-                    )
-            elif update.message:
-                with qris_path.open("rb") as fh:
-                    sent_message = await update.message.reply_photo(
-                        photo=fh,
-                        caption=payload_text,
-                        reply_markup=result_keyboard,
-                        parse_mode=ParseMode.HTML,
-                    )
-        except Exception as exc:
-            logger.warning("Gagal kirim QRIS: %s", exc)
-
-    if sent_message is None:
-        if update.callback_query and update.callback_query.message:
-            sent_message = await update.callback_query.message.reply_text(
-                payload_text,
-                reply_markup=result_keyboard,
-                parse_mode=ParseMode.HTML,
-            )
-        elif update.message:
-            sent_message = await update.message.reply_text(
-                payload_text,
-                reply_markup=result_keyboard,
-                parse_mode=ParseMode.HTML,
-            )
+    # Always send checkout summary as a single text message, then send QR image separately.
+    if update.callback_query and update.callback_query.message:
+        sent_message = await update.callback_query.message.reply_text(
+            payload_text,
+            reply_markup=result_keyboard,
+            parse_mode=ParseMode.HTML,
+        )
+    elif update.message:
+        sent_message = await update.message.reply_text(
+            payload_text,
+            reply_markup=result_keyboard,
+            parse_mode=ParseMode.HTML,
+        )
 
     if sent_message is not None:
         with get_session() as session:
@@ -1359,6 +1337,18 @@ async def _send_checkout_result(
                 chat_id=int(sent_message.chat_id),
                 message_id=int(sent_message.message_id),
             )
+
+    qris_path = settings.qris_file_path
+    if qris_path.exists():
+        try:
+            if update.callback_query and update.callback_query.message:
+                with qris_path.open("rb") as fh:
+                    await update.callback_query.message.reply_photo(photo=fh)
+            elif update.message:
+                with qris_path.open("rb") as fh:
+                    await update.message.reply_photo(photo=fh)
+        except Exception as exc:
+            logger.warning("Gagal kirim QRIS: %s", exc)
 
     return True
 
@@ -2048,25 +2038,65 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
                             [InlineKeyboardButton("🏠 /start Menu Utama", callback_data="back:main")],
                         ]
                     )
+                    checkout_chat_id = int(admin_notification.checkout_chat_id) if (
+                        admin_notification is not None and admin_notification.checkout_chat_id is not None
+                    ) else 0
+                    checkout_message_id = int(admin_notification.checkout_message_id) if (
+                        admin_notification is not None and admin_notification.checkout_message_id is not None
+                    ) else 0
                     try:
-                        await context.bot.send_message(
-                            chat_id=customer_chat_id,
-                            text=customer_text,
-                            parse_mode=ParseMode.HTML,
-                            reply_markup=customer_keyboard,
-                            disable_web_page_preview=True,
-                        )
-                    except Exception as exc:
-                        logger.warning("Gagal kirim notifikasi cancel ke customer: %s", exc)
-                        with get_session() as session:
-                            enqueue_notification_retry(
-                                session=session,
-                                channel="customer_cancelled_by_admin",
-                                chat_id=customer_chat_id,
-                                payload_text=customer_text,
-                                parse_mode="HTML",
+                        if checkout_chat_id > 0 and checkout_message_id > 0:
+                            await context.bot.edit_message_text(
+                                chat_id=checkout_chat_id,
+                                message_id=checkout_message_id,
+                                text=customer_text,
+                                parse_mode=ParseMode.HTML,
+                                reply_markup=customer_keyboard,
+                                disable_web_page_preview=True,
                             )
-                        warning_text = "\n⚠️ Notifikasi ke customer gagal dikirim langsung, sudah masuk retry queue."
+                        else:
+                            sent = await context.bot.send_message(
+                                chat_id=customer_chat_id,
+                                text=customer_text,
+                                parse_mode=ParseMode.HTML,
+                                reply_markup=customer_keyboard,
+                                disable_web_page_preview=True,
+                            )
+                            with get_session() as session:
+                                set_checkout_message_ref(
+                                    session=session,
+                                    order_ref=order_ref,
+                                    chat_id=int(sent.chat_id),
+                                    message_id=int(sent.message_id),
+                                )
+                    except Exception as exc:
+                        logger.warning("Gagal upsert notifikasi cancel ke customer: %s", exc)
+                        try:
+                            sent = await context.bot.send_message(
+                                chat_id=customer_chat_id,
+                                text=customer_text,
+                                parse_mode=ParseMode.HTML,
+                                reply_markup=customer_keyboard,
+                                disable_web_page_preview=True,
+                            )
+                            with get_session() as session:
+                                set_checkout_message_ref(
+                                    session=session,
+                                    order_ref=order_ref,
+                                    chat_id=int(sent.chat_id),
+                                    message_id=int(sent.message_id),
+                                )
+                        except Exception as send_exc:
+                            logger.warning("Fallback kirim notifikasi cancel ke customer juga gagal: %s", send_exc)
+                            with get_session() as session:
+                                enqueue_notification_retry(
+                                    session=session,
+                                    channel="customer_cancelled_by_admin",
+                                    chat_id=customer_chat_id,
+                                    payload_text=customer_text,
+                                    parse_mode="HTML",
+                                )
+                            warning_text = "\n⚠️ Notifikasi ke customer gagal dikirim langsung, sudah masuk retry queue."
 
             await _respond(update, f"{cancel_result.message}{warning_text}", _back_keyboard("main"))
             return

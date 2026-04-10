@@ -38,6 +38,8 @@ class AdminOrderNotification:
     quantity: int
     total_amount: int
     status: str
+    checkout_chat_id: int | None = None
+    checkout_message_id: int | None = None
     admin_chat_id: int | None = None
     admin_message_id: int | None = None
 
@@ -175,6 +177,8 @@ def _build_admin_order_notification(
         quantity=total_qty,
         total_amount=order.total_amount,
         status=status_override or order.status,
+        checkout_chat_id=order.checkout_chat_id,
+        checkout_message_id=order.checkout_message_id,
         admin_chat_id=order.admin_notify_chat_id,
         admin_message_id=order.admin_notify_message_id,
     )
