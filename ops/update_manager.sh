@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+on_error() {
+  local exit_code="$?"
+  echo "ERROR: update_manager gagal pada baris ${BASH_LINENO[0]}: ${BASH_COMMAND}" >&2
+  exit "${exit_code}"
+}
+
+trap on_error ERR
+
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BACKUP_DIR="${PROJECT_DIR}/ops/backups"
 LAST_COMMIT_FILE="${BACKUP_DIR}/.last_commit"
@@ -14,6 +22,10 @@ STASH_REF=""
 STASH_CREATED=0
 
 mkdir -p "${BACKUP_DIR}"
+
+log_step() {
+  echo "[update] $*"
+}
 
 has_local_changes() {
   if ! git diff --quiet || ! git diff --cached --quiet; then
@@ -109,7 +121,21 @@ default_branch() {
     echo "${configured}"
     return
   fi
-  git remote show origin | sed -n '/HEAD branch/s/.*: //p'
+
+  local discovered
+  discovered="$(git remote show origin 2>/dev/null | sed -n '/HEAD branch/s/.*: //p' || true)"
+  if [[ -n "${discovered}" ]]; then
+    echo "${discovered}"
+    return
+  fi
+
+  discovered="$(git symbolic-ref --quiet --short HEAD 2>/dev/null || true)"
+  if [[ -n "${discovered}" ]]; then
+    echo "${discovered}"
+    return
+  fi
+
+  echo "main"
 }
 
 check_update() {
@@ -163,23 +189,41 @@ restart_services() {
 
 apply_update() {
   cd "${PROJECT_DIR}"
+  log_step "fetch origin"
   git fetch origin
 
-  local branch ts
+  local branch ts before_commit after_commit
   branch="$(default_branch)"
   ts="$(date +%Y%m%d_%H%M%S)"
+  before_commit="$(git rev-parse HEAD)"
 
+  log_step "target branch: ${branch}"
+
+  log_step "membuat backup sebelum update"
   backup_before_update
+  log_step "menyimpan file runtime lokal (.env, user_role.txt)"
   preserve_runtime_files "${ts}"
+  log_step "cek perubahan lokal untuk auto-stash"
   stash_local_changes_for_update "${ts}"
 
+  log_step "checkout branch ${branch}"
   git checkout "${branch}"
+  log_step "pull fast-forward dari origin/${branch}"
   git pull --ff-only origin "${branch}"
+  after_commit="$(git rev-parse HEAD)"
+
+  log_step "restore file runtime lokal"
   restore_runtime_files
+  log_step "install requirements (jika venv tersedia)"
   install_requirements
+  log_step "restart service bot dan api"
   restart_services
 
-  echo "Update selesai pada branch ${branch}."
+  if [[ "${before_commit}" == "${after_commit}" ]]; then
+    echo "Update selesai pada branch ${branch} (tidak ada commit baru)."
+  else
+    echo "Update selesai pada branch ${branch} (${before_commit:0:7} -> ${after_commit:0:7})."
+  fi
   if [[ "${STASH_CREATED}" -eq 1 ]]; then
     echo "Catatan: perubahan lokal lama disimpan di stash agar tidak menimpa update terbaru."
     if [[ -n "${STASH_REF}" ]]; then
