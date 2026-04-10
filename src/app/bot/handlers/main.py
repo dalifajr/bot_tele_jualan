@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from dataclasses import dataclass
 import logging
 import subprocess
 from pathlib import Path
@@ -42,6 +43,12 @@ FLOW_ADMIN_ADD_STOCK = "admin_add_stock"
 FLOW_ADMIN_BROADCAST = "admin_broadcast"
 FLOW_CUSTOMER_MANUAL_QTY = "customer_manual_qty"
 AWAIT_QRIS_IMAGE_KEY = "await_qris_image"
+
+
+@dataclass(frozen=True)
+class UserContext:
+    id: int
+    telegram_id: int
 
 
 def _role_for_telegram_id(telegram_id: int) -> str:
@@ -411,7 +418,10 @@ async def _ensure_user(update: Update):
             full_name=tg_user.full_name,
             role=role,
         )
-    return db_user, role
+        if db_user.id is None:
+            raise ValueError("Gagal menyimpan user Telegram.")
+        user_ctx = UserContext(id=int(db_user.id), telegram_id=int(db_user.telegram_id))
+    return user_ctx, role
 
 
 def _ensure_admin(update: Update) -> bool:
