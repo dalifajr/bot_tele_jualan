@@ -1,13 +1,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
 
-from sqlalchemy import Select, func, select
+from sqlalchemy import Select, func, or_, select, update
 from sqlalchemy.orm import Session
 
 from app.bot.services.audit_service import append_audit
 from app.bot.services.stock_parser import parse_stock_block
 from app.db.models import Product, StockUnit
+
+STOCK_STATUS_READY = "ready"
+STOCK_STATUS_AWAITING = "awaiting_benefits"
 
 
 @dataclass
@@ -23,9 +27,33 @@ class ProductView:
 def _build_stock_count_query() -> Select:
     return (
         select(StockUnit.product_id, func.count(StockUnit.id).label("stock_count"))
-        .where(StockUnit.is_sold.is_(False))
+        .where(
+            StockUnit.is_sold.is_(False),
+            or_(
+                StockUnit.stock_status == STOCK_STATUS_READY,
+                StockUnit.stock_status.is_(None),
+            ),
+        )
         .group_by(StockUnit.product_id)
     )
+
+
+def promote_awaiting_stocks(session: Session, product_id: int | None = None) -> int:
+    stmt = (
+        update(StockUnit)
+        .where(
+            StockUnit.is_sold.is_(False),
+            StockUnit.stock_status == STOCK_STATUS_AWAITING,
+            StockUnit.available_at.is_not(None),
+            StockUnit.available_at <= datetime.utcnow(),
+        )
+        .values(stock_status=STOCK_STATUS_READY, available_at=None)
+    )
+    if product_id is not None:
+        stmt = stmt.where(StockUnit.product_id == product_id)
+
+    result = session.execute(stmt)
+    return int(result.rowcount or 0)
 
 
 def _to_view(product: Product, stock_available: int) -> ProductView:
@@ -40,6 +68,7 @@ def _to_view(product: Product, stock_available: int) -> ProductView:
 
 
 def list_products(session: Session, include_suspended: bool = False) -> list[ProductView]:
+    promote_awaiting_stocks(session)
     stock_counts = {pid: count for pid, count in session.execute(_build_stock_count_query()).all()}
 
     stmt = select(Product).order_by(Product.id.asc())
@@ -58,11 +87,16 @@ def get_product(session: Session, product_id: int) -> Product | None:
 
 
 def get_available_stock_count(session: Session, product_id: int) -> int:
+    promote_awaiting_stocks(session, product_id=product_id)
     return (
         session.scalar(
             select(func.count(StockUnit.id)).where(
                 StockUnit.product_id == product_id,
                 StockUnit.is_sold.is_(False),
+                or_(
+                    StockUnit.stock_status == STOCK_STATUS_READY,
+                    StockUnit.stock_status.is_(None),
+                ),
             )
         )
         or 0
@@ -151,6 +185,8 @@ def add_stock_block(session: Session, product_id: int, raw_text: str, actor_id: 
         product_id=product_id,
         raw_text=raw_text.strip(),
         parsed_json=parsed.as_json(),
+        stock_status=STOCK_STATUS_READY,
+        username_key=(parsed.fields.get("Username") or parsed.fields.get("username") or "").strip().lower() or None,
     )
     session.add(stock)
     session.flush()

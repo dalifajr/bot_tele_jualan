@@ -2,11 +2,15 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass
+from datetime import datetime, timezone
+import html
 import logging
 import subprocess
 from pathlib import Path
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram.constants import ParseMode
 from telegram.error import BadRequest
 from telegram.ext import (
     Application,
@@ -27,7 +31,21 @@ from app.bot.services.catalog_service import (
     list_products,
     suspend_product,
 )
-from app.bot.services.order_service import create_checkout, list_recent_orders_by_customer
+from app.bot.services.github_pack_service import (
+    add_github_stock,
+    delete_github_stock,
+    ensure_github_pack_product,
+    get_github_stock_detail,
+    is_github_pack_product,
+    list_github_stocks,
+)
+from app.bot.services.order_service import (
+    cancel_order,
+    count_delivered_orders_by_customer,
+    create_checkout,
+    list_recent_orders_by_customer,
+    set_checkout_message_ref,
+)
 from app.bot.services.user_service import get_user_by_telegram_id, upsert_user
 from app.common.config import get_settings
 from app.common.roles import is_admin
@@ -42,6 +60,8 @@ FLOW_ADMIN_ADD_PRODUCT = "admin_add_product"
 FLOW_ADMIN_ADD_STOCK = "admin_add_stock"
 FLOW_ADMIN_BROADCAST = "admin_broadcast"
 FLOW_CUSTOMER_MANUAL_QTY = "customer_manual_qty"
+FLOW_GH_ADD_READY = "gh_add_ready"
+FLOW_GH_ADD_AWAIT = "gh_add_await"
 AWAIT_QRIS_IMAGE_KEY = "await_qris_image"
 
 
@@ -90,6 +110,7 @@ def _admin_catalog_menu_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         [
             [InlineKeyboardButton("📋 Lihat Katalog", callback_data="ac:view")],
+            [InlineKeyboardButton("🎓 GitHub Student Developer Pack", callback_data="ac:ghpack")],
             [InlineKeyboardButton("➕ Upsert Produk", callback_data="ac:add")],
             [InlineKeyboardButton("📥 Tambah Stok", callback_data="ac:stock")],
             [InlineKeyboardButton("⏸️ Suspend Produk", callback_data="ac:susp")],
@@ -116,6 +137,19 @@ def _update_menu_keyboard() -> InlineKeyboardMarkup:
             [InlineKeyboardButton("🔍 Cek Update", callback_data="up:check")],
             [InlineKeyboardButton("⬆️ Terapkan Update", callback_data="up:apply")],
             [InlineKeyboardButton("⬅️ Kembali", callback_data="back:main")],
+        ]
+    )
+
+
+def _github_pack_menu_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        [
+            [InlineKeyboardButton("📥 Tambah Stok Ready", callback_data="gh:add:ready")],
+            [InlineKeyboardButton("⏳ Tambah Stok Awaiting Benefits", callback_data="gh:add:await")],
+            [InlineKeyboardButton("📋 Lihat List Akun", callback_data="gh:list")],
+            [InlineKeyboardButton("👁️ Lihat Detail Akun", callback_data="gh:view:list")],
+            [InlineKeyboardButton("🗑️ Hapus Akun", callback_data="gh:del:list")],
+            [InlineKeyboardButton("⬅️ Kembali", callback_data="back:adm_cat")],
         ]
     )
 
@@ -166,30 +200,84 @@ async def _respond(
     update: Update,
     text: str,
     keyboard: InlineKeyboardMarkup | None = None,
+    parse_mode: str | None = None,
 ) -> None:
     query = update.callback_query
     if query is not None:
         try:
-            await query.edit_message_text(text=text, reply_markup=keyboard)
+            await query.edit_message_text(text=text, reply_markup=keyboard, parse_mode=parse_mode)
             return
         except BadRequest:
             if query.message is not None:
-                await query.message.reply_text(text=text, reply_markup=keyboard)
+                await query.message.reply_text(text=text, reply_markup=keyboard, parse_mode=parse_mode)
                 return
 
     if update.message is not None:
-        await update.message.reply_text(text=text, reply_markup=keyboard)
+        await update.message.reply_text(text=text, reply_markup=keyboard, parse_mode=parse_mode)
 
 
-async def _send_main_menu(update: Update, role: str, welcome: bool = False) -> None:
-    text = "👋 Selamat datang di bot jualan."
-    if role == "admin":
-        text = "👋 Selamat datang Admin."
+def _now_display_time() -> datetime:
+    try:
+        return datetime.now(ZoneInfo(settings.display_timezone))
+    except ZoneInfoNotFoundError:
+        return datetime.now()
+
+
+def _format_display_time(value: datetime) -> str:
+    try:
+        tz = ZoneInfo(settings.display_timezone)
+    except ZoneInfoNotFoundError:
+        tz = None
+
+    display_value = value
+    if tz is not None:
+        if display_value.tzinfo is None:
+            display_value = display_value.replace(tzinfo=timezone.utc)
+        display_value = display_value.astimezone(tz)
+
+    return display_value.strftime("%d %b %Y %H:%M")
+
+
+async def _send_main_menu(
+    update: Update,
+    role: str,
+    welcome: bool = False,
+    username: str | None = None,
+    total_transaksi: int | None = None,
+) -> None:
+    display_name = username
+    if not display_name:
+        tg_user = update.effective_user
+        if tg_user is not None:
+            display_name = tg_user.username or tg_user.full_name
+    if not display_name:
+        display_name = "user"
+
+    if total_transaksi is None:
+        tg_user = update.effective_user
+        if tg_user is not None:
+            with get_session() as session:
+                user = get_user_by_telegram_id(session, tg_user.id)
+                if user is not None:
+                    total_transaksi = count_delivered_orders_by_customer(session, user.id)
+    if total_transaksi is None:
+        total_transaksi = 0
+
+    now_text = _format_display_time(_now_display_time())
+    total_text = str(total_transaksi)
+
+    text = (
+        f"Halo {html.escape(display_name)}\n"
+        f"{now_text}\n\n"
+        f"total transaksi kamu: {total_text}\n"
+        "<i>created with love by:\n"
+        "dzulfikrialifajri_store</i>"
+    )
 
     if welcome:
         text += "\n\nSilakan pilih menu di bawah ini."
 
-    await _respond(update, text, _main_menu_keyboard(role))
+    await _respond(update, text, _main_menu_keyboard(role), parse_mode=ParseMode.HTML)
 
 
 async def _send_help(update: Update, role: str) -> None:
@@ -207,6 +295,9 @@ async def _send_help(update: Update, role: str) -> None:
 
 
 async def _send_admin_catalog_menu(update: Update) -> None:
+    with get_session() as session:
+        ensure_github_pack_product(session)
+
     await _respond(
         update,
         "📦 Menu Katalog Admin\nPilih tindakan yang ingin dilakukan.",
@@ -214,8 +305,53 @@ async def _send_admin_catalog_menu(update: Update) -> None:
     )
 
 
+def _stock_status_badge(status: str) -> str:
+    if status == "awaiting_benefits":
+        return "⏳ Awaiting"
+    return "✅ Ready"
+
+
+async def _send_github_pack_menu(update: Update) -> None:
+    with get_session() as session:
+        product = ensure_github_pack_product(session)
+        stocks = list_github_stocks(session)
+
+    ready_count = sum(1 for x in stocks if x.status == "ready")
+    awaiting_count = sum(1 for x in stocks if x.status == "awaiting_benefits")
+    await _respond(
+        update,
+        (
+            f"🎓 {product.name}\n"
+            f"Ready: {ready_count} akun\n"
+            f"Awaiting benefits: {awaiting_count} akun"
+        ),
+        _github_pack_menu_keyboard(),
+    )
+
+
+async def _send_github_stock_picker(update: Update, mode: str) -> None:
+    with get_session() as session:
+        stocks = list_github_stocks(session)
+
+    if not stocks:
+        await _respond(update, "📭 Belum ada stok GitHub Pack.", _github_pack_menu_keyboard())
+        return
+
+    prefix = "gh:view" if mode == "view" else "gh:del"
+    title = "👁️ Pilih akun untuk melihat detail:" if mode == "view" else "🗑️ Pilih akun yang ingin dihapus:"
+
+    keyboard_rows: list[list[InlineKeyboardButton]] = []
+    for stock in stocks:
+        label = f"{stock.username} | {_stock_status_badge(stock.status)}"
+        keyboard_rows.append([InlineKeyboardButton(label, callback_data=f"{prefix}:{stock.id}")])
+    keyboard_rows.append([InlineKeyboardButton("⬅️ Kembali", callback_data="ac:ghpack")])
+
+    await _respond(update, title, InlineKeyboardMarkup(keyboard_rows))
+
+
 async def _send_admin_catalog_list(update: Update) -> None:
     with get_session() as session:
+        ensure_github_pack_product(session)
         products = list_products(session=session, include_suspended=True)
 
     if not products:
@@ -223,13 +359,16 @@ async def _send_admin_catalog_list(update: Update) -> None:
         return
 
     lines = ["📋 Daftar produk:"]
+    keyboard_rows: list[list[InlineKeyboardButton]] = []
     for product in products:
         status = "⏸️ Suspend" if product.is_suspended else "✅ Aktif"
         lines.append(
             f"#{product.id} {product.name} | {_format_rupiah(product.price)} | stok {product.stock_available} | {status}"
         )
+        keyboard_rows.append([InlineKeyboardButton(f"Buka #{product.id} {product.name}", callback_data=f"acp:{product.id}")])
 
-    await _respond(update, "\n".join(lines), _back_keyboard("adm_cat"))
+    keyboard_rows.append([InlineKeyboardButton("⬅️ Kembali", callback_data="back:adm_cat")])
+    await _respond(update, "\n".join(lines), InlineKeyboardMarkup(keyboard_rows))
 
 
 async def _send_admin_product_picker(update: Update, action: str, title: str) -> None:
@@ -253,11 +392,18 @@ async def _send_admin_product_picker(update: Update, action: str, title: str) ->
 
 async def _send_customer_catalog(update: Update) -> None:
     with get_session() as session:
+        github_product = ensure_github_pack_product(session)
+        github_product_id = int(github_product.id)
         products = list_products(session=session, include_suspended=False)
 
     if not products:
         await _respond(update, "📭 Katalog masih kosong.", _back_keyboard("main"))
         return
+
+    products = sorted(
+        products,
+        key=lambda x: (0 if x.id == github_product_id else 1, x.id),
+    )
 
     keyboard_rows: list[list[InlineKeyboardButton]] = []
     for product in products:
@@ -295,7 +441,8 @@ async def _send_customer_orders(update: Update, telegram_id: int) -> None:
     await _respond(update, "\n".join(lines), _back_keyboard("main"))
 
 
-async def _send_product_detail(update: Update, product_id: int) -> None:
+async def _send_product_detail(update: Update, product_id: int, qty: int = 1) -> None:
+    qty = max(1, min(qty, 20))
     with get_session() as session:
         product = get_product(session, product_id)
         if product is None or product.is_suspended:
@@ -305,6 +452,7 @@ async def _send_product_detail(update: Update, product_id: int) -> None:
         product_name = product.name
         product_price = product.price
         product_description = product.description or "-"
+        github_mode = is_github_pack_product(session, product_id)
 
     text = (
         f"🧾 Detail Produk\n"
@@ -314,20 +462,33 @@ async def _send_product_detail(update: Update, product_id: int) -> None:
         f"Deskripsi: {product_description}"
     )
 
-    keyboard = InlineKeyboardMarkup(
-        [
+    if github_mode:
+        keyboard = InlineKeyboardMarkup(
             [
-                InlineKeyboardButton("🛒 Beli 1", callback_data=f"buy:{product_id}:1"),
-                InlineKeyboardButton("🛒 Beli 2", callback_data=f"buy:{product_id}:2"),
-            ],
+                [
+                    InlineKeyboardButton("➖", callback_data=f"qty:dec:{product_id}:{qty}"),
+                    InlineKeyboardButton(f"{qty}", callback_data="noop"),
+                    InlineKeyboardButton("➕", callback_data=f"qty:inc:{product_id}:{qty}"),
+                ],
+                [InlineKeyboardButton("🛒 Pesan Sekarang", callback_data=f"buy:{product_id}:{qty}")],
+                [InlineKeyboardButton("⬅️ Kembali", callback_data="back:cus_cat")],
+            ]
+        )
+    else:
+        keyboard = InlineKeyboardMarkup(
             [
-                InlineKeyboardButton("🛒 Beli 3", callback_data=f"buy:{product_id}:3"),
-                InlineKeyboardButton("🛒 Beli 5", callback_data=f"buy:{product_id}:5"),
-            ],
-            [InlineKeyboardButton("✍️ Input Qty Manual", callback_data=f"buyq:{product_id}")],
-            [InlineKeyboardButton("⬅️ Kembali", callback_data="back:cus_cat")],
-        ]
-    )
+                [
+                    InlineKeyboardButton("🛒 Beli 1", callback_data=f"buy:{product_id}:1"),
+                    InlineKeyboardButton("🛒 Beli 2", callback_data=f"buy:{product_id}:2"),
+                ],
+                [
+                    InlineKeyboardButton("🛒 Beli 3", callback_data=f"buy:{product_id}:3"),
+                    InlineKeyboardButton("🛒 Beli 5", callback_data=f"buy:{product_id}:5"),
+                ],
+                [InlineKeyboardButton("✍️ Input Qty Manual", callback_data=f"buyq:{product_id}")],
+                [InlineKeyboardButton("⬅️ Kembali", callback_data="back:cus_cat")],
+            ]
+        )
     await _respond(update, text, keyboard)
 
 
@@ -355,41 +516,65 @@ async def _send_checkout_result(
         order_ref = order.order_ref
         payment_ref = payment.payment_ref
         expected_amount = payment.expected_amount
+        expires_at = order.expires_at
+
+    expires_text = "-"
+    if expires_at is not None:
+        expires_text = _format_display_time(expires_at)
 
     lines = [
         "✅ Checkout berhasil dibuat.",
         f"🧾 Order Ref: {order_ref}",
         f"🔖 Payment Ref: {payment_ref}",
         f"💰 Total Bayar: {_format_rupiah(expected_amount)}",
+        f"⏱️ Batas bayar: {expires_text}",
         "📲 Silakan transfer sesuai nominal. Konfirmasi dilakukan otomatis.",
     ]
     result_keyboard = InlineKeyboardMarkup(
         [
+            [InlineKeyboardButton("❌ Batalkan Pesanan", callback_data=f"ord:cancel:{order_ref}")],
             [InlineKeyboardButton("📦 Lihat Pesanan", callback_data="cus:ord")],
             [InlineKeyboardButton("⬅️ Kembali", callback_data="back:cus_cat")],
         ]
     )
-    await _respond(update, "\n".join(lines), result_keyboard)
+
+    sent_message = None
+    payload_text = "\n".join(lines)
 
     qris_path = settings.qris_file_path
     if qris_path.exists():
         try:
             if update.callback_query and update.callback_query.message:
                 with qris_path.open("rb") as fh:
-                    await update.callback_query.message.reply_photo(
+                    sent_message = await update.callback_query.message.reply_photo(
                         photo=fh,
-                        caption="🧾 QRIS Pembayaran",
-                        reply_markup=_back_keyboard("cus_cat"),
+                        caption=payload_text,
+                        reply_markup=result_keyboard,
                     )
             elif update.message:
                 with qris_path.open("rb") as fh:
-                    await update.message.reply_photo(
+                    sent_message = await update.message.reply_photo(
                         photo=fh,
-                        caption="🧾 QRIS Pembayaran",
-                        reply_markup=_back_keyboard("cus_cat"),
+                        caption=payload_text,
+                        reply_markup=result_keyboard,
                     )
         except Exception as exc:
             logger.warning("Gagal kirim QRIS: %s", exc)
+
+    if sent_message is None:
+        if update.callback_query and update.callback_query.message:
+            sent_message = await update.callback_query.message.reply_text(payload_text, reply_markup=result_keyboard)
+        elif update.message:
+            sent_message = await update.message.reply_text(payload_text, reply_markup=result_keyboard)
+
+    if sent_message is not None:
+        with get_session() as session:
+            set_checkout_message_ref(
+                session=session,
+                order_ref=order_ref,
+                chat_id=int(sent_message.chat_id),
+                message_id=int(sent_message.message_id),
+            )
 
 
 async def _run_update_script(action: str) -> str:
@@ -439,10 +624,24 @@ def _ensure_admin(update: Update) -> bool:
 
 
 async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    _, role = await _ensure_user(update)
+    db_user, role = await _ensure_user(update)
+    tg_user = update.effective_user
+    username = "customer"
+    if tg_user is not None:
+        username = tg_user.username or tg_user.full_name or "customer"
+
+    with get_session() as session:
+        total_transaksi = count_delivered_orders_by_customer(session, db_user.id)
+
     _clear_flow(context)
     context.user_data.pop(AWAIT_QRIS_IMAGE_KEY, None)
-    await _send_main_menu(update, role=role, welcome=True)
+    await _send_main_menu(
+        update,
+        role=role,
+        welcome=True,
+        username=username,
+        total_transaksi=total_transaksi,
+    )
 
 
 async def help_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -695,8 +894,170 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         await _send_help(update, role)
         return
 
+    if data == "noop":
+        return
+
     if data == "ac:view":
         await _send_admin_catalog_list(update)
+        return
+
+    if data == "ac:ghpack":
+        if role != "admin":
+            await _respond(update, "🚫 Hanya admin yang bisa akses menu ini.", _back_keyboard("main"))
+            return
+        _clear_flow(context)
+        await _send_github_pack_menu(update)
+        return
+
+    if data.startswith("acp:"):
+        if role != "admin":
+            await _respond(update, "🚫 Hanya admin yang bisa akses menu ini.", _back_keyboard("main"))
+            return
+        try:
+            product_id = int(data.split(":", maxsplit=1)[1])
+        except ValueError:
+            await _respond(update, "⚠️ Produk tidak valid.", _back_keyboard("adm_cat"))
+            return
+
+        is_ghpack = False
+        missing_product = False
+        with get_session() as session:
+            product = get_product(session, product_id)
+            if product is None:
+                missing_product = True
+            else:
+                if is_github_pack_product(session, product_id):
+                    is_ghpack = True
+                stock_count = get_available_stock_count(session, product_id)
+                status = "⏸️ Suspend" if product.is_suspended else "✅ Aktif"
+                product_name = product.name
+                product_price = product.price
+                product_desc = product.description or "-"
+
+        if missing_product:
+            await _respond(update, "⚠️ Produk tidak ditemukan.", _back_keyboard("adm_cat"))
+            return
+
+        if is_ghpack:
+            await _send_github_pack_menu(update)
+            return
+
+        await _respond(
+            update,
+            (
+                "🧾 Detail Produk\n"
+                f"Nama: {product_name}\n"
+                f"Harga: {_format_rupiah(product_price)}\n"
+                f"Stok Ready: {stock_count}\n"
+                f"Status: {status}\n"
+                f"Deskripsi: {product_desc}"
+            ),
+            _back_keyboard("adm_cat"),
+        )
+        return
+
+    if data == "gh:add:ready":
+        if role != "admin":
+            await _respond(update, "🚫 Hanya admin yang bisa akses menu ini.", _back_keyboard("main"))
+            return
+        _set_flow(context, FLOW_GH_ADD_READY)
+        await _respond(
+            update,
+            "📥 Kirim blok stok GitHub Pack (status READY).\nSatu pesan = satu akun.",
+            _back_keyboard("adm_cat"),
+        )
+        return
+
+    if data == "gh:add:await":
+        if role != "admin":
+            await _respond(update, "🚫 Hanya admin yang bisa akses menu ini.", _back_keyboard("main"))
+            return
+        _set_flow(context, FLOW_GH_ADD_AWAIT)
+        await _respond(
+            update,
+            "⏳ Kirim blok stok GitHub Pack (status AWAITING BENEFITS).\nStok akan otomatis pindah ke READY setelah 72 jam.",
+            _back_keyboard("adm_cat"),
+        )
+        return
+
+    if data == "gh:list":
+        if role != "admin":
+            await _respond(update, "🚫 Hanya admin yang bisa akses menu ini.", _back_keyboard("main"))
+            return
+        with get_session() as session:
+            stocks = list_github_stocks(session)
+
+        if not stocks:
+            await _respond(update, "📭 Belum ada stok GitHub Pack.", _github_pack_menu_keyboard())
+            return
+
+        lines = ["📋 List akun GitHub Pack:"]
+        for stock in stocks:
+            lines.append(f"#{stock.id} {stock.username} | {_stock_status_badge(stock.status)}")
+        await _respond(update, "\n".join(lines), _github_pack_menu_keyboard())
+        return
+
+    if data == "gh:view:list":
+        if role != "admin":
+            await _respond(update, "🚫 Hanya admin yang bisa akses menu ini.", _back_keyboard("main"))
+            return
+        await _send_github_stock_picker(update, mode="view")
+        return
+
+    if data == "gh:del:list":
+        if role != "admin":
+            await _respond(update, "🚫 Hanya admin yang bisa akses menu ini.", _back_keyboard("main"))
+            return
+        await _send_github_stock_picker(update, mode="delete")
+        return
+
+    if data.startswith("gh:view:"):
+        if role != "admin":
+            await _respond(update, "🚫 Hanya admin yang bisa akses menu ini.", _back_keyboard("main"))
+            return
+        try:
+            stock_id = int(data.split(":", maxsplit=2)[2])
+        except ValueError:
+            await _respond(update, "⚠️ ID stok tidak valid.", _github_pack_menu_keyboard())
+            return
+
+        with get_session() as session:
+            detail = get_github_stock_detail(session, stock_id)
+
+        if detail is None:
+            await _respond(update, "⚠️ Stok tidak ditemukan.", _github_pack_menu_keyboard())
+            return
+
+        await _respond(
+            update,
+            (
+                f"👤 Username: {detail.username}\n"
+                f"Status: {_stock_status_badge(detail.status)}\n"
+                f"ID Stok: {detail.id}\n\n"
+                f"{detail.raw_text}"
+            ),
+            _github_pack_menu_keyboard(),
+        )
+        return
+
+    if data.startswith("gh:del:"):
+        if role != "admin":
+            await _respond(update, "🚫 Hanya admin yang bisa akses menu ini.", _back_keyboard("main"))
+            return
+        try:
+            stock_id = int(data.split(":", maxsplit=2)[2])
+        except ValueError:
+            await _respond(update, "⚠️ ID stok tidak valid.", _github_pack_menu_keyboard())
+            return
+
+        with get_session() as session:
+            try:
+                delete_github_stock(session, stock_id=stock_id, actor_id=db_user.id)
+            except ValueError as exc:
+                await _respond(update, f"❌ {exc}", _github_pack_menu_keyboard())
+                return
+
+        await _respond(update, "✅ Stok akun berhasil dihapus.", _github_pack_menu_keyboard())
         return
 
     if data == "ac:add":
@@ -781,6 +1142,32 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         await _send_product_detail(update, product_id)
         return
 
+    if data.startswith("qty:"):
+        if role == "admin":
+            await _respond(update, "🚫 Admin tidak bisa checkout sebagai customer.", _back_keyboard("main"))
+            return
+
+        parts = data.split(":")
+        if len(parts) != 4:
+            await _respond(update, "⚠️ Aksi qty tidak valid.", _back_keyboard("cus_cat"))
+            return
+
+        action = parts[1]
+        try:
+            product_id = int(parts[2])
+            current_qty = int(parts[3])
+        except ValueError:
+            await _respond(update, "⚠️ Aksi qty tidak valid.", _back_keyboard("cus_cat"))
+            return
+
+        if action == "inc":
+            current_qty += 1
+        elif action == "dec":
+            current_qty -= 1
+
+        await _send_product_detail(update, product_id, qty=current_qty)
+        return
+
     if data.startswith("buy:"):
         if role == "admin":
             await _respond(update, "🚫 Admin tidak bisa checkout sebagai customer.", _back_keyboard("main"))
@@ -818,6 +1205,19 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             "✍️ Masukkan jumlah pembelian (angka).",
             _back_keyboard("cus_cat"),
         )
+        return
+
+    if data.startswith("ord:cancel:"):
+        if role == "admin":
+            await _respond(update, "🚫 Admin tidak bisa checkout sebagai customer.", _back_keyboard("main"))
+            return
+        order_ref = data.split(":", maxsplit=2)[2]
+
+        with get_session() as session:
+            ok, message = cancel_order(session, order_ref=order_ref, customer_id=db_user.id)
+
+        keyboard = _back_keyboard("cus_cat") if ok else _back_keyboard("main")
+        await _respond(update, message, keyboard)
         return
 
     if data == "pay:upload":
@@ -944,6 +1344,34 @@ async def text_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
                 update,
                 f"✅ Stok berhasil ditambahkan. ID stok: {stock_id}",
                 _back_keyboard("adm_cat"),
+            )
+            return
+
+        if flow in {FLOW_GH_ADD_READY, FLOW_GH_ADD_AWAIT}:
+            if role != "admin":
+                await _respond(update, "🚫 Akses ditolak.", _back_keyboard("main"))
+                _clear_flow(context)
+                return
+
+            awaiting = flow == FLOW_GH_ADD_AWAIT
+            with get_session() as session:
+                try:
+                    stock = add_github_stock(
+                        session=session,
+                        raw_text=text,
+                        actor_id=db_user.id,
+                        awaiting=awaiting,
+                    )
+                except ValueError as exc:
+                    await _respond(update, f"❌ Gagal tambah stok GitHub Pack: {exc}", _github_pack_menu_keyboard())
+                    return
+
+            _clear_flow(context)
+            status_text = "AWAITING BENEFITS" if awaiting else "READY"
+            await _respond(
+                update,
+                f"✅ Stok GitHub Pack ditambahkan.\nID: {stock.id}\nUsername: {stock.username}\nStatus: {status_text}",
+                _github_pack_menu_keyboard(),
             )
             return
 

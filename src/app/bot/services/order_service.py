@@ -2,17 +2,32 @@ from __future__ import annotations
 
 import json
 import random
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.bot.services.audit_service import append_audit
-from app.bot.services.catalog_service import get_available_stock_count
+from app.bot.services.catalog_service import (
+    STOCK_STATUS_READY,
+    get_available_stock_count,
+    promote_awaiting_stocks,
+)
 from app.common.config import get_settings
 from app.db.models import Order, OrderItem, Payment, Product, StockUnit, User
 
 settings = get_settings()
+
+
+@dataclass
+class ReconcileResult:
+    status: str
+    message: str
+    customer_chat_id: int | None
+    delivery_message: str | None
+    checkout_chat_id: int | None = None
+    checkout_message_id: int | None = None
 
 
 def _generate_order_ref() -> str:
@@ -25,6 +40,33 @@ def _generate_unique_code() -> int:
     return random.randint(101, 999)
 
 
+def _utcnow() -> datetime:
+    return datetime.utcnow()
+
+
+def expire_pending_orders(session: Session) -> int:
+    now = _utcnow()
+    orders = list(
+        session.scalars(
+            select(Order).where(
+                Order.status == "pending_payment",
+                Order.expires_at.is_not(None),
+                Order.expires_at <= now,
+            )
+        ).all()
+    )
+    for order in orders:
+        order.status = "expired"
+        order.cancelled_at = now
+        order.cancel_reason = "payment_timeout"
+        payment = order.payment
+        if payment is not None and payment.status == "pending":
+            payment.status = "expired"
+            session.add(payment)
+        session.add(order)
+    return len(orders)
+
+
 def create_checkout(session: Session, customer: User, product_id: int, quantity: int) -> tuple[Order, Payment]:
     if quantity <= 0:
         raise ValueError("Jumlah pesanan harus lebih dari 0.")
@@ -35,6 +77,7 @@ def create_checkout(session: Session, customer: User, product_id: int, quantity:
     if product.is_suspended:
         raise ValueError("Produk sedang suspend.")
 
+    promote_awaiting_stocks(session, product_id=product_id)
     available_stock = get_available_stock_count(session, product_id)
     if available_stock < quantity:
         raise ValueError(f"Stok tidak cukup. Tersedia {available_stock} unit.")
@@ -51,6 +94,7 @@ def create_checkout(session: Session, customer: User, product_id: int, quantity:
         unique_code=unique_code,
         total_amount=total,
         status="pending_payment",
+        expires_at=_utcnow() + timedelta(minutes=max(1, settings.checkout_expiry_minutes)),
     )
     session.add(order)
     session.flush()
@@ -85,6 +129,7 @@ def create_checkout(session: Session, customer: User, product_id: int, quantity:
 
 
 def list_recent_orders_by_customer(session: Session, customer_id: int, limit: int = 10) -> list[Order]:
+    expire_pending_orders(session)
     stmt = (
         select(Order)
         .where(Order.customer_id == customer_id)
@@ -94,10 +139,30 @@ def list_recent_orders_by_customer(session: Session, customer_id: int, limit: in
     return list(session.scalars(stmt).all())
 
 
+def count_delivered_orders_by_customer(session: Session, customer_id: int) -> int:
+    return (
+        session.scalar(
+            select(func.count(Order.id)).where(
+                Order.customer_id == customer_id,
+                Order.status == "delivered",
+            )
+        )
+        or 0
+    )
+
+
 def _allocate_stock_fifo(session: Session, product_id: int, quantity: int, order_id: int) -> list[StockUnit]:
+    promote_awaiting_stocks(session, product_id=product_id)
     stmt = (
         select(StockUnit)
-        .where(StockUnit.product_id == product_id, StockUnit.is_sold.is_(False))
+        .where(
+            StockUnit.product_id == product_id,
+            StockUnit.is_sold.is_(False),
+            or_(
+                StockUnit.stock_status == STOCK_STATUS_READY,
+                StockUnit.stock_status.is_(None),
+            ),
+        )
         .order_by(StockUnit.id.asc())
         .limit(quantity)
     )
@@ -131,6 +196,7 @@ def _resolve_pending_payment(
     amount: int,
     reference: str | None,
 ) -> tuple[str, str, Payment | None]:
+    expire_pending_orders(session)
     base_stmt = (
         select(Payment)
         .join(Order, Payment.order_id == Order.id)
@@ -144,16 +210,18 @@ def _resolve_pending_payment(
             ).all()
         )
         if not candidates:
-            historical_paid = session.scalar(
+            historical_payment = session.scalar(
                 select(Payment)
                 .join(Order, Payment.order_id == Order.id)
                 .where(
                     or_(Payment.payment_ref == reference, Order.order_ref == reference),
-                    Payment.status == "paid",
+                    Payment.status.in_(["paid", "expired", "cancelled"]),
                 )
             )
-            if historical_paid is not None:
-                return "duplicate", "Reference pembayaran sudah diproses sebelumnya.", historical_paid
+            if historical_payment is not None:
+                if historical_payment.status == "paid":
+                    return "duplicate", "Reference pembayaran sudah diproses sebelumnya.", historical_payment
+                return "expired", "Order untuk reference ini sudah tidak aktif.", None
             return "not_found", "Reference tidak ditemukan pada order pending.", None
 
         exact_amount = [payment for payment in candidates if payment.expected_amount == amount]
@@ -161,6 +229,15 @@ def _resolve_pending_payment(
             return "amount_mismatch", "Reference ditemukan tapi nominal tidak sesuai.", None
         if len(exact_amount) > 1:
             return "ambiguous", "Reference cocok ke lebih dari satu pembayaran pending.", None
+        picked = exact_amount[0]
+        if picked.order and picked.order.expires_at and picked.order.expires_at <= _utcnow():
+            picked.order.status = "expired"
+            picked.order.cancelled_at = _utcnow()
+            picked.order.cancel_reason = "payment_timeout"
+            picked.status = "expired"
+            session.add(picked.order)
+            session.add(picked)
+            return "expired", "Order sudah kedaluwarsa (lebih dari 5 menit).", None
         return "matched", "ok", exact_amount[0]
 
     if settings.listener_require_reference:
@@ -179,6 +256,17 @@ def _resolve_pending_payment(
         return "not_found", "Tidak ada order pending yang cocok di window waktu aktif.", None
     if len(candidates) > 1:
         return "ambiguous", "Nominal cocok ke beberapa order. Kirim reference untuk memastikan.", None
+
+    picked = candidates[0]
+    if picked.order and picked.order.expires_at and picked.order.expires_at <= _utcnow():
+        picked.order.status = "expired"
+        picked.order.cancelled_at = _utcnow()
+        picked.order.cancel_reason = "payment_timeout"
+        picked.status = "expired"
+        session.add(picked.order)
+        session.add(picked)
+        return "expired", "Order sudah kedaluwarsa (lebih dari 5 menit).", None
+
     return "matched", "ok", candidates[0]
 
 
@@ -188,24 +276,58 @@ def reconcile_payment(
     source_app: str,
     reference: str | None = None,
     raw_payload: dict | None = None,
-) -> tuple[str, str, int | None, str | None]:
+) -> ReconcileResult:
     match_status, match_message, payment = _resolve_pending_payment(
         session=session,
         amount=amount,
         reference=reference,
     )
     if payment is None:
-        return match_status, match_message, None, None
+        return ReconcileResult(match_status, match_message, None, None)
 
     order = payment.order
     if order is None:
-        return "error", "Order tidak ditemukan untuk pembayaran ini.", None, None
+        return ReconcileResult("error", "Order tidak ditemukan untuk pembayaran ini.", None, None)
 
     customer = session.get(User, order.customer_id)
     customer_telegram_id = customer.telegram_id if customer else None
 
     if payment.status == "paid":
-        return "duplicate", "Pembayaran sudah diproses sebelumnya.", customer_telegram_id, None
+        return ReconcileResult(
+            "duplicate",
+            "Pembayaran sudah diproses sebelumnya.",
+            customer_telegram_id,
+            None,
+            checkout_chat_id=order.checkout_chat_id,
+            checkout_message_id=order.checkout_message_id,
+        )
+
+    if order.status in {"cancelled", "expired"}:
+        return ReconcileResult(
+            "expired",
+            "Order tidak aktif (dibatalkan atau kedaluwarsa).",
+            customer_telegram_id,
+            None,
+            checkout_chat_id=order.checkout_chat_id,
+            checkout_message_id=order.checkout_message_id,
+        )
+
+    if order.expires_at and order.expires_at <= _utcnow():
+        order.status = "expired"
+        order.cancelled_at = _utcnow()
+        order.cancel_reason = "payment_timeout"
+        if payment.status == "pending":
+            payment.status = "expired"
+            session.add(payment)
+        session.add(order)
+        return ReconcileResult(
+            "expired",
+            "Order sudah kedaluwarsa (lebih dari 5 menit).",
+            customer_telegram_id,
+            None,
+            checkout_chat_id=order.checkout_chat_id,
+            checkout_message_id=order.checkout_message_id,
+        )
 
     order_items = list(order.items)
     delivered_units: list[StockUnit] = []
@@ -219,11 +341,11 @@ def reconcile_payment(
     payment.received_amount = amount
     payment.source_app = source_app
     payment.payload_json = payload_text
-    payment.matched_at = datetime.utcnow()
+    payment.matched_at = _utcnow()
 
     order.status = "delivered"
-    order.paid_at = datetime.utcnow()
-    order.delivered_at = datetime.utcnow()
+    order.paid_at = _utcnow()
+    order.delivered_at = _utcnow()
 
     session.add(order)
     session.add(payment)
@@ -237,4 +359,60 @@ def reconcile_payment(
     )
 
     delivery_message = _build_delivery_message(order, delivered_units)
-    return "paid", "Pembayaran berhasil dan stok terkirim.", customer_telegram_id, delivery_message
+    return ReconcileResult(
+        "paid",
+        "Pembayaran berhasil dan stok terkirim.",
+        customer_telegram_id,
+        delivery_message,
+        checkout_chat_id=order.checkout_chat_id,
+        checkout_message_id=order.checkout_message_id,
+    )
+
+
+def set_checkout_message_ref(session: Session, order_ref: str, chat_id: int, message_id: int) -> None:
+    order = session.scalar(select(Order).where(Order.order_ref == order_ref))
+    if order is None:
+        return
+    order.checkout_chat_id = chat_id
+    order.checkout_message_id = message_id
+    session.add(order)
+
+
+def cancel_order(session: Session, order_ref: str, customer_id: int) -> tuple[bool, str]:
+    expire_pending_orders(session)
+    order = session.scalar(
+        select(Order).where(
+            Order.order_ref == order_ref,
+            Order.customer_id == customer_id,
+        )
+    )
+    if order is None:
+        return False, "Order tidak ditemukan."
+
+    if order.status == "delivered":
+        return False, "Order sudah delivered dan tidak bisa dibatalkan."
+    if order.status == "cancelled":
+        return False, "Order sudah dibatalkan sebelumnya."
+    if order.status == "expired":
+        return False, "Order sudah kedaluwarsa."
+
+    order.status = "cancelled"
+    order.cancelled_at = _utcnow()
+    order.cancel_reason = "cancelled_by_customer"
+    session.add(order)
+
+    payment = order.payment
+    if payment is not None and payment.status == "pending":
+        payment.status = "cancelled"
+        session.add(payment)
+
+    append_audit(
+        session,
+        action="order_cancelled",
+        actor_id=customer_id,
+        entity_type="order",
+        entity_id=str(order.id),
+        detail=f"order_ref={order_ref}",
+    )
+
+    return True, "✅ Pesanan berhasil dibatalkan."

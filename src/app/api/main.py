@@ -7,7 +7,7 @@ from typing import Any
 
 from fastapi import FastAPI, Header, HTTPException, Request
 from pydantic import BaseModel, Field, ValidationError
-from telegram import Bot
+from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup
 
 from app.api.listener_events import (
     create_event,
@@ -24,6 +24,7 @@ from app.api.security import (
 from app.bot.services.order_service import reconcile_payment
 from app.common.config import get_settings
 from app.common.logging import configure_logging
+from app.common.roles import get_primary_admin_id
 from app.db.bootstrap import init_db
 from app.db.database import get_session
 
@@ -151,13 +152,18 @@ async def payment_listener(
 
         event = create_event(session, idempotency_key, body_hash)
 
-        status, message, customer_chat_id, delivery_message = reconcile_payment(
+        reconcile_result = reconcile_payment(
             session=session,
             amount=payload.amount,
             source_app=payload.source_app,
             reference=payload.reference,
             raw_payload=request_payload,
         )
+
+        status = reconcile_result.status
+        message = reconcile_result.message
+        customer_chat_id = reconcile_result.customer_chat_id
+        delivery_message = reconcile_result.delivery_message
 
         notify_sent = False
         notify_error = ""
@@ -169,7 +175,28 @@ async def payment_listener(
             else:
                 try:
                     bot = Bot(token=settings.bot_token)
-                    await bot.send_message(chat_id=customer_chat_id, text=delivery_message)
+
+                    if reconcile_result.checkout_chat_id and reconcile_result.checkout_message_id:
+                        try:
+                            await bot.delete_message(
+                                chat_id=reconcile_result.checkout_chat_id,
+                                message_id=reconcile_result.checkout_message_id,
+                            )
+                        except Exception as exc:
+                            logger.warning("Gagal hapus pesan checkout lama: %s", exc)
+
+                    reply_markup = None
+                    admin_id = get_primary_admin_id(settings.role_file_path)
+                    if admin_id is not None:
+                        reply_markup = InlineKeyboardMarkup(
+                            [[InlineKeyboardButton("💬 Hubungi Admin", url=f"tg://user?id={admin_id}")]]
+                        )
+
+                    await bot.send_message(
+                        chat_id=customer_chat_id,
+                        text=delivery_message,
+                        reply_markup=reply_markup,
+                    )
                     notify_sent = True
                 except Exception as exc:
                     logger.exception("Gagal kirim notifikasi ke customer: %s", exc)
