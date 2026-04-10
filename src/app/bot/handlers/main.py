@@ -39,6 +39,7 @@ from app.bot.services.github_pack_service import (
     get_github_stock_detail,
     is_github_pack_product,
     list_github_stocks,
+    set_github_pack_price,
 )
 from app.bot.services.order_service import (
     build_admin_order_message,
@@ -66,6 +67,7 @@ FLOW_ADMIN_BROADCAST = "admin_broadcast"
 FLOW_CUSTOMER_MANUAL_QTY = "customer_manual_qty"
 FLOW_GH_ADD_READY = "gh_add_ready"
 FLOW_GH_ADD_AWAIT = "gh_add_await"
+FLOW_GH_SET_PRICE = "gh_set_price"
 AWAIT_QRIS_IMAGE_KEY = "await_qris_image"
 
 
@@ -148,6 +150,7 @@ def _update_menu_keyboard() -> InlineKeyboardMarkup:
 def _github_pack_menu_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         [
+            [InlineKeyboardButton("💰 Atur Harga", callback_data="gh:price:set")],
             [InlineKeyboardButton("📥 Tambah Stok Ready", callback_data="gh:add:ready")],
             [InlineKeyboardButton("⏳ Tambah Stok Awaiting Benefits", callback_data="gh:add:await")],
             [InlineKeyboardButton("📋 Lihat List Akun", callback_data="gh:list")],
@@ -242,6 +245,19 @@ def _format_display_time(value: datetime) -> str:
     return display_value.strftime("%d %b %Y %H:%M")
 
 
+async def _try_delete_callback_message(update: Update) -> None:
+    query = update.callback_query
+    if query is None or query.message is None:
+        return
+
+    try:
+        await query.message.delete()
+    except BadRequest:
+        logger.debug("Pesan callback tidak bisa dihapus.")
+    except Exception as exc:
+        logger.warning("Gagal menghapus pesan callback: %s", exc)
+
+
 async def _send_main_menu(
     update: Update,
     role: str,
@@ -271,31 +287,31 @@ async def _send_main_menu(
     total_text = str(total_transaksi)
 
     text = (
-        f"Halo {html.escape(display_name)}\n"
-        f"{now_text}\n\n"
-        f"total transaksi kamu: {total_text}\n"
+        f"✨ <b>Halo, {html.escape(display_name)}!</b>\n"
+        f"🕒 {now_text}\n"
+        f"📊 Total transaksi sukses: <b>{total_text}</b>\n\n"
         "<i>created with love by:\n"
         "dzulfikrialifajri_store</i>"
     )
 
     if welcome:
-        text += "\n\nSilakan pilih menu di bawah ini."
+        text += "\n\nSilakan pilih menu di bawah ya 👇"
 
     await _respond(update, text, _main_menu_keyboard(role), parse_mode=ParseMode.HTML)
 
 
 async def _send_help(update: Update, role: str) -> None:
     common = [
-        "📌 Semua interaksi utama sekarang berbasis tombol.",
-        "📌 Setiap aksi punya tombol ⬅️ Kembali.",
-        "📌 Ketik 'kembali' kapan saja untuk kembali ke menu utama.",
+        "🧭 Semua interaksi utama berbasis tombol.",
+        "↩️ Setiap layar punya tombol kembali.",
+        "⌨️ Ketik <code>/start</code> kapan saja untuk kembali ke menu utama.",
     ]
     if role == "admin":
-        common.append("🔐 Admin: gunakan menu 📦 Katalog Admin untuk CRUD produk.")
+        common.append("🔐 Admin: kelola produk dari menu <b>📦 Katalog Admin</b>.")
     else:
-        common.append("🛍️ Customer: pilih produk dari menu katalog lalu checkout via tombol.")
+        common.append("🛍️ Customer: pilih produk dari katalog lalu checkout lewat tombol.")
 
-    await _respond(update, "\n".join(common), _back_keyboard("main"))
+    await _respond(update, "\n".join(common), _back_keyboard("main"), parse_mode=ParseMode.HTML)
 
 
 async def _send_admin_catalog_menu(update: Update) -> None:
@@ -315,6 +331,16 @@ def _stock_status_badge(status: str) -> str:
     return "✅ Ready"
 
 
+def _order_status_badge(status: str) -> str:
+    mapping = {
+        "pending_payment": "🟡 Menunggu Pembayaran",
+        "delivered": "✅ Berhasil",
+        "cancelled": "❌ Dibatalkan",
+        "expired": "⌛ Kedaluwarsa",
+    }
+    return mapping.get(status, status)
+
+
 async def _send_github_pack_menu(update: Update) -> None:
     with get_session() as session:
         product = ensure_github_pack_product(session)
@@ -325,11 +351,12 @@ async def _send_github_pack_menu(update: Update) -> None:
     await _respond(
         update,
         (
-            f"🎓 {product.name}\n"
-            f"Ready: {ready_count} akun\n"
-            f"Awaiting benefits: {awaiting_count} akun"
+            f"🎓 <b>{html.escape(product.name)}</b>\n"
+            f"✅ Ready: <b>{ready_count}</b> akun\n"
+            f"⏳ Awaiting benefits: <b>{awaiting_count}</b> akun"
         ),
         _github_pack_menu_keyboard(),
+        parse_mode=ParseMode.HTML,
     )
 
 
@@ -419,8 +446,9 @@ async def _send_customer_catalog(update: Update) -> None:
     keyboard_rows.append([InlineKeyboardButton("⬅️ Kembali", callback_data="back:main")])
     await _respond(
         update,
-        "🛍️ Katalog Produk\nPilih produk untuk melihat detail dan checkout.",
+        "🛍️ <b>Katalog Produk</b>\nPilih produk favorit kamu untuk lihat detail dan checkout.",
         InlineKeyboardMarkup(keyboard_rows),
+        parse_mode=ParseMode.HTML,
     )
 
 
@@ -437,12 +465,12 @@ async def _send_customer_orders(update: Update, telegram_id: int) -> None:
         await _respond(update, "📭 Belum ada pesanan.", _back_keyboard("main"))
         return
 
-    lines = ["📦 Pesanan terbaru:"]
+    lines = ["📦 <b>Pesanan Terbaru</b>"]
     for order_ref, status, total_amount in order_rows:
         lines.append(
-            f"• {order_ref} | {status} | {_format_rupiah(total_amount)}"
+            f"• <code>{html.escape(order_ref)}</code> | {_order_status_badge(status)} | <b>{_format_rupiah(total_amount)}</b>"
         )
-    await _respond(update, "\n".join(lines), _back_keyboard("main"))
+    await _respond(update, "\n".join(lines), _back_keyboard("main"), parse_mode=ParseMode.HTML)
 
 
 async def _send_product_detail(update: Update, product_id: int, qty: int = 1) -> None:
@@ -459,11 +487,11 @@ async def _send_product_detail(update: Update, product_id: int, qty: int = 1) ->
         github_mode = is_github_pack_product(session, product_id)
 
     text = (
-        f"🧾 Detail Produk\n"
-        f"Nama: {product_name}\n"
-        f"Harga: {_format_rupiah(product_price)}\n"
-        f"Stok: {stock}\n"
-        f"Deskripsi: {product_description}"
+        "🧾 <b>Detail Produk</b>\n"
+        f"📦 Nama: <b>{html.escape(product_name)}</b>\n"
+        f"💰 Harga: <b>{_format_rupiah(product_price)}</b>\n"
+        f"📦 Stok: {stock}\n"
+        f"📝 Deskripsi: {html.escape(product_description)}"
     )
 
     if github_mode:
@@ -493,7 +521,7 @@ async def _send_product_detail(update: Update, product_id: int, qty: int = 1) ->
                 [InlineKeyboardButton("⬅️ Kembali", callback_data="back:cus_cat")],
             ]
         )
-    await _respond(update, text, keyboard)
+    await _respond(update, text, keyboard, parse_mode=ParseMode.HTML)
 
 
 async def _upsert_admin_order_notification(update: Update, order_ref: str) -> None:
@@ -559,12 +587,12 @@ async def _send_checkout_result(
         expires_text = _format_display_time(expires_at)
 
     lines = [
-        "✅ Checkout berhasil dibuat.",
-        f"🧾 Order Ref: {order_ref}",
-        f"🔖 Payment Ref: {payment_ref}",
-        f"💰 Total Bayar: {_format_rupiah(expected_amount)}",
-        f"⏱️ Batas bayar: {expires_text}",
-        "📲 Silakan transfer sesuai nominal. Konfirmasi dilakukan otomatis.",
+        "✅ <b>Checkout berhasil dibuat</b>",
+        f"🧾 Order Ref: <code>{html.escape(order_ref)}</code>",
+        f"🔖 Payment Ref: <code>{html.escape(payment_ref)}</code>",
+        f"💰 Total Bayar: <b>{_format_rupiah(expected_amount)}</b>",
+        f"⏱️ Batas bayar: <b>{expires_text}</b>",
+        "📲 Silakan transfer sesuai nominal. Sistem akan konfirmasi otomatis.",
     ]
     result_keyboard = InlineKeyboardMarkup(
         [
@@ -586,6 +614,7 @@ async def _send_checkout_result(
                         photo=fh,
                         caption=payload_text,
                         reply_markup=result_keyboard,
+                        parse_mode=ParseMode.HTML,
                     )
             elif update.message:
                 with qris_path.open("rb") as fh:
@@ -593,15 +622,24 @@ async def _send_checkout_result(
                         photo=fh,
                         caption=payload_text,
                         reply_markup=result_keyboard,
+                        parse_mode=ParseMode.HTML,
                     )
         except Exception as exc:
             logger.warning("Gagal kirim QRIS: %s", exc)
 
     if sent_message is None:
         if update.callback_query and update.callback_query.message:
-            sent_message = await update.callback_query.message.reply_text(payload_text, reply_markup=result_keyboard)
+            sent_message = await update.callback_query.message.reply_text(
+                payload_text,
+                reply_markup=result_keyboard,
+                parse_mode=ParseMode.HTML,
+            )
         elif update.message:
-            sent_message = await update.message.reply_text(payload_text, reply_markup=result_keyboard)
+            sent_message = await update.message.reply_text(
+                payload_text,
+                reply_markup=result_keyboard,
+                parse_mode=ParseMode.HTML,
+            )
 
     if sent_message is not None:
         with get_session() as session:
@@ -1035,6 +1073,28 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         await _respond(update, "\n".join(lines), _github_pack_menu_keyboard())
         return
 
+    if data == "gh:price:set":
+        if role != "admin":
+            await _respond(update, "🚫 Hanya admin yang bisa akses menu ini.", _back_keyboard("main"))
+            return
+
+        with get_session() as session:
+            product = ensure_github_pack_product(session)
+            current_price = product.price
+
+        _set_flow(context, FLOW_GH_SET_PRICE)
+        await _respond(
+            update,
+            (
+                "💰 <b>Atur Harga GitHub Pack</b>\n"
+                f"Harga saat ini: <b>{_format_rupiah(current_price)}</b>\n\n"
+                "Kirim angka harga baru (contoh: <code>35000</code>)."
+            ),
+            _back_keyboard("adm_cat"),
+            parse_mode=ParseMode.HTML,
+        )
+        return
+
     if data == "gh:view:list":
         if role != "admin":
             await _respond(update, "🚫 Hanya admin yang bisa akses menu ini.", _back_keyboard("main"))
@@ -1224,6 +1284,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             return
 
         await _send_checkout_result(update, db_user.telegram_id, product_id, qty)
+        await _try_delete_callback_message(update)
         return
 
     if data.startswith("buyq:"):
@@ -1413,6 +1474,48 @@ async def text_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
                 update,
                 f"✅ Stok GitHub Pack ditambahkan.\nID: {stock.id}\nUsername: {stock.username}\nStatus: {status_text}",
                 _github_pack_menu_keyboard(),
+            )
+            return
+
+        if flow == FLOW_GH_SET_PRICE:
+            if role != "admin":
+                await _respond(update, "🚫 Akses ditolak.", _back_keyboard("main"))
+                _clear_flow(context)
+                return
+
+            normalized = (
+                text.lower()
+                .replace("rp", "")
+                .replace(".", "")
+                .replace(",", "")
+                .strip()
+            )
+            try:
+                new_price = int(normalized)
+            except ValueError:
+                await _respond(
+                    update,
+                    "⚠️ Format harga tidak valid. Kirim angka saja, contoh: 35000",
+                    _back_keyboard("adm_cat"),
+                )
+                return
+
+            with get_session() as session:
+                try:
+                    product = set_github_pack_price(session, new_price=new_price, actor_id=db_user.id)
+                except ValueError as exc:
+                    await _respond(update, f"❌ {exc}", _back_keyboard("adm_cat"))
+                    return
+
+            _clear_flow(context)
+            await _respond(
+                update,
+                (
+                    f"✅ Harga <b>{html.escape(product.name)}</b> berhasil diperbarui.\n"
+                    f"Harga baru: <b>{_format_rupiah(product.price)}</b>"
+                ),
+                _github_pack_menu_keyboard(),
+                parse_mode=ParseMode.HTML,
             )
             return
 

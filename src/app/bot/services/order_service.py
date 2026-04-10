@@ -59,7 +59,7 @@ def _generate_order_ref() -> str:
 
 
 def _generate_unique_code() -> int:
-    return random.randint(101, 999)
+    return random.randint(1, 100)
 
 
 def _utcnow() -> datetime:

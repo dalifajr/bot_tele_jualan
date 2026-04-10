@@ -26,6 +26,10 @@ class PaymentNotificationListenerService : NotificationListenerService() {
         }
 
         val packageName = sbn.packageName.orEmpty()
+        if (!SupportedPaymentApps.isSupported(packageName)) {
+            return
+        }
+
         val monitorAll = ListenerConfigStore.isMonitorAll(this)
         val selectedApps = ListenerConfigStore.getSelectedApps(this)
         if (!monitorAll && packageName !in selectedApps) {

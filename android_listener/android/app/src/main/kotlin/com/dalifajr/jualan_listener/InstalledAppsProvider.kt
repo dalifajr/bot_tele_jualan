@@ -17,6 +17,7 @@ object InstalledAppsProvider {
             .filter { it.activityInfo?.packageName != null }
             .mapNotNull { info ->
                 val packageName = info.activityInfo.packageName ?: return@mapNotNull null
+                if (!SupportedPaymentApps.isSupported(packageName)) return@mapNotNull null
                 if (!seen.add(packageName)) return@mapNotNull null
 
                 val label = info.loadLabel(pm)?.toString().orEmpty().ifBlank { packageName }
