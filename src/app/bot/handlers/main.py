@@ -271,6 +271,31 @@ def _format_display_time(value: datetime) -> str:
     return display_value.strftime("%d %b %Y %H:%M")
 
 
+def _format_display_day_time(value: datetime) -> str:
+    try:
+        tz = ZoneInfo(settings.display_timezone)
+    except ZoneInfoNotFoundError:
+        tz = None
+
+    display_value = value
+    if tz is not None:
+        if display_value.tzinfo is None:
+            display_value = display_value.replace(tzinfo=timezone.utc)
+        display_value = display_value.astimezone(tz)
+
+    day_map = {
+        0: "Senin",
+        1: "Selasa",
+        2: "Rabu",
+        3: "Kamis",
+        4: "Jumat",
+        5: "Sabtu",
+        6: "Minggu",
+    }
+    day_name = day_map.get(display_value.weekday(), "-")
+    return f"{day_name}, {display_value.strftime('%d %b %Y %H:%M')}"
+
+
 async def _try_delete_callback_message(update: Update) -> None:
     query = update.callback_query
     if query is None or query.message is None:
@@ -2042,12 +2067,17 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             await _respond(update, "⚠️ Stok tidak ditemukan.", _github_pack_menu_keyboard())
             return
 
+        ready_at_line = ""
+        if detail.status == "awaiting_benefits" and detail.available_at is not None:
+            ready_at_line = f"Ready at: <b>{html.escape(_format_display_day_time(detail.available_at))}</b>\n"
+
         await _respond(
             update,
             (
                 f"👤 Username: <b>{html.escape(detail.username)}</b>\n"
                 f"Status: {_stock_status_badge(detail.status)}\n"
                 f"ID Stok: <b>{detail.id}</b>\n\n"
+                f"{ready_at_line}"
                 f"<pre>{html.escape(detail.raw_text)}</pre>\n\n"
                 f"{_admin_footer_text()}"
             ),
