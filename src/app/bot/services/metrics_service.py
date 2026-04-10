@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from sqlalchemy import and_, func, select
 from sqlalchemy.orm import Session
 
+from app.common.config import get_settings
 from app.db.models import ListenerEvent, NotificationRetryJob, Order, Payment
+
+settings = get_settings()
 
 
 @dataclass
@@ -27,6 +31,10 @@ class OperationalMetrics:
     timeout_rate: float
     checkout_to_paid_rate: float
     paid_to_delivered_rate: float
+    revenue_today: int
+    revenue_this_month: int
+    revenue_last_month: int
+    revenue_total: int
 
 
 def _utcnow() -> datetime:
@@ -37,6 +45,40 @@ def _safe_ratio(numerator: int, denominator: int) -> float:
     if denominator <= 0:
         return 0.0
     return float(numerator) / float(denominator)
+
+
+def _format_rupiah(amount: int) -> str:
+    return f"Rp{int(amount):,}".replace(",", ".")
+
+
+def _display_now() -> datetime:
+    now_utc = datetime.now(timezone.utc)
+    try:
+        return now_utc.astimezone(ZoneInfo(settings.display_timezone))
+    except ZoneInfoNotFoundError:
+        return now_utc
+
+
+def _to_utc_naive(value: datetime) -> datetime:
+    if value.tzinfo is None:
+        return value
+    return value.astimezone(timezone.utc).replace(tzinfo=None)
+
+
+def _sum_delivered_revenue(
+    session: Session,
+    start_utc_naive: datetime | None = None,
+    end_utc_naive: datetime | None = None,
+) -> int:
+    stmt = select(func.sum(Order.total_amount)).where(
+        Order.status == "delivered",
+        Order.delivered_at.is_not(None),
+    )
+    if start_utc_naive is not None:
+        stmt = stmt.where(Order.delivered_at >= start_utc_naive)
+    if end_utc_naive is not None:
+        stmt = stmt.where(Order.delivered_at < end_utc_naive)
+    return int(session.scalar(stmt) or 0)
 
 
 def collect_operational_metrics(session: Session, window_hours: int = 24) -> OperationalMetrics:
@@ -109,6 +151,37 @@ def collect_operational_metrics(session: Session, window_hours: int = 24) -> Ope
 
     timeout_denominator = orders_delivered + orders_expired + orders_cancelled
 
+    now_local = _display_now()
+    today_start_local = now_local.replace(hour=0, minute=0, second=0, microsecond=0)
+    month_start_local = now_local.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    if month_start_local.month == 1:
+        next_month_start_local = month_start_local.replace(year=month_start_local.year + 1, month=2)
+        last_month_start_local = month_start_local.replace(year=month_start_local.year - 1, month=12)
+    elif month_start_local.month == 12:
+        next_month_start_local = month_start_local.replace(year=month_start_local.year + 1, month=1)
+        last_month_start_local = month_start_local.replace(month=11)
+    else:
+        next_month_start_local = month_start_local.replace(month=month_start_local.month + 1)
+        last_month_start_local = month_start_local.replace(month=month_start_local.month - 1)
+
+    today_start_utc = _to_utc_naive(today_start_local)
+    month_start_utc = _to_utc_naive(month_start_local)
+    next_month_start_utc = _to_utc_naive(next_month_start_local)
+    last_month_start_utc = _to_utc_naive(last_month_start_local)
+
+    revenue_today = _sum_delivered_revenue(session, start_utc_naive=today_start_utc)
+    revenue_this_month = _sum_delivered_revenue(
+        session,
+        start_utc_naive=month_start_utc,
+        end_utc_naive=next_month_start_utc,
+    )
+    revenue_last_month = _sum_delivered_revenue(
+        session,
+        start_utc_naive=last_month_start_utc,
+        end_utc_naive=month_start_utc,
+    )
+    revenue_total = _sum_delivered_revenue(session)
+
     return OperationalMetrics(
         window_hours=safe_window_hours,
         window_start=window_start,
@@ -126,6 +199,10 @@ def collect_operational_metrics(session: Session, window_hours: int = 24) -> Ope
         timeout_rate=_safe_ratio(orders_expired, timeout_denominator),
         checkout_to_paid_rate=_safe_ratio(orders_paid, orders_created),
         paid_to_delivered_rate=_safe_ratio(orders_delivered, orders_paid),
+        revenue_today=revenue_today,
+        revenue_this_month=revenue_this_month,
+        revenue_last_month=revenue_last_month,
+        revenue_total=revenue_total,
     )
 
 
@@ -155,5 +232,11 @@ def format_operational_metrics_report(metrics: OperationalMetrics) -> str:
             "📣 <b>Notification Retry Queue</b>",
             f"Pending: <b>{metrics.retry_pending}</b>",
             f"Failed permanen: <b>{metrics.retry_failed}</b>",
+            "",
+            "💵 <b>Pendapatan</b>",
+            f"Hari ini: <b>{_format_rupiah(metrics.revenue_today)}</b>",
+            f"Bulan ini: <b>{_format_rupiah(metrics.revenue_this_month)}</b>",
+            f"Bulan Kemarin: <b>{_format_rupiah(metrics.revenue_last_month)}</b>",
+            f"Total Pendapatan: <b>{_format_rupiah(metrics.revenue_total)}</b>",
         ]
     )

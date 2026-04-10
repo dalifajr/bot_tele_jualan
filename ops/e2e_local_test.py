@@ -614,12 +614,14 @@ def _run_metrics_flow() -> bool:
     print("listener_total:", metrics.listener_total)
     print("retry_pending:", metrics.retry_pending)
     print("report_title:", "📊 <b>Laporan Operasional</b>" in report)
+    print("report_revenue:", "💵 <b>Pendapatan</b>" in report)
 
     return (
         metrics.orders_created >= 1
         and metrics.listener_total >= 1
         and metrics.retry_pending >= 0
         and "📊 <b>Laporan Operasional</b>" in report
+        and "💵 <b>Pendapatan</b>" in report
     )
 
 

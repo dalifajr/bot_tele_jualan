@@ -64,6 +64,7 @@ from app.bot.services.order_service import (
 )
 from app.bot.services.loyalty_service import list_customer_vouchers
 from app.bot.services.metrics_service import collect_operational_metrics, format_operational_metrics_report
+from app.bot.services.notification_retry_service import enqueue_notification_retry
 from app.bot.services.restock_service import subscribe_restock
 from app.bot.services.user_service import get_user_by_telegram_id, upsert_user
 from app.common.config import get_settings
@@ -513,6 +514,31 @@ def _format_remaining_text(expires_at: datetime | None) -> str:
     return f"{remaining_minutes} menit"
 
 
+def _format_remaining_compact(target_at: datetime | None) -> str:
+    if target_at is None:
+        return "-"
+
+    target = target_at
+    if target.tzinfo is not None:
+        target = target.astimezone(timezone.utc).replace(tzinfo=None)
+
+    remaining_seconds = int((target - datetime.utcnow()).total_seconds())
+    if remaining_seconds <= 0:
+        return "0m"
+
+    days, rem = divmod(remaining_seconds, 86400)
+    hours, rem = divmod(rem, 3600)
+    minutes = max(1, rem // 60)
+
+    parts: list[str] = []
+    if days > 0:
+        parts.append(f"{days}d")
+    if hours > 0 or days > 0:
+        parts.append(f"{hours}h")
+    parts.append(f"{minutes}m")
+    return " ".join(parts)
+
+
 def _customer_footer_text() -> str:
     return "👇 <i>Pilih aksi lewat tombol di bawah.</i>"
 
@@ -659,7 +685,12 @@ async def _send_github_stock_list(update: Update, page: int = 1) -> None:
         "",
     ]
     for idx, stock in enumerate(paged_stocks, start=start_no):
-        lines.append(f"{idx}. <b>#{stock.id}</b> {html.escape(stock.username)} | {_stock_status_badge(stock.status)}")
+        status_text = _stock_status_badge(stock.status)
+        line = f"{idx}. <b>#{stock.id}</b> {html.escape(stock.username)} | {status_text}"
+        if stock.status == "awaiting_benefits" and stock.available_at is not None:
+            line += f" | Ready at <b>{html.escape(_format_display_day_time(stock.available_at))}</b>"
+            line += f" | Sisa <b>{_format_remaining_compact(stock.available_at)}</b>"
+        lines.append(line)
     lines.append("")
     lines.append(_admin_footer_text())
 
@@ -1939,10 +1970,50 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
                     admin_user_id=db_user.id,
                 )
 
+            warning_text = ""
             if cancel_result.ok:
                 await _upsert_admin_order_notification(update, order_ref)
 
-            await _respond(update, cancel_result.message, _back_keyboard("main"))
+                admin_notification = cancel_result.admin_notification
+                customer_chat_id = int(admin_notification.customer_telegram_id) if admin_notification is not None else 0
+                if customer_chat_id > 0:
+                    customer_text = "\n".join(
+                        [
+                            "❌ <b>Pesanan Dibatalkan</b>",
+                            f"Order Ref: <code>{html.escape(order_ref)}</code>",
+                            "Pesanan kamu dibatalkan oleh admin.",
+                            "",
+                            f"🔎 Cek status: <code>/order_status {html.escape(order_ref)}</code>",
+                            "Jika butuh bantuan, hubungi admin.",
+                        ]
+                    )
+                    customer_keyboard = InlineKeyboardMarkup(
+                        [
+                            [InlineKeyboardButton("📦 Cek Pesanan", callback_data="cus:ord")],
+                            [InlineKeyboardButton("🏠 /start Menu Utama", callback_data="back:main")],
+                        ]
+                    )
+                    try:
+                        await context.bot.send_message(
+                            chat_id=customer_chat_id,
+                            text=customer_text,
+                            parse_mode=ParseMode.HTML,
+                            reply_markup=customer_keyboard,
+                            disable_web_page_preview=True,
+                        )
+                    except Exception as exc:
+                        logger.warning("Gagal kirim notifikasi cancel ke customer: %s", exc)
+                        with get_session() as session:
+                            enqueue_notification_retry(
+                                session=session,
+                                channel="customer_cancelled_by_admin",
+                                chat_id=customer_chat_id,
+                                payload_text=customer_text,
+                                parse_mode="HTML",
+                            )
+                        warning_text = "\n⚠️ Notifikasi ke customer gagal dikirim langsung, sudah masuk retry queue."
+
+            await _respond(update, f"{cancel_result.message}{warning_text}", _back_keyboard("main"))
             return
 
         await _respond(update, "⚠️ Aksi order admin tidak dikenali.", _back_keyboard("main"))
