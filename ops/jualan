@@ -1,12 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
+PROJECT_DIR="$(cd "$(dirname "${SCRIPT_PATH}")/.." && pwd)"
 ENV_FILE="${PROJECT_DIR}/.env"
 ROLE_FILE="${PROJECT_DIR}/user_role.txt"
 UPDATE_SCRIPT="${PROJECT_DIR}/ops/update_manager.sh"
 BOT_SERVICE="jualan-bot.service"
 API_SERVICE="jualan-api.service"
+
+if [[ ! -f "${PROJECT_DIR}/.env.example" || ! -x "${UPDATE_SCRIPT}" ]]; then
+  echo "Struktur project tidak valid: ${PROJECT_DIR}" >&2
+  echo "Pastikan alias jualan menunjuk ke <project>/ops/jualan" >&2
+  exit 1
+fi
 
 print_usage() {
   cat <<'EOF'
