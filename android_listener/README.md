@@ -12,6 +12,10 @@ Scaffold awal aplikasi listener notifikasi pembayaran.
 
 - `POST /listener/payment`
 
+Catatan koneksi:
+- Jika endpoint masih `http://` (tanpa TLS), aplikasi Android membutuhkan `usesCleartextTraffic=true` (sudah diaktifkan di manifest proyek ini).
+- Untuk produksi sangat disarankan pakai `https://` agar trafik terenkripsi.
+
 Payload minimum:
 
 ```json
