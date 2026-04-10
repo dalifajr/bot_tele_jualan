@@ -118,6 +118,27 @@ def _is_back_text(text: str) -> bool:
     return normalized in {"kembali", "back", "menu", "/start"}
 
 
+def _parse_product_upsert_input(text: str) -> tuple[str, int, str] | None:
+    parts = [x.strip() for x in text.split("|")]
+    if len(parts) < 2:
+        return None
+
+    name = parts[0]
+    if not name:
+        return None
+
+    try:
+        price = int(parts[1])
+    except ValueError:
+        return None
+
+    if price <= 0:
+        return None
+
+    description = parts[2] if len(parts) >= 3 else ""
+    return name, price, description
+
+
 def _set_flow(context: ContextTypes.DEFAULT_TYPE, flow: str, **flow_data: int | str) -> None:
     context.user_data[FLOW_KEY] = flow
     context.user_data[FLOW_DATA_KEY] = flow_data
@@ -834,135 +855,155 @@ async def text_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     if update.message is None or update.message.text is None:
         return
 
-    db_user, role = await _ensure_user(update)
-    text = update.message.text.strip()
-    flow, flow_data = _get_flow(context)
+    role = "customer"
+    try:
+        db_user, role = await _ensure_user(update)
+        text = update.message.text.strip()
+        flow, flow_data = _get_flow(context)
 
-    if _is_back_text(text):
-        _clear_flow(context)
-        context.user_data.pop(AWAIT_QRIS_IMAGE_KEY, None)
-        await _send_main_menu(update, role)
-        return
-
-    if flow == FLOW_ADMIN_ADD_PRODUCT:
-        if role != "admin":
-            await _respond(update, "🚫 Akses ditolak.", _back_keyboard("main"))
+        if _is_back_text(text):
             _clear_flow(context)
+            context.user_data.pop(AWAIT_QRIS_IMAGE_KEY, None)
+            await _send_main_menu(update, role)
             return
 
-        parts = [x.strip() for x in text.split("|")]
-        if len(parts) < 2:
+        if flow == FLOW_ADMIN_ADD_PRODUCT:
+            if role != "admin":
+                await _respond(update, "🚫 Akses ditolak.", _back_keyboard("main"))
+                _clear_flow(context)
+                return
+
+            parsed = _parse_product_upsert_input(text)
+            if parsed is None:
+                await _respond(
+                    update,
+                    "⚠️ Format salah. Gunakan: Nama|Harga|Deskripsi",
+                    _back_keyboard("adm_cat"),
+                )
+                return
+
+            name, price, description = parsed
+            with get_session() as session:
+                product = add_product(session, name=name, price=price, description=description, actor_id=db_user.id)
+
+            _clear_flow(context)
             await _respond(
                 update,
-                "⚠️ Format salah. Gunakan: Nama|Harga|Deskripsi",
+                f"✅ Produk tersimpan (upsert) dengan ID #{product.id}.",
                 _back_keyboard("adm_cat"),
             )
             return
 
-        name = parts[0]
-        try:
-            price = int(parts[1])
-        except ValueError:
-            await _respond(update, "⚠️ Harga harus angka.", _back_keyboard("adm_cat"))
-            return
-
-        description = parts[2] if len(parts) >= 3 else ""
-        with get_session() as session:
-            product = add_product(session, name=name, price=price, description=description, actor_id=db_user.id)
-
-        _clear_flow(context)
-        await _respond(
-            update,
-            f"✅ Produk tersimpan (upsert) dengan ID #{product.id}.",
-            _back_keyboard("adm_cat"),
-        )
-        return
-
-    if flow == FLOW_ADMIN_ADD_STOCK:
-        if role != "admin":
-            await _respond(update, "🚫 Akses ditolak.", _back_keyboard("main"))
-            _clear_flow(context)
-            return
-
-        product_id_raw = flow_data.get("product_id")
-        try:
-            product_id = int(str(product_id_raw))
-        except ValueError:
-            _clear_flow(context)
-            await _respond(update, "⚠️ Data produk tidak valid.", _back_keyboard("adm_cat"))
-            return
-
-        with get_session() as session:
-            try:
-                stock = add_stock_block(
-                    session,
-                    product_id=product_id,
-                    raw_text=text,
-                    actor_id=db_user.id,
-                )
-            except ValueError as exc:
-                await _respond(update, f"❌ Gagal menambah stok: {exc}", _back_keyboard("adm_cat"))
+        if flow == FLOW_ADMIN_ADD_STOCK:
+            if role != "admin":
+                await _respond(update, "🚫 Akses ditolak.", _back_keyboard("main"))
+                _clear_flow(context)
                 return
 
-        _clear_flow(context)
-        await _respond(
-            update,
-            f"✅ Stok berhasil ditambahkan. ID stok: {stock.id}",
-            _back_keyboard("adm_cat"),
-        )
-        return
+            product_id_raw = flow_data.get("product_id")
+            try:
+                product_id = int(str(product_id_raw))
+            except ValueError:
+                _clear_flow(context)
+                await _respond(update, "⚠️ Data produk tidak valid.", _back_keyboard("adm_cat"))
+                return
 
-    if flow == FLOW_ADMIN_BROADCAST:
-        if role != "admin":
-            await _respond(update, "🚫 Akses ditolak.", _back_keyboard("main"))
+            with get_session() as session:
+                try:
+                    stock = add_stock_block(
+                        session,
+                        product_id=product_id,
+                        raw_text=text,
+                        actor_id=db_user.id,
+                    )
+                except ValueError as exc:
+                    await _respond(update, f"❌ Gagal menambah stok: {exc}", _back_keyboard("adm_cat"))
+                    return
+
             _clear_flow(context)
-            return
-
-        with get_session() as session:
-            sent, failed = await broadcast_to_customers(
-                session=session,
-                bot=context.bot,
-                admin_user_id=db_user.id,
-                message=text,
+            await _respond(
+                update,
+                f"✅ Stok berhasil ditambahkan. ID stok: {stock.id}",
+                _back_keyboard("adm_cat"),
             )
+            return
 
-        _clear_flow(context)
+        if flow == FLOW_ADMIN_BROADCAST:
+            if role != "admin":
+                await _respond(update, "🚫 Akses ditolak.", _back_keyboard("main"))
+                _clear_flow(context)
+                return
+
+            with get_session() as session:
+                sent, failed = await broadcast_to_customers(
+                    session=session,
+                    bot=context.bot,
+                    admin_user_id=db_user.id,
+                    message=text,
+                )
+
+            _clear_flow(context)
+            await _respond(
+                update,
+                f"📢 Broadcast selesai.\n✅ Sent: {sent}\n❌ Failed: {failed}",
+                _back_keyboard("main"),
+            )
+            return
+
+        if flow == FLOW_CUSTOMER_MANUAL_QTY:
+            if role == "admin":
+                _clear_flow(context)
+                await _respond(update, "🚫 Admin tidak bisa checkout sebagai customer.", _back_keyboard("main"))
+                return
+
+            try:
+                qty = int(text)
+            except ValueError:
+                await _respond(update, "⚠️ Jumlah harus angka.", _back_keyboard("cus_cat"))
+                return
+
+            product_id_raw = flow_data.get("product_id")
+            try:
+                product_id = int(str(product_id_raw))
+            except ValueError:
+                _clear_flow(context)
+                await _respond(update, "⚠️ Data produk tidak valid.", _back_keyboard("cus_cat"))
+                return
+
+            _clear_flow(context)
+            await _send_checkout_result(update, db_user.telegram_id, product_id, qty)
+            return
+
+        # Fallback: admin can directly send upsert format even if flow state was lost.
+        if role == "admin":
+            parsed = _parse_product_upsert_input(text)
+            if parsed is not None:
+                name, price, description = parsed
+                with get_session() as session:
+                    product = add_product(session, name=name, price=price, description=description, actor_id=db_user.id)
+
+                _clear_flow(context)
+                await _respond(
+                    update,
+                    f"✅ Produk tersimpan (upsert fallback) dengan ID #{product.id}.",
+                    _back_keyboard("adm_cat"),
+                )
+                return
+
         await _respond(
             update,
-            f"📢 Broadcast selesai.\n✅ Sent: {sent}\n❌ Failed: {failed}",
-            _back_keyboard("main"),
+            "👉 Silakan gunakan tombol menu untuk navigasi.",
+            _main_menu_keyboard(role),
         )
-        return
-
-    if flow == FLOW_CUSTOMER_MANUAL_QTY:
-        if role == "admin":
-            _clear_flow(context)
-            await _respond(update, "🚫 Admin tidak bisa checkout sebagai customer.", _back_keyboard("main"))
-            return
-
-        try:
-            qty = int(text)
-        except ValueError:
-            await _respond(update, "⚠️ Jumlah harus angka.", _back_keyboard("cus_cat"))
-            return
-
-        product_id_raw = flow_data.get("product_id")
-        try:
-            product_id = int(str(product_id_raw))
-        except ValueError:
-            _clear_flow(context)
-            await _respond(update, "⚠️ Data produk tidak valid.", _back_keyboard("cus_cat"))
-            return
-
+    except Exception as exc:
+        logger.exception("Unhandled error in text_router: %s", exc)
         _clear_flow(context)
-        await _send_checkout_result(update, db_user.telegram_id, product_id, qty)
-        return
-
-    await _respond(
-        update,
-        "👉 Silakan gunakan tombol menu untuk navigasi.",
-        _main_menu_keyboard(role),
-    )
+        context.user_data.pop(AWAIT_QRIS_IMAGE_KEY, None)
+        await _respond(
+            update,
+            "❌ Terjadi error saat memproses pesan. Silakan coba lagi atau tekan /start.",
+            _main_menu_keyboard(role),
+        )
 
 
 async def photo_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
