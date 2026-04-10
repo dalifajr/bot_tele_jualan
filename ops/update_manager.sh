@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -Eeuo pipefail
 
 on_error() {
   local exit_code="$?"
@@ -25,6 +25,11 @@ mkdir -p "${BACKUP_DIR}"
 
 log_step() {
   echo "[update] $*"
+}
+
+sanitize_ref_value() {
+  local value="$1"
+  printf '%s' "${value}" | tr -d '\r\n' | sed 's/^[[:space:]]*//; s/[[:space:]]*$//'
 }
 
 has_local_changes() {
@@ -117,6 +122,7 @@ read_env_var() {
 default_branch() {
   local configured
   configured="$(read_env_var UPDATE_BRANCH || true)"
+  configured="$(sanitize_ref_value "${configured}")"
   if [[ -n "${configured}" ]]; then
     echo "${configured}"
     return
@@ -124,12 +130,14 @@ default_branch() {
 
   local discovered
   discovered="$(git remote show origin 2>/dev/null | sed -n '/HEAD branch/s/.*: //p' || true)"
+  discovered="$(sanitize_ref_value "${discovered}")"
   if [[ -n "${discovered}" ]]; then
     echo "${discovered}"
     return
   fi
 
   discovered="$(git symbolic-ref --quiet --short HEAD 2>/dev/null || true)"
+  discovered="$(sanitize_ref_value "${discovered}")"
   if [[ -n "${discovered}" ]]; then
     echo "${discovered}"
     return
@@ -197,6 +205,11 @@ apply_update() {
   ts="$(date +%Y%m%d_%H%M%S)"
   before_commit="$(git rev-parse HEAD)"
 
+  if [[ -z "${branch}" ]]; then
+    echo "ERROR: branch update tidak ditemukan. Set UPDATE_BRANCH di .env atau pastikan remote origin valid." >&2
+    exit 1
+  fi
+
   log_step "target branch: ${branch}"
 
   log_step "membuat backup sebelum update"
@@ -207,7 +220,10 @@ apply_update() {
   stash_local_changes_for_update "${ts}"
 
   log_step "checkout branch ${branch}"
-  git checkout "${branch}"
+  if ! git checkout "${branch}"; then
+    log_step "branch lokal '${branch}' belum ada, membuat tracking dari origin/${branch}"
+    git checkout -B "${branch}" "origin/${branch}"
+  fi
   log_step "pull fast-forward dari origin/${branch}"
   git pull --ff-only origin "${branch}"
   after_commit="$(git rev-parse HEAD)"
