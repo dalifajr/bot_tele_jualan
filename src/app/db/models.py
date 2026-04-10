@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
 
 from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
@@ -16,8 +15,8 @@ class User(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     telegram_id: Mapped[int] = mapped_column(BigInteger, unique=True, index=True)
-    username: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
-    full_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    username: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    full_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     role: Mapped[str] = mapped_column(String(32), default="customer", index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     last_seen_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
@@ -43,9 +42,9 @@ class StockUnit(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     product_id: Mapped[int] = mapped_column(ForeignKey("products.id", ondelete="CASCADE"), index=True)
     raw_text: Mapped[str] = mapped_column(Text, nullable=False)
-    parsed_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    parsed_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     is_sold: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
-    sold_order_id: Mapped[Optional[int]] = mapped_column(ForeignKey("orders.id", ondelete="SET NULL"), nullable=True)
+    sold_order_id: Mapped[int | None] = mapped_column(ForeignKey("orders.id", ondelete="SET NULL"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     product: Mapped["Product"] = relationship(back_populates="stocks")
@@ -62,11 +61,11 @@ class Order(Base):
     unique_code: Mapped[int] = mapped_column(Integer, nullable=False)
     total_amount: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    paid_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    delivered_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    paid_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    delivered_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     items: Mapped[list["OrderItem"]] = relationship(back_populates="order", cascade="all, delete-orphan")
-    payment: Mapped[Optional["Payment"]] = relationship(back_populates="order", uselist=False, cascade="all, delete-orphan")
+    payment: Mapped["Payment | None"] = relationship(back_populates="order", uselist=False, cascade="all, delete-orphan")
 
 
 class OrderItem(Base):
@@ -89,12 +88,12 @@ class Payment(Base):
     order_id: Mapped[int] = mapped_column(ForeignKey("orders.id", ondelete="CASCADE"), unique=True, index=True)
     payment_ref: Mapped[str] = mapped_column(String(64), unique=True, index=True)
     expected_amount: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
-    received_amount: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    source_app: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
+    received_amount: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    source_app: Mapped[str | None] = mapped_column(String(128), nullable=True)
     status: Mapped[str] = mapped_column(String(32), default="pending", index=True)
-    payload_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    payload_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    matched_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    matched_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     order: Mapped["Order"] = relationship(back_populates="payment")
 
@@ -122,7 +121,7 @@ class AuditLog(Base):
     __tablename__ = "audit_logs"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    actor_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    actor_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     action: Mapped[str] = mapped_column(String(64), index=True)
     entity_type: Mapped[str] = mapped_column(String(64), default="")
     entity_id: Mapped[str] = mapped_column(String(64), default="")
@@ -151,4 +150,4 @@ class ListenerEvent(Base):
     status: Mapped[str] = mapped_column(String(32), default="received", index=True)
     response_json: Mapped[str] = mapped_column(Text, default="")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    processed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    processed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
