@@ -70,16 +70,43 @@ def get_available_stock_count(session: Session, product_id: int) -> int:
 
 
 def add_product(session: Session, name: str, price: int, description: str, actor_id: int | None) -> Product:
-    product = Product(name=name.strip(), price=price, description=description.strip())
+    normalized_name = name.strip()
+    normalized_description = description.strip()
+
+    product = session.scalar(
+        select(Product).where(func.lower(Product.name) == normalized_name.lower())
+    )
+
+    if product is None:
+        product = Product(name=normalized_name, price=price, description=normalized_description)
+        session.add(product)
+        session.flush()
+        append_audit(
+            session,
+            action="product_add",
+            actor_id=actor_id,
+            entity_type="product",
+            entity_id=str(product.id),
+            detail=f"name={product.name}; price={product.price}",
+        )
+        return product
+
+    old_price = product.price
+    old_description = product.description
+    product.price = price
+    product.description = normalized_description
     session.add(product)
     session.flush()
     append_audit(
         session,
-        action="product_add",
+        action="product_upsert",
         actor_id=actor_id,
         entity_type="product",
         entity_id=str(product.id),
-        detail=f"name={product.name}; price={product.price}",
+        detail=(
+            f"name={product.name}; old_price={old_price}; new_price={product.price}; "
+            f"old_desc={old_description}; new_desc={product.description}"
+        ),
     )
     return product
 
