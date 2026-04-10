@@ -2,16 +2,66 @@
 set -euo pipefail
 
 SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
-PROJECT_DIR="$(cd "$(dirname "${SCRIPT_PATH}")/.." && pwd)"
-ENV_FILE="${PROJECT_DIR}/.env"
-ROLE_FILE="${PROJECT_DIR}/user_role.txt"
-UPDATE_SCRIPT="${PROJECT_DIR}/ops/update_manager.sh"
 BOT_SERVICE="jualan-bot.service"
 API_SERVICE="jualan-api.service"
 
-if [[ ! -f "${PROJECT_DIR}/.env.example" || ! -x "${UPDATE_SCRIPT}" ]]; then
+is_valid_project_dir() {
+  local dir="$1"
+  [[ -n "${dir}" && -f "${dir}/.env.example" && -f "${dir}/ops/update_manager.sh" && -f "${dir}/ops/jualan" ]]
+}
+
+resolve_project_dir() {
+  local guessed
+  guessed="$(cd "$(dirname "${SCRIPT_PATH}")/.." && pwd)"
+  if is_valid_project_dir "${guessed}"; then
+    echo "${guessed}"
+    return
+  fi
+
+  local repo_top=""
+  if repo_top="$(git -C "${PWD}" rev-parse --show-toplevel 2>/dev/null)"; then
+    if is_valid_project_dir "${repo_top}"; then
+      echo "${repo_top}"
+      return
+    fi
+  fi
+
+  local candidates=()
+  if [[ -n "${JUALAN_PROJECT_DIR:-}" ]]; then
+    candidates+=("${JUALAN_PROJECT_DIR}")
+  fi
+  candidates+=(
+    "${PWD}"
+    "${HOME}/bot_tele_jualan"
+    "/root/bot_tele_jualan"
+  )
+
+  local candidate
+  for candidate in "${candidates[@]}"; do
+    if is_valid_project_dir "${candidate}"; then
+      echo "${candidate}"
+      return
+    fi
+  done
+
+  echo "${guessed}"
+}
+
+PROJECT_DIR="$(resolve_project_dir)"
+ENV_FILE="${PROJECT_DIR}/.env"
+ROLE_FILE="${PROJECT_DIR}/user_role.txt"
+UPDATE_SCRIPT="${PROJECT_DIR}/ops/update_manager.sh"
+
+if [[ ! -x "${UPDATE_SCRIPT}" ]]; then
+  chmod +x "${UPDATE_SCRIPT}" 2>/dev/null || true
+fi
+
+if ! is_valid_project_dir "${PROJECT_DIR}"; then
   echo "Struktur project tidak valid: ${PROJECT_DIR}" >&2
-  echo "Pastikan alias jualan menunjuk ke <project>/ops/jualan" >&2
+  echo "Solusi cepat:" >&2
+  echo "1) cd ~/bot_tele_jualan" >&2
+  echo "2) sudo ln -sf /root/bot_tele_jualan/ops/jualan /usr/local/bin/jualan" >&2
+  echo "3) hash -r" >&2
   exit 1
 fi
 
