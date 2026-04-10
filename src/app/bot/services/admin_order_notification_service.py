@@ -3,10 +3,23 @@ from __future__ import annotations
 import logging
 
 from telegram import Bot
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.constants import ParseMode
 from telegram.error import BadRequest
 
 logger = logging.getLogger(__name__)
+
+
+def build_admin_order_actions_keyboard(order_ref: str, status: str) -> InlineKeyboardMarkup | None:
+    if status != "pending_payment":
+        return None
+
+    return InlineKeyboardMarkup(
+        [
+            [InlineKeyboardButton("✅ Pembayaran Diterima", callback_data=f"adm:ord:paid:{order_ref}")],
+            [InlineKeyboardButton("❌ Batalkan Pesanan", callback_data=f"adm:ord:cancel:{order_ref}")],
+        ]
+    )
 
 
 async def upsert_admin_order_message(
@@ -14,6 +27,7 @@ async def upsert_admin_order_message(
     bot: Bot,
     admin_chat_id: int,
     message_text: str,
+    reply_markup: InlineKeyboardMarkup | None = None,
     existing_chat_id: int | None,
     existing_message_id: int | None,
 ) -> tuple[int, int] | None:
@@ -23,6 +37,7 @@ async def upsert_admin_order_message(
                 chat_id=existing_chat_id,
                 message_id=existing_message_id,
                 text=message_text,
+                reply_markup=reply_markup,
                 parse_mode=ParseMode.HTML,
                 disable_web_page_preview=True,
             )
@@ -38,6 +53,7 @@ async def upsert_admin_order_message(
         sent = await bot.send_message(
             chat_id=admin_chat_id,
             text=message_text,
+            reply_markup=reply_markup,
             parse_mode=ParseMode.HTML,
             disable_web_page_preview=True,
         )

@@ -964,3 +964,85 @@ def cancel_order(session: Session, order_ref: str, customer_id: int) -> CancelOr
         "✅ Pesanan berhasil dibatalkan.",
         admin_notification=_build_admin_order_notification(session, order, status_override="cancelled"),
     )
+
+
+def confirm_order_payment_by_admin(
+    session: Session,
+    order_ref: str,
+    admin_user_id: int,
+) -> ReconcileResult:
+    expire_pending_orders(session)
+
+    order = session.scalar(select(Order).where(Order.order_ref == order_ref))
+    if order is None:
+        return ReconcileResult("not_found", "Order tidak ditemukan.", None, None)
+
+    payment = order.payment
+    if payment is None:
+        customer = session.get(User, order.customer_id)
+        customer_telegram_id = customer.telegram_id if customer else None
+        return ReconcileResult(
+            "error",
+            "Data pembayaran order tidak ditemukan.",
+            customer_telegram_id,
+            None,
+            checkout_chat_id=order.checkout_chat_id,
+            checkout_message_id=order.checkout_message_id,
+            admin_notification=_build_admin_order_notification(session, order),
+        )
+
+    return reconcile_payment(
+        session=session,
+        amount=int(payment.expected_amount),
+        source_app=f"ADMIN_MANUAL:{admin_user_id}",
+        reference=payment.payment_ref,
+        raw_payload={
+            "manual": True,
+            "actor_admin_id": int(admin_user_id),
+            "order_ref": order_ref,
+        },
+    )
+
+
+def cancel_order_by_admin(
+    session: Session,
+    order_ref: str,
+    admin_user_id: int,
+) -> CancelOrderResult:
+    expire_pending_orders(session)
+    order = session.scalar(select(Order).where(Order.order_ref == order_ref))
+    if order is None:
+        return CancelOrderResult(False, "Order tidak ditemukan.")
+
+    if order.status == "delivered":
+        return CancelOrderResult(False, "Order sudah delivered dan tidak bisa dibatalkan.")
+    if order.status == "cancelled":
+        return CancelOrderResult(False, "Order sudah dibatalkan sebelumnya.")
+    if order.status == "expired":
+        return CancelOrderResult(False, "Order sudah kedaluwarsa.")
+
+    order.status = "cancelled"
+    order.cancelled_at = _utcnow()
+    order.cancel_reason = "cancelled_by_admin"
+    release_voucher_for_order(session, order)
+    session.add(order)
+
+    payment = order.payment
+    if payment is not None and payment.status == "pending":
+        payment.status = "cancelled"
+        session.add(payment)
+
+    append_audit(
+        session,
+        action="order_cancelled_by_admin",
+        actor_id=admin_user_id,
+        entity_type="order",
+        entity_id=str(order.id),
+        detail=f"order_ref={order_ref}; customer_id={order.customer_id}",
+    )
+
+    return CancelOrderResult(
+        True,
+        "✅ Pesanan berhasil dibatalkan oleh admin.",
+        admin_notification=_build_admin_order_notification(session, order, status_override="cancelled"),
+    )

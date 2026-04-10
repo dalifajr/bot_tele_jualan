@@ -25,7 +25,10 @@ from telegram.ext import (
 )
 
 from app.bot.services.broadcast_service import broadcast_to_customers
-from app.bot.services.admin_order_notification_service import upsert_admin_order_message
+from app.bot.services.admin_order_notification_service import (
+    build_admin_order_actions_keyboard,
+    upsert_admin_order_message,
+)
 from app.bot.services.catalog_service import (
     add_product,
     add_stock_block,
@@ -46,7 +49,9 @@ from app.bot.services.github_pack_service import (
 )
 from app.bot.services.order_service import (
     build_admin_order_message,
+    cancel_order_by_admin,
     cancel_order,
+    confirm_order_payment_by_admin,
     count_delivered_orders_by_customer,
     create_checkout,
     get_customer_order_detail,
@@ -1158,10 +1163,12 @@ async def _upsert_admin_order_notification(update: Update, order_ref: str) -> No
         return
 
     message_text = build_admin_order_message(notification)
+    reply_markup = build_admin_order_actions_keyboard(notification.order_ref, notification.status)
     upsert_result = await upsert_admin_order_message(
         bot=update.get_bot(),
         admin_chat_id=admin_id,
         message_text=message_text,
+        reply_markup=reply_markup,
         existing_chat_id=notification.admin_chat_id,
         existing_message_id=notification.admin_message_id,
     )
@@ -1865,6 +1872,80 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         return
 
     if data == "noop":
+        return
+
+    if data.startswith("adm:ord:"):
+        if role != "admin":
+            await _respond_admin_only(update)
+            return
+
+        parts = data.split(":", maxsplit=3)
+        if len(parts) != 4:
+            await _respond(update, "⚠️ Aksi order admin tidak valid.", _back_keyboard("main"))
+            return
+
+        action = parts[2]
+        order_ref = parts[3].strip().upper()
+
+        if action == "paid":
+            with get_session() as session:
+                reconcile_result = confirm_order_payment_by_admin(
+                    session=session,
+                    order_ref=order_ref,
+                    admin_user_id=db_user.id,
+                )
+
+            if reconcile_result.status == "paid":
+                if reconcile_result.customer_chat_id and reconcile_result.delivery_message:
+                    keyboard_rows: list[list[InlineKeyboardButton]] = [
+                        [InlineKeyboardButton("🏠 /start Menu Utama", callback_data="back:main")]
+                    ]
+                    admin_id = get_primary_admin_id(settings.role_file_path)
+                    if admin_id is not None:
+                        keyboard_rows.append(
+                            [InlineKeyboardButton("💬 Hubungi Admin", url=f"tg://user?id={admin_id}")]
+                        )
+                    await context.bot.send_message(
+                        chat_id=reconcile_result.customer_chat_id,
+                        text=reconcile_result.delivery_message,
+                        parse_mode=ParseMode.HTML,
+                        reply_markup=InlineKeyboardMarkup(keyboard_rows),
+                        disable_web_page_preview=True,
+                    )
+
+                await _upsert_admin_order_notification(update, order_ref)
+                await _respond(
+                    update,
+                    "✅ Pembayaran berhasil dikonfirmasi. Stok sudah dikirim ke customer.",
+                    _back_keyboard("main"),
+                )
+                return
+
+            if reconcile_result.status in {"duplicate", "expired"}:
+                await _upsert_admin_order_notification(update, order_ref)
+
+            await _respond(
+                update,
+                f"⚠️ {reconcile_result.message}",
+                _back_keyboard("main"),
+            )
+            return
+
+        if action == "cancel":
+            with get_session() as session:
+                cancel_result = cancel_order_by_admin(
+                    session=session,
+                    order_ref=order_ref,
+                    admin_user_id=db_user.id,
+                )
+
+            if cancel_result.ok:
+                await _upsert_admin_order_notification(update, order_ref)
+
+            await _respond(update, cancel_result.message, _back_keyboard("main"))
+            return
+
+        await _respond(update, "⚠️ Aksi order admin tidak dikenali.", _back_keyboard("main"))
         return
 
     if data == "ac:view":

@@ -22,7 +22,10 @@ from app.api.security import (
     request_hash,
     verify_signed_headers_or_raise,
 )
-from app.bot.services.admin_order_notification_service import upsert_admin_order_message
+from app.bot.services.admin_order_notification_service import (
+    build_admin_order_actions_keyboard,
+    upsert_admin_order_message,
+)
 from app.bot.services.notification_retry_service import enqueue_notification_retry
 from app.bot.services.order_service import (
     build_admin_order_message,
@@ -259,10 +262,15 @@ async def payment_listener(
                     admin_notify_error = "Admin utama belum diset di role file."
                 else:
                     try:
+                        reply_markup = build_admin_order_actions_keyboard(
+                            admin_notification.order_ref,
+                            admin_notification.status,
+                        )
                         upsert_result = await upsert_admin_order_message(
                             bot=bot,
                             admin_chat_id=admin_id,
                             message_text=admin_message_text,
+                            reply_markup=reply_markup,
                             existing_chat_id=admin_notification.admin_chat_id,
                             existing_message_id=admin_notification.admin_message_id,
                         )
