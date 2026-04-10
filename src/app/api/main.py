@@ -23,6 +23,7 @@ from app.api.security import (
     verify_signed_headers_or_raise,
 )
 from app.bot.services.admin_order_notification_service import upsert_admin_order_message
+from app.bot.services.notification_retry_service import enqueue_notification_retry
 from app.bot.services.order_service import (
     build_admin_order_message,
     reconcile_payment,
@@ -187,6 +188,14 @@ async def payment_listener(
             if bot is None:
                 logger.error("BOT_TOKEN kosong, tidak bisa kirim notifikasi sukses")
                 notify_error = "BOT_TOKEN kosong"
+                if customer_chat_id and delivery_message:
+                    enqueue_notification_retry(
+                        session=session,
+                        channel="customer_delivery",
+                        chat_id=int(customer_chat_id),
+                        payload_text=delivery_message,
+                        parse_mode="HTML",
+                    )
             else:
                 try:
                     if reconcile_result.checkout_chat_id and reconcile_result.checkout_message_id:
@@ -219,22 +228,41 @@ async def payment_listener(
                 except Exception as exc:
                     logger.exception("Gagal kirim notifikasi ke customer: %s", exc)
                     notify_error = str(exc)
+                    if customer_chat_id and delivery_message:
+                        enqueue_notification_retry(
+                            session=session,
+                            channel="customer_delivery",
+                            chat_id=int(customer_chat_id),
+                            payload_text=delivery_message,
+                            parse_mode="HTML",
+                        )
 
         if requires_admin_notify:
             admin_notification = reconcile_result.admin_notification
+            admin_message_text = ""
+            if admin_notification is not None:
+                admin_message_text = build_admin_order_message(admin_notification)
             if bot is None:
                 admin_notify_error = "BOT_TOKEN kosong"
+                if admin_id := get_primary_admin_id(settings.role_file_path):
+                    if admin_message_text:
+                        enqueue_notification_retry(
+                            session=session,
+                            channel="admin_order",
+                            chat_id=int(admin_id),
+                            payload_text=admin_message_text,
+                            parse_mode="HTML",
+                        )
             elif admin_notification is not None:
                 admin_id = get_primary_admin_id(settings.role_file_path)
                 if admin_id is None:
                     admin_notify_error = "Admin utama belum diset di role file."
                 else:
                     try:
-                        admin_message = build_admin_order_message(admin_notification)
                         upsert_result = await upsert_admin_order_message(
                             bot=bot,
                             admin_chat_id=admin_id,
-                            message_text=admin_message,
+                            message_text=admin_message_text,
                             existing_chat_id=admin_notification.admin_chat_id,
                             existing_message_id=admin_notification.admin_message_id,
                         )
@@ -251,6 +279,14 @@ async def payment_listener(
                     except Exception as exc:
                         logger.exception("Gagal upsert notifikasi admin order: %s", exc)
                         admin_notify_error = str(exc)
+                        if admin_message_text:
+                            enqueue_notification_retry(
+                                session=session,
+                                channel="admin_order",
+                                chat_id=int(admin_id),
+                                payload_text=admin_message_text,
+                                parse_mode="HTML",
+                            )
 
         extras = {
             "idempotent_replay": False,

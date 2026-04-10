@@ -1,0 +1,11 @@
+[Unit]
+Description=Jualan Database Backup Service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=__PROJECT_DIR__
+EnvironmentFile=__PROJECT_DIR__/.env
+ExecStart=__PROJECT_DIR__/ops/backup_manager.sh backup
+User=__RUN_USER__

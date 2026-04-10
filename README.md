@@ -14,6 +14,9 @@ Implementasi awal bot Telegram untuk jualan digital dengan fitur:
 - `/catalog`
 - `/buy <product_id> <qty>`
 - `/myorders`
+- `/order_status <ORDER_REF>`
+- `/reorder <ORDER_REF>`
+- `/vouchers`
 
 ### Admin
 - `/admin_catalog`
@@ -24,6 +27,7 @@ Implementasi awal bot Telegram untuk jualan digital dengan fitur:
 - `/product_delete <product_id>`
 - `/broadcast <pesan>`
 - `/set_qris` lalu kirim gambar QRIS
+- `/ops_metrics`
 - `/update_check`
 - `/update_apply`
 
@@ -62,6 +66,10 @@ jualan config
 jualan check-update
 jualan update
 jualan rollback
+jualan backup
+jualan list-backups
+jualan restore-backup [nama_file]
+jualan prune-backups [keep]
 jualan uninstall
 ```
 

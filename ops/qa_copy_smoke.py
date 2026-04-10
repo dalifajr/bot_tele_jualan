@@ -14,8 +14,16 @@ def main() -> int:
         "admin_footer_helper": "_admin_footer_text()",
         "customer_menu_pesanan": "📦 <b>Pesanan Saya</b>",
         "copy_akun_button": "📋 Copy Akun",
+        "quick_reorder_button": "🔁 Pesan Lagi",
+        "restock_button": "🔔 Ingatkan Saat Restock",
+        "vouchers_help": "/vouchers",
+        "ops_metrics_help": "/ops_metrics",
         "admin_footer_phrase": "Pilih aksi admin lewat tombol di bawah.",
         "customer_footer_phrase": "Pilih aksi lewat tombol di bawah.",
+        "empty_state_orders": "📭 <b>Belum Ada Pesanan</b>",
+        "empty_state_catalog": "📭 <b>Katalog Kosong</b>",
+        "empty_state_admin_catalog": "📭 <b>Produk Belum Tersedia</b>",
+        "empty_state_gh_stock": "📭 <b>Stok GitHub Pack Kosong</b>",
     }
 
     forbidden_tokens = {

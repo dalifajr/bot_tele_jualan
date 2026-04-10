@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime, timezone
 import html
 import logging
 import subprocess
 from pathlib import Path
+from typing import TypeVar
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
@@ -49,10 +51,14 @@ from app.bot.services.order_service import (
     get_customer_order_detail,
     get_customer_orders_page,
     get_customer_order_status_by_ref,
+    get_quick_reorder_target,
     get_order_admin_notification,
     set_admin_message_ref,
     set_checkout_message_ref,
 )
+from app.bot.services.loyalty_service import list_customer_vouchers
+from app.bot.services.metrics_service import collect_operational_metrics, format_operational_metrics_report
+from app.bot.services.restock_service import subscribe_restock
 from app.bot.services.user_service import get_user_by_telegram_id, upsert_user
 from app.common.config import get_settings
 from app.common.roles import get_primary_admin_id, is_admin
@@ -72,6 +78,16 @@ FLOW_GH_ADD_AWAIT = "gh_add_await"
 FLOW_GH_SET_PRICE = "gh_set_price"
 AWAIT_QRIS_IMAGE_KEY = "await_qris_image"
 CUSTOMER_ORDERS_PAGE_SIZE = 10
+ADMIN_LIST_PAGE_SIZE = 10
+
+ADMIN_PRODUCT_PICKER_TITLES: dict[str, str] = {
+    "stk": "📥 Pilih produk untuk ditambah stok.",
+    "sup": "⏸️ Pilih produk yang akan disuspend.",
+    "uns": "▶️ Pilih produk yang akan diaktifkan.",
+    "del": "🗑️ Pilih produk yang akan dihapus.",
+}
+
+T = TypeVar("T")
 
 
 @dataclass(frozen=True)
@@ -311,9 +327,12 @@ async def _send_help(update: Update, role: str) -> None:
     ]
     if role == "admin":
         common.append("🔐 Admin: kelola produk dari menu <b>📦 Katalog Admin</b>.")
+        common.append("📊 Cek metrik operasional: <code>/ops_metrics</code>.")
     else:
         common.append("🛍️ Customer: pilih produk dari katalog lalu checkout lewat tombol.")
         common.append("📌 Cek status cepat: <code>/order_status ORD20260101000123</code>.")
+        common.append("🔁 Reorder cepat: <code>/reorder ORDER_REF</code>.")
+        common.append("🎟️ Lihat voucher aktif: <code>/vouchers</code>.")
 
     await _respond(update, "\n".join(common), _back_keyboard("main"), parse_mode=ParseMode.HTML)
 
@@ -350,6 +369,16 @@ def _order_status_badge(status: str) -> str:
     return mapping.get(status, status)
 
 
+def _voucher_status_badge(status: str) -> str:
+    mapping = {
+        "active": "🟢 Aktif",
+        "reserved": "🟡 Dialokasikan",
+        "used": "✅ Terpakai",
+        "expired": "⌛ Kedaluwarsa",
+    }
+    return mapping.get(status, status)
+
+
 def _format_remaining_text(expires_at: datetime | None) -> str:
     if expires_at is None:
         return "-"
@@ -378,6 +407,32 @@ async def _respond_admin_only(update: Update, target: str = "main") -> None:
     await _respond(update, _admin_access_denied_text(), _back_keyboard(target), parse_mode=ParseMode.HTML)
 
 
+def _paginate_rows(rows: Sequence[T], page: int, page_size: int) -> tuple[list[T], int, int]:
+    safe_page_size = max(1, page_size)
+    total_items = len(rows)
+    total_pages = max(1, (total_items + safe_page_size - 1) // safe_page_size)
+    safe_page = min(max(1, page), total_pages)
+    start = (safe_page - 1) * safe_page_size
+    end = start + safe_page_size
+    return list(rows[start:end]), safe_page, total_pages
+
+
+def _pagination_nav_row(page: int, total_pages: int, callback_prefix: str) -> list[InlineKeyboardButton]:
+    prev_page = max(1, page - 1)
+    next_page = min(total_pages, page + 1)
+    return [
+        InlineKeyboardButton(
+            "[sebelumnya]",
+            callback_data=(f"{callback_prefix}:{prev_page}" if page > 1 else "noop"),
+        ),
+        InlineKeyboardButton(f"[{page}/{total_pages}]", callback_data="noop"),
+        InlineKeyboardButton(
+            "[berikutnya]",
+            callback_data=(f"{callback_prefix}:{next_page}" if page < total_pages else "noop"),
+        ),
+    ]
+
+
 def _customer_orders_keyboard(
     *,
     page: int,
@@ -391,27 +446,20 @@ def _customer_orders_keyboard(
             [InlineKeyboardButton(label, callback_data=f"ord:view:{order_ref}:{page}")]
         )
 
-    prev_page = max(1, page - 1)
-    next_page = min(total_pages, page + 1)
-    keyboard_rows.append(
-        [
-            InlineKeyboardButton(
-                "[sebelumnya]",
-                callback_data=(f"ord:page:{prev_page}" if page > 1 else "noop"),
-            ),
-            InlineKeyboardButton(f"[{page}/{total_pages}]", callback_data="noop"),
-            InlineKeyboardButton(
-                "[berikutnya]",
-                callback_data=(f"ord:page:{next_page}" if page < total_pages else "noop"),
-            ),
-        ]
-    )
+    keyboard_rows.append(_pagination_nav_row(page, total_pages, "ord:page"))
     keyboard_rows.append([InlineKeyboardButton("⬅️ Kembali", callback_data="back:main")])
     return InlineKeyboardMarkup(keyboard_rows)
 
 
-def _customer_order_detail_keyboard(order_ref: str, page: int, include_copy: bool) -> InlineKeyboardMarkup:
+def _customer_order_detail_keyboard(
+    order_ref: str,
+    page: int,
+    include_copy: bool,
+    include_reorder: bool,
+) -> InlineKeyboardMarkup:
     rows: list[list[InlineKeyboardButton]] = []
+    if include_reorder:
+        rows.append([InlineKeyboardButton("🔁 Pesan Lagi", callback_data=f"ord:reorder:{order_ref}:{page}")])
     if include_copy:
         rows.append([InlineKeyboardButton("📋 Copy Akun", callback_data=f"ord:copy:{order_ref}:{page}")])
     rows.append([InlineKeyboardButton("⬅️ Kembali", callback_data=f"ord:page:{max(1, page)}")])
@@ -463,7 +511,45 @@ async def _send_github_pack_menu(update: Update) -> None:
     )
 
 
-async def _send_github_stock_picker(update: Update, mode: str) -> None:
+async def _send_github_stock_list(update: Update, page: int = 1) -> None:
+    with get_session() as session:
+        stocks = list_github_stocks(session)
+
+    if not stocks:
+        await _respond(
+            update,
+            (
+                "📭 <b>Stok GitHub Pack Kosong</b>\n"
+                "Belum ada akun yang bisa ditampilkan.\n\n"
+                f"{_admin_footer_text()}"
+            ),
+            _github_pack_menu_keyboard(),
+            parse_mode=ParseMode.HTML,
+        )
+        return
+
+    paged_stocks, safe_page, total_pages = _paginate_rows(stocks, page, ADMIN_LIST_PAGE_SIZE)
+    start_no = (safe_page - 1) * ADMIN_LIST_PAGE_SIZE + 1
+
+    lines = [
+        "📋 <b>List Akun GitHub Pack</b>",
+        f"Halaman <b>{safe_page}/{total_pages}</b> • Total akun: <b>{len(stocks)}</b>",
+        "",
+    ]
+    for idx, stock in enumerate(paged_stocks, start=start_no):
+        lines.append(f"{idx}. <b>#{stock.id}</b> {html.escape(stock.username)} | {_stock_status_badge(stock.status)}")
+    lines.append("")
+    lines.append(_admin_footer_text())
+
+    keyboard_rows: list[list[InlineKeyboardButton]] = []
+    if total_pages > 1:
+        keyboard_rows.append(_pagination_nav_row(safe_page, total_pages, "gh:list"))
+    keyboard_rows.append([InlineKeyboardButton("⬅️ Kembali", callback_data="ac:ghpack")])
+
+    await _respond(update, "\n".join(lines), InlineKeyboardMarkup(keyboard_rows), parse_mode=ParseMode.HTML)
+
+
+async def _send_github_stock_picker(update: Update, mode: str, page: int = 1) -> None:
     with get_session() as session:
         stocks = list_github_stocks(session)
 
@@ -482,22 +568,26 @@ async def _send_github_stock_picker(update: Update, mode: str) -> None:
 
     prefix = "gh:view" if mode == "view" else "gh:del"
     title = "👁️ <b>Pilih Akun untuk Melihat Detail</b>" if mode == "view" else "🗑️ <b>Pilih Akun yang Ingin Dihapus</b>"
+    page_prefix = "gh:view:page" if mode == "view" else "gh:del:page"
+    paged_stocks, safe_page, total_pages = _paginate_rows(stocks, page, ADMIN_LIST_PAGE_SIZE)
 
     keyboard_rows: list[list[InlineKeyboardButton]] = []
-    for stock in stocks:
+    for stock in paged_stocks:
         label = f"{stock.username} | {_stock_status_badge(stock.status)}"
         keyboard_rows.append([InlineKeyboardButton(label, callback_data=f"{prefix}:{stock.id}")])
+    if total_pages > 1:
+        keyboard_rows.append(_pagination_nav_row(safe_page, total_pages, page_prefix))
     keyboard_rows.append([InlineKeyboardButton("⬅️ Kembali", callback_data="ac:ghpack")])
 
     await _respond(
         update,
-        f"{title}\n\n{_admin_footer_text()}",
+        f"{title}\nHalaman <b>{safe_page}/{total_pages}</b> • Total akun: <b>{len(stocks)}</b>\n\n{_admin_footer_text()}",
         InlineKeyboardMarkup(keyboard_rows),
         parse_mode=ParseMode.HTML,
     )
 
 
-async def _send_admin_catalog_list(update: Update) -> None:
+async def _send_admin_catalog_list(update: Update, page: int = 1) -> None:
     with get_session() as session:
         ensure_github_pack_product(session)
         products = list_products(session=session, include_suspended=True)
@@ -515,22 +605,30 @@ async def _send_admin_catalog_list(update: Update) -> None:
         )
         return
 
-    lines = ["📋 <b>Daftar Produk</b>"]
+    paged_products, safe_page, total_pages = _paginate_rows(products, page, ADMIN_LIST_PAGE_SIZE)
+    start_no = (safe_page - 1) * ADMIN_LIST_PAGE_SIZE + 1
+
+    lines = [
+        "📋 <b>Daftar Produk</b>",
+        f"Halaman <b>{safe_page}/{total_pages}</b> • Total produk: <b>{len(products)}</b>",
+    ]
     keyboard_rows: list[list[InlineKeyboardButton]] = []
-    for product in products:
+    for idx, product in enumerate(paged_products, start=start_no):
         status = "⏸️ Suspend" if product.is_suspended else "✅ Aktif"
         lines.append(
-            f"• <b>#{product.id}</b> {html.escape(product.name)} | {_format_rupiah(product.price)} | stok {product.stock_available} | {status}"
+            f"{idx}. <b>#{product.id}</b> {html.escape(product.name)} | {_format_rupiah(product.price)} | stok {product.stock_available} | {status}"
         )
         keyboard_rows.append([InlineKeyboardButton(f"Buka #{product.id} {product.name}", callback_data=f"acp:{product.id}")])
 
     lines.append("")
     lines.append(_admin_footer_text())
+    if total_pages > 1:
+        keyboard_rows.append(_pagination_nav_row(safe_page, total_pages, "ac:list"))
     keyboard_rows.append([InlineKeyboardButton("⬅️ Kembali", callback_data="back:adm_cat")])
     await _respond(update, "\n".join(lines), InlineKeyboardMarkup(keyboard_rows), parse_mode=ParseMode.HTML)
 
 
-async def _send_admin_product_picker(update: Update, action: str, title: str) -> None:
+async def _send_admin_product_picker(update: Update, action: str, title: str, page: int = 1) -> None:
     with get_session() as session:
         products = list_products(session=session, include_suspended=True)
 
@@ -547,17 +645,25 @@ async def _send_admin_product_picker(update: Update, action: str, title: str) ->
         )
         return
 
+    paged_products, safe_page, total_pages = _paginate_rows(products, page, ADMIN_LIST_PAGE_SIZE)
+
     keyboard_rows: list[list[InlineKeyboardButton]] = []
-    for product in products:
+    for product in paged_products:
         label = f"#{product.id} {product.name}"
         keyboard_rows.append(
             [InlineKeyboardButton(label, callback_data=f"ap:{action}:{product.id}")]
         )
 
+    if total_pages > 1:
+        keyboard_rows.append(_pagination_nav_row(safe_page, total_pages, f"apl:{action}"))
     keyboard_rows.append([InlineKeyboardButton("⬅️ Kembali", callback_data="back:adm_cat")])
     await _respond(
         update,
-        f"<b>{html.escape(title)}</b>\n\n{_admin_footer_text()}",
+        (
+            f"<b>{html.escape(title)}</b>\n"
+            f"Halaman <b>{safe_page}/{total_pages}</b> • Total produk: <b>{len(products)}</b>\n\n"
+            f"{_admin_footer_text()}"
+        ),
         InlineKeyboardMarkup(keyboard_rows),
         parse_mode=ParseMode.HTML,
     )
@@ -698,6 +804,7 @@ async def _send_customer_order_detail(update: Update, telegram_id: int, order_re
         for item_line in detail.item_lines:
             lines.append(f"• {html.escape(item_line)}")
 
+    include_reorder = detail.status == "delivered" and bool(detail.item_lines)
     include_copy = detail.status == "delivered" and bool(detail.account_blocks)
     if include_copy:
         lines.append("")
@@ -720,7 +827,12 @@ async def _send_customer_order_detail(update: Update, telegram_id: int, order_re
     await _respond(
         update,
         "\n".join(lines),
-        _customer_order_detail_keyboard(detail.order_ref, page, include_copy=include_copy),
+        _customer_order_detail_keyboard(
+            detail.order_ref,
+            page,
+            include_copy=include_copy,
+            include_reorder=include_reorder,
+        ),
         parse_mode=ParseMode.HTML,
     )
 
@@ -867,6 +979,24 @@ async def _send_product_detail(update: Update, product_id: int, qty: int = 1) ->
         f"{_customer_footer_text()}"
     )
 
+    if stock <= 0:
+        await _respond(
+            update,
+            (
+                f"{text}\n"
+                "⚠️ <b>Stok sedang habis.</b>\n"
+                "Aktifkan notifikasi agar kamu dapat info saat stok tersedia lagi."
+            ),
+            InlineKeyboardMarkup(
+                [
+                    [InlineKeyboardButton("🔔 Ingatkan Saat Restock", callback_data=f"restock:sub:{product_id}")],
+                    [InlineKeyboardButton("⬅️ Kembali", callback_data="back:cus_cat")],
+                ]
+            ),
+            parse_mode=ParseMode.HTML,
+        )
+        return
+
     if github_mode:
         keyboard = InlineKeyboardMarkup(
             [
@@ -934,6 +1064,8 @@ async def _send_checkout_result(
     telegram_id: int,
     product_id: int,
     qty: int,
+    source_order_ref: str | None = None,
+    source_product_name: str | None = None,
 ) -> None:
     with get_session() as session:
         user = get_user_by_telegram_id(session, telegram_id)
@@ -959,6 +1091,8 @@ async def _send_checkout_result(
         payment_ref = payment.payment_ref
         expected_amount = payment.expected_amount
         expires_at = order.expires_at
+        subtotal_amount = order.subtotal
+        voucher_discount_amount = max(0, int(order.voucher_discount_amount or 0))
 
     expires_text = "-"
     if expires_at is not None:
@@ -970,15 +1104,29 @@ async def _send_checkout_result(
         f"🔖 Payment Ref: <code>{html.escape(payment_ref)}</code>",
         f"💰 Total Bayar: <b>{_format_rupiah(expected_amount)}</b>",
         f"⏱️ Batas bayar: <b>{expires_text}</b>",
-        "",
-        "🧭 <b>Langkah Berikutnya</b>",
-        "1. Transfer sesuai nominal di atas.",
-        "2. Pantau status order secara berkala.",
-        "3. Jika batal, gunakan tombol Batalkan Pesanan.",
-        f"🔎 Cek status cepat: <code>/order_status {html.escape(order_ref)}</code>",
-        "",
-        _customer_footer_text(),
     ]
+
+    if voucher_discount_amount > 0:
+        lines.append(f"🎟️ Voucher otomatis: -<b>{_format_rupiah(voucher_discount_amount)}</b>")
+        lines.append(f"Subtotal sebelum voucher: {_format_rupiah(subtotal_amount)}")
+
+    if source_order_ref is not None:
+        lines.append(f"🔁 Reorder dari: <code>{html.escape(source_order_ref)}</code>")
+        if source_product_name:
+            lines.append(f"📦 Produk: <b>{html.escape(source_product_name)}</b>")
+
+    lines.extend(
+        [
+            "",
+            "🧭 <b>Langkah Berikutnya</b>",
+            "1. Transfer sesuai nominal di atas.",
+            "2. Pantau status order secara berkala.",
+            "3. Jika batal, gunakan tombol Batalkan Pesanan.",
+            f"🔎 Cek status cepat: <code>/order_status {html.escape(order_ref)}</code>",
+            "",
+            _customer_footer_text(),
+        ]
+    )
     result_keyboard = InlineKeyboardMarkup(
         [
             [InlineKeyboardButton("❌ Batalkan Pesanan", callback_data=f"ord:cancel:{order_ref}")],
@@ -1036,6 +1184,42 @@ async def _send_checkout_result(
             )
 
     await _upsert_admin_order_notification(update, order_ref)
+
+
+async def _send_quick_reorder_result(
+    update: Update,
+    telegram_id: int,
+    source_order_ref: str,
+) -> None:
+    with get_session() as session:
+        user = get_user_by_telegram_id(session, telegram_id)
+        if user is None:
+            await _respond(
+                update,
+                "⚠️ <b>User tidak ditemukan</b>\nSilakan jalankan /start lalu coba lagi.",
+                _back_keyboard("main"),
+                parse_mode=ParseMode.HTML,
+            )
+            return
+
+        try:
+            target = get_quick_reorder_target(
+                session,
+                customer_id=user.id,
+                source_order_ref=source_order_ref,
+            )
+        except ValueError as exc:
+            await _respond(update, f"⚠️ {exc}", _back_keyboard("main"))
+            return
+
+    await _send_checkout_result(
+        update,
+        telegram_id=telegram_id,
+        product_id=target.product_id,
+        qty=target.quantity,
+        source_order_ref=target.source_order_ref,
+        source_product_name=target.product_name,
+    )
 
 
 async def _run_update_script(action: str) -> str:
@@ -1257,6 +1441,100 @@ async def order_status_handler(update: Update, context: ContextTypes.DEFAULT_TYP
     await _send_customer_order_status(update, db_user.telegram_id, order_ref)
 
 
+async def vouchers_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    db_user, role = await _ensure_user(update)
+    if role == "admin":
+        await _respond(update, "🚫 Admin tidak menggunakan command ini.", _back_keyboard("main"))
+        return
+
+    with get_session() as session:
+        vouchers = list_customer_vouchers(session, customer_id=db_user.id, include_used=False)
+
+    if not vouchers:
+        await _respond(
+            update,
+            (
+                "🎟️ <b>Voucher Kamu</b>\n"
+                "Belum ada voucher aktif saat ini.\n"
+                "Teruskan transaksi sukses untuk membuka reward loyalti."
+            ),
+            _back_keyboard("main"),
+            parse_mode=ParseMode.HTML,
+        )
+        return
+
+    lines = ["🎟️ <b>Voucher Kamu</b>"]
+    for idx, voucher in enumerate(vouchers, start=1):
+        expiry_text = "-"
+        if voucher.expires_at is not None:
+            expiry_text = _format_display_time(voucher.expires_at)
+        lines.extend(
+            [
+                "",
+                f"{idx}. <code>{html.escape(voucher.code)}</code>",
+                f"Status: {_voucher_status_badge(voucher.status)}",
+                f"Diskon: <b>{_format_rupiah(voucher.discount_amount)}</b>",
+                f"Min. order: {_format_rupiah(voucher.min_order_amount)}",
+                f"Berlaku sampai: {expiry_text}",
+            ]
+        )
+
+    lines.extend([
+        "",
+        "Voucher aktif dipakai otomatis saat checkout jika memenuhi syarat.",
+    ])
+
+    await _respond(
+        update,
+        "\n".join(lines),
+        _back_keyboard("main"),
+        parse_mode=ParseMode.HTML,
+    )
+
+
+async def ops_metrics_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await _ensure_user(update)
+    if not _ensure_admin(update):
+        await _respond_admin_only(update)
+        return
+
+    with get_session() as session:
+        metrics = collect_operational_metrics(
+            session,
+            window_hours=settings.metrics_report_window_hours,
+        )
+
+    await _respond(
+        update,
+        format_operational_metrics_report(metrics),
+        _back_keyboard("main"),
+        parse_mode=ParseMode.HTML,
+    )
+
+
+async def reorder_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    db_user, role = await _ensure_user(update)
+    if role == "admin":
+        await _respond(update, "🚫 Admin tidak menggunakan command ini.", _back_keyboard("main"))
+        return
+
+    if not context.args:
+        await _respond(
+            update,
+            (
+                "🔁 <b>Quick Reorder</b>\n"
+                "Gunakan format: <code>/reorder ORDER_REF</code>\n"
+                "Contoh: <code>/reorder ORD20260101000123</code>"
+            ),
+            _back_keyboard("main"),
+            parse_mode=ParseMode.HTML,
+        )
+        return
+
+    source_order_ref = context.args[0].strip().upper()
+    await _send_quick_reorder_result(update, db_user.telegram_id, source_order_ref)
+
+
 async def broadcast_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     _, _ = await _ensure_user(update)
     if not _ensure_admin(update):
@@ -1437,7 +1715,16 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         return
 
     if data == "ac:view":
-        await _send_admin_catalog_list(update)
+        await _send_admin_catalog_list(update, page=1)
+        return
+
+    if data.startswith("ac:list:"):
+        try:
+            page = int(data.split(":", maxsplit=2)[2])
+        except ValueError:
+            await _respond(update, "⚠️ Halaman katalog tidak valid.", _back_keyboard("adm_cat"))
+            return
+        await _send_admin_catalog_list(update, page=page)
         return
 
     if data == "ac:ghpack":
@@ -1535,28 +1822,19 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         if role != "admin":
             await _respond_admin_only(update)
             return
-        with get_session() as session:
-            stocks = list_github_stocks(session)
+        await _send_github_stock_list(update, page=1)
+        return
 
-        if not stocks:
-            await _respond(
-                update,
-                (
-                    "📭 <b>Stok GitHub Pack Kosong</b>\n"
-                    "Belum ada akun yang bisa ditampilkan.\n\n"
-                    f"{_admin_footer_text()}"
-                ),
-                _github_pack_menu_keyboard(),
-                parse_mode=ParseMode.HTML,
-            )
+    if data.startswith("gh:list:"):
+        if role != "admin":
+            await _respond_admin_only(update)
             return
-
-        lines = ["📋 <b>List Akun GitHub Pack</b>"]
-        for stock in stocks:
-            lines.append(f"• <b>#{stock.id}</b> {html.escape(stock.username)} | {_stock_status_badge(stock.status)}")
-        lines.append("")
-        lines.append(_admin_footer_text())
-        await _respond(update, "\n".join(lines), _github_pack_menu_keyboard(), parse_mode=ParseMode.HTML)
+        try:
+            page = int(data.split(":", maxsplit=2)[2])
+        except ValueError:
+            await _respond(update, "⚠️ Halaman list akun tidak valid.", _github_pack_menu_keyboard())
+            return
+        await _send_github_stock_list(update, page=page)
         return
 
     if data == "gh:price:set":
@@ -1585,14 +1863,38 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         if role != "admin":
             await _respond_admin_only(update)
             return
-        await _send_github_stock_picker(update, mode="view")
+        await _send_github_stock_picker(update, mode="view", page=1)
         return
 
     if data == "gh:del:list":
         if role != "admin":
             await _respond_admin_only(update)
             return
-        await _send_github_stock_picker(update, mode="delete")
+        await _send_github_stock_picker(update, mode="delete", page=1)
+        return
+
+    if data.startswith("gh:view:page:"):
+        if role != "admin":
+            await _respond_admin_only(update)
+            return
+        try:
+            page = int(data.split(":", maxsplit=3)[3])
+        except ValueError:
+            await _respond(update, "⚠️ Halaman detail akun tidak valid.", _github_pack_menu_keyboard())
+            return
+        await _send_github_stock_picker(update, mode="view", page=page)
+        return
+
+    if data.startswith("gh:del:page:"):
+        if role != "admin":
+            await _respond_admin_only(update)
+            return
+        try:
+            page = int(data.split(":", maxsplit=3)[3])
+        except ValueError:
+            await _respond(update, "⚠️ Halaman hapus akun tidak valid.", _github_pack_menu_keyboard())
+            return
+        await _send_github_stock_picker(update, mode="delete", page=page)
         return
 
     if data.startswith("gh:view:"):
@@ -1662,19 +1964,44 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         return
 
     if data == "ac:stock":
-        await _send_admin_product_picker(update, action="stk", title="📥 Pilih produk untuk ditambah stok.")
+        await _send_admin_product_picker(update, action="stk", title=ADMIN_PRODUCT_PICKER_TITLES["stk"], page=1)
         return
 
     if data == "ac:susp":
-        await _send_admin_product_picker(update, action="sup", title="⏸️ Pilih produk yang akan disuspend.")
+        await _send_admin_product_picker(update, action="sup", title=ADMIN_PRODUCT_PICKER_TITLES["sup"], page=1)
         return
 
     if data == "ac:uns":
-        await _send_admin_product_picker(update, action="uns", title="▶️ Pilih produk yang akan diaktifkan.")
+        await _send_admin_product_picker(update, action="uns", title=ADMIN_PRODUCT_PICKER_TITLES["uns"], page=1)
         return
 
     if data == "ac:del":
-        await _send_admin_product_picker(update, action="del", title="🗑️ Pilih produk yang akan dihapus.")
+        await _send_admin_product_picker(update, action="del", title=ADMIN_PRODUCT_PICKER_TITLES["del"], page=1)
+        return
+
+    if data.startswith("apl:"):
+        if role != "admin":
+            await _respond_admin_only(update)
+            return
+
+        parts = data.split(":", maxsplit=2)
+        if len(parts) != 3:
+            await _respond(update, "⚠️ Halaman picker produk tidak valid.", _back_keyboard("adm_cat"))
+            return
+
+        action = parts[1]
+        title = ADMIN_PRODUCT_PICKER_TITLES.get(action)
+        if title is None:
+            await _respond(update, "⚠️ Aksi picker produk tidak valid.", _back_keyboard("adm_cat"))
+            return
+
+        try:
+            page = int(parts[2])
+        except ValueError:
+            await _respond(update, "⚠️ Halaman picker produk tidak valid.", _back_keyboard("adm_cat"))
+            return
+
+        await _send_admin_product_picker(update, action=action, title=title, page=page)
         return
 
     if data.startswith("ap:"):
@@ -1737,6 +2064,40 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             return
 
         await _send_product_detail(update, product_id)
+        return
+
+    if data.startswith("restock:sub:"):
+        if role == "admin":
+            await _respond(update, "🚫 Admin tidak bisa checkout sebagai customer.", _back_keyboard("main"))
+            return
+
+        try:
+            product_id = int(data.split(":", maxsplit=2)[2])
+        except ValueError:
+            await _respond(update, "⚠️ Produk tidak valid untuk notifikasi restock.", _back_keyboard("cus_cat"))
+            return
+
+        with get_session() as session:
+            product = get_product(session, product_id)
+            if product is None:
+                await _respond(update, "⚠️ Produk tidak ditemukan.", _back_keyboard("cus_cat"))
+                return
+
+            created, message = subscribe_restock(
+                session,
+                customer_id=db_user.id,
+                product_id=product_id,
+            )
+
+        title = "🔔 <b>Notifikasi Restock</b>"
+        details = f"Produk: <b>{html.escape(product.name)}</b>"
+        icon = "✅" if created else "ℹ️"
+        await _respond(
+            update,
+            f"{title}\n{details}\n{icon} {html.escape(message)}\n\n{_customer_footer_text()}",
+            _back_keyboard("cus_cat"),
+            parse_mode=ParseMode.HTML,
+        )
         return
 
     if data.startswith("qty:"):
@@ -1852,6 +2213,19 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             page = 1
 
         await _send_customer_order_copy(update, db_user.telegram_id, order_ref=order_ref, page=page)
+        return
+
+    if data.startswith("ord:reorder:"):
+        if role == "admin":
+            await _respond(update, "🚫 Admin tidak bisa checkout sebagai customer.", _back_keyboard("main"))
+            return
+        parts = data.split(":", maxsplit=3)
+        if len(parts) != 4:
+            await _respond(update, "⚠️ Data quick reorder tidak valid.", _back_keyboard("main"))
+            return
+
+        order_ref = parts[2]
+        await _send_quick_reorder_result(update, db_user.telegram_id, order_ref)
         return
 
     if data.startswith("ord:cancel:"):
@@ -2230,6 +2604,8 @@ def register_handlers(application: Application) -> None:
     application.add_handler(CommandHandler("buy", buy_handler))
     application.add_handler(CommandHandler("myorders", my_orders_handler))
     application.add_handler(CommandHandler("order_status", order_status_handler))
+    application.add_handler(CommandHandler("vouchers", vouchers_handler))
+    application.add_handler(CommandHandler("reorder", reorder_handler))
 
     application.add_handler(CommandHandler("admin_catalog", admin_catalog_handler))
     application.add_handler(CommandHandler("product_add", product_add_handler))
@@ -2239,6 +2615,7 @@ def register_handlers(application: Application) -> None:
     application.add_handler(CommandHandler("product_delete", product_delete_handler))
     application.add_handler(CommandHandler("broadcast", broadcast_handler))
     application.add_handler(CommandHandler("set_qris", set_qris_handler))
+    application.add_handler(CommandHandler("ops_metrics", ops_metrics_handler))
     application.add_handler(CommandHandler("update_check", update_check_handler))
     application.add_handler(CommandHandler("update_apply", update_apply_handler))
 

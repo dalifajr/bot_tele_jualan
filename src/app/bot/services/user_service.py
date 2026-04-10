@@ -5,8 +5,6 @@ from datetime import datetime
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.common.config import get_settings
-from app.common.roles import is_admin
 from app.db.models import User
 
 
@@ -44,10 +42,9 @@ def get_user_by_telegram_id(session: Session, telegram_id: int) -> User | None:
 
 
 def list_customer_telegram_ids(session: Session) -> list[int]:
-    settings = get_settings()
-    rows = session.scalars(select(User.telegram_id)).all()
+    rows = session.scalars(select(User.telegram_id).where(User.role != "admin")).all()
     return [
         int(telegram_id)
         for telegram_id in rows
-        if not is_admin(int(telegram_id), settings.role_file_path)
+        if telegram_id is not None
     ]

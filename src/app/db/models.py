@@ -69,6 +69,12 @@ class Order(Base):
     checkout_chat_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     checkout_message_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     reminder_sent_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    applied_voucher_id: Mapped[int | None] = mapped_column(
+        ForeignKey("loyalty_vouchers.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    voucher_discount_amount: Mapped[int] = mapped_column(Integer, default=0)
     admin_notify_chat_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     admin_notify_message_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
@@ -107,6 +113,52 @@ class Payment(Base):
     matched_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     order: Mapped["Order"] = relationship(back_populates="payment")
+
+
+class LoyaltyVoucher(Base):
+    __tablename__ = "loyalty_vouchers"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    customer_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    code: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    discount_amount: Mapped[int] = mapped_column(Integer, nullable=False)
+    min_order_amount: Mapped[int] = mapped_column(Integer, default=0)
+    status: Mapped[str] = mapped_column(String(32), default="active", index=True)
+    source: Mapped[str] = mapped_column(String(64), default="loyalty")
+    reserved_order_id: Mapped[int | None] = mapped_column(ForeignKey("orders.id", ondelete="SET NULL"), nullable=True)
+    used_order_id: Mapped[int | None] = mapped_column(ForeignKey("orders.id", ondelete="SET NULL"), nullable=True)
+    note: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    used_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
+class RestockSubscription(Base):
+    __tablename__ = "restock_subscriptions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    customer_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    product_id: Mapped[int] = mapped_column(ForeignKey("products.id", ondelete="CASCADE"), index=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    notified_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
+class NotificationRetryJob(Base):
+    __tablename__ = "notification_retry_jobs"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    channel: Mapped[str] = mapped_column(String(64), default="generic", index=True)
+    chat_id: Mapped[int] = mapped_column(BigInteger, index=True)
+    payload_text: Mapped[str] = mapped_column(Text, nullable=False)
+    parse_mode: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    status: Mapped[str] = mapped_column(String(32), default="pending", index=True)
+    attempt_count: Mapped[int] = mapped_column(Integer, default=0)
+    max_attempts: Mapped[int] = mapped_column(Integer, default=3)
+    last_error: Mapped[str] = mapped_column(Text, default="")
+    next_attempt_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    sent_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 
 class BroadcastLog(Base):

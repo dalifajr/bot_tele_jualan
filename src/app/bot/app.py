@@ -3,12 +3,20 @@ from __future__ import annotations
 import html
 import logging
 
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application
 from telegram.ext import ContextTypes
 
 from app.bot.services.admin_order_notification_service import upsert_admin_order_message
 from app.bot.services.catalog_service import promote_awaiting_stocks
 from app.bot.handlers.main import register_handlers
+from app.bot.services.metrics_service import collect_operational_metrics, format_operational_metrics_report
+from app.bot.services.notification_retry_service import (
+    enqueue_notification_retry,
+    list_due_notification_retries,
+    mark_notification_retry_failed,
+    mark_notification_retry_sent,
+)
 from app.bot.services.order_service import (
     build_admin_order_message,
     expire_pending_orders_with_notifications,
@@ -16,6 +24,7 @@ from app.bot.services.order_service import (
     mark_payment_reminder_sent,
     set_admin_message_ref,
 )
+from app.bot.services.restock_service import list_ready_restock_notifications, mark_restock_notified
 from app.common.config import get_settings
 from app.common.roles import get_primary_admin_id
 from app.db.database import get_session
@@ -40,6 +49,20 @@ def _build_payment_reminder_message(order_ref: str, expected_amount: int, remain
             "1. Segera transfer sesuai nominal.",
             f"2. Pantau status: <code>/order_status {safe_order_ref}</code>",
             "3. Ketik /start untuk kembali ke menu utama.",
+        ]
+    )
+
+
+def _build_restock_message(product_id: int, product_name: str, product_price: int, stock_available: int) -> str:
+    return "\n".join(
+        [
+            "📦 <b>Stok Kembali Tersedia</b>",
+            f"Produk: <b>{html.escape(product_name)}</b>",
+            f"Harga: <b>{_format_rupiah(product_price)}</b>",
+            f"Stok ready: <b>{stock_available}</b>",
+            "",
+            f"Checkout cepat: <code>/buy {product_id} 1</code>",
+            "Atau ketik /catalog untuk lihat semua produk.",
         ]
     )
 
@@ -113,10 +136,128 @@ async def _payment_reminder_job(context: ContextTypes.DEFAULT_TYPE) -> None:
                 candidate.order_ref,
                 exc,
             )
+            with get_session() as session:
+                enqueue_notification_retry(
+                    session=session,
+                    channel="payment_reminder",
+                    chat_id=candidate.customer_telegram_id,
+                    payload_text=text,
+                    parse_mode="HTML",
+                )
             continue
 
         with get_session() as session:
             mark_payment_reminder_sent(session, candidate.order_ref)
+
+
+async def _restock_subscription_job(context: ContextTypes.DEFAULT_TYPE) -> None:
+    with get_session() as session:
+        candidates = list_ready_restock_notifications(session, limit=50)
+
+    for candidate in candidates:
+        text = _build_restock_message(
+            product_id=candidate.product_id,
+            product_name=candidate.product_name,
+            product_price=candidate.product_price,
+            stock_available=candidate.stock_available,
+        )
+        keyboard = InlineKeyboardMarkup(
+            [
+                [InlineKeyboardButton("🛍️ Buka Detail Produk", callback_data=f"cp:{candidate.product_id}")],
+                [InlineKeyboardButton("🏠 /start Menu Utama", callback_data="back:main")],
+            ]
+        )
+
+        try:
+            await context.bot.send_message(
+                chat_id=candidate.customer_telegram_id,
+                text=text,
+                parse_mode="HTML",
+                reply_markup=keyboard,
+                disable_web_page_preview=True,
+            )
+        except Exception as exc:
+            logger.warning("Gagal kirim notifikasi restock untuk sub#%s: %s", candidate.subscription_id, exc)
+            with get_session() as session:
+                enqueue_notification_retry(
+                    session=session,
+                    channel="restock_notify",
+                    chat_id=candidate.customer_telegram_id,
+                    payload_text=text,
+                    parse_mode="HTML",
+                )
+            continue
+
+        with get_session() as session:
+            mark_restock_notified(session, candidate.subscription_id)
+
+
+async def _notification_retry_job(context: ContextTypes.DEFAULT_TYPE) -> None:
+    settings = get_settings()
+    with get_session() as session:
+        jobs = list_due_notification_retries(
+            session=session,
+            limit=settings.notification_retry_batch_size,
+        )
+
+    for job in jobs:
+        try:
+            await context.bot.send_message(
+                chat_id=job.chat_id,
+                text=job.payload_text,
+                parse_mode=job.parse_mode,
+                disable_web_page_preview=True,
+            )
+        except Exception as exc:
+            logger.warning("Retry notif gagal untuk job#%s: %s", job.id, exc)
+            with get_session() as session:
+                mark_notification_retry_failed(
+                    session=session,
+                    job_id=job.id,
+                    error=str(exc),
+                    backoff_seconds=settings.notification_retry_backoff_seconds,
+                )
+            continue
+
+        with get_session() as session:
+            mark_notification_retry_sent(session=session, job_id=job.id)
+
+
+async def _metrics_report_job(context: ContextTypes.DEFAULT_TYPE) -> None:
+    settings = get_settings()
+    if not settings.metrics_report_enabled:
+        return
+
+    with get_session() as session:
+        metrics = collect_operational_metrics(session, window_hours=settings.metrics_report_window_hours)
+
+    report_text = format_operational_metrics_report(metrics)
+    logger.info("Operational metrics report generated for last %s hours", settings.metrics_report_window_hours)
+
+    if not settings.metrics_report_send_to_admin:
+        return
+
+    admin_id = get_primary_admin_id(settings.role_file_path)
+    if admin_id is None:
+        return
+
+    try:
+        await context.bot.send_message(
+            chat_id=admin_id,
+            text=report_text,
+            parse_mode="HTML",
+            disable_web_page_preview=True,
+        )
+    except Exception as exc:
+        logger.warning("Gagal kirim metrics report ke admin: %s", exc)
+        with get_session() as session:
+            enqueue_notification_retry(
+                session=session,
+                channel="metrics_report",
+                chat_id=admin_id,
+                payload_text=report_text,
+                parse_mode="HTML",
+            )
 
 
 def create_bot_application() -> Application:
@@ -144,6 +285,24 @@ def create_bot_application() -> Application:
             interval=max(10, settings.payment_reminder_job_interval_seconds),
             first=20,
             name="payment-reminder",
+        )
+        application.job_queue.run_repeating(
+            _restock_subscription_job,
+            interval=60,
+            first=25,
+            name="restock-subscription",
+        )
+        application.job_queue.run_repeating(
+            _notification_retry_job,
+            interval=max(10, settings.notification_retry_job_interval_seconds),
+            first=30,
+            name="notification-retry",
+        )
+        application.job_queue.run_repeating(
+            _metrics_report_job,
+            interval=max(60, settings.metrics_report_interval_minutes * 60),
+            first=120,
+            name="metrics-report",
         )
     else:
         logger.warning(

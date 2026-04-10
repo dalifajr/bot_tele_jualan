@@ -38,16 +38,21 @@ fi
 
 mkdir -p "${PROJECT_DIR}/data"
 
-echo "[4/8] Install scripts permissions"
+echo "[4/9] Install scripts permissions"
 chmod +x "${PROJECT_DIR}/ops/jualan"
 chmod +x "${PROJECT_DIR}/ops/update_manager.sh"
+chmod +x "${PROJECT_DIR}/ops/backup_manager.sh"
 chmod +x "${PROJECT_DIR}/setup.sh"
 
-echo "[5/8] Render systemd units"
+echo "[5/9] Render systemd units"
 BOT_UNIT_TMP="${PROJECT_DIR}/ops/systemd/jualan-bot.service"
 API_UNIT_TMP="${PROJECT_DIR}/ops/systemd/jualan-api.service"
+BACKUP_UNIT_TMP="${PROJECT_DIR}/ops/systemd/jualan-backup.service"
+BACKUP_TIMER_TMP="${PROJECT_DIR}/ops/systemd/jualan-backup.timer"
 BOT_UNIT_OUT="/etc/systemd/system/jualan-bot.service"
 API_UNIT_OUT="/etc/systemd/system/jualan-api.service"
+BACKUP_UNIT_OUT="/etc/systemd/system/jualan-backup.service"
+BACKUP_TIMER_OUT="/etc/systemd/system/jualan-backup.timer"
 
 render_unit() {
   local src="$1"
@@ -61,16 +66,23 @@ render_unit() {
 
 render_unit "${BOT_UNIT_TMP}" "${BOT_UNIT_OUT}"
 render_unit "${API_UNIT_TMP}" "${API_UNIT_OUT}"
+render_unit "${BACKUP_UNIT_TMP}" "${BACKUP_UNIT_OUT}"
+render_unit "${BACKUP_TIMER_TMP}" "${BACKUP_TIMER_OUT}"
 
-echo "[6/8] Reload and enable services"
+echo "[6/9] Reload and enable services"
 sudo systemctl daemon-reload
 sudo systemctl enable jualan-bot.service jualan-api.service
+sudo systemctl enable jualan-backup.timer
 
-echo "[7/8] Install alias command"
+echo "[7/9] Install alias command"
 sudo ln -sf "${PROJECT_DIR}/ops/jualan" /usr/local/bin/jualan
 
-echo "[8/8] Start services"
+echo "[8/9] Start services"
 sudo systemctl restart jualan-bot.service jualan-api.service
+sudo systemctl restart jualan-backup.timer
+
+echo "[9/9] Initial backup snapshot"
+bash "${PROJECT_DIR}/ops/backup_manager.sh" backup || true
 
 echo "Setup selesai. Jalankan:"
 echo "  jualan config"

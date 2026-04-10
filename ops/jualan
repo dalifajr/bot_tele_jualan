@@ -51,9 +51,13 @@ PROJECT_DIR="$(resolve_project_dir)"
 ENV_FILE="${PROJECT_DIR}/.env"
 ROLE_FILE="${PROJECT_DIR}/user_role.txt"
 UPDATE_SCRIPT="${PROJECT_DIR}/ops/update_manager.sh"
+BACKUP_SCRIPT="${PROJECT_DIR}/ops/backup_manager.sh"
 
 if [[ ! -x "${UPDATE_SCRIPT}" ]]; then
   chmod +x "${UPDATE_SCRIPT}" 2>/dev/null || true
+fi
+if [[ ! -x "${BACKUP_SCRIPT}" ]]; then
+  chmod +x "${BACKUP_SCRIPT}" 2>/dev/null || true
 fi
 
 if ! is_valid_project_dir "${PROJECT_DIR}"; then
@@ -79,6 +83,12 @@ Commands:
   update       Apply update from GitHub
   check-update Check latest commit from GitHub
   rollback     Rollback to previous commit
+  backup       Create database backup snapshot now
+  list-backups List existing backup snapshots
+  restore-backup [file]
+              Restore DB from backup file (default: latest)
+  prune-backups [keep]
+              Keep latest N backups (default from BACKUP_KEEP_COUNT or 14)
   uninstall    Stop/disable services and remove alias
 EOF
 }
@@ -172,6 +182,22 @@ rollback_update() {
   bash "${UPDATE_SCRIPT}" rollback
 }
 
+backup_now() {
+  bash "${BACKUP_SCRIPT}" backup
+}
+
+list_backups_cmd() {
+  bash "${BACKUP_SCRIPT}" list
+}
+
+restore_backup_cmd() {
+  bash "${BACKUP_SCRIPT}" restore "${1:-}"
+}
+
+prune_backups_cmd() {
+  bash "${BACKUP_SCRIPT}" prune "${1:-}"
+}
+
 uninstall_bot() {
   local confirm
   read -r -p "Yakin uninstall bot service? ketik YES: " confirm
@@ -200,7 +226,11 @@ Panel Jualan
 6) check-update
 7) update
 8) rollback
-9) uninstall
+9) backup
+10) list-backups
+11) restore-backup (latest)
+12) prune-backups
+13) uninstall
 0) keluar
 EOF
   read -r -p "Pilih menu: " choice
@@ -213,7 +243,11 @@ EOF
     6) check_update ;;
     7) apply_update ;;
     8) rollback_update ;;
-    9) uninstall_bot ;;
+    9) backup_now ;;
+    10) list_backups_cmd ;;
+    11) restore_backup_cmd ;;
+    12) prune_backups_cmd ;;
+    13) uninstall_bot ;;
     0) exit 0 ;;
     *) echo "Pilihan tidak valid." ;;
   esac
@@ -230,6 +264,10 @@ case "${cmd}" in
   update) apply_update ;;
   check-update) check_update ;;
   rollback) rollback_update ;;
+  backup) backup_now ;;
+  list-backups) list_backups_cmd ;;
+  restore-backup) restore_backup_cmd "${2:-}" ;;
+  prune-backups) prune_backups_cmd "${2:-}" ;;
   uninstall) uninstall_bot ;;
   "") menu ;;
   *) print_usage; exit 1 ;;

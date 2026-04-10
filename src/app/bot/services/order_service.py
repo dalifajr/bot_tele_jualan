@@ -15,6 +15,12 @@ from app.bot.services.catalog_service import (
     get_available_stock_count,
     promote_awaiting_stocks,
 )
+from app.bot.services.loyalty_service import (
+    allocate_voucher_for_checkout,
+    consume_voucher_for_order,
+    issue_milestone_voucher,
+    release_voucher_for_order,
+)
 from app.common.config import get_settings
 from app.db.models import Order, OrderItem, Payment, Product, StockUnit, User
 
@@ -92,6 +98,14 @@ class CustomerOrderStatusView:
     paid_at: datetime | None
     delivered_at: datetime | None
     cancelled_at: datetime | None
+
+
+@dataclass
+class QuickReorderTarget:
+    source_order_ref: str
+    product_id: int
+    product_name: str
+    quantity: int
 
 
 @dataclass
@@ -224,6 +238,7 @@ def expire_pending_orders_with_notifications(session: Session) -> list[AdminOrde
         order.status = "expired"
         order.cancelled_at = now
         order.cancel_reason = "payment_timeout"
+        release_voucher_for_order(session, order)
         payment = order.payment
         if payment is not None and payment.status == "pending":
             payment.status = "expired"
@@ -255,8 +270,18 @@ def create_checkout(session: Session, customer: User, product_id: int, quantity:
 
     order_ref = _generate_order_ref()
     subtotal = product.price * quantity
+    voucher_discount = 0
+
+    voucher = allocate_voucher_for_checkout(
+        session=session,
+        customer_id=customer.id,
+        subtotal_amount=subtotal,
+    )
+    if voucher is not None:
+        voucher_discount = min(voucher.discount_amount, max(0, subtotal - 1))
+
     unique_code = _generate_unique_code()
-    total = subtotal + unique_code
+    total = (subtotal - voucher_discount) + unique_code
 
     order = Order(
         order_ref=order_ref,
@@ -264,11 +289,17 @@ def create_checkout(session: Session, customer: User, product_id: int, quantity:
         subtotal=subtotal,
         unique_code=unique_code,
         total_amount=total,
+        applied_voucher_id=(voucher.id if voucher is not None else None),
+        voucher_discount_amount=voucher_discount,
         status="pending_payment",
         expires_at=_utcnow() + timedelta(minutes=max(1, settings.checkout_expiry_minutes)),
     )
     session.add(order)
     session.flush()
+
+    if voucher is not None:
+        voucher.reserved_order_id = order.id
+        session.add(voucher)
 
     item = OrderItem(
         order_id=order.id,
@@ -292,7 +323,10 @@ def create_checkout(session: Session, customer: User, product_id: int, quantity:
         actor_id=customer.id,
         entity_type="order",
         entity_id=str(order.id),
-        detail=f"product_id={product.id}; qty={quantity}; total={total}",
+        detail=(
+            f"product_id={product.id}; qty={quantity}; subtotal={subtotal}; "
+            f"voucher_discount={voucher_discount}; total={total}"
+        ),
     )
 
     session.flush()
@@ -398,6 +432,47 @@ def get_customer_order_detail(
         delivered_at=order.delivered_at,
         item_lines=item_lines,
         account_blocks=[unit.raw_text for unit in account_units],
+    )
+
+
+def get_quick_reorder_target(
+    session: Session,
+    customer_id: int,
+    source_order_ref: str,
+) -> QuickReorderTarget:
+    expire_pending_orders(session)
+
+    order = session.scalar(
+        select(Order).where(
+            Order.customer_id == customer_id,
+            Order.order_ref == source_order_ref,
+        )
+    )
+    if order is None:
+        raise ValueError("Order tidak ditemukan.")
+    if order.status != "delivered":
+        raise ValueError("Quick reorder hanya tersedia untuk pesanan yang sudah berhasil.")
+
+    order_items = list(order.items)
+    if not order_items:
+        raise ValueError("Item pesanan tidak ditemukan.")
+    if len(order_items) != 1:
+        raise ValueError("Quick reorder untuk pesanan multi-item belum didukung.")
+
+    item = order_items[0]
+    qty = max(1, int(item.quantity))
+
+    product = session.get(Product, item.product_id)
+    if product is None:
+        raise ValueError("Produk dari pesanan ini sudah tidak tersedia.")
+    if product.is_suspended:
+        raise ValueError("Produk dari pesanan ini sedang nonaktif.")
+
+    return QuickReorderTarget(
+        source_order_ref=order.order_ref,
+        product_id=int(product.id),
+        product_name=product.name,
+        quantity=qty,
     )
 
 
@@ -540,7 +615,40 @@ def _allocate_stock_fifo(session: Session, product_id: int, quantity: int, order
     return units
 
 
-def _build_delivery_message(order: Order, units: list[StockUnit]) -> str:
+def _recommend_upsell_products(
+    session: Session,
+    excluded_product_ids: set[int],
+    limit: int = 2,
+) -> list[Product]:
+    products = list(
+        session.scalars(
+            select(Product)
+            .where(Product.is_suspended.is_(False))
+            .order_by(Product.id.asc())
+        ).all()
+    )
+
+    recommendations: list[Product] = []
+    for product in products:
+        if product.id in excluded_product_ids:
+            continue
+        stock = get_available_stock_count(session, product.id)
+        if stock <= 0:
+            continue
+        recommendations.append(product)
+        if len(recommendations) >= max(1, int(limit)):
+            break
+
+    return recommendations
+
+
+def _build_delivery_message(
+    order: Order,
+    units: list[StockUnit],
+    recommendations: list[Product],
+    issued_voucher_code: str | None = None,
+    issued_voucher_discount: int = 0,
+) -> str:
     parts = [
         "✅ <b>Pembayaran Berhasil Dikonfirmasi</b>",
         f"Order Ref: <code>{html.escape(order.order_ref)}</code>",
@@ -551,6 +659,24 @@ def _build_delivery_message(order: Order, units: list[StockUnit]) -> str:
     for idx, unit in enumerate(units, start=1):
         parts.append(f"\n<b>Akun {idx}</b>")
         parts.append(f"<pre>{html.escape(unit.raw_text)}</pre>")
+
+    if recommendations:
+        parts.append("")
+        parts.append("🎯 <b>Rekomendasi Selanjutnya</b>")
+        for product in recommendations:
+            parts.append(
+                f"• {html.escape(product.name)} - {_format_rupiah(product.price)} "
+                f"(<code>/buy {product.id} 1</code>)"
+            )
+
+    if issued_voucher_code:
+        parts.append("")
+        parts.append("🎁 <b>Voucher Loyalti Baru</b>")
+        parts.append(
+            f"Kode: <code>{html.escape(issued_voucher_code)}</code> | "
+            f"Diskon: <b>{_format_rupiah(issued_voucher_discount)}</b>"
+        )
+        parts.append("Voucher akan dipakai otomatis di checkout berikutnya jika masih aktif.")
 
     parts.append("")
     parts.append("📌 Simpan data akun ini dengan aman.")
@@ -602,6 +728,7 @@ def _resolve_pending_payment(
             picked.order.status = "expired"
             picked.order.cancelled_at = _utcnow()
             picked.order.cancel_reason = "payment_timeout"
+            release_voucher_for_order(session, picked.order)
             picked.status = "expired"
             session.add(picked.order)
             session.add(picked)
@@ -630,6 +757,7 @@ def _resolve_pending_payment(
         picked.order.status = "expired"
         picked.order.cancelled_at = _utcnow()
         picked.order.cancel_reason = "payment_timeout"
+        release_voucher_for_order(session, picked.order)
         picked.status = "expired"
         session.add(picked.order)
         session.add(picked)
@@ -685,6 +813,7 @@ def reconcile_payment(
         order.status = "expired"
         order.cancelled_at = _utcnow()
         order.cancel_reason = "payment_timeout"
+        release_voucher_for_order(session, order)
         if payment.status == "pending":
             payment.status = "expired"
             session.add(payment)
@@ -716,9 +845,20 @@ def reconcile_payment(
     order.status = "delivered"
     order.paid_at = _utcnow()
     order.delivered_at = _utcnow()
+    consume_voucher_for_order(session, order)
 
     session.add(order)
     session.add(payment)
+    session.flush()
+
+    purchased_product_ids = {item.product_id for item in order_items}
+    recommendations = _recommend_upsell_products(session, excluded_product_ids=purchased_product_ids, limit=2)
+
+    issued_voucher = issue_milestone_voucher(
+        session=session,
+        customer_id=order.customer_id,
+        delivered_count=count_delivered_orders_by_customer(session, order.customer_id),
+    )
 
     append_audit(
         session,
@@ -728,7 +868,13 @@ def reconcile_payment(
         detail=f"amount={amount}; source_app={source_app}",
     )
 
-    delivery_message = _build_delivery_message(order, delivered_units)
+    delivery_message = _build_delivery_message(
+        order,
+        delivered_units,
+        recommendations=recommendations,
+        issued_voucher_code=(issued_voucher.code if issued_voucher is not None else None),
+        issued_voucher_discount=(issued_voucher.discount_amount if issued_voucher is not None else 0),
+    )
     return ReconcileResult(
         "paid",
         "Pembayaran berhasil dan stok terkirim.",
@@ -779,6 +925,7 @@ def cancel_order(session: Session, order_ref: str, customer_id: int) -> CancelOr
     order.status = "cancelled"
     order.cancelled_at = _utcnow()
     order.cancel_reason = "cancelled_by_customer"
+    release_voucher_for_order(session, order)
     session.add(order)
 
     payment = order.payment

@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from sqlalchemy import text
 
+from app.common.config import get_settings
+from app.common.roles import sync_admin_ids_from_file_to_db
+from app.db.database import get_session
 from app.db.database import engine
 from app.db.models import Base
 
@@ -26,6 +29,8 @@ def _run_compat_migrations() -> None:
         _ensure_column(conn, "orders", "checkout_chat_id", "checkout_chat_id BIGINT")
         _ensure_column(conn, "orders", "checkout_message_id", "checkout_message_id BIGINT")
         _ensure_column(conn, "orders", "reminder_sent_at", "reminder_sent_at DATETIME")
+        _ensure_column(conn, "orders", "applied_voucher_id", "applied_voucher_id INTEGER")
+        _ensure_column(conn, "orders", "voucher_discount_amount", "voucher_discount_amount INTEGER DEFAULT 0")
         _ensure_column(conn, "orders", "admin_notify_chat_id", "admin_notify_chat_id BIGINT")
         _ensure_column(conn, "orders", "admin_notify_message_id", "admin_notify_message_id BIGINT")
 
@@ -52,8 +57,28 @@ def _run_compat_migrations() -> None:
             "CREATE INDEX IF NOT EXISTS ix_orders_pending_reminder "
             "ON orders(status, expires_at, reminder_sent_at)"
         ))
+        conn.execute(text(
+            "CREATE INDEX IF NOT EXISTS ix_orders_voucher "
+            "ON orders(applied_voucher_id, voucher_discount_amount)"
+        ))
+        conn.execute(text(
+            "CREATE INDEX IF NOT EXISTS ix_retry_jobs_due "
+            "ON notification_retry_jobs(status, next_attempt_at, attempt_count)"
+        ))
+        conn.execute(text(
+            "CREATE INDEX IF NOT EXISTS ix_loyalty_vouchers_customer_status "
+            "ON loyalty_vouchers(customer_id, status, expires_at)"
+        ))
+        conn.execute(text(
+            "CREATE INDEX IF NOT EXISTS ix_restock_subscriptions_lookup "
+            "ON restock_subscriptions(product_id, is_active, customer_id)"
+        ))
 
 
 def init_db() -> None:
     Base.metadata.create_all(bind=engine)
     _run_compat_migrations()
+
+    settings = get_settings()
+    with get_session() as session:
+        sync_admin_ids_from_file_to_db(session=session, role_file=settings.role_file_path)
