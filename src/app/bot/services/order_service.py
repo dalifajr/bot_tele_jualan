@@ -52,6 +52,34 @@ class CancelOrderResult:
     admin_notification: AdminOrderNotification | None = None
 
 
+@dataclass
+class CustomerOrderSummary:
+    order_ref: str
+    status: str
+    total_amount: int
+    created_at: datetime
+
+
+@dataclass
+class CustomerOrdersPage:
+    rows: list[CustomerOrderSummary]
+    page: int
+    total_pages: int
+    total_items: int
+
+
+@dataclass
+class CustomerOrderDetail:
+    order_ref: str
+    status: str
+    total_amount: int
+    created_at: datetime
+    paid_at: datetime | None
+    delivered_at: datetime | None
+    item_lines: list[str]
+    account_blocks: list[str]
+
+
 def _generate_order_ref() -> str:
     timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
     suffix = random.randint(100, 999)
@@ -254,6 +282,97 @@ def list_recent_orders_by_customer(session: Session, customer_id: int, limit: in
         .limit(limit)
     )
     return list(session.scalars(stmt).all())
+
+
+def get_customer_orders_page(
+    session: Session,
+    customer_id: int,
+    page: int,
+    page_size: int = 10,
+) -> CustomerOrdersPage:
+    expire_pending_orders(session)
+
+    safe_page_size = max(1, int(page_size))
+    total_items = (
+        session.scalar(
+            select(func.count(Order.id)).where(Order.customer_id == customer_id)
+        )
+        or 0
+    )
+
+    total_pages = max(1, (int(total_items) + safe_page_size - 1) // safe_page_size)
+    safe_page = max(1, min(int(page), total_pages))
+
+    if total_items <= 0:
+        return CustomerOrdersPage(rows=[], page=1, total_pages=1, total_items=0)
+
+    offset = (safe_page - 1) * safe_page_size
+    rows = list(
+        session.scalars(
+            select(Order)
+            .where(Order.customer_id == customer_id)
+            .order_by(Order.id.desc())
+            .offset(offset)
+            .limit(safe_page_size)
+        ).all()
+    )
+
+    return CustomerOrdersPage(
+        rows=[
+            CustomerOrderSummary(
+                order_ref=row.order_ref,
+                status=row.status,
+                total_amount=row.total_amount,
+                created_at=row.created_at,
+            )
+            for row in rows
+        ],
+        page=safe_page,
+        total_pages=total_pages,
+        total_items=int(total_items),
+    )
+
+
+def get_customer_order_detail(
+    session: Session,
+    customer_id: int,
+    order_ref: str,
+) -> CustomerOrderDetail | None:
+    expire_pending_orders(session)
+
+    order = session.scalar(
+        select(Order).where(
+            Order.customer_id == customer_id,
+            Order.order_ref == order_ref,
+        )
+    )
+    if order is None:
+        return None
+
+    item_lines: list[str] = []
+    for item in order.items:
+        product = session.get(Product, item.product_id)
+        product_name = product.name if product is not None else f"Produk #{item.product_id}"
+        item_lines.append(f"{product_name} x{item.quantity}")
+
+    account_units = list(
+        session.scalars(
+            select(StockUnit)
+            .where(StockUnit.sold_order_id == order.id)
+            .order_by(StockUnit.id.asc())
+        ).all()
+    )
+
+    return CustomerOrderDetail(
+        order_ref=order.order_ref,
+        status=order.status,
+        total_amount=order.total_amount,
+        created_at=order.created_at,
+        paid_at=order.paid_at,
+        delivered_at=order.delivered_at,
+        item_lines=item_lines,
+        account_blocks=[unit.raw_text for unit in account_units],
+    )
 
 
 def count_delivered_orders_by_customer(session: Session, customer_id: int) -> int:

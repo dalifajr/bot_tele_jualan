@@ -46,8 +46,9 @@ from app.bot.services.order_service import (
     cancel_order,
     count_delivered_orders_by_customer,
     create_checkout,
+    get_customer_order_detail,
+    get_customer_orders_page,
     get_order_admin_notification,
-    list_recent_orders_by_customer,
     set_admin_message_ref,
     set_checkout_message_ref,
 )
@@ -69,6 +70,7 @@ FLOW_GH_ADD_READY = "gh_add_ready"
 FLOW_GH_ADD_AWAIT = "gh_add_await"
 FLOW_GH_SET_PRICE = "gh_set_price"
 AWAIT_QRIS_IMAGE_KEY = "await_qris_image"
+CUSTOMER_ORDERS_PAGE_SIZE = 10
 
 
 @dataclass(frozen=True)
@@ -341,6 +343,71 @@ def _order_status_badge(status: str) -> str:
     return mapping.get(status, status)
 
 
+def _customer_orders_keyboard(
+    *,
+    page: int,
+    total_pages: int,
+    rows: list[tuple[int, str, str]],
+) -> InlineKeyboardMarkup:
+    keyboard_rows: list[list[InlineKeyboardButton]] = []
+    for order_no, order_ref, status in rows:
+        label = f"{order_no}. {order_ref} | {_order_status_badge(status)}"
+        keyboard_rows.append(
+            [InlineKeyboardButton(label, callback_data=f"ord:view:{order_ref}:{page}")]
+        )
+
+    prev_page = max(1, page - 1)
+    next_page = min(total_pages, page + 1)
+    keyboard_rows.append(
+        [
+            InlineKeyboardButton(
+                "[sebelumnya]",
+                callback_data=(f"ord:page:{prev_page}" if page > 1 else "noop"),
+            ),
+            InlineKeyboardButton(f"[{page}/{total_pages}]", callback_data="noop"),
+            InlineKeyboardButton(
+                "[berikutnya]",
+                callback_data=(f"ord:page:{next_page}" if page < total_pages else "noop"),
+            ),
+        ]
+    )
+    keyboard_rows.append([InlineKeyboardButton("⬅️ Kembali", callback_data="back:main")])
+    return InlineKeyboardMarkup(keyboard_rows)
+
+
+def _customer_order_detail_keyboard(order_ref: str, page: int, include_copy: bool) -> InlineKeyboardMarkup:
+    rows: list[list[InlineKeyboardButton]] = []
+    if include_copy:
+        rows.append([InlineKeyboardButton("📋 Copy Akun", callback_data=f"ord:copy:{order_ref}:{page}")])
+    rows.append([InlineKeyboardButton("⬅️ Kembali", callback_data=f"ord:page:{max(1, page)}")])
+    return InlineKeyboardMarkup(rows)
+
+
+def _build_accounts_copy_text(order_ref: str, account_blocks: list[str]) -> str:
+    parts = [f"Order: {order_ref}"]
+    for idx, raw in enumerate(account_blocks, start=1):
+        parts.append(f"[AKUN {idx}]\n{raw}")
+    return "\n\n".join(parts)
+
+
+def _split_message_chunks(text: str, max_len: int = 3500) -> list[str]:
+    if len(text) <= max_len:
+        return [text]
+
+    chunks: list[str] = []
+    current = ""
+    for line in text.splitlines(keepends=True):
+        if len(current) + len(line) > max_len and current:
+            chunks.append(current.rstrip())
+            current = line
+        else:
+            current += line
+
+    if current:
+        chunks.append(current.rstrip())
+    return chunks
+
+
 async def _send_github_pack_menu(update: Update) -> None:
     with get_session() as session:
         product = ensure_github_pack_product(session)
@@ -452,25 +519,117 @@ async def _send_customer_catalog(update: Update) -> None:
     )
 
 
-async def _send_customer_orders(update: Update, telegram_id: int) -> None:
+async def _send_customer_orders(update: Update, telegram_id: int, page: int = 1) -> None:
     with get_session() as session:
         user = get_user_by_telegram_id(session, telegram_id)
         if user is None:
             await _respond(update, "⚠️ User tidak ditemukan.", _back_keyboard("main"))
             return
-        orders = list_recent_orders_by_customer(session, customer_id=user.id, limit=10)
-        order_rows = [(order.order_ref, order.status, order.total_amount) for order in orders]
+        orders_page = get_customer_orders_page(
+            session,
+            customer_id=user.id,
+            page=page,
+            page_size=CUSTOMER_ORDERS_PAGE_SIZE,
+        )
 
-    if not order_rows:
+    if orders_page.total_items <= 0:
         await _respond(update, "📭 Belum ada pesanan.", _back_keyboard("main"))
         return
 
-    lines = ["📦 <b>Pesanan Terbaru</b>"]
-    for order_ref, status, total_amount in order_rows:
-        lines.append(
-            f"• <code>{html.escape(order_ref)}</code> | {_order_status_badge(status)} | <b>{_format_rupiah(total_amount)}</b>"
+    start_no = (orders_page.page - 1) * CUSTOMER_ORDERS_PAGE_SIZE + 1
+    rows = [
+        (start_no + idx, row.order_ref, row.status)
+        for idx, row in enumerate(orders_page.rows)
+    ]
+
+    await _respond(
+        update,
+        "📦 <b>Pesanan Saya</b>\nKlik tombol order untuk melihat detail akun pesanan.",
+        _customer_orders_keyboard(
+            page=orders_page.page,
+            total_pages=orders_page.total_pages,
+            rows=rows,
+        ),
+        parse_mode=ParseMode.HTML,
+    )
+
+
+async def _send_customer_order_detail(update: Update, telegram_id: int, order_ref: str, page: int) -> None:
+    with get_session() as session:
+        user = get_user_by_telegram_id(session, telegram_id)
+        if user is None:
+            await _respond(update, "⚠️ User tidak ditemukan.", _back_keyboard("main"))
+            return
+        detail = get_customer_order_detail(
+            session,
+            customer_id=user.id,
+            order_ref=order_ref,
         )
-    await _respond(update, "\n".join(lines), _back_keyboard("main"), parse_mode=ParseMode.HTML)
+
+    if detail is None:
+        await _respond(update, "⚠️ Pesanan tidak ditemukan.", _back_keyboard("main"))
+        return
+
+    lines = [
+        "🧾 <b>Detail Pesanan</b>",
+        f"Order: <code>{html.escape(detail.order_ref)}</code>",
+        f"Status: {_order_status_badge(detail.status)}",
+        f"Total: <b>{_format_rupiah(detail.total_amount)}</b>",
+    ]
+
+    if detail.item_lines:
+        lines.append("🛍️ Item:")
+        for item_line in detail.item_lines:
+            lines.append(f"• {html.escape(item_line)}")
+
+    include_copy = detail.status == "delivered" and bool(detail.account_blocks)
+    if include_copy:
+        lines.append("")
+        lines.append("🔐 <b>Detail Akun:</b>")
+        for idx, raw in enumerate(detail.account_blocks, start=1):
+            lines.append(f"\n<b>Akun {idx}</b>")
+            lines.append(f"<pre>{html.escape(raw)}</pre>")
+    elif detail.status == "delivered":
+        lines.append("")
+        lines.append("⚠️ Status berhasil, tapi detail akun belum tersedia. Silakan hubungi admin.")
+    else:
+        lines.append("")
+        lines.append("ℹ️ Detail akun akan muncul setelah pesanan berstatus berhasil.")
+
+    await _respond(
+        update,
+        "\n".join(lines),
+        _customer_order_detail_keyboard(detail.order_ref, page, include_copy=include_copy),
+        parse_mode=ParseMode.HTML,
+    )
+
+
+async def _send_customer_order_copy(update: Update, telegram_id: int, order_ref: str, page: int) -> None:
+    with get_session() as session:
+        user = get_user_by_telegram_id(session, telegram_id)
+        if user is None:
+            await _respond(update, "⚠️ User tidak ditemukan.", _back_keyboard("main"))
+            return
+        detail = get_customer_order_detail(
+            session,
+            customer_id=user.id,
+            order_ref=order_ref,
+        )
+
+    if detail is None:
+        await _respond(update, "⚠️ Pesanan tidak ditemukan.", _back_keyboard("main"))
+        return
+    if detail.status != "delivered" or not detail.account_blocks:
+        await _send_customer_order_detail(update, telegram_id, order_ref, page)
+        return
+
+    payload = _build_accounts_copy_text(detail.order_ref, detail.account_blocks)
+    query = update.callback_query
+    if query is not None and query.message is not None:
+        for chunk in _split_message_chunks(payload):
+            await query.message.reply_text(chunk)
+
+    await _send_customer_order_detail(update, telegram_id, order_ref, page)
 
 
 async def _send_product_detail(update: Update, product_id: int, qty: int = 1) -> None:
@@ -831,7 +990,7 @@ async def buy_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
 async def my_orders_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     db_user, _ = await _ensure_user(update)
-    await _send_customer_orders(update, db_user.telegram_id)
+    await _send_customer_orders(update, db_user.telegram_id, page=1)
 
 
 async def broadcast_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -963,7 +1122,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
     if data == "cus:ord":
         _clear_flow(context)
-        await _send_customer_orders(update, db_user.telegram_id)
+        await _send_customer_orders(update, db_user.telegram_id, page=1)
         return
 
     if data == "cus:help":
@@ -1304,6 +1463,55 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             "✍️ Masukkan jumlah pembelian (angka).",
             _back_keyboard("cus_cat"),
         )
+        return
+
+    if data.startswith("ord:page:"):
+        if role == "admin":
+            await _respond(update, "🚫 Admin tidak bisa checkout sebagai customer.", _back_keyboard("main"))
+            return
+        try:
+            page = int(data.split(":", maxsplit=2)[2])
+        except ValueError:
+            await _respond(update, "⚠️ Halaman pesanan tidak valid.", _back_keyboard("main"))
+            return
+
+        await _send_customer_orders(update, db_user.telegram_id, page=page)
+        return
+
+    if data.startswith("ord:view:"):
+        if role == "admin":
+            await _respond(update, "🚫 Admin tidak bisa checkout sebagai customer.", _back_keyboard("main"))
+            return
+        parts = data.split(":", maxsplit=3)
+        if len(parts) != 4:
+            await _respond(update, "⚠️ Data pesanan tidak valid.", _back_keyboard("main"))
+            return
+
+        order_ref = parts[2]
+        try:
+            page = int(parts[3])
+        except ValueError:
+            page = 1
+
+        await _send_customer_order_detail(update, db_user.telegram_id, order_ref=order_ref, page=page)
+        return
+
+    if data.startswith("ord:copy:"):
+        if role == "admin":
+            await _respond(update, "🚫 Admin tidak bisa checkout sebagai customer.", _back_keyboard("main"))
+            return
+        parts = data.split(":", maxsplit=3)
+        if len(parts) != 4:
+            await _respond(update, "⚠️ Data pesanan tidak valid.", _back_keyboard("main"))
+            return
+
+        order_ref = parts[2]
+        try:
+            page = int(parts[3])
+        except ValueError:
+            page = 1
+
+        await _send_customer_order_copy(update, db_user.telegram_id, order_ref=order_ref, page=page)
         return
 
     if data.startswith("ord:cancel:"):
