@@ -1358,41 +1358,40 @@ async def _send_checkout_result(
     sent_message = None
     payload_text = "\n".join(lines)
 
+    reply_target: Message | None = None
+    if update.callback_query and update.callback_query.message:
+        reply_target = update.callback_query.message
+    elif update.message:
+        reply_target = update.message
+
+    if reply_target is None:
+        logger.error("Checkout %s gagal: target pesan Telegram tidak tersedia", order_ref)
+        return False
+
     qris_path = settings.qris_file_path
     if qris_path.exists():
         try:
-            if update.callback_query and update.callback_query.message:
-                with qris_path.open("rb") as fh:
-                    sent_message = await update.callback_query.message.reply_photo(
-                        photo=fh,
-                        caption=payload_text,
-                        reply_markup=result_keyboard,
-                        parse_mode=ParseMode.HTML,
-                    )
-            elif update.message:
-                with qris_path.open("rb") as fh:
-                    sent_message = await update.message.reply_photo(
-                        photo=fh,
-                        caption=payload_text,
-                        reply_markup=result_keyboard,
-                        parse_mode=ParseMode.HTML,
-                    )
+            with qris_path.open("rb") as fh:
+                sent_message = await reply_target.reply_photo(
+                    photo=fh,
+                    caption=payload_text,
+                    reply_markup=result_keyboard,
+                    parse_mode=ParseMode.HTML,
+                )
+            logger.info("Checkout %s dikirim sebagai QR+caption tunggal", order_ref)
         except Exception as exc:
-            logger.warning("Gagal kirim QRIS: %s", exc)
+            logger.warning("Gagal kirim QRIS checkout %s: %s", order_ref, exc)
 
     if sent_message is None:
-        if update.callback_query and update.callback_query.message:
-            sent_message = await update.callback_query.message.reply_text(
-                payload_text,
-                reply_markup=result_keyboard,
-                parse_mode=ParseMode.HTML,
-            )
-        elif update.message:
-            sent_message = await update.message.reply_text(
-                payload_text,
-                reply_markup=result_keyboard,
-                parse_mode=ParseMode.HTML,
-            )
+        sent_message = await reply_target.reply_text(
+            payload_text,
+            reply_markup=result_keyboard,
+            parse_mode=ParseMode.HTML,
+        )
+        if qris_path.exists():
+            logger.info("Checkout %s fallback ke pesan teks karena kirim QR gagal", order_ref)
+        else:
+            logger.info("Checkout %s dikirim sebagai teks karena file QRIS tidak tersedia", order_ref)
 
     if sent_message is not None:
         with get_session() as session:
