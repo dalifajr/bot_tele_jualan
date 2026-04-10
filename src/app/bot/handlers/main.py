@@ -341,6 +341,49 @@ async def _try_delete_message(message: Message | None) -> None:
         logger.warning("Gagal menghapus pesan loading: %s", exc)
 
 
+async def _upsert_customer_checkout_message(
+    *,
+    context: ContextTypes.DEFAULT_TYPE,
+    chat_id: int,
+    message_id: int,
+    text: str,
+    keyboard: InlineKeyboardMarkup | None,
+) -> bool:
+    try:
+        await context.bot.edit_message_text(
+            chat_id=chat_id,
+            message_id=message_id,
+            text=text,
+            parse_mode=ParseMode.HTML,
+            reply_markup=keyboard,
+            disable_web_page_preview=True,
+        )
+        return True
+    except BadRequest as exc:
+        if "message is not modified" in str(exc).lower():
+            return True
+    except Exception:
+        pass
+
+    try:
+        await context.bot.edit_message_caption(
+            chat_id=chat_id,
+            message_id=message_id,
+            caption=text,
+            parse_mode=ParseMode.HTML,
+            reply_markup=keyboard,
+        )
+        return True
+    except BadRequest as exc:
+        if "message is not modified" in str(exc).lower():
+            return True
+        logger.warning("Gagal upsert caption checkout message: %s", exc)
+    except Exception as exc:
+        logger.warning("Gagal upsert checkout message: %s", exc)
+
+    return False
+
+
 def _acquire_checkout_lock(context: ContextTypes.DEFAULT_TYPE) -> bool:
     now = time.monotonic()
     lock_until = float(context.user_data.get(CHECKOUT_LOCK_UNTIL_KEY, 0.0))
@@ -1315,19 +1358,41 @@ async def _send_checkout_result(
     sent_message = None
     payload_text = "\n".join(lines)
 
-    # Always send checkout summary as a single text message, then send QR image separately.
-    if update.callback_query and update.callback_query.message:
-        sent_message = await update.callback_query.message.reply_text(
-            payload_text,
-            reply_markup=result_keyboard,
-            parse_mode=ParseMode.HTML,
-        )
-    elif update.message:
-        sent_message = await update.message.reply_text(
-            payload_text,
-            reply_markup=result_keyboard,
-            parse_mode=ParseMode.HTML,
-        )
+    qris_path = settings.qris_file_path
+    if qris_path.exists():
+        try:
+            if update.callback_query and update.callback_query.message:
+                with qris_path.open("rb") as fh:
+                    sent_message = await update.callback_query.message.reply_photo(
+                        photo=fh,
+                        caption=payload_text,
+                        reply_markup=result_keyboard,
+                        parse_mode=ParseMode.HTML,
+                    )
+            elif update.message:
+                with qris_path.open("rb") as fh:
+                    sent_message = await update.message.reply_photo(
+                        photo=fh,
+                        caption=payload_text,
+                        reply_markup=result_keyboard,
+                        parse_mode=ParseMode.HTML,
+                    )
+        except Exception as exc:
+            logger.warning("Gagal kirim QRIS: %s", exc)
+
+    if sent_message is None:
+        if update.callback_query and update.callback_query.message:
+            sent_message = await update.callback_query.message.reply_text(
+                payload_text,
+                reply_markup=result_keyboard,
+                parse_mode=ParseMode.HTML,
+            )
+        elif update.message:
+            sent_message = await update.message.reply_text(
+                payload_text,
+                reply_markup=result_keyboard,
+                parse_mode=ParseMode.HTML,
+            )
 
     if sent_message is not None:
         with get_session() as session:
@@ -1337,18 +1402,6 @@ async def _send_checkout_result(
                 chat_id=int(sent_message.chat_id),
                 message_id=int(sent_message.message_id),
             )
-
-    qris_path = settings.qris_file_path
-    if qris_path.exists():
-        try:
-            if update.callback_query and update.callback_query.message:
-                with qris_path.open("rb") as fh:
-                    await update.callback_query.message.reply_photo(photo=fh)
-            elif update.message:
-                with qris_path.open("rb") as fh:
-                    await update.message.reply_photo(photo=fh)
-        except Exception as exc:
-            logger.warning("Gagal kirim QRIS: %s", exc)
 
     return True
 
@@ -2046,14 +2099,15 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
                     ) else 0
                     try:
                         if checkout_chat_id > 0 and checkout_message_id > 0:
-                            await context.bot.edit_message_text(
+                            upserted = await _upsert_customer_checkout_message(
+                                context=context,
                                 chat_id=checkout_chat_id,
                                 message_id=checkout_message_id,
                                 text=customer_text,
-                                parse_mode=ParseMode.HTML,
-                                reply_markup=customer_keyboard,
-                                disable_web_page_preview=True,
+                                keyboard=customer_keyboard,
                             )
+                            if not upserted:
+                                raise RuntimeError("upsert checkout message gagal")
                         else:
                             sent = await context.bot.send_message(
                                 chat_id=customer_chat_id,
