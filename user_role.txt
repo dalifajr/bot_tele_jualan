@@ -1,0 +1,3 @@
+# Format: admin:<telegram_user_id>
+# Contoh:
+# admin:123456789

@@ -1,0 +1,139 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+from sqlalchemy import Select, func, select
+from sqlalchemy.orm import Session
+
+from app.bot.services.audit_service import append_audit
+from app.bot.services.stock_parser import parse_stock_block
+from app.db.models import Product, StockUnit
+
+
+@dataclass
+class ProductView:
+    id: int
+    name: str
+    description: str
+    price: int
+    is_suspended: bool
+    stock_available: int
+
+
+def _build_stock_count_query() -> Select:
+    return (
+        select(StockUnit.product_id, func.count(StockUnit.id).label("stock_count"))
+        .where(StockUnit.is_sold.is_(False))
+        .group_by(StockUnit.product_id)
+    )
+
+
+def _to_view(product: Product, stock_available: int) -> ProductView:
+    return ProductView(
+        id=product.id,
+        name=product.name,
+        description=product.description,
+        price=product.price,
+        is_suspended=product.is_suspended,
+        stock_available=stock_available,
+    )
+
+
+def list_products(session: Session, include_suspended: bool = False) -> list[ProductView]:
+    stock_counts = {pid: count for pid, count in session.execute(_build_stock_count_query()).all()}
+
+    stmt = select(Product).order_by(Product.id.asc())
+    if not include_suspended:
+        stmt = stmt.where(Product.is_suspended.is_(False))
+
+    products = session.scalars(stmt).all()
+    result: list[ProductView] = []
+    for product in products:
+        result.append(_to_view(product, stock_counts.get(product.id, 0)))
+    return result
+
+
+def get_product(session: Session, product_id: int) -> Product | None:
+    return session.get(Product, product_id)
+
+
+def get_available_stock_count(session: Session, product_id: int) -> int:
+    return (
+        session.scalar(
+            select(func.count(StockUnit.id)).where(
+                StockUnit.product_id == product_id,
+                StockUnit.is_sold.is_(False),
+            )
+        )
+        or 0
+    )
+
+
+def add_product(session: Session, name: str, price: int, description: str, actor_id: int | None) -> Product:
+    product = Product(name=name.strip(), price=price, description=description.strip())
+    session.add(product)
+    session.flush()
+    append_audit(
+        session,
+        action="product_add",
+        actor_id=actor_id,
+        entity_type="product",
+        entity_id=str(product.id),
+        detail=f"name={product.name}; price={product.price}",
+    )
+    return product
+
+
+def suspend_product(session: Session, product_id: int, suspended: bool, actor_id: int | None) -> Product:
+    product = session.get(Product, product_id)
+    if product is None:
+        raise ValueError("Produk tidak ditemukan.")
+    product.is_suspended = suspended
+    session.add(product)
+    append_audit(
+        session,
+        action="product_suspend" if suspended else "product_unsuspend",
+        actor_id=actor_id,
+        entity_type="product",
+        entity_id=str(product.id),
+    )
+    return product
+
+
+def delete_product(session: Session, product_id: int, actor_id: int | None) -> None:
+    product = session.get(Product, product_id)
+    if product is None:
+        raise ValueError("Produk tidak ditemukan.")
+    session.delete(product)
+    append_audit(
+        session,
+        action="product_delete",
+        actor_id=actor_id,
+        entity_type="product",
+        entity_id=str(product_id),
+    )
+
+
+def add_stock_block(session: Session, product_id: int, raw_text: str, actor_id: int | None) -> StockUnit:
+    product = session.get(Product, product_id)
+    if product is None:
+        raise ValueError("Produk tidak ditemukan.")
+
+    parsed = parse_stock_block(raw_text)
+    stock = StockUnit(
+        product_id=product_id,
+        raw_text=raw_text.strip(),
+        parsed_json=parsed.as_json(),
+    )
+    session.add(stock)
+    session.flush()
+
+    append_audit(
+        session,
+        action="stock_add",
+        actor_id=actor_id,
+        entity_type="stock_unit",
+        entity_id=str(stock.id),
+        detail=f"product_id={product_id}",
+    )
+    return stock

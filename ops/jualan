@@ -1,0 +1,179 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ENV_FILE="${PROJECT_DIR}/.env"
+ROLE_FILE="${PROJECT_DIR}/user_role.txt"
+UPDATE_SCRIPT="${PROJECT_DIR}/ops/update_manager.sh"
+BOT_SERVICE="jualan-bot.service"
+API_SERVICE="jualan-api.service"
+
+print_usage() {
+  cat <<'EOF'
+Usage: jualan <command>
+
+Commands:
+  start        Start bot and API service
+  stop         Stop bot and API service
+  restart      Restart bot and API service
+  status       Show service status
+  logs         Show bot logs (follow)
+  config       Configure BOT_TOKEN, LISTENER_SHARED_SECRET, and admin id
+  update       Apply update from GitHub
+  check-update Check latest commit from GitHub
+  rollback     Rollback to previous commit
+  uninstall    Stop/disable services and remove alias
+EOF
+}
+
+set_env_var() {
+  local key="$1"
+  local value="$2"
+  local escaped
+  escaped="${value//|/\\|}"
+  escaped="${escaped//&/\\&}"
+
+  if [[ ! -f "${ENV_FILE}" ]]; then
+    cp "${PROJECT_DIR}/.env.example" "${ENV_FILE}"
+  fi
+
+  if grep -q "^${key}=" "${ENV_FILE}"; then
+    sed -i "s|^${key}=.*|${key}=${escaped}|" "${ENV_FILE}"
+  else
+    printf '%s=%s\n' "${key}" "${value}" >> "${ENV_FILE}"
+  fi
+}
+
+configure_admin_role() {
+  local admin_id="$1"
+  if [[ -z "${admin_id}" ]]; then
+    return
+  fi
+
+  if [[ ! "${admin_id}" =~ ^[0-9]+$ ]]; then
+    echo "Admin ID harus angka." >&2
+    exit 1
+  fi
+
+  cat > "${ROLE_FILE}" <<EOF
+# Format: admin:<telegram_user_id>
+# Dikelola oleh panel jualan
+admin:${admin_id}
+EOF
+}
+
+start_services() {
+  sudo systemctl start "${BOT_SERVICE}" "${API_SERVICE}"
+  echo "Service started."
+}
+
+stop_services() {
+  sudo systemctl stop "${BOT_SERVICE}" "${API_SERVICE}"
+  echo "Service stopped."
+}
+
+restart_services() {
+  sudo systemctl restart "${BOT_SERVICE}" "${API_SERVICE}"
+  echo "Service restarted."
+}
+
+status_services() {
+  sudo systemctl --no-pager --full status "${BOT_SERVICE}" "${API_SERVICE}" || true
+}
+
+show_logs() {
+  sudo journalctl -u "${BOT_SERVICE}" -f
+}
+
+configure_bot() {
+  local token secret admin_id
+  read -r -p "BOT_TOKEN: " token
+  read -r -p "LISTENER_SHARED_SECRET (kosongkan untuk skip): " secret
+  read -r -p "Admin Telegram ID (kosongkan untuk skip): " admin_id
+
+  if [[ -n "${token}" ]]; then
+    set_env_var "BOT_TOKEN" "${token}"
+  fi
+
+  if [[ -n "${secret}" ]]; then
+    set_env_var "LISTENER_SHARED_SECRET" "${secret}"
+  fi
+
+  configure_admin_role "${admin_id}"
+  echo "Konfigurasi tersimpan. Restart service agar perubahan aktif."
+}
+
+apply_update() {
+  bash "${UPDATE_SCRIPT}" update
+}
+
+check_update() {
+  bash "${UPDATE_SCRIPT}" check
+}
+
+rollback_update() {
+  bash "${UPDATE_SCRIPT}" rollback
+}
+
+uninstall_bot() {
+  local confirm
+  read -r -p "Yakin uninstall bot service? ketik YES: " confirm
+  if [[ "${confirm}" != "YES" ]]; then
+    echo "Batal."
+    exit 0
+  fi
+
+  sudo systemctl stop "${BOT_SERVICE}" "${API_SERVICE}" || true
+  sudo systemctl disable "${BOT_SERVICE}" "${API_SERVICE}" || true
+  sudo rm -f "/etc/systemd/system/${BOT_SERVICE}" "/etc/systemd/system/${API_SERVICE}"
+  sudo systemctl daemon-reload
+  sudo rm -f /usr/local/bin/jualan
+
+  echo "Uninstall selesai (kode project tidak dihapus)."
+}
+
+menu() {
+  cat <<'EOF'
+Panel Jualan
+1) start
+2) stop
+3) restart
+4) status
+5) config
+6) check-update
+7) update
+8) rollback
+9) uninstall
+0) keluar
+EOF
+  read -r -p "Pilih menu: " choice
+  case "${choice}" in
+    1) start_services ;;
+    2) stop_services ;;
+    3) restart_services ;;
+    4) status_services ;;
+    5) configure_bot ;;
+    6) check_update ;;
+    7) apply_update ;;
+    8) rollback_update ;;
+    9) uninstall_bot ;;
+    0) exit 0 ;;
+    *) echo "Pilihan tidak valid." ;;
+  esac
+}
+
+cmd="${1:-}"
+case "${cmd}" in
+  start) start_services ;;
+  stop) stop_services ;;
+  restart) restart_services ;;
+  status) status_services ;;
+  logs) show_logs ;;
+  config) configure_bot ;;
+  update) apply_update ;;
+  check-update) check_update ;;
+  rollback) rollback_update ;;
+  uninstall) uninstall_bot ;;
+  "") menu ;;
+  *) print_usage; exit 1 ;;
+esac

@@ -1,0 +1,17 @@
+[Unit]
+Description=Jualan Telegram Bot Service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=__PROJECT_DIR__
+Environment=PYTHONPATH=__PROJECT_DIR__/src
+EnvironmentFile=__PROJECT_DIR__/.env
+ExecStart=__PYTHON_BIN__ -m app.run_bot
+Restart=on-failure
+RestartSec=5
+User=__RUN_USER__
+
+[Install]
+WantedBy=multi-user.target
