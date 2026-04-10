@@ -82,6 +82,10 @@ CUSTOMER_ORDERS_PAGE_SIZE = 10
 ADMIN_LIST_PAGE_SIZE = 10
 CHECKOUT_LOCK_UNTIL_KEY = "checkout_lock_until"
 CHECKOUT_LOCK_SECONDS = 8.0
+CHECKOUT_ACTION_CACHE_KEY = "checkout_action_cache"
+CHECKOUT_ACTION_TTL_SECONDS = 20.0
+USER_CTX_CACHE_KEY = "user_ctx_cache"
+USER_CTX_CACHE_TTL_SECONDS = 20.0
 
 ADMIN_PRODUCT_PICKER_TITLES: dict[str, str] = {
     "stk": "📥 Pilih produk untuk ditambah stok.",
@@ -303,6 +307,25 @@ def _acquire_checkout_lock(context: ContextTypes.DEFAULT_TYPE) -> bool:
 
 def _release_checkout_lock(context: ContextTypes.DEFAULT_TYPE) -> None:
     context.user_data.pop(CHECKOUT_LOCK_UNTIL_KEY, None)
+
+
+def _is_duplicate_checkout_action(context: ContextTypes.DEFAULT_TYPE, signature: str) -> bool:
+    now = time.monotonic()
+    raw_cache = context.user_data.get(CHECKOUT_ACTION_CACHE_KEY)
+    cache: dict[str, float] = raw_cache if isinstance(raw_cache, dict) else {}
+
+    # Purge expired keys to keep user_data small.
+    for key in list(cache.keys()):
+        if cache[key] <= now:
+            cache.pop(key, None)
+
+    if signature in cache and cache[signature] > now:
+        context.user_data[CHECKOUT_ACTION_CACHE_KEY] = cache
+        return True
+
+    cache[signature] = now + CHECKOUT_ACTION_TTL_SECONDS
+    context.user_data[CHECKOUT_ACTION_CACHE_KEY] = cache
+    return False
 
 
 async def _send_checkout_loading(update: Update) -> Message | None:
@@ -1075,6 +1098,7 @@ async def _send_product_detail(update: Update, product_id: int, qty: int = 1) ->
                     InlineKeyboardButton("➕", callback_data=f"qty:inc:{product_id}:{qty}"),
                 ],
                 [InlineKeyboardButton("🛒 Pesan Sekarang", callback_data=f"buy:{product_id}:{qty}")],
+                [InlineKeyboardButton(f"🧺 Take All ({stock})", callback_data=f"buyall:{product_id}")],
                 [InlineKeyboardButton("⬅️ Kembali", callback_data="back:cus_cat")],
             ]
         )
@@ -1089,6 +1113,7 @@ async def _send_product_detail(update: Update, product_id: int, qty: int = 1) ->
                     InlineKeyboardButton("🛒 Beli 3", callback_data=f"buy:{product_id}:3"),
                     InlineKeyboardButton("🛒 Beli 5", callback_data=f"buy:{product_id}:5"),
                 ],
+                [InlineKeyboardButton(f"🧺 Take All ({stock})", callback_data=f"buyall:{product_id}")],
                 [InlineKeyboardButton("✍️ Input Qty Manual", callback_data=f"buyq:{product_id}")],
                 [InlineKeyboardButton("⬅️ Kembali", callback_data="back:cus_cat")],
             ]
@@ -1316,12 +1341,27 @@ async def _run_update_script(action: str) -> str:
     return output
 
 
-async def _ensure_user(update: Update):
+async def _ensure_user(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE | None = None,
+):
     tg_user = update.effective_user
     if tg_user is None:
         raise ValueError("User Telegram tidak ditemukan.")
 
     role = _role_for_telegram_id(tg_user.id)
+
+    if context is not None:
+        cached = context.user_data.get(USER_CTX_CACHE_KEY)
+        now = time.monotonic()
+        if isinstance(cached, dict):
+            cached_until = float(cached.get("until", 0.0))
+            cached_role = str(cached.get("role", ""))
+            cached_tg = int(cached.get("telegram_id", 0) or 0)
+            cached_id = int(cached.get("id", 0) or 0)
+            if cached_until > now and cached_role == role and cached_tg == tg_user.id and cached_id > 0:
+                return UserContext(id=cached_id, telegram_id=cached_tg), role
+
     with get_session() as session:
         db_user = upsert_user(
             session=session,
@@ -1333,6 +1373,15 @@ async def _ensure_user(update: Update):
         if db_user.id is None:
             raise ValueError("Gagal menyimpan user Telegram.")
         user_ctx = UserContext(id=int(db_user.id), telegram_id=int(db_user.telegram_id))
+
+    if context is not None:
+        context.user_data[USER_CTX_CACHE_KEY] = {
+            "id": user_ctx.id,
+            "telegram_id": user_ctx.telegram_id,
+            "role": role,
+            "until": time.monotonic() + USER_CTX_CACHE_TTL_SECONDS,
+        }
+
     return user_ctx, role
 
 
@@ -1678,12 +1727,12 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         return
 
     data = query.data or ""
-    if data.startswith("buy:") or data.startswith("ord:reorder:"):
+    if data.startswith("buy:") or data.startswith("buyall:") or data.startswith("ord:reorder:"):
         await query.answer("⏳ Memproses checkout...", show_alert=False)
     else:
         await query.answer()
 
-    db_user, role = await _ensure_user(update)
+    db_user, role = await _ensure_user(update, context)
 
     admin_only_prefixes = ("adm:", "ac:", "acp:", "gh:", "ap:", "pay:", "up:")
     if role != "admin" and any(data.startswith(prefix) for prefix in admin_only_prefixes):
@@ -2234,6 +2283,67 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             await _try_delete_message(loading_message)
             return
 
+        message_id = int(query.message.message_id) if query.message is not None else 0
+        action_signature = f"buy:{product_id}:{qty}:{message_id}"
+        if _is_duplicate_checkout_action(context, action_signature):
+            _release_checkout_lock(context)
+            await _try_delete_message(loading_message)
+            await query.answer("Permintaan checkout ini sudah diproses.", show_alert=False)
+            return
+
+        try:
+            checkout_ok = await _send_checkout_result(update, db_user.telegram_id, product_id, qty)
+        finally:
+            _release_checkout_lock(context)
+            await _try_delete_message(loading_message)
+
+        if checkout_ok:
+            await _try_delete_callback_message(update)
+        return
+
+    if data.startswith("buyall:"):
+        if role == "admin":
+            await _respond(update, "🚫 Admin tidak bisa checkout sebagai customer.", _back_keyboard("main"))
+            return
+
+        if not _acquire_checkout_lock(context):
+            await query.answer("⏳ Checkout sebelumnya masih diproses.", show_alert=False)
+            return
+
+        loading_message = await _send_checkout_loading(update)
+        checkout_ok = False
+
+        try:
+            product_id = int(data.split(":", maxsplit=1)[1])
+        except ValueError:
+            await _respond(update, "⚠️ Data checkout tidak valid. Silakan pilih ulang dari detail produk.", _back_keyboard("cus_cat"))
+            _release_checkout_lock(context)
+            await _try_delete_message(loading_message)
+            return
+
+        with get_session() as session:
+            product = get_product(session, product_id)
+            if product is None or product.is_suspended:
+                await _respond(update, "⚠️ Produk tidak tersedia.", _back_keyboard("cus_cat"))
+                _release_checkout_lock(context)
+                await _try_delete_message(loading_message)
+                return
+            qty = get_available_stock_count(session, product_id)
+
+        if qty <= 0:
+            await _respond(update, "⚠️ Stok produk sudah habis.", _back_keyboard("cus_cat"))
+            _release_checkout_lock(context)
+            await _try_delete_message(loading_message)
+            return
+
+        message_id = int(query.message.message_id) if query.message is not None else 0
+        action_signature = f"buyall:{product_id}:{qty}:{message_id}"
+        if _is_duplicate_checkout_action(context, action_signature):
+            _release_checkout_lock(context)
+            await _try_delete_message(loading_message)
+            await query.answer("Permintaan checkout ini sudah diproses.", show_alert=False)
+            return
+
         try:
             checkout_ok = await _send_checkout_result(update, db_user.telegram_id, product_id, qty)
         finally:
@@ -2318,8 +2428,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             return
 
         if not _acquire_checkout_lock(context):
-            if query.message is not None:
-                await query.message.reply_text("⏳ Checkout sebelumnya masih diproses. Mohon tunggu sebentar.")
+            await query.answer("⏳ Checkout sebelumnya masih diproses.", show_alert=False)
             return
 
         loading_message = await _send_checkout_loading(update)
@@ -2333,6 +2442,14 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             return
 
         order_ref = parts[2]
+        message_id = int(query.message.message_id) if query.message is not None else 0
+        action_signature = f"reorder:{order_ref}:{message_id}"
+        if _is_duplicate_checkout_action(context, action_signature):
+            _release_checkout_lock(context)
+            await _try_delete_message(loading_message)
+            await query.answer("Permintaan checkout ini sudah diproses.", show_alert=False)
+            return
+
         try:
             checkout_ok = await _send_quick_reorder_result(update, db_user.telegram_id, order_ref)
         finally:
@@ -2438,7 +2555,7 @@ async def text_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
     role = "customer"
     try:
-        db_user, role = await _ensure_user(update)
+        db_user, role = await _ensure_user(update, context)
         text = update.message.text.strip()
         flow, flow_data = _get_flow(context)
 
@@ -2692,7 +2809,7 @@ async def photo_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     if update.message is None or not update.message.photo:
         return
 
-    await _ensure_user(update)
+    await _ensure_user(update, context)
     if not _ensure_admin(update):
         return
 
