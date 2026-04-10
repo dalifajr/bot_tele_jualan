@@ -101,7 +101,12 @@ stash_local_changes_for_update() {
     exit 1
   fi
 
-  STASH_REF="$(git stash list | awk -v needle="${AUTOSTASH_NAME}" 'index($0, needle) { print $1; exit }')"
+  local stash_list
+  stash_list="$(git stash list || true)"
+  STASH_REF="$(awk -v needle="${AUTOSTASH_NAME}" 'index($0, needle) { print $1; exit }' <<< "${stash_list}" || true)"
+  if [[ -z "${STASH_REF}" ]]; then
+    STASH_REF="$(git stash list -n 1 --format='%gd' 2>/dev/null || true)"
+  fi
   STASH_CREATED=1
 
   echo "Local changes disimpan sementara sebelum update."
