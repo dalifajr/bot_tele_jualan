@@ -5,8 +5,94 @@ PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BACKUP_DIR="${PROJECT_DIR}/ops/backups"
 LAST_COMMIT_FILE="${BACKUP_DIR}/.last_commit"
 ENV_FILE="${PROJECT_DIR}/.env"
+RUNTIME_PRESERVE_FILES=(".env" "user_role.txt")
+
+PRESERVE_DIR=""
+LOCAL_PATCH_FILE=""
+AUTOSTASH_NAME=""
+STASH_REF=""
+STASH_CREATED=0
 
 mkdir -p "${BACKUP_DIR}"
+
+has_local_changes() {
+  if ! git diff --quiet || ! git diff --cached --quiet; then
+    return 0
+  fi
+
+  if [[ -n "$(git ls-files --others --exclude-standard)" ]]; then
+    return 0
+  fi
+
+  return 1
+}
+
+preserve_runtime_files() {
+  local ts="$1"
+  local rel_path
+  local src
+  local dst
+
+  PRESERVE_DIR="${BACKUP_DIR}/preserve_${ts}"
+  mkdir -p "${PRESERVE_DIR}"
+
+  for rel_path in "${RUNTIME_PRESERVE_FILES[@]}"; do
+    src="${PROJECT_DIR}/${rel_path}"
+    dst="${PRESERVE_DIR}/${rel_path}"
+    if [[ -f "${src}" ]]; then
+      mkdir -p "$(dirname "${dst}")"
+      cp -f "${src}" "${dst}"
+    fi
+  done
+}
+
+restore_runtime_files() {
+  local rel_path
+  local src
+  local dst
+
+  if [[ -z "${PRESERVE_DIR}" || ! -d "${PRESERVE_DIR}" ]]; then
+    return
+  fi
+
+  for rel_path in "${RUNTIME_PRESERVE_FILES[@]}"; do
+    src="${PRESERVE_DIR}/${rel_path}"
+    dst="${PROJECT_DIR}/${rel_path}"
+    if [[ -f "${src}" ]]; then
+      mkdir -p "$(dirname "${dst}")"
+      cp -f "${src}" "${dst}"
+    fi
+  done
+}
+
+stash_local_changes_for_update() {
+  local ts="$1"
+
+  if ! has_local_changes; then
+    return
+  fi
+
+  LOCAL_PATCH_FILE="${BACKUP_DIR}/local_changes_${ts}.patch"
+  {
+    git diff --binary
+    git diff --binary --cached
+  } > "${LOCAL_PATCH_FILE}"
+
+  AUTOSTASH_NAME="jualan-auto-update-${ts}"
+  if ! git stash push --include-untracked -m "${AUTOSTASH_NAME}" >/dev/null; then
+    echo "Gagal menyimpan perubahan lokal sementara. Update dibatalkan agar aman." >&2
+    exit 1
+  fi
+
+  STASH_REF="$(git stash list | awk -v needle="${AUTOSTASH_NAME}" 'index($0, needle) { print $1; exit }')"
+  STASH_CREATED=1
+
+  echo "Local changes disimpan sementara sebelum update."
+  echo "Patch backup: ${LOCAL_PATCH_FILE}"
+  if [[ -n "${STASH_REF}" ]]; then
+    echo "Stash ref : ${STASH_REF}"
+  fi
+}
 
 read_env_var() {
   local key="$1"
@@ -79,17 +165,29 @@ apply_update() {
   cd "${PROJECT_DIR}"
   git fetch origin
 
-  local branch
+  local branch ts
   branch="$(default_branch)"
+  ts="$(date +%Y%m%d_%H%M%S)"
 
   backup_before_update
+  preserve_runtime_files "${ts}"
+  stash_local_changes_for_update "${ts}"
 
   git checkout "${branch}"
   git pull --ff-only origin "${branch}"
+  restore_runtime_files
   install_requirements
   restart_services
 
   echo "Update selesai pada branch ${branch}."
+  if [[ "${STASH_CREATED}" -eq 1 ]]; then
+    echo "Catatan: perubahan lokal lama disimpan di stash agar tidak menimpa update terbaru."
+    if [[ -n "${STASH_REF}" ]]; then
+      echo "Lihat detail stash : git stash show -p ${STASH_REF}"
+    else
+      echo "Lihat daftar stash : git stash list"
+    fi
+  fi
 }
 
 rollback_update() {
