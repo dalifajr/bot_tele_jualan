@@ -615,6 +615,8 @@ def _run_metrics_flow() -> bool:
     print("retry_pending:", metrics.retry_pending)
     print("report_title:", "📊 <b>Laporan Operasional</b>" in report)
     print("report_revenue:", "💵 <b>Pendapatan</b>" in report)
+    print("report_yesterday:", "Kemarin:" in report)
+    print("report_top_product:", "Produk terlaris" in report)
 
     return (
         metrics.orders_created >= 1
@@ -622,6 +624,8 @@ def _run_metrics_flow() -> bool:
         and metrics.retry_pending >= 0
         and "📊 <b>Laporan Operasional</b>" in report
         and "💵 <b>Pendapatan</b>" in report
+        and "Kemarin:" in report
+        and "Produk terlaris" in report
     )
 
 

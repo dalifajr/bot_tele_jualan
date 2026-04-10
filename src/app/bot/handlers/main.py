@@ -63,7 +63,11 @@ from app.bot.services.order_service import (
     set_checkout_message_ref,
 )
 from app.bot.services.loyalty_service import list_customer_vouchers
-from app.bot.services.metrics_service import collect_operational_metrics, format_operational_metrics_report
+from app.bot.services.metrics_service import (
+    collect_operational_metrics,
+    format_operational_metrics_report,
+    reset_operational_metrics,
+)
 from app.bot.services.notification_retry_service import enqueue_notification_retry
 from app.bot.services.restock_service import subscribe_restock
 from app.bot.services.user_service import get_user_by_telegram_id, upsert_user
@@ -130,6 +134,7 @@ def _main_menu_keyboard(role: str) -> InlineKeyboardMarkup:
                 [InlineKeyboardButton("📦 Katalog Admin", callback_data="adm:cat")],
                 [InlineKeyboardButton("📢 Broadcast", callback_data="adm:bc")],
                 [InlineKeyboardButton("💳 Konfigurasi Payment", callback_data="adm:pay")],
+                [InlineKeyboardButton("📊 Laporan Operasional", callback_data="adm:ops")],
                 [InlineKeyboardButton("🔄 Update Bot Tele", callback_data="adm:upd")],
                 [InlineKeyboardButton("ℹ️ Bantuan", callback_data="adm:help")],
             ]
@@ -189,6 +194,15 @@ def _github_pack_menu_keyboard() -> InlineKeyboardMarkup:
             [InlineKeyboardButton("👁️ Lihat Detail Akun", callback_data="gh:view:list")],
             [InlineKeyboardButton("🗑️ Hapus Akun", callback_data="gh:del:list")],
             [InlineKeyboardButton("⬅️ Kembali", callback_data="back:adm_cat")],
+        ]
+    )
+
+
+def _ops_metrics_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        [
+            [InlineKeyboardButton("🔄 Reset Metrik", callback_data="adm:ops:reset")],
+            [InlineKeyboardButton("⬅️ Kembali", callback_data="back:main")],
         ]
     )
 
@@ -1691,10 +1705,11 @@ async def ops_metrics_handler(update: Update, context: ContextTypes.DEFAULT_TYPE
             window_hours=settings.metrics_report_window_hours,
         )
 
+    report_text = format_operational_metrics_report(metrics)
     await _respond(
         update,
-        format_operational_metrics_report(metrics),
-        _back_keyboard("main"),
+        report_text,
+        _ops_metrics_keyboard(),
         parse_mode=ParseMode.HTML,
     )
 
@@ -1886,6 +1901,46 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
     if data == "adm:help":
         await _send_help(update, role)
+        return
+
+    if data == "adm:ops":
+        if role != "admin":
+            await _respond_admin_only(update)
+            return
+
+        with get_session() as session:
+            metrics = collect_operational_metrics(
+                session,
+                window_hours=settings.metrics_report_window_hours,
+            )
+
+        await _respond(
+            update,
+            format_operational_metrics_report(metrics),
+            _ops_metrics_keyboard(),
+            parse_mode=ParseMode.HTML,
+        )
+        return
+
+    if data == "adm:ops:reset":
+        if role != "admin":
+            await _respond_admin_only(update)
+            return
+
+        with get_session() as session:
+            reset_at = reset_operational_metrics(session)
+            metrics = collect_operational_metrics(
+                session,
+                window_hours=settings.metrics_report_window_hours,
+            )
+
+        reset_text = _format_display_day_time(reset_at)
+        await _respond(
+            update,
+            f"✅ Metrik direset pada <b>{html.escape(reset_text)}</b>.\n\n{format_operational_metrics_report(metrics)}",
+            _ops_metrics_keyboard(),
+            parse_mode=ParseMode.HTML,
+        )
         return
 
     if data == "cus:cat":
