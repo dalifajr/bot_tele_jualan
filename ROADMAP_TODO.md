@@ -34,6 +34,7 @@
 - [x] Snapshot retry queue on-demand di panel admin (pending, failed, sent 24 jam, top failed channels)
 - [x] Housekeeping terjadwal untuk data transient (listener events, retry jobs, telemetry events)
 - [x] Perf smoke gate script untuk listener payment (`ops/perf_listener_smoke.py`)
+- [x] Wiring perf smoke listener ke CI pipeline (`.github/workflows/ci.yml`, job `perf-listener-gate`)
 - [x] Optimasi query hot-path order service (reduce N+1 pada detail order dan rekomendasi upsell)
 
 ## Notes

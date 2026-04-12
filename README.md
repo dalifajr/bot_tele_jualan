@@ -84,6 +84,11 @@ Perf smoke gate listener (lokal):
 PYTHONPATH=src .venv/Scripts/python.exe ops/perf_listener_smoke.py
 ```
 
+CI gate otomatis:
+
+- GitHub Actions workflow: `.github/workflows/ci.yml`
+- Job `perf-listener-gate` menjalankan `ops/perf_listener_smoke.py` dan gagal jika p95 melebihi threshold.
+
 ## Kontrak Listener Payment
 
 Endpoint:
