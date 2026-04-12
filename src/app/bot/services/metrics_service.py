@@ -8,7 +8,7 @@ from sqlalchemy import and_, func, select
 from sqlalchemy.orm import Session
 
 from app.common.config import get_settings
-from app.db.models import BotSetting, ListenerEvent, NotificationRetryJob, Order, OrderItem, Payment, Product
+from app.db.models import BotSetting, ListenerEvent, NotificationRetryJob, Order, OrderItem, Payment, Product, TelemetryEvent
 
 settings = get_settings()
 METRICS_RESET_AT_KEY = "metrics_reset_at"
@@ -40,6 +40,17 @@ class OperationalMetrics:
     top_products: list[tuple[str, int]]
 
 
+@dataclass
+class RuntimeTelemetryMetrics:
+    window_hours: int
+    listener_total: int
+    listener_p95_ms: int | None
+    listener_error_rate: float
+    checkout_total: int
+    checkout_p95_ms: int | None
+    checkout_success_rate: float
+
+
 def _utcnow() -> datetime:
     return datetime.utcnow()
 
@@ -48,6 +59,18 @@ def _safe_ratio(numerator: int, denominator: int) -> float:
     if denominator <= 0:
         return 0.0
     return float(numerator) / float(denominator)
+
+
+def _percentile_ms(samples: list[int], percentile: int = 95) -> int | None:
+    if not samples:
+        return None
+    ordered = sorted(max(0, int(x)) for x in samples)
+    if len(ordered) == 1:
+        return ordered[0]
+
+    safe_percentile = min(100, max(1, int(percentile)))
+    rank = int(round((safe_percentile / 100.0) * (len(ordered) - 1)))
+    return ordered[rank]
 
 
 def _format_rupiah(amount: int) -> str:
@@ -280,6 +303,83 @@ def collect_operational_metrics(session: Session, window_hours: int = 24) -> Ope
         revenue_last_month=revenue_last_month,
         revenue_total=revenue_total,
         top_products=top_products,
+    )
+
+
+def collect_runtime_telemetry_metrics(session: Session, window_hours: int = 24) -> RuntimeTelemetryMetrics:
+    safe_window_hours = max(1, int(window_hours))
+    window_start = _utcnow() - timedelta(hours=safe_window_hours)
+
+    rows = list(
+        session.execute(
+            select(
+                TelemetryEvent.event,
+                TelemetryEvent.duration_ms,
+                TelemetryEvent.success,
+                TelemetryEvent.status,
+            ).where(
+                TelemetryEvent.created_at >= window_start,
+                TelemetryEvent.event.in_(["api.payment_listener", "bot.checkout_result"]),
+            )
+        ).all()
+    )
+
+    listener_durations: list[int] = []
+    listener_total = 0
+    listener_error = 0
+
+    checkout_durations: list[int] = []
+    checkout_total = 0
+    checkout_success = 0
+
+    for event_name, duration_ms, success, status in rows:
+        name = str(event_name or "")
+
+        if name == "api.payment_listener":
+            listener_total += 1
+            if duration_ms is not None:
+                listener_durations.append(int(duration_ms))
+            if str(status or "").lower() == "error":
+                listener_error += 1
+            continue
+
+        if name == "bot.checkout_result":
+            checkout_total += 1
+            if duration_ms is not None:
+                checkout_durations.append(int(duration_ms))
+            if success is True:
+                checkout_success += 1
+
+    return RuntimeTelemetryMetrics(
+        window_hours=safe_window_hours,
+        listener_total=listener_total,
+        listener_p95_ms=_percentile_ms(listener_durations, percentile=95),
+        listener_error_rate=_safe_ratio(listener_error, listener_total),
+        checkout_total=checkout_total,
+        checkout_p95_ms=_percentile_ms(checkout_durations, percentile=95),
+        checkout_success_rate=_safe_ratio(checkout_success, checkout_total),
+    )
+
+
+def format_runtime_telemetry_report(metrics: RuntimeTelemetryMetrics) -> str:
+    def pct(value: float) -> str:
+        return f"{value * 100:.1f}%"
+
+    listener_p95 = f"{metrics.listener_p95_ms} ms" if metrics.listener_p95_ms is not None else "-"
+    checkout_p95 = f"{metrics.checkout_p95_ms} ms" if metrics.checkout_p95_ms is not None else "-"
+
+    return "\n".join(
+        [
+            "🚀 <b>Runtime KPI (Telemetry)</b>",
+            f"Window: {metrics.window_hours} jam terakhir",
+            f"Listener total sample: <b>{metrics.listener_total}</b>",
+            f"Listener p95 latency: <b>{listener_p95}</b>",
+            f"Listener error rate: <b>{pct(metrics.listener_error_rate)}</b>",
+            "",
+            f"Checkout total sample: <b>{metrics.checkout_total}</b>",
+            f"Checkout p95 latency: <b>{checkout_p95}</b>",
+            f"Checkout success rate: <b>{pct(metrics.checkout_success_rate)}</b>",
+        ]
     )
 
 

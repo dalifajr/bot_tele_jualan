@@ -190,3 +190,15 @@ class ListenerEvent(Base):
     response_json: Mapped[str] = mapped_column(Text, default="")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     processed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
+class TelemetryEvent(Base):
+    __tablename__ = "telemetry_events"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    event: Mapped[str] = mapped_column(String(128), index=True)
+    duration_ms: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
+    success: Mapped[bool | None] = mapped_column(Boolean, nullable=True, index=True)
+    status: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    payload_json: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)

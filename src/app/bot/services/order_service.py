@@ -405,11 +405,18 @@ def get_customer_order_detail(
     if order is None:
         return None
 
-    item_lines: list[str] = []
-    for item in order.items:
-        product = session.get(Product, item.product_id)
-        product_name = product.name if product is not None else f"Produk #{item.product_id}"
-        item_lines.append(f"{product_name} x{item.quantity}")
+    item_rows = list(
+        session.execute(
+            select(OrderItem.product_id, OrderItem.quantity, Product.name)
+            .outerjoin(Product, Product.id == OrderItem.product_id)
+            .where(OrderItem.order_id == order.id)
+            .order_by(OrderItem.id.asc())
+        ).all()
+    )
+    item_lines = [
+        f"{(product_name if product_name is not None else f'Produk #{product_id}')} x{quantity}"
+        for product_id, quantity, product_name in item_rows
+    ]
 
     account_units = list(
         session.scalars(
@@ -623,13 +630,34 @@ def _recommend_upsell_products(
             .order_by(Product.id.asc())
         ).all()
     )
+    if not products:
+        return []
+
+    candidate_ids = [int(product.id) for product in products if product.id not in excluded_product_ids]
+    if not candidate_ids:
+        return []
+
+    stock_rows = list(
+        session.execute(
+            select(StockUnit.product_id, func.count(StockUnit.id))
+            .where(
+                StockUnit.product_id.in_(candidate_ids),
+                StockUnit.is_sold.is_(False),
+                or_(
+                    StockUnit.stock_status == STOCK_STATUS_READY,
+                    StockUnit.stock_status.is_(None),
+                ),
+            )
+            .group_by(StockUnit.product_id)
+        ).all()
+    )
+    stock_map = {int(product_id): int(total or 0) for product_id, total in stock_rows}
 
     recommendations: list[Product] = []
     for product in products:
         if product.id in excluded_product_ids:
             continue
-        stock = get_available_stock_count(session, product.id)
-        if stock <= 0:
+        if stock_map.get(int(product.id), 0) <= 0:
             continue
         recommendations.append(product)
         if len(recommendations) >= max(1, int(limit)):

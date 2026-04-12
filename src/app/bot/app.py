@@ -10,6 +10,7 @@ from telegram.ext import ContextTypes
 from app.bot.services.admin_order_notification_service import upsert_admin_order_message
 from app.bot.services.catalog_service import promote_awaiting_stocks
 from app.bot.handlers.main import register_handlers
+from app.bot.services.housekeeping_service import cleanup_transient_data
 from app.bot.services.notification_retry_service import (
     enqueue_notification_retry,
     list_due_notification_retries,
@@ -26,6 +27,7 @@ from app.bot.services.order_service import (
 from app.bot.services.restock_service import list_ready_restock_notifications, mark_restock_notified
 from app.common.config import get_settings
 from app.common.roles import get_primary_admin_id
+from app.common.telemetry import elapsed_ms, log_telemetry, monotonic_ms
 from app.db.database import get_session
 
 logger = logging.getLogger(__name__)
@@ -67,14 +69,24 @@ def _build_restock_message(product_id: int, product_name: str, product_price: in
 
 
 async def _promote_awaiting_stock_job(context: ContextTypes.DEFAULT_TYPE) -> None:
+    started_ms = monotonic_ms()
     with get_session() as session:
         promoted_count = promote_awaiting_stocks(session)
     if promoted_count > 0:
         logger.info("Promoted %s awaiting stock units to ready", promoted_count)
+        log_telemetry(
+            logger,
+            "job.promote_awaiting_stock",
+            duration_ms=elapsed_ms(started_ms),
+            promoted_count=promoted_count,
+        )
 
 
 async def _expire_pending_orders_job(context: ContextTypes.DEFAULT_TYPE) -> None:
+    started_ms = monotonic_ms()
     admin_id = get_primary_admin_id(get_settings().role_file_path)
+    upsert_success_count = 0
+    upsert_failed_count = 0
 
     with get_session() as session:
         notifications = expire_pending_orders_with_notifications(session)
@@ -83,6 +95,13 @@ async def _expire_pending_orders_job(context: ContextTypes.DEFAULT_TYPE) -> None
 
         if admin_id is None:
             logger.warning("Order expired terdeteksi, tapi admin utama belum diset.")
+            log_telemetry(
+                logger,
+                "job.expire_pending_orders",
+                duration_ms=elapsed_ms(started_ms),
+                expired_count=len(notifications),
+                admin_configured=False,
+            )
             return
 
         for notification in notifications:
@@ -95,6 +114,7 @@ async def _expire_pending_orders_job(context: ContextTypes.DEFAULT_TYPE) -> None
                 existing_message_id=notification.admin_message_id,
             )
             if upsert_result is None:
+                upsert_failed_count += 1
                 continue
 
             set_admin_message_ref(
@@ -103,10 +123,24 @@ async def _expire_pending_orders_job(context: ContextTypes.DEFAULT_TYPE) -> None
                 chat_id=upsert_result[0],
                 message_id=upsert_result[1],
             )
+            upsert_success_count += 1
+
+        log_telemetry(
+            logger,
+            "job.expire_pending_orders",
+            duration_ms=elapsed_ms(started_ms),
+            expired_count=len(notifications),
+            admin_configured=True,
+            upsert_success_count=upsert_success_count,
+            upsert_failed_count=upsert_failed_count,
+        )
 
 
 async def _payment_reminder_job(context: ContextTypes.DEFAULT_TYPE) -> None:
+    started_ms = monotonic_ms()
     settings = get_settings()
+    sent_count = 0
+    retry_enqueued_count = 0
 
     with get_session() as session:
         candidates = list_orders_for_payment_reminder(
@@ -143,13 +177,28 @@ async def _payment_reminder_job(context: ContextTypes.DEFAULT_TYPE) -> None:
                     payload_text=text,
                     parse_mode="HTML",
                 )
+                retry_enqueued_count += 1
             continue
 
         with get_session() as session:
             mark_payment_reminder_sent(session, candidate.order_ref)
+        sent_count += 1
+
+    if candidates:
+        log_telemetry(
+            logger,
+            "job.payment_reminder",
+            duration_ms=elapsed_ms(started_ms),
+            candidate_count=len(candidates),
+            sent_count=sent_count,
+            retry_enqueued_count=retry_enqueued_count,
+        )
 
 
 async def _restock_subscription_job(context: ContextTypes.DEFAULT_TYPE) -> None:
+    started_ms = monotonic_ms()
+    sent_count = 0
+    retry_enqueued_count = 0
     with get_session() as session:
         candidates = list_ready_restock_notifications(session, limit=50)
 
@@ -185,19 +234,37 @@ async def _restock_subscription_job(context: ContextTypes.DEFAULT_TYPE) -> None:
                     payload_text=text,
                     parse_mode="HTML",
                 )
+                retry_enqueued_count += 1
             continue
 
         with get_session() as session:
             mark_restock_notified(session, candidate.subscription_id)
+        sent_count += 1
+
+    if candidates:
+        log_telemetry(
+            logger,
+            "job.restock_subscription",
+            duration_ms=elapsed_ms(started_ms),
+            candidate_count=len(candidates),
+            sent_count=sent_count,
+            retry_enqueued_count=retry_enqueued_count,
+        )
 
 
 async def _notification_retry_job(context: ContextTypes.DEFAULT_TYPE) -> None:
+    started_ms = monotonic_ms()
     settings = get_settings()
+    sent_count = 0
+    failed_count = 0
     with get_session() as session:
         jobs = list_due_notification_retries(
             session=session,
             limit=settings.notification_retry_batch_size,
         )
+
+    if not jobs:
+        return
 
     for job in jobs:
         try:
@@ -216,10 +283,59 @@ async def _notification_retry_job(context: ContextTypes.DEFAULT_TYPE) -> None:
                     error=str(exc),
                     backoff_seconds=settings.notification_retry_backoff_seconds,
                 )
+            failed_count += 1
             continue
 
         with get_session() as session:
             mark_notification_retry_sent(session=session, job_id=job.id)
+        sent_count += 1
+
+    log_telemetry(
+        logger,
+        "job.notification_retry",
+        duration_ms=elapsed_ms(started_ms),
+        due_job_count=len(jobs),
+        sent_count=sent_count,
+        failed_count=failed_count,
+    )
+
+
+async def _housekeeping_job(context: ContextTypes.DEFAULT_TYPE) -> None:
+    settings = get_settings()
+    if not settings.housekeeping_enabled:
+        return
+
+    started_ms = monotonic_ms()
+    with get_session() as session:
+        result = cleanup_transient_data(
+            session,
+            listener_event_retention_days=settings.listener_event_retention_days,
+            retry_job_retention_days=settings.retry_job_retention_days,
+            telemetry_retention_days=settings.telemetry_retention_days,
+        )
+
+    deleted_total = (
+        result.deleted_listener_events
+        + result.deleted_retry_jobs
+        + result.deleted_telemetry_events
+    )
+
+    if deleted_total > 0:
+        logger.info(
+            "Housekeeping cleanup selesai: listener=%s retry=%s telemetry=%s",
+            result.deleted_listener_events,
+            result.deleted_retry_jobs,
+            result.deleted_telemetry_events,
+        )
+
+    log_telemetry(
+        logger,
+        "job.housekeeping",
+        duration_ms=elapsed_ms(started_ms),
+        deleted_listener_events=result.deleted_listener_events,
+        deleted_retry_jobs=result.deleted_retry_jobs,
+        deleted_telemetry_events=result.deleted_telemetry_events,
+    )
 
 
 def create_bot_application() -> Application:
@@ -260,6 +376,13 @@ def create_bot_application() -> Application:
             first=5,
             name="notification-retry",
         )
+        if settings.housekeeping_enabled:
+            application.job_queue.run_repeating(
+                _housekeeping_job,
+                interval=max(900, settings.housekeeping_interval_minutes * 60),
+                first=90,
+                name="housekeeping",
+            )
     else:
         logger.warning(
             "JobQueue tidak tersedia. Auto-promote awaiting stock tetap berjalan saat operasi katalog/checkout dipanggil."

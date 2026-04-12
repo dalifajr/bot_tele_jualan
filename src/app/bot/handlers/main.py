@@ -64,14 +64,17 @@ from app.bot.services.order_service import (
 )
 from app.bot.services.metrics_service import (
     collect_operational_metrics,
+    collect_runtime_telemetry_metrics,
     format_operational_metrics_report,
+    format_runtime_telemetry_report,
     reset_operational_metrics,
 )
-from app.bot.services.notification_retry_service import enqueue_notification_retry
+from app.bot.services.notification_retry_service import collect_retry_queue_snapshot, enqueue_notification_retry
 from app.bot.services.restock_service import subscribe_restock
 from app.bot.services.user_service import get_user_by_telegram_id, upsert_user
 from app.common.config import get_settings
 from app.common.roles import get_primary_admin_id, is_admin
+from app.common.telemetry import elapsed_ms, log_telemetry, monotonic_ms
 from app.db.database import get_session
 
 logger = logging.getLogger(__name__)
@@ -200,6 +203,8 @@ def _github_pack_menu_keyboard() -> InlineKeyboardMarkup:
 def _ops_metrics_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         [
+            [InlineKeyboardButton("♻️ Refresh", callback_data="adm:ops")],
+            [InlineKeyboardButton("🧯 Retry Queue", callback_data="adm:ops:retry")],
             [InlineKeyboardButton("🔄 Reset Metrik", callback_data="adm:ops:reset")],
             [InlineKeyboardButton("⬅️ Kembali", callback_data="back:main")],
         ]
@@ -594,6 +599,32 @@ def _admin_footer_text() -> str:
 
 def _admin_access_denied_text() -> str:
     return "🚫 <b>Akses Ditolak</b>\nMenu ini khusus admin."
+
+
+def _format_retry_snapshot_text(snapshot: object) -> str:
+    # snapshot is RetryQueueSnapshot from notification_retry_service.
+    pending_count = int(getattr(snapshot, "pending_count", 0))
+    failed_count = int(getattr(snapshot, "failed_count", 0))
+    sent_last_24h = int(getattr(snapshot, "sent_last_24h", 0))
+    top_failed_channels = list(getattr(snapshot, "top_failed_channels", []) or [])
+
+    lines = [
+        "🧯 <b>Snapshot Retry Queue</b>",
+        f"Pending: <b>{pending_count}</b>",
+        f"Failed permanen: <b>{failed_count}</b>",
+        f"Sent (24 jam): <b>{sent_last_24h}</b>",
+        "",
+        "Channel gagal terbanyak:",
+    ]
+
+    if top_failed_channels:
+        for idx, (channel, total) in enumerate(top_failed_channels, start=1):
+            lines.append(f"{idx}. <b>{html.escape(str(channel))}</b> - {int(total)}")
+    else:
+        lines.append("- Tidak ada channel gagal.")
+
+    lines.extend(["", _admin_footer_text()])
+    return "\n".join(lines)
 
 
 async def _respond_admin_only(update: Update, target: str = "main") -> None:
@@ -1269,122 +1300,154 @@ async def _send_checkout_result(
     source_order_ref: str | None = None,
     source_product_name: str | None = None,
 ) -> bool:
-    with get_session() as session:
-        user = get_user_by_telegram_id(session, telegram_id)
-        if user is None:
-            await _respond(
-                update,
-                "⚠️ <b>User tidak ditemukan</b>\nSilakan jalankan /start lalu coba lagi.",
-                _back_keyboard("main"),
-                parse_mode=ParseMode.HTML,
-            )
-            return False
-        try:
-            order, payment = create_checkout(
-                session,
-                customer=user,
-                product_id=product_id,
-                quantity=qty,
-            )
-        except ValueError as exc:
-            await _respond(update, f"❌ Checkout gagal: {exc}", _back_keyboard("cus_cat"))
-            return False
-        order_ref = order.order_ref
-        payment_ref = payment.payment_ref
-        expected_amount = payment.expected_amount
-        expires_at = order.expires_at
+    started_ms = monotonic_ms()
+    order_ref_for_log = ""
+    send_mode = "none"
+    result_reason = "unknown"
+    success = False
 
-    admin_task = asyncio.create_task(
-        _upsert_admin_order_notification(update, order_ref),
-        name=f"admin-checkout:{order_ref}",
-    )
-    _track_background_task(admin_task, f"admin-checkout:{order_ref}")
-
-    expires_text = "-"
-    if expires_at is not None:
-        expires_text = _format_display_time(expires_at)
-
-    lines = [
-        "✅ <b>Checkout berhasil dibuat</b>",
-        f"🧾 Order Ref: <code>{html.escape(order_ref)}</code>",
-        f"🔖 Payment Ref: <code>{html.escape(payment_ref)}</code>",
-        f"💰 Total Bayar: <b>{_format_rupiah(expected_amount)}</b>",
-        f"⏱️ Batas bayar: <b>{expires_text}</b>",
-    ]
-
-    if source_order_ref is not None:
-        lines.append(f"🔁 Reorder dari: <code>{html.escape(source_order_ref)}</code>")
-        if source_product_name:
-            lines.append(f"📦 Produk: <b>{html.escape(source_product_name)}</b>")
-
-    lines.extend(
-        [
-            "",
-            "🧭 <b>Langkah Berikutnya</b>",
-            "1. Transfer sesuai nominal di atas.",
-            "2. Pantau status order secara berkala.",
-            "3. Jika batal, gunakan tombol Batalkan Pesanan.",
-            f"🔎 Cek status cepat: <code>/order_status {html.escape(order_ref)}</code>",
-            "",
-            _customer_footer_text(),
-        ]
-    )
-    result_keyboard = InlineKeyboardMarkup(
-        [
-            [InlineKeyboardButton("❌ Batalkan Pesanan", callback_data=f"ord:cancel:{order_ref}")],
-            [InlineKeyboardButton("📦 Lihat Pesanan", callback_data="cus:ord")],
-            [InlineKeyboardButton("⬅️ Kembali", callback_data="back:cus_cat")],
-        ]
-    )
-
-    sent_message = None
-    payload_text = "\n".join(lines)
-
-    reply_target: Message | None = None
-    if update.callback_query and update.callback_query.message:
-        reply_target = update.callback_query.message
-    elif update.message:
-        reply_target = update.message
-
-    if reply_target is None:
-        logger.error("Checkout %s gagal: target pesan Telegram tidak tersedia", order_ref)
-        return False
-
-    qris_path = settings.qris_file_path
-    if qris_path.exists():
-        try:
-            with qris_path.open("rb") as fh:
-                sent_message = await reply_target.reply_photo(
-                    photo=fh,
-                    caption=payload_text,
-                    reply_markup=result_keyboard,
+    try:
+        with get_session() as session:
+            user = get_user_by_telegram_id(session, telegram_id)
+            if user is None:
+                result_reason = "user_not_found"
+                await _respond(
+                    update,
+                    "⚠️ <b>User tidak ditemukan</b>\nSilakan jalankan /start lalu coba lagi.",
+                    _back_keyboard("main"),
                     parse_mode=ParseMode.HTML,
                 )
-            logger.info("Checkout %s dikirim sebagai QR+caption tunggal", order_ref)
-        except Exception as exc:
-            logger.warning("Gagal kirim QRIS checkout %s: %s", order_ref, exc)
+                return False
+            try:
+                order, payment = create_checkout(
+                    session,
+                    customer=user,
+                    product_id=product_id,
+                    quantity=qty,
+                )
+            except ValueError as exc:
+                result_reason = "create_checkout_failed"
+                await _respond(update, f"❌ Checkout gagal: {exc}", _back_keyboard("cus_cat"))
+                return False
+            order_ref = order.order_ref
+            order_ref_for_log = order_ref
+            payment_ref = payment.payment_ref
+            expected_amount = payment.expected_amount
+            expires_at = order.expires_at
 
-    if sent_message is None:
-        sent_message = await reply_target.reply_text(
-            payload_text,
-            reply_markup=result_keyboard,
-            parse_mode=ParseMode.HTML,
+        admin_task = asyncio.create_task(
+            _upsert_admin_order_notification(update, order_ref),
+            name=f"admin-checkout:{order_ref}",
         )
+        _track_background_task(admin_task, f"admin-checkout:{order_ref}")
+
+        expires_text = "-"
+        if expires_at is not None:
+            expires_text = _format_display_time(expires_at)
+
+        lines = [
+            "✅ <b>Checkout berhasil dibuat</b>",
+            f"🧾 Order Ref: <code>{html.escape(order_ref)}</code>",
+            f"🔖 Payment Ref: <code>{html.escape(payment_ref)}</code>",
+            f"💰 Total Bayar: <b>{_format_rupiah(expected_amount)}</b>",
+            f"⏱️ Batas bayar: <b>{expires_text}</b>",
+        ]
+
+        if source_order_ref is not None:
+            lines.append(f"🔁 Reorder dari: <code>{html.escape(source_order_ref)}</code>")
+            if source_product_name:
+                lines.append(f"📦 Produk: <b>{html.escape(source_product_name)}</b>")
+
+        lines.extend(
+            [
+                "",
+                "🧭 <b>Langkah Berikutnya</b>",
+                "1. Transfer sesuai nominal di atas.",
+                "2. Pantau status order secara berkala.",
+                "3. Jika batal, gunakan tombol Batalkan Pesanan.",
+                f"🔎 Cek status cepat: <code>/order_status {html.escape(order_ref)}</code>",
+                "",
+                _customer_footer_text(),
+            ]
+        )
+        result_keyboard = InlineKeyboardMarkup(
+            [
+                [InlineKeyboardButton("❌ Batalkan Pesanan", callback_data=f"ord:cancel:{order_ref}")],
+                [InlineKeyboardButton("📦 Lihat Pesanan", callback_data="cus:ord")],
+                [InlineKeyboardButton("⬅️ Kembali", callback_data="back:cus_cat")],
+            ]
+        )
+
+        sent_message = None
+        payload_text = "\n".join(lines)
+
+        reply_target: Message | None = None
+        if update.callback_query and update.callback_query.message:
+            reply_target = update.callback_query.message
+        elif update.message:
+            reply_target = update.message
+
+        if reply_target is None:
+            result_reason = "missing_reply_target"
+            logger.error("Checkout %s gagal: target pesan Telegram tidak tersedia", order_ref)
+            return False
+
+        qris_path = settings.qris_file_path
         if qris_path.exists():
-            logger.info("Checkout %s fallback ke pesan teks karena kirim QR gagal", order_ref)
-        else:
-            logger.info("Checkout %s dikirim sebagai teks karena file QRIS tidak tersedia", order_ref)
+            try:
+                with qris_path.open("rb") as fh:
+                    sent_message = await reply_target.reply_photo(
+                        photo=fh,
+                        caption=payload_text,
+                        reply_markup=result_keyboard,
+                        parse_mode=ParseMode.HTML,
+                    )
+                send_mode = "photo"
+                logger.info("Checkout %s dikirim sebagai QR+caption tunggal", order_ref)
+            except Exception as exc:
+                logger.warning("Gagal kirim QRIS checkout %s: %s", order_ref, exc)
 
-    if sent_message is not None:
-        with get_session() as session:
-            set_checkout_message_ref(
-                session=session,
-                order_ref=order_ref,
-                chat_id=int(sent_message.chat_id),
-                message_id=int(sent_message.message_id),
+        if sent_message is None:
+            send_mode = "text"
+            sent_message = await reply_target.reply_text(
+                payload_text,
+                reply_markup=result_keyboard,
+                parse_mode=ParseMode.HTML,
             )
+            if qris_path.exists():
+                logger.info("Checkout %s fallback ke pesan teks karena kirim QR gagal", order_ref)
+            else:
+                logger.info("Checkout %s dikirim sebagai teks karena file QRIS tidak tersedia", order_ref)
 
-    return True
+        if sent_message is not None:
+            with get_session() as session:
+                set_checkout_message_ref(
+                    session=session,
+                    order_ref=order_ref,
+                    chat_id=int(sent_message.chat_id),
+                    message_id=int(sent_message.message_id),
+                )
+            success = True
+            result_reason = "ok"
+            return True
+
+        result_reason = "send_failed"
+        return False
+    finally:
+        log_telemetry(
+            logger,
+            "bot.checkout_result",
+            duration_ms=elapsed_ms(started_ms),
+            success=success,
+            reason=result_reason,
+            order_ref=order_ref_for_log,
+            telegram_id=telegram_id,
+            product_id=product_id,
+            qty=qty,
+            send_mode=send_mode,
+            has_qris_file=settings.qris_file_path.exists(),
+            source_reorder=bool(source_order_ref),
+        )
 
 
 async def _send_quick_reorder_result(
@@ -1677,8 +1740,17 @@ async def ops_metrics_handler(update: Update, context: ContextTypes.DEFAULT_TYPE
             session,
             window_hours=settings.metrics_report_window_hours,
         )
+        runtime_metrics = collect_runtime_telemetry_metrics(
+            session,
+            window_hours=settings.metrics_report_window_hours,
+        )
 
-    report_text = format_operational_metrics_report(metrics)
+    report_text = "\n\n".join(
+        [
+            format_operational_metrics_report(metrics),
+            format_runtime_telemetry_report(runtime_metrics),
+        ]
+    )
     await _respond(
         update,
         report_text,
@@ -1886,10 +1958,35 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
                 session,
                 window_hours=settings.metrics_report_window_hours,
             )
+            runtime_metrics = collect_runtime_telemetry_metrics(
+                session,
+                window_hours=settings.metrics_report_window_hours,
+            )
 
         await _respond(
             update,
-            format_operational_metrics_report(metrics),
+            "\n\n".join(
+                [
+                    format_operational_metrics_report(metrics),
+                    format_runtime_telemetry_report(runtime_metrics),
+                ]
+            ),
+            _ops_metrics_keyboard(),
+            parse_mode=ParseMode.HTML,
+        )
+        return
+
+    if data == "adm:ops:retry":
+        if role != "admin":
+            await _respond_admin_only(update)
+            return
+
+        with get_session() as session:
+            snapshot = collect_retry_queue_snapshot(session, recent_hours=24, top_n=5)
+
+        await _respond(
+            update,
+            _format_retry_snapshot_text(snapshot),
             _ops_metrics_keyboard(),
             parse_mode=ParseMode.HTML,
         )
@@ -1906,11 +2003,19 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
                 session,
                 window_hours=settings.metrics_report_window_hours,
             )
+            runtime_metrics = collect_runtime_telemetry_metrics(
+                session,
+                window_hours=settings.metrics_report_window_hours,
+            )
 
         reset_text = _format_display_day_time(reset_at)
         await _respond(
             update,
-            f"✅ Metrik direset pada <b>{html.escape(reset_text)}</b>.\n\n{format_operational_metrics_report(metrics)}",
+            (
+                f"✅ Metrik direset pada <b>{html.escape(reset_text)}</b>.\n\n"
+                f"{format_operational_metrics_report(metrics)}\n\n"
+                f"{format_runtime_telemetry_report(runtime_metrics)}"
+            ),
             _ops_metrics_keyboard(),
             parse_mode=ParseMode.HTML,
         )

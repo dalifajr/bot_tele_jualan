@@ -27,6 +27,15 @@
 - [x] Backup otomatis + prosedur restore teruji
 - [x] Metrik operasional terjadwal (payment match success, timeout rate, notif failure, funnel)
 
+## Phase 4 - Efficiency, Performance, and Interface Ops
+
+- [x] Telemetry terstruktur untuk jalur kritis (listener payment, checkout, scheduler jobs)
+- [x] Runtime KPI on-demand di panel admin (p95 listener, p95 checkout, success/error rate)
+- [x] Snapshot retry queue on-demand di panel admin (pending, failed, sent 24 jam, top failed channels)
+- [x] Housekeeping terjadwal untuk data transient (listener events, retry jobs, telemetry events)
+- [x] Perf smoke gate script untuk listener payment (`ops/perf_listener_smoke.py`)
+- [x] Optimasi query hot-path order service (reduce N+1 pada detail order dan rekomendasi upsell)
+
 ## Notes
 
 - Prioritas aktif sekarang: tutup QA Phase 1 sampai stabil.
@@ -34,5 +43,6 @@
 - Quick reorder sudah aktif via tombol detail pesanan dan command `/reorder <ORDER_REF>`.
 - Perintah QA otomatis saat ini: `PYTHONPATH=src .venv/Scripts/python.exe ops/e2e_local_test.py`
 - Perintah smoke-check copy/CTA: `PYTHONPATH=src .venv/Scripts/python.exe ops/qa_copy_smoke.py`
+- Perintah perf smoke listener: `PYTHONPATH=src .venv/Scripts/python.exe ops/perf_listener_smoke.py`
 - Runbook manual QA Phase 1: `ops/qa_phase1_manual.md`
 - Verifikasi backup workflow: `bash ops/backup_manager.sh backup`, `bash ops/backup_manager.sh list`, `bash ops/backup_manager.sh restore <file>`

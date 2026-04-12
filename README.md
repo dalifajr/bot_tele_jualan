@@ -72,6 +72,18 @@ jualan prune-backups [keep]
 jualan uninstall
 ```
 
+## Observability dan Performa
+
+- Telemetry runtime aktif untuk jalur kritis (listener payment, checkout, scheduler jobs).
+- Laporan KPI runtime ditampilkan on-demand dari tombol admin `📊 Laporan Operasional`.
+- Housekeeping data transient berjalan terjadwal untuk menjaga ukuran DB tetap efisien.
+
+Perf smoke gate listener (lokal):
+
+```bash
+PYTHONPATH=src .venv/Scripts/python.exe ops/perf_listener_smoke.py
+```
+
 ## Kontrak Listener Payment
 
 Endpoint:

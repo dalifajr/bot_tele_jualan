@@ -32,6 +32,13 @@ class Settings(BaseSettings):
         alias="NOTIFICATION_RETRY_JOB_INTERVAL_SECONDS",
     )
     notification_retry_batch_size: int = Field(default=50, alias="NOTIFICATION_RETRY_BATCH_SIZE")
+    telemetry_enabled: bool = Field(default=True, alias="TELEMETRY_ENABLED")
+    telemetry_persist_enabled: bool = Field(default=True, alias="TELEMETRY_PERSIST_ENABLED")
+    telemetry_retention_days: int = Field(default=14, alias="TELEMETRY_RETENTION_DAYS")
+    housekeeping_enabled: bool = Field(default=True, alias="HOUSEKEEPING_ENABLED")
+    housekeeping_interval_minutes: int = Field(default=360, alias="HOUSEKEEPING_INTERVAL_MINUTES")
+    listener_event_retention_days: int = Field(default=30, alias="LISTENER_EVENT_RETENTION_DAYS")
+    retry_job_retention_days: int = Field(default=14, alias="RETRY_JOB_RETENTION_DAYS")
     metrics_report_enabled: bool = Field(default=True, alias="METRICS_REPORT_ENABLED")
     metrics_report_window_hours: int = Field(default=24, alias="METRICS_REPORT_WINDOW_HOURS")
     metrics_report_interval_minutes: int = Field(default=60, alias="METRICS_REPORT_INTERVAL_MINUTES")

@@ -35,6 +35,7 @@ from app.bot.services.order_service import (
 from app.common.config import get_settings
 from app.common.logging import configure_logging
 from app.common.roles import get_primary_admin_id
+from app.common.telemetry import elapsed_ms, log_telemetry, monotonic_ms
 from app.db.bootstrap import init_db
 from app.db.database import get_session
 
@@ -130,6 +131,7 @@ async def payment_listener(
     x_signature: str = Header(default="", alias="X-Signature"),
     x_timestamp: str = Header(default="", alias="X-Timestamp"),
 ) -> dict[str, Any]:
+    started_ms = monotonic_ms()
     raw_body = await request.body()
     try:
         payload = PaymentListenerPayload.model_validate_json(raw_body)
@@ -158,6 +160,16 @@ async def payment_listener(
                 )
             cached = parse_cached_response(existing_event)
             cached["idempotent_replay"] = True
+            log_telemetry(
+                logger,
+                "api.payment_listener",
+                duration_ms=elapsed_ms(started_ms),
+                idempotent_replay=True,
+                status=str(cached.get("status") or "unknown"),
+                source_app=payload.source_app,
+                has_reference=bool(payload.reference),
+                request_size_bytes=len(raw_body),
+            )
             return cached
 
         event = create_event(session, idempotency_key, body_hash)
@@ -328,5 +340,20 @@ async def payment_listener(
             status=event_status,
             response_payload=response_payload,
         )
+
+    log_telemetry(
+        logger,
+        "api.payment_listener",
+        duration_ms=elapsed_ms(started_ms),
+        idempotent_replay=False,
+        status=status,
+        source_app=payload.source_app,
+        has_reference=bool(payload.reference),
+        request_size_bytes=len(raw_body),
+        requires_customer_notify=bool(requires_customer_notify),
+        requires_admin_notify=bool(requires_admin_notify),
+        notify_sent=bool(notify_sent),
+        admin_notify_sent=bool(admin_notify_sent),
+    )
 
     return response_payload

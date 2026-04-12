@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.common.config import get_settings
@@ -21,6 +21,14 @@ class NotificationRetryCandidate:
     parse_mode: str | None
     attempt_count: int
     max_attempts: int
+
+
+@dataclass
+class RetryQueueSnapshot:
+    pending_count: int
+    failed_count: int
+    sent_last_24h: int
+    top_failed_channels: list[tuple[str, int]]
 
 
 def _utcnow() -> datetime:
@@ -129,3 +137,58 @@ def mark_notification_retry_failed(
 
     session.add(job)
     return True
+
+
+def collect_retry_queue_snapshot(
+    session: Session,
+    *,
+    recent_hours: int = 24,
+    top_n: int = 5,
+) -> RetryQueueSnapshot:
+    now = _utcnow()
+    since = now - timedelta(hours=max(1, int(recent_hours)))
+
+    pending_count = int(
+        session.scalar(
+            select(func.count(NotificationRetryJob.id)).where(NotificationRetryJob.status == "pending")
+        )
+        or 0
+    )
+    failed_count = int(
+        session.scalar(
+            select(func.count(NotificationRetryJob.id)).where(NotificationRetryJob.status == "failed")
+        )
+        or 0
+    )
+    sent_last_24h = int(
+        session.scalar(
+            select(func.count(NotificationRetryJob.id)).where(
+                NotificationRetryJob.status == "sent",
+                NotificationRetryJob.sent_at.is_not(None),
+                NotificationRetryJob.sent_at >= since,
+            )
+        )
+        or 0
+    )
+
+    top_rows = list(
+        session.execute(
+            select(
+                NotificationRetryJob.channel,
+                func.count(NotificationRetryJob.id).label("failed_total"),
+            )
+            .where(NotificationRetryJob.status == "failed")
+            .group_by(NotificationRetryJob.channel)
+            .order_by(func.count(NotificationRetryJob.id).desc(), NotificationRetryJob.channel.asc())
+            .limit(max(1, int(top_n)))
+        ).all()
+    )
+
+    top_failed_channels = [(str(channel), int(total or 0)) for channel, total in top_rows]
+
+    return RetryQueueSnapshot(
+        pending_count=pending_count,
+        failed_count=failed_count,
+        sent_last_24h=sent_last_24h,
+        top_failed_channels=top_failed_channels,
+    )
