@@ -32,10 +32,6 @@ class Settings(BaseSettings):
         alias="NOTIFICATION_RETRY_JOB_INTERVAL_SECONDS",
     )
     notification_retry_batch_size: int = Field(default=50, alias="NOTIFICATION_RETRY_BATCH_SIZE")
-    loyalty_enabled: bool = Field(default=True, alias="LOYALTY_ENABLED")
-    loyalty_milestone_orders: int = Field(default=3, alias="LOYALTY_MILESTONE_ORDERS")
-    loyalty_voucher_discount_amount: int = Field(default=2000, alias="LOYALTY_VOUCHER_DISCOUNT_AMOUNT")
-    loyalty_voucher_expiry_days: int = Field(default=14, alias="LOYALTY_VOUCHER_EXPIRY_DAYS")
     metrics_report_enabled: bool = Field(default=True, alias="METRICS_REPORT_ENABLED")
     metrics_report_window_hours: int = Field(default=24, alias="METRICS_REPORT_WINDOW_HOURS")
     metrics_report_interval_minutes: int = Field(default=60, alias="METRICS_REPORT_INTERVAL_MINUTES")

@@ -16,7 +16,6 @@ def main() -> int:
         "copy_akun_button": "📋 Copy Akun",
         "quick_reorder_button": "🔁 Pesan Lagi",
         "restock_button": "🔔 Ingatkan Saat Restock",
-        "vouchers_help": "/vouchers",
         "ops_metrics_help": "/ops_metrics",
         "admin_footer_phrase": "Pilih aksi admin lewat tombol di bawah.",
         "customer_footer_phrase": "Pilih aksi lewat tombol di bawah.",

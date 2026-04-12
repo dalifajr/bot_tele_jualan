@@ -16,7 +16,6 @@ Implementasi awal bot Telegram untuk jualan digital dengan fitur:
 - `/myorders`
 - `/order_status <ORDER_REF>`
 - `/reorder <ORDER_REF>`
-- `/vouchers`
 
 ### Admin
 - `/admin_catalog`

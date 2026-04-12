@@ -69,12 +69,6 @@ class Order(Base):
     checkout_chat_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     checkout_message_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     reminder_sent_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-    applied_voucher_id: Mapped[int | None] = mapped_column(
-        ForeignKey("loyalty_vouchers.id", ondelete="SET NULL"),
-        nullable=True,
-        index=True,
-    )
-    voucher_discount_amount: Mapped[int] = mapped_column(Integer, default=0)
     admin_notify_chat_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     admin_notify_message_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
@@ -113,24 +107,6 @@ class Payment(Base):
     matched_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     order: Mapped["Order"] = relationship(back_populates="payment")
-
-
-class LoyaltyVoucher(Base):
-    __tablename__ = "loyalty_vouchers"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    customer_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
-    code: Mapped[str] = mapped_column(String(64), unique=True, index=True)
-    discount_amount: Mapped[int] = mapped_column(Integer, nullable=False)
-    min_order_amount: Mapped[int] = mapped_column(Integer, default=0)
-    status: Mapped[str] = mapped_column(String(32), default="active", index=True)
-    source: Mapped[str] = mapped_column(String(64), default="loyalty")
-    reserved_order_id: Mapped[int | None] = mapped_column(ForeignKey("orders.id", ondelete="SET NULL"), nullable=True)
-    used_order_id: Mapped[int | None] = mapped_column(ForeignKey("orders.id", ondelete="SET NULL"), nullable=True)
-    note: Mapped[str] = mapped_column(Text, default="")
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    expires_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-    used_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 
 class RestockSubscription(Base):

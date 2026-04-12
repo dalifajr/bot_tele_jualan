@@ -19,7 +19,6 @@ os.environ["BOT_TOKEN"] = ""
 from app.api.main import app  # noqa: E402
 from app.api.security import build_signature  # noqa: E402
 from app.bot.services.catalog_service import add_product, add_stock_block  # noqa: E402
-from app.bot.services.loyalty_service import list_customer_vouchers  # noqa: E402
 from app.bot.services.metrics_service import collect_operational_metrics, format_operational_metrics_report  # noqa: E402
 from app.bot.services.notification_retry_service import (  # noqa: E402
     enqueue_notification_retry,
@@ -364,19 +363,19 @@ def _run_quick_reorder_flow(client: TestClient) -> bool:
     )
 
 
-def _run_upsell_voucher_flow() -> bool:
+def _run_upsell_flow() -> bool:
     with get_session() as session:
         user = upsert_user(
             session=session,
             telegram_id=987654555,
-            username="e2e_loyalty",
-            full_name="E2E Loyalty",
+            username="e2e_upsell",
+            full_name="E2E Upsell",
             role="customer",
         )
 
         primary_product = add_product(
             session=session,
-            name="Loyalty Primary Product",
+            name="Upsell Primary Product",
             price=70000,
             description="Primary",
             actor_id=None,
@@ -394,10 +393,10 @@ def _run_upsell_voucher_flow() -> bool:
                 session=session,
                 product_id=primary_product.id,
                 raw_text=(
-                    "*Loyalty Primary Product*\n"
-                    f"Username: loyalty_user_{idx}\n"
-                    "Password: loyaltypass\n"
-                    "F2A: LOYALTY\n"
+                    "*Upsell Primary Product*\n"
+                    f"Username: upsell_primary_{idx}\n"
+                    "Password: upsellprimarypass\n"
+                    "F2A: UPSELLPRIMARY\n"
                 ),
                 actor_id=None,
             )
@@ -429,13 +428,12 @@ def _run_upsell_voucher_flow() -> bool:
                 amount=payment.expected_amount,
                 source_app="TEST_APP",
                 reference=payment.payment_ref,
-                raw_payload={"scenario": "upsell_voucher", "idx": idx},
+                raw_payload={"scenario": "upsell", "idx": idx},
             )
             if result.status != "paid":
                 paid_ok = False
             last_delivery_message = result.delivery_message or ""
 
-        vouchers = list_customer_vouchers(session, customer_id=int(user.id), include_used=False)
         reorder_order, reorder_payment = create_checkout(
             session=session,
             customer=user,
@@ -443,25 +441,22 @@ def _run_upsell_voucher_flow() -> bool:
             quantity=1,
         )
 
-    has_active_voucher = any(v.status in {"active", "reserved"} for v in vouchers)
-    has_voucher_discount = int(reorder_order.voucher_discount_amount or 0) > 0
+    has_no_voucher_discount = int(reorder_order.total_amount) == int(reorder_order.subtotal) + int(reorder_order.unique_code)
     has_upsell_copy = "🎯 <b>Rekomendasi Selanjutnya</b>" in last_delivery_message
-    has_voucher_copy = "🎁 <b>Voucher Loyalti Baru</b>" in last_delivery_message
+    has_no_voucher_copy = "Voucher Loyalti" not in last_delivery_message
 
-    print("\n=== SCENARIO: UPSELL + VOUCHER FLOW ===")
+    print("\n=== SCENARIO: UPSELL FLOW ===")
     print("paid_ok:", paid_ok)
-    print("vouchers_count:", len(vouchers), "has_active:", has_active_voucher)
-    print("reorder_order:", reorder_order.order_ref, "voucher_discount:", reorder_order.voucher_discount_amount)
+    print("reorder_order:", reorder_order.order_ref, "subtotal:", reorder_order.subtotal, "unique_code:", reorder_order.unique_code)
     print("reorder_payment_expected:", reorder_payment.expected_amount)
     print("has_upsell_copy:", has_upsell_copy)
-    print("has_voucher_copy:", has_voucher_copy)
+    print("has_no_voucher_copy:", has_no_voucher_copy)
 
     return (
         paid_ok
-        and has_active_voucher
-        and has_voucher_discount
+        and has_no_voucher_discount
         and has_upsell_copy
-        and has_voucher_copy
+        and has_no_voucher_copy
     )
 
 
@@ -639,7 +634,7 @@ def main() -> int:
     ok_expired = _run_expired_flow(client)
     ok_pagination = _run_orders_pagination_flow()
     ok_quick_reorder = _run_quick_reorder_flow(client)
-    ok_upsell_voucher = _run_upsell_voucher_flow()
+    ok_upsell = _run_upsell_flow()
     ok_restock = _run_restock_subscription_flow()
     ok_retry_queue = _run_notification_retry_flow()
     ok_rbac_db = _run_rbac_db_flow()
@@ -650,7 +645,7 @@ def main() -> int:
     print("expired_flow:", ok_expired)
     print("pagination_flow:", ok_pagination)
     print("quick_reorder_flow:", ok_quick_reorder)
-    print("upsell_voucher_flow:", ok_upsell_voucher)
+    print("upsell_flow:", ok_upsell)
     print("restock_subscription_flow:", ok_restock)
     print("retry_queue_flow:", ok_retry_queue)
     print("rbac_db_flow:", ok_rbac_db)
@@ -661,7 +656,7 @@ def main() -> int:
         and ok_expired
         and ok_pagination
         and ok_quick_reorder
-        and ok_upsell_voucher
+        and ok_upsell
         and ok_restock
         and ok_retry_queue
         and ok_rbac_db

@@ -62,7 +62,6 @@ from app.bot.services.order_service import (
     set_admin_message_ref,
     set_checkout_message_ref,
 )
-from app.bot.services.loyalty_service import list_customer_vouchers
 from app.bot.services.metrics_service import (
     collect_operational_metrics,
     format_operational_metrics_report,
@@ -512,7 +511,6 @@ async def _send_help(update: Update, role: str) -> None:
         common.append("🛍️ Customer: pilih produk dari katalog lalu checkout lewat tombol.")
         common.append("📌 Cek status cepat: <code>/order_status ORD20260101000123</code>.")
         common.append("🔁 Reorder cepat: <code>/reorder ORDER_REF</code>.")
-        common.append("🎟️ Lihat voucher aktif: <code>/vouchers</code>.")
 
     await _respond(update, "\n".join(common), _back_keyboard("main"), parse_mode=ParseMode.HTML)
 
@@ -544,16 +542,6 @@ def _order_status_badge(status: str) -> str:
         "pending_payment": "🟡 Menunggu Pembayaran",
         "delivered": "✅ Berhasil",
         "cancelled": "❌ Dibatalkan",
-        "expired": "⌛ Kedaluwarsa",
-    }
-    return mapping.get(status, status)
-
-
-def _voucher_status_badge(status: str) -> str:
-    mapping = {
-        "active": "🟢 Aktif",
-        "reserved": "🟡 Dialokasikan",
-        "used": "✅ Terpakai",
         "expired": "⌛ Kedaluwarsa",
     }
     return mapping.get(status, status)
@@ -1305,8 +1293,6 @@ async def _send_checkout_result(
         payment_ref = payment.payment_ref
         expected_amount = payment.expected_amount
         expires_at = order.expires_at
-        subtotal_amount = order.subtotal
-        voucher_discount_amount = max(0, int(order.voucher_discount_amount or 0))
 
     admin_task = asyncio.create_task(
         _upsert_admin_order_notification(update, order_ref),
@@ -1325,10 +1311,6 @@ async def _send_checkout_result(
         f"💰 Total Bayar: <b>{_format_rupiah(expected_amount)}</b>",
         f"⏱️ Batas bayar: <b>{expires_text}</b>",
     ]
-
-    if voucher_discount_amount > 0:
-        lines.append(f"🎟️ Voucher otomatis: -<b>{_format_rupiah(voucher_discount_amount)}</b>")
-        lines.append(f"Subtotal sebelum voucher: {_format_rupiah(subtotal_amount)}")
 
     if source_order_ref is not None:
         lines.append(f"🔁 Reorder dari: <code>{html.escape(source_order_ref)}</code>")
@@ -1682,57 +1664,6 @@ async def order_status_handler(update: Update, context: ContextTypes.DEFAULT_TYP
 
     order_ref = context.args[0].strip().upper()
     await _send_customer_order_status(update, db_user.telegram_id, order_ref)
-
-
-async def vouchers_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    db_user, role = await _ensure_user(update)
-    if role == "admin":
-        await _respond(update, "🚫 Admin tidak menggunakan command ini.", _back_keyboard("main"))
-        return
-
-    with get_session() as session:
-        vouchers = list_customer_vouchers(session, customer_id=db_user.id, include_used=False)
-
-    if not vouchers:
-        await _respond(
-            update,
-            (
-                "🎟️ <b>Voucher Kamu</b>\n"
-                "Belum ada voucher aktif saat ini.\n"
-                "Teruskan transaksi sukses untuk membuka reward loyalti."
-            ),
-            _back_keyboard("main"),
-            parse_mode=ParseMode.HTML,
-        )
-        return
-
-    lines = ["🎟️ <b>Voucher Kamu</b>"]
-    for idx, voucher in enumerate(vouchers, start=1):
-        expiry_text = "-"
-        if voucher.expires_at is not None:
-            expiry_text = _format_display_time(voucher.expires_at)
-        lines.extend(
-            [
-                "",
-                f"{idx}. <code>{html.escape(voucher.code)}</code>",
-                f"Status: {_voucher_status_badge(voucher.status)}",
-                f"Diskon: <b>{_format_rupiah(voucher.discount_amount)}</b>",
-                f"Min. order: {_format_rupiah(voucher.min_order_amount)}",
-                f"Berlaku sampai: {expiry_text}",
-            ]
-        )
-
-    lines.extend([
-        "",
-        "Voucher aktif dipakai otomatis saat checkout jika memenuhi syarat.",
-    ])
-
-    await _respond(
-        update,
-        "\n".join(lines),
-        _back_keyboard("main"),
-        parse_mode=ParseMode.HTML,
-    )
 
 
 async def ops_metrics_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -3156,7 +3087,6 @@ def register_handlers(application: Application) -> None:
     application.add_handler(CommandHandler("buy", buy_handler))
     application.add_handler(CommandHandler("myorders", my_orders_handler))
     application.add_handler(CommandHandler("order_status", order_status_handler))
-    application.add_handler(CommandHandler("vouchers", vouchers_handler))
     application.add_handler(CommandHandler("reorder", reorder_handler))
 
     application.add_handler(CommandHandler("admin_catalog", admin_catalog_handler))

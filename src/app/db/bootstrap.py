@@ -29,8 +29,6 @@ def _run_compat_migrations() -> None:
         _ensure_column(conn, "orders", "checkout_chat_id", "checkout_chat_id BIGINT")
         _ensure_column(conn, "orders", "checkout_message_id", "checkout_message_id BIGINT")
         _ensure_column(conn, "orders", "reminder_sent_at", "reminder_sent_at DATETIME")
-        _ensure_column(conn, "orders", "applied_voucher_id", "applied_voucher_id INTEGER")
-        _ensure_column(conn, "orders", "voucher_discount_amount", "voucher_discount_amount INTEGER DEFAULT 0")
         _ensure_column(conn, "orders", "admin_notify_chat_id", "admin_notify_chat_id BIGINT")
         _ensure_column(conn, "orders", "admin_notify_message_id", "admin_notify_message_id BIGINT")
 
@@ -58,16 +56,8 @@ def _run_compat_migrations() -> None:
             "ON orders(status, expires_at, reminder_sent_at)"
         ))
         conn.execute(text(
-            "CREATE INDEX IF NOT EXISTS ix_orders_voucher "
-            "ON orders(applied_voucher_id, voucher_discount_amount)"
-        ))
-        conn.execute(text(
             "CREATE INDEX IF NOT EXISTS ix_retry_jobs_due "
             "ON notification_retry_jobs(status, next_attempt_at, attempt_count)"
-        ))
-        conn.execute(text(
-            "CREATE INDEX IF NOT EXISTS ix_loyalty_vouchers_customer_status "
-            "ON loyalty_vouchers(customer_id, status, expires_at)"
         ))
         conn.execute(text(
             "CREATE INDEX IF NOT EXISTS ix_restock_subscriptions_lookup "
