@@ -24,7 +24,7 @@ from telegram.ext import (
     filters,
 )
 
-from app.bot.services.broadcast_service import broadcast_to_customers
+from app.bot.services.broadcast_service import build_product_ready_broadcast_message, broadcast_to_customers
 from app.bot.services.admin_order_notification_service import (
     build_admin_order_actions_keyboard,
     upsert_admin_order_message,
@@ -1221,7 +1221,7 @@ async def _send_product_detail(update: Update, product_id: int, qty: int = 1) ->
             empty_lines.extend(
                 [
                     "Ready kembali pada:",
-                    f"Ready at: <b>{ready_at_text}</b> • <b>{nearest_ready_at.account_count} accounts</b>",
+                    f"<b>{ready_at_text}</b> • <b>{nearest_ready_at.account_count} accounts</b>",
                 ]
             )
         empty_lines.append("Aktifkan notifikasi agar kamu dapat info saat stok tersedia lagi.")
@@ -1925,6 +1925,56 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
                 "📢 <b>Broadcast ke Customer</b>\n"
                 "Kirim isi pesan sekarang, lalu bot akan kirim ke semua customer.\n\n"
                 f"{_admin_footer_text()}"
+            ),
+            _back_keyboard("main"),
+            parse_mode=ParseMode.HTML,
+        )
+        return
+
+    if data.startswith("adm:rb:bc:"):
+        if role != "admin":
+            await _respond_admin_only(update)
+            return
+
+        try:
+            product_id = int(data.split(":", maxsplit=3)[3])
+        except ValueError:
+            await _respond(update, "⚠️ Produk untuk broadcast tidak valid.", _back_keyboard("main"))
+            return
+
+        with get_session() as session:
+            product = get_product(session, product_id)
+            if product is None or product.is_suspended:
+                await _respond(update, "⚠️ Produk tidak ditemukan atau tidak aktif.", _back_keyboard("main"))
+                return
+
+            product_name = product.name
+            ready_count = get_available_stock_count(session, product_id)
+            if ready_count <= 0:
+                await _respond(
+                    update,
+                    "⚠️ Stok ready saat ini belum tersedia untuk produk ini.",
+                    _back_keyboard("main"),
+                )
+                return
+
+            broadcast_message = build_product_ready_broadcast_message(product_name, ready_count)
+            sent, failed = await broadcast_to_customers(
+                session=session,
+                bot=context.bot,
+                admin_user_id=db_user.id,
+                message=broadcast_message,
+                parse_mode=ParseMode.HTML,
+            )
+
+        await _respond(
+            update,
+            (
+                "✅ <b>Broadcast notifikasi ketersediaan terkirim</b>\n"
+                f"Produk: <b>{html.escape(product_name)}</b>\n"
+                f"Jumlah ready: <b>{ready_count}</b>\n"
+                f"✅ Sent: <b>{sent}</b>\n"
+                f"❌ Failed: <b>{failed}</b>"
             ),
             _back_keyboard("main"),
             parse_mode=ParseMode.HTML,

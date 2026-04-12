@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import html
+
 from telegram import Bot
 from sqlalchemy.orm import Session
 
@@ -13,6 +15,7 @@ async def broadcast_to_customers(
     bot: Bot,
     admin_user_id: int | None,
     message: str,
+    parse_mode: str | None = None,
 ) -> tuple[int, int]:
     recipients = list_customer_telegram_ids(session)
     sent = 0
@@ -20,7 +23,7 @@ async def broadcast_to_customers(
 
     for telegram_id in recipients:
         try:
-            await bot.send_message(chat_id=telegram_id, text=message)
+            await bot.send_message(chat_id=telegram_id, text=message, parse_mode=parse_mode)
             sent += 1
         except Exception:
             failed += 1
@@ -45,3 +48,17 @@ async def broadcast_to_customers(
 
     session.flush()
     return sent, failed
+
+
+def build_product_ready_broadcast_message(product_name: str, ready_count: int) -> str:
+    safe_name = html.escape(str(product_name or "Produk"))
+    safe_count = max(0, int(ready_count))
+    return "\n".join(
+        [
+            "🎉 <b>Produk kembali tersedia</b>",
+            f"Produk: <b>{safe_name}</b>",
+            f"Jumlah: <b>{safe_count} akun ready</b>",
+            "",
+            "Silakan diorder sebelum kehabisan stok, Happy Shopping 😄",
+        ]
+    )

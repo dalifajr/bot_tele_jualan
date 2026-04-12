@@ -8,7 +8,11 @@ from telegram.ext import Application
 from telegram.ext import ContextTypes
 
 from app.bot.services.admin_order_notification_service import upsert_admin_order_message
-from app.bot.services.catalog_service import promote_awaiting_stocks
+from app.bot.services.broadcast_service import (
+    build_product_ready_broadcast_message,
+    broadcast_to_customers,
+)
+from app.bot.services.catalog_service import list_products, promote_awaiting_stocks
 from app.bot.handlers.main import register_handlers
 from app.bot.services.housekeeping_service import cleanup_transient_data
 from app.bot.services.notification_retry_service import (
@@ -25,12 +29,14 @@ from app.bot.services.order_service import (
     set_admin_message_ref,
 )
 from app.bot.services.restock_service import list_ready_restock_notifications, mark_restock_notified
+from app.bot.services.settings_service import get_setting, set_setting
 from app.common.config import get_settings
 from app.common.roles import get_primary_admin_id
 from app.common.telemetry import elapsed_ms, log_telemetry, monotonic_ms
 from app.db.database import get_session
 
 logger = logging.getLogger(__name__)
+READY_STOCK_BROADCAST_KEY_PREFIX = "ready_stock_broadcast:last_stock:"
 
 
 def _format_rupiah(amount: int) -> str:
@@ -66,6 +72,17 @@ def _build_restock_message(product_id: int, product_name: str, product_price: in
             "Atau ketik /catalog untuk lihat semua produk.",
         ]
     )
+
+
+def _ready_stock_setting_key(product_id: int) -> str:
+    return f"{READY_STOCK_BROADCAST_KEY_PREFIX}{int(product_id)}"
+
+
+def _to_int(value: str, default: int = 0) -> int:
+    try:
+        return int(str(value).strip())
+    except (TypeError, ValueError, AttributeError):
+        return int(default)
 
 
 async def _promote_awaiting_stock_job(context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -252,6 +269,113 @@ async def _restock_subscription_job(context: ContextTypes.DEFAULT_TYPE) -> None:
         )
 
 
+async def _ready_stock_broadcast_job(context: ContextTypes.DEFAULT_TYPE) -> None:
+    started_ms = monotonic_ms()
+    settings = get_settings()
+    admin_chat_id = get_primary_admin_id(settings.role_file_path)
+
+    initialized_count = 0
+    events: list[tuple[int, str, int]] = []
+    with get_session() as session:
+        products = list_products(session, include_suspended=False)
+        for product in products:
+            product_id = int(product.id)
+            current_stock = max(0, int(product.stock_available))
+            key = _ready_stock_setting_key(product_id)
+            previous_raw = get_setting(session, key, default="__unset__")
+
+            # First seen baseline: set current value without broadcasting.
+            if previous_raw == "__unset__":
+                set_setting(session, key, str(current_stock))
+                initialized_count += 1
+                continue
+
+            previous_stock = _to_int(previous_raw, default=0)
+            if previous_stock <= 0 and current_stock > 0:
+                events.append((product_id, product.name, current_stock))
+
+            if previous_stock != current_stock:
+                set_setting(session, key, str(current_stock))
+
+    if not events:
+        if initialized_count > 0:
+            log_telemetry(
+                logger,
+                "job.ready_stock_broadcast",
+                duration_ms=elapsed_ms(started_ms),
+                initialized_count=initialized_count,
+                event_count=0,
+            )
+        return
+
+    sent_total = 0
+    failed_total = 0
+    admin_notified_count = 0
+    retry_enqueued_count = 0
+
+    for product_id, product_name, ready_count in events:
+        message = build_product_ready_broadcast_message(product_name, ready_count)
+
+        with get_session() as session:
+            sent, failed = await broadcast_to_customers(
+                session=session,
+                bot=context.bot,
+                admin_user_id=None,
+                message=message,
+                parse_mode="HTML",
+            )
+        sent_total += sent
+        failed_total += failed
+
+        if admin_chat_id is not None:
+            admin_text = "\n".join(
+                [
+                    message,
+                    "",
+                    f"Auto broadcast ke customer: ✅ <b>{sent}</b> | ❌ <b>{failed}</b>",
+                ]
+            )
+            admin_keyboard = InlineKeyboardMarkup(
+                [[InlineKeyboardButton("📢 Broadcast Notifikasi", callback_data=f"adm:rb:bc:{product_id}")]]
+            )
+            try:
+                await context.bot.send_message(
+                    chat_id=admin_chat_id,
+                    text=admin_text,
+                    parse_mode="HTML",
+                    reply_markup=admin_keyboard,
+                    disable_web_page_preview=True,
+                )
+                admin_notified_count += 1
+            except Exception as exc:
+                logger.warning(
+                    "Gagal kirim notifikasi ready-stock ke admin untuk produk#%s: %s",
+                    product_id,
+                    exc,
+                )
+                with get_session() as session:
+                    enqueue_notification_retry(
+                        session=session,
+                        channel="admin_ready_stock_notify",
+                        chat_id=admin_chat_id,
+                        payload_text=admin_text,
+                        parse_mode="HTML",
+                    )
+                retry_enqueued_count += 1
+
+    log_telemetry(
+        logger,
+        "job.ready_stock_broadcast",
+        duration_ms=elapsed_ms(started_ms),
+        initialized_count=initialized_count,
+        event_count=len(events),
+        customer_sent_count=sent_total,
+        customer_failed_count=failed_total,
+        admin_notified_count=admin_notified_count,
+        retry_enqueued_count=retry_enqueued_count,
+    )
+
+
 async def _notification_retry_job(context: ContextTypes.DEFAULT_TYPE) -> None:
     started_ms = monotonic_ms()
     settings = get_settings()
@@ -369,6 +493,12 @@ def create_bot_application() -> Application:
             interval=60,
             first=25,
             name="restock-subscription",
+        )
+        application.job_queue.run_repeating(
+            _ready_stock_broadcast_job,
+            interval=60,
+            first=35,
+            name="ready-stock-broadcast",
         )
         application.job_queue.run_repeating(
             _notification_retry_job,

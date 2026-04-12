@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from sqlalchemy import Select, func, or_, select, update
 from sqlalchemy.orm import Session
@@ -130,19 +130,20 @@ def get_nearest_awaiting_ready_at(session: Session, product_id: int) -> Awaiting
         return None
 
     future_rows = [value for value in awaiting_rows if value >= now]
-    nearest_at = future_rows[0] if future_rows else min(
+    nearest_start = future_rows[0] if future_rows else min(
         awaiting_rows,
         key=lambda value: abs((value - now).total_seconds()),
     )
-    nearest_key = nearest_at.replace(second=0, microsecond=0)
-    account_count = sum(
-        1
-        for value in awaiting_rows
-        if value.replace(second=0, microsecond=0) == nearest_key
-    )
+    window_end = nearest_start + timedelta(days=1)
+    window_rows = [value for value in awaiting_rows if nearest_start <= value <= window_end]
+    if not window_rows:
+        window_rows = [nearest_start]
+
+    estimate_at = max(window_rows)
+    account_count = len(window_rows)
 
     return AwaitingReadyAtView(
-        available_at=nearest_at,
+        available_at=estimate_at,
         account_count=max(1, int(account_count)),
     )
 
