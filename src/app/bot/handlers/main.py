@@ -98,7 +98,9 @@ CHECKOUT_LOCK_SECONDS = 8.0
 CHECKOUT_ACTION_CACHE_KEY = "checkout_action_cache"
 CHECKOUT_ACTION_TTL_SECONDS = 20.0
 USER_CTX_CACHE_KEY = "user_ctx_cache"
-USER_CTX_CACHE_TTL_SECONDS = 20.0
+USER_CTX_CACHE_TTL_SECONDS = 120.0
+MENU_STATS_CACHE_KEY = "menu_stats_cache"
+MENU_STATS_CACHE_TTL_SECONDS = 45.0
 
 ADMIN_PRODUCT_PICKER_TITLES: dict[str, str] = {
     "stk": "📥 Pilih produk untuk ditambah stok.",
@@ -265,7 +267,9 @@ async def _respond(
         try:
             await query.edit_message_text(text=text, reply_markup=keyboard, parse_mode=parse_mode)
             return
-        except BadRequest:
+        except BadRequest as exc:
+            if "message is not modified" in str(exc).lower():
+                return
             if query.message is not None:
                 await query.message.reply_text(text=text, reply_markup=keyboard, parse_mode=parse_mode)
                 return
@@ -468,6 +472,7 @@ async def _send_main_menu(
     welcome: bool = False,
     username: str | None = None,
     total_transaksi: int | None = None,
+    context: ContextTypes.DEFAULT_TYPE | None = None,
 ) -> None:
     display_name = username
     if not display_name:
@@ -477,6 +482,16 @@ async def _send_main_menu(
     if not display_name:
         display_name = "user"
 
+    if total_transaksi is None and context is not None and tg_user is not None:
+        cached_stats = context.user_data.get(MENU_STATS_CACHE_KEY)
+        now_mono = time.monotonic()
+        if isinstance(cached_stats, dict):
+            cached_until = float(cached_stats.get("until", 0.0) or 0.0)
+            cached_tg = int(cached_stats.get("telegram_id", 0) or 0)
+            cached_total = int(cached_stats.get("total_transaksi", 0) or 0)
+            if cached_until > now_mono and cached_tg == int(tg_user.id):
+                total_transaksi = cached_total
+
     if total_transaksi is None:
         tg_user = update.effective_user
         if tg_user is not None:
@@ -484,6 +499,14 @@ async def _send_main_menu(
                 user = get_user_by_telegram_id(session, tg_user.id)
                 if user is not None:
                     total_transaksi = count_delivered_orders_by_customer(session, user.id)
+
+    if total_transaksi is not None and context is not None and tg_user is not None:
+        context.user_data[MENU_STATS_CACHE_KEY] = {
+            "telegram_id": int(tg_user.id),
+            "total_transaksi": int(total_transaksi),
+            "until": time.monotonic() + MENU_STATS_CACHE_TTL_SECONDS,
+        }
+
     if total_transaksi is None:
         total_transaksi = 0
 
@@ -1587,6 +1610,7 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         welcome=True,
         username=username,
         total_transaksi=total_transaksi,
+        context=context,
     )
 
 
@@ -1862,13 +1886,25 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     if query is None:
         return
 
+    tg_user = update.effective_user
+    if tg_user is None:
+        return
+
+    role = _role_for_telegram_id(tg_user.id)
+    telegram_id = int(tg_user.id)
+    cached_user_ctx: UserContext | None = None
+
+    async def _require_db_user_ctx() -> UserContext:
+        nonlocal cached_user_ctx
+        if cached_user_ctx is None:
+            cached_user_ctx, _ = await _ensure_user(update, context)
+        return cached_user_ctx
+
     data = query.data or ""
     if data.startswith("buy:") or data.startswith("buyall:") or data.startswith("ord:reorder:"):
         await query.answer("⏳ Memproses checkout...", show_alert=False)
     else:
         await query.answer()
-
-    db_user, role = await _ensure_user(update, context)
 
     admin_only_prefixes = ("adm:", "ac:", "acp:", "gh:", "ap:", "pay:", "up:")
     if role != "admin" and any(data.startswith(prefix) for prefix in admin_only_prefixes):
@@ -1879,7 +1915,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         target = data.split(":", maxsplit=1)[1]
         _clear_flow(context)
         if target == "main":
-            await _send_main_menu(update, role)
+            await _send_main_menu(update, role, context=context)
             return
         if target == "adm_cat":
             await _send_admin_catalog_menu(update)
@@ -1903,7 +1939,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
                 parse_mode=ParseMode.HTML,
             )
             return
-        await _send_main_menu(update, role)
+        await _send_main_menu(update, role, context=context)
         return
 
     if data == "adm:cat":
@@ -1959,10 +1995,11 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
                 return
 
             broadcast_message = build_product_ready_broadcast_message(product_name, ready_count)
+            db_user_ctx = await _require_db_user_ctx()
             sent, failed = await broadcast_to_customers(
                 session=session,
                 bot=context.bot,
-                admin_user_id=db_user.id,
+                admin_user_id=db_user_ctx.id,
                 message=broadcast_message,
                 parse_mode=ParseMode.HTML,
             )
@@ -2091,7 +2128,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
     if data == "cus:ord":
         _clear_flow(context)
-        await _send_customer_orders(update, db_user.telegram_id, page=1)
+        await _send_customer_orders(update, telegram_id, page=1)
         return
 
     if data == "cus:help":
@@ -2115,11 +2152,12 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         order_ref = parts[3].strip().upper()
 
         if action == "paid":
+            db_user_ctx = await _require_db_user_ctx()
             with get_session() as session:
                 reconcile_result = confirm_order_payment_by_admin(
                     session=session,
                     order_ref=order_ref,
-                    admin_user_id=db_user.id,
+                    admin_user_id=db_user_ctx.id,
                 )
 
             if reconcile_result.status == "paid":
@@ -2159,11 +2197,12 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             return
 
         if action == "cancel":
+            db_user_ctx = await _require_db_user_ctx()
             with get_session() as session:
                 cancel_result = cancel_order_by_admin(
                     session=session,
                     order_ref=order_ref,
-                    admin_user_id=db_user.id,
+                    admin_user_id=db_user_ctx.id,
                 )
 
             warning_text = ""
@@ -2485,9 +2524,10 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             await _respond(update, "⚠️ ID stok tidak valid.", _github_pack_menu_keyboard())
             return
 
+        db_user_ctx = await _require_db_user_ctx()
         with get_session() as session:
             try:
-                delete_github_stock(session, stock_id=stock_id, actor_id=db_user.id)
+                delete_github_stock(session, stock_id=stock_id, actor_id=db_user_ctx.id)
             except ValueError as exc:
                 await _respond(update, f"❌ {exc}", _github_pack_menu_keyboard())
                 return
@@ -2582,16 +2622,17 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             )
             return
 
+        db_user_ctx = await _require_db_user_ctx()
         with get_session() as session:
             try:
                 if action == "sup":
-                    suspend_product(session, product_id=product_id, suspended=True, actor_id=db_user.id)
+                    suspend_product(session, product_id=product_id, suspended=True, actor_id=db_user_ctx.id)
                     await _respond(update, f"⏸️ Produk #{product_id} berhasil disuspend.", _back_keyboard("adm_cat"))
                 elif action == "uns":
-                    suspend_product(session, product_id=product_id, suspended=False, actor_id=db_user.id)
+                    suspend_product(session, product_id=product_id, suspended=False, actor_id=db_user_ctx.id)
                     await _respond(update, f"▶️ Produk #{product_id} berhasil diaktifkan.", _back_keyboard("adm_cat"))
                 elif action == "del":
-                    delete_product(session, product_id=product_id, actor_id=db_user.id)
+                    delete_product(session, product_id=product_id, actor_id=db_user_ctx.id)
                     await _respond(update, f"🗑️ Produk #{product_id} berhasil dihapus.", _back_keyboard("adm_cat"))
                 else:
                     await _respond(update, "⚠️ Aksi produk tidak dikenali.", _back_keyboard("adm_cat"))
@@ -2624,6 +2665,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             await _respond(update, "⚠️ Produk tidak valid untuk notifikasi restock.", _back_keyboard("cus_cat"))
             return
 
+        db_user_ctx = await _require_db_user_ctx()
         with get_session() as session:
             product = get_product(session, product_id)
             if product is None:
@@ -2632,7 +2674,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
             created, message = subscribe_restock(
                 session,
-                customer_id=db_user.id,
+                customer_id=db_user_ctx.id,
                 product_id=product_id,
             )
 
@@ -2711,7 +2753,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             return
 
         try:
-            checkout_ok = await _send_checkout_result(update, db_user.telegram_id, product_id, qty)
+            checkout_ok = await _send_checkout_result(update, telegram_id, product_id, qty)
         finally:
             _release_checkout_lock(context)
             await _try_delete_message(loading_message)
@@ -2764,7 +2806,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             return
 
         try:
-            checkout_ok = await _send_checkout_result(update, db_user.telegram_id, product_id, qty)
+            checkout_ok = await _send_checkout_result(update, telegram_id, product_id, qty)
         finally:
             _release_checkout_lock(context)
             await _try_delete_message(loading_message)
@@ -2802,7 +2844,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             await _respond(update, "⚠️ Halaman pesanan tidak valid. Buka lagi menu Pesanan Saya.", _back_keyboard("main"))
             return
 
-        await _send_customer_orders(update, db_user.telegram_id, page=page)
+        await _send_customer_orders(update, telegram_id, page=page)
         return
 
     if data.startswith("ord:view:"):
@@ -2820,7 +2862,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         except ValueError:
             page = 1
 
-        await _send_customer_order_detail(update, db_user.telegram_id, order_ref=order_ref, page=page)
+        await _send_customer_order_detail(update, telegram_id, order_ref=order_ref, page=page)
         return
 
     if data.startswith("ord:copy:"):
@@ -2838,7 +2880,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         except ValueError:
             page = 1
 
-        await _send_customer_order_copy(update, db_user.telegram_id, order_ref=order_ref, page=page)
+        await _send_customer_order_copy(update, telegram_id, order_ref=order_ref, page=page)
         return
 
     if data.startswith("ord:reorder:"):
@@ -2870,7 +2912,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             return
 
         try:
-            checkout_ok = await _send_quick_reorder_result(update, db_user.telegram_id, order_ref)
+            checkout_ok = await _send_quick_reorder_result(update, telegram_id, order_ref)
         finally:
             _release_checkout_lock(context)
             await _try_delete_message(loading_message)
@@ -2885,8 +2927,9 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             return
         order_ref = data.split(":", maxsplit=2)[2]
 
+        db_user_ctx = await _require_db_user_ctx()
         with get_session() as session:
-            cancel_result = cancel_order(session, order_ref=order_ref, customer_id=db_user.id)
+            cancel_result = cancel_order(session, order_ref=order_ref, customer_id=db_user_ctx.id)
 
         if cancel_result.ok:
             await _upsert_admin_order_notification(update, order_ref)
@@ -2981,7 +3024,7 @@ async def text_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         if _is_back_text(text):
             _clear_flow(context)
             context.user_data.pop(AWAIT_QRIS_IMAGE_KEY, None)
-            await _send_main_menu(update, role)
+            await _send_main_menu(update, role, context=context)
             return
 
         if flow == FLOW_ADMIN_ADD_PRODUCT:
