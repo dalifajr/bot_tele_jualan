@@ -474,9 +474,9 @@ async def _send_main_menu(
     total_transaksi: int | None = None,
     context: ContextTypes.DEFAULT_TYPE | None = None,
 ) -> None:
+    tg_user = update.effective_user
     display_name = username
     if not display_name:
-        tg_user = update.effective_user
         if tg_user is not None:
             display_name = tg_user.username or tg_user.full_name
     if not display_name:
@@ -493,7 +493,6 @@ async def _send_main_menu(
                 total_transaksi = cached_total
 
     if total_transaksi is None:
-        tg_user = update.effective_user
         if tg_user is not None:
             with get_session() as session:
                 user = get_user_by_telegram_id(session, tg_user.id)
