@@ -10,7 +10,6 @@ from telegram.ext import ContextTypes
 from app.bot.services.admin_order_notification_service import upsert_admin_order_message
 from app.bot.services.catalog_service import promote_awaiting_stocks
 from app.bot.handlers.main import register_handlers
-from app.bot.services.metrics_service import collect_operational_metrics, format_operational_metrics_report
 from app.bot.services.notification_retry_service import (
     enqueue_notification_retry,
     list_due_notification_retries,
@@ -223,43 +222,6 @@ async def _notification_retry_job(context: ContextTypes.DEFAULT_TYPE) -> None:
             mark_notification_retry_sent(session=session, job_id=job.id)
 
 
-async def _metrics_report_job(context: ContextTypes.DEFAULT_TYPE) -> None:
-    settings = get_settings()
-    if not settings.metrics_report_enabled:
-        return
-
-    with get_session() as session:
-        metrics = collect_operational_metrics(session, window_hours=settings.metrics_report_window_hours)
-
-    report_text = format_operational_metrics_report(metrics)
-    logger.info("Operational metrics report generated for last %s hours", settings.metrics_report_window_hours)
-
-    if not settings.metrics_report_send_to_admin:
-        return
-
-    admin_id = get_primary_admin_id(settings.role_file_path)
-    if admin_id is None:
-        return
-
-    try:
-        await context.bot.send_message(
-            chat_id=admin_id,
-            text=report_text,
-            parse_mode="HTML",
-            disable_web_page_preview=True,
-        )
-    except Exception as exc:
-        logger.warning("Gagal kirim metrics report ke admin: %s", exc)
-        with get_session() as session:
-            enqueue_notification_retry(
-                session=session,
-                channel="metrics_report",
-                chat_id=admin_id,
-                payload_text=report_text,
-                parse_mode="HTML",
-            )
-
-
 def create_bot_application() -> Application:
     settings = get_settings()
     if not settings.bot_token:
@@ -297,12 +259,6 @@ def create_bot_application() -> Application:
             interval=max(5, settings.notification_retry_job_interval_seconds),
             first=5,
             name="notification-retry",
-        )
-        application.job_queue.run_repeating(
-            _metrics_report_job,
-            interval=max(60, settings.metrics_report_interval_minutes * 60),
-            first=120,
-            name="metrics-report",
         )
     else:
         logger.warning(
