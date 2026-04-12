@@ -24,6 +24,12 @@ class ProductView:
     stock_available: int
 
 
+@dataclass(frozen=True)
+class AwaitingReadyAtView:
+    available_at: datetime
+    account_count: int
+
+
 def _build_stock_count_query() -> Select:
     return (
         select(StockUnit.product_id, func.count(StockUnit.id).label("stock_count"))
@@ -100,6 +106,44 @@ def get_available_stock_count(session: Session, product_id: int) -> int:
             )
         )
         or 0
+    )
+
+
+def get_nearest_awaiting_ready_at(session: Session, product_id: int) -> AwaitingReadyAtView | None:
+    promote_awaiting_stocks(session, product_id=product_id)
+    now = datetime.utcnow()
+    awaiting_rows = [
+        value
+        for value in session.scalars(
+            select(StockUnit.available_at)
+            .where(
+                StockUnit.product_id == product_id,
+                StockUnit.is_sold.is_(False),
+                StockUnit.stock_status == STOCK_STATUS_AWAITING,
+                StockUnit.available_at.is_not(None),
+            )
+            .order_by(StockUnit.available_at.asc(), StockUnit.id.asc())
+        ).all()
+        if value is not None
+    ]
+    if not awaiting_rows:
+        return None
+
+    future_rows = [value for value in awaiting_rows if value >= now]
+    nearest_at = future_rows[0] if future_rows else min(
+        awaiting_rows,
+        key=lambda value: abs((value - now).total_seconds()),
+    )
+    nearest_key = nearest_at.replace(second=0, microsecond=0)
+    account_count = sum(
+        1
+        for value in awaiting_rows
+        if value.replace(second=0, microsecond=0) == nearest_key
+    )
+
+    return AwaitingReadyAtView(
+        available_at=nearest_at,
+        account_count=max(1, int(account_count)),
     )
 
 

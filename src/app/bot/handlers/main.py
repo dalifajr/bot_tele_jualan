@@ -34,6 +34,7 @@ from app.bot.services.catalog_service import (
     add_stock_block,
     delete_product,
     get_available_stock_count,
+    get_nearest_awaiting_ready_at,
     get_product,
     list_products,
     suspend_product,
@@ -1183,6 +1184,7 @@ async def _send_customer_order_status(update: Update, telegram_id: int, order_re
 
 async def _send_product_detail(update: Update, product_id: int, qty: int = 1) -> None:
     qty = max(1, min(qty, 20))
+    nearest_ready_at = None
     with get_session() as session:
         product = get_product(session, product_id)
         if product is None or product.is_suspended:
@@ -1198,6 +1200,7 @@ async def _send_product_detail(update: Update, product_id: int, qty: int = 1) ->
         product_price = product.price
         product_description = product.description or "-"
         github_mode = is_github_pack_product(session, product_id)
+        nearest_ready_at = get_nearest_awaiting_ready_at(session, product_id)
 
     text = (
         "🧾 <b>Detail Produk</b>\n"
@@ -1209,13 +1212,23 @@ async def _send_product_detail(update: Update, product_id: int, qty: int = 1) ->
     )
 
     if stock <= 0:
+        empty_lines = [
+            text,
+            "⚠️ <b>Stok sedang habis.</b>",
+        ]
+        if nearest_ready_at is not None:
+            ready_at_text = html.escape(_format_display_day_time(nearest_ready_at.available_at))
+            empty_lines.extend(
+                [
+                    "Ready kembali pada:",
+                    f"Ready at: <b>{ready_at_text}</b> • <b>{nearest_ready_at.account_count} accounts</b>",
+                ]
+            )
+        empty_lines.append("Aktifkan notifikasi agar kamu dapat info saat stok tersedia lagi.")
+
         await _respond(
             update,
-            (
-                f"{text}\n"
-                "⚠️ <b>Stok sedang habis.</b>\n"
-                "Aktifkan notifikasi agar kamu dapat info saat stok tersedia lagi."
-            ),
+            "\n".join(empty_lines),
             InlineKeyboardMarkup(
                 [
                     [InlineKeyboardButton("🔔 Ingatkan Saat Restock", callback_data=f"restock:sub:{product_id}")],
