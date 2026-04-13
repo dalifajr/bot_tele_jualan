@@ -8,6 +8,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.bot.services.audit_service import append_audit
+from app.bot.services.settings_service import get_setting, set_setting
 from app.bot.services.catalog_service import (
     STOCK_STATUS_AWAITING,
     STOCK_STATUS_READY,
@@ -18,6 +19,10 @@ from app.common.config import get_settings
 from app.db.models import Product, StockUnit
 
 settings = get_settings()
+GITHUB_PACK_AWAITING_HOURS_KEY = "github_pack.awaiting_hours"
+DEFAULT_GITHUB_PACK_AWAITING_HOURS = 78
+MIN_GITHUB_PACK_AWAITING_HOURS = 1
+MAX_GITHUB_PACK_AWAITING_HOURS = 720
 
 
 @dataclass
@@ -94,6 +99,49 @@ def is_github_pack_product(session: Session, product_id: int) -> bool:
     return int(product.id) == int(product_id)
 
 
+def _sanitize_awaiting_hours(raw: str) -> int:
+    try:
+        parsed = int(str(raw).strip())
+    except (TypeError, ValueError):
+        return int(DEFAULT_GITHUB_PACK_AWAITING_HOURS)
+
+    if parsed < MIN_GITHUB_PACK_AWAITING_HOURS:
+        return int(MIN_GITHUB_PACK_AWAITING_HOURS)
+    if parsed > MAX_GITHUB_PACK_AWAITING_HOURS:
+        return int(MAX_GITHUB_PACK_AWAITING_HOURS)
+    return int(parsed)
+
+
+def get_github_pack_awaiting_hours(session: Session) -> int:
+    raw = get_setting(
+        session,
+        key=GITHUB_PACK_AWAITING_HOURS_KEY,
+        default=str(DEFAULT_GITHUB_PACK_AWAITING_HOURS),
+    )
+    return _sanitize_awaiting_hours(raw)
+
+
+def set_github_pack_awaiting_hours(session: Session, hours: int, actor_id: int | None) -> int:
+    normalized = _sanitize_awaiting_hours(str(hours))
+    if int(hours) != normalized:
+        raise ValueError(
+            f"Durasi awaiting harus antara {MIN_GITHUB_PACK_AWAITING_HOURS} sampai {MAX_GITHUB_PACK_AWAITING_HOURS} jam."
+        )
+
+    old_hours = get_github_pack_awaiting_hours(session)
+    set_setting(session, key=GITHUB_PACK_AWAITING_HOURS_KEY, value=str(normalized))
+
+    append_audit(
+        session,
+        action="github_pack_set_awaiting_hours",
+        actor_id=actor_id,
+        entity_type="setting",
+        entity_id=GITHUB_PACK_AWAITING_HOURS_KEY,
+        detail=f"old_hours={old_hours}; new_hours={normalized}",
+    )
+    return normalized
+
+
 def add_github_stock(session: Session, raw_text: str, actor_id: int | None, awaiting: bool) -> GithubStockView:
     product = ensure_github_pack_product(session)
     parsed = parse_stock_block(raw_text)
@@ -105,7 +153,8 @@ def add_github_stock(session: Session, raw_text: str, actor_id: int | None, awai
             break
 
     stock_status = STOCK_STATUS_AWAITING if awaiting else STOCK_STATUS_READY
-    available_at = datetime.utcnow() + timedelta(hours=78) if awaiting else None
+    awaiting_hours = get_github_pack_awaiting_hours(session)
+    available_at = datetime.utcnow() + timedelta(hours=awaiting_hours) if awaiting else None
 
     stock = StockUnit(
         product_id=product.id,

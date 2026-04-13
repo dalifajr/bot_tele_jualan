@@ -43,9 +43,11 @@ from app.bot.services.github_pack_service import (
     add_github_stock,
     delete_github_stock,
     ensure_github_pack_product,
+    get_github_pack_awaiting_hours,
     get_github_stock_detail,
     is_github_pack_product,
     list_github_stocks,
+    set_github_pack_awaiting_hours,
     set_github_pack_price,
 )
 from app.bot.services.order_service import (
@@ -90,6 +92,7 @@ FLOW_CUSTOMER_MANUAL_QTY = "customer_manual_qty"
 FLOW_GH_ADD_READY = "gh_add_ready"
 FLOW_GH_ADD_AWAIT = "gh_add_await"
 FLOW_GH_SET_PRICE = "gh_set_price"
+FLOW_GH_SET_AWAITING_HOURS = "gh_set_awaiting_hours"
 AWAIT_QRIS_IMAGE_KEY = "await_qris_image"
 CUSTOMER_ORDERS_PAGE_SIZE = 10
 ADMIN_LIST_PAGE_SIZE = 10
@@ -193,6 +196,7 @@ def _github_pack_menu_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         [
             [InlineKeyboardButton("💰 Atur Harga", callback_data="gh:price:set")],
+            [InlineKeyboardButton("⏱️ Atur Jam Awaiting", callback_data="gh:await:set")],
             [InlineKeyboardButton("📥 Tambah Stok Ready", callback_data="gh:add:ready")],
             [InlineKeyboardButton("⏳ Tambah Stok Awaiting Benefits", callback_data="gh:add:await")],
             [InlineKeyboardButton("📋 Lihat List Akun", callback_data="gh:list")],
@@ -742,6 +746,7 @@ async def _send_github_pack_menu(update: Update) -> None:
     with get_session() as session:
         product = ensure_github_pack_product(session)
         stocks = list_github_stocks(session)
+        awaiting_hours = get_github_pack_awaiting_hours(session)
 
     ready_count = sum(1 for x in stocks if x.status == "ready")
     awaiting_count = sum(1 for x in stocks if x.status == "awaiting_benefits")
@@ -751,6 +756,7 @@ async def _send_github_pack_menu(update: Update) -> None:
             f"🎓 <b>{html.escape(product.name)}</b>\n"
             f"✅ Ready: <b>{ready_count}</b> akun\n"
             f"⏳ Awaiting benefits: <b>{awaiting_count}</b> akun\n\n"
+            f"⏱️ Durasi awaiting: <b>{awaiting_hours} jam</b>\n\n"
             f"{_admin_footer_text()}"
         ),
         _github_pack_menu_keyboard(),
@@ -2484,12 +2490,14 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         if role != "admin":
             await _respond_admin_only(update)
             return
+        with get_session() as session:
+            awaiting_hours = get_github_pack_awaiting_hours(session)
         _set_flow(context, FLOW_GH_ADD_AWAIT)
         await _respond(
             update,
             (
                 "⏳ <b>Tambah Stok GitHub Pack (AWAITING)</b>\n"
-                "Kirim blok data akun. Stok otomatis pindah ke READY setelah 78 jam.\n\n"
+                f"Kirim blok data akun. Stok otomatis pindah ke READY setelah {awaiting_hours} jam.\n\n"
                 f"{_admin_footer_text()}"
             ),
             _back_keyboard("adm_cat"),
@@ -2532,6 +2540,28 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
                 "💰 <b>Atur Harga GitHub Pack</b>\n"
                 f"Harga saat ini: <b>{_format_rupiah(current_price)}</b>\n\n"
                 "Kirim angka harga baru (contoh: <code>35000</code>)."
+            ),
+            _back_keyboard("adm_cat"),
+            parse_mode=ParseMode.HTML,
+        )
+        return
+
+    if data == "gh:await:set":
+        if role != "admin":
+            await _respond_admin_only(update)
+            return
+
+        with get_session() as session:
+            current_hours = get_github_pack_awaiting_hours(session)
+
+        _set_flow(context, FLOW_GH_SET_AWAITING_HOURS)
+        await _respond(
+            update,
+            (
+                "⏱️ <b>Atur Jam Awaiting Benefits</b>\n"
+                f"Durasi saat ini: <b>{current_hours} jam</b>\n\n"
+                "Kirim angka durasi baru dalam jam (contoh: <code>84</code>).\n"
+                "Rentang yang diizinkan: <b>1 - 720</b> jam."
             ),
             _back_keyboard("adm_cat"),
             parse_mode=ParseMode.HTML,
@@ -3226,13 +3256,17 @@ async def text_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
             _clear_flow(context)
             status_text = "AWAITING BENEFITS" if awaiting else "READY"
+            awaiting_info_line = ""
+            if awaiting and stock.available_at is not None:
+                awaiting_info_line = f"Estimasi ready: <b>{html.escape(_format_display_day_time(stock.available_at))}</b>\n"
             await _respond(
                 update,
                 (
                     "✅ <b>Stok GitHub Pack berhasil ditambahkan</b>\n"
                     f"ID: <b>{stock.id}</b>\n"
                     f"Username: <b>{html.escape(stock.username)}</b>\n"
-                    f"Status: <b>{status_text}</b>\n\n"
+                    f"Status: <b>{status_text}</b>\n"
+                    f"{awaiting_info_line}\n"
                     f"{_admin_footer_text()}"
                 ),
                 _github_pack_menu_keyboard(),
@@ -3276,6 +3310,47 @@ async def text_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
                 (
                     f"✅ Harga <b>{html.escape(product.name)}</b> berhasil diperbarui.\n"
                     f"Harga baru: <b>{_format_rupiah(product.price)}</b>"
+                ),
+                _github_pack_menu_keyboard(),
+                parse_mode=ParseMode.HTML,
+            )
+            return
+
+        if flow == FLOW_GH_SET_AWAITING_HOURS:
+            if role != "admin":
+                await _respond_admin_only(update)
+                _clear_flow(context)
+                return
+
+            normalized = text.lower().replace("jam", "").strip()
+            try:
+                new_hours = int(normalized)
+            except ValueError:
+                await _respond(
+                    update,
+                    "⚠️ Format jam tidak valid. Kirim angka saja, contoh: 84",
+                    _back_keyboard("adm_cat"),
+                )
+                return
+
+            with get_session() as session:
+                try:
+                    applied_hours = set_github_pack_awaiting_hours(
+                        session,
+                        hours=new_hours,
+                        actor_id=db_user.id,
+                    )
+                except ValueError as exc:
+                    await _respond(update, f"❌ {exc}", _back_keyboard("adm_cat"))
+                    return
+
+            _clear_flow(context)
+            await _respond(
+                update,
+                (
+                    "✅ <b>Durasi awaiting berhasil diperbarui</b>\n"
+                    f"Nilai baru: <b>{applied_hours} jam</b>\n\n"
+                    "Stok awaiting berikutnya akan menggunakan durasi ini."
                 ),
                 _github_pack_menu_keyboard(),
                 parse_mode=ParseMode.HTML,
