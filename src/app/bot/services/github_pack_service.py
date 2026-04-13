@@ -105,7 +105,7 @@ def add_github_stock(session: Session, raw_text: str, actor_id: int | None, awai
             break
 
     stock_status = STOCK_STATUS_AWAITING if awaiting else STOCK_STATUS_READY
-    available_at = datetime.utcnow() + timedelta(hours=72) if awaiting else None
+    available_at = datetime.utcnow() + timedelta(hours=78) if awaiting else None
 
     stock = StockUnit(
         product_id=product.id,

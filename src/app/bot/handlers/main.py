@@ -2390,7 +2390,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             update,
             (
                 "⏳ <b>Tambah Stok GitHub Pack (AWAITING)</b>\n"
-                "Kirim blok data akun. Stok otomatis pindah ke READY setelah 72 jam.\n\n"
+                "Kirim blok data akun. Stok otomatis pindah ke READY setelah 78 jam.\n\n"
                 f"{_admin_footer_text()}"
             ),
             _back_keyboard("adm_cat"),
