@@ -3335,7 +3335,7 @@ async def text_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
             with get_session() as session:
                 try:
-                    applied_hours = set_github_pack_awaiting_hours(
+                    update_result = set_github_pack_awaiting_hours(
                         session,
                         hours=new_hours,
                         actor_id=db_user.id,
@@ -3345,12 +3345,23 @@ async def text_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
                     return
 
             _clear_flow(context)
+            delta_hours = update_result.delta_hours
+            if delta_hours > 0:
+                delta_text = f"+{delta_hours} jam"
+            elif delta_hours < 0:
+                delta_text = f"{delta_hours} jam"
+            else:
+                delta_text = "0 jam"
+
             await _respond(
                 update,
                 (
                     "✅ <b>Durasi awaiting berhasil diperbarui</b>\n"
-                    f"Nilai baru: <b>{applied_hours} jam</b>\n\n"
-                    "Stok awaiting berikutnya akan menggunakan durasi ini."
+                    f"Nilai lama: <b>{update_result.old_hours} jam</b>\n"
+                    f"Nilai baru: <b>{update_result.new_hours} jam</b>\n"
+                    f"Delta diterapkan: <b>{delta_text}</b>\n"
+                    "Stok awaiting lama disesuaikan: "
+                    f"<b>{update_result.adjusted_stock_count} akun</b>."
                 ),
                 _github_pack_menu_keyboard(),
                 parse_mode=ParseMode.HTML,

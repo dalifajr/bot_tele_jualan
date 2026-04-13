@@ -35,6 +35,14 @@ class GithubStockView:
     raw_text: str
 
 
+@dataclass(frozen=True)
+class GithubAwaitingHoursUpdateResult:
+    old_hours: int
+    new_hours: int
+    delta_hours: int
+    adjusted_stock_count: int
+
+
 def _extract_username_from_parsed_json(parsed_json: str | None) -> str:
     if not parsed_json:
         return "unknown"
@@ -121,14 +129,59 @@ def get_github_pack_awaiting_hours(session: Session) -> int:
     return _sanitize_awaiting_hours(raw)
 
 
-def set_github_pack_awaiting_hours(session: Session, hours: int, actor_id: int | None) -> int:
+def _apply_awaiting_delta_to_existing_stocks(
+    session: Session,
+    *,
+    product_id: int,
+    delta_hours: int,
+) -> int:
+    if delta_hours == 0:
+        return 0
+
+    delta = timedelta(hours=delta_hours)
+    awaiting_rows = list(
+        session.scalars(
+            select(StockUnit)
+            .where(
+                StockUnit.product_id == product_id,
+                StockUnit.is_sold.is_(False),
+                StockUnit.stock_status == STOCK_STATUS_AWAITING,
+                StockUnit.available_at.is_not(None),
+            )
+            .order_by(StockUnit.id.asc())
+        ).all()
+    )
+
+    adjusted_count = 0
+    for row in awaiting_rows:
+        if row.available_at is None:
+            continue
+        row.available_at = row.available_at + delta
+        session.add(row)
+        adjusted_count += 1
+
+    return adjusted_count
+
+
+def set_github_pack_awaiting_hours(
+    session: Session,
+    hours: int,
+    actor_id: int | None,
+) -> GithubAwaitingHoursUpdateResult:
     normalized = _sanitize_awaiting_hours(str(hours))
     if int(hours) != normalized:
         raise ValueError(
             f"Durasi awaiting harus antara {MIN_GITHUB_PACK_AWAITING_HOURS} sampai {MAX_GITHUB_PACK_AWAITING_HOURS} jam."
         )
 
+    product = ensure_github_pack_product(session)
     old_hours = get_github_pack_awaiting_hours(session)
+    delta_hours = int(normalized) - int(old_hours)
+    adjusted_stock_count = _apply_awaiting_delta_to_existing_stocks(
+        session,
+        product_id=int(product.id),
+        delta_hours=delta_hours,
+    )
     set_setting(session, key=GITHUB_PACK_AWAITING_HOURS_KEY, value=str(normalized))
 
     append_audit(
@@ -137,9 +190,17 @@ def set_github_pack_awaiting_hours(session: Session, hours: int, actor_id: int |
         actor_id=actor_id,
         entity_type="setting",
         entity_id=GITHUB_PACK_AWAITING_HOURS_KEY,
-        detail=f"old_hours={old_hours}; new_hours={normalized}",
+        detail=(
+            f"old_hours={old_hours}; new_hours={normalized}; "
+            f"delta_hours={delta_hours}; adjusted_stock_count={adjusted_stock_count}"
+        ),
     )
-    return normalized
+    return GithubAwaitingHoursUpdateResult(
+        old_hours=int(old_hours),
+        new_hours=int(normalized),
+        delta_hours=int(delta_hours),
+        adjusted_stock_count=int(adjusted_stock_count),
+    )
 
 
 def add_github_stock(session: Session, raw_text: str, actor_id: int | None, awaiting: bool) -> GithubStockView:
