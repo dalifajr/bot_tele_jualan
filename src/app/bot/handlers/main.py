@@ -1521,10 +1521,10 @@ async def _send_quick_reorder_result(
     )
 
 
-async def _run_update_script(action: str) -> str:
+async def _run_update_script_with_code(action: str) -> tuple[int, str]:
     script_path = Path(settings.project_root / "ops" / "update_manager.sh")
     if not script_path.exists():
-        return "❌ Script update tidak ditemukan."
+        return 1, "Script update tidak ditemukan."
 
     proc = await asyncio.to_thread(
         subprocess.run,
@@ -1534,10 +1534,104 @@ async def _run_update_script(action: str) -> str:
         text=True,
         check=False,
     )
-    output = (proc.stdout or proc.stderr or "Tidak ada output").strip()
+
+    stdout = (proc.stdout or "").strip()
+    stderr = (proc.stderr or "").strip()
+    if stdout and stderr:
+        output = f"{stdout}\n{stderr}"
+    else:
+        output = stdout or stderr or "Tidak ada output"
+
     if len(output) > 3500:
         output = output[:3500] + "\n..."
+    return int(proc.returncode), output
+
+
+async def _run_update_script(action: str) -> str:
+    _code, output = await _run_update_script_with_code(action)
     return output
+
+
+def _detect_update_state(output: str) -> str:
+    text = output.lower()
+    if "status: update available" in text:
+        return "update_available"
+    if "status: up-to-date" in text or "status: up to date" in text:
+        return "up_to_date"
+    return "unknown"
+
+
+def _extract_update_summary_line(output: str) -> str | None:
+    for line in output.splitlines():
+        candidate = line.strip()
+        if candidate.lower().startswith("update selesai"):
+            return candidate
+    return None
+
+
+def _build_update_check_user_message(return_code: int, output: str) -> tuple[str, bool | None]:
+    if return_code != 0:
+        return (
+            "❌ <b>Cek update gagal</b>\n"
+            "Bot belum bisa mengecek update saat ini. Coba lagi sebentar lagi.",
+            None,
+        )
+
+    state = _detect_update_state(output)
+    if state == "up_to_date":
+        return (
+            "✅ <b>Bot sudah versi terbaru</b>\n"
+            "Saat ini tidak ada update baru.",
+            False,
+        )
+
+    if state == "update_available":
+        return (
+            "⬆️ <b>Update baru ditemukan</b>\n"
+            "Bot akan menerapkan update secara otomatis.",
+            True,
+        )
+
+    return (
+        "ℹ️ <b>Status update belum bisa dipastikan</b>\n"
+        "Silakan coba lagi dalam beberapa saat.",
+        None,
+    )
+
+
+def _build_update_apply_user_message(return_code: int, output: str) -> str:
+    if return_code != 0:
+        return (
+            "❌ <b>Update gagal diterapkan</b>\n"
+            "Perubahan belum diterapkan. Silakan coba lagi nanti."
+        )
+
+    summary_line = _extract_update_summary_line(output)
+    if summary_line and "tidak ada commit baru" in summary_line.lower():
+        return (
+            "✅ <b>Bot sudah versi terbaru</b>\n"
+            "Tidak ada commit baru, jadi tidak perlu update."
+        )
+
+    lines = [
+        "✅ <b>Update berhasil diterapkan</b>",
+        "Bot sudah diperbarui dan service sudah direstart.",
+    ]
+    if summary_line:
+        lines.append(f"Info: <i>{html.escape(summary_line)}</i>")
+    return "\n".join(lines)
+
+
+async def _run_auto_update_flow() -> str:
+    check_code, check_output = await _run_update_script_with_code("check")
+    check_message, should_apply = _build_update_check_user_message(check_code, check_output)
+
+    if should_apply is not True:
+        return check_message
+
+    apply_code, apply_output = await _run_update_script_with_code("update")
+    apply_message = _build_update_apply_user_message(apply_code, apply_output)
+    return f"{check_message}\n\n{apply_message}"
 
 
 async def _ensure_user(
@@ -1862,8 +1956,9 @@ async def update_check_handler(update: Update, context: ContextTypes.DEFAULT_TYP
         await _respond_admin_only(update)
         return
 
-    output = await _run_update_script("check")
-    await _respond(update, f"🔍 Hasil cek update:\n{output}", _back_keyboard("upd"))
+    check_code, check_output = await _run_update_script_with_code("check")
+    check_message, _ = _build_update_check_user_message(check_code, check_output)
+    await _respond(update, check_message, _back_keyboard("main"), parse_mode=ParseMode.HTML)
 
 
 async def update_apply_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -1872,12 +1967,9 @@ async def update_apply_handler(update: Update, context: ContextTypes.DEFAULT_TYP
         await _respond_admin_only(update)
         return
 
-    output = await _run_update_script("update")
-    await _respond(
-        update,
-        f"⬆️ Update dijalankan:\n{output}",
-        _back_keyboard("main"),
-    )
+    apply_code, apply_output = await _run_update_script_with_code("update")
+    apply_message = _build_update_apply_user_message(apply_code, apply_output)
+    await _respond(update, apply_message, _back_keyboard("main"), parse_mode=ParseMode.HTML)
 
 
 async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -2037,8 +2129,15 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         _clear_flow(context)
         await _respond(
             update,
-            f"🔄 <b>Menu Update Bot</b>\n\n{_admin_footer_text()}",
-            _update_menu_keyboard(),
+            "🔄 <b>Mengecek update bot...</b>\nMohon tunggu sebentar.",
+            _back_keyboard("main"),
+            parse_mode=ParseMode.HTML,
+        )
+        auto_message = await _run_auto_update_flow()
+        await _respond(
+            update,
+            auto_message,
+            _back_keyboard("main"),
             parse_mode=ParseMode.HTML,
         )
         return
@@ -2985,11 +3084,12 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         if role != "admin":
             await _respond_admin_only(update)
             return
-        output = await _run_update_script("check")
+        check_code, check_output = await _run_update_script_with_code("check")
+        check_message, _ = _build_update_check_user_message(check_code, check_output)
         await _respond(
             update,
-            f"🔍 <b>Hasil Cek Update</b>\n{html.escape(output)}\n\n{_admin_footer_text()}",
-            _back_keyboard("upd"),
+            check_message,
+            _back_keyboard("main"),
             parse_mode=ParseMode.HTML,
         )
         return
@@ -2998,10 +3098,11 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         if role != "admin":
             await _respond_admin_only(update)
             return
-        output = await _run_update_script("update")
+        apply_code, apply_output = await _run_update_script_with_code("update")
+        apply_message = _build_update_apply_user_message(apply_code, apply_output)
         await _respond(
             update,
-            f"⬆️ <b>Update Dijalankan</b>\n{html.escape(output)}\n\n{_admin_footer_text()}",
+            apply_message,
             _back_keyboard("main"),
             parse_mode=ParseMode.HTML,
         )
