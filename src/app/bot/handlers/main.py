@@ -24,7 +24,11 @@ from telegram.ext import (
     filters,
 )
 
-from app.bot.services.broadcast_service import build_product_ready_broadcast_message, broadcast_to_customers
+from app.bot.services.broadcast_service import (
+    BroadcastAttachmentType,
+    build_product_ready_broadcast_message,
+    broadcast_to_customers,
+)
 from app.bot.services.admin_order_notification_service import (
     build_admin_order_actions_keyboard,
     upsert_admin_order_message,
@@ -458,6 +462,153 @@ async def _send_checkout_loading(update: Update) -> Message | None:
     except Exception as exc:
         logger.warning("Gagal kirim fallback loading message: %s", exc)
     return None
+
+
+def _broadcast_mode_label(attachment_type: BroadcastAttachmentType | None) -> str:
+    if attachment_type == "photo":
+        return "Foto"
+    if attachment_type == "document":
+        return "File"
+    return "Teks"
+
+
+def _build_broadcast_progress_text(
+    *,
+    processed: int,
+    total: int,
+    sent: int,
+    failed: int,
+    attachment_type: BroadcastAttachmentType | None,
+) -> str:
+    return (
+        "📡 <b>Broadcast sedang berjalan...</b>\n"
+        f"Mode: <b>{_broadcast_mode_label(attachment_type)}</b>\n"
+        f"Progress: <b>{processed}/{total}</b>\n"
+        f"✅ Sent: <b>{sent}</b>\n"
+        f"❌ Failed: <b>{failed}</b>"
+    )
+
+
+def _build_broadcast_done_text(
+    *,
+    total: int,
+    sent: int,
+    failed: int,
+    attachment_type: BroadcastAttachmentType | None,
+) -> str:
+    return (
+        "✅ <b>Broadcast selesai</b>\n"
+        f"Mode: <b>{_broadcast_mode_label(attachment_type)}</b>\n"
+        f"Total customer: <b>{total}</b>\n"
+        f"✅ Sent: <b>{sent}</b>\n"
+        f"❌ Failed: <b>{failed}</b>"
+    )
+
+
+async def _send_broadcast_progress_message(update: Update) -> Message | None:
+    text = _build_broadcast_progress_text(
+        processed=0,
+        total=0,
+        sent=0,
+        failed=0,
+        attachment_type=None,
+    )
+
+    query = update.callback_query
+    if query is not None and query.message is not None:
+        try:
+            return await query.message.reply_text(text=text, parse_mode=ParseMode.HTML)
+        except Exception as exc:
+            logger.warning("Gagal kirim pesan progres broadcast (callback): %s", exc)
+
+    if update.message is not None:
+        try:
+            return await update.message.reply_text(text=text, parse_mode=ParseMode.HTML)
+        except Exception as exc:
+            logger.warning("Gagal kirim pesan progres broadcast (message): %s", exc)
+
+    return None
+
+
+async def _edit_broadcast_progress_message(
+    *,
+    context: ContextTypes.DEFAULT_TYPE,
+    message: Message | None,
+    text: str,
+) -> None:
+    if message is None:
+        return
+
+    try:
+        await context.bot.edit_message_text(
+            chat_id=message.chat_id,
+            message_id=message.message_id,
+            text=text,
+            parse_mode=ParseMode.HTML,
+        )
+    except BadRequest as exc:
+        if "message is not modified" not in str(exc).lower():
+            logger.debug("Gagal update pesan progres broadcast: %s", exc)
+    except Exception as exc:
+        logger.warning("Gagal update pesan progres broadcast: %s", exc)
+
+
+async def _run_admin_broadcast_with_progress(
+    *,
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    admin_user_id: int,
+    message_text: str,
+    attachment_type: BroadcastAttachmentType | None = None,
+    attachment_file_id: str | None = None,
+) -> tuple[int, int, int]:
+    progress_message = await _send_broadcast_progress_message(update)
+    total = 0
+    last_snapshot: tuple[int, int, int, int] | None = None
+
+    async def _on_progress(processed: int, current_total: int, sent: int, failed: int) -> None:
+        nonlocal total, last_snapshot
+        total = current_total
+        snapshot = (processed, current_total, sent, failed)
+        if snapshot == last_snapshot:
+            return
+        last_snapshot = snapshot
+
+        await _edit_broadcast_progress_message(
+            context=context,
+            message=progress_message,
+            text=_build_broadcast_progress_text(
+                processed=processed,
+                total=current_total,
+                sent=sent,
+                failed=failed,
+                attachment_type=attachment_type,
+            ),
+        )
+
+    with get_session() as session:
+        sent, failed = await broadcast_to_customers(
+            session=session,
+            bot=context.bot,
+            admin_user_id=admin_user_id,
+            message=message_text,
+            attachment_type=attachment_type,
+            attachment_file_id=attachment_file_id,
+            progress_callback=_on_progress,
+        )
+
+    final_total = total if total > 0 else (sent + failed)
+    await _edit_broadcast_progress_message(
+        context=context,
+        message=progress_message,
+        text=_build_broadcast_done_text(
+            total=final_total,
+            sent=sent,
+            failed=failed,
+            attachment_type=attachment_type,
+        ),
+    )
+    return sent, failed, final_total
 
 
 def _track_background_task(task: asyncio.Task[object], label: str) -> None:
@@ -1929,7 +2080,8 @@ async def broadcast_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         update,
         (
             "📢 <b>Broadcast ke Customer</b>\n"
-            "Kirim isi pesan sekarang, lalu bot akan kirim ke semua customer.\n\n"
+            "Kirim <b>teks</b>, <b>foto</b>, atau <b>file</b> sekarang.\n"
+            "Untuk foto/file, caption opsional.\n\n"
             f"{_admin_footer_text()}"
         ),
         _back_keyboard("main"),
@@ -2056,7 +2208,8 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             update,
             (
                 "📢 <b>Broadcast ke Customer</b>\n"
-                "Kirim isi pesan sekarang, lalu bot akan kirim ke semua customer.\n\n"
+                "Kirim <b>teks</b>, <b>foto</b>, atau <b>file</b> sekarang.\n"
+                "Untuk foto/file, caption opsional.\n\n"
                 f"{_admin_footer_text()}"
             ),
             _back_keyboard("main"),
@@ -3374,19 +3527,28 @@ async def text_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
                 _clear_flow(context)
                 return
 
-            with get_session() as session:
-                sent, failed = await broadcast_to_customers(
-                    session=session,
-                    bot=context.bot,
-                    admin_user_id=db_user.id,
-                    message=text,
+            if len(text) > 4096:
+                await _respond(
+                    update,
+                    "⚠️ Pesan broadcast terlalu panjang. Maksimal 4096 karakter untuk mode teks.",
+                    _back_keyboard("main"),
                 )
+                return
+
+            sent, failed, total = await _run_admin_broadcast_with_progress(
+                update=update,
+                context=context,
+                admin_user_id=db_user.id,
+                message_text=text,
+            )
 
             _clear_flow(context)
             await _respond(
                 update,
                 (
                     "📢 <b>Broadcast selesai</b>\n"
+                    "Mode: <b>Teks</b>\n"
+                    f"Total customer: <b>{total}</b>\n"
                     f"✅ Sent: <b>{sent}</b>\n"
                     f"❌ Failed: <b>{failed}</b>\n\n"
                     f"{_admin_footer_text()}"
@@ -3457,11 +3619,48 @@ async def photo_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     if update.message is None or not update.message.photo:
         return
 
-    await _ensure_user(update, context)
-    if not _ensure_admin(update):
+    db_user, role = await _ensure_user(update, context)
+    if role != "admin":
         return
 
-    if not context.user_data.get(AWAIT_QRIS_IMAGE_KEY):
+    awaiting_qris = bool((context.user_data or {}).get(AWAIT_QRIS_IMAGE_KEY))
+    if not awaiting_qris:
+        flow, _ = _get_flow(context)
+        if flow != FLOW_ADMIN_BROADCAST:
+            return
+
+        caption = (update.message.caption or "").strip()
+        if len(caption) > 1024:
+            await _respond(
+                update,
+                "⚠️ Caption broadcast foto terlalu panjang. Maksimal 1024 karakter.",
+                _back_keyboard("main"),
+            )
+            return
+
+        photo = update.message.photo[-1]
+        sent, failed, total = await _run_admin_broadcast_with_progress(
+            update=update,
+            context=context,
+            admin_user_id=db_user.id,
+            message_text=caption,
+            attachment_type="photo",
+            attachment_file_id=photo.file_id,
+        )
+        _clear_flow(context)
+        await _respond(
+            update,
+            (
+                "📢 <b>Broadcast selesai</b>\n"
+                "Mode: <b>Foto</b>\n"
+                f"Total customer: <b>{total}</b>\n"
+                f"✅ Sent: <b>{sent}</b>\n"
+                f"❌ Failed: <b>{failed}</b>\n\n"
+                f"{_admin_footer_text()}"
+            ),
+            _back_keyboard("main"),
+            parse_mode=ParseMode.HTML,
+        )
         return
 
     context.user_data[AWAIT_QRIS_IMAGE_KEY] = False
@@ -3473,6 +3672,60 @@ async def photo_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     await update.message.reply_text(
         "✅ QRIS berhasil disimpan.",
         reply_markup=_back_keyboard("pay"),
+    )
+
+
+async def document_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if update.message is None or update.message.document is None:
+        return
+
+    db_user, role = await _ensure_user(update, context)
+    if role != "admin":
+        return
+
+    awaiting_qris = bool((context.user_data or {}).get(AWAIT_QRIS_IMAGE_KEY))
+    if awaiting_qris:
+        await _respond(
+            update,
+            "⚠️ Upload QRIS harus berupa foto, bukan file dokumen.",
+            _back_keyboard("pay"),
+        )
+        return
+
+    flow, _ = _get_flow(context)
+    if flow != FLOW_ADMIN_BROADCAST:
+        return
+
+    caption = (update.message.caption or "").strip()
+    if len(caption) > 1024:
+        await _respond(
+            update,
+            "⚠️ Caption broadcast file terlalu panjang. Maksimal 1024 karakter.",
+            _back_keyboard("main"),
+        )
+        return
+
+    sent, failed, total = await _run_admin_broadcast_with_progress(
+        update=update,
+        context=context,
+        admin_user_id=db_user.id,
+        message_text=caption,
+        attachment_type="document",
+        attachment_file_id=update.message.document.file_id,
+    )
+    _clear_flow(context)
+    await _respond(
+        update,
+        (
+            "📢 <b>Broadcast selesai</b>\n"
+            "Mode: <b>File</b>\n"
+            f"Total customer: <b>{total}</b>\n"
+            f"✅ Sent: <b>{sent}</b>\n"
+            f"❌ Failed: <b>{failed}</b>\n\n"
+            f"{_admin_footer_text()}"
+        ),
+        _back_keyboard("main"),
+        parse_mode=ParseMode.HTML,
     )
 
 
@@ -3500,4 +3753,5 @@ def register_handlers(application: Application) -> None:
 
     application.add_handler(CallbackQueryHandler(callback_router))
     application.add_handler(MessageHandler(filters.PHOTO, photo_handler))
+    application.add_handler(MessageHandler(filters.Document.ALL, document_handler))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, text_router))
