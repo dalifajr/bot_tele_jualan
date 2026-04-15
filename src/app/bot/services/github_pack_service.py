@@ -16,13 +16,17 @@ from app.bot.services.catalog_service import (
 )
 from app.bot.services.stock_parser import parse_stock_block
 from app.common.config import get_settings
-from app.db.models import Product, StockUnit
+from app.db.models import Order, Product, StockUnit, User
 
 settings = get_settings()
 GITHUB_PACK_AWAITING_HOURS_KEY = "github_pack.awaiting_hours"
+GITHUB_PACK_USED_PRODUCT_ID_KEY = "github_pack.used_product_id"
 DEFAULT_GITHUB_PACK_AWAITING_HOURS = 78
 MIN_GITHUB_PACK_AWAITING_HOURS = 1
 MAX_GITHUB_PACK_AWAITING_HOURS = 720
+DEFAULT_GITHUB_USED_PRODUCT_NAME = "GHS Bekas"
+DEFAULT_GITHUB_USED_PRODUCT_PRICE = 20000
+GITHUB_PACK_STOCK_STATUS_MOVED_TO_USED = "moved_to_ghs_used"
 
 
 @dataclass
@@ -41,6 +45,37 @@ class GithubAwaitingHoursUpdateResult:
     new_hours: int
     delta_hours: int
     adjusted_stock_count: int
+
+
+@dataclass(frozen=True)
+class GithubSoldStockSummary:
+    stock_id: int
+    username: str
+    sold_at: datetime
+    order_ref: str
+    is_moved_to_used: bool
+
+
+@dataclass(frozen=True)
+class GithubSoldStockDetail:
+    stock_id: int
+    username: str
+    sold_at: datetime
+    account_age_days: int
+    order_ref: str
+    buyer_display: str
+    buyer_telegram_id: int | None
+    raw_text: str
+    is_moved_to_used: bool
+
+
+@dataclass(frozen=True)
+class GithubSoldStockMoveResult:
+    source_stock_id: int
+    source_username: str
+    used_product_id: int
+    used_product_name: str
+    used_stock_id: int
 
 
 def _extract_username_from_parsed_json(parsed_json: str | None) -> str:
@@ -65,6 +100,24 @@ def _normalize_username(value: str) -> str:
     return value.strip().lower()
 
 
+def _resolve_sold_at(order: Order | None, stock: StockUnit) -> datetime:
+    if order is None:
+        return stock.created_at
+    return order.delivered_at or order.paid_at or order.created_at or stock.created_at
+
+
+def _buyer_display(user: User | None) -> tuple[str, int | None]:
+    if user is None:
+        return "-", None
+
+    telegram_id = int(user.telegram_id)
+    if user.username:
+        return f"@{user.username}", telegram_id
+    if user.full_name:
+        return user.full_name, telegram_id
+    return str(telegram_id), telegram_id
+
+
 def ensure_github_pack_product(session: Session) -> Product:
     target_name = settings.github_pack_name.strip()
     product = session.scalar(
@@ -79,6 +132,42 @@ def ensure_github_pack_product(session: Session) -> Product:
         )
         session.add(product)
         session.flush()
+    return product
+
+
+def ensure_github_pack_used_product(session: Session) -> Product:
+    github_pack_product = ensure_github_pack_product(session)
+    configured_id_raw = get_setting(session, key=GITHUB_PACK_USED_PRODUCT_ID_KEY, default="")
+
+    configured_id: int | None = None
+    try:
+        configured_id = int(str(configured_id_raw).strip()) if str(configured_id_raw).strip() else None
+    except (TypeError, ValueError):
+        configured_id = None
+
+    product: Product | None = None
+    if configured_id is not None:
+        existing = session.get(Product, configured_id)
+        if existing is not None:
+            product = existing
+
+    if product is None:
+        product = session.scalar(
+            select(Product).where(func.lower(Product.name) == DEFAULT_GITHUB_USED_PRODUCT_NAME.lower())
+        )
+
+    if product is None:
+        default_price = max(1000, min(int(github_pack_product.price), DEFAULT_GITHUB_USED_PRODUCT_PRICE))
+        product = Product(
+            name=DEFAULT_GITHUB_USED_PRODUCT_NAME,
+            description="Akun GitHub Student Developer Pack bekas untuk dijual ulang.",
+            price=default_price,
+            is_suspended=False,
+        )
+        session.add(product)
+        session.flush()
+
+    set_setting(session, key=GITHUB_PACK_USED_PRODUCT_ID_KEY, value=str(int(product.id)))
     return product
 
 
@@ -282,6 +371,138 @@ def list_github_stocks(session: Session) -> list[GithubStockView]:
             )
         )
     return result
+
+
+def list_sold_github_stocks(session: Session) -> list[GithubSoldStockSummary]:
+    product = ensure_github_pack_product(session)
+
+    rows = list(
+        session.execute(
+            select(StockUnit, Order)
+            .join(Order, Order.id == StockUnit.sold_order_id)
+            .where(
+                StockUnit.product_id == product.id,
+                StockUnit.is_sold.is_(True),
+                StockUnit.sold_order_id.is_not(None),
+            )
+            .order_by(
+                func.coalesce(Order.delivered_at, Order.paid_at, Order.created_at, StockUnit.created_at).desc(),
+                StockUnit.id.desc(),
+            )
+        ).all()
+    )
+
+    result: list[GithubSoldStockSummary] = []
+    for stock, order in rows:
+        sold_at = _resolve_sold_at(order, stock)
+        result.append(
+            GithubSoldStockSummary(
+                stock_id=int(stock.id),
+                username=_extract_username_from_parsed_json(stock.parsed_json),
+                sold_at=sold_at,
+                order_ref=order.order_ref,
+                is_moved_to_used=(stock.stock_status == GITHUB_PACK_STOCK_STATUS_MOVED_TO_USED),
+            )
+        )
+    return result
+
+
+def get_sold_github_stock_detail(session: Session, stock_id: int) -> GithubSoldStockDetail | None:
+    product = ensure_github_pack_product(session)
+
+    row = session.execute(
+        select(StockUnit, Order, User)
+        .join(Order, Order.id == StockUnit.sold_order_id)
+        .outerjoin(User, User.id == Order.customer_id)
+        .where(
+            StockUnit.id == stock_id,
+            StockUnit.product_id == product.id,
+            StockUnit.is_sold.is_(True),
+            StockUnit.sold_order_id.is_not(None),
+        )
+    ).first()
+    if row is None:
+        return None
+
+    stock, order, user = row
+    sold_at = _resolve_sold_at(order, stock)
+    account_age_days = max(0, int((sold_at - stock.created_at).total_seconds() // 86400))
+    buyer_display, buyer_telegram_id = _buyer_display(user)
+
+    return GithubSoldStockDetail(
+        stock_id=int(stock.id),
+        username=_extract_username_from_parsed_json(stock.parsed_json),
+        sold_at=sold_at,
+        account_age_days=account_age_days,
+        order_ref=order.order_ref,
+        buyer_display=buyer_display,
+        buyer_telegram_id=buyer_telegram_id,
+        raw_text=stock.raw_text,
+        is_moved_to_used=(stock.stock_status == GITHUB_PACK_STOCK_STATUS_MOVED_TO_USED),
+    )
+
+
+def move_sold_github_stock_to_used_product(
+    session: Session,
+    sold_stock_id: int,
+    actor_id: int | None,
+) -> GithubSoldStockMoveResult:
+    github_pack_product = ensure_github_pack_product(session)
+    used_product = ensure_github_pack_used_product(session)
+
+    row = session.execute(
+        select(StockUnit, Order)
+        .join(Order, Order.id == StockUnit.sold_order_id)
+        .where(
+            StockUnit.id == sold_stock_id,
+            StockUnit.product_id == github_pack_product.id,
+            StockUnit.is_sold.is_(True),
+            StockUnit.sold_order_id.is_not(None),
+        )
+    ).first()
+    if row is None:
+        raise ValueError("Akun terjual tidak ditemukan.")
+
+    sold_stock, sold_order = row
+    if sold_stock.stock_status == GITHUB_PACK_STOCK_STATUS_MOVED_TO_USED:
+        raise ValueError("Akun ini sudah dipindahkan ke produk GHS Bekas.")
+
+    copied_username = _extract_username_from_parsed_json(sold_stock.parsed_json)
+    relisted_stock = StockUnit(
+        product_id=used_product.id,
+        raw_text=sold_stock.raw_text,
+        parsed_json=sold_stock.parsed_json,
+        stock_status=STOCK_STATUS_READY,
+        available_at=None,
+        username_key=_normalize_username(copied_username),
+        is_sold=False,
+        sold_order_id=None,
+    )
+    session.add(relisted_stock)
+
+    sold_stock.stock_status = GITHUB_PACK_STOCK_STATUS_MOVED_TO_USED
+    session.add(sold_stock)
+    session.flush()
+
+    append_audit(
+        session,
+        action="github_sold_stock_move_to_used",
+        actor_id=actor_id,
+        entity_type="stock_unit",
+        entity_id=str(sold_stock.id),
+        detail=(
+            f"from_product={github_pack_product.id}; to_product={used_product.id}; "
+            f"new_stock_id={relisted_stock.id}; order_ref={sold_order.order_ref}; username={copied_username}"
+        ),
+    )
+
+    return GithubSoldStockMoveResult(
+        source_stock_id=int(sold_stock.id),
+        source_username=copied_username,
+        used_product_id=int(used_product.id),
+        used_product_name=used_product.name,
+        used_stock_id=int(relisted_stock.id),
+    )
 
 
 def get_github_stock_detail(session: Session, stock_id: int) -> GithubStockView | None:

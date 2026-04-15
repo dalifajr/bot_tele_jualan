@@ -47,10 +47,14 @@ from app.bot.services.github_pack_service import (
     add_github_stock,
     delete_github_stock,
     ensure_github_pack_product,
+    ensure_github_pack_used_product,
+    get_sold_github_stock_detail,
     get_github_pack_awaiting_hours,
     get_github_stock_detail,
     is_github_pack_product,
     list_github_stocks,
+    list_sold_github_stocks,
+    move_sold_github_stock_to_used_product,
     set_github_pack_awaiting_hours,
     set_github_pack_price,
 )
@@ -204,6 +208,7 @@ def _github_pack_menu_keyboard() -> InlineKeyboardMarkup:
             [InlineKeyboardButton("📥 Tambah Stok Ready", callback_data="gh:add:ready")],
             [InlineKeyboardButton("⏳ Tambah Stok Awaiting Benefits", callback_data="gh:add:await")],
             [InlineKeyboardButton("📋 Lihat List Akun", callback_data="gh:list")],
+            [InlineKeyboardButton("🧾 Akun Terjual", callback_data="gh:sold:list")],
             [InlineKeyboardButton("👁️ Lihat Detail Akun", callback_data="gh:view:list")],
             [InlineKeyboardButton("🗑️ Hapus Akun", callback_data="gh:del:list")],
             [InlineKeyboardButton("⬅️ Kembali", callback_data="back:adm_cat")],
@@ -701,6 +706,7 @@ async def _send_help(update: Update, role: str) -> None:
 async def _send_admin_catalog_menu(update: Update) -> None:
     with get_session() as session:
         ensure_github_pack_product(session)
+        ensure_github_pack_used_product(session)
 
     await _respond(
         update,
@@ -896,21 +902,116 @@ def _split_message_chunks(text: str, max_len: int = 3500) -> list[str]:
 async def _send_github_pack_menu(update: Update) -> None:
     with get_session() as session:
         product = ensure_github_pack_product(session)
+        used_product = ensure_github_pack_used_product(session)
         stocks = list_github_stocks(session)
+        sold_stocks = list_sold_github_stocks(session)
+        used_ready_count = get_available_stock_count(session, int(used_product.id))
         awaiting_hours = get_github_pack_awaiting_hours(session)
 
     ready_count = sum(1 for x in stocks if x.status == "ready")
     awaiting_count = sum(1 for x in stocks if x.status == "awaiting_benefits")
+    moved_count = sum(1 for x in sold_stocks if x.is_moved_to_used)
     await _respond(
         update,
         (
             f"🎓 <b>{html.escape(product.name)}</b>\n"
             f"✅ Ready: <b>{ready_count}</b> akun\n"
             f"⏳ Awaiting benefits: <b>{awaiting_count}</b> akun\n\n"
+            f"🧾 Akun terjual: <b>{len(sold_stocks)}</b> akun\n"
+            f"♻️ Sudah dipindah ke GHS Bekas: <b>{moved_count}</b> akun\n"
+            f"🛍️ Stok GHS Bekas Ready: <b>{used_ready_count}</b> akun\n\n"
             f"⏱️ Durasi awaiting: <b>{awaiting_hours} jam</b>\n\n"
             f"{_admin_footer_text()}"
         ),
         _github_pack_menu_keyboard(),
+        parse_mode=ParseMode.HTML,
+    )
+
+
+async def _send_github_sold_stock_picker(update: Update, page: int = 1) -> None:
+    with get_session() as session:
+        sold_stocks = list_sold_github_stocks(session)
+
+    if not sold_stocks:
+        await _respond(
+            update,
+            (
+                "📭 <b>Belum Ada Akun Terjual</b>\n"
+                "Akun GitHub Pack yang berhasil terjual akan muncul di sini.\n\n"
+                f"{_admin_footer_text()}"
+            ),
+            _github_pack_menu_keyboard(),
+            parse_mode=ParseMode.HTML,
+        )
+        return
+
+    paged_rows, safe_page, total_pages = _paginate_rows(sold_stocks, page, ADMIN_LIST_PAGE_SIZE)
+
+    keyboard_rows: list[list[InlineKeyboardButton]] = []
+    for row in paged_rows:
+        username_label = row.username
+        if len(username_label) > 20:
+            username_label = f"{username_label[:17]}..."
+        sold_label = _format_display_time(row.sold_at)
+        button_label = f"{username_label} | {sold_label}"
+        keyboard_rows.append(
+            [InlineKeyboardButton(button_label, callback_data=f"gh:sold:view:{row.stock_id}:{safe_page}")]
+        )
+
+    if total_pages > 1:
+        keyboard_rows.append(_pagination_nav_row(safe_page, total_pages, "gh:sold:list"))
+    keyboard_rows.append([InlineKeyboardButton("⬅️ Kembali", callback_data="ac:ghpack")])
+
+    await _respond(
+        update,
+        (
+            "🧾 <b>Akun Terjual - GitHub Pack</b>\n"
+            f"Halaman <b>{safe_page}/{total_pages}</b> • Total akun: <b>{len(sold_stocks)}</b>\n\n"
+            "Pilih akun untuk lihat detail dan pindahkan ke produk <b>GHS Bekas</b>."
+        ),
+        InlineKeyboardMarkup(keyboard_rows),
+        parse_mode=ParseMode.HTML,
+    )
+
+
+async def _send_github_sold_stock_detail(update: Update, stock_id: int, page: int = 1) -> None:
+    with get_session() as session:
+        detail = get_sold_github_stock_detail(session, stock_id)
+
+    if detail is None:
+        await _respond(update, "⚠️ Akun terjual tidak ditemukan.", _github_pack_menu_keyboard())
+        return
+
+    buyer_line = html.escape(detail.buyer_display)
+    if detail.buyer_telegram_id is not None:
+        buyer_line = f"{buyer_line} ({detail.buyer_telegram_id})"
+
+    moved_line = "✅ Sudah dipindahkan ke GHS Bekas" if detail.is_moved_to_used else "⏳ Belum dipindahkan ke GHS Bekas"
+
+    keyboard_rows: list[list[InlineKeyboardButton]] = []
+    if detail.is_moved_to_used:
+        keyboard_rows.append([InlineKeyboardButton("✅ Sudah Masuk GHS Bekas", callback_data="noop")])
+    else:
+        keyboard_rows.append(
+            [InlineKeyboardButton("♻️ Masukkan ke Produk GHS Bekas", callback_data=f"gh:sold:move:{detail.stock_id}:{max(1, page)}")]
+        )
+    keyboard_rows.append([InlineKeyboardButton("⬅️ Kembali ke Akun Terjual", callback_data=f"gh:sold:list:{max(1, page)}")])
+    keyboard_rows.append([InlineKeyboardButton("⬅️ Kembali ke GitHub Pack", callback_data="ac:ghpack")])
+
+    await _respond(
+        update,
+        (
+            "🧾 <b>Detail Akun Terjual</b>\n"
+            f"Username akun: <b>{html.escape(detail.username)}</b>\n"
+            f"Tanggal terjual: <b>{html.escape(_format_display_day_time(detail.sold_at))}</b>\n"
+            f"Umur akun: <b>{detail.account_age_days} hari</b>\n"
+            f"Nomor reff: <code>{html.escape(detail.order_ref)}</code>\n"
+            f"Pemesan: <b>{buyer_line}</b>\n"
+            f"Status relist: {moved_line}\n\n"
+            f"<pre>{html.escape(detail.raw_text)}</pre>\n\n"
+            f"{_admin_footer_text()}"
+        ),
+        InlineKeyboardMarkup(keyboard_rows),
         parse_mode=ParseMode.HTML,
     )
 
@@ -999,6 +1100,7 @@ async def _send_github_stock_picker(update: Update, mode: str, page: int = 1) ->
 async def _send_admin_catalog_list(update: Update, page: int = 1) -> None:
     with get_session() as session:
         ensure_github_pack_product(session)
+        ensure_github_pack_used_product(session)
         products = list_products(session=session, include_suspended=True)
 
     if not products:
@@ -1081,7 +1183,9 @@ async def _send_admin_product_picker(update: Update, action: str, title: str, pa
 async def _send_customer_catalog(update: Update) -> None:
     with get_session() as session:
         github_product = ensure_github_pack_product(session)
+        github_used_product = ensure_github_pack_used_product(session)
         github_product_id = int(github_product.id)
+        github_used_product_id = int(github_used_product.id)
         products = list_products(session=session, include_suspended=False)
 
     if not products:
@@ -1099,7 +1203,7 @@ async def _send_customer_catalog(update: Update) -> None:
 
     products = sorted(
         products,
-        key=lambda x: (0 if x.id == github_product_id else 1, x.id),
+        key=lambda x: (0 if x.id == github_product_id else 1 if x.id == github_used_product_id else 2, x.id),
     )
 
     keyboard_rows: list[list[InlineKeyboardButton]] = []
@@ -2675,6 +2779,88 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             await _respond(update, "⚠️ Halaman list akun tidak valid.", _github_pack_menu_keyboard())
             return
         await _send_github_stock_list(update, page=page)
+        return
+
+    if data == "gh:sold:list":
+        if role != "admin":
+            await _respond_admin_only(update)
+            return
+        await _send_github_sold_stock_picker(update, page=1)
+        return
+
+    if data.startswith("gh:sold:list:"):
+        if role != "admin":
+            await _respond_admin_only(update)
+            return
+        try:
+            page = int(data.split(":", maxsplit=3)[3])
+        except ValueError:
+            await _respond(update, "⚠️ Halaman akun terjual tidak valid.", _github_pack_menu_keyboard())
+            return
+        await _send_github_sold_stock_picker(update, page=page)
+        return
+
+    if data.startswith("gh:sold:view:"):
+        if role != "admin":
+            await _respond_admin_only(update)
+            return
+        parts = data.split(":", maxsplit=4)
+        if len(parts) != 5:
+            await _respond(update, "⚠️ Data akun terjual tidak valid.", _github_pack_menu_keyboard())
+            return
+        try:
+            stock_id = int(parts[3])
+            page = int(parts[4])
+        except ValueError:
+            await _respond(update, "⚠️ Data akun terjual tidak valid.", _github_pack_menu_keyboard())
+            return
+        await _send_github_sold_stock_detail(update, stock_id=stock_id, page=page)
+        return
+
+    if data.startswith("gh:sold:move:"):
+        if role != "admin":
+            await _respond_admin_only(update)
+            return
+        parts = data.split(":", maxsplit=4)
+        if len(parts) != 5:
+            await _respond(update, "⚠️ Data pemindahan akun tidak valid.", _github_pack_menu_keyboard())
+            return
+        try:
+            sold_stock_id = int(parts[3])
+            source_page = int(parts[4])
+        except ValueError:
+            await _respond(update, "⚠️ Data pemindahan akun tidak valid.", _github_pack_menu_keyboard())
+            return
+
+        db_user_ctx = await _require_db_user_ctx()
+        with get_session() as session:
+            try:
+                move_result = move_sold_github_stock_to_used_product(
+                    session=session,
+                    sold_stock_id=sold_stock_id,
+                    actor_id=db_user_ctx.id,
+                )
+            except ValueError as exc:
+                await _respond(update, f"❌ {exc}", _github_pack_menu_keyboard())
+                return
+
+        await _respond(
+            update,
+            (
+                "✅ <b>Akun berhasil dipindahkan ke GHS Bekas</b>\n"
+                f"Username: <b>{html.escape(move_result.source_username)}</b>\n"
+                f"Produk tujuan: <b>{html.escape(move_result.used_product_name)}</b>\n"
+                f"ID stok baru: <b>{move_result.used_stock_id}</b>"
+            ),
+            InlineKeyboardMarkup(
+                [
+                    [InlineKeyboardButton("🧾 Kembali ke Akun Terjual", callback_data=f"gh:sold:list:{max(1, source_page)}")],
+                    [InlineKeyboardButton("🛍️ Lihat Produk GHS Bekas", callback_data=f"acp:{move_result.used_product_id}")],
+                    [InlineKeyboardButton("⬅️ Kembali", callback_data="ac:ghpack")],
+                ]
+            ),
+            parse_mode=ParseMode.HTML,
+        )
         return
 
     if data == "gh:price:set":
