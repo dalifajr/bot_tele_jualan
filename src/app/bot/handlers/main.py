@@ -99,6 +99,7 @@ FLOW_ADMIN_BROADCAST = "admin_broadcast"
 FLOW_CUSTOMER_MANUAL_QTY = "customer_manual_qty"
 FLOW_GH_ADD_READY = "gh_add_ready"
 FLOW_GH_ADD_AWAIT = "gh_add_await"
+FLOW_GH_ADD_USED = "gh_add_used"
 FLOW_GH_SET_PRICE = "gh_set_price"
 FLOW_GH_SET_AWAITING_HOURS = "gh_set_awaiting_hours"
 AWAIT_QRIS_IMAGE_KEY = "await_qris_image"
@@ -207,6 +208,7 @@ def _github_pack_menu_keyboard() -> InlineKeyboardMarkup:
             [InlineKeyboardButton("⏱️ Atur Jam Awaiting", callback_data="gh:await:set")],
             [InlineKeyboardButton("📥 Tambah Stok Ready", callback_data="gh:add:ready")],
             [InlineKeyboardButton("⏳ Tambah Stok Awaiting Benefits", callback_data="gh:add:await")],
+            [InlineKeyboardButton("♻️ Tambah Stok GHS Bekas", callback_data="gh:add:used")],
             [InlineKeyboardButton("📋 Lihat List Akun", callback_data="gh:list")],
             [InlineKeyboardButton("🧾 Akun Terjual", callback_data="gh:sold:list")],
             [InlineKeyboardButton("👁️ Lihat Detail Akun", callback_data="gh:view:list")],
@@ -2762,6 +2764,26 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         )
         return
 
+    if data == "gh:add:used":
+        if role != "admin":
+            await _respond_admin_only(update)
+            return
+        with get_session() as session:
+            used_product = ensure_github_pack_used_product(session)
+        _set_flow(context, FLOW_GH_ADD_USED)
+        await _respond(
+            update,
+            (
+                "♻️ <b>Tambah Stok GHS Bekas</b>\n"
+                f"Produk tujuan: <b>{html.escape(used_product.name)}</b>\n"
+                "Kirim blok data akun. Satu pesan = satu akun ready.\n\n"
+                f"{_admin_footer_text()}"
+            ),
+            _back_keyboard("adm_cat"),
+            parse_mode=ParseMode.HTML,
+        )
+        return
+
     if data == "gh:list":
         if role != "admin":
             await _respond_admin_only(update)
@@ -3570,6 +3592,39 @@ async def text_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
                     f"{_admin_footer_text()}"
                 ),
                 _back_keyboard("adm_cat"),
+                parse_mode=ParseMode.HTML,
+            )
+            return
+
+        if flow == FLOW_GH_ADD_USED:
+            if role != "admin":
+                await _respond_admin_only(update)
+                _clear_flow(context)
+                return
+
+            with get_session() as session:
+                used_product = ensure_github_pack_used_product(session)
+                try:
+                    stock = add_stock_block(
+                        session,
+                        product_id=int(used_product.id),
+                        raw_text=text,
+                        actor_id=db_user.id,
+                    )
+                except ValueError as exc:
+                    await _respond(update, f"❌ Gagal tambah stok GHS Bekas: {exc}", _github_pack_menu_keyboard())
+                    return
+
+            _clear_flow(context)
+            await _respond(
+                update,
+                (
+                    "✅ <b>Stok GHS Bekas berhasil ditambahkan</b>\n"
+                    f"Produk: <b>{html.escape(used_product.name)}</b>\n"
+                    f"ID Stok: <b>{int(stock.id)}</b>\n\n"
+                    f"{_admin_footer_text()}"
+                ),
+                _github_pack_menu_keyboard(),
                 parse_mode=ParseMode.HTML,
             )
             return
