@@ -5,6 +5,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime, timezone
 import html
+from io import BytesIO
 import logging
 import subprocess
 import time
@@ -42,6 +43,14 @@ from app.bot.services.catalog_service import (
     get_product,
     list_products,
     suspend_product,
+)
+from app.bot.services.qris_service import (
+    build_dynamic_qris_payload,
+    build_dynamic_qris_png,
+    clear_qris_static_payload,
+    extract_qris_payload_from_image,
+    get_qris_static_payload,
+    set_qris_static_payload,
 )
 from app.bot.services.github_pack_service import (
     add_github_stock,
@@ -102,6 +111,7 @@ FLOW_GH_ADD_AWAIT = "gh_add_await"
 FLOW_GH_ADD_USED = "gh_add_used"
 FLOW_GH_SET_PRICE = "gh_set_price"
 FLOW_GH_SET_AWAITING_HOURS = "gh_set_awaiting_hours"
+FLOW_PAY_SET_QRIS_PAYLOAD = "pay_set_qris_payload"
 AWAIT_QRIS_IMAGE_KEY = "await_qris_image"
 CUSTOMER_ORDERS_PAGE_SIZE = 10
 ADMIN_LIST_PAGE_SIZE = 10
@@ -185,6 +195,7 @@ def _payment_menu_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         [
             [InlineKeyboardButton("🖼️ Upload QRIS", callback_data="pay:upload")],
+            [InlineKeyboardButton("🧾 Set Payload QRIS", callback_data="pay:payload:set")],
             [InlineKeyboardButton("ℹ️ Status QRIS", callback_data="pay:status")],
             [InlineKeyboardButton("⬅️ Kembali", callback_data="back:main")],
         ]
@@ -781,6 +792,57 @@ def _customer_footer_text() -> str:
 
 def _admin_footer_text() -> str:
     return "👇 <i>Pilih aksi admin lewat tombol di bawah.</i>"
+
+
+def _truncate_text(text: str, limit: int = 180) -> str:
+    normalized = text.strip()
+    if len(normalized) <= limit:
+        return normalized
+    return f"{normalized[: limit - 3]}..."
+
+
+def _mask_qris_payload(payload: str) -> str:
+    if not payload:
+        return "-"
+    if len(payload) <= 28:
+        return html.escape(payload)
+    return html.escape(f"{payload[:14]}...{payload[-10:]}")
+
+
+def _build_payment_status_text(
+    *,
+    dynamic_enabled: bool,
+    has_qris_image: bool,
+    payload: str,
+    dynamic_ready: bool,
+    dynamic_error: str,
+) -> str:
+    image_status = "✅ Tersedia" if has_qris_image else "⚠️ Belum ada"
+    payload_status = "✅ Tersedia" if payload else "⚠️ Belum di-set"
+    if dynamic_enabled:
+        if payload and dynamic_ready:
+            dynamic_status = "✅ Aktif (dinamis per nominal)"
+        elif payload:
+            dynamic_status = "⚠️ Aktif, payload tidak valid"
+        else:
+            dynamic_status = "⚠️ Aktif, payload belum tersedia"
+    else:
+        dynamic_status = "⏸️ Nonaktif (pakai QR statis)"
+
+    lines = [
+        "💳 <b>Status Payment</b>",
+        f"Mode QR dinamis: <b>{dynamic_status}</b>",
+        f"Payload QRIS statis: <b>{payload_status}</b>",
+        f"File QRIS fallback: <b>{image_status}</b>",
+    ]
+
+    if payload:
+        lines.append(f"Payload preview: <code>{_mask_qris_payload(payload)}</code>")
+    if dynamic_error:
+        lines.append(f"Catatan validasi: <i>{html.escape(_truncate_text(dynamic_error))}</i>")
+
+    lines.extend(["", _admin_footer_text()])
+    return "\n".join(lines)
 
 
 def _admin_access_denied_text() -> str:
@@ -1603,6 +1665,10 @@ async def _send_checkout_result(
     send_mode = "none"
     result_reason = "unknown"
     success = False
+    has_qris_payload = False
+    qris_dynamic_used = False
+    qris_dynamic_ready = False
+    qris_dynamic_error = ""
 
     try:
         with get_session() as session:
@@ -1691,7 +1757,39 @@ async def _send_checkout_result(
             return False
 
         qris_path = settings.qris_file_path
-        if qris_path.exists():
+        dynamic_qris_png: bytes | None = None
+        with get_session() as session:
+            qris_static_payload = get_qris_static_payload(session)
+
+        has_qris_payload = bool(qris_static_payload)
+        if settings.qris_dynamic_enabled and has_qris_payload:
+            try:
+                dynamic_qris_png = build_dynamic_qris_png(qris_static_payload, expected_amount)
+                qris_dynamic_ready = True
+            except Exception as exc:
+                qris_dynamic_error = str(exc)
+                logger.warning("Gagal generate QRIS dinamis checkout %s: %s", order_ref, exc)
+        elif settings.qris_dynamic_enabled:
+            qris_dynamic_error = "Payload QRIS belum di-set"
+
+        if dynamic_qris_png is not None:
+            try:
+                dynamic_photo = BytesIO(dynamic_qris_png)
+                dynamic_photo.name = f"qris-{order_ref}.png"
+                sent_message = await reply_target.reply_photo(
+                    photo=dynamic_photo,
+                    caption=payload_text,
+                    reply_markup=result_keyboard,
+                    parse_mode=ParseMode.HTML,
+                )
+                send_mode = "dynamic_photo"
+                qris_dynamic_used = True
+                logger.info("Checkout %s dikirim sebagai QR dinamis", order_ref)
+            except Exception as exc:
+                qris_dynamic_error = str(exc)
+                logger.warning("Gagal kirim QRIS dinamis checkout %s: %s", order_ref, exc)
+
+        if sent_message is None and qris_path.exists():
             try:
                 with qris_path.open("rb") as fh:
                     sent_message = await reply_target.reply_photo(
@@ -1744,6 +1842,11 @@ async def _send_checkout_result(
             qty=qty,
             send_mode=send_mode,
             has_qris_file=settings.qris_file_path.exists(),
+            has_qris_payload=has_qris_payload,
+            qris_dynamic_enabled=settings.qris_dynamic_enabled,
+            qris_dynamic_used=qris_dynamic_used,
+            qris_dynamic_ready=qris_dynamic_ready,
+            qris_dynamic_error=_truncate_text(qris_dynamic_error),
             source_reorder=bool(source_order_ref),
         )
 
@@ -2181,6 +2284,7 @@ async def broadcast_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         await _respond_admin_only(update)
         return
 
+    context.user_data[AWAIT_QRIS_IMAGE_KEY] = False
     _set_flow(context, FLOW_ADMIN_BROADCAST)
     await _respond(
         update,
@@ -2201,12 +2305,14 @@ async def set_qris_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         await _respond_admin_only(update)
         return
 
+    _clear_flow(context)
     context.user_data[AWAIT_QRIS_IMAGE_KEY] = True
     await _respond(
         update,
         (
             "🖼️ <b>Upload QRIS</b>\n"
-            "Kirim gambar QRIS sekarang dalam format foto.\n\n"
+            "Kirim gambar QRIS sekarang dalam format foto.\n"
+            "Payload akan dicoba diekstrak otomatis dari gambar.\n\n"
             f"{_admin_footer_text()}"
         ),
         _back_keyboard("pay"),
@@ -2269,6 +2375,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     if data.startswith("back:"):
         target = data.split(":", maxsplit=1)[1]
         _clear_flow(context)
+        context.user_data.pop(AWAIT_QRIS_IMAGE_KEY, None)
         if target == "main":
             await _send_main_menu(update, role, context=context)
             return
@@ -2309,6 +2416,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         if role != "admin":
             await _respond_admin_only(update)
             return
+        context.user_data[AWAIT_QRIS_IMAGE_KEY] = False
         _set_flow(context, FLOW_ADMIN_BROADCAST)
         await _respond(
             update,
@@ -2379,6 +2487,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             await _respond_admin_only(update)
             return
         _clear_flow(context)
+        context.user_data[AWAIT_QRIS_IMAGE_KEY] = False
         await _respond(
             update,
             f"💳 <b>Konfigurasi Payment</b>\n\n{_admin_footer_text()}",
@@ -3431,12 +3540,33 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         if role != "admin":
             await _respond_admin_only(update)
             return
+        _clear_flow(context)
         context.user_data[AWAIT_QRIS_IMAGE_KEY] = True
         await _respond(
             update,
             (
                 "🖼️ <b>Upload QRIS</b>\n"
-                "Kirim gambar QRIS sekarang dalam format foto.\n\n"
+                "Kirim gambar QRIS sekarang dalam format foto.\n"
+                "Payload akan dicoba diekstrak otomatis dari gambar.\n\n"
+                f"{_admin_footer_text()}"
+            ),
+            _back_keyboard("pay"),
+            parse_mode=ParseMode.HTML,
+        )
+        return
+
+    if data == "pay:payload:set":
+        if role != "admin":
+            await _respond_admin_only(update)
+            return
+        context.user_data[AWAIT_QRIS_IMAGE_KEY] = False
+        _set_flow(context, FLOW_PAY_SET_QRIS_PAYLOAD)
+        await _respond(
+            update,
+            (
+                "🧾 <b>Set Payload QRIS Statis</b>\n"
+                "Kirim payload EMV QRIS dalam 1 pesan (boleh mengandung spasi/baris baru, akan dibersihkan otomatis).\n"
+                "Ketik <code>hapus</code> untuk mengosongkan payload.\n\n"
                 f"{_admin_footer_text()}"
             ),
             _back_keyboard("pay"),
@@ -3448,27 +3578,42 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         if role != "admin":
             await _respond_admin_only(update)
             return
+        context.user_data[AWAIT_QRIS_IMAGE_KEY] = False
 
-        if settings.qris_file_path.exists():
-            await _respond(
-                update,
-                f"✅ <b>QRIS sudah tersimpan</b>\n\n{_admin_footer_text()}",
-                _back_keyboard("pay"),
-                parse_mode=ParseMode.HTML,
-            )
+        with get_session() as session:
+            payload = get_qris_static_payload(session)
+
+        has_qris_image = settings.qris_file_path.exists()
+        dynamic_ready = False
+        dynamic_error = ""
+
+        if settings.qris_dynamic_enabled and payload:
+            try:
+                build_dynamic_qris_payload(payload, amount=1000)
+                dynamic_ready = True
+            except Exception as exc:
+                dynamic_error = str(exc)
+
+        await _respond(
+            update,
+            _build_payment_status_text(
+                dynamic_enabled=settings.qris_dynamic_enabled,
+                has_qris_image=has_qris_image,
+                payload=payload,
+                dynamic_ready=dynamic_ready,
+                dynamic_error=dynamic_error,
+            ),
+            _back_keyboard("pay"),
+            parse_mode=ParseMode.HTML,
+        )
+
+        if has_qris_image:
             if query.message:
                 try:
                     with settings.qris_file_path.open("rb") as fh:
                         await query.message.reply_photo(photo=fh, caption="🧾 Preview QRIS", reply_markup=_back_keyboard("pay"))
                 except Exception as exc:
                     logger.warning("Gagal kirim preview QRIS: %s", exc)
-        else:
-            await _respond(
-                update,
-                f"⚠️ <b>QRIS belum diupload</b>\n\n{_admin_footer_text()}",
-                _back_keyboard("pay"),
-                parse_mode=ParseMode.HTML,
-            )
         return
 
     if data == "up:check":
@@ -3762,6 +3907,59 @@ async def text_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             )
             return
 
+        if flow == FLOW_PAY_SET_QRIS_PAYLOAD:
+            if role != "admin":
+                await _respond_admin_only(update)
+                _clear_flow(context)
+                return
+
+            command = text.strip().lower()
+            with get_session() as session:
+                if command in {"hapus", "clear", "kosong"}:
+                    clear_qris_static_payload(session, actor_id=db_user.id)
+                    _clear_flow(context)
+                    await _respond(
+                        update,
+                        (
+                            "✅ <b>Payload QRIS berhasil dihapus</b>\n"
+                            f"{_admin_footer_text()}"
+                        ),
+                        _back_keyboard("pay"),
+                        parse_mode=ParseMode.HTML,
+                    )
+                    return
+
+                try:
+                    saved_payload = set_qris_static_payload(session, payload=text, actor_id=db_user.id)
+                    sample_payload = build_dynamic_qris_payload(saved_payload, amount=1000)
+                except ValueError as exc:
+                    await _respond(
+                        update,
+                        (
+                            "⚠️ <b>Payload QRIS tidak valid</b>\n"
+                            f"{html.escape(str(exc))}\n\n"
+                            "Kirim ulang payload EMV lengkap atau ketik <code>hapus</code>."
+                        ),
+                        _back_keyboard("pay"),
+                        parse_mode=ParseMode.HTML,
+                    )
+                    return
+
+            _clear_flow(context)
+            await _respond(
+                update,
+                (
+                    "✅ <b>Payload QRIS tersimpan</b>\n"
+                    f"Panjang payload: <b>{len(saved_payload)}</b> karakter\n"
+                    f"Payload tersimpan: <code>{_mask_qris_payload(saved_payload)}</code>\n"
+                    f"Contoh dinamis nominal 1000: <code>{_mask_qris_payload(sample_payload)}</code>\n\n"
+                    f"{_admin_footer_text()}"
+                ),
+                _back_keyboard("pay"),
+                parse_mode=ParseMode.HTML,
+            )
+            return
+
         if flow == FLOW_ADMIN_BROADCAST:
             if role != "admin":
                 await _respond_admin_only(update)
@@ -3909,10 +4107,53 @@ async def photo_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 
     image = update.message.photo[-1]
     telegram_file = await image.get_file()
-    await telegram_file.download_to_drive(custom_path=str(settings.qris_file_path))
-    await update.message.reply_text(
-        "✅ QRIS berhasil disimpan.",
-        reply_markup=_back_keyboard("pay"),
+    image_data = await telegram_file.download_as_bytearray()
+    image_bytes = bytes(image_data)
+
+    if not image_bytes:
+        await _respond(
+            update,
+            "❌ Gagal membaca file gambar QRIS. Coba kirim ulang foto QRIS.",
+            _back_keyboard("pay"),
+        )
+        return
+
+    settings.qris_file_path.write_bytes(image_bytes)
+
+    extracted_payload = ""
+    extraction_error = ""
+    with get_session() as session:
+        try:
+            extracted_payload = extract_qris_payload_from_image(image_bytes)
+            set_qris_static_payload(session, payload=extracted_payload, actor_id=db_user.id)
+        except Exception as exc:
+            extraction_error = str(exc)
+
+    if extracted_payload:
+        await _respond(
+            update,
+            (
+                "✅ <b>QRIS berhasil disimpan</b>\n"
+                "✅ Payload QRIS berhasil diekstrak otomatis.\n"
+                f"Payload: <code>{_mask_qris_payload(extracted_payload)}</code>\n\n"
+                f"{_admin_footer_text()}"
+            ),
+            _back_keyboard("pay"),
+            parse_mode=ParseMode.HTML,
+        )
+        return
+
+    await _respond(
+        update,
+        (
+            "✅ <b>QRIS berhasil disimpan</b>\n"
+            "⚠️ Payload QRIS belum bisa diekstrak otomatis.\n"
+            f"Detail: <i>{html.escape(_truncate_text(extraction_error or 'Tidak ada detail error'))}</i>\n"
+            "Gunakan tombol <b>Set Payload QRIS</b> untuk isi payload manual.\n\n"
+            f"{_admin_footer_text()}"
+        ),
+        _back_keyboard("pay"),
+        parse_mode=ParseMode.HTML,
     )
 
 

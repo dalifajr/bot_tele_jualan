@@ -48,6 +48,7 @@ class Settings(BaseSettings):
     display_timezone: str = Field(default="Asia/Jakarta", alias="DISPLAY_TIMEZONE")
     github_pack_name: str = Field(default="GitHub Student Developer Pack", alias="GITHUB_PACK_NAME")
     qris_image_path: str = Field(default="./data/qris.png", alias="QRIS_IMAGE_PATH")
+    qris_dynamic_enabled: bool = Field(default=True, alias="QRIS_DYNAMIC_ENABLED")
     github_repo_url: str = Field(default="https://github.com/dalifajr/bot-jualan.git", alias="GITHUB_REPO_URL")
     update_branch: str = Field(default="", alias="UPDATE_BRANCH")
 

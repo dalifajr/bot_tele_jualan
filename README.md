@@ -4,6 +4,7 @@ Implementasi awal bot Telegram untuk jualan digital dengan fitur:
 - Multi role admin/customer berbasis `user_role.txt`
 - Katalog produk dan stok, dengan aturan 1 blok pesan = 1 unit stok
 - Checkout customer dengan nominal unik 3 digit
+- QRIS dinamis per nominal (dari payload statis) dengan fallback QRIS gambar
 - Listener API untuk konfirmasi pembayaran otomatis dari Android listener
 - Panel terminal alias `jualan` untuk manajemen service, konfigurasi, update, rollback
 
@@ -25,10 +26,15 @@ Implementasi awal bot Telegram untuk jualan digital dengan fitur:
 - `/product_unsuspend <product_id>`
 - `/product_delete <product_id>`
 - `/broadcast <pesan>`
-- `/set_qris` lalu kirim gambar QRIS
+- `/set_qris` lalu kirim gambar QRIS fallback
 - `/ops_metrics`
 - `/update_check`
 - `/update_apply`
+
+Konfigurasi payment via menu admin:
+- Upload gambar QRIS fallback (`pay:upload`) + auto ekstrak payload dari gambar
+- Set payload QRIS statis untuk generate QR dinamis nominal (`pay:payload:set`)
+- Cek status kesiapan QRIS (`pay:status`)
 
 ## Quick Start (Ubuntu 25)
 

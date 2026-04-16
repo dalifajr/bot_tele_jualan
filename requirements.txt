@@ -5,3 +5,5 @@ uvicorn[standard]==0.30.6
 SQLAlchemy==2.0.44
 pydantic-settings==2.5.2
 python-dotenv==1.0.1
+qrcode==7.4.2
+opencv-python-headless==4.13.0.92
