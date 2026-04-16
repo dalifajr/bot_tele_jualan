@@ -19,7 +19,8 @@ def get_qris_static_payload(session: Session) -> str:
 
 
 def set_qris_static_payload(session: Session, payload: str, actor_id: int | None = None) -> str:
-    normalized = _normalize_payload(payload)
+    normalized_input = _normalize_payload(payload)
+    normalized, _ = _parse_payload_with_space_fallback(normalized_input)
     # Validate once at save time so checkout can fail fast with clear fallback.
     build_dynamic_qris_payload(normalized, amount=1000)
 
@@ -51,8 +52,8 @@ def build_dynamic_qris_payload(static_payload: str, amount: int) -> str:
     if amount <= 0:
         raise ValueError("Nominal QRIS harus lebih dari 0.")
 
-    normalized = _normalize_payload(static_payload)
-    fields = _parse_tlv(normalized)
+    normalized_input = _normalize_payload(static_payload)
+    normalized, fields = _parse_payload_with_space_fallback(normalized_input)
     fields_without_crc, original_crc = _strip_crc_field(fields)
     _validate_crc_if_present(fields_without_crc, original_crc)
 
@@ -111,13 +112,15 @@ def extract_qris_payload_from_image(image_bytes: bytes) -> str:
     for candidate in _build_decode_candidates(image, cv2):
         decoded = _decode_qr_text(candidate, cv2)
         if decoded:
-            return _normalize_payload(decoded)
+            normalized_input = _normalize_payload(decoded)
+            normalized, _ = _parse_payload_with_space_fallback(normalized_input)
+            return normalized
 
     raise ValueError("QR code tidak terdeteksi pada gambar.")
 
 
 def _normalize_payload(payload: str, allow_empty: bool = False) -> str:
-    normalized = "".join(ch for ch in payload if not ch.isspace())
+    normalized = str(payload).strip().replace("\r", "").replace("\n", "").replace("\t", "")
     if not normalized:
         if allow_empty:
             return ""
@@ -125,6 +128,22 @@ def _normalize_payload(payload: str, allow_empty: bool = False) -> str:
     if any(ord(ch) > 127 for ch in normalized):
         raise ValueError("Payload QRIS harus ASCII.")
     return normalized
+
+
+def _parse_payload_with_space_fallback(payload: str) -> tuple[str, list[QRField]]:
+    try:
+        return payload, _parse_tlv(payload)
+    except ValueError as original_exc:
+        if " " not in payload:
+            raise
+
+        compact_payload = payload.replace(" ", "")
+        try:
+            fields = _parse_tlv(compact_payload)
+        except ValueError:
+            raise original_exc
+
+        return compact_payload, fields
 
 
 def _build_decode_candidates(image: object, cv2: object) -> list[object]:

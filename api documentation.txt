@@ -1,0 +1,80 @@
+Dokumentasi API QRIS Dinamis Generator
+API ini menggunakan metode POST untuk menerima data dan menghasilkan respons dalam bentuk kode QRIS dinamis yang sudah di-encode dalam format base64.
+
+API Endpoint
+POST : https://qrisku.my.id/api
+
+Contoh Permintaan
+Untuk menghasilkan QRIS, Anda perlu mengirimkan payload JSON berikut:
+
+{
+    "amount": "10000",
+    "qris_statis": "XXXE3353COM.GO-JEK.WWWVDXXX44553463.CO.QRIS.WWXXXX4664XX.MERCHANT ENTE, XX65646XXXXTY5YY"
+}
+Contoh Respons
+Jika permintaan berhasil, Anda akan menerima respons berikut:
+
+{
+    "status": "success",
+    "message": "QRIS berhasil dihasilkan",
+    "qris_base64": "BASE64_ENCODED_QR_CODE_HERE"
+}
+Pesan Kesalahan
+Jika ada kesalahan dalam permintaan, API akan mengembalikan respons berikut:
+
+{
+    "status": "error",
+    "message": "Jumlah dan QRIS Statis diperlukan"
+}
+Contoh Kode PHP
+Berikut adalah contoh kode PHP yang mengirimkan permintaan ke API dan menampilkan gambar QRIS yang dihasilkan dalam format base64:
+
+<?php
+// URL endpoint API
+$url = "https://qrisku.my.id/api";
+
+// Data yang akan dikirimkan
+$data = [
+    "amount" => "10000",
+    "qris_statis" => "XXXE3353COM.GO-JEK.WWWVDXXX44553463.CO.QRIS.WWXXXX4664XX.MERCHANT ENTE, XX65646XXXXTY5YY"
+];
+
+// Inisialisasi cURL
+$ch = curl_init();
+
+// Setel opsi cURL
+curl_setopt($ch, CURLOPT_URL, $url); // URL API
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true); // Menyimpan respon sebagai string
+curl_setopt($ch, CURLOPT_POST, true); // Metode POST
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data)); // Data yang akan dikirim dalam format JSON
+curl_setopt($ch, CURLOPT_HTTPHEADER, [
+    'Content-Type: application/json' // Memberitahukan bahwa konten yang dikirimkan adalah JSON
+]);
+
+// Eksekusi permintaan cURL
+$response = curl_exec($ch);
+
+// Cek jika ada error saat eksekusi cURL
+if(curl_errno($ch)) {
+    echo 'cURL Error: ' . curl_error($ch);
+} else {
+    // Decode response JSON
+    $response_data = json_decode($response, true);
+    
+    // Jika response berhasil dan mengandung QRIS base64
+    if ($response_data['status'] == 'success' && isset($response_data['qris_base64'])) {
+        $qris_base64 = $response_data['qris_base64'];
+        
+        // Menampilkan gambar base64
+        echo '<h3>QRIS Dinamis Generator</h3>';
+        echo '<p>Berikut adalah QRIS yang dihasilkan:</p>';
+        echo '<img src="data:image/png;base64,' . $qris_base64 . '" alt="QRIS Image" />';
+    } else {
+        echo 'Error: ' . $response_data['message'];
+    }
+}
+
+// Tutup sesi cURL
+curl_close($ch);
+?>
+                
