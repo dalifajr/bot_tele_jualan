@@ -191,6 +191,26 @@ def set_github_pack_price(session: Session, new_price: int, actor_id: int | None
     return product
 
 
+def set_github_pack_used_price(session: Session, new_price: int, actor_id: int | None) -> Product:
+    if new_price <= 0:
+        raise ValueError("Harga harus lebih dari 0.")
+
+    product = ensure_github_pack_used_product(session)
+    old_price = product.price
+    product.price = int(new_price)
+    session.add(product)
+
+    append_audit(
+        session,
+        action="github_pack_set_used_price",
+        actor_id=actor_id,
+        entity_type="product",
+        entity_id=str(product.id),
+        detail=f"old_price={old_price}; new_price={product.price}",
+    )
+    return product
+
+
 def is_github_pack_product(session: Session, product_id: int) -> bool:
     product = ensure_github_pack_product(session)
     return int(product.id) == int(product_id)

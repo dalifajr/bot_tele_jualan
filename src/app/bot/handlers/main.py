@@ -66,6 +66,7 @@ from app.bot.services.github_pack_service import (
     move_sold_github_stock_to_used_product,
     set_github_pack_awaiting_hours,
     set_github_pack_price,
+    set_github_pack_used_price,
 )
 from app.bot.services.order_service import (
     build_admin_order_message,
@@ -110,6 +111,7 @@ FLOW_GH_ADD_READY = "gh_add_ready"
 FLOW_GH_ADD_AWAIT = "gh_add_await"
 FLOW_GH_ADD_USED = "gh_add_used"
 FLOW_GH_SET_PRICE = "gh_set_price"
+FLOW_GH_SET_USED_PRICE = "gh_set_used_price"
 FLOW_GH_SET_AWAITING_HOURS = "gh_set_awaiting_hours"
 FLOW_PAY_SET_QRIS_PAYLOAD = "pay_set_qris_payload"
 AWAIT_QRIS_IMAGE_KEY = "await_qris_image"
@@ -216,6 +218,7 @@ def _github_pack_menu_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         [
             [InlineKeyboardButton("💰 Atur Harga", callback_data="gh:price:set")],
+            [InlineKeyboardButton("♻️ Atur Harga GHS Bekas", callback_data="gh:price:used:set")],
             [InlineKeyboardButton("⏱️ Atur Jam Awaiting", callback_data="gh:await:set")],
             [InlineKeyboardButton("📥 Tambah Stok Ready", callback_data="gh:add:ready")],
             [InlineKeyboardButton("⏳ Tambah Stok Awaiting Benefits", callback_data="gh:add:await")],
@@ -979,9 +982,11 @@ async def _send_github_pack_menu(update: Update) -> None:
         update,
         (
             f"🎓 <b>{html.escape(product.name)}</b>\n"
+            f"💰 Harga utama: <b>{_format_rupiah(product.price)}</b>\n"
             f"✅ Ready: <b>{ready_count}</b> akun\n"
             f"⏳ Awaiting benefits: <b>{awaiting_count}</b> akun\n\n"
             f"🧾 Akun terjual: <b>{len(sold_stocks)}</b> akun\n"
+            f"♻️ Harga GHS Bekas: <b>{_format_rupiah(used_product.price)}</b>\n"
             f"♻️ Sudah dipindah ke GHS Bekas: <b>{moved_count}</b> akun\n"
             f"🛍️ Stok GHS Bekas Ready: <b>{used_ready_count}</b> akun\n\n"
             f"⏱️ Durasi awaiting: <b>{awaiting_hours} jam</b>\n\n"
@@ -3016,6 +3021,29 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         )
         return
 
+    if data == "gh:price:used:set":
+        if role != "admin":
+            await _respond_admin_only(update)
+            return
+
+        with get_session() as session:
+            used_product = ensure_github_pack_used_product(session)
+            current_price = used_product.price
+
+        _set_flow(context, FLOW_GH_SET_USED_PRICE)
+        await _respond(
+            update,
+            (
+                "♻️ <b>Atur Harga GHS Bekas</b>\n"
+                f"Produk: <b>{html.escape(used_product.name)}</b>\n"
+                f"Harga saat ini: <b>{_format_rupiah(current_price)}</b>\n\n"
+                "Kirim angka harga baru (contoh: <code>20000</code>)."
+            ),
+            _back_keyboard("adm_cat"),
+            parse_mode=ParseMode.HTML,
+        )
+        return
+
     if data == "gh:await:set":
         if role != "admin":
             await _respond_admin_only(update)
@@ -3849,6 +3877,52 @@ async def text_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
                 (
                     f"✅ Harga <b>{html.escape(product.name)}</b> berhasil diperbarui.\n"
                     f"Harga baru: <b>{_format_rupiah(product.price)}</b>"
+                ),
+                _github_pack_menu_keyboard(),
+                parse_mode=ParseMode.HTML,
+            )
+            return
+
+        if flow == FLOW_GH_SET_USED_PRICE:
+            if role != "admin":
+                await _respond_admin_only(update)
+                _clear_flow(context)
+                return
+
+            normalized = (
+                text.lower()
+                .replace("rp", "")
+                .replace(".", "")
+                .replace(",", "")
+                .strip()
+            )
+            try:
+                new_price = int(normalized)
+            except ValueError:
+                await _respond(
+                    update,
+                    "⚠️ Format harga tidak valid. Kirim angka saja, contoh: 20000",
+                    _back_keyboard("adm_cat"),
+                )
+                return
+
+            with get_session() as session:
+                try:
+                    used_product = set_github_pack_used_price(
+                        session,
+                        new_price=new_price,
+                        actor_id=db_user.id,
+                    )
+                except ValueError as exc:
+                    await _respond(update, f"❌ {exc}", _back_keyboard("adm_cat"))
+                    return
+
+            _clear_flow(context)
+            await _respond(
+                update,
+                (
+                    f"✅ Harga <b>{html.escape(used_product.name)}</b> berhasil diperbarui.\n"
+                    f"Harga baru: <b>{_format_rupiah(used_product.price)}</b>"
                 ),
                 _github_pack_menu_keyboard(),
                 parse_mode=ParseMode.HTML,
