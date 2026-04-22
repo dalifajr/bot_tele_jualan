@@ -35,6 +35,7 @@ def _build_stock_count_query() -> Select:
         select(StockUnit.product_id, func.count(StockUnit.id).label("stock_count"))
         .where(
             StockUnit.is_sold.is_(False),
+            StockUnit.sold_order_id.is_(None),
             or_(
                 StockUnit.stock_status == STOCK_STATUS_READY,
                 StockUnit.stock_status.is_(None),
@@ -99,6 +100,7 @@ def get_available_stock_count(session: Session, product_id: int) -> int:
             select(func.count(StockUnit.id)).where(
                 StockUnit.product_id == product_id,
                 StockUnit.is_sold.is_(False),
+                StockUnit.sold_order_id.is_(None),
                 or_(
                     StockUnit.stock_status == STOCK_STATUS_READY,
                     StockUnit.stock_status.is_(None),

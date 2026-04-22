@@ -7,8 +7,8 @@ import secrets
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
-from sqlalchemy import func, or_, select
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy import func, or_, select, update
+from sqlalchemy.exc import IntegrityError, OperationalError
 from sqlalchemy.orm import Session
 
 from app.bot.services.audit_service import append_audit
@@ -21,6 +21,7 @@ from app.common.config import get_settings
 from app.db.models import Order, OrderItem, Payment, Product, StockUnit, User
 
 settings = get_settings()
+STOCK_STATUS_RESERVED_CHECKOUT = "reserved_checkout"
 
 
 @dataclass
@@ -239,6 +240,7 @@ def expire_pending_orders_with_notifications(session: Session) -> list[AdminOrde
         order.status = "expired"
         order.cancelled_at = now
         order.cancel_reason = "payment_timeout"
+        _release_reserved_stock_for_order(session, int(order.id))
         payment = order.payment
         if payment is not None and payment.status == "pending":
             payment.status = "expired"
@@ -306,13 +308,28 @@ def create_checkout(session: Session, customer: User, product_id: int, quantity:
                 )
                 session.add(payment)
 
+                reserved_units = _reserve_stock_fifo(
+                    session=session,
+                    product_id=int(product.id),
+                    quantity=int(quantity),
+                    order_id=int(order.id),
+                )
+                if len(reserved_units) < quantity:
+                    raise ValueError(
+                        "Stok baru saja habis karena ada pesanan yang masuk lebih dulu. "
+                        "Silakan coba lagi dengan jumlah lebih kecil."
+                    )
+
                 append_audit(
                     session,
                     action="order_create",
                     actor_id=customer.id,
                     entity_type="order",
                     entity_id=str(order.id),
-                    detail=f"product_id={product.id}; qty={quantity}; subtotal={subtotal}; total={total}",
+                    detail=(
+                        f"product_id={product.id}; qty={quantity}; subtotal={subtotal}; total={total}; "
+                        f"reserved_stock_ids={[int(unit.id) for unit in reserved_units]}"
+                    ),
                 )
 
                 session.flush()
@@ -325,6 +342,12 @@ def create_checkout(session: Session, customer: User, product_id: int, quantity:
             ):
                 raise
             continue
+        except OperationalError as exc:
+            if "database is locked" in str(exc).lower():
+                raise ValueError(
+                    "Checkout sedang diproses bersamaan. Silakan ulang beberapa detik lagi."
+                ) from exc
+            raise
 
     raise ValueError("Sistem sedang sibuk. Silakan coba lagi dalam beberapa detik.")
 
@@ -421,7 +444,10 @@ def get_customer_order_detail(
     account_units = list(
         session.scalars(
             select(StockUnit)
-            .where(StockUnit.sold_order_id == order.id)
+            .where(
+                StockUnit.sold_order_id == order.id,
+                StockUnit.is_sold.is_(True),
+            )
             .order_by(StockUnit.id.asc())
         ).all()
     )
@@ -591,6 +617,101 @@ def count_delivered_orders_by_customer(session: Session, customer_id: int) -> in
     )
 
 
+def _reserve_stock_fifo(
+    session: Session,
+    product_id: int,
+    quantity: int,
+    order_id: int,
+) -> list[StockUnit]:
+    promote_awaiting_stocks(session, product_id=product_id)
+
+    candidate_ids = (
+        select(StockUnit.id)
+        .where(
+            StockUnit.product_id == product_id,
+            StockUnit.is_sold.is_(False),
+            StockUnit.sold_order_id.is_(None),
+            or_(
+                StockUnit.stock_status == STOCK_STATUS_READY,
+                StockUnit.stock_status.is_(None),
+            ),
+        )
+        .order_by(StockUnit.id.asc())
+        .limit(quantity)
+    )
+
+    reserve_stmt = (
+        update(StockUnit)
+        .where(StockUnit.id.in_(candidate_ids))
+        .values(stock_status=STOCK_STATUS_RESERVED_CHECKOUT, sold_order_id=order_id)
+    )
+    reserved_count = int(session.execute(reserve_stmt).rowcount or 0)
+    if reserved_count < quantity:
+        _release_reserved_stock_for_order(session, order_id)
+        return []
+
+    reserved_units = list(
+        session.scalars(
+            select(StockUnit)
+            .where(
+                StockUnit.product_id == product_id,
+                StockUnit.sold_order_id == order_id,
+                StockUnit.is_sold.is_(False),
+                StockUnit.stock_status == STOCK_STATUS_RESERVED_CHECKOUT,
+            )
+            .order_by(StockUnit.id.asc())
+            .limit(quantity)
+        ).all()
+    )
+
+    if len(reserved_units) < quantity:
+        _release_reserved_stock_for_order(session, order_id)
+        return []
+
+    return reserved_units
+
+
+def _release_reserved_stock_for_order(session: Session, order_id: int) -> int:
+    stmt = (
+        update(StockUnit)
+        .where(
+            StockUnit.sold_order_id == order_id,
+            StockUnit.is_sold.is_(False),
+            StockUnit.stock_status == STOCK_STATUS_RESERVED_CHECKOUT,
+        )
+        .values(stock_status=STOCK_STATUS_READY, sold_order_id=None)
+    )
+    return int(session.execute(stmt).rowcount or 0)
+
+
+def _consume_reserved_stock_fifo(
+    session: Session,
+    product_id: int,
+    quantity: int,
+    order_id: int,
+) -> list[StockUnit]:
+    reserved_units = list(
+        session.scalars(
+            select(StockUnit)
+            .where(
+                StockUnit.product_id == product_id,
+                StockUnit.sold_order_id == order_id,
+                StockUnit.is_sold.is_(False),
+            )
+            .order_by(StockUnit.id.asc())
+            .limit(quantity)
+        ).all()
+    )
+
+    for unit in reserved_units:
+        unit.is_sold = True
+        if unit.stock_status == STOCK_STATUS_RESERVED_CHECKOUT:
+            unit.stock_status = STOCK_STATUS_READY
+        session.add(unit)
+
+    return reserved_units
+
+
 def _allocate_stock_fifo(session: Session, product_id: int, quantity: int, order_id: int) -> list[StockUnit]:
     promote_awaiting_stocks(session, product_id=product_id)
     stmt = (
@@ -598,6 +719,7 @@ def _allocate_stock_fifo(session: Session, product_id: int, quantity: int, order
         .where(
             StockUnit.product_id == product_id,
             StockUnit.is_sold.is_(False),
+            StockUnit.sold_order_id.is_(None),
             or_(
                 StockUnit.stock_status == STOCK_STATUS_READY,
                 StockUnit.stock_status.is_(None),
@@ -643,6 +765,7 @@ def _recommend_upsell_products(
             .where(
                 StockUnit.product_id.in_(candidate_ids),
                 StockUnit.is_sold.is_(False),
+                StockUnit.sold_order_id.is_(None),
                 or_(
                     StockUnit.stock_status == STOCK_STATUS_READY,
                     StockUnit.stock_status.is_(None),
@@ -742,6 +865,7 @@ def _resolve_pending_payment(
             picked.order.cancelled_at = _utcnow()
             picked.order.cancel_reason = "payment_timeout"
             picked.status = "expired"
+            _release_reserved_stock_for_order(session, int(picked.order.id))
             session.add(picked.order)
             session.add(picked)
             return "expired", "Order sudah kedaluwarsa (lebih dari 5 menit).", None
@@ -770,6 +894,7 @@ def _resolve_pending_payment(
         picked.order.cancelled_at = _utcnow()
         picked.order.cancel_reason = "payment_timeout"
         picked.status = "expired"
+        _release_reserved_stock_for_order(session, int(picked.order.id))
         session.add(picked.order)
         session.add(picked)
         return "expired", "Order sudah kedaluwarsa (lebih dari 5 menit).", None
@@ -824,6 +949,7 @@ def reconcile_payment(
         order.status = "expired"
         order.cancelled_at = _utcnow()
         order.cancel_reason = "payment_timeout"
+        _release_reserved_stock_for_order(session, int(order.id))
         if payment.status == "pending":
             payment.status = "expired"
             session.add(payment)
@@ -842,7 +968,20 @@ def reconcile_payment(
     delivered_units: list[StockUnit] = []
 
     for item in order_items:
-        units = _allocate_stock_fifo(session, item.product_id, item.quantity, order.id)
+        units = _consume_reserved_stock_fifo(
+            session=session,
+            product_id=int(item.product_id),
+            quantity=int(item.quantity),
+            order_id=int(order.id),
+        )
+        if len(units) < int(item.quantity):
+            additional_units = _allocate_stock_fifo(
+                session,
+                item.product_id,
+                int(item.quantity) - len(units),
+                order.id,
+            )
+            units.extend(additional_units)
         delivered_units.extend(units)
 
     payload_text = json.dumps(raw_payload or {}, ensure_ascii=False)
@@ -926,6 +1065,7 @@ def cancel_order(session: Session, order_ref: str, customer_id: int) -> CancelOr
     order.status = "cancelled"
     order.cancelled_at = _utcnow()
     order.cancel_reason = "cancelled_by_customer"
+    _release_reserved_stock_for_order(session, int(order.id))
     session.add(order)
 
     payment = order.payment
@@ -1007,6 +1147,7 @@ def cancel_order_by_admin(
     order.status = "cancelled"
     order.cancelled_at = _utcnow()
     order.cancel_reason = "cancelled_by_admin"
+    _release_reserved_stock_for_order(session, int(order.id))
     session.add(order)
 
     payment = order.payment

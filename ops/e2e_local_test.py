@@ -7,7 +7,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from fastapi.testclient import TestClient
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 
 # Set env before app/settings import.
 os.environ["DATABASE_URL"] = "sqlite:///./data/e2e_test.db"
@@ -18,7 +18,7 @@ os.environ["BOT_TOKEN"] = ""
 
 from app.api.main import app  # noqa: E402
 from app.api.security import build_signature  # noqa: E402
-from app.bot.services.catalog_service import add_product, add_stock_block  # noqa: E402
+from app.bot.services.catalog_service import add_product, add_stock_block, get_available_stock_count  # noqa: E402
 from app.bot.services.metrics_service import collect_operational_metrics, format_operational_metrics_report  # noqa: E402
 from app.bot.services.notification_retry_service import (  # noqa: E402
     enqueue_notification_retry,
@@ -297,6 +297,103 @@ def _run_orders_pagination_flow() -> bool:
         and len(page_out_of_range.rows) == 1
         and detail is not None
         and detail.status == "pending_payment"
+    )
+
+
+def _run_checkout_stock_race_guard_flow() -> bool:
+    with get_session() as session:
+        first_customer = upsert_user(
+            session=session,
+            telegram_id=987654601,
+            username="e2e_race_first",
+            full_name="E2E Race First",
+            role="customer",
+        )
+        second_customer = upsert_user(
+            session=session,
+            telegram_id=987654602,
+            username="e2e_race_second",
+            full_name="E2E Race Second",
+            role="customer",
+        )
+        product = add_product(
+            session=session,
+            name="Race Guard Product",
+            price=36000,
+            description="Single stock race guard",
+            actor_id=None,
+        )
+        add_stock_block(
+            session=session,
+            product_id=product.id,
+            raw_text=(
+                "*Race Guard Product*\n"
+                "Username: race_guard_user\n"
+                "Password: raceguardpass\n"
+                "F2A: RACEGUARD\n"
+            ),
+            actor_id=None,
+        )
+
+        first_customer_id = int(first_customer.id)
+        second_customer_id = int(second_customer.id)
+        product_id = int(product.id)
+
+    with get_session() as session:
+        first_customer = session.get(User, first_customer_id)
+        if first_customer is None:
+            return False
+        first_order, first_payment = create_checkout(
+            session=session,
+            customer=first_customer,
+            product_id=product_id,
+            quantity=1,
+        )
+
+    second_error = ""
+    second_created = True
+    with get_session() as session:
+        second_customer = session.get(User, second_customer_id)
+        if second_customer is None:
+            return False
+        try:
+            create_checkout(
+                session=session,
+                customer=second_customer,
+                product_id=product_id,
+                quantity=1,
+            )
+        except ValueError as exc:
+            second_created = False
+            second_error = str(exc)
+
+    with get_session() as session:
+        remaining_ready_stock = get_available_stock_count(session, product_id=product_id)
+        pending_order_count = int(
+            session.scalar(
+                select(func.count(Order.id)).where(Order.status == "pending_payment")
+            )
+            or 0
+        )
+
+    print("\n=== SCENARIO: CHECKOUT STOCK RACE GUARD FLOW ===")
+    print("first_order_ref:", first_order.order_ref)
+    print("first_payment_ref:", first_payment.payment_ref)
+    print("second_created:", second_created)
+    print("second_error:", second_error)
+    print("remaining_ready_stock:", remaining_ready_stock)
+    print("pending_order_count:", pending_order_count)
+
+    return (
+        first_order.status == "pending_payment"
+        and first_payment.status == "pending"
+        and second_created is False
+        and (
+            "masuk lebih dulu" in second_error.lower()
+            or "stok tidak cukup" in second_error.lower()
+        )
+        and remaining_ready_stock == 0
+        and pending_order_count >= 1
     )
 
 
@@ -633,6 +730,7 @@ def main() -> int:
     ok_paid = _run_paid_flow(client)
     ok_expired = _run_expired_flow(client)
     ok_pagination = _run_orders_pagination_flow()
+    ok_race_guard = _run_checkout_stock_race_guard_flow()
     ok_quick_reorder = _run_quick_reorder_flow(client)
     ok_upsell = _run_upsell_flow()
     ok_restock = _run_restock_subscription_flow()
@@ -644,6 +742,7 @@ def main() -> int:
     print("paid_flow:", ok_paid)
     print("expired_flow:", ok_expired)
     print("pagination_flow:", ok_pagination)
+    print("checkout_stock_race_guard_flow:", ok_race_guard)
     print("quick_reorder_flow:", ok_quick_reorder)
     print("upsell_flow:", ok_upsell)
     print("restock_subscription_flow:", ok_restock)
@@ -655,6 +754,7 @@ def main() -> int:
         ok_paid
         and ok_expired
         and ok_pagination
+        and ok_race_guard
         and ok_quick_reorder
         and ok_upsell
         and ok_restock
