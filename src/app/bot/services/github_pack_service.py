@@ -107,6 +107,14 @@ class GithubSavedMoveResult:
     awaiting_hours: int
 
 
+@dataclass(frozen=True)
+class GithubSavedSingleMoveResult:
+    stock_id: int
+    username: str
+    awaiting_hours: int
+    awaiting_ready_at: datetime
+
+
 def _extract_username_from_parsed_json(parsed_json: str | None) -> str:
     if not parsed_json:
         return "unknown"
@@ -508,6 +516,149 @@ def list_saved_github_stocks(session: Session) -> list[GithubSavedStockView]:
             )
         )
     return result
+
+
+def list_ready_saved_github_stocks(
+    session: Session,
+    *,
+    now: datetime | None = None,
+) -> list[GithubSavedStockView]:
+    current = now or datetime.utcnow()
+    hold_threshold = current - timedelta(hours=GITHUB_PACK_SAVE_HOURS)
+    product = ensure_github_pack_product(session)
+
+    rows = list(
+        session.scalars(
+            select(StockUnit)
+            .where(
+                StockUnit.product_id == product.id,
+                StockUnit.is_sold.is_(False),
+                StockUnit.stock_status.in_(
+                    [
+                        GITHUB_PACK_STOCK_STATUS_SAVED,
+                        GITHUB_PACK_STOCK_STATUS_SAVED_NOTIFIED,
+                    ]
+                ),
+                or_(
+                    StockUnit.available_at <= current,
+                    and_(
+                        StockUnit.available_at.is_(None),
+                        StockUnit.created_at <= hold_threshold,
+                    ),
+                ),
+            )
+            .order_by(func.coalesce(StockUnit.available_at, StockUnit.created_at).asc(), StockUnit.id.asc())
+        ).all()
+    )
+
+    result: list[GithubSavedStockView] = []
+    for row in rows:
+        ready_at = _resolve_saved_ready_at(row)
+        result.append(
+            GithubSavedStockView(
+                stock_id=int(row.id),
+                username=_extract_username_from_parsed_json(row.parsed_json),
+                ready_at=ready_at,
+                created_at=row.created_at,
+                is_ready=True,
+                is_notified=(row.stock_status == GITHUB_PACK_STOCK_STATUS_SAVED_NOTIFIED),
+                raw_text=row.raw_text,
+            )
+        )
+    return result
+
+
+def get_saved_github_stock_detail(session: Session, stock_id: int) -> GithubSavedStockView | None:
+    product = ensure_github_pack_product(session)
+    stock = session.scalar(
+        select(StockUnit).where(
+            StockUnit.id == stock_id,
+            StockUnit.product_id == product.id,
+            StockUnit.is_sold.is_(False),
+            StockUnit.stock_status.in_(
+                [
+                    GITHUB_PACK_STOCK_STATUS_SAVED,
+                    GITHUB_PACK_STOCK_STATUS_SAVED_NOTIFIED,
+                ]
+            ),
+        )
+    )
+    if stock is None:
+        return None
+
+    ready_at = _resolve_saved_ready_at(stock)
+    now = datetime.utcnow()
+    return GithubSavedStockView(
+        stock_id=int(stock.id),
+        username=_extract_username_from_parsed_json(stock.parsed_json),
+        ready_at=ready_at,
+        created_at=stock.created_at,
+        is_ready=(ready_at <= now),
+        is_notified=(stock.stock_status == GITHUB_PACK_STOCK_STATUS_SAVED_NOTIFIED),
+        raw_text=stock.raw_text,
+    )
+
+
+def move_saved_github_stock_to_awaiting(
+    session: Session,
+    *,
+    stock_id: int,
+    actor_id: int | None,
+) -> GithubSavedSingleMoveResult:
+    product = ensure_github_pack_product(session)
+    awaiting_hours = get_github_pack_awaiting_hours(session)
+    now = datetime.utcnow()
+    hold_threshold = now - timedelta(hours=GITHUB_PACK_SAVE_HOURS)
+
+    stock = session.scalar(
+        select(StockUnit).where(
+            StockUnit.id == stock_id,
+            StockUnit.product_id == product.id,
+            StockUnit.is_sold.is_(False),
+            StockUnit.stock_status.in_(
+                [
+                    GITHUB_PACK_STOCK_STATUS_SAVED,
+                    GITHUB_PACK_STOCK_STATUS_SAVED_NOTIFIED,
+                ]
+            ),
+        )
+    )
+    if stock is None:
+        raise ValueError("Akun simpan tidak ditemukan.")
+
+    is_ready = False
+    if stock.available_at is not None:
+        is_ready = stock.available_at <= now
+    else:
+        is_ready = stock.created_at <= hold_threshold
+    if not is_ready:
+        raise ValueError("Akun ini belum mencapai 80 jam simpan.")
+
+    awaiting_ready_at = now + timedelta(hours=awaiting_hours)
+    username = _extract_username_from_parsed_json(stock.parsed_json)
+
+    stock.stock_status = STOCK_STATUS_AWAITING
+    stock.available_at = awaiting_ready_at
+    session.add(stock)
+
+    append_audit(
+        session,
+        action="github_saved_stock_move_single_to_awaiting",
+        actor_id=actor_id,
+        entity_type="stock_unit",
+        entity_id=str(stock.id),
+        detail=(
+            f"username={username}; awaiting_hours={awaiting_hours}; "
+            f"target_ready_at={awaiting_ready_at.isoformat()}"
+        ),
+    )
+
+    return GithubSavedSingleMoveResult(
+        stock_id=int(stock.id),
+        username=username,
+        awaiting_hours=awaiting_hours,
+        awaiting_ready_at=awaiting_ready_at,
+    )
 
 
 def list_saved_github_ready_notification_batch(

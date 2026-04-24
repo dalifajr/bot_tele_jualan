@@ -59,14 +59,16 @@ from app.bot.services.github_pack_service import (
     delete_github_stock,
     ensure_github_pack_product,
     ensure_github_pack_used_product,
+    get_saved_github_stock_detail,
     get_sold_github_stock_detail,
     get_github_pack_awaiting_hours,
     get_github_stock_detail,
     is_github_pack_product,
     list_github_stocks,
+    list_ready_saved_github_stocks,
     list_saved_github_stocks,
     list_sold_github_stocks,
-    move_ready_saved_github_stocks_to_awaiting,
+    move_saved_github_stock_to_awaiting,
     move_sold_github_stock_to_used_product,
     set_github_pack_awaiting_hours,
     set_github_pack_price,
@@ -1028,6 +1030,13 @@ def _saved_account_status_label(*, is_ready: bool, is_notified: bool) -> str:
     return "🔔 Siap diajukan"
 
 
+def _saved_account_button_label(username: str) -> str:
+    label = username.strip() or "unknown"
+    if len(label) > 28:
+        return f"{label[:25]}..."
+    return label
+
+
 async def _send_github_saved_account_menu(update: Update) -> None:
     with get_session() as session:
         saved_stocks = list_saved_github_stocks(session)
@@ -1078,33 +1087,143 @@ async def _send_github_saved_stock_list(update: Update, page: int = 1) -> None:
         return
 
     paged_rows, safe_page, total_pages = _paginate_rows(saved_stocks, page, ADMIN_LIST_PAGE_SIZE)
-    start_no = (safe_page - 1) * ADMIN_LIST_PAGE_SIZE + 1
-
-    lines = [
-        "📋 <b>List Simpan Akun GitHub</b>",
-        f"Halaman <b>{safe_page}/{total_pages}</b> • Total akun: <b>{len(saved_stocks)}</b>",
-        "",
-    ]
-    for idx, stock in enumerate(paged_rows, start=start_no):
-        status_text = _saved_account_status_label(is_ready=stock.is_ready, is_notified=stock.is_notified)
-        line = (
-            f"{idx}. <b>#{stock.stock_id}</b> {html.escape(stock.username)} | {status_text} | "
-            f"Ready: <b>{html.escape(_format_display_day_time(stock.ready_at))}</b>"
-        )
-        if not stock.is_ready:
-            line += f" | Sisa <b>{_format_remaining_compact(stock.ready_at)}</b>"
-        lines.append(line)
-
-    lines.extend(["", _admin_footer_text()])
-
     keyboard_rows: list[list[InlineKeyboardButton]] = []
+    for stock in paged_rows:
+        status_icon = "🔔" if stock.is_ready else "⏳"
+        button_text = f"{status_icon} {_saved_account_button_label(stock.username)}"
+        keyboard_rows.append(
+            [InlineKeyboardButton(button_text, callback_data=f"gh:save:view:{stock.stock_id}:{safe_page}")]
+        )
+
     if total_pages > 1:
         keyboard_rows.append(_pagination_nav_row(safe_page, total_pages, "gh:save:list"))
     keyboard_rows.append([InlineKeyboardButton("⬅️ Kembali", callback_data="gh:save:menu")])
 
     await _respond(
         update,
-        "\n".join(lines),
+        (
+            "📋 <b>List Simpan Akun GitHub</b>\n"
+            f"Halaman <b>{safe_page}/{total_pages}</b> • Total akun: <b>{len(saved_stocks)}</b>\n\n"
+            "Klik username untuk lihat detail akun.\n\n"
+            f"{_admin_footer_text()}"
+        ),
+        InlineKeyboardMarkup(keyboard_rows),
+        parse_mode=ParseMode.HTML,
+    )
+
+
+async def _send_github_saved_move_picker(update: Update, page: int = 1) -> None:
+    with get_session() as session:
+        ready_stocks = list_ready_saved_github_stocks(session)
+
+    if not ready_stocks:
+        await _respond(
+            update,
+            (
+                "📭 <b>Belum Ada Akun Siap Pindah</b>\n"
+                "Akun akan muncul di sini setelah melewati masa simpan 80 jam.\n\n"
+                f"{_admin_footer_text()}"
+            ),
+            _github_saved_account_menu_keyboard(),
+            parse_mode=ParseMode.HTML,
+        )
+        return
+
+    paged_rows, safe_page, total_pages = _paginate_rows(ready_stocks, page, ADMIN_LIST_PAGE_SIZE)
+
+    keyboard_rows: list[list[InlineKeyboardButton]] = []
+    for stock in paged_rows:
+        button_text = f"⏳ {_saved_account_button_label(stock.username)}"
+        keyboard_rows.append(
+            [InlineKeyboardButton(button_text, callback_data=f"gh:save:move:pick:{stock.stock_id}:{safe_page}")]
+        )
+
+    if total_pages > 1:
+        keyboard_rows.append(_pagination_nav_row(safe_page, total_pages, "gh:save:move:list"))
+    keyboard_rows.append([InlineKeyboardButton("⬅️ Kembali", callback_data="gh:save:menu")])
+
+    await _respond(
+        update,
+        (
+            "⏳ <b>Pilih Akun untuk Dipindahkan ke Awaiting Benefits</b>\n"
+            f"Halaman <b>{safe_page}/{total_pages}</b> • Total akun siap: <b>{len(ready_stocks)}</b>\n\n"
+            "List ini hanya menampilkan akun yang sudah tersimpan minimal 80 jam.\n\n"
+            f"{_admin_footer_text()}"
+        ),
+        InlineKeyboardMarkup(keyboard_rows),
+        parse_mode=ParseMode.HTML,
+    )
+
+
+async def _send_github_saved_stock_detail(
+    update: Update,
+    *,
+    stock_id: int,
+    source_mode: str,
+    page: int = 1,
+) -> None:
+    with get_session() as session:
+        stock = get_saved_github_stock_detail(session, stock_id)
+
+    if stock is None:
+        fallback_keyboard = _github_saved_account_menu_keyboard()
+        if source_mode == "view":
+            fallback_keyboard = InlineKeyboardMarkup(
+                [[InlineKeyboardButton("⬅️ Kembali", callback_data=f"gh:save:list:{max(1, page)}")]]
+            )
+        if source_mode == "move":
+            fallback_keyboard = InlineKeyboardMarkup(
+                [[InlineKeyboardButton("⬅️ Kembali", callback_data=f"gh:save:move:list:{max(1, page)}")]]
+            )
+        await _respond(update, "⚠️ Akun simpan tidak ditemukan.", fallback_keyboard)
+        return
+
+    status_text = _saved_account_status_label(is_ready=stock.is_ready, is_notified=stock.is_notified)
+    remaining_line = ""
+    if not stock.is_ready:
+        remaining_line = f"Sisa masa simpan: <b>{_format_remaining_compact(stock.ready_at)}</b>\n"
+
+    keyboard_rows: list[list[InlineKeyboardButton]] = []
+    if source_mode == "move":
+        keyboard_rows.append(
+            [
+                InlineKeyboardButton(
+                    "✅ Konfirmasi Pindahkan",
+                    callback_data=f"gh:save:move:do:{stock.stock_id}:{max(1, page)}",
+                )
+            ]
+        )
+        keyboard_rows.append(
+            [InlineKeyboardButton("⬅️ Kembali", callback_data=f"gh:save:move:list:{max(1, page)}")]
+        )
+    else:
+        keyboard_rows.append(
+            [
+                InlineKeyboardButton(
+                    "⏳ Pindahkan ke Awaiting Benefits",
+                    callback_data=f"gh:save:move:confirm:{stock.stock_id}:{max(1, page)}",
+                )
+            ]
+        )
+        keyboard_rows.append(
+            [InlineKeyboardButton("⬅️ Kembali", callback_data=f"gh:save:list:{max(1, page)}")]
+        )
+
+    keyboard_rows.append([InlineKeyboardButton("⬅️ Kembali ke Simpan Akun", callback_data="gh:save:menu")])
+
+    await _respond(
+        update,
+        (
+            "🗂️ <b>Detail Akun Simpan</b>\n"
+            f"Username akun: <b>{html.escape(stock.username)}</b>\n"
+            f"ID stok: <b>#{stock.stock_id}</b>\n"
+            f"Status: <b>{status_text}</b>\n"
+            f"Waktu simpan: <b>{html.escape(_format_display_day_time(stock.created_at))}</b>\n"
+            f"Siap verifikasi: <b>{html.escape(_format_display_day_time(stock.ready_at))}</b>\n"
+            f"{remaining_line}\n"
+            f"<pre>{html.escape(stock.raw_text)}</pre>\n\n"
+            f"{_admin_footer_text()}"
+        ),
         InlineKeyboardMarkup(keyboard_rows),
         parse_mode=ParseMode.HTML,
     )
@@ -3058,30 +3177,142 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         await _send_github_saved_stock_list(update, page=page)
         return
 
+    if data.startswith("gh:save:view:"):
+        if role != "admin":
+            await _respond_admin_only(update)
+            return
+        parts = data.split(":", maxsplit=4)
+        if len(parts) != 5:
+            await _respond(update, "⚠️ Data akun simpan tidak valid.", _github_saved_account_menu_keyboard())
+            return
+        try:
+            stock_id = int(parts[3])
+            page = int(parts[4])
+        except ValueError:
+            await _respond(update, "⚠️ Data akun simpan tidak valid.", _github_saved_account_menu_keyboard())
+            return
+        await _send_github_saved_stock_detail(
+            update,
+            stock_id=stock_id,
+            source_mode="view",
+            page=page,
+        )
+        return
+
     if data == "gh:save:move":
         if role != "admin":
             await _respond_admin_only(update)
+            return
+        await _send_github_saved_move_picker(update, page=1)
+        return
+
+    if data.startswith("gh:save:move:list:"):
+        if role != "admin":
+            await _respond_admin_only(update)
+            return
+        try:
+            page = int(data.split(":", maxsplit=4)[4])
+        except ValueError:
+            await _respond(update, "⚠️ Halaman akun siap pindah tidak valid.", _github_saved_account_menu_keyboard())
+            return
+        await _send_github_saved_move_picker(update, page=page)
+        return
+
+    if data.startswith("gh:save:move:pick:"):
+        if role != "admin":
+            await _respond_admin_only(update)
+            return
+        parts = data.split(":", maxsplit=5)
+        if len(parts) != 6:
+            await _respond(update, "⚠️ Data akun simpan tidak valid.", _github_saved_account_menu_keyboard())
+            return
+        try:
+            stock_id = int(parts[4])
+            page = int(parts[5])
+        except ValueError:
+            await _respond(update, "⚠️ Data akun simpan tidak valid.", _github_saved_account_menu_keyboard())
+            return
+        await _send_github_saved_stock_detail(
+            update,
+            stock_id=stock_id,
+            source_mode="move",
+            page=page,
+        )
+        return
+
+    if data.startswith("gh:save:move:confirm:"):
+        if role != "admin":
+            await _respond_admin_only(update)
+            return
+        parts = data.split(":", maxsplit=5)
+        if len(parts) != 6:
+            await _respond(update, "⚠️ Data akun simpan tidak valid.", _github_saved_account_menu_keyboard())
+            return
+        try:
+            stock_id = int(parts[4])
+            page = int(parts[5])
+        except ValueError:
+            await _respond(update, "⚠️ Data akun simpan tidak valid.", _github_saved_account_menu_keyboard())
+            return
+        await _send_github_saved_stock_detail(
+            update,
+            stock_id=stock_id,
+            source_mode="move",
+            page=page,
+        )
+        return
+
+    if data.startswith("gh:save:move:do:"):
+        if role != "admin":
+            await _respond_admin_only(update)
+            return
+        parts = data.split(":", maxsplit=5)
+        if len(parts) != 6:
+            await _respond(update, "⚠️ Data akun simpan tidak valid.", _github_saved_account_menu_keyboard())
+            return
+        try:
+            stock_id = int(parts[4])
+            page = int(parts[5])
+        except ValueError:
+            await _respond(update, "⚠️ Data akun simpan tidak valid.", _github_saved_account_menu_keyboard())
             return
 
         db_user_ctx = await _require_db_user_ctx()
         with get_session() as session:
             try:
-                move_result = move_ready_saved_github_stocks_to_awaiting(
+                move_result = move_saved_github_stock_to_awaiting(
                     session,
+                    stock_id=stock_id,
                     actor_id=db_user_ctx.id,
                 )
             except ValueError as exc:
-                await _respond(update, f"⚠️ {exc}", _github_saved_account_menu_keyboard())
+                await _respond(
+                    update,
+                    f"⚠️ {exc}",
+                    InlineKeyboardMarkup(
+                        [
+                            [InlineKeyboardButton("⬅️ Kembali", callback_data=f"gh:save:move:list:{max(1, page)}")],
+                            [InlineKeyboardButton("⬅️ Kembali ke Simpan Akun", callback_data="gh:save:menu")],
+                        ]
+                    ),
+                )
                 return
 
         await _respond(
             update,
             (
-                "✅ <b>Akun simpan berhasil dipindahkan ke Awaiting Benefits</b>\n"
-                f"Jumlah akun: <b>{move_result.moved_count}</b>\n"
-                f"Durasi awaiting terpakai: <b>{move_result.awaiting_hours} jam</b>"
+                "✅ <b>Akun berhasil dipindahkan ke Awaiting Benefits</b>\n"
+                f"Username: <b>{html.escape(move_result.username)}</b>\n"
+                f"ID stok: <b>#{move_result.stock_id}</b>\n"
+                f"Durasi awaiting: <b>{move_result.awaiting_hours} jam</b>\n"
+                f"Estimasi ready: <b>{html.escape(_format_display_day_time(move_result.awaiting_ready_at))}</b>"
             ),
-            _github_saved_account_menu_keyboard(),
+            InlineKeyboardMarkup(
+                [
+                    [InlineKeyboardButton("⏳ Lihat List Siap Pindah", callback_data=f"gh:save:move:list:{max(1, page)}")],
+                    [InlineKeyboardButton("⬅️ Kembali ke Simpan Akun", callback_data="gh:save:menu")],
+                ]
+            ),
             parse_mode=ParseMode.HTML,
         )
         return
