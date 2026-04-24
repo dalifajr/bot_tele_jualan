@@ -18,7 +18,15 @@ os.environ["BOT_TOKEN"] = ""
 
 from app.api.main import app  # noqa: E402
 from app.api.security import build_signature  # noqa: E402
-from app.bot.services.catalog_service import add_product, add_stock_block, get_available_stock_count  # noqa: E402
+from app.bot.services.catalog_service import STOCK_STATUS_AWAITING, add_product, add_stock_block, get_available_stock_count  # noqa: E402
+from app.bot.services.github_pack_service import (  # noqa: E402
+    add_saved_github_stock,
+    ensure_github_pack_product,
+    list_saved_github_ready_notification_batch,
+    list_saved_github_stocks,
+    mark_saved_github_ready_notified,
+    move_ready_saved_github_stocks_to_awaiting,
+)
 from app.bot.services.metrics_service import collect_operational_metrics, format_operational_metrics_report  # noqa: E402
 from app.bot.services.notification_retry_service import (  # noqa: E402
     enqueue_notification_retry,
@@ -613,6 +621,138 @@ def _run_restock_subscription_flow() -> bool:
     return created and len(ready_before) == 0 and len(target_ready) >= 1 and marked and len(target_after_mark) == 0
 
 
+def _run_github_saved_account_flow() -> bool:
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+
+    pending_batch_count = 0
+    ready_batch_count = 0
+    marked_count = 0
+    marked_flags_count = 0
+    move_error = ""
+    moved_count = 0
+    awaiting_rows_ok = False
+    moved_ids_gone_from_saved = False
+    ready_ids: list[int] = []
+
+    with get_session() as session:
+        ensure_github_pack_product(session)
+
+        saved_one = add_saved_github_stock(
+            session=session,
+            raw_text=(
+                "*GitHub Students Dev Pack*\n"
+                "Username: gh_saved_one\n"
+                "Password: savedpassone\n"
+                "F2A: SAVEDONE\n"
+            ),
+            actor_id=None,
+        )
+        saved_two = add_saved_github_stock(
+            session=session,
+            raw_text=(
+                "*GitHub Students Dev Pack*\n"
+                "Username: gh_saved_two\n"
+                "Password: savedpasstwo\n"
+                "F2A: SAVEDTWO\n"
+            ),
+            actor_id=None,
+        )
+
+        row_one = session.get(StockUnit, saved_one.stock_id)
+        row_two = session.get(StockUnit, saved_two.stock_id)
+        if row_one is None or row_two is None:
+            return False
+
+        # Cluster should wait for the latest ready_at within the batch window.
+        row_one.available_at = now - timedelta(minutes=50)
+        row_two.available_at = now + timedelta(minutes=5)
+        session.add(row_one)
+        session.add(row_two)
+
+        pending_batch = list_saved_github_ready_notification_batch(
+            session,
+            now=now,
+            batch_window_minutes=60,
+        )
+        pending_batch_count = len(pending_batch)
+
+        row_two.available_at = now - timedelta(minutes=1)
+        session.add(row_two)
+
+        ready_batch = list_saved_github_ready_notification_batch(
+            session,
+            now=now,
+            batch_window_minutes=60,
+        )
+        ready_batch_count = len(ready_batch)
+
+        ready_ids = [int(candidate.stock_id) for candidate in ready_batch]
+        marked_count = mark_saved_github_ready_notified(
+            session,
+            stock_ids=ready_ids,
+            actor_id=None,
+        )
+
+        listed_after_mark = list_saved_github_stocks(session)
+        marked_flags = [
+            row for row in listed_after_mark
+            if row.stock_id in ready_ids and row.is_ready and row.is_notified
+        ]
+        marked_flags_count = len(marked_flags)
+
+    with get_session() as session:
+        try:
+            moved = move_ready_saved_github_stocks_to_awaiting(
+                session,
+                actor_id=None,
+            )
+            moved_count = int(moved.moved_count)
+        except ValueError as exc:
+            move_error = str(exc)
+
+    with get_session() as session:
+        moved_rows = list(
+            session.scalars(
+                select(StockUnit)
+                .where(StockUnit.id.in_(ready_ids))
+                .order_by(StockUnit.id.asc())
+            ).all()
+        )
+        awaiting_rows_ok = all(
+            row.stock_status == STOCK_STATUS_AWAITING
+            and row.available_at is not None
+            and row.available_at > now
+            for row in moved_rows
+        )
+
+        listed_after_move = list_saved_github_stocks(session)
+        moved_ids_gone_from_saved = all(
+            row.stock_id not in ready_ids
+            for row in listed_after_move
+        )
+
+    print("\n=== SCENARIO: GITHUB SAVED ACCOUNT FLOW ===")
+    print("pending_batch_count_before_latest_ready:", pending_batch_count)
+    print("ready_batch_count_after_latest_ready:", ready_batch_count)
+    print("marked_count:", marked_count)
+    print("marked_flags_count:", marked_flags_count)
+    print("move_error:", move_error)
+    print("moved_count:", moved_count)
+    print("awaiting_rows_ok:", awaiting_rows_ok)
+    print("moved_ids_gone_from_saved:", moved_ids_gone_from_saved)
+
+    return (
+        pending_batch_count == 0
+        and ready_batch_count == 2
+        and marked_count == 2
+        and marked_flags_count == 2
+        and move_error == ""
+        and moved_count == 2
+        and awaiting_rows_ok
+        and moved_ids_gone_from_saved
+    )
+
+
 def _run_notification_retry_flow() -> bool:
     with get_session() as session:
         first_job_id = enqueue_notification_retry(
@@ -734,6 +874,7 @@ def main() -> int:
     ok_quick_reorder = _run_quick_reorder_flow(client)
     ok_upsell = _run_upsell_flow()
     ok_restock = _run_restock_subscription_flow()
+    ok_github_saved = _run_github_saved_account_flow()
     ok_retry_queue = _run_notification_retry_flow()
     ok_rbac_db = _run_rbac_db_flow()
     ok_metrics = _run_metrics_flow()
@@ -746,6 +887,7 @@ def main() -> int:
     print("quick_reorder_flow:", ok_quick_reorder)
     print("upsell_flow:", ok_upsell)
     print("restock_subscription_flow:", ok_restock)
+    print("github_saved_account_flow:", ok_github_saved)
     print("retry_queue_flow:", ok_retry_queue)
     print("rbac_db_flow:", ok_rbac_db)
     print("metrics_flow:", ok_metrics)
@@ -758,6 +900,7 @@ def main() -> int:
         and ok_quick_reorder
         and ok_upsell
         and ok_restock
+        and ok_github_saved
         and ok_retry_queue
         and ok_rbac_db
         and ok_metrics

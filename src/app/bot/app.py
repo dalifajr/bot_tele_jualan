@@ -14,6 +14,11 @@ from app.bot.services.broadcast_service import (
 )
 from app.bot.services.catalog_service import list_products, promote_awaiting_stocks
 from app.bot.handlers.main import register_handlers
+from app.bot.services.github_pack_service import (
+    GITHUB_PACK_NOTIFY_BATCH_WINDOW_MINUTES,
+    list_saved_github_ready_notification_batch,
+    mark_saved_github_ready_notified,
+)
 from app.bot.services.housekeeping_service import cleanup_transient_data
 from app.bot.services.notification_retry_service import (
     enqueue_notification_retry,
@@ -72,6 +77,39 @@ def _build_restock_message(product_id: int, product_name: str, product_price: in
             "Atau ketik /catalog untuk lihat semua produk.",
         ]
     )
+
+
+def _build_github_saved_ready_batch_message(
+    usernames: list[str],
+    *,
+    total_count: int,
+    ready_window_minutes: int,
+) -> str:
+    lines = [
+        "🗂️ <b>Simpan Akun Siap Diajukan Verifikasi</b>",
+        f"Jumlah akun siap: <b>{total_count}</b>",
+        f"Batch window: <b>{ready_window_minutes} menit</b>",
+        "",
+    ]
+
+    preview_limit = 10
+    preview_rows = usernames[:preview_limit]
+    if preview_rows:
+        lines.append("Akun pada batch ini:")
+        for idx, username in enumerate(preview_rows, start=1):
+            lines.append(f"{idx}. {html.escape(username)}")
+
+    remaining = max(0, total_count - len(preview_rows))
+    if remaining > 0:
+        lines.append(f"+{remaining} akun lainnya")
+
+    lines.extend(
+        [
+            "",
+            "Lanjutkan proses verifikasi GitHub, lalu pindahkan akun yang siap ke Awaiting Benefits.",
+        ]
+    )
+    return "\n".join(lines)
 
 
 def _ready_stock_setting_key(product_id: int) -> str:
@@ -376,6 +414,83 @@ async def _ready_stock_broadcast_job(context: ContextTypes.DEFAULT_TYPE) -> None
     )
 
 
+async def _github_saved_ready_batch_notify_job(context: ContextTypes.DEFAULT_TYPE) -> None:
+    started_ms = monotonic_ms()
+    settings = get_settings()
+    admin_chat_id = get_primary_admin_id(settings.role_file_path)
+
+    if admin_chat_id is None:
+        return
+
+    with get_session() as session:
+        candidates = list_saved_github_ready_notification_batch(
+            session,
+            batch_window_minutes=GITHUB_PACK_NOTIFY_BATCH_WINDOW_MINUTES,
+        )
+
+    if not candidates:
+        return
+
+    usernames = [candidate.username for candidate in candidates]
+    stock_ids = [int(candidate.stock_id) for candidate in candidates]
+    text = _build_github_saved_ready_batch_message(
+        usernames,
+        total_count=len(candidates),
+        ready_window_minutes=GITHUB_PACK_NOTIFY_BATCH_WINDOW_MINUTES,
+    )
+    keyboard = InlineKeyboardMarkup(
+        [
+            [InlineKeyboardButton("🗂️ Buka Menu Simpan Akun", callback_data="gh:save:menu")],
+            [InlineKeyboardButton("⏳ Pindahkan ke Awaiting Benefits", callback_data="gh:save:move")],
+        ]
+    )
+
+    try:
+        await context.bot.send_message(
+            chat_id=admin_chat_id,
+            text=text,
+            parse_mode="HTML",
+            reply_markup=keyboard,
+            disable_web_page_preview=True,
+        )
+    except Exception as exc:
+        logger.warning("Gagal kirim notifikasi batch Simpan Akun ke admin: %s", exc)
+        with get_session() as session:
+            enqueue_notification_retry(
+                session=session,
+                channel="admin_github_saved_ready_batch",
+                chat_id=admin_chat_id,
+                payload_text=text,
+                parse_mode="HTML",
+            )
+
+        log_telemetry(
+            logger,
+            "job.github_saved_ready_batch_notify",
+            duration_ms=elapsed_ms(started_ms),
+            candidate_count=len(candidates),
+            notified_count=0,
+            retry_enqueued_count=1,
+        )
+        return
+
+    with get_session() as session:
+        marked_count = mark_saved_github_ready_notified(
+            session,
+            stock_ids=stock_ids,
+            actor_id=None,
+        )
+
+    log_telemetry(
+        logger,
+        "job.github_saved_ready_batch_notify",
+        duration_ms=elapsed_ms(started_ms),
+        candidate_count=len(candidates),
+        notified_count=marked_count,
+        retry_enqueued_count=0,
+    )
+
+
 async def _notification_retry_job(context: ContextTypes.DEFAULT_TYPE) -> None:
     started_ms = monotonic_ms()
     settings = get_settings()
@@ -499,6 +614,12 @@ def create_bot_application() -> Application:
             interval=60,
             first=35,
             name="ready-stock-broadcast",
+        )
+        application.job_queue.run_repeating(
+            _github_saved_ready_batch_notify_job,
+            interval=60,
+            first=40,
+            name="github-saved-ready-batch-notify",
         )
         application.job_queue.run_repeating(
             _notification_retry_job,

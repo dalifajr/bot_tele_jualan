@@ -53,7 +53,9 @@ from app.bot.services.qris_service import (
     set_qris_static_payload,
 )
 from app.bot.services.github_pack_service import (
+    GITHUB_PACK_SAVE_HOURS,
     add_github_stock,
+    add_saved_github_stock,
     delete_github_stock,
     ensure_github_pack_product,
     ensure_github_pack_used_product,
@@ -62,7 +64,9 @@ from app.bot.services.github_pack_service import (
     get_github_stock_detail,
     is_github_pack_product,
     list_github_stocks,
+    list_saved_github_stocks,
     list_sold_github_stocks,
+    move_ready_saved_github_stocks_to_awaiting,
     move_sold_github_stock_to_used_product,
     set_github_pack_awaiting_hours,
     set_github_pack_price,
@@ -110,6 +114,7 @@ FLOW_CUSTOMER_MANUAL_QTY = "customer_manual_qty"
 FLOW_GH_ADD_READY = "gh_add_ready"
 FLOW_GH_ADD_AWAIT = "gh_add_await"
 FLOW_GH_ADD_USED = "gh_add_used"
+FLOW_GH_SAVE_ADD = "gh_save_add"
 FLOW_GH_SET_PRICE = "gh_set_price"
 FLOW_GH_SET_USED_PRICE = "gh_set_used_price"
 FLOW_GH_SET_AWAITING_HOURS = "gh_set_awaiting_hours"
@@ -222,12 +227,24 @@ def _github_pack_menu_keyboard() -> InlineKeyboardMarkup:
             [InlineKeyboardButton("⏱️ Atur Jam Awaiting", callback_data="gh:await:set")],
             [InlineKeyboardButton("📥 Tambah Stok Ready", callback_data="gh:add:ready")],
             [InlineKeyboardButton("⏳ Tambah Stok Awaiting Benefits", callback_data="gh:add:await")],
+            [InlineKeyboardButton("🗂️ Simpan Akun", callback_data="gh:save:menu")],
             [InlineKeyboardButton("♻️ Tambah Stok GHS Bekas", callback_data="gh:add:used")],
             [InlineKeyboardButton("📋 Lihat List Akun", callback_data="gh:list")],
             [InlineKeyboardButton("🧾 Akun Terjual", callback_data="gh:sold:list")],
             [InlineKeyboardButton("👁️ Lihat Detail Akun", callback_data="gh:view:list")],
             [InlineKeyboardButton("🗑️ Hapus Akun", callback_data="gh:del:list")],
             [InlineKeyboardButton("⬅️ Kembali", callback_data="back:adm_cat")],
+        ]
+    )
+
+
+def _github_saved_account_menu_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        [
+            [InlineKeyboardButton("➕ Tambah Akun", callback_data="gh:save:add")],
+            [InlineKeyboardButton("📋 Lihat List Akun", callback_data="gh:save:list")],
+            [InlineKeyboardButton("⏳ Pindahkan ke Awaiting Benefits", callback_data="gh:save:move")],
+            [InlineKeyboardButton("⬅️ Kembali ke GitHub Pack", callback_data="ac:ghpack")],
         ]
     )
 
@@ -971,12 +988,15 @@ async def _send_github_pack_menu(update: Update) -> None:
         product = ensure_github_pack_product(session)
         used_product = ensure_github_pack_used_product(session)
         stocks = list_github_stocks(session)
+        saved_stocks = list_saved_github_stocks(session)
         sold_stocks = list_sold_github_stocks(session)
         used_ready_count = get_available_stock_count(session, int(used_product.id))
         awaiting_hours = get_github_pack_awaiting_hours(session)
 
     ready_count = sum(1 for x in stocks if x.status == "ready")
     awaiting_count = sum(1 for x in stocks if x.status == "awaiting_benefits")
+    saved_ready_count = sum(1 for x in saved_stocks if x.is_ready)
+    saved_waiting_count = max(0, len(saved_stocks) - saved_ready_count)
     moved_count = sum(1 for x in sold_stocks if x.is_moved_to_used)
     await _respond(
         update,
@@ -985,6 +1005,9 @@ async def _send_github_pack_menu(update: Update) -> None:
             f"💰 Harga utama: <b>{_format_rupiah(product.price)}</b>\n"
             f"✅ Ready: <b>{ready_count}</b> akun\n"
             f"⏳ Awaiting benefits: <b>{awaiting_count}</b> akun\n\n"
+            f"🗂️ Simpan akun: <b>{len(saved_stocks)}</b> akun\n"
+            f"🔔 Siap diajukan verifikasi: <b>{saved_ready_count}</b> akun\n"
+            f"⏱️ Menunggu 80 jam: <b>{saved_waiting_count}</b> akun\n\n"
             f"🧾 Akun terjual: <b>{len(sold_stocks)}</b> akun\n"
             f"♻️ Harga GHS Bekas: <b>{_format_rupiah(used_product.price)}</b>\n"
             f"♻️ Sudah dipindah ke GHS Bekas: <b>{moved_count}</b> akun\n"
@@ -993,6 +1016,96 @@ async def _send_github_pack_menu(update: Update) -> None:
             f"{_admin_footer_text()}"
         ),
         _github_pack_menu_keyboard(),
+        parse_mode=ParseMode.HTML,
+    )
+
+
+def _saved_account_status_label(*, is_ready: bool, is_notified: bool) -> str:
+    if not is_ready:
+        return "⏳ Menunggu 80 jam"
+    if is_notified:
+        return "✅ Siap diajukan (notifikasi terkirim)"
+    return "🔔 Siap diajukan"
+
+
+async def _send_github_saved_account_menu(update: Update) -> None:
+    with get_session() as session:
+        saved_stocks = list_saved_github_stocks(session)
+
+    ready_count = sum(1 for stock in saved_stocks if stock.is_ready)
+    waiting_count = max(0, len(saved_stocks) - ready_count)
+    nearest_ready = min((stock.ready_at for stock in saved_stocks if not stock.is_ready), default=None)
+
+    nearest_line = ""
+    if nearest_ready is not None:
+        nearest_line = (
+            f"Ready terdekat: <b>{html.escape(_format_display_day_time(nearest_ready))}</b> "
+            f"(sisa <b>{_format_remaining_compact(nearest_ready)}</b>)\n"
+        )
+
+    await _respond(
+        update,
+        (
+            "🗂️ <b>Simpan Akun GitHub Fresh</b>\n"
+            f"Mode simpan: <b>{GITHUB_PACK_SAVE_HOURS} jam</b> sebelum diajukan verifikasi.\n\n"
+            f"Total akun simpan: <b>{len(saved_stocks)}</b> akun\n"
+            f"Siap diajukan: <b>{ready_count}</b> akun\n"
+            f"Masih menunggu: <b>{waiting_count}</b> akun\n"
+            f"{nearest_line}\n"
+            "Gunakan tombol di bawah untuk tambah akun, lihat list, atau pindahkan akun siap ke awaiting benefits.\n\n"
+            f"{_admin_footer_text()}"
+        ),
+        _github_saved_account_menu_keyboard(),
+        parse_mode=ParseMode.HTML,
+    )
+
+
+async def _send_github_saved_stock_list(update: Update, page: int = 1) -> None:
+    with get_session() as session:
+        saved_stocks = list_saved_github_stocks(session)
+
+    if not saved_stocks:
+        await _respond(
+            update,
+            (
+                "📭 <b>Belum Ada Akun Tersimpan</b>\n"
+                "Tambahkan akun fresh dari menu Simpan Akun.\n\n"
+                f"{_admin_footer_text()}"
+            ),
+            _github_saved_account_menu_keyboard(),
+            parse_mode=ParseMode.HTML,
+        )
+        return
+
+    paged_rows, safe_page, total_pages = _paginate_rows(saved_stocks, page, ADMIN_LIST_PAGE_SIZE)
+    start_no = (safe_page - 1) * ADMIN_LIST_PAGE_SIZE + 1
+
+    lines = [
+        "📋 <b>List Simpan Akun GitHub</b>",
+        f"Halaman <b>{safe_page}/{total_pages}</b> • Total akun: <b>{len(saved_stocks)}</b>",
+        "",
+    ]
+    for idx, stock in enumerate(paged_rows, start=start_no):
+        status_text = _saved_account_status_label(is_ready=stock.is_ready, is_notified=stock.is_notified)
+        line = (
+            f"{idx}. <b>#{stock.stock_id}</b> {html.escape(stock.username)} | {status_text} | "
+            f"Ready: <b>{html.escape(_format_display_day_time(stock.ready_at))}</b>"
+        )
+        if not stock.is_ready:
+            line += f" | Sisa <b>{_format_remaining_compact(stock.ready_at)}</b>"
+        lines.append(line)
+
+    lines.extend(["", _admin_footer_text()])
+
+    keyboard_rows: list[list[InlineKeyboardButton]] = []
+    if total_pages > 1:
+        keyboard_rows.append(_pagination_nav_row(safe_page, total_pages, "gh:save:list"))
+    keyboard_rows.append([InlineKeyboardButton("⬅️ Kembali", callback_data="gh:save:menu")])
+
+    await _respond(
+        update,
+        "\n".join(lines),
+        InlineKeyboardMarkup(keyboard_rows),
         parse_mode=ParseMode.HTML,
     )
 
@@ -2398,6 +2511,9 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
                 parse_mode=ParseMode.HTML,
             )
             return
+        if target == "gh_save":
+            await _send_github_saved_account_menu(update)
+            return
         if target == "upd":
             await _respond(
                 update,
@@ -2894,6 +3010,78 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
                 f"{_admin_footer_text()}"
             ),
             _back_keyboard("adm_cat"),
+            parse_mode=ParseMode.HTML,
+        )
+        return
+
+    if data == "gh:save:menu":
+        if role != "admin":
+            await _respond_admin_only(update)
+            return
+        _clear_flow(context)
+        await _send_github_saved_account_menu(update)
+        return
+
+    if data == "gh:save:add":
+        if role != "admin":
+            await _respond_admin_only(update)
+            return
+        _set_flow(context, FLOW_GH_SAVE_ADD)
+        await _respond(
+            update,
+            (
+                "➕ <b>Simpan Akun GitHub Fresh</b>\n"
+                f"Kirim blok data akun. Akun akan ditahan selama <b>{GITHUB_PACK_SAVE_HOURS} jam</b> sebelum siap diajukan verifikasi.\n\n"
+                f"{_admin_footer_text()}"
+            ),
+            _back_keyboard("gh_save"),
+            parse_mode=ParseMode.HTML,
+        )
+        return
+
+    if data == "gh:save:list":
+        if role != "admin":
+            await _respond_admin_only(update)
+            return
+        await _send_github_saved_stock_list(update, page=1)
+        return
+
+    if data.startswith("gh:save:list:"):
+        if role != "admin":
+            await _respond_admin_only(update)
+            return
+        try:
+            page = int(data.split(":", maxsplit=3)[3])
+        except ValueError:
+            await _respond(update, "⚠️ Halaman list akun simpan tidak valid.", _github_saved_account_menu_keyboard())
+            return
+        await _send_github_saved_stock_list(update, page=page)
+        return
+
+    if data == "gh:save:move":
+        if role != "admin":
+            await _respond_admin_only(update)
+            return
+
+        db_user_ctx = await _require_db_user_ctx()
+        with get_session() as session:
+            try:
+                move_result = move_ready_saved_github_stocks_to_awaiting(
+                    session,
+                    actor_id=db_user_ctx.id,
+                )
+            except ValueError as exc:
+                await _respond(update, f"⚠️ {exc}", _github_saved_account_menu_keyboard())
+                return
+
+        await _respond(
+            update,
+            (
+                "✅ <b>Akun simpan berhasil dipindahkan ke Awaiting Benefits</b>\n"
+                f"Jumlah akun: <b>{move_result.moved_count}</b>\n"
+                f"Durasi awaiting terpakai: <b>{move_result.awaiting_hours} jam</b>"
+            ),
+            _github_saved_account_menu_keyboard(),
             parse_mode=ParseMode.HTML,
         )
         return
@@ -3837,6 +4025,38 @@ async def text_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
                     f"{_admin_footer_text()}"
                 ),
                 _github_pack_menu_keyboard(),
+                parse_mode=ParseMode.HTML,
+            )
+            return
+
+        if flow == FLOW_GH_SAVE_ADD:
+            if role != "admin":
+                await _respond_admin_only(update)
+                _clear_flow(context)
+                return
+
+            with get_session() as session:
+                try:
+                    saved_stock = add_saved_github_stock(
+                        session=session,
+                        raw_text=text,
+                        actor_id=db_user.id,
+                    )
+                except ValueError as exc:
+                    await _respond(update, f"❌ Gagal simpan akun GitHub: {exc}", _github_saved_account_menu_keyboard())
+                    return
+
+            _clear_flow(context)
+            await _respond(
+                update,
+                (
+                    "✅ <b>Akun berhasil disimpan</b>\n"
+                    f"ID: <b>#{saved_stock.stock_id}</b>\n"
+                    f"Username: <b>{html.escape(saved_stock.username)}</b>\n"
+                    f"Siap diajukan verifikasi: <b>{html.escape(_format_display_day_time(saved_stock.ready_at))}</b>\n"
+                    f"Estimasi sisa: <b>{_format_remaining_compact(saved_stock.ready_at)}</b>"
+                ),
+                _github_saved_account_menu_keyboard(),
                 parse_mode=ParseMode.HTML,
             )
             return
