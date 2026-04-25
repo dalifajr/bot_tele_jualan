@@ -62,6 +62,7 @@ class ComplaintDetail:
     complaint_at: datetime
     status: str
     complaint_text: str
+    refund_amount: int | None
     attachment_file_ids: list[str]
     refund_target_detail: str | None
     refund_note: str | None
@@ -229,6 +230,16 @@ def get_complaint_detail(session: Session, *, complaint_id: int) -> ComplaintDet
         return None
 
     user = session.get(User, int(complaint.customer_id))
+    order: Order | None = None
+    if complaint.order_id is not None:
+        order = session.get(Order, int(complaint.order_id))
+    if order is None and complaint.order_ref_snapshot:
+        order = session.scalar(
+            select(Order).where(
+                Order.customer_id == int(complaint.customer_id),
+                Order.order_ref == complaint.order_ref_snapshot,
+            )
+        )
     attachments = list(
         session.scalars(
             select(ComplaintAttachment)
@@ -252,6 +263,7 @@ def get_complaint_detail(session: Session, *, complaint_id: int) -> ComplaintDet
         complaint_at=complaint.created_at,
         status=complaint.status,
         complaint_text=complaint.complaint_text,
+        refund_amount=(int(order.total_amount) if order is not None else None),
         attachment_file_ids=[item.file_id for item in attachments],
         refund_target_detail=complaint.refund_target_detail,
         refund_note=complaint.refund_note,

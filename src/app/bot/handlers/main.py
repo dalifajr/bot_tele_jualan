@@ -1103,6 +1103,8 @@ def _build_complaint_detail_text(detail: ComplaintDetail, *, include_customer: b
     if include_customer:
         lines.append(f"Pelanggan: <b>{html.escape(detail.customer_display)}</b> ({detail.customer_telegram_id})")
     lines.append(f"Status: <b>{html.escape(_complaint_status_badge(detail.status))}</b>")
+    if detail.refund_amount is not None:
+        lines.append(f"Nominal refund: <b>{_format_rupiah(detail.refund_amount)}</b>")
     lines.append("")
     lines.append("Isi pesan komplain:")
     lines.append(f"<pre>{html.escape(detail.complaint_text)}</pre>")
@@ -1237,6 +1239,14 @@ async def _send_admin_complaint_detail(
         return
 
     keyboard_rows: list[list[InlineKeyboardButton]] = []
+    keyboard_rows.append(
+        [
+            InlineKeyboardButton(
+                "🧾 Lihat Detail Pesanan",
+                callback_data=f"cmp:admin:order:{bucket}:{detail.complaint_id}:{max(1, page)}",
+            )
+        ]
+    )
     if bucket == "new" and detail.status == COMPLAINT_STATUS_NEW:
         keyboard_rows.append(
             [InlineKeyboardButton("▶️ Proses", callback_data=f"cmp:admin:new:process:{detail.complaint_id}:{max(1, page)}")]
@@ -1279,7 +1289,7 @@ async def _send_admin_complaint_detail(
 async def _submit_customer_complaint_from_draft(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
-    db_user_ctx: UserContext,
+    customer_id: int,
 ) -> bool:
     flow, flow_data = _get_flow(context)
     if flow != FLOW_CUSTOMER_COMPLAINT_COMPOSE:
@@ -1304,7 +1314,7 @@ async def _submit_customer_complaint_from_draft(
         return False
 
     with get_session() as session:
-        customer = session.get(User, db_user_ctx.id)
+        customer = session.get(User, int(customer_id))
         if customer is None:
             await _respond(update, "⚠️ User tidak ditemukan. Silakan /start lalu ulangi.", _back_keyboard("main"))
             return False
@@ -3348,7 +3358,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             await _respond(update, "🚫 Admin tidak bisa membuat komplain customer.", _back_keyboard("main"))
             return
         db_user_ctx = await _require_db_user_ctx()
-        await _submit_customer_complaint_from_draft(update, context, db_user_ctx)
+        await _submit_customer_complaint_from_draft(update, context, int(db_user_ctx.id))
         return
 
     if data == "cmp:new:cancel":
@@ -3444,6 +3454,86 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
                 await _respond(update, "⚠️ Data detail komplain tidak valid.", _admin_complaint_menu_keyboard())
                 return
             await _send_admin_complaint_detail(update, bucket=bucket, complaint_id=complaint_id, page=page)
+            return
+
+        if data.startswith("cmp:admin:order:"):
+            parts = data.split(":", maxsplit=5)
+            if len(parts) != 6:
+                await _respond(update, "⚠️ Data detail pesanan komplain tidak valid.", _admin_complaint_menu_keyboard())
+                return
+            bucket = parts[3]
+            if bucket not in {"new", "proc", "done"}:
+                await _respond(update, "⚠️ Kategori komplain tidak valid.", _admin_complaint_menu_keyboard())
+                return
+            try:
+                complaint_id = int(parts[4])
+                page = int(parts[5])
+            except ValueError:
+                await _respond(update, "⚠️ Data detail pesanan komplain tidak valid.", _admin_complaint_menu_keyboard())
+                return
+
+            with get_session() as session:
+                complaint_detail = get_complaint_detail(session, complaint_id=complaint_id)
+                if complaint_detail is None:
+                    await _respond(update, "⚠️ Komplain tidak ditemukan.", _admin_complaint_menu_keyboard())
+                    return
+                order_detail = get_customer_order_detail(
+                    session,
+                    customer_id=complaint_detail.customer_id,
+                    order_ref=complaint_detail.order_ref,
+                )
+
+            if order_detail is None:
+                await _respond(
+                    update,
+                    "⚠️ Detail pesanan terkait komplain tidak ditemukan.",
+                    InlineKeyboardMarkup(
+                        [
+                            [
+                                InlineKeyboardButton(
+                                    "⬅️ Kembali ke Detail Komplain",
+                                    callback_data=f"cmp:admin:view:{bucket}:{complaint_id}:{max(1, page)}",
+                                )
+                            ],
+                            [InlineKeyboardButton("⬅️ Kembali ke Kelola Komplain", callback_data="adm:cmp")],
+                        ]
+                    ),
+                )
+                return
+
+            lines = [
+                "🧾 <b>Detail Pesanan Dikomplain</b>",
+                f"Order: <code>{html.escape(order_detail.order_ref)}</code>",
+                f"Status: {_order_status_badge(order_detail.status)}",
+                f"Total bayar: <b>{_format_rupiah(order_detail.total_amount)}</b>",
+                "",
+            ]
+            if order_detail.item_lines:
+                lines.append("🛍️ Item:")
+                for item_line in order_detail.item_lines:
+                    lines.append(f"• {html.escape(item_line)}")
+            else:
+                lines.append("🛍️ Item: -")
+
+            lines.append("")
+            lines.append(_admin_footer_text())
+
+            await _respond(
+                update,
+                "\n".join(lines),
+                InlineKeyboardMarkup(
+                    [
+                        [
+                            InlineKeyboardButton(
+                                "⬅️ Kembali ke Detail Komplain",
+                                callback_data=f"cmp:admin:view:{bucket}:{complaint_id}:{max(1, page)}",
+                            )
+                        ],
+                        [InlineKeyboardButton("⬅️ Kembali ke Kelola Komplain", callback_data="adm:cmp")],
+                    ]
+                ),
+                parse_mode=ParseMode.HTML,
+            )
             return
 
         db_user_ctx = await _require_db_user_ctx()
@@ -4924,8 +5014,7 @@ async def text_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
             normalized = text.strip().lower()
             if normalized in {"kirim", "submit", "selesai", "enter"}:
-                db_user_ctx = await _require_db_user_ctx()
-                await _submit_customer_complaint_from_draft(update, context, db_user_ctx)
+                await _submit_customer_complaint_from_draft(update, context, int(db_user.id))
                 return
 
             _append_complaint_text(context, text)
@@ -4959,13 +5048,12 @@ async def text_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
                 await _respond(update, "⚠️ Data komplain refund tidak valid.", _back_keyboard("main"))
                 return
 
-            db_user_ctx = await _require_db_user_ctx()
             with get_session() as session:
                 try:
                     detail = set_complaint_refund_target_from_customer(
                         session,
                         complaint_id=complaint_id,
-                        customer_id=db_user_ctx.id,
+                        customer_id=int(db_user.id),
                         detail_text=text,
                     )
                 except ValueError as exc:
@@ -4985,6 +5073,9 @@ async def text_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
             admin_id = get_primary_admin_id(settings.role_file_path)
             if admin_id is not None:
+                refund_amount_text = "-"
+                if detail.refund_amount is not None:
+                    refund_amount_text = _format_rupiah(detail.refund_amount)
                 try:
                     await context.bot.send_message(
                         chat_id=admin_id,
@@ -4992,6 +5083,7 @@ async def text_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
                             "💳 <b>Detail Refund Diterima</b>\n"
                             f"No. komplain: <b>{html.escape(detail.complaint_ref)}</b>\n"
                             f"Nomor order: <code>{html.escape(detail.order_ref)}</code>\n"
+                            f"Nominal refund: <b>{html.escape(refund_amount_text)}</b>\n"
                             f"Detail rekening/e-wallet:\n<pre>{html.escape(detail.refund_target_detail or '-')}</pre>"
                         ),
                         parse_mode=ParseMode.HTML,
