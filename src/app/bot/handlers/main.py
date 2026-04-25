@@ -33,6 +33,8 @@ from app.bot.services.broadcast_service import (
 from app.bot.services.complaint_service import (
     COMPLAINT_STATUS_AWAITING_ADMIN_REFUND_TRANSFER,
     COMPLAINT_STATUS_AWAITING_CUSTOMER_REFUND_DETAILS,
+    COMPLAINT_STATUS_GROUP_CUSTOMER_CANCELABLE,
+    COMPLAINT_STATUS_GROUP_CUSTOMER_TRACKING,
     COMPLAINT_STATUS_GROUP_DONE,
     COMPLAINT_STATUS_GROUP_NEW,
     COMPLAINT_STATUS_GROUP_PROCESS,
@@ -45,9 +47,11 @@ from app.bot.services.complaint_service import (
     ComplaintListItem,
     ComplaintOrderOption,
     approve_complaint_refund,
+    cancel_customer_complaint,
     create_customer_complaint,
     get_complaint_detail,
     list_complaints_by_statuses,
+    list_customer_complaints,
     list_customer_order_options_for_complaint,
     mark_complaint_refund_transferred,
     mark_complaint_replacement_sent,
@@ -301,6 +305,16 @@ def _admin_complaint_menu_keyboard() -> InlineKeyboardMarkup:
             [InlineKeyboardButton("📥 Kelola Komplain", callback_data="cmp:admin:new:list")],
             [InlineKeyboardButton("🔎 Komplain Proses", callback_data="cmp:admin:proc:list")],
             [InlineKeyboardButton("✅ Komplain Selesai", callback_data="cmp:admin:done:list")],
+            [InlineKeyboardButton("⬅️ Kembali", callback_data="back:main")],
+        ]
+    )
+
+
+def _customer_complaint_menu_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        [
+            [InlineKeyboardButton("🆘 Buat Komplain", callback_data="cmp:cus:new")],
+            [InlineKeyboardButton("📋 Komplain Saya", callback_data="cmp:cus:mine:list")],
             [InlineKeyboardButton("⬅️ Kembali", callback_data="back:main")],
         ]
     )
@@ -1132,6 +1146,142 @@ async def _send_admin_complaint_menu(update: Update) -> None:
             f"{_admin_footer_text()}"
         ),
         _admin_complaint_menu_keyboard(),
+        parse_mode=ParseMode.HTML,
+    )
+
+
+async def _send_customer_complaint_menu(update: Update) -> None:
+    await _respond(
+        update,
+        (
+            "🆘 <b>Menu Komplain</b>\n"
+            "Pilih aksi komplain yang ingin kamu lakukan.\n\n"
+            f"{_customer_footer_text()}"
+        ),
+        _customer_complaint_menu_keyboard(),
+        parse_mode=ParseMode.HTML,
+    )
+
+
+def _build_customer_complaint_detail_text(detail: ComplaintDetail) -> str:
+    order_date_text = "-"
+    if detail.order_created_at is not None:
+        order_date_text = html.escape(_format_display_day_time(detail.order_created_at))
+
+    refund_amount_text = "-"
+    if detail.refund_amount is not None:
+        refund_amount_text = _format_rupiah(detail.refund_amount)
+
+    lines = [
+        "🧾 <b>Detail Komplain Saya</b>",
+        f"No. komplain: <b>{html.escape(detail.complaint_ref)}</b>",
+        f"Nomor order: <code>{html.escape(detail.order_ref)}</code>",
+        f"Tanggal pesanan: <b>{order_date_text}</b>",
+        f"Tanggal komplain: <b>{html.escape(_format_display_day_time(detail.complaint_at))}</b>",
+        f"Status: <b>{html.escape(_complaint_status_badge(detail.status))}</b>",
+        f"Nominal refund: <b>{html.escape(refund_amount_text)}</b>",
+        "",
+        "Isi pesan komplain:",
+        f"<pre>{html.escape(detail.complaint_text)}</pre>",
+    ]
+
+    if detail.refund_target_detail:
+        lines.append("")
+        lines.append("Detail rekening/e-wallet refund:")
+        lines.append(f"<pre>{html.escape(detail.refund_target_detail)}</pre>")
+
+    if detail.refund_note:
+        lines.append("")
+        lines.append(f"Catatan refund admin: <i>{html.escape(detail.refund_note)}</i>")
+
+    lines.append("")
+    lines.append(_customer_footer_text())
+    return "\n".join(lines)
+
+
+def _customer_complaint_detail_keyboard(detail: ComplaintDetail, *, page: int) -> InlineKeyboardMarkup:
+    rows: list[list[InlineKeyboardButton]] = []
+    if detail.status in COMPLAINT_STATUS_GROUP_CUSTOMER_CANCELABLE:
+        rows.append(
+            [InlineKeyboardButton("❌ Batalkan Komplain", callback_data=f"cmp:cus:mine:cancel:{detail.complaint_id}:{max(1, page)}")]
+        )
+    rows.append([InlineKeyboardButton("⬅️ Kembali", callback_data=f"cmp:cus:mine:list:{max(1, page)}")])
+    rows.append([InlineKeyboardButton("⬅️ Kembali ke Menu Komplain", callback_data="cus:cmp")])
+    return InlineKeyboardMarkup(rows)
+
+
+async def _send_customer_complaint_list(update: Update, *, customer_id: int, page: int = 1) -> None:
+    with get_session() as session:
+        rows = list_customer_complaints(
+            session,
+            customer_id=customer_id,
+            statuses=set(COMPLAINT_STATUS_GROUP_CUSTOMER_TRACKING),
+        )
+
+    if not rows:
+        await _respond(
+            update,
+            (
+                "📭 <b>Belum Ada Komplain yang Diproses</b>\n"
+                "Komplain yang tampil di sini: diproses, ditolak, atau disetujui.\n\n"
+                f"{_customer_footer_text()}"
+            ),
+            _customer_complaint_menu_keyboard(),
+            parse_mode=ParseMode.HTML,
+        )
+        return
+
+    paged_rows, safe_page, total_pages = _paginate_rows(rows, page, CUSTOMER_ORDERS_PAGE_SIZE)
+    keyboard_rows: list[list[InlineKeyboardButton]] = []
+    info_lines: list[str] = []
+    start_no = (safe_page - 1) * CUSTOMER_ORDERS_PAGE_SIZE + 1
+    for idx, row in enumerate(paged_rows):
+        refund_amount_text = "-"
+        if row.refund_amount is not None:
+            refund_amount_text = _format_rupiah(row.refund_amount)
+        no = start_no + idx
+        info_lines.append(
+            f"{no}. <b>{html.escape(row.complaint_ref)}</b> | {html.escape(_complaint_status_badge(row.status))} | Nominal: <b>{html.escape(refund_amount_text)}</b>"
+        )
+        keyboard_rows.append(
+            [
+                InlineKeyboardButton(
+                    f"{row.complaint_ref} | {_complaint_status_badge(row.status)}",
+                    callback_data=f"cmp:cus:mine:view:{row.complaint_id}:{safe_page}",
+                )
+            ]
+        )
+
+    if total_pages > 1:
+        keyboard_rows.append(_pagination_nav_row(safe_page, total_pages, "cmp:cus:mine:list"))
+    keyboard_rows.append([InlineKeyboardButton("⬅️ Kembali", callback_data="cus:cmp")])
+
+    await _respond(
+        update,
+        (
+            "📋 <b>Komplain Saya</b>\n"
+            f"Halaman <b>{safe_page}/{total_pages}</b> • Total komplain: <b>{len(rows)}</b>\n\n"
+            + "\n".join(info_lines)
+            + "\n\n"
+            + _customer_footer_text()
+        ),
+        InlineKeyboardMarkup(keyboard_rows),
+        parse_mode=ParseMode.HTML,
+    )
+
+
+async def _send_customer_complaint_detail(update: Update, *, customer_id: int, complaint_id: int, page: int) -> None:
+    with get_session() as session:
+        detail = get_complaint_detail(session, complaint_id=complaint_id)
+
+    if detail is None or int(detail.customer_id) != int(customer_id):
+        await _respond(update, "⚠️ Komplain tidak ditemukan untuk akun kamu.", _customer_complaint_menu_keyboard())
+        return
+
+    await _respond(
+        update,
+        _build_customer_complaint_detail_text(detail),
+        _customer_complaint_detail_keyboard(detail, page=max(1, page)),
         parse_mode=ParseMode.HTML,
     )
 
@@ -3286,10 +3436,116 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         if role == "admin":
             await _respond(update, "🚫 Admin tidak bisa membuat komplain customer.", _back_keyboard("main"))
             return
+        _clear_flow(context)
+        _clear_complaint_draft(context)
+        await _send_customer_complaint_menu(update)
+        return
+
+    if data == "cmp:cus:new":
+        if role == "admin":
+            await _respond(update, "🚫 Admin tidak bisa membuat komplain customer.", _back_keyboard("main"))
+            return
         db_user_ctx = await _require_db_user_ctx()
         _clear_flow(context)
         _clear_complaint_draft(context)
         await _send_customer_complaint_order_picker(update, customer_id=db_user_ctx.id, page=1)
+        return
+
+    if data.startswith("cmp:cus:mine:list"):
+        if role == "admin":
+            await _respond(update, "🚫 Admin tidak bisa membuka komplain customer.", _back_keyboard("main"))
+            return
+        page = 1
+        if data.startswith("cmp:cus:mine:list:"):
+            try:
+                page = int(data.split(":", maxsplit=4)[4])
+            except ValueError:
+                page = 1
+        db_user_ctx = await _require_db_user_ctx()
+        _clear_flow(context)
+        _clear_complaint_draft(context)
+        await _send_customer_complaint_list(update, customer_id=db_user_ctx.id, page=max(1, page))
+        return
+
+    if data.startswith("cmp:cus:mine:view:"):
+        if role == "admin":
+            await _respond(update, "🚫 Admin tidak bisa membuka komplain customer.", _back_keyboard("main"))
+            return
+        parts = data.split(":", maxsplit=5)
+        if len(parts) != 6:
+            await _respond(update, "⚠️ Data komplain tidak valid.", _customer_complaint_menu_keyboard())
+            return
+        try:
+            complaint_id = int(parts[4])
+            page = int(parts[5])
+        except ValueError:
+            await _respond(update, "⚠️ Data komplain tidak valid.", _customer_complaint_menu_keyboard())
+            return
+        db_user_ctx = await _require_db_user_ctx()
+        await _send_customer_complaint_detail(
+            update,
+            customer_id=db_user_ctx.id,
+            complaint_id=complaint_id,
+            page=max(1, page),
+        )
+        return
+
+    if data.startswith("cmp:cus:mine:cancel:"):
+        if role == "admin":
+            await _respond(update, "🚫 Admin tidak bisa membatalkan komplain customer.", _back_keyboard("main"))
+            return
+        parts = data.split(":", maxsplit=5)
+        if len(parts) != 6:
+            await _respond(update, "⚠️ Data batalkan komplain tidak valid.", _customer_complaint_menu_keyboard())
+            return
+        try:
+            complaint_id = int(parts[4])
+            page = int(parts[5])
+        except ValueError:
+            await _respond(update, "⚠️ Data batalkan komplain tidak valid.", _customer_complaint_menu_keyboard())
+            return
+
+        db_user_ctx = await _require_db_user_ctx()
+        with get_session() as session:
+            try:
+                detail = cancel_customer_complaint(
+                    session,
+                    complaint_id=complaint_id,
+                    customer_id=db_user_ctx.id,
+                )
+            except ValueError as exc:
+                await _respond(update, f"⚠️ {exc}", _customer_complaint_menu_keyboard())
+                return
+
+        admin_id = get_primary_admin_id(settings.role_file_path)
+        if admin_id is not None:
+            try:
+                await context.bot.send_message(
+                    chat_id=admin_id,
+                    text=(
+                        "🚫 <b>Komplain Dibatalkan Customer</b>\n"
+                        f"No. komplain: <b>{html.escape(detail.complaint_ref)}</b>\n"
+                        f"Nomor order: <code>{html.escape(detail.order_ref)}</code>"
+                    ),
+                    parse_mode=ParseMode.HTML,
+                )
+            except Exception as exc:
+                logger.warning("Gagal kirim notifikasi pembatalan komplain ke admin: %s", exc)
+
+        await _respond(
+            update,
+            (
+                "✅ <b>Komplain berhasil dibatalkan</b>\n"
+                f"No. komplain: <b>{html.escape(detail.complaint_ref)}</b>"
+            ),
+            InlineKeyboardMarkup(
+                [
+                    [InlineKeyboardButton("📋 Lihat Komplain Saya", callback_data=f"cmp:cus:mine:list:{max(1, page)}")],
+                    [InlineKeyboardButton("⬅️ Kembali ke Menu Komplain", callback_data="cus:cmp")],
+                ]
+            ),
+            parse_mode=ParseMode.HTML,
+        )
         return
 
     if data.startswith("cmp:new:orders"):
@@ -3367,7 +3623,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             return
         _clear_flow(context)
         _clear_complaint_draft(context)
-        await _send_main_menu(update, role, context=context)
+        await _send_customer_complaint_menu(update)
         return
 
     if data.startswith("cmp:cus:refund:fill:"):

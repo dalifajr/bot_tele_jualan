@@ -29,6 +29,13 @@ COMPLAINT_STATUS_GROUP_DONE = {
     COMPLAINT_STATUS_REPLACEMENT_SENT,
     COMPLAINT_STATUS_REJECTED,
 }
+COMPLAINT_STATUS_GROUP_CUSTOMER_TRACKING = COMPLAINT_STATUS_GROUP_PROCESS | COMPLAINT_STATUS_GROUP_DONE
+COMPLAINT_STATUS_GROUP_CUSTOMER_CANCELABLE = {
+    COMPLAINT_STATUS_NEW,
+    COMPLAINT_STATUS_IN_PROCESS,
+    COMPLAINT_STATUS_AWAITING_CUSTOMER_REFUND_DETAILS,
+    COMPLAINT_STATUS_AWAITING_ADMIN_REFUND_TRANSFER,
+}
 
 
 @dataclass(frozen=True)
@@ -48,6 +55,7 @@ class ComplaintListItem:
     order_created_at: datetime | None
     complaint_at: datetime
     status: str
+    refund_amount: int | None
 
 
 @dataclass(frozen=True)
@@ -97,6 +105,22 @@ def _customer_display(user: User | None, snapshot_username: str | None, telegram
     if user is not None and user.full_name:
         return user.full_name
     return str(telegram_id)
+
+
+def _resolve_refund_amount(session: Session, complaint: ComplaintCase) -> int | None:
+    order: Order | None = None
+    if complaint.order_id is not None:
+        order = session.get(Order, int(complaint.order_id))
+    if order is None and complaint.order_ref_snapshot:
+        order = session.scalar(
+            select(Order).where(
+                Order.customer_id == int(complaint.customer_id),
+                Order.order_ref == complaint.order_ref_snapshot,
+            )
+        )
+    if order is None:
+        return None
+    return int(order.total_amount)
 
 
 def list_customer_order_options_for_complaint(
@@ -219,6 +243,51 @@ def list_complaints_by_statuses(session: Session, *, statuses: set[str]) -> list
                 order_created_at=row.order_created_at_snapshot,
                 complaint_at=row.created_at,
                 status=row.status,
+                refund_amount=_resolve_refund_amount(session, row),
+            )
+        )
+    return result
+
+
+def list_customer_complaints(
+    session: Session,
+    *,
+    customer_id: int,
+    statuses: set[str] | None = None,
+) -> list[ComplaintListItem]:
+    selected_statuses = set(statuses or COMPLAINT_STATUS_GROUP_CUSTOMER_TRACKING)
+    if not selected_statuses:
+        return []
+
+    rows = list(
+        session.scalars(
+            select(ComplaintCase)
+            .where(
+                ComplaintCase.customer_id == int(customer_id),
+                ComplaintCase.status.in_(list(selected_statuses)),
+            )
+            .order_by(ComplaintCase.created_at.desc(), ComplaintCase.id.desc())
+        ).all()
+    )
+
+    user = session.get(User, int(customer_id))
+    result: list[ComplaintListItem] = []
+    for row in rows:
+        result.append(
+            ComplaintListItem(
+                complaint_id=int(row.id),
+                complaint_ref=row.complaint_ref,
+                customer_display=_customer_display(
+                    user,
+                    row.customer_username_snapshot,
+                    int(row.customer_telegram_id),
+                ),
+                customer_telegram_id=int(row.customer_telegram_id),
+                order_ref=row.order_ref_snapshot,
+                order_created_at=row.order_created_at_snapshot,
+                complaint_at=row.created_at,
+                status=row.status,
+                refund_amount=_resolve_refund_amount(session, row),
             )
         )
     return result
@@ -230,16 +299,7 @@ def get_complaint_detail(session: Session, *, complaint_id: int) -> ComplaintDet
         return None
 
     user = session.get(User, int(complaint.customer_id))
-    order: Order | None = None
-    if complaint.order_id is not None:
-        order = session.get(Order, int(complaint.order_id))
-    if order is None and complaint.order_ref_snapshot:
-        order = session.scalar(
-            select(Order).where(
-                Order.customer_id == int(complaint.customer_id),
-                Order.order_ref == complaint.order_ref_snapshot,
-            )
-        )
+    refund_amount = _resolve_refund_amount(session, complaint)
     attachments = list(
         session.scalars(
             select(ComplaintAttachment)
@@ -263,7 +323,7 @@ def get_complaint_detail(session: Session, *, complaint_id: int) -> ComplaintDet
         complaint_at=complaint.created_at,
         status=complaint.status,
         complaint_text=complaint.complaint_text,
-        refund_amount=(int(order.total_amount) if order is not None else None),
+        refund_amount=refund_amount,
         attachment_file_ids=[item.file_id for item in attachments],
         refund_target_detail=complaint.refund_target_detail,
         refund_note=complaint.refund_note,
@@ -479,6 +539,36 @@ def reopen_done_complaint(session: Session, *, complaint_id: int, actor_id: int 
         entity_id=str(complaint.id),
         detail=f"complaint_ref={complaint.complaint_ref}",
     )
+    detail = get_complaint_detail(session, complaint_id=int(complaint.id))
+    if detail is None:
+        raise ValueError("Komplain tidak ditemukan.")
+    return detail
+
+
+def cancel_customer_complaint(session: Session, *, complaint_id: int, customer_id: int) -> ComplaintDetail:
+    complaint = session.get(ComplaintCase, int(complaint_id))
+    if complaint is None:
+        raise ValueError("Komplain tidak ditemukan.")
+    if int(complaint.customer_id) != int(customer_id):
+        raise ValueError("Komplain tidak ditemukan untuk akun kamu.")
+    if complaint.status not in COMPLAINT_STATUS_GROUP_CUSTOMER_CANCELABLE:
+        raise ValueError("Komplain ini tidak bisa dibatalkan pada status saat ini.")
+
+    complaint.status = COMPLAINT_STATUS_REJECTED
+    complaint.rejected_reason = "Dibatalkan customer"
+    complaint.closed_at = _utcnow()
+    complaint.updated_at = _utcnow()
+    session.add(complaint)
+
+    append_audit(
+        session,
+        action="complaint_cancel_by_customer",
+        actor_id=int(customer_id),
+        entity_type="complaint_case",
+        entity_id=str(complaint.id),
+        detail=f"complaint_ref={complaint.complaint_ref}",
+    )
+
     detail = get_complaint_detail(session, complaint_id=int(complaint.id))
     if detail is None:
         raise ValueError("Komplain tidak ditemukan.")
