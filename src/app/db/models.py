@@ -202,3 +202,37 @@ class TelemetryEvent(Base):
     status: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     payload_json: Mapped[str] = mapped_column(Text, default="")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+
+
+class ComplaintCase(Base):
+    __tablename__ = "complaint_cases"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    complaint_ref: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    customer_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    customer_telegram_id: Mapped[int] = mapped_column(BigInteger, index=True)
+    customer_username_snapshot: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    order_id: Mapped[int | None] = mapped_column(ForeignKey("orders.id", ondelete="SET NULL"), nullable=True, index=True)
+    order_ref_snapshot: Mapped[str] = mapped_column(String(64), index=True)
+    order_created_at_snapshot: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    complaint_text: Mapped[str] = mapped_column(Text, default="")
+    status: Mapped[str] = mapped_column(String(64), default="new", index=True)
+    rejected_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    refund_target_detail: Mapped[str | None] = mapped_column(Text, nullable=True)
+    refund_requested_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    refund_detail_received_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    refund_proof_file_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    refund_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    refund_transferred_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    closed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class ComplaintAttachment(Base):
+    __tablename__ = "complaint_attachments"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    complaint_id: Mapped[int] = mapped_column(ForeignKey("complaint_cases.id", ondelete="CASCADE"), index=True)
+    file_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

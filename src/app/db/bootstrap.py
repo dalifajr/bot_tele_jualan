@@ -63,6 +63,18 @@ def _run_compat_migrations() -> None:
             "CREATE INDEX IF NOT EXISTS ix_restock_subscriptions_lookup "
             "ON restock_subscriptions(product_id, is_active, customer_id)"
         ))
+        conn.execute(text(
+            "CREATE INDEX IF NOT EXISTS ix_complaint_cases_status_created "
+            "ON complaint_cases(status, created_at)"
+        ))
+        conn.execute(text(
+            "CREATE INDEX IF NOT EXISTS ix_complaint_cases_customer_status "
+            "ON complaint_cases(customer_id, status, created_at)"
+        ))
+        conn.execute(text(
+            "CREATE INDEX IF NOT EXISTS ix_complaint_attachments_case "
+            "ON complaint_attachments(complaint_id, id)"
+        ))
 
 
 def init_db() -> None:
