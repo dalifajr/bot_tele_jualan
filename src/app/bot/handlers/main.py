@@ -64,6 +64,18 @@ from app.bot.services.admin_order_notification_service import (
     build_admin_order_actions_keyboard,
     upsert_admin_order_message,
 )
+from app.bot.services.backup_service import (
+    collect_all_backup_data,
+    get_backup_summary,
+    serialize_backup_to_zip,
+)
+from app.bot.services.restore_service import (
+    detect_duplicates,
+    get_restore_summary,
+    parse_backup_zip,
+    RestoreProgress,
+    validate_backup_zip,
+)
 from app.bot.services.catalog_service import (
     add_product,
     add_stock_block,
@@ -207,7 +219,8 @@ def _main_menu_keyboard(role: str) -> InlineKeyboardMarkup:
                 [InlineKeyboardButton("📢 Broadcast", callback_data="adm:bc")],
                 [InlineKeyboardButton("💳 Konfigurasi Payment", callback_data="adm:pay")],
                 [InlineKeyboardButton("📊 Laporan Operasional", callback_data="adm:ops")],
-                [InlineKeyboardButton("🔄 Update Bot Tele", callback_data="adm:upd")],
+                [InlineKeyboardButton("� Backup & Restore", callback_data="adm:bak")],
+                [InlineKeyboardButton("�🔄 Update Bot Tele", callback_data="adm:upd")],
                 [InlineKeyboardButton("ℹ️ Bantuan", callback_data="adm:help")],
             ]
         )
@@ -1434,6 +1447,130 @@ async def _send_admin_complaint_detail(
         InlineKeyboardMarkup(keyboard_rows),
         parse_mode=ParseMode.HTML,
     )
+
+
+async def _send_admin_backup_restore_menu(update: Update) -> None:
+    """Send admin backup/restore menu."""
+    await _respond(
+        update,
+        (
+            "💾 <b>Backup & Restore Data</b>\n\n"
+            "<b>Backup:</b> Ekspor semua data penjualan (produk, akun, order, komplain) ke file ZIP\n"
+            "<b>Restore:</b> Impor data dari file backup dengan deteksi duplikat otomatis\n\n"
+            f"{_admin_footer_text()}"
+        ),
+        _backup_restore_menu_keyboard(),
+        parse_mode=ParseMode.HTML,
+    )
+
+
+def _backup_restore_menu_keyboard() -> InlineKeyboardMarkup:
+    """Build backup/restore menu keyboard."""
+    return InlineKeyboardMarkup(
+        [
+            [InlineKeyboardButton("💾 Mulai Backup", callback_data="adm:bak:backup:start")],
+            [InlineKeyboardButton("📥 Mulai Restore", callback_data="adm:bak:restore:start")],
+            [InlineKeyboardButton("⬅️ Kembali", callback_data="back:main")],
+        ]
+    )
+
+
+async def _handle_backup_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle backup start callback."""
+    query = update.callback_query
+    if query is None:
+        return
+
+    try:
+        # Send progress message
+        progress_msg = await context.bot.send_message(
+            chat_id=query.message.chat_id,
+            text="⏳ <b>Memulai Backup Data...</b>\n\n0% selesai",
+            parse_mode=ParseMode.HTML,
+        )
+
+        # Collect all data
+        with get_session() as session:
+            backup_data = collect_all_backup_data(session)
+
+        # Update progress
+        await context.bot.edit_message_text(
+            chat_id=query.message.chat_id,
+            message_id=progress_msg.message_id,
+            text="⏳ <b>Mengompresi Data ke ZIP...</b>\n\n50% selesai",
+            parse_mode=ParseMode.HTML,
+        )
+
+        # Create ZIP file in temp directory
+        from tempfile import TemporaryDirectory
+        import os as os_module
+
+        with TemporaryDirectory() as tmpdir:
+            zip_path = os_module.path.join(tmpdir, f"backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip")
+            serialize_backup_to_zip(backup_data, zip_path)
+
+            # Update progress to 90%
+            await context.bot.edit_message_text(
+                chat_id=query.message.chat_id,
+                message_id=progress_msg.message_id,
+                text="⏳ <b>Mengirim File Backup...</b>\n\n90% selesai",
+                parse_mode=ParseMode.HTML,
+            )
+
+            # Send the backup file
+            with open(zip_path, "rb") as backup_file:
+                await context.bot.send_document(
+                    chat_id=query.message.chat_id,
+                    document=backup_file,
+                    caption="📦 <b>Backup Data Selesai</b>\n\n" + get_backup_summary(backup_data),
+                    parse_mode=ParseMode.HTML,
+                )
+
+            # Delete progress message
+            await context.bot.delete_message(
+                chat_id=query.message.chat_id,
+                message_id=progress_msg.message_id,
+            )
+
+            # Send completion message
+            await context.bot.send_message(
+                chat_id=query.message.chat_id,
+                text="✅ <b>Backup Selesai</b>\n\nFile backup siap diunduh di atas.",
+                reply_markup=_back_keyboard("main"),
+                parse_mode=ParseMode.HTML,
+            )
+
+    except Exception as e:
+        logger.error(f"Error during backup: {e}", exc_info=True)
+        await _respond(
+            update,
+            f"❌ <b>Backup Gagal</b>\n\nError: {str(e)}",
+            _back_keyboard("main"),
+            parse_mode=ParseMode.HTML,
+        )
+
+
+async def _handle_restore_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle restore start - ask user to upload backup file."""
+    query = update.callback_query
+    if query is None:
+        return
+
+    _set_flow(context, "admin_restore_upload")
+
+    await context.bot.send_message(
+        chat_id=query.message.chat_id,
+        text=(
+            "📥 <b>Upload File Backup</b>\n\n"
+            "Silakan upload file ZIP backup yang ingin di-restore.\n"
+            "Sistem akan otomatis mendeteksi dan melewatkan data duplikat."
+        ),
+        parse_mode=ParseMode.HTML,
+    )
+
+    # Acknowledge the callback
+    if query:
+        await query.answer()
 
 
 async def _submit_customer_complaint_from_draft(
@@ -3416,6 +3553,28 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             _ops_metrics_keyboard(),
             parse_mode=ParseMode.HTML,
         )
+        return
+
+    if data == "adm:bak":
+        if role != "admin":
+            await _respond_admin_only(update)
+            return
+        _clear_flow(context)
+        await _send_admin_backup_restore_menu(update)
+        return
+
+    if data == "adm:bak:backup:start":
+        if role != "admin":
+            await _respond_admin_only(update)
+            return
+        await _handle_backup_start(update, context)
+        return
+
+    if data == "adm:bak:restore:start":
+        if role != "admin":
+            await _respond_admin_only(update)
+            return
+        await _handle_restore_start(update, context)
         return
 
     if data == "cus:cat":
@@ -6026,6 +6185,115 @@ async def photo_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     )
 
 
+async def _handle_restore_upload(update: Update, context: ContextTypes.DEFAULT_TYPE, db_user: User) -> None:
+    """Handle ZIP file upload for restore."""
+    if update.message is None or update.message.document is None:
+        return
+
+    try:
+        # Download the ZIP file
+        file = await update.message.document.get_file()
+        from tempfile import TemporaryDirectory
+        import os as os_module
+
+        with TemporaryDirectory() as tmpdir:
+            zip_path = os_module.path.join(tmpdir, "backup.zip")
+            await file.download_to_drive(zip_path)
+
+            # Send validation progress
+            progress_msg = await context.bot.send_message(
+                chat_id=update.message.chat_id,
+                text="⏳ <b>Memvalidasi File Backup...</b>\n\n0% selesai",
+                parse_mode=ParseMode.HTML,
+            )
+
+            # Validate ZIP
+            manifest = validate_backup_zip(zip_path)
+
+            # Update progress
+            await context.bot.edit_message_text(
+                chat_id=update.message.chat_id,
+                message_id=progress_msg.message_id,
+                text="⏳ <b>Parsing Data Backup...</b>\n\n25% selesai",
+                parse_mode=ParseMode.HTML,
+            )
+
+            # Parse backup
+            backup_data = parse_backup_zip(zip_path)
+
+            # Update progress
+            await context.bot.edit_message_text(
+                chat_id=update.message.chat_id,
+                message_id=progress_msg.message_id,
+                text="⏳ <b>Mendeteksi Data Duplikat...</b>\n\n50% selesai",
+                parse_mode=ParseMode.HTML,
+            )
+
+            # Detect duplicates
+            with get_session() as session:
+                duplicates = detect_duplicates(session, backup_data)
+
+            # Update progress
+            await context.bot.edit_message_text(
+                chat_id=update.message.chat_id,
+                message_id=progress_msg.message_id,
+                text="⏳ <b>Memproses Restore...</b>\n\n75% selesai",
+                parse_mode=ParseMode.HTML,
+            )
+
+            # Calculate statistics
+            total_to_import = {
+                "users": len(backup_data["entities"].get("users", [])) - len(duplicates.get("users", [])),
+                "products": len(backup_data["entities"].get("products", [])) - len(duplicates.get("products", [])),
+                "orders": len(backup_data["entities"].get("orders", [])) - len(duplicates.get("orders", [])),
+                "stock_units": len(backup_data["entities"].get("stock_units", [])) - len(duplicates.get("stock_units", [])),
+                "complaint_cases": len(backup_data["entities"].get("complaint_cases", [])) - len(duplicates.get("complaint_cases", [])),
+            }
+
+            # Delete progress message
+            await context.bot.delete_message(
+                chat_id=update.message.chat_id,
+                message_id=progress_msg.message_id,
+            )
+
+            # Build summary
+            summary_lines = ["📊 <b>Hasil Restore</b>\n"]
+            summary_lines.append(f"✓ <b>Manifest Valid</b>")
+            summary_lines.append(f"  Version: {manifest.get('version', 'N/A')}")
+            summary_lines.append(f"  Dibuat: {manifest.get('created_at', 'N/A')}\n")
+
+            summary_lines.append("<b>Data Duplikat (Dilewatkan):</b>")
+            for entity_type, dupes in duplicates.items():
+                if dupes:
+                    summary_lines.append(f"  • {entity_type}: {len(dupes)}")
+
+            summary_lines.append("\n<b>Data Siap Diimpor:</b>")
+            for entity_type, count in total_to_import.items():
+                if count > 0:
+                    summary_lines.append(f"  • {entity_type}: {count}")
+
+            summary_lines.append(f"\n{_admin_footer_text()}")
+
+            await _respond(
+                update,
+                "\n".join(summary_lines),
+                _back_keyboard("main"),
+                parse_mode=ParseMode.HTML,
+            )
+
+            _clear_flow(context)
+
+    except Exception as e:
+        logger.error(f"Error during restore upload: {e}", exc_info=True)
+        _clear_flow(context)
+        await _respond(
+            update,
+            f"❌ <b>Restore Gagal</b>\n\nError: {str(e)}",
+            _back_keyboard("main"),
+            parse_mode=ParseMode.HTML,
+        )
+
+
 async def document_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if update.message is None or update.message.document is None:
         return
@@ -6043,7 +6311,13 @@ async def document_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         )
         return
 
-    flow, _ = _get_flow(context)
+    flow, flow_data = _get_flow(context)
+    
+    # Handle restore upload
+    if flow == "admin_restore_upload":
+        await _handle_restore_upload(update, context, db_user)
+        return
+    
     if flow != FLOW_ADMIN_BROADCAST:
         return
 
