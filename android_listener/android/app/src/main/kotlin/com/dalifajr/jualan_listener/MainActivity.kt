@@ -26,6 +26,32 @@ class MainActivity : FlutterActivity() {
 		MethodChannel(flutterEngine.dartExecutor.binaryMessenger, channelName)
 			.setMethodCallHandler { call, result ->
 				when (call.method) {
+					"isKeepAliveForegroundEnabled" -> {
+						result.success(ListenerConfigStore.isKeepAliveForegroundEnabled(this))
+					}
+
+					"setKeepAliveForegroundEnabled" -> {
+						val enabled = call.argument<Boolean>("enabled") ?: false
+						ListenerConfigStore.setKeepAliveForegroundEnabled(this, enabled)
+						if (enabled) {
+							ListenerKeepAliveService.start(applicationContext)
+						} else {
+							ListenerKeepAliveService.stop(applicationContext)
+						}
+						result.success(true)
+					}
+
+					"lockToRecommendedApps" -> {
+						ListenerConfigStore.setConfig(
+							this,
+							ListenerConfigStore.getEndpoint(this),
+							ListenerConfigStore.getSecret(this),
+							false,
+						)
+						ListenerConfigStore.setSelectedApps(this, ListenerConfigStore.getDefaultSelectedApps())
+						result.success(ListenerConfigStore.getDefaultSelectedApps().toList())
+					}
+
 					"openNotificationListenerSettings" -> {
 						val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
 						startActivity(intent)

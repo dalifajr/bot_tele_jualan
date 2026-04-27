@@ -54,6 +54,7 @@ class _ListenerHomePageState extends State<ListenerHomePage> {
   Set<String> _selectedPackages = <String>{};
   bool _monitorAll = true;
   bool _listenerEnabled = false;
+  bool _keepAliveForegroundEnabled = false;
   bool _appsLoaded = false;
   bool _appsLoading = false;
   int _pendingCount = 0;
@@ -108,6 +109,7 @@ class _ListenerHomePageState extends State<ListenerHomePage> {
       final configRaw = await _channel.invokeMethod<Map<Object?, Object?>>('getConfig');
       final selectedRaw = await _channel.invokeMethod<List<Object?>>('getSelectedApps');
       final listenerEnabledRaw = await _channel.invokeMethod<bool>('isListenerEnabled');
+      final keepAliveRaw = await _channel.invokeMethod<bool>('isKeepAliveForegroundEnabled');
       final pendingRaw = await _channel.invokeMethod<int>('getPendingQueueCount');
 
       final config = configRaw ?? <Object?, Object?>{};
@@ -120,6 +122,7 @@ class _ListenerHomePageState extends State<ListenerHomePage> {
               .map((e) => e.toString())
               .toSet();
           _listenerEnabled = listenerEnabledRaw ?? false;
+          _keepAliveForegroundEnabled = keepAliveRaw ?? false;
           _pendingCount = pendingRaw ?? 0;
           _status = 'Konfigurasi dimuat';
         });
@@ -199,6 +202,36 @@ class _ListenerHomePageState extends State<ListenerHomePage> {
         _status = 'Gagal simpan daftar app: ${e.message}';
       });
     }
+  }
+
+  Future<void> _setKeepAliveForeground(bool enabled) async {
+    await _runBusy(() async {
+      await _channel.invokeMethod('setKeepAliveForegroundEnabled', {
+        'enabled': enabled,
+      });
+      if (!mounted) return;
+      setState(() {
+        _keepAliveForegroundEnabled = enabled;
+        _status = enabled
+            ? 'Mode background aktif: notifikasi listener ditampilkan terus'
+            : 'Mode background dimatikan';
+      });
+    });
+  }
+
+  Future<void> _lockToRecommendedApps() async {
+    await _runBusy(() async {
+      final selected = await _channel.invokeMethod<List<Object?>>('lockToRecommendedApps');
+      if (!mounted) return;
+      setState(() {
+        _monitorAll = false;
+        _selectedPackages = (selected ?? const <Object?>[])
+            .map((e) => e.toString())
+            .where((e) => e.isNotEmpty)
+            .toSet();
+        _status = 'Lock-in aktif: hanya DANA, ShopeePay, dan GoPay';
+      });
+    });
   }
 
   Future<void> _openSettings() async {
@@ -384,6 +417,12 @@ class _ListenerHomePageState extends State<ListenerHomePage> {
               style: const TextStyle(fontWeight: FontWeight.w500),
             ),
           ),
+          const SizedBox(height: 6),
+          Text(
+            _keepAliveForegroundEnabled
+                ? 'Mode background: notifikasi "Mendengarkan notifikasi pembayaran..." aktif'
+                : 'Mode background: nonaktif',
+          ),
           const SizedBox(height: 10),
           Wrap(
             spacing: 8,
@@ -416,6 +455,23 @@ class _ListenerHomePageState extends State<ListenerHomePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          SwitchListTile(
+            value: _keepAliveForegroundEnabled,
+            onChanged: (value) => _setKeepAliveForeground(value),
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Notifikasi background tetap aktif'),
+            subtitle: const Text('Tampilkan notifikasi "mendengarkan notifikasi..." di notification center'),
+          ),
+          const SizedBox(height: 6),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: FilledButton.tonalIcon(
+              onPressed: _lockToRecommendedApps,
+              icon: const Icon(Icons.lock_outline),
+              label: const Text('Lock-in DANA + ShopeePay + GoPay'),
+            ),
+          ),
+          const SizedBox(height: 6),
           SwitchListTile(
             value: _monitorAll,
             onChanged: (value) {

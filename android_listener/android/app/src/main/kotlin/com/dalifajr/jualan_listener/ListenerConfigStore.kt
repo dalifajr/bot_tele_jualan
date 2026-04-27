@@ -8,6 +8,15 @@ object ListenerConfigStore {
     private const val KEY_SECRET = "secret"
     private const val KEY_MONITOR_ALL = "monitor_all"
     private const val KEY_SELECTED_APPS = "selected_apps"
+    private const val KEY_KEEP_ALIVE_FOREGROUND = "keep_alive_foreground"
+
+    private val defaultPaymentPackages = setOf(
+        "id.dana",
+        "com.gojek.app",
+        "com.gojek.gopay",
+        "com.shopee.id",
+        "com.shopeepay.id",
+    )
 
     fun getEndpoint(context: Context): String =
         context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
@@ -21,13 +30,26 @@ object ListenerConfigStore {
 
     fun isMonitorAll(context: Context): Boolean =
         context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
-            .getBoolean(KEY_MONITOR_ALL, true)
+            .getBoolean(KEY_MONITOR_ALL, false)
 
     fun getSelectedApps(context: Context): Set<String> =
         context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
-            .getStringSet(KEY_SELECTED_APPS, emptySet())
+            .getStringSet(KEY_SELECTED_APPS, defaultPaymentPackages)
             ?.toSet()
-            ?: emptySet()
+            ?: defaultPaymentPackages
+
+    fun getDefaultSelectedApps(): Set<String> = defaultPaymentPackages
+
+    fun isKeepAliveForegroundEnabled(context: Context): Boolean =
+        context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+            .getBoolean(KEY_KEEP_ALIVE_FOREGROUND, false)
+
+    fun setKeepAliveForegroundEnabled(context: Context, enabled: Boolean) {
+        context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putBoolean(KEY_KEEP_ALIVE_FOREGROUND, enabled)
+            .apply()
+    }
 
     fun setConfig(context: Context, endpoint: String, secret: String, monitorAll: Boolean) {
         context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)

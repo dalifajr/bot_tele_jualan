@@ -6,6 +6,8 @@ object SupportedPaymentApps {
         "id.dana",
         "com.gojek.app",
         "com.gojek.gopay",
+        "com.shopee.id",
+        "com.shopeepay.id",
         "com.seabank.seabank",
         "id.co.bke.seabank",
     )
@@ -13,6 +15,9 @@ object SupportedPaymentApps {
     private val containsFallback = listOf(
         "seabank",
         "gopay",
+        "shopee",
+        "shopeepay",
+        "dana",
     )
 
     fun isSupported(packageName: String): Boolean {
