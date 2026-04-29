@@ -99,6 +99,7 @@ from app.bot.services.github_pack_service import (
     add_github_stock,
     add_saved_github_stock,
     delete_github_stock,
+    delete_saved_github_stock,
     ensure_github_pack_product,
     ensure_github_pack_used_product,
     get_saved_github_stock_detail,
@@ -295,6 +296,7 @@ def _github_saved_account_menu_keyboard() -> InlineKeyboardMarkup:
         [
             [InlineKeyboardButton("➕ Tambah Akun", callback_data="gh:save:add")],
             [InlineKeyboardButton("📋 Lihat List Akun", callback_data="gh:save:list")],
+            [InlineKeyboardButton("🗑️ Hapus Akun", callback_data="gh:save:del")],
             [InlineKeyboardButton("⏳ Pindahkan ke Awaiting Benefits", callback_data="gh:save:move")],
             [InlineKeyboardButton("⬅️ Kembali ke GitHub Pack", callback_data="ac:ghpack")],
         ]
@@ -1773,7 +1775,7 @@ async def _send_github_saved_account_menu(update: Update) -> None:
             f"Siap diajukan: <b>{ready_count}</b> akun\n"
             f"Masih menunggu: <b>{waiting_count}</b> akun\n"
             f"{nearest_line}\n"
-            "Gunakan tombol di bawah untuk tambah akun, lihat list, atau pindahkan akun siap ke awaiting benefits.\n\n"
+            "Gunakan tombol di bawah untuk tambah, lihat, hapus, atau pindahkan akun siap ke awaiting benefits.\n\n"
             f"{_admin_footer_text()}"
         ),
         _github_saved_account_menu_keyboard(),
@@ -1817,6 +1819,49 @@ async def _send_github_saved_stock_list(update: Update, page: int = 1) -> None:
             "📋 <b>List Simpan Akun GitHub</b>\n"
             f"Halaman <b>{safe_page}/{total_pages}</b> • Total akun: <b>{len(saved_stocks)}</b>\n\n"
             "Klik username untuk lihat detail akun.\n\n"
+            f"{_admin_footer_text()}"
+        ),
+        InlineKeyboardMarkup(keyboard_rows),
+        parse_mode=ParseMode.HTML,
+    )
+
+
+async def _send_github_saved_delete_picker(update: Update, page: int = 1) -> None:
+    with get_session() as session:
+        saved_stocks = list_saved_github_stocks(session)
+
+    if not saved_stocks:
+        await _respond(
+            update,
+            (
+                "📭 <b>Belum Ada Akun Tersimpan</b>\n"
+                "Tidak ada akun simpan yang bisa dihapus.\n\n"
+                f"{_admin_footer_text()}"
+            ),
+            _github_saved_account_menu_keyboard(),
+            parse_mode=ParseMode.HTML,
+        )
+        return
+
+    paged_rows, safe_page, total_pages = _paginate_rows(saved_stocks, page, ADMIN_LIST_PAGE_SIZE)
+    keyboard_rows: list[list[InlineKeyboardButton]] = []
+    for stock in paged_rows:
+        status_icon = "🔔" if stock.is_ready else "⏳"
+        button_text = f"🗑️ {status_icon} {_saved_account_button_label(stock.username)}"
+        keyboard_rows.append(
+            [InlineKeyboardButton(button_text, callback_data=f"gh:save:del:pick:{stock.stock_id}:{safe_page}")]
+        )
+
+    if total_pages > 1:
+        keyboard_rows.append(_pagination_nav_row(safe_page, total_pages, "gh:save:del:list"))
+    keyboard_rows.append([InlineKeyboardButton("⬅️ Kembali", callback_data="gh:save:menu")])
+
+    await _respond(
+        update,
+        (
+            "🗑️ <b>Pilih Akun Simpan yang Ingin Dihapus</b>\n"
+            f"Halaman <b>{safe_page}/{total_pages}</b> • Total akun: <b>{len(saved_stocks)}</b>\n\n"
+            "Klik username untuk cek detail sebelum menghapus akun.\n\n"
             f"{_admin_footer_text()}"
         ),
         InlineKeyboardMarkup(keyboard_rows),
@@ -1887,6 +1932,10 @@ async def _send_github_saved_stock_detail(
             fallback_keyboard = InlineKeyboardMarkup(
                 [[InlineKeyboardButton("⬅️ Kembali", callback_data=f"gh:save:move:list:{max(1, page)}")]]
             )
+        if source_mode == "delete":
+            fallback_keyboard = InlineKeyboardMarkup(
+                [[InlineKeyboardButton("⬅️ Kembali", callback_data=f"gh:save:del:list:{max(1, page)}")]]
+            )
         await _respond(update, "⚠️ Akun simpan tidak ditemukan.", fallback_keyboard)
         return
 
@@ -1908,12 +1957,32 @@ async def _send_github_saved_stock_detail(
         keyboard_rows.append(
             [InlineKeyboardButton("⬅️ Kembali", callback_data=f"gh:save:move:list:{max(1, page)}")]
         )
+    elif source_mode == "delete":
+        keyboard_rows.append(
+            [
+                InlineKeyboardButton(
+                    "🗑️ Konfirmasi Hapus",
+                    callback_data=f"gh:save:del:do:{stock.stock_id}:{max(1, page)}",
+                )
+            ]
+        )
+        keyboard_rows.append(
+            [InlineKeyboardButton("⬅️ Kembali", callback_data=f"gh:save:del:list:{max(1, page)}")]
+        )
     else:
         keyboard_rows.append(
             [
                 InlineKeyboardButton(
                     "⏳ Pindahkan ke Awaiting Benefits",
                     callback_data=f"gh:save:move:confirm:{stock.stock_id}:{max(1, page)}",
+                )
+            ]
+        )
+        keyboard_rows.append(
+            [
+                InlineKeyboardButton(
+                    "🗑️ Hapus Akun",
+                    callback_data=f"gh:save:del:confirm:{stock.stock_id}:{max(1, page)}",
                 )
             ]
         )
@@ -4505,6 +4574,100 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             stock_id=stock_id,
             source_mode="view",
             page=page,
+        )
+        return
+
+    if data == "gh:save:del":
+        if role != "admin":
+            await _respond_admin_only(update)
+            return
+        await _send_github_saved_delete_picker(update, page=1)
+        return
+
+    if data.startswith("gh:save:del:list:"):
+        if role != "admin":
+            await _respond_admin_only(update)
+            return
+        try:
+            page = int(data.split(":", maxsplit=4)[4])
+        except ValueError:
+            await _respond(update, "⚠️ Halaman hapus akun simpan tidak valid.", _github_saved_account_menu_keyboard())
+            return
+        await _send_github_saved_delete_picker(update, page=page)
+        return
+
+    if data.startswith("gh:save:del:pick:") or data.startswith("gh:save:del:confirm:"):
+        if role != "admin":
+            await _respond_admin_only(update)
+            return
+        parts = data.split(":", maxsplit=5)
+        if len(parts) != 6:
+            await _respond(update, "⚠️ Data akun simpan tidak valid.", _github_saved_account_menu_keyboard())
+            return
+        try:
+            stock_id = int(parts[4])
+            page = int(parts[5])
+        except ValueError:
+            await _respond(update, "⚠️ Data akun simpan tidak valid.", _github_saved_account_menu_keyboard())
+            return
+        await _send_github_saved_stock_detail(
+            update,
+            stock_id=stock_id,
+            source_mode="delete",
+            page=page,
+        )
+        return
+
+    if data.startswith("gh:save:del:do:"):
+        if role != "admin":
+            await _respond_admin_only(update)
+            return
+        parts = data.split(":", maxsplit=5)
+        if len(parts) != 6:
+            await _respond(update, "⚠️ Data akun simpan tidak valid.", _github_saved_account_menu_keyboard())
+            return
+        try:
+            stock_id = int(parts[4])
+            page = int(parts[5])
+        except ValueError:
+            await _respond(update, "⚠️ Data akun simpan tidak valid.", _github_saved_account_menu_keyboard())
+            return
+
+        db_user_ctx = await _require_db_user_ctx()
+        with get_session() as session:
+            try:
+                delete_result = delete_saved_github_stock(
+                    session,
+                    stock_id=stock_id,
+                    actor_id=db_user_ctx.id,
+                )
+            except ValueError as exc:
+                await _respond(
+                    update,
+                    f"⚠️ {exc}",
+                    InlineKeyboardMarkup(
+                        [
+                            [InlineKeyboardButton("⬅️ Kembali", callback_data=f"gh:save:del:list:{max(1, page)}")],
+                            [InlineKeyboardButton("⬅️ Kembali ke Simpan Akun", callback_data="gh:save:menu")],
+                        ]
+                    ),
+                )
+                return
+
+        await _respond(
+            update,
+            (
+                "✅ <b>Akun simpan berhasil dihapus</b>\n"
+                f"Username: <b>{html.escape(delete_result.username)}</b>\n"
+                f"ID stok: <b>#{delete_result.stock_id}</b>"
+            ),
+            InlineKeyboardMarkup(
+                [
+                    [InlineKeyboardButton("🗑️ Hapus Akun Lain", callback_data=f"gh:save:del:list:{max(1, page)}")],
+                    [InlineKeyboardButton("⬅️ Kembali ke Simpan Akun", callback_data="gh:save:menu")],
+                ]
+            ),
+            parse_mode=ParseMode.HTML,
         )
         return
 

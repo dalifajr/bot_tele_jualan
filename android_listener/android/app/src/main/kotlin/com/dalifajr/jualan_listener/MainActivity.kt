@@ -32,13 +32,22 @@ class MainActivity : FlutterActivity() {
 
 					"setKeepAliveForegroundEnabled" -> {
 						val enabled = call.argument<Boolean>("enabled") ?: false
-						ListenerConfigStore.setKeepAliveForegroundEnabled(this, enabled)
-						if (enabled) {
-							ListenerKeepAliveService.start(applicationContext)
-						} else {
-							ListenerKeepAliveService.stop(applicationContext)
+						try {
+							ListenerConfigStore.setKeepAliveForegroundEnabled(this, enabled)
+							if (enabled) {
+								ListenerKeepAliveService.start(applicationContext)
+							} else {
+								ListenerKeepAliveService.stop(applicationContext)
+							}
+							result.success(true)
+						} catch (e: Exception) {
+							ListenerConfigStore.setKeepAliveForegroundEnabled(this, false)
+							result.error(
+								"KEEP_ALIVE_START_FAILED",
+								e.message ?: "Gagal mengaktifkan notifikasi background",
+								null,
+							)
 						}
-						result.success(true)
 					}
 
 					"lockToRecommendedApps" -> {

@@ -115,6 +115,12 @@ class GithubSavedSingleMoveResult:
     awaiting_ready_at: datetime
 
 
+@dataclass(frozen=True)
+class GithubSavedDeleteResult:
+    stock_id: int
+    username: str
+
+
 def _extract_username_from_parsed_json(parsed_json: str | None) -> str:
     if not parsed_json:
         return "unknown"
@@ -597,6 +603,43 @@ def get_saved_github_stock_detail(session: Session, stock_id: int) -> GithubSave
         is_notified=(stock.stock_status == GITHUB_PACK_STOCK_STATUS_SAVED_NOTIFIED),
         raw_text=stock.raw_text,
     )
+
+
+def delete_saved_github_stock(
+    session: Session,
+    *,
+    stock_id: int,
+    actor_id: int | None,
+) -> GithubSavedDeleteResult:
+    product = ensure_github_pack_product(session)
+    stock = session.scalar(
+        select(StockUnit).where(
+            StockUnit.id == stock_id,
+            StockUnit.product_id == product.id,
+            StockUnit.is_sold.is_(False),
+            StockUnit.stock_status.in_(
+                [
+                    GITHUB_PACK_STOCK_STATUS_SAVED,
+                    GITHUB_PACK_STOCK_STATUS_SAVED_NOTIFIED,
+                ]
+            ),
+        )
+    )
+    if stock is None:
+        raise ValueError("Akun simpan tidak ditemukan.")
+
+    username = _extract_username_from_parsed_json(stock.parsed_json)
+    session.delete(stock)
+    append_audit(
+        session,
+        action="github_saved_stock_delete",
+        actor_id=actor_id,
+        entity_type="stock_unit",
+        entity_id=str(stock_id),
+        detail=f"username={username}",
+    )
+
+    return GithubSavedDeleteResult(stock_id=int(stock_id), username=username)
 
 
 def move_saved_github_stock_to_awaiting(

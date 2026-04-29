@@ -21,7 +21,9 @@ from app.api.security import build_signature  # noqa: E402
 from app.bot.services.catalog_service import STOCK_STATUS_AWAITING, add_product, add_stock_block, get_available_stock_count  # noqa: E402
 from app.bot.services.github_pack_service import (  # noqa: E402
     add_saved_github_stock,
+    delete_saved_github_stock,
     ensure_github_pack_product,
+    get_saved_github_stock_detail,
     list_saved_github_ready_notification_batch,
     list_saved_github_stocks,
     mark_saved_github_ready_notified,
@@ -632,7 +634,10 @@ def _run_github_saved_account_flow() -> bool:
     moved_count = 0
     awaiting_rows_ok = False
     moved_ids_gone_from_saved = False
+    delete_result_ok = False
+    deleted_id_gone_from_saved = False
     ready_ids: list[int] = []
+    deleted_stock_id = 0
 
     with get_session() as session:
         ensure_github_pack_product(session)
@@ -656,6 +661,26 @@ def _run_github_saved_account_flow() -> bool:
                 "F2A: SAVEDTWO\n"
             ),
             actor_id=None,
+        )
+        saved_delete = add_saved_github_stock(
+            session=session,
+            raw_text=(
+                "*GitHub Students Dev Pack*\n"
+                "Username: gh_saved_delete\n"
+                "Password: savedpassdelete\n"
+                "F2A: SAVEDDELETE\n"
+            ),
+            actor_id=None,
+        )
+        deleted_stock_id = int(saved_delete.stock_id)
+        delete_result = delete_saved_github_stock(
+            session=session,
+            stock_id=deleted_stock_id,
+            actor_id=None,
+        )
+        delete_result_ok = (
+            delete_result.stock_id == deleted_stock_id
+            and delete_result.username == "gh_saved_delete"
         )
 
         row_one = session.get(StockUnit, saved_one.stock_id)
@@ -701,6 +726,12 @@ def _run_github_saved_account_flow() -> bool:
         marked_flags_count = len(marked_flags)
 
     with get_session() as session:
+        deleted_id_gone_from_saved = (
+            get_saved_github_stock_detail(session, deleted_stock_id) is None
+            and all(row.stock_id != deleted_stock_id for row in list_saved_github_stocks(session))
+        )
+
+    with get_session() as session:
         try:
             moved = move_ready_saved_github_stocks_to_awaiting(
                 session,
@@ -736,6 +767,8 @@ def _run_github_saved_account_flow() -> bool:
     print("ready_batch_count_after_latest_ready:", ready_batch_count)
     print("marked_count:", marked_count)
     print("marked_flags_count:", marked_flags_count)
+    print("delete_result_ok:", delete_result_ok)
+    print("deleted_id_gone_from_saved:", deleted_id_gone_from_saved)
     print("move_error:", move_error)
     print("moved_count:", moved_count)
     print("awaiting_rows_ok:", awaiting_rows_ok)
@@ -746,6 +779,8 @@ def _run_github_saved_account_flow() -> bool:
         and ready_batch_count == 2
         and marked_count == 2
         and marked_flags_count == 2
+        and delete_result_ok
+        and deleted_id_gone_from_saved
         and move_error == ""
         and moved_count == 2
         and awaiting_rows_ok

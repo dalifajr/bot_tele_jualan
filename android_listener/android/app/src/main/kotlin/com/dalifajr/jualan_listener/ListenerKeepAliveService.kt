@@ -9,6 +9,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.IBinder
+import android.util.Log
 import androidx.core.app.NotificationCompat
 
 class ListenerKeepAliveService : Service() {
@@ -18,9 +19,15 @@ class ListenerKeepAliveService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val notification = buildForegroundNotification()
-        startForeground(NOTIFICATION_ID, notification)
-        return START_STICKY
+        return try {
+            val notification = buildForegroundNotification()
+            startForeground(NOTIFICATION_ID, notification)
+            START_STICKY
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to start foreground keep-alive service", e)
+            stopSelf()
+            START_NOT_STICKY
+        }
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -70,6 +77,7 @@ class ListenerKeepAliveService : Service() {
     }
 
     companion object {
+        private const val TAG = "ListenerKeepAliveSvc"
         private const val CHANNEL_ID = "listener_keep_alive_channel"
         private const val NOTIFICATION_ID = 4312
 
