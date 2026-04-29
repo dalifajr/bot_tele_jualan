@@ -582,7 +582,17 @@ def create_bot_application() -> Application:
     if not settings.bot_token:
         raise RuntimeError("BOT_TOKEN belum diisi di .env")
 
-    application = Application.builder().token(settings.bot_token).build()
+    application = (
+        Application.builder()
+        .token(settings.bot_token)
+        .concurrent_updates(max(1, int(settings.bot_concurrent_updates)))
+        .connection_pool_size(max(1, int(settings.bot_http_pool_size)))
+        .connect_timeout(max(1.0, float(settings.bot_connect_timeout_seconds)))
+        .read_timeout(max(1.0, float(settings.bot_read_timeout_seconds)))
+        .write_timeout(max(1.0, float(settings.bot_write_timeout_seconds)))
+        .pool_timeout(max(1.0, float(settings.bot_pool_timeout_seconds)))
+        .build()
+    )
     register_handlers(application)
     if application.job_queue is not None:
         application.job_queue.run_repeating(

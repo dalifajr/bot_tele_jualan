@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -41,6 +42,16 @@ class OperationalMetrics:
 
 
 @dataclass
+class HandlerLatencySummary:
+    label: str
+    sample_count: int
+    p50_ms: int | None
+    p95_ms: int | None
+    max_ms: int | None
+    error_rate: float
+
+
+@dataclass
 class RuntimeTelemetryMetrics:
     window_hours: int
     listener_total: int
@@ -49,6 +60,8 @@ class RuntimeTelemetryMetrics:
     checkout_total: int
     checkout_p95_ms: int | None
     checkout_success_rate: float
+    handler_total: int
+    handler_slowest: list[HandlerLatencySummary]
 
 
 def _utcnow() -> datetime:
@@ -317,9 +330,10 @@ def collect_runtime_telemetry_metrics(session: Session, window_hours: int = 24) 
                 TelemetryEvent.duration_ms,
                 TelemetryEvent.success,
                 TelemetryEvent.status,
+                TelemetryEvent.payload_json,
             ).where(
                 TelemetryEvent.created_at >= window_start,
-                TelemetryEvent.event.in_(["api.payment_listener", "bot.checkout_result"]),
+                TelemetryEvent.event.in_(["api.payment_listener", "bot.checkout_result", "bot.handler_latency"]),
             )
         ).all()
     )
@@ -332,7 +346,10 @@ def collect_runtime_telemetry_metrics(session: Session, window_hours: int = 24) 
     checkout_total = 0
     checkout_success = 0
 
-    for event_name, duration_ms, success, status in rows:
+    handler_samples: dict[str, list[tuple[int, bool | None]]] = {}
+    handler_total = 0
+
+    for event_name, duration_ms, success, status, payload_json in rows:
         name = str(event_name or "")
 
         if name == "api.payment_listener":
@@ -349,6 +366,47 @@ def collect_runtime_telemetry_metrics(session: Session, window_hours: int = 24) 
                 checkout_durations.append(int(duration_ms))
             if success is True:
                 checkout_success += 1
+            continue
+
+        if name == "bot.handler_latency":
+            handler_total += 1
+            if duration_ms is None:
+                continue
+            label = "unknown"
+            try:
+                payload = json.loads(payload_json or "{}")
+                handler = str(payload.get("handler") or "").strip()
+                callback_prefix = str(payload.get("callback_prefix") or "").strip()
+                if handler == "callback_router" and callback_prefix:
+                    label = f"callback:{callback_prefix}"
+                elif handler:
+                    label = handler
+            except Exception:
+                label = "unknown"
+            handler_samples.setdefault(label, []).append((int(duration_ms), success if isinstance(success, bool) else None))
+
+    handler_slowest: list[HandlerLatencySummary] = []
+    for label, samples in handler_samples.items():
+        durations = [duration for duration, _success in samples]
+        error_count = sum(1 for _duration, sample_success in samples if sample_success is False)
+        handler_slowest.append(
+            HandlerLatencySummary(
+                label=label,
+                sample_count=len(samples),
+                p50_ms=_percentile_ms(durations, percentile=50),
+                p95_ms=_percentile_ms(durations, percentile=95),
+                max_ms=max(durations) if durations else None,
+                error_rate=_safe_ratio(error_count, len(samples)),
+            )
+        )
+    handler_slowest.sort(
+        key=lambda item: (
+            item.p95_ms if item.p95_ms is not None else -1,
+            item.max_ms if item.max_ms is not None else -1,
+            item.sample_count,
+        ),
+        reverse=True,
+    )
 
     return RuntimeTelemetryMetrics(
         window_hours=safe_window_hours,
@@ -358,6 +416,8 @@ def collect_runtime_telemetry_metrics(session: Session, window_hours: int = 24) 
         checkout_total=checkout_total,
         checkout_p95_ms=_percentile_ms(checkout_durations, percentile=95),
         checkout_success_rate=_safe_ratio(checkout_success, checkout_total),
+        handler_total=handler_total,
+        handler_slowest=handler_slowest[:8],
     )
 
 
@@ -367,6 +427,17 @@ def format_runtime_telemetry_report(metrics: RuntimeTelemetryMetrics) -> str:
 
     listener_p95 = f"{metrics.listener_p95_ms} ms" if metrics.listener_p95_ms is not None else "-"
     checkout_p95 = f"{metrics.checkout_p95_ms} ms" if metrics.checkout_p95_ms is not None else "-"
+    handler_lines: list[str] = []
+    if metrics.handler_slowest:
+        for idx, item in enumerate(metrics.handler_slowest, start=1):
+            p50 = f"{item.p50_ms} ms" if item.p50_ms is not None else "-"
+            p95 = f"{item.p95_ms} ms" if item.p95_ms is not None else "-"
+            max_ms = f"{item.max_ms} ms" if item.max_ms is not None else "-"
+            handler_lines.append(
+                f"{idx}. <b>{item.label}</b> n={item.sample_count} p50={p50} p95={p95} max={max_ms} err={pct(item.error_rate)}"
+            )
+    else:
+        handler_lines.append("- Belum ada sample handler.")
 
     return "\n".join(
         [
@@ -379,6 +450,10 @@ def format_runtime_telemetry_report(metrics: RuntimeTelemetryMetrics) -> str:
             f"Checkout total sample: <b>{metrics.checkout_total}</b>",
             f"Checkout p95 latency: <b>{checkout_p95}</b>",
             f"Checkout success rate: <b>{pct(metrics.checkout_success_rate)}</b>",
+            "",
+            f"Bot handler sample: <b>{metrics.handler_total}</b>",
+            "Handler terlambat (p95):",
+            *handler_lines,
         ]
     )
 

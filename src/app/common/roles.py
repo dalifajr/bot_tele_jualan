@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
+import time
 from typing import Iterable
 
 from sqlalchemy import select
@@ -9,6 +10,13 @@ from sqlalchemy import select
 from app.common.config import get_settings
 from app.db.database import get_session
 from app.db.models import User
+
+_ADMIN_IDS_CACHE: tuple[set[int], float] | None = None
+
+
+def invalidate_admin_cache() -> None:
+    global _ADMIN_IDS_CACHE
+    _ADMIN_IDS_CACHE = None
 
 
 def _load_admin_ids_from_file(role_file: Path) -> set[int]:
@@ -39,16 +47,29 @@ def _load_admin_ids_from_db() -> set[int]:
 
 
 def load_admin_ids(role_file: Path) -> set[int]:
+    global _ADMIN_IDS_CACHE
     settings = get_settings()
+    ttl_seconds = max(0, int(settings.rbac_cache_ttl_seconds))
+    now = time.monotonic()
+    if ttl_seconds > 0 and _ADMIN_IDS_CACHE is not None:
+        cached_ids, cached_until = _ADMIN_IDS_CACHE
+        if cached_until > now:
+            return set(cached_ids)
 
     file_ids = _load_admin_ids_from_file(role_file)
     if not settings.rbac_use_database:
+        if ttl_seconds > 0:
+            _ADMIN_IDS_CACHE = (set(file_ids), now + ttl_seconds)
         return file_ids
 
     db_ids = _load_admin_ids_from_db()
     if settings.rbac_fallback_to_file:
-        return db_ids | file_ids
-    return db_ids
+        result = db_ids | file_ids
+    else:
+        result = db_ids
+    if ttl_seconds > 0:
+        _ADMIN_IDS_CACHE = (set(result), now + ttl_seconds)
+    return result
 
 
 def is_admin(telegram_id: int, role_file: Path) -> bool:
@@ -56,6 +77,7 @@ def is_admin(telegram_id: int, role_file: Path) -> bool:
 
 
 def replace_admin_ids(role_file: Path, telegram_ids: Iterable[int]) -> None:
+    invalidate_admin_cache()
     cleaned = sorted({int(x) for x in telegram_ids})
     role_file.parent.mkdir(parents=True, exist_ok=True)
 
@@ -98,21 +120,18 @@ def replace_admin_ids(role_file: Path, telegram_ids: Iterable[int]) -> None:
     except Exception:
         # DB sync bersifat best-effort agar kompatibel dengan instalasi lama.
         return
+    finally:
+        invalidate_admin_cache()
 
 
 def get_primary_admin_id(role_file: Path) -> int | None:
-    settings = get_settings()
-    if settings.rbac_use_database:
-        db_ids = sorted(_load_admin_ids_from_db())
-        if db_ids:
-            return db_ids[0]
-
-    for admin_id in sorted(_load_admin_ids_from_file(role_file)):
+    for admin_id in sorted(load_admin_ids(role_file)):
         return admin_id
     return None
 
 
 def sync_admin_ids_from_file_to_db(session, role_file: Path) -> None:
+    invalidate_admin_cache()
     settings = get_settings()
     if not settings.rbac_use_database:
         return

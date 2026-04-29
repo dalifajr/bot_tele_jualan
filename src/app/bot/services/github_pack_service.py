@@ -12,6 +12,7 @@ from app.bot.services.settings_service import get_setting, set_setting
 from app.bot.services.catalog_service import (
     STOCK_STATUS_AWAITING,
     STOCK_STATUS_READY,
+    invalidate_catalog_cache,
     promote_awaiting_stocks,
 )
 from app.bot.services.stock_parser import parse_stock_block
@@ -395,6 +396,7 @@ def add_github_stock(session: Session, raw_text: str, actor_id: int | None, awai
         entity_id=str(stock.id),
         detail=f"status={stock_status}; username={username}",
     )
+    invalidate_catalog_cache()
 
     return GithubStockView(
         id=int(stock.id),
@@ -638,6 +640,7 @@ def delete_saved_github_stock(
         entity_id=str(stock_id),
         detail=f"username={username}",
     )
+    invalidate_catalog_cache()
 
     return GithubSavedDeleteResult(stock_id=int(stock_id), username=username)
 
@@ -695,6 +698,7 @@ def move_saved_github_stock_to_awaiting(
             f"target_ready_at={awaiting_ready_at.isoformat()}"
         ),
     )
+    invalidate_catalog_cache()
 
     return GithubSavedSingleMoveResult(
         stock_id=int(stock.id),
@@ -853,6 +857,7 @@ def move_ready_saved_github_stocks_to_awaiting(
             f"stock_ids={[int(x.id) for x in rows]}"
         ),
     )
+    invalidate_catalog_cache()
 
     return GithubSavedMoveResult(moved_count=len(rows), awaiting_hours=awaiting_hours)
 
@@ -979,6 +984,7 @@ def move_sold_github_stock_to_used_product(
             f"new_stock_id={relisted_stock.id}; order_ref={sold_order.order_ref}; username={copied_username}"
         ),
     )
+    invalidate_catalog_cache()
 
     return GithubSoldStockMoveResult(
         source_stock_id=int(sold_stock.id),
@@ -1035,3 +1041,4 @@ def delete_github_stock(session: Session, stock_id: int, actor_id: int | None) -
         entity_id=str(stock_id),
         detail=f"username={username}",
     )
+    invalidate_catalog_cache()

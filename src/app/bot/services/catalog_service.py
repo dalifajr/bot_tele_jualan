@@ -2,16 +2,20 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+import time
 
 from sqlalchemy import Select, func, or_, select, update
 from sqlalchemy.orm import Session
 
 from app.bot.services.audit_service import append_audit
 from app.bot.services.stock_parser import parse_stock_block
+from app.common.config import get_settings
 from app.db.models import Product, StockUnit
 
 STOCK_STATUS_READY = "ready"
 STOCK_STATUS_AWAITING = "awaiting_benefits"
+settings = get_settings()
+_PRODUCT_LIST_CACHE: dict[bool, tuple[float, list["ProductView"]]] = {}
 
 
 @dataclass
@@ -45,6 +49,10 @@ def _build_stock_count_query() -> Select:
     )
 
 
+def invalidate_catalog_cache() -> None:
+    _PRODUCT_LIST_CACHE.clear()
+
+
 def promote_awaiting_stocks(session: Session, product_id: int | None = None) -> int:
     stmt = (
         update(StockUnit)
@@ -60,7 +68,10 @@ def promote_awaiting_stocks(session: Session, product_id: int | None = None) -> 
         stmt = stmt.where(StockUnit.product_id == product_id)
 
     result = session.execute(stmt)
-    return int(result.rowcount or 0)
+    promoted_count = int(result.rowcount or 0)
+    if promoted_count > 0:
+        invalidate_catalog_cache()
+    return promoted_count
 
 
 def _to_view(product: Product, stock_available: int) -> ProductView:
@@ -75,6 +86,15 @@ def _to_view(product: Product, stock_available: int) -> ProductView:
 
 
 def list_products(session: Session, include_suspended: bool = False) -> list[ProductView]:
+    ttl_seconds = max(0.0, float(settings.catalog_cache_ttl_seconds))
+    now = time.monotonic()
+    if ttl_seconds > 0:
+        cached = _PRODUCT_LIST_CACHE.get(bool(include_suspended))
+        if cached is not None:
+            cached_until, cached_rows = cached
+            if cached_until > now:
+                return list(cached_rows)
+
     promote_awaiting_stocks(session)
     stock_counts = {pid: count for pid, count in session.execute(_build_stock_count_query()).all()}
 
@@ -86,6 +106,8 @@ def list_products(session: Session, include_suspended: bool = False) -> list[Pro
     result: list[ProductView] = []
     for product in products:
         result.append(_to_view(product, stock_counts.get(product.id, 0)))
+    if ttl_seconds > 0:
+        _PRODUCT_LIST_CACHE[bool(include_suspended)] = (now + ttl_seconds, list(result))
     return result
 
 
@@ -114,35 +136,49 @@ def get_available_stock_count(session: Session, product_id: int) -> int:
 def get_nearest_awaiting_ready_at(session: Session, product_id: int) -> AwaitingReadyAtView | None:
     promote_awaiting_stocks(session, product_id=product_id)
     now = datetime.utcnow()
-    awaiting_rows = [
-        value
-        for value in session.scalars(
+    base_filters = (
+        StockUnit.product_id == product_id,
+        StockUnit.is_sold.is_(False),
+        StockUnit.stock_status == STOCK_STATUS_AWAITING,
+        StockUnit.available_at.is_not(None),
+    )
+    nearest_start = session.scalar(
+        select(StockUnit.available_at)
+        .where(*base_filters, StockUnit.available_at >= now)
+        .order_by(StockUnit.available_at.asc(), StockUnit.id.asc())
+        .limit(1)
+    )
+    if nearest_start is None:
+        nearest_start = session.scalar(
             select(StockUnit.available_at)
-            .where(
-                StockUnit.product_id == product_id,
-                StockUnit.is_sold.is_(False),
-                StockUnit.stock_status == STOCK_STATUS_AWAITING,
-                StockUnit.available_at.is_not(None),
-            )
-            .order_by(StockUnit.available_at.asc(), StockUnit.id.asc())
-        ).all()
-        if value is not None
-    ]
-    if not awaiting_rows:
+            .where(*base_filters)
+            .order_by(StockUnit.available_at.desc(), StockUnit.id.desc())
+            .limit(1)
+        )
+    if nearest_start is None:
         return None
 
-    future_rows = [value for value in awaiting_rows if value >= now]
-    nearest_start = future_rows[0] if future_rows else min(
-        awaiting_rows,
-        key=lambda value: abs((value - now).total_seconds()),
-    )
     window_end = nearest_start + timedelta(days=1)
-    window_rows = [value for value in awaiting_rows if nearest_start <= value <= window_end]
-    if not window_rows:
-        window_rows = [nearest_start]
-
-    estimate_at = max(window_rows)
-    account_count = len(window_rows)
+    account_count = int(
+        session.scalar(
+            select(func.count(StockUnit.id)).where(
+                *base_filters,
+                StockUnit.available_at >= nearest_start,
+                StockUnit.available_at <= window_end,
+            )
+        )
+        or 0
+    )
+    estimate_at = (
+        session.scalar(
+            select(func.max(StockUnit.available_at)).where(
+                *base_filters,
+                StockUnit.available_at >= nearest_start,
+                StockUnit.available_at <= window_end,
+            )
+        )
+        or nearest_start
+    )
 
     return AwaitingReadyAtView(
         available_at=estimate_at,
@@ -170,6 +206,7 @@ def add_product(session: Session, name: str, price: int, description: str, actor
             entity_id=str(product.id),
             detail=f"name={product.name}; price={product.price}",
         )
+        invalidate_catalog_cache()
         return product
 
     old_price = product.price
@@ -189,6 +226,7 @@ def add_product(session: Session, name: str, price: int, description: str, actor
             f"old_desc={old_description}; new_desc={product.description}"
         ),
     )
+    invalidate_catalog_cache()
     return product
 
 
@@ -205,6 +243,7 @@ def suspend_product(session: Session, product_id: int, suspended: bool, actor_id
         entity_type="product",
         entity_id=str(product.id),
     )
+    invalidate_catalog_cache()
     return product
 
 
@@ -220,6 +259,7 @@ def delete_product(session: Session, product_id: int, actor_id: int | None) -> N
         entity_type="product",
         entity_id=str(product_id),
     )
+    invalidate_catalog_cache()
 
 
 def add_stock_block(session: Session, product_id: int, raw_text: str, actor_id: int | None) -> StockUnit:
@@ -246,4 +286,5 @@ def add_stock_block(session: Session, product_id: int, raw_text: str, actor_id: 
         entity_id=str(stock.id),
         detail=f"product_id={product_id}",
     )
+    invalidate_catalog_cache()
     return stock

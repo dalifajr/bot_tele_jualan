@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Sequence
+from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass
 from datetime import datetime, timezone
 import html
 from io import BytesIO
 import logging
+import random
 import subprocess
 import time
 from pathlib import Path
@@ -195,6 +196,91 @@ T = TypeVar("T")
 class UserContext:
     id: int
     telegram_id: int
+
+
+HandlerCallback = Callable[[Update, ContextTypes.DEFAULT_TYPE], Awaitable[None]]
+
+
+def _update_type_for_telemetry(update: Update) -> str:
+    if update.callback_query is not None:
+        return "callback"
+    if update.message is None:
+        return "unknown"
+    if update.message.photo:
+        return "photo"
+    if update.message.document:
+        return "document"
+    if update.message.text:
+        return "command" if update.message.text.startswith("/") else "text"
+    return "message"
+
+
+def _callback_prefix_for_telemetry(update: Update) -> str:
+    query = update.callback_query
+    if query is None or not query.data:
+        return ""
+
+    parts = query.data.split(":")
+    if not parts:
+        return ""
+    if len(parts) >= 2 and parts[0] in {"adm", "cmp", "gh", "ord", "pay", "up", "ac", "ap", "apl"}:
+        return f"{parts[0]}:{parts[1]}"
+    return parts[0]
+
+
+def _should_log_handler_latency(duration_ms: int) -> bool:
+    slow_ms = max(1, int(settings.bot_handler_slow_ms))
+    if duration_ms >= slow_ms:
+        return True
+
+    sample_rate = max(0.0, min(1.0, float(settings.bot_handler_telemetry_sample_rate)))
+    if sample_rate <= 0:
+        return False
+    if sample_rate >= 1:
+        return True
+    return random.random() < sample_rate
+
+
+def _instrument_handler(name: str, callback: HandlerCallback) -> HandlerCallback:
+    async def _wrapped(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        started_ms = monotonic_ms()
+        success = False
+        role = "unknown"
+        if update.effective_user is not None:
+            try:
+                role = _role_for_telegram_id(int(update.effective_user.id))
+            except Exception:
+                role = "unknown"
+
+        try:
+            await callback(update, context)
+            success = True
+        finally:
+            duration_ms = elapsed_ms(started_ms)
+            if _should_log_handler_latency(duration_ms):
+                log_telemetry(
+                    logger,
+                    "bot.handler_latency",
+                    handler=name,
+                    update_type=_update_type_for_telemetry(update),
+                    callback_prefix=_callback_prefix_for_telemetry(update),
+                    duration_ms=duration_ms,
+                    success=success,
+                    role=role,
+                )
+            if duration_ms >= max(1, int(settings.bot_handler_slow_ms)):
+                logger.warning(
+                    "Slow bot handler: handler=%s update_type=%s callback_prefix=%s duration_ms=%s success=%s role=%s",
+                    name,
+                    _update_type_for_telemetry(update),
+                    _callback_prefix_for_telemetry(update),
+                    duration_ms,
+                    success,
+                    role,
+                )
+
+    _wrapped.__name__ = getattr(callback, "__name__", name)
+    return _wrapped
 
 
 def _role_for_telegram_id(telegram_id: int) -> str:
@@ -741,6 +827,7 @@ async def _send_main_menu(
     username: str | None = None,
     total_transaksi: int | None = None,
     context: ContextTypes.DEFAULT_TYPE | None = None,
+    db_user_id: int | None = None,
 ) -> None:
     tg_user = update.effective_user
     display_name = username
@@ -761,7 +848,10 @@ async def _send_main_menu(
                 total_transaksi = cached_total
 
     if total_transaksi is None:
-        if tg_user is not None:
+        if db_user_id is not None:
+            with get_session() as session:
+                total_transaksi = count_delivered_orders_by_customer(session, int(db_user_id))
+        elif tg_user is not None:
             with get_session() as session:
                 user = get_user_by_telegram_id(session, tg_user.id)
                 if user is not None:
@@ -968,6 +1058,51 @@ def _format_retry_snapshot_text(snapshot: object) -> str:
 
     lines.extend(["", _admin_footer_text()])
     return "\n".join(lines)
+
+
+def _build_ops_metrics_report_text() -> str:
+    with get_session() as session:
+        metrics = collect_operational_metrics(
+            session,
+            window_hours=settings.metrics_report_window_hours,
+        )
+        runtime_metrics = collect_runtime_telemetry_metrics(
+            session,
+            window_hours=settings.metrics_report_window_hours,
+        )
+
+    return "\n\n".join(
+        [
+            format_operational_metrics_report(metrics),
+            format_runtime_telemetry_report(runtime_metrics),
+        ]
+    )
+
+
+def _build_reset_ops_metrics_report_text() -> str:
+    with get_session() as session:
+        reset_at = reset_operational_metrics(session)
+        metrics = collect_operational_metrics(
+            session,
+            window_hours=settings.metrics_report_window_hours,
+        )
+        runtime_metrics = collect_runtime_telemetry_metrics(
+            session,
+            window_hours=settings.metrics_report_window_hours,
+        )
+
+    reset_text = _format_display_day_time(reset_at)
+    return (
+        f"✅ Metrik direset pada <b>{html.escape(reset_text)}</b>.\n\n"
+        f"{format_operational_metrics_report(metrics)}\n\n"
+        f"{format_runtime_telemetry_report(runtime_metrics)}"
+    )
+
+
+def _build_retry_snapshot_report_text() -> str:
+    with get_session() as session:
+        snapshot = collect_retry_queue_snapshot(session, recent_hours=24, top_n=5)
+    return _format_retry_snapshot_text(snapshot)
 
 
 async def _respond_admin_only(update: Update, target: str = "main") -> None:
@@ -1477,6 +1612,24 @@ def _backup_restore_menu_keyboard() -> InlineKeyboardMarkup:
     )
 
 
+def _create_backup_zip(zip_path: str) -> tuple[dict, str]:
+    with get_session() as session:
+        backup_data = collect_all_backup_data(session)
+    serialize_backup_to_zip(backup_data, zip_path)
+    return backup_data, get_backup_summary(backup_data)
+
+
+def _validate_and_parse_backup_zip(zip_path: str) -> tuple[dict, dict]:
+    manifest = validate_backup_zip(zip_path)
+    backup_data = parse_backup_zip(zip_path)
+    return manifest, backup_data
+
+
+def _detect_restore_duplicates(backup_data: dict) -> dict:
+    with get_session() as session:
+        return detect_duplicates(session, backup_data)
+
+
 async def _handle_backup_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle backup start callback."""
     query = update.callback_query
@@ -1490,10 +1643,6 @@ async def _handle_backup_start(update: Update, context: ContextTypes.DEFAULT_TYP
             text="⏳ <b>Memulai Backup Data...</b>\n\n0% selesai",
             parse_mode=ParseMode.HTML,
         )
-
-        # Collect all data
-        with get_session() as session:
-            backup_data = collect_all_backup_data(session)
 
         # Update progress
         await context.bot.edit_message_text(
@@ -1509,7 +1658,7 @@ async def _handle_backup_start(update: Update, context: ContextTypes.DEFAULT_TYP
 
         with TemporaryDirectory() as tmpdir:
             zip_path = os_module.path.join(tmpdir, f"backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip")
-            serialize_backup_to_zip(backup_data, zip_path)
+            backup_data, backup_summary = await asyncio.to_thread(_create_backup_zip, zip_path)
 
             # Update progress to 90%
             await context.bot.edit_message_text(
@@ -1524,7 +1673,7 @@ async def _handle_backup_start(update: Update, context: ContextTypes.DEFAULT_TYP
                 await context.bot.send_document(
                     chat_id=query.message.chat_id,
                     document=backup_file,
-                    caption="📦 <b>Backup Data Selesai</b>\n\n" + get_backup_summary(backup_data),
+                    caption="📦 <b>Backup Data Selesai</b>\n\n" + backup_summary,
                     parse_mode=ParseMode.HTML,
                 )
 
@@ -2782,7 +2931,7 @@ async def _send_checkout_result(
         has_qris_payload = bool(qris_static_payload)
         if settings.qris_dynamic_enabled and has_qris_payload:
             try:
-                dynamic_qris_png = build_dynamic_qris_png(qris_static_payload, expected_amount)
+                dynamic_qris_png = await asyncio.to_thread(build_dynamic_qris_png, qris_static_payload, expected_amount)
                 qris_dynamic_ready = True
             except Exception as exc:
                 qris_dynamic_error = str(exc)
@@ -3070,14 +3219,11 @@ def _ensure_admin(update: Update) -> bool:
 
 
 async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    db_user, role = await _ensure_user(update)
+    db_user, role = await _ensure_user(update, context)
     tg_user = update.effective_user
     username = "customer"
     if tg_user is not None:
         username = tg_user.username or tg_user.full_name or "customer"
-
-    with get_session() as session:
-        total_transaksi = count_delivered_orders_by_customer(session, db_user.id)
 
     _clear_flow(context)
     context.user_data.pop(AWAIT_QRIS_IMAGE_KEY, None)
@@ -3086,18 +3232,18 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         role=role,
         welcome=True,
         username=username,
-        total_transaksi=total_transaksi,
         context=context,
+        db_user_id=db_user.id,
     )
 
 
 async def help_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    _, role = await _ensure_user(update)
+    _, role = await _ensure_user(update, context)
     await _send_help(update, role)
 
 
 async def catalog_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    _, role = await _ensure_user(update)
+    _, role = await _ensure_user(update, context)
     _clear_flow(context)
     if role == "admin":
         await _send_admin_catalog_menu(update)
@@ -3106,7 +3252,7 @@ async def catalog_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
 
 async def admin_catalog_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await _ensure_user(update)
+    await _ensure_user(update, context)
 
     if not _ensure_admin(update):
         await _respond_admin_only(update)
@@ -3116,7 +3262,7 @@ async def admin_catalog_handler(update: Update, context: ContextTypes.DEFAULT_TY
 
 
 async def product_add_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    _, _ = await _ensure_user(update)
+    _, _ = await _ensure_user(update, context)
     if not _ensure_admin(update):
         await _respond_admin_only(update)
         return
@@ -3135,7 +3281,7 @@ async def product_add_handler(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 
 async def stock_add_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await _ensure_user(update)
+    await _ensure_user(update, context)
     if not _ensure_admin(update):
         await _respond_admin_only(update)
         return
@@ -3148,7 +3294,7 @@ async def stock_add_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 
 
 async def product_suspend_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    _, _ = await _ensure_user(update)
+    _, _ = await _ensure_user(update, context)
     if not _ensure_admin(update):
         await _respond_admin_only(update)
         return
@@ -3161,7 +3307,7 @@ async def product_suspend_handler(update: Update, context: ContextTypes.DEFAULT_
 
 
 async def product_unsuspend_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    _, _ = await _ensure_user(update)
+    _, _ = await _ensure_user(update, context)
     if not _ensure_admin(update):
         await _respond_admin_only(update)
         return
@@ -3174,7 +3320,7 @@ async def product_unsuspend_handler(update: Update, context: ContextTypes.DEFAUL
 
 
 async def product_delete_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    _, _ = await _ensure_user(update)
+    _, _ = await _ensure_user(update, context)
     if not _ensure_admin(update):
         await _respond_admin_only(update)
         return
@@ -3187,7 +3333,7 @@ async def product_delete_handler(update: Update, context: ContextTypes.DEFAULT_T
 
 
 async def buy_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    db_user, role = await _ensure_user(update)
+    db_user, role = await _ensure_user(update, context)
     if role != "customer":
         await _respond(update, "🚫 Admin tidak bisa checkout sebagai customer.", _back_keyboard("main"))
         return
@@ -3216,12 +3362,12 @@ async def buy_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
 
 async def my_orders_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    db_user, _ = await _ensure_user(update)
+    db_user, _ = await _ensure_user(update, context)
     await _send_customer_orders(update, db_user.telegram_id, page=1)
 
 
 async def order_status_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    db_user, role = await _ensure_user(update)
+    db_user, role = await _ensure_user(update, context)
     if role == "admin":
         await _respond(update, "🚫 Admin tidak menggunakan command ini.", _back_keyboard("main"))
         return
@@ -3244,27 +3390,12 @@ async def order_status_handler(update: Update, context: ContextTypes.DEFAULT_TYP
 
 
 async def ops_metrics_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await _ensure_user(update)
+    await _ensure_user(update, context)
     if not _ensure_admin(update):
         await _respond_admin_only(update)
         return
 
-    with get_session() as session:
-        metrics = collect_operational_metrics(
-            session,
-            window_hours=settings.metrics_report_window_hours,
-        )
-        runtime_metrics = collect_runtime_telemetry_metrics(
-            session,
-            window_hours=settings.metrics_report_window_hours,
-        )
-
-    report_text = "\n\n".join(
-        [
-            format_operational_metrics_report(metrics),
-            format_runtime_telemetry_report(runtime_metrics),
-        ]
-    )
+    report_text = await asyncio.to_thread(_build_ops_metrics_report_text)
     await _respond(
         update,
         report_text,
@@ -3274,7 +3405,7 @@ async def ops_metrics_handler(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 
 async def reorder_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    db_user, role = await _ensure_user(update)
+    db_user, role = await _ensure_user(update, context)
     if role == "admin":
         await _respond(update, "🚫 Admin tidak menggunakan command ini.", _back_keyboard("main"))
         return
@@ -3297,7 +3428,7 @@ async def reorder_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
 
 async def broadcast_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    _, _ = await _ensure_user(update)
+    _, _ = await _ensure_user(update, context)
     if not _ensure_admin(update):
         await _respond_admin_only(update)
         return
@@ -3318,7 +3449,7 @@ async def broadcast_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 
 
 async def set_qris_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await _ensure_user(update)
+    await _ensure_user(update, context)
     if not _ensure_admin(update):
         await _respond_admin_only(update)
         return
@@ -3339,7 +3470,7 @@ async def set_qris_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 
 
 async def update_check_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await _ensure_user(update)
+    await _ensure_user(update, context)
     if not _ensure_admin(update):
         await _respond_admin_only(update)
         return
@@ -3350,7 +3481,7 @@ async def update_check_handler(update: Update, context: ContextTypes.DEFAULT_TYP
 
 
 async def update_apply_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await _ensure_user(update)
+    await _ensure_user(update, context)
     if not _ensure_admin(update):
         await _respond_admin_only(update)
         return
@@ -3556,24 +3687,9 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             await _respond_admin_only(update)
             return
 
-        with get_session() as session:
-            metrics = collect_operational_metrics(
-                session,
-                window_hours=settings.metrics_report_window_hours,
-            )
-            runtime_metrics = collect_runtime_telemetry_metrics(
-                session,
-                window_hours=settings.metrics_report_window_hours,
-            )
-
         await _respond(
             update,
-            "\n\n".join(
-                [
-                    format_operational_metrics_report(metrics),
-                    format_runtime_telemetry_report(runtime_metrics),
-                ]
-            ),
+            await asyncio.to_thread(_build_ops_metrics_report_text),
             _ops_metrics_keyboard(),
             parse_mode=ParseMode.HTML,
         )
@@ -3584,12 +3700,9 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             await _respond_admin_only(update)
             return
 
-        with get_session() as session:
-            snapshot = collect_retry_queue_snapshot(session, recent_hours=24, top_n=5)
-
         await _respond(
             update,
-            _format_retry_snapshot_text(snapshot),
+            await asyncio.to_thread(_build_retry_snapshot_report_text),
             _ops_metrics_keyboard(),
             parse_mode=ParseMode.HTML,
         )
@@ -3600,25 +3713,9 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             await _respond_admin_only(update)
             return
 
-        with get_session() as session:
-            reset_at = reset_operational_metrics(session)
-            metrics = collect_operational_metrics(
-                session,
-                window_hours=settings.metrics_report_window_hours,
-            )
-            runtime_metrics = collect_runtime_telemetry_metrics(
-                session,
-                window_hours=settings.metrics_report_window_hours,
-            )
-
-        reset_text = _format_display_day_time(reset_at)
         await _respond(
             update,
-            (
-                f"✅ Metrik direset pada <b>{html.escape(reset_text)}</b>.\n\n"
-                f"{format_operational_metrics_report(metrics)}\n\n"
-                f"{format_runtime_telemetry_report(runtime_metrics)}"
-            ),
+            await asyncio.to_thread(_build_reset_ops_metrics_report_text),
             _ops_metrics_keyboard(),
             parse_mode=ParseMode.HTML,
         )
@@ -5508,7 +5605,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
         if settings.qris_dynamic_enabled and payload:
             try:
-                build_dynamic_qris_payload(payload, amount=1000)
+                await asyncio.to_thread(build_dynamic_qris_payload, payload, 1000)
                 dynamic_ready = True
             except Exception as exc:
                 dynamic_error = str(exc)
@@ -6370,8 +6467,8 @@ async def _handle_restore_upload(update: Update, context: ContextTypes.DEFAULT_T
                 parse_mode=ParseMode.HTML,
             )
 
-            # Validate ZIP
-            manifest = validate_backup_zip(zip_path)
+            # Validate and parse ZIP away from the event loop.
+            manifest, backup_data = await asyncio.to_thread(_validate_and_parse_backup_zip, zip_path)
 
             # Update progress
             await context.bot.edit_message_text(
@@ -6381,9 +6478,6 @@ async def _handle_restore_upload(update: Update, context: ContextTypes.DEFAULT_T
                 parse_mode=ParseMode.HTML,
             )
 
-            # Parse backup
-            backup_data = parse_backup_zip(zip_path)
-
             # Update progress
             await context.bot.edit_message_text(
                 chat_id=update.message.chat_id,
@@ -6392,9 +6486,7 @@ async def _handle_restore_upload(update: Update, context: ContextTypes.DEFAULT_T
                 parse_mode=ParseMode.HTML,
             )
 
-            # Detect duplicates
-            with get_session() as session:
-                duplicates = detect_duplicates(session, backup_data)
+            duplicates = await asyncio.to_thread(_detect_restore_duplicates, backup_data)
 
             # Update progress
             await context.bot.edit_message_text(
@@ -6518,28 +6610,28 @@ async def document_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 
 
 def register_handlers(application: Application) -> None:
-    application.add_handler(CommandHandler("start", start_handler))
-    application.add_handler(CommandHandler("help", help_handler))
+    application.add_handler(CommandHandler("start", _instrument_handler("cmd:start", start_handler)))
+    application.add_handler(CommandHandler("help", _instrument_handler("cmd:help", help_handler)))
 
-    application.add_handler(CommandHandler("catalog", catalog_handler))
-    application.add_handler(CommandHandler("buy", buy_handler))
-    application.add_handler(CommandHandler("myorders", my_orders_handler))
-    application.add_handler(CommandHandler("order_status", order_status_handler))
-    application.add_handler(CommandHandler("reorder", reorder_handler))
+    application.add_handler(CommandHandler("catalog", _instrument_handler("cmd:catalog", catalog_handler)))
+    application.add_handler(CommandHandler("buy", _instrument_handler("cmd:buy", buy_handler)))
+    application.add_handler(CommandHandler("myorders", _instrument_handler("cmd:myorders", my_orders_handler)))
+    application.add_handler(CommandHandler("order_status", _instrument_handler("cmd:order_status", order_status_handler)))
+    application.add_handler(CommandHandler("reorder", _instrument_handler("cmd:reorder", reorder_handler)))
 
-    application.add_handler(CommandHandler("admin_catalog", admin_catalog_handler))
-    application.add_handler(CommandHandler("product_add", product_add_handler))
-    application.add_handler(CommandHandler("stock_add", stock_add_handler))
-    application.add_handler(CommandHandler("product_suspend", product_suspend_handler))
-    application.add_handler(CommandHandler("product_unsuspend", product_unsuspend_handler))
-    application.add_handler(CommandHandler("product_delete", product_delete_handler))
-    application.add_handler(CommandHandler("broadcast", broadcast_handler))
-    application.add_handler(CommandHandler("set_qris", set_qris_handler))
-    application.add_handler(CommandHandler("ops_metrics", ops_metrics_handler))
-    application.add_handler(CommandHandler("update_check", update_check_handler))
-    application.add_handler(CommandHandler("update_apply", update_apply_handler))
+    application.add_handler(CommandHandler("admin_catalog", _instrument_handler("cmd:admin_catalog", admin_catalog_handler)))
+    application.add_handler(CommandHandler("product_add", _instrument_handler("cmd:product_add", product_add_handler)))
+    application.add_handler(CommandHandler("stock_add", _instrument_handler("cmd:stock_add", stock_add_handler)))
+    application.add_handler(CommandHandler("product_suspend", _instrument_handler("cmd:product_suspend", product_suspend_handler)))
+    application.add_handler(CommandHandler("product_unsuspend", _instrument_handler("cmd:product_unsuspend", product_unsuspend_handler)))
+    application.add_handler(CommandHandler("product_delete", _instrument_handler("cmd:product_delete", product_delete_handler)))
+    application.add_handler(CommandHandler("broadcast", _instrument_handler("cmd:broadcast", broadcast_handler)))
+    application.add_handler(CommandHandler("set_qris", _instrument_handler("cmd:set_qris", set_qris_handler)))
+    application.add_handler(CommandHandler("ops_metrics", _instrument_handler("cmd:ops_metrics", ops_metrics_handler)))
+    application.add_handler(CommandHandler("update_check", _instrument_handler("cmd:update_check", update_check_handler)))
+    application.add_handler(CommandHandler("update_apply", _instrument_handler("cmd:update_apply", update_apply_handler)))
 
-    application.add_handler(CallbackQueryHandler(callback_router))
-    application.add_handler(MessageHandler(filters.PHOTO, photo_handler))
-    application.add_handler(MessageHandler(filters.Document.ALL, document_handler))
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, text_router))
+    application.add_handler(CallbackQueryHandler(_instrument_handler("callback_router", callback_router)))
+    application.add_handler(MessageHandler(filters.PHOTO, _instrument_handler("msg:photo", photo_handler)))
+    application.add_handler(MessageHandler(filters.Document.ALL, _instrument_handler("msg:document", document_handler)))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, _instrument_handler("msg:text", text_router)))

@@ -48,12 +48,48 @@ def _run_compat_migrations() -> None:
             "ON stock_units(stock_status, is_sold)"
         ))
         conn.execute(text(
+            "CREATE INDEX IF NOT EXISTS ix_stock_units_product_ready_fifo "
+            "ON stock_units(product_id, is_sold, sold_order_id, stock_status, id)"
+        ))
+        conn.execute(text(
+            "CREATE INDEX IF NOT EXISTS ix_stock_units_awaiting_promotion "
+            "ON stock_units(stock_status, available_at, product_id, is_sold)"
+        ))
+        conn.execute(text(
             "CREATE INDEX IF NOT EXISTS ix_stock_units_username_key "
             "ON stock_units(username_key)"
         ))
         conn.execute(text(
             "CREATE INDEX IF NOT EXISTS ix_orders_pending_reminder "
             "ON orders(status, expires_at, reminder_sent_at)"
+        ))
+        conn.execute(text(
+            "CREATE INDEX IF NOT EXISTS ix_orders_customer_id_desc "
+            "ON orders(customer_id, id DESC)"
+        ))
+        conn.execute(text(
+            "CREATE INDEX IF NOT EXISTS ix_orders_status_created "
+            "ON orders(status, created_at)"
+        ))
+        conn.execute(text(
+            "CREATE INDEX IF NOT EXISTS ix_orders_delivered_at "
+            "ON orders(delivered_at, status)"
+        ))
+        conn.execute(text(
+            "CREATE INDEX IF NOT EXISTS ix_payments_status_matched "
+            "ON payments(status, matched_at)"
+        ))
+        conn.execute(text(
+            "CREATE INDEX IF NOT EXISTS ix_payments_expected_status_created "
+            "ON payments(expected_amount, status, created_at)"
+        ))
+        conn.execute(text(
+            "CREATE INDEX IF NOT EXISTS ix_listener_events_status_created "
+            "ON listener_events(status, created_at)"
+        ))
+        conn.execute(text(
+            "CREATE INDEX IF NOT EXISTS ix_telemetry_events_event_created_duration "
+            "ON telemetry_events(event, created_at, duration_ms)"
         ))
         conn.execute(text(
             "CREATE INDEX IF NOT EXISTS ix_retry_jobs_due "

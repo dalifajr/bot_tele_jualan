@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 from app.bot.services.audit_service import append_audit
 from app.bot.services.catalog_service import (
     STOCK_STATUS_READY,
-    get_available_stock_count,
+    invalidate_catalog_cache,
     promote_awaiting_stocks,
 )
 from app.common.config import get_settings
@@ -266,7 +266,7 @@ def create_checkout(session: Session, customer: User, product_id: int, quantity:
         raise ValueError("Produk sedang suspend.")
 
     promote_awaiting_stocks(session, product_id=product_id)
-    available_stock = get_available_stock_count(session, product_id)
+    available_stock = _count_ready_stock_without_promote(session, product_id)
     if available_stock < quantity:
         raise ValueError(f"Stok tidak cukup. Tersedia {available_stock} unit.")
 
@@ -313,6 +313,7 @@ def create_checkout(session: Session, customer: User, product_id: int, quantity:
                     product_id=int(product.id),
                     quantity=int(quantity),
                     order_id=int(order.id),
+                    promote_first=False,
                 )
                 if len(reserved_units) < quantity:
                     raise ValueError(
@@ -617,13 +618,33 @@ def count_delivered_orders_by_customer(session: Session, customer_id: int) -> in
     )
 
 
+def _count_ready_stock_without_promote(session: Session, product_id: int) -> int:
+    return (
+        session.scalar(
+            select(func.count(StockUnit.id)).where(
+                StockUnit.product_id == product_id,
+                StockUnit.is_sold.is_(False),
+                StockUnit.sold_order_id.is_(None),
+                or_(
+                    StockUnit.stock_status == STOCK_STATUS_READY,
+                    StockUnit.stock_status.is_(None),
+                ),
+            )
+        )
+        or 0
+    )
+
+
 def _reserve_stock_fifo(
     session: Session,
     product_id: int,
     quantity: int,
     order_id: int,
+    *,
+    promote_first: bool = True,
 ) -> list[StockUnit]:
-    promote_awaiting_stocks(session, product_id=product_id)
+    if promote_first:
+        promote_awaiting_stocks(session, product_id=product_id)
 
     candidate_ids = (
         select(StockUnit.id)
@@ -646,6 +667,8 @@ def _reserve_stock_fifo(
         .values(stock_status=STOCK_STATUS_RESERVED_CHECKOUT, sold_order_id=order_id)
     )
     reserved_count = int(session.execute(reserve_stmt).rowcount or 0)
+    if reserved_count > 0:
+        invalidate_catalog_cache()
     if reserved_count < quantity:
         _release_reserved_stock_for_order(session, order_id)
         return []
@@ -681,7 +704,10 @@ def _release_reserved_stock_for_order(session: Session, order_id: int) -> int:
         )
         .values(stock_status=STOCK_STATUS_READY, sold_order_id=None)
     )
-    return int(session.execute(stmt).rowcount or 0)
+    released_count = int(session.execute(stmt).rowcount or 0)
+    if released_count > 0:
+        invalidate_catalog_cache()
+    return released_count
 
 
 def _consume_reserved_stock_fifo(
