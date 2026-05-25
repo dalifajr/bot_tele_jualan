@@ -226,6 +226,7 @@ update_website() {
   local run_user
   run_user="$(stat -c '%U' "${PROJECT_DIR}")"
   sudo chown -R "${run_user}:www-data" "${web_dir}" 2>/dev/null || true
+  sudo chmod -R g+rX "${web_dir}" 2>/dev/null || true
   sudo chmod -R 775 "${web_dir}/storage" "${web_dir}/bootstrap/cache" 2>/dev/null || true
   sudo chmod o+x /root 2>/dev/null || true
   sudo chmod o+x "${PROJECT_DIR}" 2>/dev/null || true

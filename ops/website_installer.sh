@@ -348,6 +348,11 @@ setup_laravel() {
   local run_user
   run_user="$(stat -c '%U' "${PROJECT_DIR}")"
   chown -R "${run_user}:www-data" "${WEB_DIR}"
+  
+  # Pastikan seluruh folder web bisa dibaca oleh group www-data
+  chmod -R g+rX "${WEB_DIR}"
+  
+  # Beri akses write untuk folder storage dan bootstrap/cache
   chmod -R 775 "${WEB_DIR}/storage" "${WEB_DIR}/bootstrap/cache"
 
   # Agar Nginx (www-data) bisa mengakses folder di dalam /root, kita harus 
