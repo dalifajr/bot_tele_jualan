@@ -485,7 +485,15 @@ do_uninstall() {
 
   _set_env_value "${ENV_FILE}" "WEBSITE_ENABLED" "false"
 
-  log_step "Website config dihapus. File Laravel di web/ tidak dihapus."
+  log_step "Konfigurasi Nginx untuk website telah dihapus."
+  log_step "Database MySQL (bot_jualan) TIDAK dihapus dan bot Telegram akan tetap menggunakannya."
+  log_step "File kode Laravel di web/ juga tidak dihapus."
+
+  # Restart bot if service exists so it picks up WEBSITE_ENABLED=false
+  if systemctl list-units --full -all | grep -Fq "jualan-bot.service"; then
+      log_step "Me-restart jualan-bot.service agar perubahan konfigurasi (WEBSITE_ENABLED=false) segera aktif..."
+      systemctl restart jualan-bot.service || true
+  fi
 }
 
 cmd="${1:-}"

@@ -266,7 +266,8 @@ Panel Jualan
 15) website-restart
 16) website-logs
 17) website-domain
-18) uninstall
+18) uninstall-website
+19) uninstall bot service
 0) keluar
 EOF
   read -r -p "Pilih menu: " choice
@@ -288,7 +289,8 @@ EOF
     15) website_restart_cmd ;;
     16) website_logs_cmd ;;
     17) website_domain_cmd ;;
-    18) uninstall_bot ;;
+    18) sudo bash "${WEBSITE_SCRIPT}" uninstall ;;
+    19) uninstall_bot ;;
     0) exit 0 ;;
     *) echo "Pilihan tidak valid." ;;
   esac
@@ -314,6 +316,7 @@ case "${cmd}" in
   website-restart) website_restart_cmd ;;
   website-logs) website_logs_cmd ;;
   website-domain) website_domain_cmd "${2:-}" ;;
+  uninstall-website) sudo bash "${WEBSITE_SCRIPT}" uninstall ;;
   uninstall) uninstall_bot ;;
   "") menu ;;
   *) print_usage; exit 1 ;;
