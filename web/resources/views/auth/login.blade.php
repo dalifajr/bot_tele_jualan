@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login — {{ config('app.name', 'Jualan') }}</title>
+    <title>Login — {{ config('app.name', 'Dzulfikrialifajri Store') }}</title>
     <meta name="description" content="Login ke platform jual beli produk digital menggunakan akun Telegram">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -156,7 +156,7 @@
             <i class="fas fa-shopping-bag"></i>
         </div>
 
-        <h1 class="fw-bold mb-2" style="font-size: 1.8rem;">{{ config('app.name', 'Jualan') }}</h1>
+        <h1 class="fw-bold mb-2" style="font-size: 1.8rem;">{{ config('app.name', 'Dzulfikrialifajri Store') }}</h1>
         <p class="text-muted mb-4">Platform jual beli produk digital terpercaya</p>
 
         {{-- Flash Messages --}}

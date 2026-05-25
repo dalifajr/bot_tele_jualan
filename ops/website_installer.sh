@@ -273,7 +273,7 @@ setup_laravel() {
 
   # Set APP_URL dulu agar composer post-install scripts tidak crash
   _set_env_value "${WEB_ENV_FILE}" "APP_URL" "https://${website_domain}"
-  _set_env_value "${WEB_ENV_FILE}" "APP_NAME" "Jualan"
+  _set_env_value "${WEB_ENV_FILE}" "APP_NAME" "Dzulfikrialifajri Store"
 
   # Install dependencies (allow running as root on VPS)
   export COMPOSER_ALLOW_SUPERUSER=1

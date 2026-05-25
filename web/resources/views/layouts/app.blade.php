@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Dashboard') — {{ config('app.name', 'Jualan') }}</title>
+    <title>@yield('title', 'Dashboard') — {{ config('app.name', 'Dzulfikrialifajri Store') }}</title>
     <meta name="description" content="@yield('meta_description', 'Platform jual beli produk digital terpercaya')">
 
     {{-- Google Fonts: Outfit --}}
@@ -33,7 +33,7 @@
         </button>
         <div class="navbar-brand d-flex align-items-center gap-2 text-primary fw-bold m-0">
             <i class="fas fa-shopping-bag"></i>
-            <span>{{ config('app.name', 'Jualan') }} <span class="fw-light text-secondary fs-6 d-none d-sm-inline">| @yield('page_subtitle', 'Dashboard')</span></span>
+            <span>{{ config('app.name', 'Dzulfikrialifajri Store') }} <span class="fw-light text-secondary fs-6 d-none d-sm-inline">| @yield('page_subtitle', 'Dashboard')</span></span>
         </div>
     </div>
     <div class="ms-auto d-flex align-items-center gap-3">
