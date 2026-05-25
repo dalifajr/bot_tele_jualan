@@ -121,7 +121,7 @@ class AdminController extends Controller
     {
         $request->validate([
             'product_id' => 'required|exists:products,id',
-            'stock_status' => 'required|in:ready,awaiting_benefits,simpan_akun',
+            'stock_status' => 'required|in:ready,awaiting_benefits,saved_for_verification',
             'raw_text' => 'required|string',
         ]);
 

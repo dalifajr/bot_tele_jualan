@@ -29,7 +29,7 @@
                 <a class="nav-link {{ request('status') === 'awaiting_benefits' ? 'active border-primary border-bottom-0 text-primary fw-bold' : 'text-muted' }}" href="{{ route('admin.stock.index', ['status' => 'awaiting_benefits']) }}">Awaiting Benefits</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link {{ request('status') === 'simpan_akun' ? 'active border-primary border-bottom-0 text-primary fw-bold' : 'text-muted' }}" href="{{ route('admin.stock.index', ['status' => 'simpan_akun']) }}">Simpan Akun</a>
+                <a class="nav-link {{ request('status') === 'saved_for_verification' ? 'active border-primary border-bottom-0 text-primary fw-bold' : 'text-muted' }}" href="{{ route('admin.stock.index', ['status' => 'saved_for_verification']) }}">Simpan Akun</a>
             </li>
             <li class="nav-item">
                 <a class="nav-link {{ request('status') === 'terjual' ? 'active border-primary border-bottom-0 text-primary fw-bold' : 'text-muted' }}" href="{{ route('admin.stock.index', ['status' => 'terjual']) }}">Terjual</a>
@@ -93,7 +93,7 @@
                                     $statusBadge = match($unit->stock_status) {
                                         'ready' => ['bg' => 'success-subtle', 'text' => 'success', 'label' => 'Ready'],
                                         'awaiting_benefits' => ['bg' => 'warning-subtle', 'text' => 'warning', 'label' => 'Awaiting Benefits'],
-                                        'simpan_akun' => ['bg' => 'info-subtle', 'text' => 'info', 'label' => 'Simpan Akun'],
+                                        'saved_for_verification' => ['bg' => 'info-subtle', 'text' => 'info', 'label' => 'Simpan Akun'],
                                         default => ['bg' => 'secondary-subtle', 'text' => 'secondary', 'label' => $unit->stock_status]
                                     };
                                 @endphp
@@ -164,7 +164,7 @@
                         <select name="stock_status" class="form-select" required>
                             <option value="ready">Ready</option>
                             <option value="awaiting_benefits">Awaiting Benefits</option>
-                            <option value="simpan_akun">Simpan Akun</option>
+                            <option value="saved_for_verification">Simpan Akun</option>
                         </select>
                     </div>
                     <div class="mb-3">
