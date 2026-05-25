@@ -258,7 +258,7 @@
 {{-- Modals Container --}}
 <script>
     function markNotificationsRead() {
-        fetch('{{ route("notifications.markRead") }}', {
+        fetch('{{ route("admin.notifications.markRead") }}', {
             method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': '{{ csrf_token() }}',
