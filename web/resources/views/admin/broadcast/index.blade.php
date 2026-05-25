@@ -73,7 +73,7 @@ async function startBroadcast() {
     
     // UI Update
     btnSend.disabled = true;
-    btnSend.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Mempersiapkan...';
+    btnSend.innerHTML = 'Mempersiapkan...';
     document.getElementById('progressSection').classList.remove('d-none');
     
     let targets = [];
@@ -108,7 +108,7 @@ async function startBroadcast() {
     let success = 0;
     let failed = 0;
     
-    btnSend.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Sedang Mengirim...';
+    btnSend.innerHTML = 'Sedang Mengirim...';
     document.getElementById('progressText').innerText = `0/${total}`;
     
     // Loop through targets one by one

@@ -13,9 +13,12 @@ class NotificationComposer
     {
         $pendingOrdersCount = Order::whereIn('status', ['pending_payment', 'paid'])->count();
         $pendingLoginsCount = TelegramLoginToken::where('status', 'pending')->count();
-        $readyStockCount = StockUnit::where('is_sold', false)->count();
+        $readyStockCount = StockUnit::where('stock_status', 'ready')->where('is_sold', false)->count();
 
-        $totalNotifications = $pendingOrdersCount + $pendingLoginsCount;
+        $actualTotal = $pendingOrdersCount + $pendingLoginsCount;
+        $clearedCount = session('notifications_cleared_count', 0);
+        
+        $totalNotifications = max(0, $actualTotal - $clearedCount);
 
         $view->with(compact('pendingOrdersCount', 'pendingLoginsCount', 'readyStockCount', 'totalNotifications'));
     }

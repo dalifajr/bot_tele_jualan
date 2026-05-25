@@ -101,8 +101,8 @@ class AdminController extends Controller
         $product = \App\Models\Product::with('stockUnits')->findOrFail($id);
         
         // Count stock statistics
-        $readyStockCount = $product->stockUnits()->where('status', 'available')->count();
-        $soldStockCount = $product->stockUnits()->where('status', 'sold')->count();
+        $readyStockCount = $product->stockUnits()->where('stock_status', 'ready')->count();
+        $soldStockCount = $product->stockUnits()->where('is_sold', true)->count();
 
         return view('admin.products.manage', compact('product', 'readyStockCount', 'soldStockCount'));
     }
@@ -115,14 +115,15 @@ class AdminController extends Controller
             'raw_text' => 'required|string',
         ]);
 
-        // Split by lines and create multiple stock units
-        $lines = array_filter(array_map('trim', explode("\n", $request->raw_text)));
+        // Split by double-newlines (blank lines) to separate different accounts,
+        // instead of splitting every single line, preserving complex account formats.
+        $blocks = array_filter(array_map('trim', preg_split('/\n\s*\n/', $request->raw_text)));
         $count = 0;
-        foreach ($lines as $line) {
-            if (!empty($line)) {
-                StockUnit::create([
+        foreach ($blocks as $block) {
+            if (!empty($block)) {
+                \App\Models\StockUnit::create([
                     'product_id' => $request->product_id,
-                    'raw_text' => $line,
+                    'raw_text' => $block,
                     'stock_status' => 'ready',
                     'is_sold' => false
                 ]);
@@ -171,6 +172,16 @@ class AdminController extends Controller
     {
         $loginTokens = \App\Models\TelegramLoginToken::orderBy('created_at', 'desc')->paginate(15);
         return view('admin.logins.index', compact('loginTokens'));
+    }
+
+    public function markNotificationsRead()
+    {
+        $pendingOrdersCount = \App\Models\Order::whereIn('status', ['pending_payment', 'paid'])->count();
+        $pendingLoginsCount = \App\Models\TelegramLoginToken::where('status', 'pending')->count();
+        
+        session(['notifications_cleared_count' => $pendingOrdersCount + $pendingLoginsCount]);
+        
+        return response()->json(['success' => true]);
     }
 
     // ==========================================

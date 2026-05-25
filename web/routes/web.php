@@ -74,6 +74,7 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
 
         // Logins Notification Page
         Route::get('/logins', [\App\Http\Controllers\AdminController::class, 'logins'])->name('logins.index');
+        Route::post('/notifications/mark-read', [\App\Http\Controllers\AdminController::class, 'markNotificationsRead'])->name('notifications.markRead');
         
         // New features ported from Bot
         Route::get('/complaints', [\App\Http\Controllers\AdminController::class, 'complaints'])->name('complaints.index');

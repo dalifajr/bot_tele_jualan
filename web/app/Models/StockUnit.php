@@ -7,10 +7,12 @@ use Illuminate\Database\Eloquent\Model;
 class StockUnit extends Model
 {
     protected $table = 'stock_units';
+    
+    const UPDATED_AT = null;
 
     protected $fillable = [
         'product_id',
-        'content',
+        'raw_text',
         'is_sold',
         'sold_order_id',
         'stock_status',

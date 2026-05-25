@@ -36,7 +36,7 @@
                     </div>
 
                     <div class="d-grid mt-4">
-                        <button type="submit" class="btn btn-primary rounded-pill py-2 fw-bold disabled" onclick="alert('Fitur update env masih dalam tahap pengembangan.')">
+                        <button type="submit" class="btn btn-primary rounded-pill py-2 fw-bold disabled" onclick="Swal.fire('Fitur update env masih dalam tahap pengembangan.')">
                             <i class="fas fa-save me-2"></i>Simpan Pengaturan
                         </button>
                     </div>

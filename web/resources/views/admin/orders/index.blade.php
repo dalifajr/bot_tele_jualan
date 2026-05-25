@@ -59,9 +59,14 @@
                         </td>
                         <td class="text-secondary small">{{ $order->created_at->format('d M Y H:i') }}</td>
                         <td class="text-end px-4">
-                            <button class="btn btn-sm btn-outline-primary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#editOrderModal{{ $order->id }}">
-                                Edit
-                            </button>
+                            <div class="d-flex gap-2 justify-content-end">
+                                <button class="btn btn-sm btn-light text-info rounded-circle" data-bs-toggle="modal" data-bs-target="#detailOrderModal{{ $order->id }}" title="Detail">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-sm btn-light text-primary rounded-circle" data-bs-toggle="modal" data-bs-target="#editOrderModal{{ $order->id }}" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                            </div>
                         </td>
                     </tr>
 
@@ -84,6 +89,69 @@
 
 @push('modals')
 @foreach($orders as $order)
+{{-- Detail Order Modal --}}
+<div class="modal fade" id="detailOrderModal{{ $order->id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" style="border-radius: 16px; border: none;">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="fw-bold">Detail Pesanan #{{ $order->order_ref }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <h6 class="fw-bold text-muted border-bottom pb-2 mb-3">Informasi Pelanggan</h6>
+                        <table class="table table-sm table-borderless">
+                            <tr><td class="text-muted" style="width: 120px;">Nama</td><td class="fw-bold">{{ $order->user->full_name ?? '-' }}</td></tr>
+                            <tr><td class="text-muted">Username</td><td>{{ $order->user->username ? '@'.$order->user->username : '-' }}</td></tr>
+                            <tr><td class="text-muted">Telegram ID</td><td><code>{{ $order->user->telegram_id ?? '-' }}</code></td></tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="fw-bold text-muted border-bottom pb-2 mb-3">Rincian Transaksi</h6>
+                        <table class="table table-sm table-borderless">
+                            <tr><td class="text-muted" style="width: 120px;">Produk</td><td class="fw-bold">{{ $order->product->name ?? '-' }}</td></tr>
+                            <tr><td class="text-muted">Subtotal</td><td>Rp {{ number_format($order->subtotal, 0, ',', '.') }}</td></tr>
+                            <tr><td class="text-muted">Kode Unik</td><td>Rp {{ $order->unique_code }}</td></tr>
+                            <tr><td class="text-muted">Total Bayar</td><td class="fw-bold text-primary">Rp {{ number_format($order->total_amount, 0, ',', '.') }}</td></tr>
+                            <tr><td class="text-muted">Status</td>
+                                <td>
+                                    <span class="badge bg-{{ $order->status_color }}-subtle text-{{ $order->status_color }}">
+                                        {{ $order->status_label }}
+                                    </span>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-12">
+                        <h6 class="fw-bold text-muted border-bottom pb-2 mb-3">Log Sistem</h6>
+                        <div class="d-flex flex-wrap gap-3 small">
+                            <div><span class="text-muted">Dibuat:</span> <br><b>{{ $order->created_at->format('d M Y H:i:s') }}</b></div>
+                            @if($order->paid_at)
+                            <div><span class="text-muted">Dibayar:</span> <br><b class="text-success">{{ \Carbon\Carbon::parse($order->paid_at)->format('d M Y H:i:s') }}</b></div>
+                            @endif
+                            @if($order->delivered_at)
+                            <div><span class="text-muted">Dikirim:</span> <br><b class="text-primary">{{ \Carbon\Carbon::parse($order->delivered_at)->format('d M Y H:i:s') }}</b></div>
+                            @endif
+                            @if($order->cancelled_at)
+                            <div><span class="text-muted">Dibatalkan:</span> <br><b class="text-danger">{{ \Carbon\Carbon::parse($order->cancelled_at)->format('d M Y H:i:s') }}</b></div>
+                            @endif
+                        </div>
+                        @if($order->cancel_reason)
+                        <div class="alert alert-danger mt-3 small mb-0">
+                            <b>Alasan Batal:</b> {{ $order->cancel_reason }}
+                        </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {{-- Edit Status Modal --}}
 <div class="modal fade" id="editOrderModal{{ $order->id }}" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">

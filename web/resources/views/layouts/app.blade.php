@@ -98,7 +98,7 @@
                 
                 <li><hr class="dropdown-divider mb-0"></li>
                 <li class="d-flex justify-content-between px-3 py-2 bg-light" style="border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;">
-                    <a href="#" class="text-decoration-none small text-muted hover-primary" onclick="alert('Notifikasi telah ditandai dibaca.')"><i class="fas fa-check-double me-1"></i>Tandai Dibaca</a>
+                    <a href="javascript:void(0)" class="text-decoration-none small text-muted hover-primary" onclick="markNotificationsRead()"><i class="fas fa-check-double me-1"></i>Tandai Dibaca</a>
                     <a href="{{ route('admin.logins.index') }}" class="text-decoration-none small fw-bold text-primary"><i class="fas fa-list me-1"></i>Lihat Semua</a>
                 </li>
             </ul>
@@ -256,6 +256,36 @@
 @stack('scripts')
 
 {{-- Modals Container --}}
+<script>
+    function markNotificationsRead() {
+        fetch('{{ route("notifications.markRead") }}', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Hide badge instantly
+                const badge = document.querySelector('.badge.bg-danger.rounded-circle');
+                if(badge) badge.style.display = 'none';
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil',
+                    text: 'Semua notifikasi telah ditandai dibaca.',
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 3000
+                });
+            }
+        });
+    }
+</script>
+
 @stack('modals')
 
 </body>

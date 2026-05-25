@@ -46,13 +46,18 @@
                         </td>
                         <td class="text-secondary small">{{ $unit->created_at->format('d M Y') }}</td>
                         <td class="text-end px-4">
-                            @if(!$unit->is_sold)
-                            <button class="btn btn-sm btn-outline-danger rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#deleteStockModal{{ $unit->id }}">
-                                Hapus
-                            </button>
-                            @else
-                            <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" disabled>Hapus</button>
-                            @endif
+                            <div class="d-flex gap-2 justify-content-end">
+                                <button class="btn btn-sm btn-light text-info rounded-circle" data-bs-toggle="modal" data-bs-target="#detailStockModal{{ $unit->id }}" title="Lihat Detail">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                @if(!$unit->is_sold)
+                                <button class="btn btn-sm btn-light text-danger rounded-circle" data-bs-toggle="modal" data-bs-target="#deleteStockModal{{ $unit->id }}" title="Hapus">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                                @else
+                                <button class="btn btn-sm btn-light text-secondary rounded-circle" disabled title="Tidak bisa dihapus"><i class="fas fa-trash-alt"></i></button>
+                                @endif
+                            </div>
                         </td>
                     </tr>
 
@@ -98,9 +103,9 @@
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">Konten Stok (Pisahkan dengan baris baru)</label>
-                        <textarea name="raw_text" class="form-control" rows="5" required placeholder="akun1@email.com:pass1&#10;akun2@email.com:pass2"></textarea>
-                        <div class="form-text">Setiap baris baru akan dihitung sebagai 1 unit stok.</div>
+                        <label class="form-label text-muted small fw-bold">Data Akun (Mendukung Multi-baris)</label>
+                        <textarea name="raw_text" class="form-control" rows="5" required placeholder="Username: x&#10;Password: y&#10;2FA: z&#10;&#10;Username: a&#10;Password: b..."></textarea>
+                        <div class="form-text">Pisahkan antar akun dengan <b>baris kosong (Enter 2x)</b> jika ingin menginput banyak akun sekaligus.</div>
                     </div>
                 </div>
                 <div class="modal-footer border-0 pt-0">
@@ -113,6 +118,31 @@
 </div>
 
 @foreach($stockUnits as $unit)
+{{-- Detail Stock Modal --}}
+<div class="modal fade" id="detailStockModal{{ $unit->id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 16px; border: none;">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="fw-bold">Detail Data Akun</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="mb-3">
+                    <label class="form-label fw-bold text-muted small">Produk</label>
+                    <p class="mb-0">{{ $unit->product->name ?? '-' }}</p>
+                </div>
+                <div class="mb-0">
+                    <label class="form-label fw-bold text-muted small">Isi Data</label>
+                    <div class="bg-light rounded-3 p-3 text-break" style="max-height: 300px; overflow-y: auto; font-family: monospace; white-space: pre-wrap; font-size: 0.85rem;">{{ $unit->raw_text }}</div>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @if(!$unit->is_sold)
 {{-- Delete Modal --}}
 <div class="modal fade" id="deleteStockModal{{ $unit->id }}" tabindex="-1" aria-hidden="true">
