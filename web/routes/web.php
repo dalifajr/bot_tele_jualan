@@ -60,6 +60,7 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         Route::post('/products', [\App\Http\Controllers\AdminController::class, 'storeProduct'])->name('products.store');
         Route::put('/products/{id}', [\App\Http\Controllers\AdminController::class, 'updateProduct'])->name('products.update');
         Route::delete('/products/{id}', [\App\Http\Controllers\AdminController::class, 'destroyProduct'])->name('products.destroy');
+        Route::get('/products/{id}/manage', [\App\Http\Controllers\AdminController::class, 'manageProduct'])->name('products.manage');
         
         Route::get('/stock', [\App\Http\Controllers\AdminController::class, 'stock'])->name('stock.index');
         Route::post('/stock', [\App\Http\Controllers\AdminController::class, 'storeStock'])->name('stock.store');
@@ -69,7 +70,10 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         Route::put('/orders/{id}', [\App\Http\Controllers\AdminController::class, 'updateOrder'])->name('orders.update');
         
         Route::get('/users', [\App\Http\Controllers\AdminController::class, 'users'])->name('users.index');
-        Route::put('/users/{id}', [\App\Http\Controllers\AdminController::class, 'updateUser'])->name('users.update');
+        Route::put('/users/{id}', [\App\Http\Controllers\AdminController::class, 'updateUserRole'])->name('users.update');
+
+        // Logins Notification Page
+        Route::get('/logins', [\App\Http\Controllers\AdminController::class, 'logins'])->name('logins.index');
         
         // New features ported from Bot
         Route::get('/complaints', [\App\Http\Controllers\AdminController::class, 'complaints'])->name('complaints.index');

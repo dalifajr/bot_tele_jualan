@@ -66,6 +66,7 @@
     </div>
 </div>
 
+@push('modals')
 @foreach($users as $user)
 @if($user->id !== Auth::id())
 {{-- Edit Role Modal --}}
@@ -106,4 +107,5 @@
 </div>
 @endif
 @endforeach
+@endpush
 @endsection

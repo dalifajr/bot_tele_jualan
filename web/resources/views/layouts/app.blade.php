@@ -65,7 +65,7 @@
                 
                 @if(isset($pendingLoginsCount) && $pendingLoginsCount > 0)
                 <li>
-                    <a class="dropdown-item py-2 d-flex align-items-start gap-3" href="#">
+                    <a class="dropdown-item py-2 d-flex align-items-start gap-3" href="{{ route('admin.logins.index') }}">
                         <div class="text-info mt-1"><i class="fas fa-sign-in-alt"></i></div>
                         <div>
                             <div class="fw-bold">Percobaan Login</div>
@@ -95,6 +95,12 @@
                     </div>
                 </li>
                 @endif
+                
+                <li><hr class="dropdown-divider mb-0"></li>
+                <li class="d-flex justify-content-between px-3 py-2 bg-light" style="border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;">
+                    <a href="#" class="text-decoration-none small text-muted hover-primary" onclick="alert('Notifikasi telah ditandai dibaca.')"><i class="fas fa-check-double me-1"></i>Tandai Dibaca</a>
+                    <a href="{{ route('admin.logins.index') }}" class="text-decoration-none small fw-bold text-primary"><i class="fas fa-list me-1"></i>Lihat Semua</a>
+                </li>
             </ul>
         </div>
         @endif
@@ -116,7 +122,7 @@
 
 <div class="app-container" style="padding-top: 80px;">
     {{-- Sidebar --}}
-    <div class="sidebar" id="sidebar">
+    <div class="sidebar" id="sidebar" style="overflow-y: auto; overflow-x: hidden;">
         <div class="sidebar-header d-flex align-items-center gap-3">
             <div class="user-avatar rounded-circle d-flex align-items-center justify-content-center fw-bold text-white bg-primary" style="width: 40px; height: 40px;">
                 {{ strtoupper(substr(Auth::user()->full_name ?? Auth::user()->username ?? 'U', 0, 1)) }}
@@ -241,9 +247,16 @@
 {{-- Bootstrap JS --}}
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
+{{-- SweetAlert2 --}}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 {{-- Custom JS --}}
 <script src="{{ asset('js/app.js') }}"></script>
 
 @stack('scripts')
+
+{{-- Modals Container --}}
+@stack('modals')
+
 </body>
 </html>

@@ -35,8 +35,11 @@ class TelegramAuthController extends Controller
         }
 
         // Create pending login token (must be < 64 chars total with prefix for Telegram start param)
-        $token = Str::random(40);
-        $ttlMinutes = (int) config('telegram.login_token_ttl_minutes', 5);
+        $botUsername = config('telegram.bot_username');
+        $ttlMinutes = config('telegram.login_token_ttl_minutes', 5);
+
+        // Generate shorter token (8 chars) so Telegram deep link doesn't reject it
+        $token = \Illuminate\Support\Str::random(8);
 
         TelegramLoginToken::create([
             'token' => $token,

@@ -72,7 +72,7 @@ function initPageLoader() {
     });
 
     // Show loader on form submit
-    document.querySelectorAll('form').forEach(form => {
+    document.querySelectorAll('form:not(.no-loader)').forEach(form => {
         form.addEventListener('submit', () => {
             loader.classList.add('show');
         });

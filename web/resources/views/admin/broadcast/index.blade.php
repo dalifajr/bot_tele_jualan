@@ -15,7 +15,7 @@
     <div class="col-md-8 mx-auto">
         <div class="card border-0 shadow-sm" style="border-radius: 16px;">
             <div class="card-body p-4">
-                <form id="broadcastForm" onsubmit="event.preventDefault(); startBroadcast();">
+                <form id="broadcastForm" class="no-loader" onsubmit="event.preventDefault(); startBroadcast();">
                     @csrf
                     <div class="mb-4">
                         <label class="form-label fw-bold text-muted small">Pesan Broadcast (Mendukung Format HTML)</label>
@@ -62,7 +62,14 @@ async function startBroadcast() {
     const btnSend = document.getElementById('btnSend');
     const message = document.getElementById('broadcastMessage').value;
     
-    if (!message.trim()) return alert('Pesan tidak boleh kosong!');
+    if (!message.trim()) {
+        return Swal.fire({
+            icon: 'warning',
+            title: 'Oops...',
+            text: 'Pesan tidak boleh kosong!',
+            confirmButtonColor: '#3085d6'
+        });
+    }
     
     // UI Update
     btnSend.disabled = true;
@@ -86,7 +93,12 @@ async function startBroadcast() {
         
         targets = data.targets;
     } catch (error) {
-        alert(error.message);
+        Swal.fire({
+            icon: 'error',
+            title: 'Gagal',
+            text: error.message,
+            confirmButtonColor: '#d33'
+        });
         btnSend.disabled = false;
         btnSend.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Mulai Kirim Broadcast';
         return;
@@ -138,7 +150,13 @@ async function startBroadcast() {
     // Finished
     btnSend.innerHTML = '<i class="fas fa-check-circle me-2"></i>Selesai';
     btnSend.classList.replace('btn-primary', 'btn-success');
-    alert(`Broadcast selesai! \nBerhasil: ${success}\nGagal: ${failed}`);
+    
+    Swal.fire({
+        icon: 'success',
+        title: 'Broadcast Selesai!',
+        html: `Berhasil terkirim: <b>${success}</b><br>Gagal terkirim: <b>${failed}</b>`,
+        confirmButtonColor: '#198754'
+    });
 }
 </script>
 @endpush

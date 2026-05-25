@@ -73,6 +73,7 @@
     </div>
 </div>
 
+@push('modals')
 {{-- Add Stock Modal --}}
 <div class="modal fade" id="addStockModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -135,4 +136,5 @@
 </div>
 @endif
 @endforeach
+@endpush
 @endsection

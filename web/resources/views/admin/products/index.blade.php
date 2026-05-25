@@ -45,13 +45,18 @@
                             @endif
                         </td>
                         <td class="text-secondary small">{{ $product->created_at->format('d M Y') }}</td>
-                        <td class="text-end px-4">
-                            <button class="btn btn-sm btn-outline-primary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#editProductModal{{ $product->id }}">
-                                Edit
-                            </button>
-                            <button class="btn btn-sm btn-outline-danger rounded-pill px-3 ms-1" data-bs-toggle="modal" data-bs-target="#deleteProductModal{{ $product->id }}">
-                                Hapus
-                            </button>
+                        <td class="px-4">
+                            <div class="d-flex gap-2 justify-content-end">
+                                <a href="{{ route('admin.products.manage', $product->id) }}" class="btn btn-sm btn-light text-primary rounded-pill px-3" title="Detail & Aksi">
+                                    <i class="fas fa-cog"></i> Aksi
+                                </a>
+                                <button class="btn btn-sm btn-light text-primary rounded-circle" data-bs-toggle="modal" data-bs-target="#editProductModal{{ $product->id }}" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-light text-danger rounded-circle" data-bs-toggle="modal" data-bs-target="#deleteProductModal{{ $product->id }}" title="Hapus">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
                         </td>
                     </tr>
 
@@ -72,6 +77,7 @@
     </div>
 </div>
 
+@push('modals')
 {{-- Add Product Modal --}}
 <div class="modal fade" id="addProductModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -165,4 +171,5 @@
     </div>
 </div>
 @endforeach
+@endpush
 @endsection

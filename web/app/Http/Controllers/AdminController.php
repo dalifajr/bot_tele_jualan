@@ -90,9 +90,21 @@ class AdminController extends Controller
 
     public function destroyProduct($id)
     {
-        $product = Product::findOrFail($id);
-        $product->delete();
-        return redirect()->route('admin.products.index')->with('success', 'Produk berhasil dihapus.');
+        $product = \App\Models\Product::findOrFail($id);
+        $product->delete(); // Cascades to stock theoretically
+
+        return redirect()->back()->with('success', 'Produk berhasil dihapus.');
+    }
+
+    public function manageProduct($id)
+    {
+        $product = \App\Models\Product::with('stockUnits')->findOrFail($id);
+        
+        // Count stock statistics
+        $readyStockCount = $product->stockUnits()->where('status', 'available')->count();
+        $soldStockCount = $product->stockUnits()->where('status', 'sold')->count();
+
+        return view('admin.products.manage', compact('product', 'readyStockCount', 'soldStockCount'));
     }
 
     // --- CRUD Stock ---
@@ -153,6 +165,15 @@ class AdminController extends Controller
     }
 
     // ==========================================
+    // NOTIFICATION: LOGINS
+    // ==========================================
+    public function logins()
+    {
+        $loginTokens = \App\Models\TelegramLoginToken::orderBy('created_at', 'desc')->paginate(15);
+        return view('admin.logins.index', compact('loginTokens'));
+    }
+
+    // ==========================================
     // COMPLAINTS MANAGEMENT
     // ==========================================
     public function complaints()
@@ -196,7 +217,7 @@ class AdminController extends Controller
             'message' => 'required|string'
         ]);
 
-        $token = env('BOT_TOKEN'); // Atau ambil dari config jika ada
+        $token = config('telegram.bot_token');
         if (!$token) {
             return response()->json(['status' => 'error', 'message' => 'Bot token tidak dikonfigurasi.']);
         }

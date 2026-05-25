@@ -82,6 +82,7 @@
     </div>
 </div>
 
+@push('modals')
 @foreach($orders as $order)
 {{-- Edit Status Modal --}}
 <div class="modal fade" id="editOrderModal{{ $order->id }}" tabindex="-1" aria-hidden="true">
@@ -119,4 +120,5 @@
     </div>
 </div>
 @endforeach
+@endpush
 @endsection
