@@ -60,4 +60,94 @@ class AdminController extends Controller
         $users = User::orderBy('created_at', 'desc')->paginate(10);
         return view('admin.users.index', compact('users'));
     }
+
+    // --- CRUD Products ---
+    public function storeProduct(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'price' => 'required|numeric|min:0',
+        ]);
+        Product::create($request->only(['name', 'description', 'price']));
+        return redirect()->route('admin.products.index')->with('success', 'Produk berhasil ditambahkan.');
+    }
+
+    public function updateProduct(Request $request, $id)
+    {
+        $product = Product::findOrFail($id);
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'price' => 'required|numeric|min:0',
+            'is_suspended' => 'boolean'
+        ]);
+        $data = $request->only(['name', 'description', 'price']);
+        $data['is_suspended'] = $request->has('is_suspended');
+        $product->update($data);
+        return redirect()->route('admin.products.index')->with('success', 'Produk berhasil diperbarui.');
+    }
+
+    public function destroyProduct($id)
+    {
+        $product = Product::findOrFail($id);
+        $product->delete();
+        return redirect()->route('admin.products.index')->with('success', 'Produk berhasil dihapus.');
+    }
+
+    // --- CRUD Stock ---
+    public function storeStock(Request $request)
+    {
+        $request->validate([
+            'product_id' => 'required|exists:products,id',
+            'raw_text' => 'required|string',
+        ]);
+
+        // Split by lines and create multiple stock units
+        $lines = array_filter(array_map('trim', explode("\n", $request->raw_text)));
+        $count = 0;
+        foreach ($lines as $line) {
+            if (!empty($line)) {
+                StockUnit::create([
+                    'product_id' => $request->product_id,
+                    'raw_text' => $line,
+                    'stock_status' => 'ready',
+                    'is_sold' => false
+                ]);
+                $count++;
+            }
+        }
+        return redirect()->route('admin.stock.index')->with('success', "$count stok berhasil ditambahkan.");
+    }
+
+    public function destroyStock($id)
+    {
+        $stock = StockUnit::findOrFail($id);
+        $stock->delete();
+        return redirect()->route('admin.stock.index')->with('success', 'Stok berhasil dihapus.');
+    }
+
+    // --- CRUD Orders ---
+    public function updateOrder(Request $request, $id)
+    {
+        $order = Order::findOrFail($id);
+        $request->validate([
+            'status' => 'required|in:pending_payment,paid,delivered,cancelled,expired'
+        ]);
+        $order->status = $request->status;
+        $order->save();
+        return redirect()->back()->with('success', 'Status pesanan berhasil diperbarui.');
+    }
+
+    // --- CRUD Users ---
+    public function updateUser(Request $request, $id)
+    {
+        $user = User::findOrFail($id);
+        $request->validate([
+            'role' => 'required|in:admin,customer'
+        ]);
+        $user->role = $request->role;
+        $user->save();
+        return redirect()->route('admin.users.index')->with('success', 'Role pengguna berhasil diperbarui.');
+    }
 }

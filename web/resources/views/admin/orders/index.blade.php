@@ -38,6 +38,7 @@
                         <th class="py-3 border-0">Total</th>
                         <th class="py-3 border-0">Status</th>
                         <th class="py-3 border-0">Tanggal</th>
+                        <th class="py-3 border-0 text-end px-4">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -57,7 +58,48 @@
                             </span>
                         </td>
                         <td class="text-secondary small">{{ $order->created_at->format('d M Y H:i') }}</td>
+                        <td class="text-end px-4">
+                            <button class="btn btn-sm btn-outline-primary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#editOrderModal{{ $order->id }}">
+                                Edit
+                            </button>
+                        </td>
                     </tr>
+
+                    {{-- Edit Status Modal --}}
+                    <div class="modal fade" id="editOrderModal{{ $order->id }}" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content" style="border-radius: 16px; border: none;">
+                                <div class="modal-header border-0 pb-0">
+                                    <h5 class="fw-bold">Ubah Status Pesanan</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <form action="{{ route('admin.orders.update', $order->id) }}" method="POST">
+                                    @csrf
+                                    @method('PUT')
+                                    <div class="modal-body p-4">
+                                        <div class="mb-3">
+                                            <p class="mb-1 text-muted small">No. Order</p>
+                                            <h6 class="fw-bold text-primary">{{ $order->reference }}</h6>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label text-muted small fw-bold">Status Baru</label>
+                                            <select name="status" class="form-select" required>
+                                                <option value="pending_payment" {{ $order->status == 'pending_payment' ? 'selected' : '' }}>Pending Payment</option>
+                                                <option value="paid" {{ $order->status == 'paid' ? 'selected' : '' }}>Paid (Lunas)</option>
+                                                <option value="delivered" {{ $order->status == 'delivered' ? 'selected' : '' }}>Delivered (Selesai)</option>
+                                                <option value="cancelled" {{ $order->status == 'cancelled' ? 'selected' : '' }}>Cancelled (Dibatalkan)</option>
+                                                <option value="expired" {{ $order->status == 'expired' ? 'selected' : '' }}>Expired (Kedaluwarsa)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer border-0 pt-0">
+                                        <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
+                                        <button type="submit" class="btn btn-primary rounded-pill px-4">Simpan Perubahan</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
                     @endforeach
                 </tbody>
             </table>

@@ -55,9 +55,20 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
     */
     Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {
         Route::get('/', [\App\Http\Controllers\AdminController::class, 'dashboard'])->name('dashboard');
+        
         Route::get('/products', [\App\Http\Controllers\AdminController::class, 'products'])->name('products.index');
+        Route::post('/products', [\App\Http\Controllers\AdminController::class, 'storeProduct'])->name('products.store');
+        Route::put('/products/{id}', [\App\Http\Controllers\AdminController::class, 'updateProduct'])->name('products.update');
+        Route::delete('/products/{id}', [\App\Http\Controllers\AdminController::class, 'destroyProduct'])->name('products.destroy');
+        
         Route::get('/stock', [\App\Http\Controllers\AdminController::class, 'stock'])->name('stock.index');
+        Route::post('/stock', [\App\Http\Controllers\AdminController::class, 'storeStock'])->name('stock.store');
+        Route::delete('/stock/{id}', [\App\Http\Controllers\AdminController::class, 'destroyStock'])->name('stock.destroy');
+        
         Route::get('/orders', [\App\Http\Controllers\AdminController::class, 'orders'])->name('orders.index');
+        Route::put('/orders/{id}', [\App\Http\Controllers\AdminController::class, 'updateOrder'])->name('orders.update');
+        
         Route::get('/users', [\App\Http\Controllers\AdminController::class, 'users'])->name('users.index');
+        Route::put('/users/{id}', [\App\Http\Controllers\AdminController::class, 'updateUser'])->name('users.update');
     });
 });

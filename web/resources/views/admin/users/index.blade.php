@@ -23,6 +23,7 @@
                         <th class="py-3 border-0">Username</th>
                         <th class="py-3 border-0">Role</th>
                         <th class="py-3 border-0">Bergabung</th>
+                        <th class="py-3 border-0 text-end px-4">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -37,7 +38,55 @@
                             </span>
                         </td>
                         <td class="text-secondary small">{{ $user->created_at->format('d M Y') }}</td>
+                        <td class="text-end px-4">
+                            @if($user->id !== Auth::id())
+                            <button class="btn btn-sm btn-outline-primary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#editUserModal{{ $user->id }}">
+                                Edit Role
+                            </button>
+                            @else
+                            <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" disabled>Edit Role</button>
+                            @endif
+                        </td>
                     </tr>
+
+                    @if($user->id !== Auth::id())
+                    {{-- Edit Role Modal --}}
+                    <div class="modal fade" id="editUserModal{{ $user->id }}" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content" style="border-radius: 16px; border: none;">
+                                <div class="modal-header border-0 pb-0">
+                                    <h5 class="fw-bold">Ubah Hak Akses Pengguna</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <form action="{{ route('admin.users.update', $user->id) }}" method="POST">
+                                    @csrf
+                                    @method('PUT')
+                                    <div class="modal-body p-4">
+                                        <div class="mb-3">
+                                            <p class="mb-1 text-muted small">Nama Pengguna</p>
+                                            <h6 class="fw-bold text-primary">{{ $user->full_name ?? $user->username ?? 'Unknown' }}</h6>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label text-muted small fw-bold">Role Akses</label>
+                                            <select name="role" class="form-select" required>
+                                                <option value="customer" {{ $user->role === 'customer' ? 'selected' : '' }}>Customer (Biasa)</option>
+                                                <option value="admin" {{ $user->role === 'admin' ? 'selected' : '' }}>Admin (Penuh)</option>
+                                            </select>
+                                            <div class="form-text mt-2">
+                                                <i class="fas fa-info-circle text-primary me-1"></i>
+                                                Menjadikan pengguna sebagai Admin akan memberikan akses penuh ke Panel Web ini dan menu Bot Admin Telegram secara bersamaan.
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer border-0 pt-0">
+                                        <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
+                                        <button type="submit" class="btn btn-primary rounded-pill px-4">Simpan Perubahan</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
                     @endforeach
                 </tbody>
             </table>

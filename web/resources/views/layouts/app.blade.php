@@ -37,6 +37,68 @@
         </div>
     </div>
     <div class="ms-auto d-flex align-items-center gap-3">
+        @if(Auth::user()->role === 'admin')
+        {{-- Notification Bell (Admin Only) --}}
+        <div class="dropdown">
+            <button class="btn btn-link link-body-emphasis p-0 position-relative" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Notifikasi">
+                <i class="fas fa-bell fs-5"></i>
+                @if(isset($totalNotifications) && $totalNotifications > 0)
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.65rem;">
+                    {{ $totalNotifications > 99 ? '99+' : $totalNotifications }}
+                </span>
+                @endif
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2" style="width: 320px; border-radius: 12px; z-index: 1050;">
+                <li><h6 class="dropdown-header fw-bold text-primary border-bottom pb-2 mb-2">Notifikasi Sistem</h6></li>
+                
+                @if(isset($pendingOrdersCount) && $pendingOrdersCount > 0)
+                <li>
+                    <a class="dropdown-item py-2 d-flex align-items-start gap-3" href="{{ route('admin.orders.index') }}">
+                        <div class="text-warning mt-1"><i class="fas fa-shopping-cart"></i></div>
+                        <div>
+                            <div class="fw-bold">Pesanan Pending</div>
+                            <small class="text-muted text-wrap">Ada {{ $pendingOrdersCount }} pesanan menunggu diproses.</small>
+                        </div>
+                    </a>
+                </li>
+                @endif
+                
+                @if(isset($pendingLoginsCount) && $pendingLoginsCount > 0)
+                <li>
+                    <a class="dropdown-item py-2 d-flex align-items-start gap-3" href="#">
+                        <div class="text-info mt-1"><i class="fas fa-sign-in-alt"></i></div>
+                        <div>
+                            <div class="fw-bold">Percobaan Login</div>
+                            <small class="text-muted text-wrap">Terdapat {{ $pendingLoginsCount }} permintaan login web belum terkonfirmasi.</small>
+                        </div>
+                    </a>
+                </li>
+                @endif
+
+                @if(isset($readyStockCount))
+                <li>
+                    <a class="dropdown-item py-2 d-flex align-items-start gap-3" href="{{ route('admin.stock.index') }}">
+                        <div class="text-success mt-1"><i class="fas fa-box-open"></i></div>
+                        <div>
+                            <div class="fw-bold">Stok Produk</div>
+                            <small class="text-muted text-wrap">Total stok yang siap dijual: {{ $readyStockCount }} unit.</small>
+                        </div>
+                    </a>
+                </li>
+                @endif
+
+                @if(!isset($totalNotifications) || $totalNotifications == 0)
+                <li>
+                    <div class="dropdown-item py-3 text-center text-muted">
+                        <i class="fas fa-check-circle fs-4 mb-2 text-success"></i><br>
+                        <small>Tidak ada notifikasi baru.</small>
+                    </div>
+                </li>
+                @endif
+            </ul>
+        </div>
+        @endif
+
         {{-- Theme Toggle --}}
         <button class="btn btn-link link-body-emphasis p-0 me-2" id="themeToggle" title="Toggle Theme">
             <i class="fas fa-moon fs-5" id="themeIcon"></i>
@@ -52,7 +114,7 @@
     </div>
 </nav>
 
-<div class="app-container" style="padding-top: 0;">
+<div class="app-container" style="padding-top: 80px;">
     {{-- Sidebar --}}
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header d-flex align-items-center gap-3">

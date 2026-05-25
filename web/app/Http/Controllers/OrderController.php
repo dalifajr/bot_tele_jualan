@@ -27,7 +27,7 @@ class OrderController extends Controller
     public function show($id)
     {
         $order = Order::where('customer_id', Auth::id())
-            ->with(['product', 'stockUnits'])
+            ->with(['items.product', 'stockUnits'])
             ->findOrFail($id);
 
         return view('orders.show', compact('order'));
