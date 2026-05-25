@@ -336,14 +336,12 @@ setup_laravel() {
       python3 "${OPS_DIR}/migrate_sqlite_to_mysql.py" --mysql-url="${python_mysql_url}"
   fi
 
-  # Run laravel migrations (just in case there are specific laravel tables like sessions/jobs etc, but we rely on python for core tables)
-  # But we must be careful not to overwrite the schema managed by Python. Laravel's default migrations include users table which might clash.
-  # Since python's Base.metadata.create_all handles it, we don't need `php artisan migrate` unless we have Laravel-only tables.
-  # Let's run it just for Laravel specific things, assuming they don't clash. Wait, `users` table might clash if Laravel's default migration runs.
-  # Actually, `ops/migrate_sqlite_to_mysql.py` creates ALL python tables. If Laravel runs migrate, it will see `users` exists if we created it.
-  # To avoid issues, we should just let python handle schema. We only need `telegram_login_tokens` which is in Python `models.py`.
-  # So we SKIP `php artisan migrate` to avoid collisions with default Laravel migrations!
-  
+  # Jalankan migrasi Laravel untuk membuat tabel bawaan (seperti sessions, jobs, cache)
+  # File migrasi Laravel 0001_01_01_000000_create_users_table.php sudah dimodifikasi
+  # agar aman dan tidak menabrak tabel 'users' yang dibuat oleh Python.
+  log_step "Menjalankan migrasi database Laravel..."
+  php artisan migrate --force
+
   # Set permissions
   local run_user
   run_user="$(stat -c '%U' "${PROJECT_DIR}")"
