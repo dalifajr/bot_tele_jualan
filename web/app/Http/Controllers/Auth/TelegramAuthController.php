@@ -34,8 +34,8 @@ class TelegramAuthController extends Controller
             return back()->with('error', 'Bot Telegram belum dikonfigurasi.');
         }
 
-        // Create pending login token
-        $token = Str::random(64);
+        // Create pending login token (must be < 64 chars total with prefix for Telegram start param)
+        $token = Str::random(40);
         $ttlMinutes = (int) config('telegram.login_token_ttl_minutes', 5);
 
         TelegramLoginToken::create([
