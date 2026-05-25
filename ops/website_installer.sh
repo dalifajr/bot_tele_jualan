@@ -495,10 +495,10 @@ do_install() {
   install_system_packages
   setup_mysql
   install_composer
+  update_main_env "${domain}"
   setup_laravel
   setup_nginx "${domain}"
   setup_ssl "${domain}"
-  update_main_env "${domain}"
 
   restore_terminal
 
