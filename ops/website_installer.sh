@@ -581,19 +581,69 @@ do_logs() {
 do_uninstall() {
   check_root
 
-  log_step "Menghapus konfigurasi website..."
+  local confirm
+  read -rp "⚠️  Hapus semua konfigurasi website? Database MySQL tetap dipertahankan. Ketik YES: " confirm
+  if [[ "${confirm}" != "YES" ]]; then
+    echo "Batal."
+    exit 0
+  fi
+
+  echo ""
+  log_step "Menghapus konfigurasi Nginx..."
   rm -f /etc/nginx/sites-enabled/jualan-web
   rm -f /etc/nginx/sites-available/jualan-web
   systemctl reload nginx 2>/dev/null || true
 
-  # Hapus konfigurasi environment website
-  rm -f "${WEB_ENV_FILE}"
-  
-  _set_env_value "${ENV_FILE}" "WEBSITE_ENABLED" "false"
+  # Hapus SSL certificates untuk domain website
+  load_env
+  local domain="${WEBSITE_DOMAIN:-}"
+  if [[ -n "${domain}" ]]; then
+    log_step "Menghapus sertifikat SSL untuk ${domain}..."
+    certbot delete --cert-name "${domain}" --non-interactive 2>/dev/null || true
+  fi
 
-  log_step "Konfigurasi Nginx dan environment Laravel telah dihapus."
-  log_step "Database MySQL (bot_jualan) TIDAK dihapus dan bot Telegram akan tetap menggunakannya."
-  log_step "File source code Laravel di web/ tetap dipertahankan."
+  # Hapus Ondrej PPA yang bermasalah (hanya jika ada)
+  local ppa_file="/etc/apt/sources.list.d/ondrej-ubuntu-php-questing.sources"
+  if [[ -f "${ppa_file}" ]]; then
+    log_step "Menghapus PPA ondrej/php yang tidak kompatibel..."
+    rm -f "${ppa_file}"
+    apt-get update -qq 2>/dev/null || true
+  fi
+
+  # Bersihkan cache dan compiled files Laravel
+  if [[ -f "${WEB_DIR}/artisan" ]]; then
+    log_step "Membersihkan cache Laravel..."
+    php "${WEB_DIR}/artisan" config:clear 2>/dev/null || true
+    php "${WEB_DIR}/artisan" cache:clear 2>/dev/null || true
+    php "${WEB_DIR}/artisan" view:clear 2>/dev/null || true
+    php "${WEB_DIR}/artisan" route:clear 2>/dev/null || true
+  fi
+
+  # Hapus .env website
+  log_step "Menghapus konfigurasi environment website (.env)..."
+  rm -f "${WEB_ENV_FILE}"
+
+  # Update main .env
+  _set_env_value "${ENV_FILE}" "WEBSITE_ENABLED" "false"
+  _set_env_value "${ENV_FILE}" "WEBSITE_DOMAIN" ""
+
+  echo ""
+  echo "============================================"
+  echo "  ✅ Website berhasil di-uninstall!"
+  echo ""
+  echo "  Yang dihapus:"
+  echo "    ✓ Konfigurasi Nginx"
+  echo "    ✓ Sertifikat SSL (${domain:-n/a})"
+  echo "    ✓ PPA ondrej/php (jika ada)"
+  echo "    ✓ Cache & compiled Laravel"
+  echo "    ✓ File .env website"
+  echo ""
+  echo "  Yang DIPERTAHANKAN:"
+  echo "    ✓ Database MySQL (bot_jualan)"
+  echo "    ✓ Source code Laravel di web/"
+  echo "    ✓ PHP, Nginx, MySQL packages"
+  echo "============================================"
+  echo ""
 
   # Restart bot if service exists so it picks up WEBSITE_ENABLED=false
   if systemctl list-units --full -all | grep -Fq "jualan-bot.service"; then
