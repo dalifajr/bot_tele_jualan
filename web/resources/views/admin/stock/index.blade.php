@@ -56,28 +56,7 @@
                         </td>
                     </tr>
 
-                    @if(!$unit->is_sold)
-                    {{-- Delete Modal --}}
-                    <div class="modal fade" id="deleteStockModal{{ $unit->id }}" tabindex="-1" aria-hidden="true">
-                        <div class="modal-dialog modal-dialog-centered modal-sm">
-                            <div class="modal-content text-center" style="border-radius: 16px; border: none;">
-                                <div class="modal-body p-4">
-                                    <i class="fas fa-trash-alt text-danger mb-3" style="font-size: 3rem;"></i>
-                                    <h5 class="fw-bold">Hapus Stok?</h5>
-                                    <p class="text-muted small">Stok ini belum terjual. Yakin ingin menghapusnya?</p>
-                                    <div class="d-flex gap-2 justify-content-center mt-4">
-                                        <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
-                                        <form action="{{ route('admin.stock.destroy', $unit->id) }}" method="POST">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-danger rounded-pill px-4">Ya, Hapus</button>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    @endif
+
                     @endforeach
                 </tbody>
             </table>
@@ -131,4 +110,29 @@
         </div>
     </div>
 </div>
+
+@foreach($stockUnits as $unit)
+@if(!$unit->is_sold)
+{{-- Delete Modal --}}
+<div class="modal fade" id="deleteStockModal{{ $unit->id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content text-center" style="border-radius: 16px; border: none;">
+            <div class="modal-body p-4">
+                <i class="fas fa-trash-alt text-danger mb-3" style="font-size: 3rem;"></i>
+                <h5 class="fw-bold">Hapus Stok?</h5>
+                <p class="text-muted small">Stok ini belum terjual. Yakin ingin menghapusnya?</p>
+                <div class="d-flex gap-2 justify-content-center mt-4">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
+                    <form action="{{ route('admin.stock.destroy', $unit->id) }}" method="POST">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="btn btn-danger rounded-pill px-4">Ya, Hapus</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
+@endforeach
 @endsection

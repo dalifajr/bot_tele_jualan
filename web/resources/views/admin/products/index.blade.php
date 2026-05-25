@@ -55,64 +55,7 @@
                         </td>
                     </tr>
 
-                    {{-- Edit Modal --}}
-                    <div class="modal fade" id="editProductModal{{ $product->id }}" tabindex="-1" aria-hidden="true">
-                        <div class="modal-dialog modal-dialog-centered">
-                            <div class="modal-content" style="border-radius: 16px; border: none;">
-                                <div class="modal-header border-0 pb-0">
-                                    <h5 class="fw-bold">Edit Produk</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                </div>
-                                <form action="{{ route('admin.products.update', $product->id) }}" method="POST">
-                                    @csrf
-                                    @method('PUT')
-                                    <div class="modal-body">
-                                        <div class="mb-3">
-                                            <label class="form-label text-muted small fw-bold">Nama Produk</label>
-                                            <input type="text" name="name" class="form-control" value="{{ $product->name }}" required>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label class="form-label text-muted small fw-bold">Harga (Rp)</label>
-                                            <input type="number" name="price" class="form-control" value="{{ $product->price }}" required>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label class="form-label text-muted small fw-bold">Deskripsi</label>
-                                            <textarea name="description" class="form-control" rows="3">{{ $product->description }}</textarea>
-                                        </div>
-                                        <div class="form-check form-switch mb-3">
-                                            <input class="form-check-input" type="checkbox" role="switch" name="is_suspended" id="suspend{{ $product->id }}" {{ $product->is_suspended ? 'checked' : '' }}>
-                                            <label class="form-check-label" for="suspend{{ $product->id }}">Suspend (Sembunyikan dari katalog)</label>
-                                        </div>
-                                    </div>
-                                    <div class="modal-footer border-0 pt-0">
-                                        <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
-                                        <button type="submit" class="btn btn-primary rounded-pill px-4">Simpan</button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
 
-                    {{-- Delete Modal --}}
-                    <div class="modal fade" id="deleteProductModal{{ $product->id }}" tabindex="-1" aria-hidden="true">
-                        <div class="modal-dialog modal-dialog-centered modal-sm">
-                            <div class="modal-content text-center" style="border-radius: 16px; border: none;">
-                                <div class="modal-body p-4">
-                                    <i class="fas fa-exclamation-triangle text-danger mb-3" style="font-size: 3rem;"></i>
-                                    <h5 class="fw-bold">Hapus Produk?</h5>
-                                    <p class="text-muted small">Menghapus produk akan turut menghapus semua stok yang terkait dengannya. Lanjutkan?</p>
-                                    <div class="d-flex gap-2 justify-content-center mt-4">
-                                        <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
-                                        <form action="{{ route('admin.products.destroy', $product->id) }}" method="POST">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-danger rounded-pill px-4">Ya, Hapus</button>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                     @endforeach
                 </tbody>
             </table>
@@ -161,4 +104,65 @@
         </div>
     </div>
 </div>
+
+@foreach($products as $product)
+{{-- Edit Modal --}}
+<div class="modal fade" id="editProductModal{{ $product->id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 16px; border: none;">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="fw-bold">Edit Produk</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ route('admin.products.update', $product->id) }}" method="POST">
+                @csrf
+                @method('PUT')
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">Nama Produk</label>
+                        <input type="text" name="name" class="form-control" value="{{ $product->name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">Harga (Rp)</label>
+                        <input type="number" name="price" class="form-control" value="{{ $product->price }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">Deskripsi</label>
+                        <textarea name="description" class="form-control" rows="3">{{ $product->description }}</textarea>
+                    </div>
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" role="switch" name="is_suspended" id="suspend{{ $product->id }}" {{ $product->is_suspended ? 'checked' : '' }}>
+                        <label class="form-check-label" for="suspend{{ $product->id }}">Suspend (Sembunyikan dari katalog)</label>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{{-- Delete Modal --}}
+<div class="modal fade" id="deleteProductModal{{ $product->id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content text-center" style="border-radius: 16px; border: none;">
+            <div class="modal-body p-4">
+                <i class="fas fa-exclamation-triangle text-danger mb-3" style="font-size: 3rem;"></i>
+                <h5 class="fw-bold">Hapus Produk?</h5>
+                <p class="text-muted small">Menghapus produk akan turut menghapus semua stok yang terkait dengannya. Lanjutkan?</p>
+                <div class="d-flex gap-2 justify-content-center mt-4">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
+                    <form action="{{ route('admin.products.destroy', $product->id) }}" method="POST">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="btn btn-danger rounded-pill px-4">Ya, Hapus</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endforeach
 @endsection

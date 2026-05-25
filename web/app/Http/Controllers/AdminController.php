@@ -148,6 +148,119 @@ class AdminController extends Controller
         ]);
         $user->role = $request->role;
         $user->save();
-        return redirect()->route('admin.users.index')->with('success', 'Role pengguna berhasil diperbarui.');
+        return redirect()->route('admin.users.index')
+            ->with('success', 'Hak akses pengguna berhasil diperbarui.');
+    }
+
+    // ==========================================
+    // COMPLAINTS MANAGEMENT
+    // ==========================================
+    public function complaints()
+    {
+        // For simplicity, we just fetch all complaints ordered by newest.
+        $complaints = \App\Models\ComplaintCase::with(['customer', 'order'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(15);
+            
+        return view('admin.complaints.index', compact('complaints'));
+    }
+
+    // ==========================================
+    // BROADCAST
+    // ==========================================
+    public function broadcast()
+    {
+        return view('admin.broadcast.index');
+    }
+
+    public function prepareBroadcast(Request $request)
+    {
+        $request->validate(['message' => 'required|string']);
+        
+        // Dapatkan semua user dengan role customer dan punya telegram_id valid
+        $customers = \App\Models\User::whereNotNull('telegram_id')
+            ->where('role', 'customer')
+            ->pluck('telegram_id');
+            
+        return response()->json([
+            'status' => 'success',
+            'total' => $customers->count(),
+            'targets' => $customers
+        ]);
+    }
+
+    public function sendBroadcast(Request $request)
+    {
+        $request->validate([
+            'telegram_id' => 'required',
+            'message' => 'required|string'
+        ]);
+
+        $token = env('BOT_TOKEN'); // Atau ambil dari config jika ada
+        if (!$token) {
+            return response()->json(['status' => 'error', 'message' => 'Bot token tidak dikonfigurasi.']);
+        }
+
+        try {
+            $response = \Illuminate\Support\Facades\Http::post("https://api.telegram.org/bot{$token}/sendMessage", [
+                'chat_id' => $request->telegram_id,
+                'text' => $request->message,
+                'parse_mode' => 'HTML'
+            ]);
+
+            if ($response->successful()) {
+                return response()->json(['status' => 'success']);
+            } else {
+                return response()->json(['status' => 'error', 'message' => 'Telegram API Error']);
+            }
+        } catch (\Exception $e) {
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()]);
+        }
+    }
+
+    // ==========================================
+    // SETTINGS (Payment)
+    // ==========================================
+    public function settings()
+    {
+        $settings = \App\Models\BotSetting::all()->pluck('value', 'key');
+        return view('admin.settings.index', compact('settings'));
+    }
+
+    // ==========================================
+    // REPORTS
+    // ==========================================
+    public function reports()
+    {
+        // Simple aggregate data
+        $totalSales = \App\Models\Order::where('status', 'delivered')->sum('total_amount');
+        $totalOrders = \App\Models\Order::count();
+        $deliveredOrders = \App\Models\Order::where('status', 'delivered')->count();
+        $cancelledOrders = \App\Models\Order::whereIn('status', ['cancelled', 'expired'])->count();
+        $totalUsers = \App\Models\User::count();
+        
+        // Latest 5 delivered orders for table
+        $latestOrders = \App\Models\Order::with('customer')
+            ->where('status', 'delivered')
+            ->orderBy('created_at', 'desc')
+            ->take(5)
+            ->get();
+
+        return view('admin.reports.index', compact(
+            'totalSales',
+            'totalOrders',
+            'deliveredOrders',
+            'cancelledOrders',
+            'totalUsers',
+            'latestOrders'
+        ));
+    }
+
+    // ==========================================
+    // WEBSITE SETTINGS
+    // ==========================================
+    public function websiteSettings()
+    {
+        return view('admin.website.settings');
     }
 }

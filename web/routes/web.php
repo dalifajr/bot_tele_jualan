@@ -70,5 +70,18 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         
         Route::get('/users', [\App\Http\Controllers\AdminController::class, 'users'])->name('users.index');
         Route::put('/users/{id}', [\App\Http\Controllers\AdminController::class, 'updateUser'])->name('users.update');
+        
+        // New features ported from Bot
+        Route::get('/complaints', [\App\Http\Controllers\AdminController::class, 'complaints'])->name('complaints.index');
+        
+        Route::get('/broadcast', [\App\Http\Controllers\AdminController::class, 'broadcast'])->name('broadcast.index');
+        Route::post('/broadcast/prepare', [\App\Http\Controllers\AdminController::class, 'prepareBroadcast'])->name('broadcast.prepare');
+        Route::post('/broadcast/send', [\App\Http\Controllers\AdminController::class, 'sendBroadcast'])->name('broadcast.send');
+        
+        Route::get('/settings', [\App\Http\Controllers\AdminController::class, 'settings'])->name('settings.index');
+        Route::get('/reports', [\App\Http\Controllers\AdminController::class, 'reports'])->name('reports.index');
+        
+        // System Actions
+        Route::get('/website/settings', [\App\Http\Controllers\AdminController::class, 'websiteSettings'])->name('website.settings');
     });
 });

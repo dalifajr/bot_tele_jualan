@@ -161,7 +161,7 @@
                     <i class="fas fa-chart-line"></i> Dashboard Admin
                 </a>
                 <a href="{{ route('admin.products.index') }}" class="menu-item {{ request()->routeIs('admin.products.*') ? 'active' : '' }}">
-                    <i class="fas fa-box"></i> Kelola Produk
+                    <i class="fas fa-box"></i> Katalog Admin
                 </a>
                 <a href="{{ route('admin.stock.index') }}" class="menu-item {{ request()->routeIs('admin.stock.*') ? 'active' : '' }}">
                     <i class="fas fa-cubes"></i> Kelola Stok
@@ -169,8 +169,27 @@
                 <a href="{{ route('admin.orders.index') }}" class="menu-item {{ request()->routeIs('admin.orders.*') ? 'active' : '' }}">
                     <i class="fas fa-shopping-cart"></i> Kelola Pesanan
                 </a>
+                <a href="{{ route('admin.complaints.index') }}" class="menu-item {{ request()->routeIs('admin.complaints.*') ? 'active' : '' }}">
+                    <i class="fas fa-toolbox"></i> Kelola Komplain
+                </a>
+                <a href="{{ route('admin.broadcast.index') }}" class="menu-item {{ request()->routeIs('admin.broadcast.*') ? 'active' : '' }}">
+                    <i class="fas fa-bullhorn"></i> Broadcast
+                </a>
                 <a href="{{ route('admin.users.index') }}" class="menu-item {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
                     <i class="fas fa-users"></i> Kelola Pelanggan
+                </a>
+            </div>
+
+            <div class="menu-group">
+                <div class="menu-header text-danger"><i class="fas fa-cogs me-1"></i> Sistem & Konfigurasi</div>
+                <a href="{{ route('admin.settings.index') }}" class="menu-item {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
+                    <i class="fas fa-credit-card"></i> Konfigurasi Payment
+                </a>
+                <a href="{{ route('admin.reports.index') }}" class="menu-item {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}">
+                    <i class="fas fa-chart-bar"></i> Laporan Operasional
+                </a>
+                <a href="{{ route('admin.website.settings') }}" class="menu-item {{ request()->routeIs('admin.website.settings') ? 'active' : '' }}">
+                    <i class="fas fa-globe"></i> Kelola Website
                 </a>
             </div>
             @endif
