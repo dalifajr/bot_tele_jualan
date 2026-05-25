@@ -82,8 +82,18 @@ def migrate_data():
                         print(f"  - No rows to migrate for {tname}.")
                         continue
 
-                    # Ambil nama kolom dari hasil query
-                    columns = list(rows[0]._mapping.keys())
+                    # Ambil nama kolom dari hasil query SQLite
+                    src_columns = list(rows[0]._mapping.keys())
+
+                    # Ambil nama kolom yang ada di target MySQL
+                    tgt_inspector = inspect(target_engine)
+                    tgt_columns = {c["name"] for c in tgt_inspector.get_columns(tname)}
+
+                    # Hanya insert kolom yang ada di kedua sisi
+                    columns = [c for c in src_columns if c in tgt_columns]
+                    skipped = [c for c in src_columns if c not in tgt_columns]
+                    if skipped:
+                        print(f"  - Skipping columns not in MySQL: {skipped}")
 
                     # Buat INSERT statement dengan backtick-quoted column names
                     cols_bt = ", ".join(bt(c) for c in columns)
@@ -92,7 +102,8 @@ def migrate_data():
 
                     batch_size = 200
                     for i in range(0, len(rows), batch_size):
-                        batch = [dict(r._mapping) for r in rows[i:i + batch_size]]
+                        batch = [{k: v for k, v in dict(r._mapping).items() if k in tgt_columns}
+                                 for r in rows[i:i + batch_size]]
                         target_conn.execute(text(insert_sql), batch)
 
                     print(f"  - Migrated {len(rows)} rows to {tname}.")
