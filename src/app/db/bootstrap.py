@@ -32,6 +32,9 @@ def _run_compat_migrations() -> None:
         _ensure_column(conn, "orders", "admin_notify_chat_id", "admin_notify_chat_id BIGINT")
         _ensure_column(conn, "orders", "admin_notify_message_id", "admin_notify_message_id BIGINT")
 
+        # For Laravel website remember-me auth
+        _ensure_column(conn, "users", "remember_token", "remember_token VARCHAR(100)")
+
         conn.execute(text(
             "UPDATE stock_units "
             "SET stock_status='ready' "
@@ -110,6 +113,10 @@ def _run_compat_migrations() -> None:
         conn.execute(text(
             "CREATE INDEX IF NOT EXISTS ix_complaint_attachments_case "
             "ON complaint_attachments(complaint_id, id)"
+        ))
+        conn.execute(text(
+            "CREATE INDEX IF NOT EXISTS ix_login_tokens_status_expires "
+            "ON telegram_login_tokens(status, expires_at)"
         ))
 
 

@@ -52,12 +52,16 @@ ENV_FILE="${PROJECT_DIR}/.env"
 ROLE_FILE="${PROJECT_DIR}/user_role.txt"
 UPDATE_SCRIPT="${PROJECT_DIR}/ops/update_manager.sh"
 BACKUP_SCRIPT="${PROJECT_DIR}/ops/backup_manager.sh"
+WEBSITE_SCRIPT="${PROJECT_DIR}/ops/website_installer.sh"
 
 if [[ ! -x "${UPDATE_SCRIPT}" ]]; then
   chmod +x "${UPDATE_SCRIPT}" 2>/dev/null || true
 fi
 if [[ ! -x "${BACKUP_SCRIPT}" ]]; then
   chmod +x "${BACKUP_SCRIPT}" 2>/dev/null || true
+fi
+if [[ ! -x "${WEBSITE_SCRIPT}" ]]; then
+  chmod +x "${WEBSITE_SCRIPT}" 2>/dev/null || true
 fi
 
 if ! is_valid_project_dir "${PROJECT_DIR}"; then
@@ -88,7 +92,14 @@ Commands:
   restore-backup [file]
               Restore DB from backup file (default: latest)
   prune-backups [keep]
-              Keep latest N backups (default from BACKUP_KEEP_COUNT or 14)
+               Keep latest N backups (default from BACKUP_KEEP_COUNT or 14)
+  install-website [domain]
+               Install Laravel website (PHP, Nginx, SSL)
+  website-status Show website service status
+  website-restart Restart website services (PHP-FPM + Nginx)
+  website-logs   Show website logs
+  website-domain [domain]
+               Configure/change website domain + SSL
   uninstall    Stop/disable services and remove alias
 EOF
 }
@@ -198,6 +209,26 @@ prune_backups_cmd() {
   bash "${BACKUP_SCRIPT}" prune "${1:-}"
 }
 
+install_website_cmd() {
+  sudo bash "${WEBSITE_SCRIPT}" install "${1:-}"
+}
+
+website_status_cmd() {
+  bash "${WEBSITE_SCRIPT}" status
+}
+
+website_restart_cmd() {
+  sudo bash "${WEBSITE_SCRIPT}" restart
+}
+
+website_logs_cmd() {
+  bash "${WEBSITE_SCRIPT}" logs
+}
+
+website_domain_cmd() {
+  sudo bash "${WEBSITE_SCRIPT}" configure-domain "${1:-}"
+}
+
 uninstall_bot() {
   local confirm
   read -r -p "Yakin uninstall bot service? ketik YES: " confirm
@@ -230,7 +261,12 @@ Panel Jualan
 10) list-backups
 11) restore-backup (latest)
 12) prune-backups
-13) uninstall
+13) install-website
+14) website-status
+15) website-restart
+16) website-logs
+17) website-domain
+18) uninstall
 0) keluar
 EOF
   read -r -p "Pilih menu: " choice
@@ -247,7 +283,12 @@ EOF
     10) list_backups_cmd ;;
     11) restore_backup_cmd ;;
     12) prune_backups_cmd ;;
-    13) uninstall_bot ;;
+    13) install_website_cmd ;;
+    14) website_status_cmd ;;
+    15) website_restart_cmd ;;
+    16) website_logs_cmd ;;
+    17) website_domain_cmd ;;
+    18) uninstall_bot ;;
     0) exit 0 ;;
     *) echo "Pilihan tidak valid." ;;
   esac
@@ -268,6 +309,11 @@ case "${cmd}" in
   list-backups) list_backups_cmd ;;
   restore-backup) restore_backup_cmd "${2:-}" ;;
   prune-backups) prune_backups_cmd "${2:-}" ;;
+  install-website) install_website_cmd "${2:-}" ;;
+  website-status) website_status_cmd ;;
+  website-restart) website_restart_cmd ;;
+  website-logs) website_logs_cmd ;;
+  website-domain) website_domain_cmd "${2:-}" ;;
   uninstall) uninstall_bot ;;
   "") menu ;;
   *) print_usage; exit 1 ;;

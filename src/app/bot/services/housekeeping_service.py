@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from sqlalchemy import delete
 from sqlalchemy.orm import Session
 
-from app.db.models import ListenerEvent, NotificationRetryJob, TelemetryEvent
+from app.db.models import ListenerEvent, NotificationRetryJob, TelemetryEvent, TelegramLoginToken
 
 
 @dataclass
@@ -14,6 +14,7 @@ class HousekeepingCleanupResult:
     deleted_listener_events: int
     deleted_retry_jobs: int
     deleted_telemetry_events: int
+    deleted_login_tokens: int
 
 
 def _utcnow() -> datetime:
@@ -61,8 +62,47 @@ def cleanup_transient_data(
         or 0
     )
 
+    # Cleanup expired/used web login tokens
+    login_token_cutoff = now - timedelta(hours=1)
+    used_token_cutoff = now - timedelta(days=7)
+    deleted_login_tokens = 0
+
+    # Delete expired pending tokens (older than 1 hour past expiry)
+    deleted_login_tokens += int(
+        session.execute(
+            delete(TelegramLoginToken).where(
+                TelegramLoginToken.status == "pending",
+                TelegramLoginToken.expires_at < login_token_cutoff,
+            )
+        ).rowcount
+        or 0
+    )
+
+    # Delete used tokens older than 7 days
+    deleted_login_tokens += int(
+        session.execute(
+            delete(TelegramLoginToken).where(
+                TelegramLoginToken.status == "used",
+                TelegramLoginToken.used_at < used_token_cutoff,
+            )
+        ).rowcount
+        or 0
+    )
+
+    # Delete verified-but-never-used tokens (link expired over 1 hour ago)
+    deleted_login_tokens += int(
+        session.execute(
+            delete(TelegramLoginToken).where(
+                TelegramLoginToken.status == "verified",
+                TelegramLoginToken.link_expires_at < login_token_cutoff,
+            )
+        ).rowcount
+        or 0
+    )
+
     return HousekeepingCleanupResult(
         deleted_listener_events=deleted_listener_events,
         deleted_retry_jobs=deleted_retry_jobs,
         deleted_telemetry_events=deleted_telemetry_events,
+        deleted_login_tokens=deleted_login_tokens,
     )

@@ -236,3 +236,19 @@ class ComplaintAttachment(Base):
     complaint_id: Mapped[int] = mapped_column(ForeignKey("complaint_cases.id", ondelete="CASCADE"), index=True)
     file_id: Mapped[str] = mapped_column(String(255), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class TelegramLoginToken(Base):
+    __tablename__ = "telegram_login_tokens"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    token: Mapped[str] = mapped_column(String(128), unique=True, index=True)
+    link_token: Mapped[str | None] = mapped_column(String(128), unique=True, nullable=True, index=True)
+    telegram_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True, index=True)
+    status: Mapped[str] = mapped_column(String(32), default="pending", index=True)
+    ip_address: Mapped[str | None] = mapped_column(String(45), nullable=True)
+    user_agent: Mapped[str | None] = mapped_column(Text, nullable=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, index=True)
+    link_expires_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    used_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

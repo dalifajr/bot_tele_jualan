@@ -299,18 +299,17 @@ def _back_keyboard(target: str = "main") -> InlineKeyboardMarkup:
 
 def _main_menu_keyboard(role: str) -> InlineKeyboardMarkup:
     if role == "admin":
-        return InlineKeyboardMarkup(
-            [
+        return InlineKeyboardMarkup([row for row in [
                 [InlineKeyboardButton("📦 Katalog Admin", callback_data="adm:cat")],
                 [InlineKeyboardButton("🧰 Kelola Komplain", callback_data="adm:cmp")],
                 [InlineKeyboardButton("📢 Broadcast", callback_data="adm:bc")],
                 [InlineKeyboardButton("💳 Konfigurasi Payment", callback_data="adm:pay")],
                 [InlineKeyboardButton("📊 Laporan Operasional", callback_data="adm:ops")],
-                [InlineKeyboardButton("� Backup & Restore", callback_data="adm:bak")],
-                [InlineKeyboardButton("�🔄 Update Bot Tele", callback_data="adm:upd")],
+                [InlineKeyboardButton("💾 Backup & Restore", callback_data="adm:bak")],
+                [InlineKeyboardButton("🔄 Update Bot Tele", callback_data="adm:upd")],
+                [InlineKeyboardButton("🌐 Kelola Website", callback_data="adm:web")] if settings.website_enabled else None,
                 [InlineKeyboardButton("ℹ️ Bantuan", callback_data="adm:help")],
-            ]
-        )
+            ] if row is not None])
 
     return InlineKeyboardMarkup(
         [
@@ -3218,8 +3217,74 @@ def _ensure_admin(update: Update) -> bool:
     return _role_for_telegram_id(tg_user.id) == "admin"
 
 
+async def _handle_web_login_deeplink(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    db_user,
+    web_token: str,
+) -> None:
+    """Handle /start weblogin_<token> deep-link for website authentication."""
+    from app.bot.services.web_login_service import verify_web_login
+
+    with get_session() as session:
+        result = verify_web_login(
+            session,
+            token=web_token,
+            telegram_id=db_user.telegram_id,
+            link_ttl_minutes=settings.web_login_link_ttl_minutes,
+        )
+
+    if not result.success:
+        await _respond(
+            update,
+            (
+                "❌ <b>Login Website Gagal</b>\n\n"
+                f"{html.escape(result.error or 'Token tidak valid.')}\n\n"
+                "Silakan coba lagi dari halaman login website."
+            ),
+            _main_menu_keyboard(_role_for_telegram_id(db_user.telegram_id)),
+            parse_mode=ParseMode.HTML,
+        )
+        return
+
+    domain = settings.website_domain
+    if not domain:
+        await _respond(
+            update,
+            "❌ Website belum dikonfigurasi. Hubungi admin.",
+            _main_menu_keyboard(_role_for_telegram_id(db_user.telegram_id)),
+        )
+        return
+
+    scheme = "https" if not domain.startswith("localhost") else "http"
+    login_url = f"{scheme}://{domain}/auth/telegram/callback?token={result.link_token}"
+
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🌐 Masuk ke Website", url=login_url)],
+    ])
+
+    await _respond(
+        update,
+        (
+            "🔐 <b>Login Website Berhasil Diverifikasi</b>\n\n"
+            "Klik tombol di bawah untuk masuk ke website:\n\n"
+            "⚠️ Link ini hanya berlaku <b>5 menit</b> dan <b>sekali pakai</b>."
+        ),
+        keyboard,
+        parse_mode=ParseMode.HTML,
+    )
+
+
 async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     db_user, role = await _ensure_user(update, context)
+
+    # Handle weblogin_ deep-link for website Telegram authentication
+    args = context.args
+    if args and args[0].startswith("weblogin_"):
+        web_token = args[0][len("weblogin_"):]
+        await _handle_web_login_deeplink(update, context, db_user, web_token)
+        return
+
     tg_user = update.effective_user
     username = "customer"
     if tg_user is not None:
@@ -3667,6 +3732,85 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             _back_keyboard("main"),
             parse_mode=ParseMode.HTML,
         )
+        return
+
+    if data == "adm:web":
+        if role != "admin":
+            await _respond_admin_only(update)
+            return
+        _clear_flow(context)
+
+        domain = settings.website_domain or "<belum diset>"
+        enabled = "✅ Aktif" if settings.website_enabled else "❌ Tidak Aktif"
+        bot_username = settings.website_bot_username or "<belum diset>"
+
+        keyboard = InlineKeyboardMarkup([
+            [InlineKeyboardButton("📊 Status Website", callback_data="adm:web:status")],
+            [InlineKeyboardButton("🔄 Restart Website", callback_data="adm:web:restart")],
+            [InlineKeyboardButton("⬅️ Kembali", callback_data="back:main")],
+        ])
+
+        await _respond(
+            update,
+            (
+                "🌐 <b>Kelola Website</b>\n\n"
+                f"Status: <b>{enabled}</b>\n"
+                f"Domain: <b>{html.escape(domain)}</b>\n"
+                f"Bot Username: <b>{html.escape(bot_username)}</b>\n\n"
+                "Gunakan panel CLI <code>jualan</code> untuk:\n"
+                "• <code>jualan install-website domain.com</code>\n"
+                "• <code>jualan website-domain domain.com</code>\n"
+                "• <code>jualan website-restart</code>\n\n"
+                f"{_admin_footer_text()}"
+            ),
+            keyboard,
+            parse_mode=ParseMode.HTML,
+        )
+        return
+
+    if data == "adm:web:restart":
+        if role != "admin":
+            await _respond_admin_only(update)
+            return
+        await _respond(
+            update,
+            (
+                "🔄 <b>Restart Website</b>\n\n"
+                "Untuk me-restart website, jalankan di server:\n"
+                "<code>jualan website-restart</code>\n\n"
+                "Atau via SSH:\n"
+                "<code>sudo systemctl restart php*-fpm nginx</code>"
+            ),
+            _back_keyboard("main"),
+            parse_mode=ParseMode.HTML,
+        )
+        return
+
+    if data == "adm:web:status":
+        if role != "admin":
+            await _respond_admin_only(update)
+            return
+        domain = settings.website_domain
+        if domain:
+            scheme = "https" if not domain.startswith("localhost") else "http"
+            url = f"{scheme}://{domain}"
+            await _respond(
+                update,
+                (
+                    "📊 <b>Status Website</b>\n\n"
+                    f"URL: <a href=\"{url}\">{html.escape(url)}</a>\n\n"
+                    "Untuk detail status, jalankan:\n"
+                    "<code>jualan website-status</code>"
+                ),
+                _back_keyboard("main"),
+                parse_mode=ParseMode.HTML,
+            )
+        else:
+            await _respond(
+                update,
+                "❌ Domain website belum dikonfigurasi.",
+                _back_keyboard("main"),
+            )
         return
 
     if data == "adm:help":

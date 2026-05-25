@@ -61,6 +61,12 @@ class Settings(BaseSettings):
     qris_dynamic_enabled: bool = Field(default=True, alias="QRIS_DYNAMIC_ENABLED")
     github_repo_url: str = Field(default="https://github.com/dalifajr/bot-jualan.git", alias="GITHUB_REPO_URL")
     update_branch: str = Field(default="", alias="UPDATE_BRANCH")
+    website_enabled: bool = Field(default=False, alias="WEBSITE_ENABLED")
+    website_domain: str = Field(default="", alias="WEBSITE_DOMAIN")
+    website_bot_username: str = Field(default="", alias="WEBSITE_BOT_USERNAME")
+    web_login_token_ttl_minutes: int = Field(default=5, alias="WEB_LOGIN_TOKEN_TTL_MINUTES")
+    web_login_link_ttl_minutes: int = Field(default=5, alias="WEB_LOGIN_LINK_TTL_MINUTES")
+    web_remember_me_days: int = Field(default=30, alias="WEB_REMEMBER_ME_DAYS")
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 

@@ -1,0 +1,81 @@
+/**
+ * SIMAK Student Layout Logic
+ * Handles: Page Loader, Sidebar Toggle, Dark Mode
+ */
+
+document.addEventListener('DOMContentLoaded', function () {
+    const loader = document.getElementById('pageLoader');
+
+    // Fix: Hide loader when page is shown (handles Back/Forward cache)
+    window.addEventListener('pageshow', function (event) {
+        if (loader) loader.classList.remove('active');
+    });
+
+    // Show loader on page navigation (link clicks that cause reload)
+    window.addEventListener('beforeunload', function () {
+        if (loader) loader.classList.add('active');
+    });
+
+    // Show loader on form submit, unless it opens in a new tab
+    document.querySelectorAll('form').forEach(form => {
+        form.addEventListener('submit', function (event) {
+            if (event.defaultPrevented) return; // Don't show loader if submit was cancelled
+
+            if (form.target !== '_blank') {
+                if (loader) loader.classList.add('active');
+            }
+        });
+    });
+
+    // Toggle Sidebar Logic
+
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+
+    function toggleSidebar() {
+        sidebar.classList.toggle('active');
+        overlay.classList.toggle('active');
+    }
+
+    if (sidebarToggle) {
+        sidebarToggle.addEventListener('click', toggleSidebar);
+    }
+
+    if (overlay) {
+        overlay.addEventListener('click', toggleSidebar);
+    }
+
+    // Dark Mode Logic
+    const themeToggle = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
+    const html = document.documentElement;
+
+    // Load preference
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    setTheme(savedTheme);
+
+    if (themeToggle) {
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = html.getAttribute('data-bs-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            setTheme(newTheme);
+        });
+    }
+
+    function setTheme(theme) {
+        html.setAttribute('data-bs-theme', theme);
+        localStorage.setItem('theme', theme);
+
+        // Validate icon existence
+        if (themeIcon) {
+            if (theme === 'dark') {
+                themeIcon.classList.remove('fa-moon');
+                themeIcon.classList.add('fa-sun');
+            } else {
+                themeIcon.classList.remove('fa-sun');
+                themeIcon.classList.add('fa-moon');
+            }
+        }
+    }
+});
