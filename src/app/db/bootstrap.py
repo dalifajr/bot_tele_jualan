@@ -18,6 +18,9 @@ def _ensure_column(conn, table_name: str, column_name: str, ddl: str) -> None:
 
 
 def _run_compat_migrations() -> None:
+    if engine.dialect.name != "sqlite":
+        return
+
     with engine.begin() as conn:
         _ensure_column(conn, "stock_units", "stock_status", "stock_status VARCHAR(32) DEFAULT 'ready'")
         _ensure_column(conn, "stock_units", "available_at", "available_at DATETIME")

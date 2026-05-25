@@ -46,8 +46,8 @@ class TelegramAuthController extends Controller
             'expires_at' => now()->addMinutes($ttlMinutes),
         ]);
 
-        // Redirect to Telegram deep-link
-        $telegramUrl = "https://t.me/{$botUsername}?start=weblogin_{$token}";
+        // Redirect to Telegram deep-link (using ?text= to ensure it pre-fills the message box, avoiding Telegram Desktop bugs)
+        $telegramUrl = "https://t.me/{$botUsername}?text=/start%20weblogin_{$token}";
 
         return redirect()->away($telegramUrl);
     }
