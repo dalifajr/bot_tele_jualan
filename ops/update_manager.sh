@@ -222,6 +222,15 @@ update_website() {
   php artisan view:clear 2>/dev/null || true
   php artisan route:clear 2>/dev/null || true
   
+  log_step "memperbarui izin file (permissions)..."
+  local run_user
+  run_user="$(stat -c '%U' "${PROJECT_DIR}")"
+  sudo chown -R "${run_user}:www-data" "${web_dir}" 2>/dev/null || true
+  sudo chmod -R 775 "${web_dir}/storage" "${web_dir}/bootstrap/cache" 2>/dev/null || true
+  sudo chmod o+x /root 2>/dev/null || true
+  sudo chmod o+x "${PROJECT_DIR}" 2>/dev/null || true
+  sudo chmod -R o+rX "${web_dir}/public" 2>/dev/null || true
+  
   log_step "restart PHP-FPM dan Nginx..."
   local php_ver=""
   if command -v php >/dev/null 2>&1; then

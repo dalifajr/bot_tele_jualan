@@ -350,6 +350,14 @@ setup_laravel() {
   chown -R "${run_user}:www-data" "${WEB_DIR}"
   chmod -R 775 "${WEB_DIR}/storage" "${WEB_DIR}/bootstrap/cache"
 
+  # Agar Nginx (www-data) bisa mengakses folder di dalam /root, kita harus 
+  # memberikan izin eksekusi (traversal) ke parent directories.
+  chmod o+x /root 2>/dev/null || true
+  chmod o+x "${PROJECT_DIR}" 2>/dev/null || true
+  
+  # Pastikan file static bisa dibaca oleh Nginx
+  chmod -R o+rX "${WEB_DIR}/public" 2>/dev/null || true
+
   log_step "Laravel setup selesai."
 }
 
