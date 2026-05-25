@@ -221,7 +221,7 @@ update_website() {
   php artisan config:clear 2>/dev/null || true
   php artisan view:clear 2>/dev/null || true
   php artisan route:clear 2>/dev/null || true
-  php artisan migrate --force 2>/dev/null || true
+  php artisan migrate --force || echo "WARNING: Laravel migration failed."
   
   log_step "memperbarui izin file (permissions)..."
   local run_user
