@@ -171,6 +171,19 @@ install_system_packages() {
   log_step "PHP version: $(php -v | head -n1)"
 }
 
+setup_swap() {
+  if [[ $(swapon --show | wc -l) -eq 0 ]]; then
+    log_step "Membuat swap file 1GB untuk mencegah kehabisan memori (OOM hang)..."
+    fallocate -l 1G /swapfile || dd if=/dev/zero of=/swapfile bs=1M count=1024 status=none
+    chmod 600 /swapfile
+    mkswap /swapfile >/dev/null 2>&1
+    swapon /swapfile
+    if ! grep -q "/swapfile" /etc/fstab; then
+      echo '/swapfile none swap sw 0 0' >> /etc/fstab
+    fi
+  fi
+}
+
 install_composer() {
   if command -v composer >/dev/null 2>&1; then
     log_step "Composer sudah terinstall: $(composer --version 2>/dev/null | head -n1)"
@@ -180,7 +193,7 @@ install_composer() {
   log_step "Menginstall Composer..."
   local expected_sig
   expected_sig="$(curl -sS https://composer.github.io/installer.sig)"
-  php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+  curl -sS https://getcomposer.org/installer -o composer-setup.php
   local actual_sig
   actual_sig="$(php -r "echo hash_file('sha384', 'composer-setup.php');")"
 
@@ -466,6 +479,7 @@ do_install() {
   
   init_progress
 
+  setup_swap
   install_system_packages
   setup_mysql
   install_composer
