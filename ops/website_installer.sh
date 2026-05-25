@@ -8,8 +8,85 @@ ENV_FILE="${PROJECT_DIR}/.env"
 WEB_ENV_FILE="${WEB_DIR}/.env"
 OPS_DIR="${PROJECT_DIR}/ops"
 
+PROGRESS_ENABLED=0
+TOTAL_STEPS=18
+CURRENT_STEP=0
+LAST_PROGRESS_TEXT="Menyiapkan instalasi..."
+
+restore_terminal() {
+  if [[ "${PROGRESS_ENABLED}" == "1" ]]; then
+    printf "\033[r"      # reset scrolling region
+    local lines
+    lines=$(tput lines 2>/dev/null || echo 24)
+    printf "\033[%d;1H\033[K" "$lines" # move to bottom and clear line
+    printf "\033[?25h"   # show cursor
+    PROGRESS_ENABLED=0   # disable so it doesn't run twice
+  fi
+}
+
+handle_winch() {
+  if [[ "${PROGRESS_ENABLED}" == "1" ]]; then
+    local lines
+    lines=$(tput lines 2>/dev/null || echo 24)
+    local scroll_lines=$((lines - 2))
+    if [[ $scroll_lines -lt 5 ]]; then scroll_lines=5; fi
+    printf "\033[1;%dr" "$scroll_lines"
+    update_progress "${LAST_PROGRESS_TEXT}"
+  fi
+}
+
+init_progress() {
+  PROGRESS_ENABLED=1
+  CURRENT_STEP=0
+  trap 'restore_terminal; exit 1' INT TERM
+  trap 'restore_terminal' EXIT
+  trap 'handle_winch' WINCH
+
+  printf "\033[?25l" # hide cursor
+  handle_winch
+  printf "\033[2J\033[1;1H" # clear screen and move to top
+}
+
+update_progress() {
+  local text="$1"
+  LAST_PROGRESS_TEXT="${text}"
+  if [[ "${PROGRESS_ENABLED}" != "1" ]]; then return; fi
+  
+  local lines
+  lines=$(tput lines 2>/dev/null || echo 24)
+  local cols
+  cols=$(tput cols 2>/dev/null || echo 80)
+  
+  local prog_line=$((lines - 1))
+  
+  local percent=$(( CURRENT_STEP * 100 / TOTAL_STEPS ))
+  if [[ $percent -gt 100 ]]; then percent=100; fi
+  
+  local prefix="Progress: [${percent}%] "
+  local bar_len=$((cols - ${#prefix} - ${#text} - 4))
+  if [[ $bar_len -lt 10 ]]; then bar_len=10; fi
+  
+  local filled_len=$(( percent * bar_len / 100 ))
+  local empty_len=$(( bar_len - filled_len ))
+  
+  local bar=""
+  for ((i=0; i<filled_len; i++)); do bar="${bar}#"; done
+  for ((i=0; i<empty_len; i++)); do bar="${bar}-"; done
+  
+  printf "\0337" # save cursor
+  printf "\033[%d;1H\033[K" "$prog_line" # move to progress line and clear
+  printf "\033[44;37m %s[%s] %s \033[0m" "${prefix}" "${bar}" "${text}"
+  printf "\0338" # restore cursor
+}
+
 log_step() {
-  echo "[website-installer] $*"
+  if [[ "${PROGRESS_ENABLED}" == "1" ]]; then
+    CURRENT_STEP=$((CURRENT_STEP + 1))
+    echo -e "\n\033[1;32m[+] $*\033[0m"
+    update_progress "$*"
+  else
+    echo "[website-installer] $*"
+  fi
 }
 
 load_env() {
@@ -373,44 +450,6 @@ update_main_env() {
   log_step "Main .env diperbarui: WEBSITE_ENABLED=true, WEBSITE_DOMAIN=${domain}"
 }
 
-LOG_FILE="/tmp/jualan-install.log"
-TOTAL_STEPS=7
-CURRENT_STEP=0
-
-cleanup_install() {
-    tput cnorm 2>/dev/null || true # Restore cursor
-    echo -e "\n\n[!] Instalasi dibatalkan oleh pengguna (Ctrl+C). Silakan cek ${LOG_FILE} jika ada proses yang menggantung."
-    exit 130
-}
-
-draw_progress() {
-    local label="$1"
-    local pct=$(( CURRENT_STEP * 100 / TOTAL_STEPS ))
-    local filled=$(( pct / 5 ))
-    local empty=$(( 20 - filled ))
-    local bar="["
-    for ((i=0; i<filled; i++)); do bar="${bar}#"; done
-    for ((i=0; i<empty; i++)); do bar="${bar}-"; done
-    bar="${bar}]"
-
-    # Print carriage return and clear line to overwrite
-    printf "\r\033[K%s %3d%% | %s" "${bar}" "${pct}" "${label}"
-}
-
-run_step() {
-    local label="$1"
-    shift
-    CURRENT_STEP=$(( CURRENT_STEP + 1 ))
-    draw_progress "${label}..."
-    
-    echo -e "\n\n=== STEP ${CURRENT_STEP}/${TOTAL_STEPS}: ${label} ===" >> "${LOG_FILE}"
-    if ! DEBIAN_FRONTEND=noninteractive "$@" >> "${LOG_FILE}" 2>&1; then
-        tput cnorm 2>/dev/null || true
-        echo -e "\n\n[ERROR] Proses '${label}' gagal! Silakan cek log detail di: ${LOG_FILE}"
-        exit 1
-    fi
-}
-
 do_install() {
   local domain="${1:-}"
 
@@ -424,27 +463,19 @@ do_install() {
   fi
 
   check_root
-
-  echo "Memulai instalasi website untuk ${domain}..."
-  echo "Log instalasi: ${LOG_FILE}"
-  > "${LOG_FILE}" # Kosongkan log
   
-  trap cleanup_install INT
-  tput civis 2>/dev/null || true # Sembunyikan cursor
+  init_progress
 
-  run_step "Install system packages" install_system_packages
-  run_step "Setup MySQL Database" setup_mysql
-  run_step "Install Composer" install_composer
-  run_step "Setup Laravel" setup_laravel
-  run_step "Konfigurasi Nginx" setup_nginx "${domain}"
-  run_step "Setup SSL (Let's Encrypt)" setup_ssl "${domain}"
-  run_step "Update Main Config" update_main_env "${domain}"
+  install_system_packages
+  setup_mysql
+  install_composer
+  setup_laravel
+  setup_nginx "${domain}"
+  setup_ssl "${domain}"
+  update_main_env "${domain}"
 
-  draw_progress "Selesai!"
-  tput cnorm 2>/dev/null || true # Tampilkan cursor
-  trap - INT
+  restore_terminal
 
-  echo ""
   echo ""
   echo "============================================"
   echo "  ✅ Website berhasil diinstall!"
