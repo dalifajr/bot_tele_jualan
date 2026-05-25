@@ -8,18 +8,18 @@ from app.db.database import get_session
 from app.db.database import engine
 from app.db.models import Base
 
+from sqlalchemy import inspect
 
 def _ensure_column(conn, table_name: str, column_name: str, ddl: str) -> None:
-    rows = conn.execute(text(f"PRAGMA table_info({table_name})")).mappings().all()
-    existing = {row["name"] for row in rows}
+    inspector = inspect(engine)
+    columns = inspector.get_columns(table_name)
+    existing = {col["name"] for col in columns}
     if column_name in existing:
         return
     conn.execute(text(f"ALTER TABLE {table_name} ADD COLUMN {ddl}"))
 
 
 def _run_compat_migrations() -> None:
-    if engine.dialect.name != "sqlite":
-        return
 
     with engine.begin() as conn:
         _ensure_column(conn, "stock_units", "stock_status", "stock_status VARCHAR(32) DEFAULT 'ready'")
@@ -43,11 +43,19 @@ def _run_compat_migrations() -> None:
             "SET stock_status='ready' "
             "WHERE stock_status IS NULL OR stock_status=''"
         ))
-        conn.execute(text(
-            "UPDATE orders "
-            "SET expires_at = datetime(created_at, '+5 minutes') "
-            "WHERE status='pending_payment' AND expires_at IS NULL"
-        ))
+        
+        if engine.dialect.name == "mysql":
+            conn.execute(text(
+                "UPDATE orders "
+                "SET expires_at = DATE_ADD(created_at, INTERVAL 5 MINUTE) "
+                "WHERE status='pending_payment' AND expires_at IS NULL"
+            ))
+        else:
+            conn.execute(text(
+                "UPDATE orders "
+                "SET expires_at = datetime(created_at, '+5 minutes') "
+                "WHERE status='pending_payment' AND expires_at IS NULL"
+            ))
 
         conn.execute(text(
             "CREATE INDEX IF NOT EXISTS ix_stock_units_status_unsold "
@@ -97,30 +105,31 @@ def _run_compat_migrations() -> None:
             "CREATE INDEX IF NOT EXISTS ix_telemetry_events_event_created_duration "
             "ON telemetry_events(event, created_at, duration_ms)"
         ))
-        conn.execute(text(
-            "CREATE INDEX IF NOT EXISTS ix_retry_jobs_due "
-            "ON notification_retry_jobs(status, next_attempt_at, attempt_count)"
-        ))
-        conn.execute(text(
-            "CREATE INDEX IF NOT EXISTS ix_restock_subscriptions_lookup "
-            "ON restock_subscriptions(product_id, is_active, customer_id)"
-        ))
-        conn.execute(text(
-            "CREATE INDEX IF NOT EXISTS ix_complaint_cases_status_created "
-            "ON complaint_cases(status, created_at)"
-        ))
-        conn.execute(text(
-            "CREATE INDEX IF NOT EXISTS ix_complaint_cases_customer_status "
-            "ON complaint_cases(customer_id, status, created_at)"
-        ))
-        conn.execute(text(
-            "CREATE INDEX IF NOT EXISTS ix_complaint_attachments_case "
-            "ON complaint_attachments(complaint_id, id)"
-        ))
-        conn.execute(text(
-            "CREATE INDEX IF NOT EXISTS ix_login_tokens_status_expires "
-            "ON telegram_login_tokens(status, expires_at)"
-        ))
+        if engine.dialect.name == "sqlite":
+            conn.execute(text(
+                "CREATE INDEX IF NOT EXISTS ix_stock_units_status_unsold "
+                "ON stock_units(product_id, stock_status, created_at)"
+            ))
+            conn.execute(text(
+                "CREATE INDEX IF NOT EXISTS ix_restock_subscriptions_lookup "
+                "ON restock_subscriptions(product_id, is_active, customer_id)"
+            ))
+            conn.execute(text(
+                "CREATE INDEX IF NOT EXISTS ix_complaint_cases_status_created "
+                "ON complaint_cases(status, created_at)"
+            ))
+            conn.execute(text(
+                "CREATE INDEX IF NOT EXISTS ix_complaint_cases_customer_status "
+                "ON complaint_cases(customer_id, status, created_at)"
+            ))
+            conn.execute(text(
+                "CREATE INDEX IF NOT EXISTS ix_complaint_attachments_case "
+                "ON complaint_attachments(complaint_id, id)"
+            ))
+            conn.execute(text(
+                "CREATE INDEX IF NOT EXISTS ix_login_tokens_status_expires "
+                "ON telegram_login_tokens(status, expires_at)"
+            ))
 
 
 def init_db() -> None:
