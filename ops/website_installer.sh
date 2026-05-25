@@ -57,6 +57,13 @@ install_system_packages() {
   log_step "Menginstall system packages..."
   apt-get update -qq
 
+  # Install add-apt-repository tool
+  apt-get install -y -qq software-properties-common
+
+  # Add Ondrej PHP PPA for PHP 8.3 support
+  LC_ALL=C.UTF-8 add-apt-repository -y ppa:ondrej/php
+  apt-get update -qq
+
   local php_ver
   php_ver="$(detect_php_version)"
 
