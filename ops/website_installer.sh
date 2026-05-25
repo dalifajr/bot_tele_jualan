@@ -43,51 +43,53 @@ check_root() {
 }
 
 detect_php_version() {
-  # Prefer 8.3, fallback to whatever is available
-  for v in 8.3 8.4 8.2; do
-    if command -v "php${v}" >/dev/null 2>&1; then
+  # If PHP is already installed, get its exact version
+  if command -v php >/dev/null 2>&1; then
+    php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;'
+    return
+  fi
+
+  # Try to find which specific PHP version is available in apt-cache
+  for v in 8.4 8.3 8.2 8.1; do
+    if apt-cache show "php${v}-fpm" >/dev/null 2>&1; then
       echo "${v}"
       return
     fi
   done
-  echo "8.3"
+  
+  # Fallback to empty string for unversioned packages
+  echo ""
 }
 
 install_system_packages() {
   log_step "Menginstall system packages..."
-  apt-get update -qq
+  apt-get update -qq || true
 
   # Install add-apt-repository tool
   apt-get install -y -qq software-properties-common
 
-  # Add Ondrej PHP PPA for PHP 8.3 support
-  LC_ALL=C.UTF-8 add-apt-repository -y ppa:ondrej/php
-  apt-get update -qq
+  # Add Ondrej PHP PPA for PHP 8.3 support, ignoring errors if OS is unsupported (like 'questing')
+  LC_ALL=C.UTF-8 add-apt-repository -y ppa:ondrej/php || true
+  apt-get update -qq || true
 
   local php_ver
   php_ver="$(detect_php_version)"
 
-  apt-get install -y -qq \
-    nginx \
-    certbot \
-    python3-certbot-nginx \
-    "php${php_ver}-fpm" \
-    "php${php_ver}-cli" \
-    "php${php_ver}-curl" \
-    "php${php_ver}-mbstring" \
-    "php${php_ver}-xml" \
-    "php${php_ver}-zip" \
-    "php${php_ver}-sqlite3" \
-    "php${php_ver}-mysql" \
-    "php${php_ver}-gd" \
-    "php${php_ver}-bcmath" \
-    "php${php_ver}-intl" \
-    mysql-server \
-    python3-pymysql \
-    python3-sqlalchemy \
-    unzip \
-    curl \
-    jq
+  if [[ -z "${php_ver}" ]]; then
+    log_step "Tidak menemukan paket PHP versi spesifik, menggunakan paket bawaan OS..."
+    apt-get install -y -qq \
+      nginx certbot python3-certbot-nginx \
+      php-fpm php-cli php-curl php-mbstring php-xml php-zip php-sqlite3 php-mysql php-gd php-bcmath php-intl \
+      mysql-server python3-pymysql python3-sqlalchemy unzip curl jq
+  else
+    log_step "Menggunakan paket PHP versi ${php_ver}..."
+    apt-get install -y -qq \
+      nginx certbot python3-certbot-nginx \
+      "php${php_ver}-fpm" "php${php_ver}-cli" "php${php_ver}-curl" "php${php_ver}-mbstring" \
+      "php${php_ver}-xml" "php${php_ver}-zip" "php${php_ver}-sqlite3" "php${php_ver}-mysql" \
+      "php${php_ver}-gd" "php${php_ver}-bcmath" "php${php_ver}-intl" \
+      mysql-server python3-pymysql python3-sqlalchemy unzip curl jq
+  fi
 
   log_step "PHP version: $(php -v | head -n1)"
 }
