@@ -12,12 +12,12 @@ class AdminController extends Controller
 {
     public function dashboard()
     {
-        $totalRevenue = Order::where('status', 'delivered')->sum('total_price');
+        $totalRevenue = Order::where('status', 'delivered')->sum('total_amount');
         $totalOrders = Order::count();
         $totalProducts = Product::count();
         $totalUsers = User::count();
 
-        $recentOrders = Order::with(['user', 'product'])
+        $recentOrders = Order::with(['customer', 'items.product'])
             ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get();
@@ -43,7 +43,7 @@ class AdminController extends Controller
 
     public function orders(Request $request)
     {
-        $query = Order::with(['user', 'product'])->orderBy('created_at', 'desc');
+        $query = Order::with(['customer', 'items.product'])->orderBy('created_at', 'desc');
 
         if ($request->has('status') && $request->status !== '') {
             $query->where('status', $request->status);

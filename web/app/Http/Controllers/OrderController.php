@@ -13,7 +13,7 @@ class OrderController extends Controller
         $userId = Auth::id();
         $status = $request->query('status');
 
-        $query = Order::where('customer_id', $userId)->with('product')->orderByDesc('id');
+        $query = Order::where('customer_id', $userId)->with('items.product')->orderByDesc('id');
 
         if ($status && in_array($status, ['pending_payment', 'paid', 'delivered', 'cancelled', 'expired'])) {
             $query->where('status', $status);

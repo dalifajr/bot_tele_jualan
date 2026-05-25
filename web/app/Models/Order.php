@@ -9,11 +9,11 @@ class Order extends Model
     protected $table = 'orders';
 
     protected $fillable = [
-        'reference',
+        'order_ref',
         'customer_id',
-        'product_id',
-        'quantity',
-        'total_price',
+        'subtotal',
+        'unique_code',
+        'total_amount',
         'status',
         'expires_at',
         'delivered_at',
@@ -22,8 +22,9 @@ class Order extends Model
     ];
 
     protected $casts = [
-        'quantity' => 'integer',
-        'total_price' => 'integer',
+        'subtotal' => 'integer',
+        'unique_code' => 'integer',
+        'total_amount' => 'integer',
         'expires_at' => 'datetime',
         'delivered_at' => 'datetime',
         'cancelled_at' => 'datetime',
@@ -34,9 +35,30 @@ class Order extends Model
         return $this->belongsTo(User::class, 'customer_id');
     }
 
-    public function product()
+    public function items()
     {
-        return $this->belongsTo(Product::class, 'product_id');
+        return $this->hasMany(OrderItem::class, 'order_id');
+    }
+
+    // Accessors for backward compatibility with views
+    public function getReferenceAttribute()
+    {
+        return $this->order_ref;
+    }
+
+    public function getTotalPriceAttribute()
+    {
+        return $this->total_amount;
+    }
+
+    public function getQuantityAttribute()
+    {
+        return $this->items->sum('quantity');
+    }
+
+    public function getProductAttribute()
+    {
+        return $this->items->first()?->product;
     }
 
     public function stockUnits()
@@ -44,12 +66,17 @@ class Order extends Model
         return $this->hasMany(StockUnit::class, 'sold_order_id');
     }
 
+    public function getUserAttribute()
+    {
+        return $this->customer;
+    }
+
     /**
      * Get formatted total price in Rupiah.
      */
     public function getFormattedTotalAttribute(): string
     {
-        return 'Rp ' . number_format($this->total_price, 0, ',', '.');
+        return 'Rp ' . number_format($this->total_amount, 0, ',', '.');
     }
 
     /**

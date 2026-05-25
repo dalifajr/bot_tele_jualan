@@ -17,10 +17,10 @@ class DashboardController extends Controller
         $totalOrders = Order::where('customer_id', $userId)->count();
         $completedOrders = Order::where('customer_id', $userId)->where('status', 'delivered')->count();
         $pendingOrders = Order::where('customer_id', $userId)->whereIn('status', ['pending_payment', 'paid'])->count();
-        $totalSpent = Order::where('customer_id', $userId)->where('status', 'delivered')->sum('total_price');
+        $totalSpent = Order::where('customer_id', $userId)->where('status', 'delivered')->sum('total_amount');
 
         $recentOrders = Order::where('customer_id', $userId)
-            ->with('product')
+            ->with('items.product')
             ->orderByDesc('id')
             ->limit(5)
             ->get();
