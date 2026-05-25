@@ -44,6 +44,7 @@
                     <tr class="text-secondary small border-bottom">
                         <th class="px-4 py-3 border-0">ID</th>
                         <th class="py-3 border-0">Produk</th>
+                        <th class="py-3 border-0">Username</th>
                         @if(request('status') === 'terjual')
                         <th class="py-3 border-0">Pembeli</th>
                         <th class="py-3 border-0">ID Telegram</th>
@@ -51,16 +52,27 @@
                         @else
                         <th class="py-3 border-0">Konten (Sebagian)</th>
                         <th class="py-3 border-0">Status</th>
+                        @if(request('status') === 'awaiting_benefits')
+                        <th class="py-3 border-0">Kapan Bisa Diverifikasi</th>
+                        @else
                         <th class="py-3 border-0">Ditambahkan</th>
+                        @endif
                         @endif
                         <th class="py-3 border-0 text-end px-4">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach($stockUnits as $unit)
+                    @php
+                        $extractedUsername = '-';
+                        if (preg_match('/Username:\s*([^\n]+)/i', $unit->raw_text, $matches)) {
+                            $extractedUsername = trim($matches[1]);
+                        }
+                    @endphp
                     <tr>
                         <td class="px-4 fw-bold text-muted">#{{ $unit->id }}</td>
                         <td>{{ Str::limit($unit->product->name ?? 'Unknown', 25) }}</td>
+                        <td class="fw-medium text-dark">{{ Str::limit($extractedUsername, 20) }}</td>
                         
                         @if(request('status') === 'terjual')
                         <td>
@@ -100,7 +112,17 @@
                                 <span class="badge bg-{{ $statusBadge['bg'] }} text-{{ $statusBadge['text'] }} rounded-pill px-3">{{ $statusBadge['label'] }}</span>
                             @endif
                         </td>
+                        @if(request('status') === 'awaiting_benefits')
+                        <td class="text-secondary small fw-bold">
+                            @if($unit->available_at)
+                                {{ \Carbon\Carbon::parse($unit->available_at)->format('d M Y H:i') }}
+                            @else
+                                <span class="text-muted">-</span>
+                            @endif
+                        </td>
+                        @else
                         <td class="text-secondary small">{{ $unit->created_at->format('d M Y') }}</td>
+                        @endif
                         @endif
                         <td class="text-end px-4">
                             <div class="d-flex gap-2 justify-content-end">

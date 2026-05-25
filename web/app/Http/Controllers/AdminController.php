@@ -261,8 +261,29 @@ class AdminController extends Controller
     // ==========================================
     public function settings()
     {
-        $settings = \App\Models\BotSetting::all()->pluck('value', 'key');
+        $settings = \App\Models\BotSetting::all()->pluck('value', 'key')->toArray();
         return view('admin.settings.index', compact('settings'));
+    }
+
+    public function updateSettings(Request $request)
+    {
+        $data = $request->except('_token');
+        foreach ($data as $key => $value) {
+            \App\Models\BotSetting::updateOrCreate(
+                ['key' => $key],
+                ['value' => $value, 'updated_at' => now()]
+            );
+        }
+        
+        // Handle custom Python bot logic sync for awaiting hours if changed
+        if (isset($data['github_pack.awaiting_hours'])) {
+            $delta = (int)$data['github_pack.awaiting_hours'];
+            // In a full implementation, we'd adjust existing stock's available_at here
+            // But since the Python bot handles this via its own command, we just save the config
+            // and future stocks will use this new setting.
+        }
+
+        return back()->with('success', 'Konfigurasi berhasil disimpan!');
     }
 
     // ==========================================

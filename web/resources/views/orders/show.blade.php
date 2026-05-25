@@ -89,13 +89,16 @@
                 {{-- Stock content for delivered orders --}}
                 @if($order->status === 'delivered' && $order->stockUnits && $order->stockUnits->count() > 0)
                 <hr>
-                <h6 class="fw-bold mb-3"><i class="fas fa-key text-success me-2"></i>Produk Anda</h6>
-                <div class="bg-body-secondary rounded-3 p-3">
-                    @foreach($order->stockUnits as $unit)
-                    <div class="mb-2 p-2 bg-body rounded border">
-                        <code class="text-break">{{ $unit->content }}</code>
-                    </div>
-                    @endforeach
+                <h6 class="fw-bold mb-3"><i class="fas fa-key text-success me-2"></i>Detail Akun yang Dibeli</h6>
+                <div class="bg-body-secondary rounded-3 p-3 text-break" style="max-height: 300px; overflow-y: auto; font-family: monospace; white-space: pre-wrap; font-size: 0.9rem;">
+@foreach($order->stockUnits as $unit)
+{{ $unit->raw_text }}
+@if(!$loop->last)
+
+----------------------------------------
+
+@endif
+@endforeach
                 </div>
                 @endif
             </div>

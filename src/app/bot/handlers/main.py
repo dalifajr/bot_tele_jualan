@@ -96,7 +96,7 @@ from app.bot.services.qris_service import (
     set_qris_static_payload,
 )
 from app.bot.services.github_pack_service import (
-    GITHUB_PACK_SAVE_HOURS,
+    get_github_pack_save_hours,
     add_github_stock,
     add_saved_github_stock,
     delete_github_stock,
@@ -1918,7 +1918,7 @@ async def _send_github_saved_account_menu(update: Update) -> None:
         update,
         (
             "🗂️ <b>Simpan Akun GitHub Fresh</b>\n"
-            f"Mode simpan: <b>{GITHUB_PACK_SAVE_HOURS} jam</b> sebelum diajukan verifikasi.\n\n"
+            f"Mode simpan: <b>{get_github_pack_save_hours(session)} jam</b> sebelum diajukan verifikasi.\n\n"
             f"Total akun simpan: <b>{len(saved_stocks)}</b> akun\n"
             f"Siap diajukan: <b>{ready_count}</b> akun\n"
             f"Masih menunggu: <b>{waiting_count}</b> akun\n"
@@ -4769,7 +4769,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             update,
             (
                 "➕ <b>Simpan Akun GitHub Fresh</b>\n"
-                f"Kirim blok data akun. Akun akan ditahan selama <b>{GITHUB_PACK_SAVE_HOURS} jam</b> sebelum siap diajukan verifikasi.\n\n"
+                f"Kirim blok data akun. Akun akan ditahan selama <b>{get_github_pack_save_hours(session)} jam</b> sebelum siap diajukan verifikasi.\n\n"
                 f"{_admin_footer_text()}"
             ),
             _back_keyboard("gh_save"),

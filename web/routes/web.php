@@ -84,6 +84,7 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         Route::post('/broadcast/send', [\App\Http\Controllers\AdminController::class, 'sendBroadcast'])->name('broadcast.send');
         
         Route::get('/settings', [\App\Http\Controllers\AdminController::class, 'settings'])->name('settings.index');
+        Route::post('/settings', [\App\Http\Controllers\AdminController::class, 'updateSettings'])->name('settings.update');
         Route::get('/reports', [\App\Http\Controllers\AdminController::class, 'reports'])->name('reports.index');
         
         // System Actions

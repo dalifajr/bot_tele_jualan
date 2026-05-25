@@ -25,7 +25,16 @@ GITHUB_PACK_USED_PRODUCT_ID_KEY = "github_pack.used_product_id"
 DEFAULT_GITHUB_PACK_AWAITING_HOURS = 78
 MIN_GITHUB_PACK_AWAITING_HOURS = 1
 MAX_GITHUB_PACK_AWAITING_HOURS = 720
-GITHUB_PACK_SAVE_HOURS = 80
+GITHUB_PACK_SAVE_HOURS_KEY = "github_pack.save_hours"
+
+def get_github_pack_save_hours(session) -> int:
+    try:
+        from app.bot.services.settings_service import get_setting
+        raw = get_setting(session, key=GITHUB_PACK_SAVE_HOURS_KEY, default="80")
+        parsed = int(str(raw).strip())
+        return parsed if parsed > 0 else 80
+    except Exception:
+        return 80
 GITHUB_PACK_NOTIFY_BATCH_WINDOW_MINUTES = 60
 DEFAULT_GITHUB_USED_PRODUCT_NAME = "GHS Bekas"
 DEFAULT_GITHUB_USED_PRODUCT_PRICE = 20000
@@ -150,10 +159,10 @@ def _resolve_sold_at(order: Order | None, stock: StockUnit) -> datetime:
     return order.delivered_at or order.paid_at or order.created_at or stock.created_at
 
 
-def _resolve_saved_ready_at(stock: StockUnit) -> datetime:
+def _resolve_saved_ready_at(stock: StockUnit, session) -> datetime:
     if stock.available_at is not None:
         return stock.available_at
-    return stock.created_at + timedelta(hours=GITHUB_PACK_SAVE_HOURS)
+    return stock.created_at + timedelta(hours=get_github_pack_save_hours(session))
 
 
 def _buyer_display(user: User | None) -> tuple[str, int | None]:
@@ -418,7 +427,7 @@ def add_saved_github_stock(session: Session, raw_text: str, actor_id: int | None
             username = value.strip() or "unknown"
             break
 
-    ready_at = datetime.utcnow() + timedelta(hours=GITHUB_PACK_SAVE_HOURS)
+    ready_at = datetime.utcnow() + timedelta(hours=get_github_pack_save_hours(session))
     stock = StockUnit(
         product_id=product.id,
         raw_text=raw_text.strip(),
@@ -511,7 +520,7 @@ def list_saved_github_stocks(session: Session) -> list[GithubSavedStockView]:
 
     result: list[GithubSavedStockView] = []
     for row in rows:
-        ready_at = _resolve_saved_ready_at(row)
+        ready_at = _resolve_saved_ready_at(row, session)
         result.append(
             GithubSavedStockView(
                 stock_id=int(row.id),
@@ -532,7 +541,7 @@ def list_ready_saved_github_stocks(
     now: datetime | None = None,
 ) -> list[GithubSavedStockView]:
     current = now or datetime.utcnow()
-    hold_threshold = current - timedelta(hours=GITHUB_PACK_SAVE_HOURS)
+    hold_threshold = current - timedelta(hours=get_github_pack_save_hours(session))
     product = ensure_github_pack_product(session)
 
     rows = list(
@@ -561,7 +570,7 @@ def list_ready_saved_github_stocks(
 
     result: list[GithubSavedStockView] = []
     for row in rows:
-        ready_at = _resolve_saved_ready_at(row)
+        ready_at = _resolve_saved_ready_at(row, session)
         result.append(
             GithubSavedStockView(
                 stock_id=int(row.id),
@@ -594,7 +603,7 @@ def get_saved_github_stock_detail(session: Session, stock_id: int) -> GithubSave
     if stock is None:
         return None
 
-    ready_at = _resolve_saved_ready_at(stock)
+    ready_at = _resolve_saved_ready_at(stock, session)
     now = datetime.utcnow()
     return GithubSavedStockView(
         stock_id=int(stock.id),
@@ -654,7 +663,7 @@ def move_saved_github_stock_to_awaiting(
     product = ensure_github_pack_product(session)
     awaiting_hours = get_github_pack_awaiting_hours(session)
     now = datetime.utcnow()
-    hold_threshold = now - timedelta(hours=GITHUB_PACK_SAVE_HOURS)
+    hold_threshold = now - timedelta(hours=get_github_pack_save_hours(session))
 
     stock = session.scalar(
         select(StockUnit).where(
@@ -737,7 +746,7 @@ def list_saved_github_ready_notification_batch(
 
     cluster_rows: list[StockUnit] = []
     for row in rows:
-        ready_at = _resolve_saved_ready_at(row)
+        ready_at = _resolve_saved_ready_at(row, session)
         if ready_at <= cluster_deadline:
             cluster_rows.append(row)
         else:
@@ -746,13 +755,13 @@ def list_saved_github_ready_notification_batch(
     if not cluster_rows:
         return []
 
-    latest_cluster_ready_at = max(_resolve_saved_ready_at(row) for row in cluster_rows)
+    latest_cluster_ready_at = max(_resolve_saved_ready_at(row, session) for row in cluster_rows)
     if latest_cluster_ready_at > current:
         return []
 
     result: list[GithubSavedReadyNotifyCandidate] = []
     for row in cluster_rows:
-        ready_at = _resolve_saved_ready_at(row)
+        ready_at = _resolve_saved_ready_at(row, session)
         if ready_at > current:
             continue
         result.append(
@@ -811,7 +820,7 @@ def move_ready_saved_github_stocks_to_awaiting(
     product = ensure_github_pack_product(session)
     awaiting_hours = get_github_pack_awaiting_hours(session)
     now = datetime.utcnow()
-    hold_threshold = now - timedelta(hours=GITHUB_PACK_SAVE_HOURS)
+    hold_threshold = now - timedelta(hours=get_github_pack_save_hours(session))
 
     rows = list(
         session.scalars(

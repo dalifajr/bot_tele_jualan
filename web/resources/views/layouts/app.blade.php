@@ -166,21 +166,11 @@
                 <a href="{{ route('admin.dashboard') }}" class="menu-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
                     <i class="fas fa-chart-line"></i> Dashboard Admin
                 </a>
-                <a href="{{ route('admin.products.index') }}" class="menu-item {{ request()->routeIs('admin.products.index') ? 'active' : '' }}">
-                    <i class="fas fa-box"></i> Kelola Semua Produk
+                <a href="{{ route('admin.products.index') }}" class="menu-item {{ request()->routeIs('admin.products.*') ? 'active' : '' }}">
+                    <i class="fas fa-box"></i> Katalog Admin
                 </a>
                 
-                {{-- Dynamic Product Links --}}
-                @php
-                    $sidebarProducts = \App\Models\Product::where('is_suspended', false)->orderBy('created_at', 'desc')->get();
-                @endphp
-                @foreach($sidebarProducts as $sp)
-                <a href="{{ route('admin.products.manage', $sp->id) }}" class="menu-item {{ request()->url() == route('admin.products.manage', $sp->id) ? 'active' : '' }} ps-4 small">
-                    <i class="fas fa-angle-right text-muted" style="font-size: 0.8em;"></i> {{ $sp->name }}
-                </a>
-                @endforeach
-                
-                <a href="{{ route('admin.stock.index') }}" class="menu-item {{ request()->routeIs('admin.stock.*') ? 'active' : '' }} mt-2">
+                <a href="{{ route('admin.stock.index') }}" class="menu-item {{ request()->routeIs('admin.stock.*') ? 'active' : '' }}">
                     <i class="fas fa-cubes"></i> Kelola Stok
                 </a>
                 <a href="{{ route('admin.orders.index') }}" class="menu-item {{ request()->routeIs('admin.orders.*') ? 'active' : '' }}">
