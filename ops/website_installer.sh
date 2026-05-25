@@ -259,29 +259,34 @@ setup_laravel() {
 
   cd "${WEB_DIR}"
 
-  # Install dependencies
-  composer install --no-dev --optimize-autoloader --no-interaction
-
-  # Create .env if not exists
+  # Create .env BEFORE composer install (composer runs artisan package:discover which needs valid APP_URL)
   if [[ ! -f "${WEB_ENV_FILE}" ]]; then
     cp .env.example .env
   fi
 
-  # Generate app key
-  php artisan key:generate --force --no-interaction
-
-  # Configure Laravel .env from main project .env
+  # Load main project .env untuk mendapatkan domain
   load_env
   local bot_token="${BOT_TOKEN:-}"
   local shared_secret="${LISTENER_SHARED_SECRET:-change-me}"
   local website_domain="${WEBSITE_DOMAIN:-}"
   local bot_username="${WEBSITE_BOT_USERNAME:-}"
 
+  # Set APP_URL dulu agar composer post-install scripts tidak crash
+  _set_env_value "${WEB_ENV_FILE}" "APP_URL" "https://${website_domain}"
+  _set_env_value "${WEB_ENV_FILE}" "APP_NAME" "Jualan"
+
+  # Install dependencies (allow running as root on VPS)
+  export COMPOSER_ALLOW_SUPERUSER=1
+  composer install --no-dev --optimize-autoloader --no-interaction
+
+  # Generate app key
+  php artisan key:generate --force --no-interaction
+
   # Auto fetch bot username if we have a token but no username
   if [[ -n "${bot_token}" && -z "${bot_username}" ]]; then
       log_step "Fetching bot username from Telegram API..."
       local me_resp
-      me_resp=$(curl -s "https://api.telegram.org/bot${bot_token}/getMe")
+      me_resp=$(curl -4 -s --connect-timeout 10 "https://api.telegram.org/bot${bot_token}/getMe")
       if echo "${me_resp}" | grep -q '"ok":true'; then
           bot_username=$(echo "${me_resp}" | jq -r '.result.username')
           log_step "Found bot username: @${bot_username}"
@@ -320,7 +325,6 @@ setup_laravel() {
   _set_env_value "${WEB_ENV_FILE}" "WEBSITE_DOMAIN" "${website_domain}"
   _set_env_value "${WEB_ENV_FILE}" "SESSION_LIFETIME" "43200"
   _set_env_value "${WEB_ENV_FILE}" "REMEMBER_ME_DAYS" "30"
-  _set_env_value "${WEB_ENV_FILE}" "APP_URL" "https://${website_domain}"
 
   # Update Python Bot to use MySQL
   local python_mysql_url="mysql+pymysql://${mysql_creds}"
