@@ -11,7 +11,7 @@
     </div>
 </div>
 
-<div class="card border-0 shadow-sm" style="border-radius: 16px;">
+<div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 16px;">
     <div class="card-body p-0">
         @if($products->count() > 0)
         <div class="table-responsive">

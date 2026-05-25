@@ -73,7 +73,7 @@
 </div>
 
 {{-- Recent Orders --}}
-<div class="card border-0 shadow-sm" style="border-radius: 16px;">
+<div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 16px;">
     <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
         <h5 class="fw-bold mb-0">Pesanan Terbaru</h5>
         <a href="{{ route('admin.orders.index') }}" class="btn btn-sm btn-outline-primary rounded-pill px-3">Lihat Semua</a>

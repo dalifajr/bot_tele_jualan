@@ -64,7 +64,7 @@
 {{-- Recent Orders --}}
 <div class="row g-4">
     <div class="col-lg-8">
-        <div class="card border-0 shadow-sm" style="border-radius: 16px;">
+        <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 16px;">
             <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center pt-4 px-4">
                 <h5 class="fw-bold mb-0"><i class="fas fa-history text-primary me-2"></i>Pesanan Terbaru</h5>
                 <a href="{{ route('orders.index') }}" class="btn btn-sm btn-outline-primary rounded-pill px-3">Lihat Semua</a>
