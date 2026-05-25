@@ -33,17 +33,26 @@ class AdminController extends Controller
         return view('admin.products.index', compact('products'));
     }
 
-    public function stock()
+    public function stock(Request $request)
     {
-        $stockUnits = StockUnit::with('product')
-            ->orderBy('created_at', 'desc')
-            ->paginate(15);
-        return view('admin.stock.index', compact('stockUnits'));
+        $query = StockUnit::with(['product', 'order.customer'])->orderBy('created_at', 'desc');
+
+        if ($request->has('status') && $request->status !== '') {
+            if ($request->status === 'terjual') {
+                $query->where('is_sold', true);
+            } else {
+                $query->where('is_sold', false)->where('stock_status', $request->status);
+            }
+        }
+
+        $stockUnits = $query->paginate(15);
+        $status = $request->status;
+        return view('admin.stock.index', compact('stockUnits', 'status'));
     }
 
     public function orders(Request $request)
     {
-        $query = Order::with(['customer', 'items.product'])->orderBy('created_at', 'desc');
+        $query = Order::with(['customer', 'items.product', 'stockUnits'])->orderBy('created_at', 'desc');
 
         if ($request->has('status') && $request->status !== '') {
             $query->where('status', $request->status);
@@ -112,6 +121,7 @@ class AdminController extends Controller
     {
         $request->validate([
             'product_id' => 'required|exists:products,id',
+            'stock_status' => 'required|in:ready,awaiting_benefits,simpan_akun',
             'raw_text' => 'required|string',
         ]);
 
@@ -124,7 +134,7 @@ class AdminController extends Controller
                 \App\Models\StockUnit::create([
                     'product_id' => $request->product_id,
                     'raw_text' => $block,
-                    'stock_status' => 'ready',
+                    'stock_status' => $request->stock_status,
                     'is_sold' => false
                 ]);
                 $count++;
@@ -176,11 +186,7 @@ class AdminController extends Controller
 
     public function markNotificationsRead()
     {
-        $pendingOrdersCount = \App\Models\Order::whereIn('status', ['pending_payment', 'paid'])->count();
-        $pendingLoginsCount = \App\Models\TelegramLoginToken::where('status', 'pending')->count();
-        
-        session(['notifications_cleared_count' => $pendingOrdersCount + $pendingLoginsCount]);
-        
+        session(['notifications_read_at' => now()->toDateTimeString()]);
         return response()->json(['success' => true]);
     }
 

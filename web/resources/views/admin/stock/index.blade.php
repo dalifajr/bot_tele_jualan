@@ -16,8 +16,27 @@
     </div>
 </div>
 
-<div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 16px;">
-    <div class="card-body p-0">
+<div class="card border-0 shadow-sm overflow-hidden mb-4" style="border-radius: 16px;">
+    <div class="card-header bg-white border-bottom-0 pt-4 pb-0 px-4">
+        <ul class="nav nav-tabs border-bottom-0" style="margin-bottom: -1px;">
+            <li class="nav-item">
+                <a class="nav-link {{ request('status') === null ? 'active border-primary border-bottom-0 text-primary fw-bold' : 'text-muted' }}" href="{{ route('admin.stock.index') }}">Semua</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {{ request('status') === 'ready' ? 'active border-primary border-bottom-0 text-primary fw-bold' : 'text-muted' }}" href="{{ route('admin.stock.index', ['status' => 'ready']) }}">Ready</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {{ request('status') === 'awaiting_benefits' ? 'active border-primary border-bottom-0 text-primary fw-bold' : 'text-muted' }}" href="{{ route('admin.stock.index', ['status' => 'awaiting_benefits']) }}">Awaiting Benefits</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {{ request('status') === 'simpan_akun' ? 'active border-primary border-bottom-0 text-primary fw-bold' : 'text-muted' }}" href="{{ route('admin.stock.index', ['status' => 'simpan_akun']) }}">Simpan Akun</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {{ request('status') === 'terjual' ? 'active border-primary border-bottom-0 text-primary fw-bold' : 'text-muted' }}" href="{{ route('admin.stock.index', ['status' => 'terjual']) }}">Terjual</a>
+            </li>
+        </ul>
+    </div>
+    <div class="card-body p-0 border-top">
         @if($stockUnits->count() > 0)
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
@@ -25,9 +44,15 @@
                     <tr class="text-secondary small border-bottom">
                         <th class="px-4 py-3 border-0">ID</th>
                         <th class="py-3 border-0">Produk</th>
+                        @if(request('status') === 'terjual')
+                        <th class="py-3 border-0">Pembeli</th>
+                        <th class="py-3 border-0">ID Telegram</th>
+                        <th class="py-3 border-0">Waktu Transaksi</th>
+                        @else
                         <th class="py-3 border-0">Konten (Sebagian)</th>
                         <th class="py-3 border-0">Status</th>
                         <th class="py-3 border-0">Ditambahkan</th>
+                        @endif
                         <th class="py-3 border-0 text-end px-4">Aksi</th>
                     </tr>
                 </thead>
@@ -36,15 +61,47 @@
                     <tr>
                         <td class="px-4 fw-bold text-muted">#{{ $unit->id }}</td>
                         <td>{{ Str::limit($unit->product->name ?? 'Unknown', 25) }}</td>
+                        
+                        @if(request('status') === 'terjual')
+                        <td>
+                            @if($unit->order && $unit->order->customer)
+                                {{ $unit->order->customer->full_name ?? $unit->order->customer->username ?? 'Unknown User' }}
+                                @if($unit->order->customer->username)
+                                    <br><small class="text-muted">{{ '@'.$unit->order->customer->username }}</small>
+                                @endif
+                            @else
+                                <span class="text-muted">-</span>
+                            @endif
+                        </td>
+                        <td>
+                            @if($unit->order && $unit->order->customer)
+                                <code>{{ $unit->order->customer->telegram_id }}</code>
+                            @else
+                                <span class="text-muted">-</span>
+                            @endif
+                        </td>
+                        <td class="text-secondary small">
+                            {{ $unit->order ? $unit->order->created_at->format('d M Y H:i') : '-' }}
+                        </td>
+                        @else
                         <td><code class="text-dark bg-light px-2 py-1 rounded">{{ Str::limit($unit->content ?? $unit->raw_text, 20) }}</code></td>
                         <td>
                             @if($unit->is_sold)
                                 <span class="badge bg-danger-subtle text-danger rounded-pill px-3">Terjual</span>
                             @else
-                                <span class="badge bg-success-subtle text-success rounded-pill px-3">Tersedia</span>
+                                @php
+                                    $statusBadge = match($unit->stock_status) {
+                                        'ready' => ['bg' => 'success-subtle', 'text' => 'success', 'label' => 'Ready'],
+                                        'awaiting_benefits' => ['bg' => 'warning-subtle', 'text' => 'warning', 'label' => 'Awaiting Benefits'],
+                                        'simpan_akun' => ['bg' => 'info-subtle', 'text' => 'info', 'label' => 'Simpan Akun'],
+                                        default => ['bg' => 'secondary-subtle', 'text' => 'secondary', 'label' => $unit->stock_status]
+                                    };
+                                @endphp
+                                <span class="badge bg-{{ $statusBadge['bg'] }} text-{{ $statusBadge['text'] }} rounded-pill px-3">{{ $statusBadge['label'] }}</span>
                             @endif
                         </td>
                         <td class="text-secondary small">{{ $unit->created_at->format('d M Y') }}</td>
+                        @endif
                         <td class="text-end px-4">
                             <div class="d-flex gap-2 justify-content-end">
                                 <button class="btn btn-sm btn-light text-info rounded-circle" data-bs-toggle="modal" data-bs-target="#detailStockModal{{ $unit->id }}" title="Lihat Detail">
@@ -67,7 +124,7 @@
             </table>
         </div>
         <div class="px-4 py-3 border-top">
-            {{ $stockUnits->links() }}
+            {{ $stockUnits->withQueryString()->links() }}
         </div>
         @else
         <div class="text-center py-5">
@@ -100,6 +157,14 @@
                             @foreach($allProducts as $p)
                                 <option value="{{ $p->id }}">{{ $p->name }} (Rp {{ number_format($p->price, 0, ',', '.') }})</option>
                             @endforeach
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">Status Awal Stok</label>
+                        <select name="stock_status" class="form-select" required>
+                            <option value="ready">Ready</option>
+                            <option value="awaiting_benefits">Awaiting Benefits</option>
+                            <option value="simpan_akun">Simpan Akun</option>
                         </select>
                     </div>
                     <div class="mb-3">

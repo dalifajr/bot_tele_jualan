@@ -123,7 +123,24 @@
                             </tr>
                         </table>
                     </div>
-                    <div class="col-12">
+                    
+                    @if($order->stockUnits && $order->stockUnits->count() > 0)
+                    <div class="col-12 mt-2">
+                        <h6 class="fw-bold text-muted border-bottom pb-2 mb-3">Data Akun yang Dikirim ({{ $order->stockUnits->count() }} unit)</h6>
+                        <div class="bg-light rounded-3 p-3 text-break" style="max-height: 250px; overflow-y: auto; font-family: monospace; white-space: pre-wrap; font-size: 0.85rem;">
+@foreach($order->stockUnits as $unit)
+{{ $unit->raw_text }}
+@if(!$loop->last)
+
+----------------------------------------
+
+@endif
+@endforeach
+</div>
+                    </div>
+                    @endif
+
+                    <div class="col-12 mt-2">
                         <h6 class="fw-bold text-muted border-bottom pb-2 mb-3">Log Sistem</h6>
                         <div class="d-flex flex-wrap gap-3 small">
                             <div><span class="text-muted">Dibuat:</span> <br><b>{{ $order->created_at->format('d M Y H:i:s') }}</b></div>

@@ -11,14 +11,21 @@ class NotificationComposer
 {
     public function compose(View $view)
     {
-        $pendingOrdersCount = Order::whereIn('status', ['pending_payment', 'paid'])->count();
-        $pendingLoginsCount = TelegramLoginToken::where('status', 'pending')->count();
+        $readAt = session('notifications_read_at');
+
+        $pendingOrdersQuery = Order::whereIn('status', ['pending_payment', 'paid']);
+        $pendingLoginsQuery = TelegramLoginToken::where('status', 'pending');
+        
+        if ($readAt) {
+            $pendingOrdersQuery->where('created_at', '>', $readAt);
+            $pendingLoginsQuery->where('created_at', '>', $readAt);
+        }
+
+        $pendingOrdersCount = $pendingOrdersQuery->count();
+        $pendingLoginsCount = $pendingLoginsQuery->count();
         $readyStockCount = StockUnit::where('stock_status', 'ready')->where('is_sold', false)->count();
 
-        $actualTotal = $pendingOrdersCount + $pendingLoginsCount;
-        $clearedCount = session('notifications_cleared_count', 0);
-        
-        $totalNotifications = max(0, $actualTotal - $clearedCount);
+        $totalNotifications = $pendingOrdersCount + $pendingLoginsCount;
 
         $view->with(compact('pendingOrdersCount', 'pendingLoginsCount', 'readyStockCount', 'totalNotifications'));
     }
