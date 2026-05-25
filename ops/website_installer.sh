@@ -192,8 +192,16 @@ install_composer() {
 
   log_step "Menginstall Composer..."
   local expected_sig
-  expected_sig="$(curl -sS https://composer.github.io/installer.sig)"
-  curl -sS https://getcomposer.org/installer -o composer-setup.php
+  expected_sig="$(curl -4 -sS --connect-timeout 15 https://composer.github.io/installer.sig)" || {
+    echo "ERROR: Gagal mengunduh signature composer. Periksa koneksi internet." >&2
+    exit 1
+  }
+  
+  curl -4 -sS --connect-timeout 30 https://getcomposer.org/installer -o composer-setup.php || {
+    echo "ERROR: Gagal mengunduh installer composer." >&2
+    exit 1
+  }
+  
   local actual_sig
   actual_sig="$(php -r "echo hash_file('sha384', 'composer-setup.php');")"
 
@@ -578,15 +586,18 @@ do_uninstall() {
   rm -f /etc/nginx/sites-available/jualan-web
   systemctl reload nginx 2>/dev/null || true
 
+  # Hapus konfigurasi environment website
+  rm -f "${WEB_ENV_FILE}"
+  
   _set_env_value "${ENV_FILE}" "WEBSITE_ENABLED" "false"
 
-  log_step "Konfigurasi Nginx untuk website telah dihapus."
+  log_step "Konfigurasi Nginx dan environment Laravel telah dihapus."
   log_step "Database MySQL (bot_jualan) TIDAK dihapus dan bot Telegram akan tetap menggunakannya."
-  log_step "File kode Laravel di web/ juga tidak dihapus."
+  log_step "File source code Laravel di web/ tetap dipertahankan."
 
   # Restart bot if service exists so it picks up WEBSITE_ENABLED=false
   if systemctl list-units --full -all | grep -Fq "jualan-bot.service"; then
-      log_step "Me-restart jualan-bot.service agar perubahan konfigurasi (WEBSITE_ENABLED=false) segera aktif..."
+      log_step "Me-restart jualan-bot.service agar bot menyembunyikan akses website..."
       systemctl restart jualan-bot.service || true
   fi
 }
