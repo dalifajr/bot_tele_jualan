@@ -196,6 +196,44 @@ install_requirements() {
   fi
 }
 
+update_website() {
+  cd "${PROJECT_DIR}"
+  
+  # Cek apakah website terinstall
+  local web_dir="${PROJECT_DIR}/web"
+  if [[ ! -f "${web_dir}/composer.json" ]]; then
+    return
+  fi
+  
+  # Cek apakah website enabled
+  local website_enabled
+  website_enabled="$(read_env_var WEBSITE_ENABLED || true)"
+  if [[ "${website_enabled}" != "true" ]]; then
+    return
+  fi
+
+  log_step "update website Laravel..."
+  cd "${web_dir}"
+  
+  export COMPOSER_ALLOW_SUPERUSER=1
+  composer install --no-dev --optimize-autoloader --no-interaction 2>&1 || true
+  
+  php artisan config:clear 2>/dev/null || true
+  php artisan view:clear 2>/dev/null || true
+  php artisan route:clear 2>/dev/null || true
+  
+  log_step "restart PHP-FPM dan Nginx..."
+  local php_ver=""
+  if command -v php >/dev/null 2>&1; then
+    php_ver=$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;')
+  fi
+  
+  if [[ -n "${php_ver}" ]]; then
+    sudo systemctl restart "php${php_ver}-fpm" 2>/dev/null || true
+  fi
+  sudo systemctl reload nginx 2>/dev/null || true
+}
+
 restart_services() {
   sudo systemctl restart jualan-bot.service jualan-api.service
 }
@@ -237,6 +275,8 @@ apply_update() {
   restore_runtime_files
   log_step "install requirements (jika venv tersedia)"
   install_requirements
+  log_step "update website (jika aktif)"
+  update_website
   log_step "restart service bot dan api"
   restart_services
 

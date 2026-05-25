@@ -390,9 +390,10 @@ server {
 
     # PHP-FPM
     location ~ \.php\$ {
-        fastcgi_pass unix:${fpm_sock};
-        fastcgi_param SCRIPT_FILENAME \$realpath_root\$fastcgi_script_name;
         include fastcgi_params;
+        fastcgi_pass unix:${fpm_sock};
+        fastcgi_index index.php;
+        fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
         fastcgi_hide_header X-Powered-By;
     }
 
@@ -440,10 +441,11 @@ NGINX_EOF
   # Test config
   nginx -t
 
-  # Reload
+  # Restart PHP-FPM dan reload Nginx
+  systemctl restart "php${php_ver}-fpm" 2>/dev/null || systemctl restart php-fpm 2>/dev/null || true
   systemctl reload nginx
 
-  log_step "Nginx dikonfigurasi dan direload."
+  log_step "Nginx + PHP-FPM dikonfigurasi dan direstart."
 }
 
 setup_ssl() {
