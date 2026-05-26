@@ -458,11 +458,11 @@ class AdminController extends Controller
                 \Log::warning('Gagal copy QRIS ke bot: ' . $e->getMessage());
             }
 
-            \App\Models\BotSetting::updateOrCreate(
+            \Illuminate\Support\Facades\DB::table('bot_settings')->updateOrInsert(
                 ['key' => 'qris_static_payload'],
                 ['value' => $payload, 'updated_at' => now()]
             );
-            \App\Models\BotSetting::updateOrCreate(
+            \Illuminate\Support\Facades\DB::table('bot_settings')->updateOrInsert(
                 ['key' => 'qris_image_path'],
                 ['value' => $path, 'updated_at' => now()]
             );
