@@ -323,14 +323,8 @@
 
                 <div class="footer-text">
                     <div class="text-uppercase fw-bold mb-1" style="letter-spacing: 1px; font-size: 0.65rem;">Supported By</div>
-                    <div class="d-flex align-items-center justify-content-center gap-2">
-                        <i class="fas fa-shield-halved fs-5 text-secondary opacity-50"></i>
-                        <div class="text-start" style="line-height: 1;">
-                            <strong>Keamanan Data</strong><br>
-                            <span style="font-size: 0.65rem;">Enkripsi & Proteksi</span>
-                        </div>
-                    </div>
-                    <div class="mt-3">&copy; {{ date('Y') }} {{ config('app.name') }}</div>
+                    <div class="fw-bold fs-6 mb-3">Antigravity</div>
+                    <div class="mt-3">&copy; {{ date('Y') }} dzulfikrialifajri_store</div>
                 </div>
             </div>
 
@@ -338,9 +332,15 @@
             <div class="col-md-6 auth-right d-none d-md-flex">
                 <div class="info-box">
                     <h5 class="fw-bold mb-2"><i class="fas fa-bullhorn me-2"></i>Informasi Store</h5>
-                    <p class="small mb-0 opacity-75" style="line-height: 1.6;">
-                        Selamat datang di pusat layanan pembelian produk digital terbaik. Pantau terus katalog kami untuk penawaran terbaru. Proses checkout aman dan pengiriman dilakukan secara instan.
+                    <p class="small mb-3 opacity-75" style="line-height: 1.6;">
+                        Selamat datang Jurangan!<br>
+                        kalau punya akun telegram, langsung saja klik "Login Via Telegram" kalau gak punya, bisa regis dulu.
                     </p>
+                    <div class="small opacity-75">
+                        <strong>Kontak Admin:</strong><br>
+                        <a href="https://wa.me/6282269245660" target="_blank" class="text-white text-decoration-none mt-1 d-inline-block"><i class="fab fa-whatsapp"></i> 082269245660 - WA</a><br>
+                        <a href="https://t.me/dzulfikrialifajri" target="_blank" class="text-white text-decoration-none mt-1 d-inline-block"><i class="fab fa-telegram"></i> @dzulfikrialifajri - Telegram</a>
+                    </div>
                 </div>
             </div>
 
