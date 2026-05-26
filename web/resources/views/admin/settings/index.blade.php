@@ -75,7 +75,7 @@
                         
                         <div class="row align-items-center">
                             <div class="col-sm-4 text-center mb-3 mb-sm-0">
-                                <img src="{{ asset('storage/' . $qrisImagePath) }}" alt="QRIS Tersimpan" class="img-fluid rounded border p-2 bg-white" style="max-height: 150px;">
+                                <img src="{{ route('admin.settings.qris.image') }}" alt="QRIS Tersimpan" class="img-fluid rounded border p-2 bg-white" style="max-height: 150px;">
                             </div>
                             <div class="col-sm-8">
                                 <label class="form-label fw-bold small text-muted">PAYLOAD EKSTRAK (RAW)</label>

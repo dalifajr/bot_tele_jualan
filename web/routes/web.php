@@ -114,6 +114,7 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         Route::post('/settings', [\App\Http\Controllers\AdminController::class, 'updateSettings'])->name('settings.update');
         Route::post('/settings/qris', [\App\Http\Controllers\AdminController::class, 'uploadQris'])->name('settings.qris.upload');
         Route::delete('/settings/qris', [\App\Http\Controllers\AdminController::class, 'deleteQris'])->name('settings.qris.delete');
+        Route::get('/settings/qris/image', [\App\Http\Controllers\AdminController::class, 'showQrisImage'])->name('settings.qris.image');
         Route::get('/reports', [\App\Http\Controllers\AdminController::class, 'reports'])->name('reports.index');
         
         // System Actions

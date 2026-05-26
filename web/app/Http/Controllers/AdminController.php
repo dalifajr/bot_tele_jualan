@@ -472,6 +472,18 @@ class AdminController extends Controller
         return back()->with('success', 'QRIS dan payload berhasil dihapus.');
     }
 
+    public function showQrisImage()
+    {
+        $imagePath = \App\Models\BotSetting::where('key', 'qris_image_path')->value('value');
+        if (!$imagePath || !\Illuminate\Support\Facades\Storage::disk('public')->exists($imagePath)) {
+            abort(404);
+        }
+
+        $fullPath = \Illuminate\Support\Facades\Storage::disk('public')->path($imagePath);
+        $mime = mime_content_type($fullPath);
+        return response()->file($fullPath, ['Content-Type' => $mime]);
+    }
+
     // ==========================================
     // REPORTS
     // ==========================================
