@@ -3274,12 +3274,81 @@ async def _handle_web_login_deeplink(
         parse_mode=ParseMode.HTML,
     )
 
+async def _handle_web_link_deeplink(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    web_token: str,
+) -> None:
+    """Handle /start weblink_<token> deep-link for website Telegram linking."""
+    from app.db.database import get_session
+    from app.db.models import TelegramLinkToken, User
+    from datetime import datetime
+
+    tg_user = update.effective_user
+    if not tg_user:
+        return
+
+    with get_session() as session:
+        # Check token
+        token_record = session.query(TelegramLinkToken).filter(
+            TelegramLinkToken.token == web_token,
+            TelegramLinkToken.expires_at > datetime.utcnow()
+        ).first()
+
+        if not token_record:
+            await _respond(
+                update,
+                "❌ <b>Link Penautan Gagal</b>\n\nToken tidak ditemukan atau sudah kedaluwarsa.",
+                parse_mode=ParseMode.HTML,
+            )
+            return
+
+        # Check if this telegram_id is already used by another user
+        existing_user = session.query(User).filter(User.telegram_id == tg_user.id).first()
+        if existing_user and existing_user.id != token_record.user_id:
+            # Conflict
+            username_display = f"@{existing_user.username}" if existing_user.username else f"ID: {existing_user.id}"
+            await _respond(
+                update,
+                f"❌ <b>Penautan Gagal</b>\n\nAkun Telegram ini sudah tertaut dengan pengguna {username_display}. Silakan lepas kaitan terlebih dahulu atau login menggunakan akun tersebut.",
+                parse_mode=ParseMode.HTML,
+            )
+            session.delete(token_record)
+            session.commit()
+            return
+
+        # Update the user's telegram_id
+        target_user = session.query(User).filter(User.id == token_record.user_id).first()
+        if target_user:
+            target_user.telegram_id = tg_user.id
+            if tg_user.username and not target_user.username:
+                target_user.username = tg_user.username
+            session.delete(token_record)
+            session.commit()
+            await _respond(
+                update,
+                "✅ <b>Penautan Akun Berhasil!</b>\n\nAkun Telegram Anda berhasil tertaut dengan akun website.",
+                parse_mode=ParseMode.HTML,
+            )
+        else:
+            await _respond(
+                update,
+                "❌ <b>Penautan Gagal</b>\n\nAkun website tidak ditemukan.",
+                parse_mode=ParseMode.HTML,
+            )
+
 
 async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    args = context.args
+    # Intercept weblink_ BEFORE _ensure_user to prevent creating a new duplicate user
+    if args and args[0].startswith("weblink_"):
+        web_token = args[0][len("weblink_"):]
+        await _handle_web_link_deeplink(update, context, web_token)
+        return
+
     db_user, role = await _ensure_user(update, context)
 
     # Handle weblogin_ deep-link for website Telegram authentication
-    args = context.args
     if args and args[0].startswith("weblogin_"):
         web_token = args[0][len("weblogin_"):]
         await _handle_web_login_deeplink(update, context, db_user, web_token)

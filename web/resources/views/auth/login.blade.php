@@ -302,8 +302,8 @@
                                 </div>
                             </div>
                             <div class="mb-3">
-                                <input type="number" name="telegram_id" class="form-control form-control-sm" placeholder="ID Telegram (Opsional)" value="{{ old('telegram_id') }}">
-                                <div class="form-text" style="font-size: 0.7rem; color: #adb5bd;">Agar bisa otomatis login dengan Telegram nantinya.</div>
+                                <input type="number" name="telegram_id" id="telegram_id_reg" class="form-control form-control-sm" placeholder="ID Telegram (Opsional)" value="{{ old('telegram_id') }}">
+                                <div id="telegram_id_feedback" class="form-text mt-1" style="font-size: 0.7rem; color: #adb5bd;">Agar bisa otomatis login dengan Telegram nantinya.</div>
                             </div>
                             <div class="row g-2 mb-4">
                                 <div class="col-6">
@@ -314,7 +314,7 @@
                                 </div>
                             </div>
 
-                            <button type="submit" class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2">
+                            <button type="submit" id="btn-register" class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2">
                                 Daftar Sekarang <i class="fas fa-user-plus"></i>
                             </button>
                         </form>
@@ -355,6 +355,58 @@
         var registerTab = new bootstrap.Tab(document.querySelector('#register-tab'));
         registerTab.show();
     @endif
+
+    // Validasi Telegram ID secara real-time
+    document.addEventListener('DOMContentLoaded', function() {
+        let telegramInput = document.getElementById('telegram_id_reg');
+        if (!telegramInput) return;
+        
+        let feedbackElem = document.getElementById('telegram_id_feedback');
+        let defaultFeedback = 'Agar bisa otomatis login dengan Telegram nantinya.';
+        let saveBtn = document.getElementById('btn-register');
+        let checkTimeout;
+
+        telegramInput.addEventListener('input', function() {
+            clearTimeout(checkTimeout);
+            let val = this.value.trim();
+
+            if (!val) {
+                feedbackElem.innerHTML = defaultFeedback;
+                saveBtn.disabled = false;
+                return;
+            }
+
+            feedbackElem.innerHTML = '<span class="text-muted"><i class="fas fa-spinner fa-spin me-1"></i>Mengecek...</span>';
+            saveBtn.disabled = true;
+
+            checkTimeout = setTimeout(() => {
+                fetch('{{ route("api.check.telegram") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ telegram_id: val })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.available) {
+                        feedbackElem.innerHTML = `<span class="text-success"><i class="fas fa-check-circle me-1"></i>${data.message}</span>`;
+                        saveBtn.disabled = false;
+                    } else {
+                        feedbackElem.innerHTML = `<span class="text-danger"><i class="fas fa-times-circle me-1"></i>${data.message}</span>`;
+                        saveBtn.disabled = true;
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    feedbackElem.innerHTML = '<span class="text-danger">Gagal mengecek ID Telegram.</span>';
+                    saveBtn.disabled = false; 
+                });
+            }, 500);
+        });
+    });
 </script>
 </body>
 </html>

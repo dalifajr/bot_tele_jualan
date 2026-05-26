@@ -23,6 +23,7 @@ Route::get('/', function () {
 | Auth Routes
 |--------------------------------------------------------------------------
 */
+Route::post('/api/check-telegram-id', [\App\Http\Controllers\ProfileController::class, 'checkTelegramId'])->name('api.check.telegram');
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login/password', [AuthController::class, 'login'])->name('login.post');
 Route::post('/register', [AuthController::class, 'register'])->name('register.post');
@@ -61,10 +62,11 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
     })->name('orders.status');
 
     // Profile
-    Route::get('/profile', function () {
-        return view('profile');
-    })->name('profile');
+    Route::get('/profile', [\App\Http\Controllers\ProfileController::class, 'index'])->name('profile');
+    Route::post('/profile/edit', [\App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
     Route::post('/profile/password', [\App\Http\Controllers\Auth\AuthController::class, 'updatePassword'])->name('profile.password.update');
+    Route::post('/profile/telegram-link', [\App\Http\Controllers\ProfileController::class, 'generateTelegramLink'])->name('profile.telegram.link');
+    Route::post('/profile/telegram-unlink', [\App\Http\Controllers\ProfileController::class, 'unlinkTelegram'])->name('profile.telegram.unlink');
 
     /*
     |--------------------------------------------------------------------------
