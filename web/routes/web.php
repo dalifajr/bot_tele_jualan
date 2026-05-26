@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\TelegramAuthController;
+use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\DashboardController;
@@ -19,10 +20,14 @@ Route::get('/', function () {
 
 /*
 |--------------------------------------------------------------------------
-| Auth Routes (Telegram Login Flow)
+| Auth Routes
 |--------------------------------------------------------------------------
 */
-Route::get('/login', [TelegramAuthController::class, 'showLogin'])->name('login');
+Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+Route::post('/login/password', [AuthController::class, 'login'])->name('login.post');
+Route::post('/register', [AuthController::class, 'register'])->name('register.post');
+
+// Telegram Login Flow
 Route::post('/auth/telegram/request', [TelegramAuthController::class, 'requestLogin'])->name('auth.telegram.request');
 Route::get('/auth/telegram/callback', [TelegramAuthController::class, 'callback'])->name('auth.telegram.callback');
 Route::post('/logout', [TelegramAuthController::class, 'logout'])->name('logout');
@@ -59,6 +64,7 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
     Route::get('/profile', function () {
         return view('profile');
     })->name('profile');
+    Route::post('/profile/password', [\App\Http\Controllers\Auth\AuthController::class, 'updatePassword'])->name('profile.password.update');
 
     /*
     |--------------------------------------------------------------------------

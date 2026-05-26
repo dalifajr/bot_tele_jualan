@@ -62,6 +62,49 @@
             </div>
         </div>
 
+        {{-- Set / Update Password --}}
+        <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
+            <div class="card-header bg-transparent border-0 pt-4 px-4">
+                <h5 class="fw-bold mb-0"><i class="fas fa-lock text-primary me-2"></i>Atur Sandi (Password)</h5>
+            </div>
+            <div class="card-body px-4 pb-4">
+                @if(session('success'))
+                    <div class="alert alert-success small py-2 mb-3"><i class="fas fa-check-circle me-1"></i>{{ session('success') }}</div>
+                @endif
+                @if($errors->any())
+                    <div class="alert alert-danger small py-2 mb-3">
+                        <ul class="mb-0 ps-3">
+                            @foreach($errors->all() as $err)
+                                <li>{{ $err }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+                
+                <p class="small text-muted mb-3">
+                    Atur kata sandi agar Anda bisa melakukan <strong>Login Konvensional</strong> menggunakan Username dan Password tanpa harus bergantung pada Telegram.
+                </p>
+                <form action="{{ route('profile.password.update') }}" method="POST">
+                    @csrf
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Kata Sandi Baru</label>
+                            <input type="password" name="password" class="form-control form-control-sm" required placeholder="Minimal 6 karakter">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Ulangi Sandi Baru</label>
+                            <input type="password" name="password_confirmation" class="form-control form-control-sm" required>
+                        </div>
+                        <div class="col-12 mt-3">
+                            <button type="submit" class="btn btn-primary btn-sm rounded-pill px-4">
+                                Simpan Sandi
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         {{-- Actions --}}
         <div class="card border-0 shadow-sm" style="border-radius: 16px;">
             <div class="card-body p-4">

@@ -21,10 +21,8 @@ class EnsureTelegramAuthenticated
 
         $user = Auth::user();
 
-        if (empty($user->telegram_id)) {
-            Auth::logout();
-            return redirect()->route('login')->with('error', 'Akun tidak terhubung dengan Telegram.');
-        }
+        // Check if the user is suspended (opsional, jika ada)
+        // if ($user->is_suspended) { ... }
 
         return $next($request);
     }
