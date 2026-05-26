@@ -88,7 +88,7 @@
                                     <form action="{{ route('admin.settings.qris.delete') }}" method="POST" class="d-inline" id="formDeleteQris">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3" onclick="confirmAction('formDeleteQris', 'Hapus QRIS ini?', 'QRIS statis dan payload akan dihapus dari sistem.')">
+                                        <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3" onclick="Swal.fire({title:'Hapus QRIS?',text:'QRIS statis dan payload akan dihapus dari sistem.',icon:'warning',showCancelButton:true,confirmButtonColor:'#d33',cancelButtonColor:'#6c757d',confirmButtonText:'Ya, Hapus!',cancelButtonText:'Batal'}).then((r)=>{if(r.isConfirmed)document.getElementById('formDeleteQris').submit()})">
                                             <i class="fas fa-trash me-1"></i> Hapus
                                         </button>
                                     </form>

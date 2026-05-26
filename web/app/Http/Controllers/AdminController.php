@@ -442,9 +442,18 @@ class AdminController extends Controller
                 return back()->with('error', 'Payload QRIS kosong atau tidak terbaca dari gambar.');
             }
 
+            // Simpan ke Laravel storage (untuk admin panel)
             $filename = 'qris_latest.' . $file->getClientOriginalExtension();
             $path = $file->storeAs('qris', $filename, 'public');
             
+            // Simpan juga ke path yang dipakai bot (src/data/qris.png) agar terintegrasi
+            $botQrisPath = base_path('../src/data/qris.png');
+            $botQrisDir = dirname($botQrisPath);
+            if (!is_dir($botQrisDir)) {
+                mkdir($botQrisDir, 0755, true);
+            }
+            copy($file->path(), $botQrisPath);
+
             \App\Models\BotSetting::updateOrCreate(
                 ['key' => 'qris_static_payload'],
                 ['value' => $payload, 'updated_at' => now()]
@@ -454,22 +463,29 @@ class AdminController extends Controller
                 ['value' => $path, 'updated_at' => now()]
             );
 
-            return back()->with('success', 'Gambar QRIS berhasil diunggah dan payload terekstraksi.');
+            return back()->with('success', 'Gambar QRIS berhasil diunggah dan payload terekstraksi. Bot Telegram & Web sudah terintegrasi.');
         } else {
-            return back()->with('error', 'Gagal mengekstraksi kode QRIS. Pastikan gambar mengandung QR Code yang valid. Output: ' . substr($output, 0, 100));
+            return back()->with('error', 'Gagal mengekstraksi kode QRIS. Pastikan gambar mengandung QR Code yang valid. Output: ' . substr($output ?? '', 0, 150));
         }
     }
 
     public function deleteQris()
     {
+        // Hapus dari Laravel storage
         $imagePath = \App\Models\BotSetting::where('key', 'qris_image_path')->value('value');
         if ($imagePath && \Illuminate\Support\Facades\Storage::disk('public')->exists($imagePath)) {
             \Illuminate\Support\Facades\Storage::disk('public')->delete($imagePath);
         }
 
+        // Hapus juga file qris.png milik bot
+        $botQrisPath = base_path('../src/data/qris.png');
+        if (file_exists($botQrisPath)) {
+            unlink($botQrisPath);
+        }
+
         \App\Models\BotSetting::whereIn('key', ['qris_static_payload', 'qris_image_path'])->delete();
 
-        return back()->with('success', 'QRIS dan payload berhasil dihapus.');
+        return back()->with('success', 'QRIS dan payload berhasil dihapus dari Web & Bot Telegram.');
     }
 
     public function showQrisImage()
