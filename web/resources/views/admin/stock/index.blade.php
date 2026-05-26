@@ -64,19 +64,19 @@
     <div class="card-header bg-white border-bottom-0 pt-4 pb-0 px-4">
         <ul class="nav nav-tabs border-bottom-0" style="margin-bottom: -1px;">
             <li class="nav-item">
-                <a class="nav-link {{ request('status') === null && !request('product_id') && !request('search') ? 'active border-primary border-bottom-0 text-primary fw-bold' : 'text-muted' }}" href="{{ route('admin.stock.index') }}">Semua</a>
+                <a class="nav-link {{ request('status') === null && !request('product_id') && !request('search') ? 'active border-primary border-bottom-0 text-primary fw-bold' : 'text-muted' }}" href="{{ request()->fullUrlWithQuery(['status' => null]) }}">Semua</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link {{ request('status') === 'ready' ? 'active border-primary border-bottom-0 text-primary fw-bold' : 'text-muted' }}" href="{{ route('admin.stock.index', ['status' => 'ready']) }}">Ready</a>
+                <a class="nav-link {{ request('status') === 'ready' ? 'active border-primary border-bottom-0 text-primary fw-bold' : 'text-muted' }}" href="{{ request()->fullUrlWithQuery(['status' => 'ready']) }}">Ready</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link {{ request('status') === 'awaiting_benefits' ? 'active border-primary border-bottom-0 text-primary fw-bold' : 'text-muted' }}" href="{{ route('admin.stock.index', ['status' => 'awaiting_benefits']) }}">Awaiting Benefits</a>
+                <a class="nav-link {{ request('status') === 'awaiting_benefits' ? 'active border-primary border-bottom-0 text-primary fw-bold' : 'text-muted' }}" href="{{ request()->fullUrlWithQuery(['status' => 'awaiting_benefits']) }}">Awaiting Benefits</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link {{ request('status') === 'saved_for_verification' ? 'active border-primary border-bottom-0 text-primary fw-bold' : 'text-muted' }}" href="{{ route('admin.stock.index', ['status' => 'saved_for_verification']) }}">Simpan Akun</a>
+                <a class="nav-link {{ request('status') === 'saved_for_verification' ? 'active border-primary border-bottom-0 text-primary fw-bold' : 'text-muted' }}" href="{{ request()->fullUrlWithQuery(['status' => 'saved_for_verification']) }}">Simpan Akun</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link {{ request('status') === 'terjual' ? 'active border-primary border-bottom-0 text-primary fw-bold' : 'text-muted' }}" href="{{ route('admin.stock.index', ['status' => 'terjual']) }}">Terjual</a>
+                <a class="nav-link {{ request('status') === 'terjual' ? 'active border-primary border-bottom-0 text-primary fw-bold' : 'text-muted' }}" href="{{ request()->fullUrlWithQuery(['status' => 'terjual']) }}">Terjual</a>
             </li>
         </ul>
     </div>

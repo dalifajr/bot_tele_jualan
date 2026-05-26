@@ -56,6 +56,11 @@ class AdminController extends Controller
                   ->orWhere('stock_status', 'like', "%{$search}%")
                   ->orWhereHas('product', function ($pq) use ($search) {
                       $pq->where('name', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('order.customer', function ($cq) use ($search) {
+                      $cq->where('username', 'like', "%{$search}%")
+                         ->orWhere('full_name', 'like', "%{$search}%")
+                         ->orWhere('telegram_id', 'like', "%{$search}%");
                   });
             });
         }
