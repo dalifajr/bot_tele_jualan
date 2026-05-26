@@ -120,7 +120,7 @@
     </div>
 </nav>
 
-<div class="app-container" style="padding-top: 80px;">
+<div class="app-container">
     {{-- Sidebar --}}
     <div id="sidebar" class="sidebar" style="top: 57px; height: calc(100vh - 57px); z-index: 1040; overflow-y: auto; overscroll-behavior: contain;">
         <div class="sidebar-header d-flex align-items-center gap-3">

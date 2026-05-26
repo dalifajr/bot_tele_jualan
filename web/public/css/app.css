@@ -92,11 +92,17 @@ body {
     text-align: center;
 }
 
+/* === LAYOUT === */
+.app-container {
+    padding-top: 57px !important;
+    min-height: 100vh;
+}
 /* === MAIN CONTENT === */
 .main-content {
     margin-left: 260px;
+    margin-top: 0 !important;
     flex: 1;
-    min-height: calc(100vh - 56px);
+    min-height: calc(100vh - 57px);
     overflow: hidden;
 }
 
