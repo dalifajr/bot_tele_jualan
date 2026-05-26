@@ -133,7 +133,7 @@
             </div>
         </div>
 
-        <div class="py-3">
+        <div class="sidebar-menu py-3">
             <div class="menu-group">
                 <a href="{{ route('dashboard') }}" class="menu-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
                     <i class="fas fa-home"></i> <span>Dashboard</span>

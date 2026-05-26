@@ -95,6 +95,7 @@ class AdminController extends Controller
         ]);
         $data = $request->only(['name', 'description', 'price']);
         $data['description'] = $data['description'] ?? '';
+        $data['is_suspended'] = false;
         Product::create($data);
         return redirect()->route('admin.products.index')->with('success', 'Produk berhasil ditambahkan.');
     }
