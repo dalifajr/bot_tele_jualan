@@ -152,7 +152,7 @@ def _build_admin_order_notification(
 ) -> AdminOrderNotification:
     customer = session.get(User, order.customer_id)
     customer_name = _normalize_customer_name(customer)
-    customer_telegram_id = int(customer.telegram_id) if customer is not None else 0
+    customer_telegram_id = int(customer.telegram_id) if (customer is not None and customer.telegram_id is not None) else 0
 
     order_items = list(order.items)
     total_qty = sum(item.quantity for item in order_items)
