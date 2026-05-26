@@ -122,7 +122,7 @@
 
 <div class="app-container" style="padding-top: 80px;">
     {{-- Sidebar --}}
-    <div class="sidebar" id="sidebar" style="overflow-y: auto; overflow-x: hidden;">
+    <div class="sidebar" id="sidebar">
         <div class="sidebar-header d-flex align-items-center gap-3">
             <div class="user-avatar rounded-circle d-flex align-items-center justify-content-center fw-bold text-white bg-primary" style="width: 40px; height: 40px;">
                 {{ strtoupper(substr(Auth::user()->full_name ?? Auth::user()->username ?? 'U', 0, 1)) }}
@@ -190,7 +190,7 @@
             <div class="menu-group">
                 <div class="menu-header text-danger"><i class="fas fa-cogs me-1"></i> Sistem & Konfigurasi</div>
                 <a href="{{ route('admin.settings.index') }}" class="menu-item {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
-                    <i class="fas fa-credit-card"></i> Konfigurasi Payment
+                    <i class="fas fa-sliders-h"></i> Konfigurasi Sistem
                 </a>
                 <a href="{{ route('admin.reports.index') }}" class="menu-item {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}">
                     <i class="fas fa-chart-bar"></i> Laporan Operasional

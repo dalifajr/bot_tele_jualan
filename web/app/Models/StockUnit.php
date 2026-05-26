@@ -16,10 +16,12 @@ class StockUnit extends Model
         'is_sold',
         'sold_order_id',
         'stock_status',
+        'available_at',
     ];
 
     protected $casts = [
         'is_sold' => 'boolean',
+        'available_at' => 'datetime',
     ];
 
     public function product()

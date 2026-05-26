@@ -45,6 +45,21 @@ class AdminController extends Controller
             }
         }
 
+        if ($request->filled('product_id')) {
+            $query->where('product_id', $request->product_id);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('raw_text', 'like', "%{$search}%")
+                  ->orWhere('stock_status', 'like', "%{$search}%")
+                  ->orWhereHas('product', function ($pq) use ($search) {
+                      $pq->where('name', 'like', "%{$search}%");
+                  });
+            });
+        }
+
         $stockUnits = $query->paginate(15);
         $status = $request->status;
         return view('admin.stock.index', compact('stockUnits', 'status'));
@@ -78,7 +93,9 @@ class AdminController extends Controller
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
         ]);
-        Product::create($request->only(['name', 'description', 'price']));
+        $data = $request->only(['name', 'description', 'price']);
+        $data['description'] = $data['description'] ?? '';
+        Product::create($data);
         return redirect()->route('admin.products.index')->with('success', 'Produk berhasil ditambahkan.');
     }
 
@@ -125,6 +142,16 @@ class AdminController extends Controller
             'raw_text' => 'required|string',
         ]);
 
+        // Compute available_at based on status
+        $availableAt = null;
+        if ($request->stock_status === 'awaiting_benefits') {
+            $hours = (int)(\App\Models\BotSetting::where('key', 'github_pack.awaiting_hours')->value('value') ?? 78);
+            $availableAt = now()->addHours($hours);
+        } elseif ($request->stock_status === 'saved_for_verification') {
+            $hours = (int)(\App\Models\BotSetting::where('key', 'github_pack.save_hours')->value('value') ?? 80);
+            $availableAt = now()->addHours($hours);
+        }
+
         // Split by double-newlines (blank lines) to separate different accounts,
         // instead of splitting every single line, preserving complex account formats.
         $blocks = array_filter(array_map('trim', preg_split('/\n\s*\n/', $request->raw_text)));
@@ -135,7 +162,8 @@ class AdminController extends Controller
                     'product_id' => $request->product_id,
                     'raw_text' => $block,
                     'stock_status' => $request->stock_status,
-                    'is_sold' => false
+                    'is_sold' => false,
+                    'available_at' => $availableAt,
                 ]);
                 $count++;
             }
@@ -267,20 +295,19 @@ class AdminController extends Controller
 
     public function updateSettings(Request $request)
     {
-        $data = $request->except('_token');
-        foreach ($data as $key => $value) {
+        // PHP converts dots in POST field names to underscores.
+        // We need to read the raw input to preserve the original key names.
+        $rawInput = file_get_contents('php://input');
+        parse_str($rawInput, $parsed);
+        
+        // Remove the CSRF token
+        unset($parsed['_token']);
+        
+        foreach ($parsed as $key => $value) {
             \App\Models\BotSetting::updateOrCreate(
                 ['key' => $key],
-                ['value' => $value, 'updated_at' => now()]
+                ['value' => (string)$value]
             );
-        }
-        
-        // Handle custom Python bot logic sync for awaiting hours if changed
-        if (isset($data['github_pack.awaiting_hours'])) {
-            $delta = (int)$data['github_pack.awaiting_hours'];
-            // In a full implementation, we'd adjust existing stock's available_at here
-            // But since the Python bot handles this via its own command, we just save the config
-            // and future stocks will use this new setting.
         }
 
         return back()->with('success', 'Konfigurasi berhasil disimpan!');

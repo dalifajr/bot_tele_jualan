@@ -33,8 +33,10 @@ body {
     top: 56px;
     left: 0;
     z-index: 1020;
+    overflow-x: hidden;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+    padding-bottom: 80px;
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 

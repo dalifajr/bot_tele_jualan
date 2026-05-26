@@ -16,11 +16,55 @@
     </div>
 </div>
 
+{{-- Filters Row --}}
+<div class="card border-0 shadow-sm mb-3" style="border-radius: 16px;">
+    <div class="card-body p-3">
+        <form action="{{ route('admin.stock.index') }}" method="GET" class="row g-2 align-items-end">
+            {{-- Status Filter --}}
+            <div class="col-md-3 col-6">
+                <label class="form-label text-muted small fw-bold mb-1">Status</label>
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">Semua Status</option>
+                    <option value="ready" {{ request('status') === 'ready' ? 'selected' : '' }}>Ready</option>
+                    <option value="awaiting_benefits" {{ request('status') === 'awaiting_benefits' ? 'selected' : '' }}>Awaiting Benefits</option>
+                    <option value="saved_for_verification" {{ request('status') === 'saved_for_verification' ? 'selected' : '' }}>Simpan Akun</option>
+                    <option value="terjual" {{ request('status') === 'terjual' ? 'selected' : '' }}>Terjual</option>
+                </select>
+            </div>
+            {{-- Product Filter --}}
+            <div class="col-md-3 col-6">
+                <label class="form-label text-muted small fw-bold mb-1">Produk</label>
+                <select name="product_id" class="form-select form-select-sm">
+                    <option value="">Semua Produk</option>
+                    @php
+                        $filterProducts = \App\Models\Product::orderBy('name')->get();
+                    @endphp
+                    @foreach($filterProducts as $fp)
+                    <option value="{{ $fp->id }}" {{ request('product_id') == $fp->id ? 'selected' : '' }}>{{ $fp->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            {{-- Search --}}
+            <div class="col-md-4 col-8">
+                <label class="form-label text-muted small fw-bold mb-1">Pencarian</label>
+                <input type="text" name="search" class="form-control form-control-sm" placeholder="Username, konten, kata kunci..." value="{{ request('search') }}">
+            </div>
+            {{-- Submit --}}
+            <div class="col-md-2 col-4">
+                <div class="d-flex gap-1">
+                    <button type="submit" class="btn btn-sm btn-primary rounded-pill flex-fill"><i class="fas fa-search me-1"></i>Filter</button>
+                    <a href="{{ route('admin.stock.index') }}" class="btn btn-sm btn-outline-secondary rounded-pill" title="Reset"><i class="fas fa-times"></i></a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
 <div class="card border-0 shadow-sm overflow-hidden mb-4" style="border-radius: 16px;">
     <div class="card-header bg-white border-bottom-0 pt-4 pb-0 px-4">
         <ul class="nav nav-tabs border-bottom-0" style="margin-bottom: -1px;">
             <li class="nav-item">
-                <a class="nav-link {{ request('status') === null ? 'active border-primary border-bottom-0 text-primary fw-bold' : 'text-muted' }}" href="{{ route('admin.stock.index') }}">Semua</a>
+                <a class="nav-link {{ request('status') === null && !request('product_id') && !request('search') ? 'active border-primary border-bottom-0 text-primary fw-bold' : 'text-muted' }}" href="{{ route('admin.stock.index') }}">Semua</a>
             </li>
             <li class="nav-item">
                 <a class="nav-link {{ request('status') === 'ready' ? 'active border-primary border-bottom-0 text-primary fw-bold' : 'text-muted' }}" href="{{ route('admin.stock.index', ['status' => 'ready']) }}">Ready</a>
@@ -53,7 +97,9 @@
                         <th class="py-3 border-0">Konten (Sebagian)</th>
                         <th class="py-3 border-0">Status</th>
                         @if(request('status') === 'awaiting_benefits')
-                        <th class="py-3 border-0">Kapan Bisa Diverifikasi</th>
+                        <th class="py-3 border-0">Tersedia Pada</th>
+                        @elseif(request('status') === 'saved_for_verification')
+                        <th class="py-3 border-0">Dapat Diverifikasi Pada</th>
                         @else
                         <th class="py-3 border-0">Ditambahkan</th>
                         @endif
@@ -118,6 +164,18 @@
                                 {{ \Carbon\Carbon::parse($unit->available_at)->format('d M Y H:i') }}
                             @else
                                 <span class="text-muted">-</span>
+                            @endif
+                        </td>
+                        @elseif(request('status') === 'saved_for_verification')
+                        <td class="text-secondary small fw-bold">
+                            @if($unit->available_at)
+                                {{ \Carbon\Carbon::parse($unit->available_at)->format('d M Y H:i') }}
+                            @else
+                                @php
+                                    $saveHours = \App\Models\BotSetting::where('key', 'github_pack.save_hours')->value('value') ?? 80;
+                                    $verifyAt = $unit->created_at->addHours((int)$saveHours);
+                                @endphp
+                                {{ $verifyAt->format('d M Y H:i') }}
                             @endif
                         </td>
                         @else
