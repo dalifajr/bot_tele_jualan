@@ -184,12 +184,11 @@
 @push('styles')
 <style>
 /* 
-   Memastikan kontainer tabel dan kartu mengizinkan dropdown 
-   untuk tampil di luar batas (visible)
+   Perbaikan untuk mengaktifkan scroll horizontal
 */
-.table-responsive, 
-.card {
-    overflow: visible !important;
+.table-responsive {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch; /* Menghaluskan scroll pada perangkat iOS */
 }
 
 /* 
