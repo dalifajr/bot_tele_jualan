@@ -60,11 +60,25 @@
                     <h5 class="fw-bold mb-1"><i class="fas fa-credit-card text-success me-2"></i>Pengaturan Payment</h5>
                     <p class="text-muted small mb-3">Konfigurasi untuk QRIS dan API pembayaran.</p>
 
+                    {{-- Upload QRIS --}}
+                    <div class="mb-4 p-3 border rounded bg-light">
+                        <label class="form-label fw-bold text-muted small"><i class="fas fa-qrcode me-1"></i> UPLOAD GAMBAR QRIS</label>
+                        <input type="file" id="qrisImageInput" class="form-control mb-2" accept="image/*">
+                        <small class="text-muted d-block mb-3">Upload gambar QRIS statis Anda (dari e-Wallet atau Bank). Sistem akan otomatis membaca barcode untuk mendukung QRIS Dinamis pada saat pelanggan checkout.</small>
+                        <div id="qrisPreview" class="text-center mb-3 d-none">
+                            <canvas id="qrisCanvas" style="max-width: 100%; height: auto; border: 1px solid #ccc; border-radius: 8px;"></canvas>
+                        </div>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-code"></i></span>
+                            <input type="text" name="settings[qris_static_payload]" id="qrisPayloadInput" class="form-control font-monospace text-muted" style="font-size: 0.8rem;" value="{{ $settings['qris_static_payload'] ?? '' }}" placeholder="Payload QRIS akan terisi otomatis" readonly>
+                        </div>
+                    </div>
+
                     @php
                         $hasPaymentSettings = false;
                     @endphp
                     @foreach($settings as $key => $val)
-                        @if(str_contains(strtolower($key), 'qris') || str_contains(strtolower($key), 'payment') || str_contains(strtolower($key), 'api') || str_contains(strtolower($key), 'pay'))
+                        @if($key !== 'qris_static_payload' && (str_contains(strtolower($key), 'qris') || str_contains(strtolower($key), 'payment') || str_contains(strtolower($key), 'api') || str_contains(strtolower($key), 'pay')))
                         @php $hasPaymentSettings = true; @endphp
                         <div class="mb-3">
                             <label class="form-label fw-bold text-muted small">{{ strtoupper(str_replace(['_', '.'], ' ', $key)) }}</label>
@@ -73,10 +87,10 @@
                         @endif
                     @endforeach
                     
-                    @if(!$hasPaymentSettings)
+                    @if(!$hasPaymentSettings && !isset($settings['qris_static_payload']))
                         <div class="text-center text-muted py-3">
                             <i class="fas fa-info-circle fs-3 mb-2"></i>
-                            <p class="mb-0">Belum ada pengaturan payment di database.</p>
+                            <p class="mb-0">Belum ada pengaturan payment tambahan di database.</p>
                         </div>
                     @endif
 
@@ -92,3 +106,79 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const fileInput = document.getElementById('qrisImageInput');
+        const canvas = document.getElementById('qrisCanvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        const payloadInput = document.getElementById('qrisPayloadInput');
+        const previewDiv = document.getElementById('qrisPreview');
+
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    // Set canvas size matching image
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    
+                    // Draw image to canvas
+                    ctx.drawImage(img, 0, 0);
+                    previewDiv.classList.remove('d-none');
+                    canvas.style.display = 'inline-block';
+
+                    // Get image data
+                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    
+                    // Use jsQR to decode
+                    const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                        inversionAttempts: "dontInvert",
+                    });
+
+                    if (code) {
+                        payloadInput.value = code.data;
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'QRIS Terbaca!',
+                            text: 'Payload QRIS berhasil diekstrak. Silakan simpan pengaturan.',
+                            confirmButtonColor: '#198754'
+                        });
+                    } else {
+                        // Fallback: try inversion
+                        const codeInverted = jsQR(imageData.data, imageData.width, imageData.height, {
+                            inversionAttempts: "invertFirst",
+                        });
+                        
+                        if (codeInverted) {
+                            payloadInput.value = codeInverted.data;
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'QRIS Terbaca!',
+                                text: 'Payload QRIS berhasil diekstrak (Inverted). Silakan simpan pengaturan.',
+                                confirmButtonColor: '#198754'
+                            });
+                        } else {
+                            payloadInput.value = '';
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Gagal Membaca QRIS',
+                                text: 'Gambar tidak memiliki QR code yang valid, atau tidak terbaca dengan jelas.',
+                                confirmButtonColor: '#dc3545'
+                            });
+                        }
+                    }
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+    });
+</script>
+@endpush

@@ -377,6 +377,15 @@ class AdminController extends Controller
     public function updateSettings(Request $request)
     {
         $settings = $request->input('settings', []);
+
+        // Validate QRIS payload if present
+        if (!empty($settings['qris_static_payload'])) {
+            try {
+                \App\Services\QrisService::buildDynamicPayload($settings['qris_static_payload'], 1000);
+            } catch (\Exception $e) {
+                return back()->with('error', 'Payload QRIS tidak valid: ' . $e->getMessage());
+            }
+        }
         
         foreach ($settings as $key => $value) {
             \App\Models\BotSetting::updateOrCreate(
