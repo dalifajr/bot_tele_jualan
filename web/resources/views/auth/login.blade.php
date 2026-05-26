@@ -339,8 +339,7 @@
                 <div class="info-box">
                     <h5 class="fw-bold mb-2"><i class="fas fa-bullhorn me-2"></i>Informasi Store</h5>
                     <p class="small mb-3 opacity-75" style="line-height: 1.6;">
-                        Selamat datang Jurangan!<br>
-                        kalau punya akun telegram, langsung saja klik "Login Via Telegram" kalau gak punya, bisa regis dulu.
+                        {!! $announcement !!}
                     </p>
                     <div class="small opacity-75 mb-3">
                         <strong>Kontak Admin:</strong><br>
@@ -424,8 +423,7 @@
             html: `
                 <div class="text-start">
                     <p class="small mb-3 opacity-75" style="line-height: 1.6;">
-                        Selamat datang Jurangan!<br>
-                        kalau punya akun telegram, langsung saja klik "Login Via Telegram" kalau gak punya, bisa regis dulu.
+                        {!! addslashes($announcement) !!}
                     </p>
                     <div class="small opacity-75 mb-3 bg-light p-3 rounded border">
                         <strong class="d-block mb-2">Kontak Admin:</strong>
@@ -446,6 +444,16 @@
             }
         });
     }
+
+    // Auto-show popup di smartphone pada kunjungan pertama sesi ini
+    document.addEventListener('DOMContentLoaded', function() {
+        if (window.innerWidth < 768) {
+            if (!sessionStorage.getItem('announcement_shown')) {
+                showMobileInfo();
+                sessionStorage.setItem('announcement_shown', 'true');
+            }
+        }
+    });
 </script>
 </body>
 </html>

@@ -20,8 +20,9 @@ class AuthController extends Controller
         }
 
         $todayVisitors = \App\Models\Visitor::where('visited_date', now()->toDateString())->count();
+        $announcement = \App\Models\BotSetting::where('key', 'web_announcement')->value('value') ?? 'Selamat datang Jurangan!<br>kalau punya akun telegram, langsung saja klik "Login Via Telegram" kalau gak punya, bisa regis dulu.';
 
-        return view('auth.login', compact('todayVisitors'));
+        return view('auth.login', compact('todayVisitors', 'announcement'));
     }
 
     /**

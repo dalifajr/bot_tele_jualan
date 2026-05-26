@@ -447,7 +447,8 @@ class AdminController extends Controller
     // ==========================================
     public function websiteSettings()
     {
-        return view('admin.website.settings');
+        $announcement = \App\Models\BotSetting::where('key', 'web_announcement')->value('value') ?? 'Selamat datang Jurangan!<br>kalau punya akun telegram, langsung saja klik "Login Via Telegram" kalau gak punya, bisa regis dulu.';
+        return view('admin.website.settings', compact('announcement'));
     }
 
     // ==========================================
