@@ -215,7 +215,12 @@
                     </div>
                 </div>
 
-                <h5 class="fw-bold mb-4">Selamat Datang</h5>
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="fw-bold mb-0">Selamat Datang</h5>
+                    <button type="button" class="btn btn-sm btn-light text-primary d-md-none rounded-pill border border-primary-subtle" onclick="showMobileInfo()">
+                        <i class="fas fa-bullhorn me-1"></i> Info
+                    </button>
+                </div>
 
                 {{-- Pesan Flash --}}
                 @if(session('error'))
@@ -413,6 +418,34 @@
             }, 500);
         });
     });
+    function showMobileInfo() {
+        Swal.fire({
+            title: '<i class="fas fa-bullhorn text-primary me-2"></i>Informasi Store',
+            html: `
+                <div class="text-start">
+                    <p class="small mb-3 opacity-75" style="line-height: 1.6;">
+                        Selamat datang Jurangan!<br>
+                        kalau punya akun telegram, langsung saja klik "Login Via Telegram" kalau gak punya, bisa regis dulu.
+                    </p>
+                    <div class="small opacity-75 mb-3 bg-light p-3 rounded border">
+                        <strong class="d-block mb-2">Kontak Admin:</strong>
+                        <a href="https://wa.me/6282269245660" target="_blank" class="text-decoration-none mb-2 d-block text-dark"><i class="fab fa-whatsapp text-success me-1"></i> 082269245660 - WA</a>
+                        <a href="https://t.me/dzulfikrialifajri" target="_blank" class="text-decoration-none d-block text-dark"><i class="fab fa-telegram text-primary me-1"></i> @dzulfikrialifajri - Telegram</a>
+                    </div>
+                    <div class="text-center mt-3">
+                        <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill py-2 px-3 shadow-sm border border-primary-subtle">
+                            <i class="fas fa-users me-1"></i> Pengunjung Hari Ini: {{ $todayVisitors ?? 0 }}
+                        </span>
+                    </div>
+                </div>
+            `,
+            confirmButtonText: 'Tutup',
+            confirmButtonColor: '#1976d2',
+            customClass: {
+                popup: 'rounded-4'
+            }
+        });
+    }
 </script>
 </body>
 </html>

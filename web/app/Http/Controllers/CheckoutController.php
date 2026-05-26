@@ -54,10 +54,10 @@ class CheckoutController extends Controller
             $uniqueCode = rand(1, 200);
             $totalAmount = $subtotal + $uniqueCode;
 
-            // Generate Order Ref ORD + YYYYMMDDHHMMSSu + 4 chars random hex
-            $timestamp = now()->format('YmdHisu');
-            $randomHex = strtoupper(substr(md5(uniqid()), 0, 8));
-            $orderRef = 'ORD' . substr($timestamp, 0, -3) . $randomHex;
+            // Generate Order Ref ORD + YYMMDDHHMMSS + 5 chars random hex
+            $timestamp = now()->format('ymdHis');
+            $randomHex = strtoupper(substr(md5(uniqid()), 0, 5));
+            $orderRef = 'ORD' . $timestamp . $randomHex;
 
             $expiryMinutes = BotSetting::where('key', 'checkout_expiry_minutes')->value('value') ?? 15;
             $expiresAt = now()->addMinutes($expiryMinutes);

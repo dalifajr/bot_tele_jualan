@@ -110,6 +110,8 @@ class QuickReorderTarget:
 @dataclass
 class PaymentReminderCandidate:
     order_ref: str
+
+
     customer_telegram_id: int
     expected_amount: int
     expires_at: datetime
@@ -117,9 +119,9 @@ class PaymentReminderCandidate:
 
 
 def _generate_order_ref() -> str:
-    # Format: ORD + UTC timestamp (microsecond precision) + secure random tail.
-    timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S%f")
-    suffix = secrets.token_hex(4).upper()
+    # Format: ORD + YYMMDDHHMMSS + secure random tail (5 chars).
+    timestamp = datetime.utcnow().strftime("%y%m%d%H%M%S")
+    suffix = secrets.token_hex(3).upper()[:5]
     return f"ORD{timestamp}{suffix}"
 
 
