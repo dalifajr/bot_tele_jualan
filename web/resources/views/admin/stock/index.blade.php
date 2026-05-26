@@ -187,6 +187,9 @@
                                 <button class="btn btn-sm btn-light text-info rounded-circle" data-bs-toggle="modal" data-bs-target="#detailStockModal{{ $unit->id }}" title="Lihat Detail">
                                     <i class="fas fa-eye"></i>
                                 </button>
+                                <button class="btn btn-sm btn-light text-primary rounded-circle" data-bs-toggle="modal" data-bs-target="#moveStockModal{{ $unit->id }}" title="Pindahkan / Ubah Status">
+                                    <i class="fas fa-exchange-alt"></i>
+                                </button>
                                 @if(!$unit->is_sold)
                                 <button class="btn btn-sm btn-light text-danger rounded-circle" data-bs-toggle="modal" data-bs-target="#deleteStockModal{{ $unit->id }}" title="Hapus">
                                     <i class="fas fa-trash-alt"></i>
@@ -284,6 +287,49 @@
             <div class="modal-footer border-0">
                 <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Tutup</button>
             </div>
+        </div>
+    </div>
+</div>
+
+{{-- Move Stock Modal --}}
+<div class="modal fade" id="moveStockModal{{ $unit->id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 16px; border: none;">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="fw-bold">Ubah Status / Pindah Produk</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ route('admin.stock.move', $unit->id) }}" method="POST">
+                @csrf
+                @method('PUT')
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">Pindah ke Produk</label>
+                        <select name="product_id" class="form-select">
+                            @php
+                                $allMoveProducts = \App\Models\Product::orderBy('name')->get();
+                            @endphp
+                            @foreach($allMoveProducts as $p)
+                                <option value="{{ $p->id }}" {{ $unit->product_id == $p->id ? 'selected' : '' }}>{{ $p->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">Ubah Status</label>
+                        <select name="stock_status" class="form-select">
+                            <option value="ready" {{ $unit->stock_status === 'ready' && !$unit->is_sold ? 'selected' : '' }}>Ready</option>
+                            <option value="awaiting_benefits" {{ $unit->stock_status === 'awaiting_benefits' && !$unit->is_sold ? 'selected' : '' }}>Awaiting Benefits</option>
+                            <option value="saved_for_verification" {{ $unit->stock_status === 'saved_for_verification' && !$unit->is_sold ? 'selected' : '' }}>Simpan Akun</option>
+                            <option value="terjual" {{ $unit->is_sold ? 'selected' : '' }}>Terjual</option>
+                        </select>
+                        <div class="form-text">Mengubah ke status "Awaiting Benefits" atau "Simpan Akun" akan menjadwal ulang akun ini sesuai dengan konfigurasi jam bot.</div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">Simpan Perubahan</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

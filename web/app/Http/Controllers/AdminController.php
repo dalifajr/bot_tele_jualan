@@ -177,6 +177,39 @@ class AdminController extends Controller
         return redirect()->route('admin.stock.index')->with('success', "$count stok berhasil ditambahkan.");
     }
 
+    public function moveStock(Request $request, $id)
+    {
+        $request->validate([
+            'product_id' => 'required|exists:products,id',
+            'stock_status' => 'required|in:ready,awaiting_benefits,saved_for_verification,terjual',
+        ]);
+
+        $stock = StockUnit::findOrFail($id);
+        $stock->product_id = $request->product_id;
+        
+        if ($request->stock_status === 'terjual') {
+            $stock->is_sold = true;
+        } else {
+            $stock->is_sold = false;
+            $stock->stock_status = $request->stock_status;
+            
+            // Recalculate available_at
+            if ($request->stock_status === 'awaiting_benefits') {
+                $hours = (int)(\App\Models\BotSetting::where('key', 'github_pack.awaiting_hours')->value('value') ?? 78);
+                $stock->available_at = now()->addHours($hours);
+            } elseif ($request->stock_status === 'saved_for_verification') {
+                $hours = (int)(\App\Models\BotSetting::where('key', 'github_pack.save_hours')->value('value') ?? 80);
+                $stock->available_at = now()->addHours($hours);
+            } else {
+                $stock->available_at = null;
+            }
+        }
+        
+        $stock->save();
+
+        return back()->with('success', 'Status/Produk stok berhasil dipindahkan.');
+    }
+
     public function destroyStock($id)
     {
         $stock = StockUnit::findOrFail($id);

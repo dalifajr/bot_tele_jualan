@@ -64,6 +64,7 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         
         Route::get('/stock', [\App\Http\Controllers\AdminController::class, 'stock'])->name('stock.index');
         Route::post('/stock', [\App\Http\Controllers\AdminController::class, 'storeStock'])->name('stock.store');
+        Route::put('/stock/{id}/move', [\App\Http\Controllers\AdminController::class, 'moveStock'])->name('stock.move');
         Route::delete('/stock/{id}', [\App\Http\Controllers\AdminController::class, 'destroyStock'])->name('stock.destroy');
         
         Route::get('/orders', [\App\Http\Controllers\AdminController::class, 'orders'])->name('orders.index');
