@@ -71,6 +71,7 @@ class AuthController extends Controller
             'telegram_id' => $request->telegram_id,
             'password' => Hash::make($request->password),
             'role' => 'customer',
+            'last_seen_at' => now(),
         ]);
 
         Auth::login($user);
