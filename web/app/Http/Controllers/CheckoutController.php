@@ -131,11 +131,12 @@ class CheckoutController extends Controller
             // Kirim Notifikasi ke Admin via Telegram
             \App\Services\TelegramService::notifyAdminNewOrder($order);
 
-            return redirect()->route('checkout.success', ['order_ref' => $orderRef]);
+            return redirect()->route('checkout.success', ['order_ref' => $orderRef])->with('checkout_new', true);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Terjadi kesalahan sistem saat memproses checkout: ' . $e->getMessage());
+            \Log::error("Web Checkout Error: " . $e->getMessage() . "\n" . $e->getTraceAsString());
+            return redirect()->back()->with('error', 'Terjadi kesalahan sistem saat memproses checkout: ' . $e->getMessage());
         }
     }
 
@@ -151,12 +152,19 @@ class CheckoutController extends Controller
         }
 
         // Coba cari payload QRIS dari bot setting
-        $staticQris = BotSetting::where('key', 'qris.payload_static')->value('value');
+        $staticQris = \App\Models\BotSetting::where('key', 'qris_static_payload')->value('value');
         $dynamicQris = null;
 
         if ($staticQris && $order->total_amount > 0 && $order->status === 'pending_payment') {
             try {
                 $dynamicQris = \App\Services\QrisService::buildDynamicPayload($staticQris, $order->total_amount);
+                
+                // Jika baru pertama kali load success page (cek parameter query atau session),
+                // kirim pesan ke Telegram user. Agar tidak dobel, kita bisa menggunakan session flash data 
+                // yang di set saat store checkout.
+                if (session('checkout_new')) {
+                    \App\Services\TelegramService::notifyCustomerNewOrder($order, $dynamicQris);
+                }
             } catch (\Exception $e) {
                 // Jika gagal parsing, fallback ke null
                 \Log::error("QRIS Generation Error: " . $e->getMessage());

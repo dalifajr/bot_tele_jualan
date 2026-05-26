@@ -73,4 +73,75 @@ class TelegramService
             }
         }
     }
+
+    /**
+     * Kirim pesan tagihan + QRIS ke pelanggan yang melakukan order via Web.
+     */
+    public static function notifyCustomerNewOrder(Order $order, ?string $dynamicQris)
+    {
+        $botToken = env('TELEGRAM_BOT_TOKEN');
+        
+        if (empty($botToken)) {
+            Log::warning("TELEGRAM_BOT_TOKEN kosong, notifikasi ke customer dilewati.");
+            return;
+        }
+
+        $customerTelegramId = $order->customer->telegram_id ?? null;
+        if (!$customerTelegramId) {
+            return;
+        }
+
+        $itemCount = $order->items->count();
+        $firstItem = $order->items->first();
+        $productName = $firstItem ? $firstItem->product->name : 'Produk';
+        if ($itemCount > 1) {
+            $productName .= " (+" . ($itemCount - 1) . " item)";
+        }
+
+        $totalQty = $order->items->sum('quantity');
+        $expiresAt = $order->expires_at ? $order->expires_at->format('d M Y, H:i') : '-';
+
+        $text = "🎉 <b>Pesanan Berhasil Dibuat (Via Web)</b>\n\n"
+              . "Order Ref: <code>{$order->order_ref}</code>\n"
+              . "Produk: {$productName}\n"
+              . "Kuantitas: {$totalQty}\n"
+              . "Total Tagihan: <b>Rp " . number_format($order->total_amount, 0, ',', '.') . "</b>\n"
+              . "Batas Pembayaran: {$expiresAt} WIB\n\n";
+
+        if ($dynamicQris) {
+            $text .= "👇 <b>Silakan Scan QRIS berikut atau Salin Kode Payload:</b>\n"
+                   . "<code>{$dynamicQris}</code>\n\n"
+                   . "<i>Pesanan akan otomatis diproses segera setelah pembayaran diterima.</i>";
+            
+            // Kita bisa menggunakan sendPhoto dengan URL image QR Code dinamis dari API public.
+            $qrImageUrl = "https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=" . urlencode($dynamicQris);
+            $apiUrl = "https://api.telegram.org/bot{$botToken}/sendPhoto";
+            
+            try {
+                Http::post($apiUrl, [
+                    'chat_id' => $customerTelegramId,
+                    'photo' => $qrImageUrl,
+                    'caption' => $text,
+                    'parse_mode' => 'HTML',
+                ]);
+            } catch (\Exception $e) {
+                Log::error("Gagal mengirim QRIS photo ke {$customerTelegramId}: " . $e->getMessage());
+            }
+
+        } else {
+            $text .= "⚠️ Payload QRIS belum diatur oleh admin.\n"
+                   . "Silakan hubungi admin untuk melakukan pembayaran manual.";
+                   
+            $apiUrl = "https://api.telegram.org/bot{$botToken}/sendMessage";
+            try {
+                Http::post($apiUrl, [
+                    'chat_id' => $customerTelegramId,
+                    'text' => $text,
+                    'parse_mode' => 'HTML',
+                ]);
+            } catch (\Exception $e) {
+                Log::error("Gagal mengirim text invoice ke {$customerTelegramId}: " . $e->getMessage());
+            }
+        }
+    }
 }
