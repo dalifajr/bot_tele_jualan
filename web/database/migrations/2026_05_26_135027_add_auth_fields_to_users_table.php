@@ -12,10 +12,18 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->string('email')->unique()->nullable()->after('username');
-            $table->string('password')->nullable()->after('email');
-            $table->rememberToken()->after('role');
-            $table->timestamp('updated_at')->nullable()->after('last_seen_at');
+            if (!Schema::hasColumn('users', 'email')) {
+                $table->string('email')->unique()->nullable()->after('username');
+            }
+            if (!Schema::hasColumn('users', 'password')) {
+                $table->string('password')->nullable()->after('email');
+            }
+            if (!Schema::hasColumn('users', 'remember_token')) {
+                $table->rememberToken()->after('role');
+            }
+            if (!Schema::hasColumn('users', 'updated_at')) {
+                $table->timestamp('updated_at')->nullable()->after('last_seen_at');
+            }
         });
     }
 
@@ -25,7 +33,15 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn(['email', 'password', 'remember_token', 'updated_at']);
+            $columns = [];
+            if (Schema::hasColumn('users', 'email')) $columns[] = 'email';
+            if (Schema::hasColumn('users', 'password')) $columns[] = 'password';
+            if (Schema::hasColumn('users', 'remember_token')) $columns[] = 'remember_token';
+            if (Schema::hasColumn('users', 'updated_at')) $columns[] = 'updated_at';
+            
+            if (!empty($columns)) {
+                $table->dropColumn($columns);
+            }
         });
     }
 };
