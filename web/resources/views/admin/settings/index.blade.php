@@ -63,7 +63,7 @@
                     $qrisImagePath = $settings['qris_image_path'] ?? null;
                 @endphp
 
-                @if($qrisPayload && $qrisImagePath)
+                @if($qrisPayload)
                     <div class="alert alert-success border-0 shadow-sm rounded-4 mb-4">
                         <div class="d-flex align-items-center mb-3">
                             <i class="fas fa-check-circle fs-3 me-3 text-success"></i>
@@ -75,7 +75,14 @@
                         
                         <div class="row align-items-center">
                             <div class="col-sm-4 text-center mb-3 mb-sm-0">
-                                <img src="{{ route('admin.settings.qris.image') }}" alt="QRIS Tersimpan" class="img-fluid rounded border p-2 bg-white" style="max-height: 150px;">
+                                @if($qrisImagePath)
+                                    <img src="{{ route('admin.settings.qris.image') }}" alt="QRIS Tersimpan" class="img-fluid rounded border p-2 bg-white" style="max-height: 150px;">
+                                @else
+                                    <div class="border rounded p-4 bg-white text-muted">
+                                        <i class="fas fa-image fs-1 mb-2"></i><br>
+                                        <small>Gambar disetup via Bot Telegram</small>
+                                    </div>
+                                @endif
                             </div>
                             <div class="col-sm-8">
                                 <label class="form-label fw-bold small text-muted">PAYLOAD EKSTRAK (RAW)</label>
