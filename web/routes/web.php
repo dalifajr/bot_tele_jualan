@@ -42,6 +42,10 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
     // Orders
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/{id}', [OrderController::class, 'show'])->name('orders.show');
+    
+    // Checkout
+    Route::post('/checkout/{product}', [\App\Http\Controllers\CheckoutController::class, 'store'])->name('checkout.store');
+    Route::get('/checkout/success/{order_ref}', [\App\Http\Controllers\CheckoutController::class, 'success'])->name('checkout.success');
 
     // Profile
     Route::get('/profile', function () {

@@ -44,13 +44,54 @@
 
                 <div class="d-flex justify-content-between align-items-center mt-auto">
                     <span class="product-price">{{ $product->formatted_price }}</span>
-                    <a href="{{ route('catalog.show', $product->id) }}" class="btn btn-sm btn-primary rounded-pill px-3">
-                        Detail <i class="fas fa-arrow-right ms-1"></i>
-                    </a>
+                    <div class="d-flex gap-2">
+                        @if($product->stock_count > 0)
+                        <button type="button" class="btn btn-sm btn-primary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#checkoutModal{{ $product->id }}">
+                            Beli <i class="fas fa-shopping-cart ms-1"></i>
+                        </button>
+                        @endif
+                        <a href="{{ route('catalog.show', $product->id) }}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                            Detail
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
+
+    @if($product->stock_count > 0)
+    {{-- Checkout Modal --}}
+    <div class="modal fade" id="checkoutModal{{ $product->id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="border-radius: 16px; border: none;">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="fw-bold">Checkout Produk</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form action="{{ route('checkout.store', $product->id) }}" method="POST">
+                    @csrf
+                    <div class="modal-body p-4">
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">Produk</label>
+                            <p class="mb-0 fw-bold">{{ $product->name }}</p>
+                            <p class="text-primary fw-bold">{{ $product->formatted_price }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">Kuantitas (QTY)</label>
+                            <input type="number" name="quantity" class="form-control" value="1" min="1" max="{{ $product->stock_count }}" required>
+                            <div class="form-text">Maksimal pembelian: {{ $product->stock_count }} unit.</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary rounded-pill px-4">Lanjutkan Pembayaran</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    @endif
+
     @empty
     <div class="col-12">
         <div class="text-center py-5">
