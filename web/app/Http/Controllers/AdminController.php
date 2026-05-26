@@ -377,15 +377,6 @@ class AdminController extends Controller
     public function updateSettings(Request $request)
     {
         $settings = $request->input('settings', []);
-
-        // Validate QRIS payload if present
-        if (!empty($settings['qris_static_payload'])) {
-            try {
-                \App\Services\QrisService::buildDynamicPayload($settings['qris_static_payload'], 1000);
-            } catch (\Exception $e) {
-                return back()->with('error', 'Payload QRIS tidak valid: ' . $e->getMessage());
-            }
-        }
         
         foreach ($settings as $key => $value) {
             \App\Models\BotSetting::updateOrCreate(
@@ -420,6 +411,59 @@ class AdminController extends Controller
         }
 
         return back()->with('success', 'Konfigurasi berhasil disimpan dan jadwal stok telah diperbarui!');
+    }
+
+    public function uploadQris(Request $request)
+    {
+        $request->validate([
+            'qris_image' => 'required|image|mimes:jpeg,png,jpg|max:2048'
+        ]);
+
+        $file = $request->file('qris_image');
+        $imagePath = $file->path();
+
+        $venvPython = base_path('../.venv/Scripts/python.exe');
+        $scriptPath = base_path('../src/extract_qris_cli.py');
+        $cmd = escapeshellcmd($venvPython) . ' ' . escapeshellarg($scriptPath) . ' ' . escapeshellarg($imagePath);
+        
+        $output = shell_exec($cmd . ' 2>&1');
+        
+        if ($output && strpos($output, 'PAYLOAD:') !== false) {
+            preg_match('/PAYLOAD:(.*)/', $output, $matches);
+            $payload = trim($matches[1]);
+            
+            if (empty($payload)) {
+                return back()->with('error', 'Payload QRIS kosong atau tidak terbaca dari gambar.');
+            }
+
+            $filename = 'qris_latest.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs('qris', $filename, 'public');
+            
+            \App\Models\BotSetting::updateOrCreate(
+                ['key' => 'qris_static_payload'],
+                ['value' => $payload, 'updated_at' => now()]
+            );
+            \App\Models\BotSetting::updateOrCreate(
+                ['key' => 'qris_image_path'],
+                ['value' => $path, 'updated_at' => now()]
+            );
+
+            return back()->with('success', 'Gambar QRIS berhasil diunggah dan payload terekstraksi.');
+        } else {
+            return back()->with('error', 'Gagal mengekstraksi kode QRIS. Pastikan gambar mengandung QR Code yang valid. Output: ' . substr($output, 0, 100));
+        }
+    }
+
+    public function deleteQris()
+    {
+        $imagePath = \App\Models\BotSetting::where('key', 'qris_image_path')->value('value');
+        if ($imagePath && \Illuminate\Support\Facades\Storage::disk('public')->exists($imagePath)) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($imagePath);
+        }
+
+        \App\Models\BotSetting::whereIn('key', ['qris_static_payload', 'qris_image_path'])->delete();
+
+        return back()->with('success', 'QRIS dan payload berhasil dihapus.');
     }
 
     // ==========================================

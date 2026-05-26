@@ -55,30 +55,94 @@
         {{-- Konfigurasi Payment / QRIS --}}
         <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
             <div class="card-body p-4">
-                <form action="{{ route('admin.settings.update') }}" method="POST">
-                    @csrf
-                    <h5 class="fw-bold mb-1"><i class="fas fa-credit-card text-success me-2"></i>Pengaturan Payment</h5>
-                    <p class="text-muted small mb-3">Konfigurasi untuk QRIS dan API pembayaran.</p>
+                <h5 class="fw-bold mb-1"><i class="fas fa-qrcode text-success me-2"></i>Konfigurasi QRIS Dinamis</h5>
+                <p class="text-muted small mb-4">Sistem akan mengekstrak payload dari gambar QRIS yang diupload dan menggunakannya untuk generate QRIS dengan nominal dinamis pada saat checkout.</p>
 
-                    {{-- Upload QRIS --}}
-                    <div class="mb-4 p-3 border rounded bg-light">
-                        <label class="form-label fw-bold text-muted small"><i class="fas fa-qrcode me-1"></i> UPLOAD GAMBAR QRIS</label>
-                        <input type="file" id="qrisImageInput" class="form-control mb-2" accept="image/*">
-                        <small class="text-muted d-block mb-3">Upload gambar QRIS statis Anda (dari e-Wallet atau Bank). Sistem akan otomatis membaca barcode untuk mendukung QRIS Dinamis pada saat pelanggan checkout.</small>
-                        <div id="qrisPreview" class="text-center mb-3 d-none">
-                            <canvas id="qrisCanvas" style="max-width: 100%; height: auto; border: 1px solid #ccc; border-radius: 8px;"></canvas>
+                @php
+                    $qrisPayload = $settings['qris_static_payload'] ?? null;
+                    $qrisImagePath = $settings['qris_image_path'] ?? null;
+                @endphp
+
+                @if($qrisPayload && $qrisImagePath)
+                    <div class="alert alert-success border-0 shadow-sm rounded-4 mb-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <i class="fas fa-check-circle fs-3 me-3 text-success"></i>
+                            <div>
+                                <h6 class="fw-bold mb-0 text-success">QRIS Dinamis Siap Digunakan</h6>
+                                <small class="text-dark">Payload berhasil diekstrak dan siap untuk transaksi.</small>
+                            </div>
                         </div>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-code"></i></span>
-                            <input type="text" name="settings[qris_static_payload]" id="qrisPayloadInput" class="form-control font-monospace text-muted" style="font-size: 0.8rem;" value="{{ $settings['qris_static_payload'] ?? '' }}" placeholder="Payload QRIS akan terisi otomatis" readonly>
+                        
+                        <div class="row align-items-center">
+                            <div class="col-sm-4 text-center mb-3 mb-sm-0">
+                                <img src="{{ asset('storage/' . $qrisImagePath) }}" alt="QRIS Tersimpan" class="img-fluid rounded border p-2 bg-white" style="max-height: 150px;">
+                            </div>
+                            <div class="col-sm-8">
+                                <label class="form-label fw-bold small text-muted">PAYLOAD EKSTRAK (RAW)</label>
+                                <textarea class="form-control form-control-sm text-muted mb-3" rows="3" readonly>{{ $qrisPayload }}</textarea>
+                                
+                                <div class="d-flex gap-2">
+                                    <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3" onclick="document.getElementById('qrisUploadForm').classList.toggle('d-none')">
+                                        <i class="fas fa-exchange-alt me-1"></i> Ganti QRIS
+                                    </button>
+                                    <form action="{{ route('admin.settings.qris.delete') }}" method="POST" class="d-inline" id="formDeleteQris">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3" onclick="confirmAction('formDeleteQris', 'Hapus QRIS ini?', 'QRIS statis dan payload akan dihapus dari sistem.')">
+                                            <i class="fas fa-trash me-1"></i> Hapus
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
                         </div>
                     </div>
+                    
+                    <form action="{{ route('admin.settings.qris.upload') }}" method="POST" enctype="multipart/form-data" id="qrisUploadForm" class="d-none border-top pt-4 mt-2">
+                        @csrf
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-muted small">UPLOAD GAMBAR QRIS BARU</label>
+                            <input type="file" name="qris_image" class="form-control" accept="image/png, image/jpeg, image/jpg" required>
+                            <small class="text-muted">Format: JPG, PNG. Maksimal 2MB. Gambar harus cukup jelas agar kode QR bisa diekstrak.</small>
+                        </div>
+                        <button type="submit" class="btn btn-primary rounded-pill px-4"><i class="fas fa-upload me-1"></i> Upload & Ekstrak</button>
+                    </form>
+                @else
+                    <div class="alert alert-warning border-0 shadow-sm rounded-4 mb-4">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-exclamation-triangle fs-3 me-3 text-warning"></i>
+                            <div>
+                                <h6 class="fw-bold mb-0 text-dark">QRIS Belum Dikonfigurasi</h6>
+                                <small class="text-dark">Sistem belum memiliki referensi QRIS untuk checkout. Silakan upload gambar QRIS.</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form action="{{ route('admin.settings.qris.upload') }}" method="POST" enctype="multipart/form-data">
+                        @csrf
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-muted small">UPLOAD GAMBAR QRIS</label>
+                            <input type="file" name="qris_image" class="form-control" accept="image/png, image/jpeg, image/jpg" required>
+                            <small class="text-muted">Format: JPG, PNG. Maksimal 2MB. Sistem akan otomatis membaca payload QRIS.</small>
+                        </div>
+                        <button type="submit" class="btn btn-primary rounded-pill px-4"><i class="fas fa-upload me-2"></i>Upload & Ekstrak</button>
+                    </form>
+                @endif
+            </div>
+        </div>
+
+        {{-- Konfigurasi Payment Lainnya --}}
+        <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
+            <div class="card-body p-4">
+                <form action="{{ route('admin.settings.update') }}" method="POST">
+                    @csrf
+                    <h5 class="fw-bold mb-1"><i class="fas fa-cog text-secondary me-2"></i>Pengaturan Payment Lainnya</h5>
+                    <p class="text-muted small mb-3">Konfigurasi variabel dan parameter tambahan.</p>
 
                     @php
                         $hasPaymentSettings = false;
                     @endphp
                     @foreach($settings as $key => $val)
-                        @if($key !== 'qris_static_payload' && (str_contains(strtolower($key), 'qris') || str_contains(strtolower($key), 'payment') || str_contains(strtolower($key), 'api') || str_contains(strtolower($key), 'pay')))
+                        @if((str_contains(strtolower($key), 'payment') || str_contains(strtolower($key), 'api') || str_contains(strtolower($key), 'pay')) && !str_contains(strtolower($key), 'qris'))
                         @php $hasPaymentSettings = true; @endphp
                         <div class="mb-3">
                             <label class="form-label fw-bold text-muted small">{{ strtoupper(str_replace(['_', '.'], ' ', $key)) }}</label>
@@ -87,16 +151,16 @@
                         @endif
                     @endforeach
                     
-                    @if(!$hasPaymentSettings && !isset($settings['qris_static_payload']))
+                    @if(!$hasPaymentSettings)
                         <div class="text-center text-muted py-3">
                             <i class="fas fa-info-circle fs-3 mb-2"></i>
-                            <p class="mb-0">Belum ada pengaturan payment tambahan di database.</p>
+                            <p class="mb-0">Tidak ada pengaturan parameter payment tambahan.</p>
                         </div>
                     @endif
 
                     <div class="d-grid mt-4">
-                        <button type="submit" class="btn btn-success rounded-pill py-2 fw-bold">
-                            <i class="fas fa-save me-2"></i>Simpan Pengaturan Payment
+                        <button type="submit" class="btn btn-secondary rounded-pill py-2 fw-bold">
+                            <i class="fas fa-save me-2"></i>Simpan Variabel Payment
                         </button>
                     </div>
                 </form>
@@ -106,79 +170,3 @@
     </div>
 </div>
 @endsection
-
-@push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const fileInput = document.getElementById('qrisImageInput');
-        const canvas = document.getElementById('qrisCanvas');
-        const ctx = canvas.getContext('2d', { willReadFrequently: true });
-        const payloadInput = document.getElementById('qrisPayloadInput');
-        const previewDiv = document.getElementById('qrisPreview');
-
-        fileInput.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                const img = new Image();
-                img.onload = function() {
-                    // Set canvas size matching image
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    
-                    // Draw image to canvas
-                    ctx.drawImage(img, 0, 0);
-                    previewDiv.classList.remove('d-none');
-                    canvas.style.display = 'inline-block';
-
-                    // Get image data
-                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                    
-                    // Use jsQR to decode
-                    const code = jsQR(imageData.data, imageData.width, imageData.height, {
-                        inversionAttempts: "dontInvert",
-                    });
-
-                    if (code) {
-                        payloadInput.value = code.data;
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'QRIS Terbaca!',
-                            text: 'Payload QRIS berhasil diekstrak. Silakan simpan pengaturan.',
-                            confirmButtonColor: '#198754'
-                        });
-                    } else {
-                        // Fallback: try inversion
-                        const codeInverted = jsQR(imageData.data, imageData.width, imageData.height, {
-                            inversionAttempts: "invertFirst",
-                        });
-                        
-                        if (codeInverted) {
-                            payloadInput.value = codeInverted.data;
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'QRIS Terbaca!',
-                                text: 'Payload QRIS berhasil diekstrak (Inverted). Silakan simpan pengaturan.',
-                                confirmButtonColor: '#198754'
-                            });
-                        } else {
-                            payloadInput.value = '';
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Gagal Membaca QRIS',
-                                text: 'Gambar tidak memiliki QR code yang valid, atau tidak terbaca dengan jelas.',
-                                confirmButtonColor: '#dc3545'
-                            });
-                        }
-                    }
-                };
-                img.src = event.target.result;
-            };
-            reader.readAsDataURL(file);
-        });
-    });
-</script>
-@endpush
