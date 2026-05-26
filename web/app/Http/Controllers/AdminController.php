@@ -191,6 +191,7 @@ class AdminController extends Controller
             $stock->is_sold = true;
         } else {
             $stock->is_sold = false;
+            $stock->sold_order_id = null; // Tambahkan ini agar stok dapat dicheckout kembali
             $stock->stock_status = $request->stock_status;
             
             // Recalculate available_at

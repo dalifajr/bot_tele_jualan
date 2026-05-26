@@ -25,7 +25,9 @@
                     </div>
                     <div class="d-flex justify-content-between mb-2">
                         <span class="text-muted">Batas Bayar</span>
-                        <span class="fw-bold text-danger">{{ $order->expires_at->format('d M Y, H:i') }} WIB</span>
+                        <span class="fw-bold text-danger" id="countdownTimer" data-expires="{{ $order->expires_at->toIso8601String() }}">
+                            {{ $order->expires_at->format('d M Y, H:i') }} WIB
+                        </span>
                     </div>
                     <hr class="border-secondary-subtle opacity-50">
                     <div class="d-flex justify-content-between align-items-center">
@@ -106,4 +108,46 @@
     }
 </script>
 @endif
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Countdown Timer
+        const countdownEl = document.getElementById('countdownTimer');
+        if (countdownEl) {
+            const expiresAt = new Date("{{ $order->expires_at->toIso8601String() }}").getTime();
+            
+            const timer = setInterval(() => {
+                const now = new Date().getTime();
+                const distance = expiresAt - now;
+                
+                if (distance < 0) {
+                    clearInterval(timer);
+                    countdownEl.innerText = "Waktu Habis";
+                    // Reload to update status server-side if needed
+                    setTimeout(() => location.reload(), 2000);
+                } else {
+                    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                    countdownEl.innerText = `${minutes}m ${seconds}s`;
+                }
+            }, 1000);
+        }
+
+        // Realtime Status Polling
+        const checkStatus = () => {
+            fetch("{{ route('orders.status', $order->id) }}")
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status !== 'pending_payment') {
+                        // Jika status berubah (paid/delivered/cancelled dll), redirect
+                        window.location.href = "{{ route('orders.show', $order->id) }}";
+                    }
+                })
+                .catch(err => console.error("Polling error:", err));
+        };
+
+        // Poll every 5 seconds
+        setInterval(checkStatus, 5000);
+    });
+</script>
 @endpush

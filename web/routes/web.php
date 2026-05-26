@@ -50,6 +50,10 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
     
     // Manage Orders
     Route::post('/orders/{id}/cancel', [\App\Http\Controllers\OrderController::class, 'cancel'])->name('orders.cancel');
+    Route::get('/orders/{id}/status', function ($id) {
+        $order = \App\Models\Order::where('customer_id', \Illuminate\Support\Facades\Auth::id())->findOrFail($id);
+        return response()->json(['status' => $order->status]);
+    })->name('orders.status');
 
     // Profile
     Route::get('/profile', function () {

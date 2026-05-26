@@ -151,6 +151,12 @@ class CheckoutController extends Controller
             abort(403);
         }
 
+        // Jika pesanan sudah bukan pending payment (misal dibatalkan/expired/paid),
+        // redirect ke halaman detail pesanan.
+        if ($order->status !== 'pending_payment') {
+            return redirect()->route('orders.show', $order->id);
+        }
+
         // Coba cari payload QRIS dari bot setting
         $staticQris = \App\Models\BotSetting::where('key', 'qris_static_payload')->value('value');
         $dynamicQris = null;
