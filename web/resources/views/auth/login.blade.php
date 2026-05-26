@@ -10,6 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
         :root {
@@ -336,10 +337,15 @@
                         Selamat datang Jurangan!<br>
                         kalau punya akun telegram, langsung saja klik "Login Via Telegram" kalau gak punya, bisa regis dulu.
                     </p>
-                    <div class="small opacity-75">
+                    <div class="small opacity-75 mb-3">
                         <strong>Kontak Admin:</strong><br>
                         <a href="https://wa.me/6282269245660" target="_blank" class="text-white text-decoration-none mt-1 d-inline-block"><i class="fab fa-whatsapp"></i> 082269245660 - WA</a><br>
                         <a href="https://t.me/dzulfikrialifajri" target="_blank" class="text-white text-decoration-none mt-1 d-inline-block"><i class="fab fa-telegram"></i> @dzulfikrialifajri - Telegram</a>
+                    </div>
+                    <div class="mt-auto">
+                        <span class="badge bg-light text-primary rounded-pill py-2 px-3 shadow-sm">
+                            <i class="fas fa-users me-1"></i> Pengunjung Hari Ini: {{ $todayVisitors ?? 0 }}
+                        </span>
                     </div>
                 </div>
             </div>

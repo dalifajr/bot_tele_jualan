@@ -24,7 +24,7 @@ Route::get('/', function () {
 |--------------------------------------------------------------------------
 */
 Route::post('/api/check-telegram-id', [\App\Http\Controllers\ProfileController::class, 'checkTelegramId'])->name('api.check.telegram');
-Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+Route::get('/login', [AuthController::class, 'showLogin'])->name('login')->middleware(\App\Http\Middleware\TrackVisitor::class);
 Route::post('/login/password', [AuthController::class, 'login'])->name('login.post');
 Route::post('/register', [AuthController::class, 'register'])->name('register.post');
 Route::get('/suspended', [AuthController::class, 'suspended'])->name('suspended');

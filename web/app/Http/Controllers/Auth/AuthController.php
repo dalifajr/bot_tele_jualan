@@ -19,7 +19,9 @@ class AuthController extends Controller
             return redirect()->route('dashboard');
         }
 
-        return view('auth.login');
+        $todayVisitors = \App\Models\Visitor::where('visited_date', now()->toDateString())->count();
+
+        return view('auth.login', compact('todayVisitors'));
     }
 
     /**

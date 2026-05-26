@@ -108,7 +108,7 @@
                     @if(Auth::user()->telegram_id)
                         <form action="{{ route('profile.telegram.unlink') }}" method="POST">
                             @csrf
-                            <button type="submit" class="quick-action-btn w-100 border-warning text-start" onclick="return confirm('Apakah Anda yakin ingin melepas kaitan akun Telegram Anda?')">
+                            <button type="button" class="quick-action-btn w-100 border-warning text-start" onclick="confirmAction(event, 'Apakah Anda yakin ingin melepas kaitan akun Telegram Anda?')">
                                 <div class="qa-icon" style="background: #fff8e1;">
                                     <i class="fas fa-unlink text-warning"></i>
                                 </div>

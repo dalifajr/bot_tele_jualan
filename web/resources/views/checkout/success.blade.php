@@ -63,7 +63,7 @@
                         Kembali ke Katalog
                     </a>
                     @if($order->status === 'pending_payment')
-                    <form action="{{ route('orders.cancel', $order->id) }}" method="POST" class="d-grid mt-2" onsubmit="return confirm('Yakin ingin membatalkan pesanan ini?');">
+                    <form action="{{ route('orders.cancel', $order->id) }}" method="POST" class="d-grid mt-2" onsubmit="confirmAction(event, 'Yakin ingin membatalkan pesanan ini?');">
                         @csrf
                         <button type="submit" class="btn btn-outline-danger rounded-pill py-2">
                             <i class="fas fa-times-circle me-1"></i> Batalkan Pesanan

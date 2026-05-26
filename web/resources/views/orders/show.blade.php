@@ -130,7 +130,7 @@
                 <i class="fas fa-arrow-left me-2"></i>Kembali ke Riwayat
             </a>
             @if($order->status === 'pending_payment')
-            <form action="{{ route('orders.cancel', $order->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin membatalkan pesanan ini?');">
+            <form action="{{ route('orders.cancel', $order->id) }}" method="POST" onsubmit="confirmAction(event, 'Apakah Anda yakin ingin membatalkan pesanan ini?');">
                 @csrf
                 <button type="submit" class="btn btn-outline-danger w-100 rounded-pill">
                     <i class="fas fa-times-circle me-2"></i>Batalkan Pesanan

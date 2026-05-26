@@ -97,7 +97,7 @@
                                         <li>
                                             <form action="{{ route('admin.users.suspend', $user->id) }}" method="POST">
                                                 @csrf
-                                                <button type="submit" class="dropdown-item py-2 text-warning" onclick="return confirm('Yakin ingin menangguhkan pengguna ini? Akses bot mereka akan diblokir.')">
+                                                <button type="button" class="dropdown-item py-2 text-warning" onclick="confirmAction(event, 'Yakin ingin menangguhkan pengguna ini? Akses bot mereka akan diblokir.')">
                                                     <i class="fas fa-ban me-2"></i> Suspend Pengguna
                                                 </button>
                                             </form>
@@ -109,7 +109,7 @@
                                         <form action="{{ route('admin.users.destroy', $user->id) }}" method="POST">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="dropdown-item py-2 text-danger" onclick="return confirm('Yakin ingin menghapus permanen pengguna ini? Proses ini tidak dapat dibatalkan.')">
+                                            <button type="button" class="dropdown-item py-2 text-danger" onclick="confirmAction(event, 'Yakin ingin menghapus permanen pengguna ini? Proses ini tidak dapat dibatalkan.')">
                                                 <i class="fas fa-trash me-2"></i> Hapus Pengguna
                                             </button>
                                         </form>

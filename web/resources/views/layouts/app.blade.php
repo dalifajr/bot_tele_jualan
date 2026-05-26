@@ -21,6 +21,34 @@
     {{-- Custom SIMAK-style CSS --}}
     <link href="{{ asset('css/app.css') }}" rel="stylesheet">
 
+    {{-- SweetAlert2 --}}
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        function confirmAction(event, message) {
+            event.preventDefault();
+            let element = event.currentTarget;
+            let form = element.closest('form') || element;
+            Swal.fire({
+                title: 'Konfirmasi Aksi',
+                text: message,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Ya, lanjutkan!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    if (form.tagName === 'FORM') {
+                        form.submit();
+                    } else if (element.href) {
+                        window.location.href = element.href;
+                    }
+                }
+            });
+        }
+    </script>
+
     @stack('styles')
 </head>
 <body class="bg-body-tertiary">
