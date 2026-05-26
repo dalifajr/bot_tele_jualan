@@ -310,7 +310,32 @@ class AdminController extends Controller
             );
         }
 
-        return back()->with('success', 'Konfigurasi berhasil disimpan!');
+        // Recalculate available_at for existing stock
+        if (isset($settings['github_pack.awaiting_hours'])) {
+            $awaitingHours = (int)$settings['github_pack.awaiting_hours'];
+            $awaitingStocks = \App\Models\StockUnit::where('is_sold', false)
+                ->where('stock_status', 'awaiting_benefits')
+                ->get();
+                
+            foreach ($awaitingStocks as $stock) {
+                $stock->available_at = $stock->created_at->copy()->addHours($awaitingHours);
+                $stock->save();
+            }
+        }
+
+        if (isset($settings['github_pack.save_hours'])) {
+            $saveHours = (int)$settings['github_pack.save_hours'];
+            $savedStocks = \App\Models\StockUnit::where('is_sold', false)
+                ->where('stock_status', 'saved_for_verification')
+                ->get();
+                
+            foreach ($savedStocks as $stock) {
+                $stock->available_at = $stock->created_at->copy()->addHours($saveHours);
+                $stock->save();
+            }
+        }
+
+        return back()->with('success', 'Konfigurasi berhasil disimpan dan jadwal stok telah diperbarui!');
     }
 
     // ==========================================
