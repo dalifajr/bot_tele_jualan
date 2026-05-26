@@ -27,7 +27,7 @@
                             <label class="form-label fw-bold small">Awaiting Benefits → Ready (Jam)</label>
                             <div class="input-group">
                                 <span class="input-group-text bg-warning-subtle border-0"><i class="fas fa-hourglass-half text-warning"></i></span>
-                                <input type="number" name="github_pack.awaiting_hours" class="form-control" value="{{ $settings['github_pack.awaiting_hours'] ?? 78 }}" min="1" max="720" required>
+                                <input type="number" name="settings[github_pack.awaiting_hours]" class="form-control" value="{{ $settings['github_pack.awaiting_hours'] ?? 78 }}" min="1" max="720" required>
                                 <span class="input-group-text bg-light border-0 small text-muted">jam</span>
                             </div>
                             <div class="form-text">Default: 78 jam. Berapa lama akun di <em>awaiting benefits</em> sebelum otomatis menjadi <em>ready</em>.</div>
@@ -36,7 +36,7 @@
                             <label class="form-label fw-bold small">Simpan Akun → Siap Diajukan (Jam)</label>
                             <div class="input-group">
                                 <span class="input-group-text bg-info-subtle border-0"><i class="fas fa-save text-info"></i></span>
-                                <input type="number" name="github_pack.save_hours" class="form-control" value="{{ $settings['github_pack.save_hours'] ?? 80 }}" min="1" max="720" required>
+                                <input type="number" name="settings[github_pack.save_hours]" class="form-control" value="{{ $settings['github_pack.save_hours'] ?? 80 }}" min="1" max="720" required>
                                 <span class="input-group-text bg-light border-0 small text-muted">jam</span>
                             </div>
                             <div class="form-text">Default: 80 jam. Berapa lama akun <em>simpan akun</em> ditahan sebelum bisa diajukan verifikasi.</div>
@@ -68,7 +68,7 @@
                         @php $hasPaymentSettings = true; @endphp
                         <div class="mb-3">
                             <label class="form-label fw-bold text-muted small">{{ strtoupper(str_replace(['_', '.'], ' ', $key)) }}</label>
-                            <input type="text" name="{{ $key }}" class="form-control" value="{{ $val }}">
+                            <input type="text" name="settings[{{ $key }}]" class="form-control" value="{{ $val }}">
                         </div>
                         @endif
                     @endforeach

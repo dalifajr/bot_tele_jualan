@@ -228,10 +228,6 @@
     {{-- Sidebar overlay (mobile) --}}
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-    {{-- Page Loader --}}
-    <div class="page-loader" id="pageLoader">
-        <div class="spinner"></div>
-    </div>
 </div>
 
 {{-- Floating Help Button (links to Telegram bot) --}}

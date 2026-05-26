@@ -37,7 +37,7 @@ class AdminController extends Controller
     {
         $query = StockUnit::with(['product', 'order.customer'])->orderBy('created_at', 'desc');
 
-        if ($request->has('status') && $request->status !== '') {
+        if ($request->filled('status')) {
             if ($request->status === 'terjual') {
                 $query->where('is_sold', true);
             } else {
@@ -301,15 +301,9 @@ class AdminController extends Controller
 
     public function updateSettings(Request $request)
     {
-        // PHP converts dots in POST field names to underscores.
-        // We need to read the raw input to preserve the original key names.
-        $rawInput = file_get_contents('php://input');
-        parse_str($rawInput, $parsed);
+        $settings = $request->input('settings', []);
         
-        // Remove the CSRF token
-        unset($parsed['_token']);
-        
-        foreach ($parsed as $key => $value) {
+        foreach ($settings as $key => $value) {
             \App\Models\BotSetting::updateOrCreate(
                 ['key' => $key],
                 ['value' => (string)$value]
