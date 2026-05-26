@@ -407,4 +407,31 @@ class AdminController extends Controller
     {
         return view('admin.website.settings');
     }
+
+    // ==========================================
+    // ORDER ACTIONS
+    // ==========================================
+    public function acceptOrder($id, \App\Services\OrderService $orderService)
+    {
+        $order = \App\Models\Order::findOrFail($id);
+
+        try {
+            $orderService->confirmPayment($order, \Illuminate\Support\Facades\Auth::id());
+            return redirect()->back()->with('success', 'Pembayaran pesanan berhasil dikonfirmasi.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal konfirmasi pesanan: ' . $e->getMessage());
+        }
+    }
+
+    public function rejectOrder($id, \App\Services\OrderService $orderService)
+    {
+        $order = \App\Models\Order::findOrFail($id);
+
+        try {
+            $orderService->cancelOrder($order, 'cancelled_by_admin', \Illuminate\Support\Facades\Auth::id());
+            return redirect()->back()->with('success', 'Pesanan berhasil ditolak (dibatalkan).');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal membatalkan pesanan: ' . $e->getMessage());
+        }
+    }
 }

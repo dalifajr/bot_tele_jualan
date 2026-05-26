@@ -60,6 +60,20 @@
                         <td class="text-secondary small">{{ $order->created_at->format('d M Y H:i') }}</td>
                         <td class="text-end px-4">
                             <div class="d-flex gap-2 justify-content-end">
+                                @if($order->status === 'pending_payment')
+                                <form action="{{ route('admin.orders.accept', $order->id) }}" method="POST" class="m-0" onsubmit="return confirm('Konfirmasi terima pembayaran untuk pesanan ini?');">
+                                    @csrf
+                                    <button type="submit" class="btn btn-sm btn-light text-success rounded-circle border-success" title="Terima Pembayaran">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                </form>
+                                <form action="{{ route('admin.orders.reject', $order->id) }}" method="POST" class="m-0" onsubmit="return confirm('Tolak dan batalkan pesanan ini?');">
+                                    @csrf
+                                    <button type="submit" class="btn btn-sm btn-light text-danger rounded-circle border-danger" title="Tolak Pesanan">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </form>
+                                @endif
                                 <button class="btn btn-sm btn-light text-info rounded-circle" data-bs-toggle="modal" data-bs-target="#detailOrderModal{{ $order->id }}" title="Detail">
                                     <i class="fas fa-eye"></i>
                                 </button>

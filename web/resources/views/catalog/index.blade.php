@@ -60,6 +60,7 @@
     </div>
 
     @if($product->stock_count > 0)
+    @push('modals')
     {{-- Checkout Modal --}}
     <div class="modal fade" id="checkoutModal{{ $product->id }}" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -90,6 +91,7 @@
             </div>
         </div>
     </div>
+    @endpush
     @endif
 
     @empty

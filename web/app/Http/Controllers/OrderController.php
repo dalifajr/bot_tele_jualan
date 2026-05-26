@@ -32,4 +32,16 @@ class OrderController extends Controller
 
         return view('orders.show', compact('order'));
     }
+
+    public function cancel($id, \App\Services\OrderService $orderService)
+    {
+        $order = Order::where('customer_id', Auth::id())->findOrFail($id);
+
+        try {
+            $orderService->cancelOrder($order, 'cancelled_by_customer', Auth::id());
+            return redirect()->back()->with('success', 'Pesanan berhasil dibatalkan.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal membatalkan pesanan: ' . $e->getMessage());
+        }
+    }
 }

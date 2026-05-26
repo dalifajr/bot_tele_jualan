@@ -44,8 +44,11 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
     Route::get('/orders/{id}', [OrderController::class, 'show'])->name('orders.show');
     
     // Checkout
-    Route::post('/checkout/{product}', [\App\Http\Controllers\CheckoutController::class, 'store'])->name('checkout.store');
-    Route::get('/checkout/success/{order_ref}', [\App\Http\Controllers\CheckoutController::class, 'success'])->name('checkout.success');
+    Route::post('/checkout/{product}', [CheckoutController::class, 'store'])->name('checkout.store');
+    Route::get('/checkout/success/{order_ref}', [CheckoutController::class, 'success'])->name('checkout.success');
+    
+    // Manage Orders
+    Route::post('/orders/{id}/cancel', [\App\Http\Controllers\OrderController::class, 'cancel'])->name('orders.cancel');
 
     // Profile
     Route::get('/profile', function () {
@@ -73,6 +76,8 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         
         Route::get('/orders', [\App\Http\Controllers\AdminController::class, 'orders'])->name('orders.index');
         Route::put('/orders/{id}', [\App\Http\Controllers\AdminController::class, 'updateOrder'])->name('orders.update');
+        Route::post('/orders/{id}/accept', [\App\Http\Controllers\AdminController::class, 'acceptOrder'])->name('orders.accept');
+        Route::post('/orders/{id}/reject', [\App\Http\Controllers\AdminController::class, 'rejectOrder'])->name('orders.reject');
         
         Route::get('/users', [\App\Http\Controllers\AdminController::class, 'users'])->name('users.index');
         Route::put('/users/{id}', [\App\Http\Controllers\AdminController::class, 'updateUserRole'])->name('users.update');

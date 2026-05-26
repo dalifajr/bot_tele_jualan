@@ -53,13 +53,21 @@
                     </div>
                 @endif
 
-                <div class="d-grid gap-2">
+                <div class="d-grid gap-2 mt-4">
                     <a href="{{ route('orders.show', $order->id) }}" class="btn btn-primary rounded-pill py-2">
-                        Lihat Status Pesanan
+                        <i class="fas fa-search me-1"></i> Cek Status Pembayaran
                     </a>
                     <a href="{{ route('catalog.index') }}" class="btn btn-light text-primary rounded-pill py-2">
                         Kembali ke Katalog
                     </a>
+                    @if($order->status === 'pending_payment')
+                    <form action="{{ route('orders.cancel', $order->id) }}" method="POST" class="d-grid mt-2" onsubmit="return confirm('Yakin ingin membatalkan pesanan ini?');">
+                        @csrf
+                        <button type="submit" class="btn btn-outline-danger rounded-pill py-2">
+                            <i class="fas fa-times-circle me-1"></i> Batalkan Pesanan
+                        </button>
+                    </form>
+                    @endif
                 </div>
             </div>
         </div>

@@ -128,6 +128,9 @@ class CheckoutController extends Controller
 
             DB::commit();
 
+            // Kirim Notifikasi ke Admin via Telegram
+            \App\Services\TelegramService::notifyAdminNewOrder($order);
+
             return redirect()->route('checkout.success', ['order_ref' => $orderRef]);
 
         } catch (\Exception $e) {

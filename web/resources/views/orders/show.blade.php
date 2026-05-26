@@ -126,9 +126,17 @@
         </div>
 
         <div class="mt-3">
-            <a href="{{ route('orders.index') }}" class="btn btn-outline-secondary w-100 rounded-pill">
+            <a href="{{ route('orders.index') }}" class="btn btn-outline-secondary w-100 rounded-pill mb-2">
                 <i class="fas fa-arrow-left me-2"></i>Kembali ke Riwayat
             </a>
+            @if($order->status === 'pending_payment')
+            <form action="{{ route('orders.cancel', $order->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin membatalkan pesanan ini?');">
+                @csrf
+                <button type="submit" class="btn btn-outline-danger w-100 rounded-pill">
+                    <i class="fas fa-times-circle me-2"></i>Batalkan Pesanan
+                </button>
+            </form>
+            @endif
         </div>
     </div>
 </div>
