@@ -6,7 +6,7 @@
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h4 class="fw-bold mb-1">Admin Dashboard</h4>
+        <h1 class="h4 fw-bold mb-1">Admin Dashboard</h1>
         <p class="text-muted mb-0">Ringkasan aktivitas toko Anda</p>
     </div>
     <div>
@@ -75,7 +75,7 @@
 {{-- Recent Orders --}}
 <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 16px;">
     <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
-        <h5 class="fw-bold mb-0">Pesanan Terbaru</h5>
+        <h2 class="h5 fw-bold mb-0">Pesanan Terbaru</h2>
         <a href="{{ route('admin.orders.index') }}" class="btn btn-sm btn-outline-primary rounded-pill px-3">Lihat Semua</a>
     </div>
     <div class="card-body p-0">

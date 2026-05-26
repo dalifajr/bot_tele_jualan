@@ -106,6 +106,12 @@ body {
     overflow: hidden;
 }
 
+/* Accessibility: High contrast buttons */
+.card-body a.btn {
+    color: #0649ab !important;
+    font-weight: 700;
+}
+
 .main-background {
     position: absolute;
     top: 0; left: 0; right: 0;

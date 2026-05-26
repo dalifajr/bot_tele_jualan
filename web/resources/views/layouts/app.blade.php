@@ -28,7 +28,7 @@
 {{-- Top Navbar --}}
 <nav class="navbar navbar-expand fixed-top shadow-sm px-4 bg-body border-bottom" style="z-index: 1030; top: 0;">
     <div class="d-flex align-items-center gap-3">
-        <button class="btn btn-link link-body-emphasis d-md-none text-decoration-none p-0" id="sidebarToggle">
+        <button class="btn btn-link link-body-emphasis d-md-none text-decoration-none p-0" id="sidebarToggle" aria-label="Buka Menu Navigasi">
             <i class="fas fa-bars fs-4"></i>
         </button>
         <div class="navbar-brand d-flex align-items-center gap-2 text-primary fw-bold m-0">
@@ -106,14 +106,14 @@
         @endif
 
         {{-- Theme Toggle --}}
-        <button class="btn btn-link link-body-emphasis p-0 me-2" id="themeToggle" title="Toggle Theme">
+        <button class="btn btn-link link-body-emphasis p-0 me-2" id="themeToggle" title="Toggle Theme" aria-label="Ganti Tema">
             <i class="fas fa-moon fs-5" id="themeIcon"></i>
         </button>
 
         {{-- Logout --}}
         <form action="{{ route('logout') }}" method="POST" class="m-0">
             @csrf
-            <button type="submit" class="btn btn-sm btn-outline-danger d-flex align-items-center gap-2">
+            <button type="submit" class="btn btn-sm btn-outline-danger d-flex align-items-center gap-2" aria-label="Logout">
                 <i class="fas fa-sign-out-alt"></i> <span class="d-none d-sm-inline">Logout</span>
             </button>
         </form>
@@ -204,7 +204,7 @@
     </div>
 
     {{-- Main Content --}}
-    <div class="main-content position-relative">
+    <main class="main-content position-relative">
         <div class="main-background"></div>
         <div class="container-fluid position-relative px-4 py-4" style="z-index: 1;">
             {{-- Flash Messages --}}
@@ -223,7 +223,7 @@
 
             @yield('content')
         </div>
-    </div>
+    </main>
 
     {{-- Sidebar overlay (mobile) --}}
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
