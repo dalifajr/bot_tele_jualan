@@ -27,6 +27,7 @@ Route::post('/api/check-telegram-id', [\App\Http\Controllers\ProfileController::
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login/password', [AuthController::class, 'login'])->name('login.post');
 Route::post('/register', [AuthController::class, 'register'])->name('register.post');
+Route::get('/suspended', [AuthController::class, 'suspended'])->name('suspended');
 
 // Telegram Login Flow
 Route::post('/auth/telegram/request', [TelegramAuthController::class, 'requestLogin'])->name('auth.telegram.request');

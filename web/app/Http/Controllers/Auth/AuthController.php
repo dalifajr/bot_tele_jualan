@@ -23,6 +23,18 @@ class AuthController extends Controller
     }
 
     /**
+     * Tampilkan halaman akun ditangguhkan.
+     */
+    public function suspended()
+    {
+        if (!Auth::check() || !Auth::user()->is_suspended) {
+            return redirect()->route('dashboard');
+        }
+
+        return view('auth.suspended');
+    }
+
+    /**
      * Proses Login menggunakan Username/Email & Password.
      */
     public function login(Request $request)

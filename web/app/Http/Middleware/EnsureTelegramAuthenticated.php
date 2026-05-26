@@ -21,8 +21,9 @@ class EnsureTelegramAuthenticated
 
         $user = Auth::user();
 
-        // Check if the user is suspended (opsional, jika ada)
-        // if ($user->is_suspended) { ... }
+        if ($user->is_suspended && !$request->routeIs('suspended') && !$request->routeIs('logout')) {
+            return redirect()->route('suspended');
+        }
 
         return $next($request);
     }
