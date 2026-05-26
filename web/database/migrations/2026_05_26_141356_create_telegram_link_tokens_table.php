@@ -11,6 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
+        Schema::dropIfExists('telegram_link_tokens');
         Schema::create('telegram_link_tokens', function (Blueprint $table) {
             $table->id();
             $table->integer('user_id');
