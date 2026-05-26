@@ -449,3 +449,11 @@ body {
 .col-sm-6:nth-child(2) .stat-card { animation-delay: 0.1s; }
 .col-sm-6:nth-child(3) .stat-card { animation-delay: 0.2s; }
 .col-sm-6:nth-child(4) .stat-card { animation-delay: 0.3s; }
+
+/* Modal Z-Index Fix */
+.modal {
+    z-index: 1060 !important;
+}
+.modal-backdrop {
+    z-index: 1050 !important;
+}

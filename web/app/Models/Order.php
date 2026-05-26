@@ -8,6 +8,8 @@ class Order extends Model
 {
     protected $table = 'orders';
 
+    const UPDATED_AT = null;
+
     protected $fillable = [
         'order_ref',
         'customer_id',
