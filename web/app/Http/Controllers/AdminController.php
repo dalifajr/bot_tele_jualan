@@ -306,7 +306,7 @@ class AdminController extends Controller
         foreach ($settings as $key => $value) {
             \App\Models\BotSetting::updateOrCreate(
                 ['key' => $key],
-                ['value' => (string)$value]
+                ['value' => (string)$value, 'updated_at' => now()]
             );
         }
 
