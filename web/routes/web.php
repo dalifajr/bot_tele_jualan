@@ -94,7 +94,7 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         Route::post('/orders/{id}/reject', [\App\Http\Controllers\AdminController::class, 'rejectOrder'])->name('orders.reject');
         
         Route::get('/users', [\App\Http\Controllers\AdminController::class, 'users'])->name('users.index');
-        Route::put('/users/{id}', [\App\Http\Controllers\AdminController::class, 'updateUserRole'])->name('users.update');
+        Route::put('/users/{id}', [\App\Http\Controllers\AdminController::class, 'updateUser'])->name('users.update');
         Route::delete('/users/{id}', [\App\Http\Controllers\AdminController::class, 'deleteUser'])->name('users.destroy');
         Route::post('/users/{id}/suspend', [\App\Http\Controllers\AdminController::class, 'suspendUser'])->name('users.suspend');
         Route::post('/users/{id}/unsuspend', [\App\Http\Controllers\AdminController::class, 'unsuspendUser'])->name('users.unsuspend');
