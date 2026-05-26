@@ -447,12 +447,16 @@ class AdminController extends Controller
             $path = $file->storeAs('qris', $filename, 'public');
             
             // Simpan juga ke path yang dipakai bot (src/data/qris.png) agar terintegrasi
-            $botQrisPath = base_path('../src/data/qris.png');
-            $botQrisDir = dirname($botQrisPath);
-            if (!is_dir($botQrisDir)) {
-                mkdir($botQrisDir, 0755, true);
+            try {
+                $botQrisPath = base_path('../src/data/qris.png');
+                $botQrisDir = dirname($botQrisPath);
+                if (!is_dir($botQrisDir)) {
+                    mkdir($botQrisDir, 0755, true);
+                }
+                copy($file->path(), $botQrisPath);
+            } catch (\Exception $e) {
+                \Log::warning('Gagal copy QRIS ke bot: ' . $e->getMessage());
             }
-            copy($file->path(), $botQrisPath);
 
             \App\Models\BotSetting::updateOrCreate(
                 ['key' => 'qris_static_payload'],
