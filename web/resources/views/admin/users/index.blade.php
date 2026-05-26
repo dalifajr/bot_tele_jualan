@@ -73,7 +73,7 @@
                         <td class="text-end px-4">
                             @if($user->id !== Auth::id())
                             <div class="dropdown">
-                                <button class="btn btn-sm btn-light rounded-circle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <button class="btn btn-sm btn-light rounded-circle" type="button" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy": "fixed"}' aria-expanded="false">
                                     <i class="fas fa-ellipsis-v"></i>
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" style="border-radius: 12px; min-width: 200px;">
@@ -180,3 +180,24 @@
 @endforeach
 @endpush
 @endsection
+
+@push('styles')
+<style>
+/* 
+   Memastikan kontainer tabel dan kartu mengizinkan dropdown 
+   untuk tampil di luar batas (visible)
+*/
+.table-responsive, 
+.card {
+    overflow: visible !important;
+}
+
+/* 
+   Memberikan z-index tinggi agar dropdown 
+   selalu berada di atas paginasi atau elemen footer lainnya 
+*/
+.dropdown-menu {
+    z-index: 1060 !important;
+}
+</style>
+@endpush
