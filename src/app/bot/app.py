@@ -576,6 +576,19 @@ async def _housekeeping_job(context: ContextTypes.DEFAULT_TYPE) -> None:
         deleted_telemetry_events=result.deleted_telemetry_events,
     )
 
+async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+    from app.bot.handlers.main import UserSuspendedError
+    from telegram import Update
+    if isinstance(context.error, UserSuspendedError):
+        if isinstance(update, Update) and update.effective_chat:
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="❌ <b>Akses Ditolak</b>\nAkun Anda telah ditangguhkan oleh Admin.",
+                parse_mode="HTML"
+            )
+        return
+    logger.error("Exception while handling an update:", exc_info=context.error)
+
 
 def create_bot_application() -> Application:
     settings = get_settings()
@@ -594,6 +607,7 @@ def create_bot_application() -> Application:
         .build()
     )
     register_handlers(application)
+    application.add_error_handler(error_handler)
     if application.job_queue is not None:
         application.job_queue.run_repeating(
             _promote_awaiting_stock_job,

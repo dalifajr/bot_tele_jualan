@@ -16,6 +16,7 @@ class User extends Authenticatable
         'email',
         'password',
         'last_seen_at',
+        'is_suspended',
     ];
 
     protected $hidden = [
@@ -25,6 +26,7 @@ class User extends Authenticatable
 
     protected $casts = [
         'telegram_id' => 'integer',
+        'is_suspended' => 'boolean',
     ];
 
     /**

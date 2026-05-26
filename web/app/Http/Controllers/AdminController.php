@@ -84,10 +84,51 @@ class AdminController extends Controller
         return view('admin.orders.index', compact('orders', 'status'));
     }
 
-    public function users()
+    public function users(Request $request)
     {
-        $users = User::orderBy('created_at', 'desc')->paginate(10);
+        $query = User::orderBy('created_at', 'desc');
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('username', 'like', "%{$search}%")
+                  ->orWhere('full_name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('telegram_id', 'like', "%{$search}%");
+            });
+        }
+
+        $users = $query->paginate(10);
         return view('admin.users.index', compact('users'));
+    }
+
+    public function deleteUser($id)
+    {
+        $user = User::findOrFail($id);
+        
+        // Prevent deleting users with existing orders
+        if (\App\Models\Order::where('customer_id', $user->id)->exists()) {
+            return redirect()->back()->with('error', 'Tidak dapat menghapus pengguna karena memiliki riwayat pesanan. Silakan gunakan fitur Suspend sebagai gantinya.');
+        }
+
+        $user->delete();
+        return redirect()->back()->with('success', 'Pengguna berhasil dihapus.');
+    }
+
+    public function suspendUser($id)
+    {
+        $user = User::findOrFail($id);
+        $user->is_suspended = true;
+        $user->save();
+        return redirect()->back()->with('success', 'Akun pengguna berhasil ditangguhkan (suspended). Akses bot telah dicabut.');
+    }
+
+    public function unsuspendUser($id)
+    {
+        $user = User::findOrFail($id);
+        $user->is_suspended = false;
+        $user->save();
+        return redirect()->back()->with('success', 'Penangguhan akun telah dicabut. Pengguna dapat menggunakan bot kembali.');
     }
 
     // --- CRUD Products ---

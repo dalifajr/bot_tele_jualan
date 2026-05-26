@@ -11,6 +11,28 @@
     </div>
 </div>
 
+<div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
+    <div class="card-body p-3">
+        <form action="{{ route('admin.users.index') }}" method="GET" class="d-flex gap-2">
+            <div class="input-group">
+                <span class="input-group-text bg-light border-0"><i class="fas fa-search text-muted"></i></span>
+                <input type="text" name="search" class="form-control border-0 bg-light" placeholder="Cari username, nama, email, atau ID Telegram..." value="{{ request('search') }}">
+            </div>
+            <button type="submit" class="btn btn-primary px-4 rounded-pill">Cari</button>
+            @if(request('search'))
+                <a href="{{ route('admin.users.index') }}" class="btn btn-light px-4 rounded-pill">Reset</a>
+            @endif
+        </form>
+    </div>
+</div>
+
+@if(session('success'))
+    <div class="alert alert-success small py-2 mb-4"><i class="fas fa-check-circle me-1"></i>{{ session('success') }}</div>
+@endif
+@if(session('error'))
+    <div class="alert alert-danger small py-2 mb-4"><i class="fas fa-exclamation-circle me-1"></i>{{ session('error') }}</div>
+@endif
+
 <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 16px;">
     <div class="card-body p-0">
         @if($users->count() > 0)
@@ -19,9 +41,9 @@
                 <thead>
                     <tr class="text-secondary small border-bottom">
                         <th class="px-4 py-3 border-0">Telegram ID</th>
-                        <th class="py-3 border-0">Nama Lengkap</th>
-                        <th class="py-3 border-0">Username</th>
-                        <th class="py-3 border-0">Role</th>
+                        <th class="py-3 border-0">Nama & Username</th>
+                        <th class="py-3 border-0">Email</th>
+                        <th class="py-3 border-0">Status & Role</th>
                         <th class="py-3 border-0">Bergabung</th>
                         <th class="py-3 border-0 text-end px-4">Aksi</th>
                     </tr>
@@ -29,27 +51,76 @@
                 <tbody>
                     @foreach($users as $user)
                     <tr>
-                        <td class="px-4 fw-bold text-muted">{{ $user->telegram_id }}</td>
-                        <td class="fw-bold text-primary">{{ $user->full_name ?? '-' }}</td>
-                        <td>{{ $user->username ? '@'.$user->username : '-' }}</td>
+                        <td class="px-4 fw-bold text-muted">{{ $user->telegram_id ?? '-' }}</td>
                         <td>
-                            <span class="badge bg-{{ $user->role === 'admin' ? 'primary' : 'secondary' }}-subtle text-{{ $user->role === 'admin' ? 'primary' : 'secondary' }} rounded-pill px-3">
+                            <div class="fw-bold text-primary">{{ $user->full_name ?? 'Unknown' }}</div>
+                            <div class="small text-muted">{{ $user->username ? '@'.$user->username : '-' }}</div>
+                        </td>
+                        <td class="text-muted small">{{ $user->email ?? '-' }}</td>
+                        <td>
+                            <div class="mb-1">
+                                @if($user->is_suspended)
+                                    <span class="badge bg-danger-subtle text-danger rounded-pill px-2"><i class="fas fa-ban me-1"></i>Ditangguhkan</span>
+                                @else
+                                    <span class="badge bg-success-subtle text-success rounded-pill px-2"><i class="fas fa-check me-1"></i>Aktif</span>
+                                @endif
+                            </div>
+                            <span class="badge bg-{{ $user->role === 'admin' ? 'primary' : 'secondary' }}-subtle text-{{ $user->role === 'admin' ? 'primary' : 'secondary' }} rounded-pill px-2">
                                 {{ ucfirst($user->role ?? 'customer') }}
                             </span>
                         </td>
                         <td class="text-secondary small">{{ $user->created_at->format('d M Y') }}</td>
                         <td class="text-end px-4">
                             @if($user->id !== Auth::id())
-                            <button class="btn btn-sm btn-outline-primary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#editUserModal{{ $user->id }}">
-                                Edit Role
-                            </button>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-light rounded-circle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" style="border-radius: 12px; min-width: 200px;">
+                                    <li>
+                                        <button class="dropdown-item py-2" data-bs-toggle="modal" data-bs-target="#editUserModal{{ $user->id }}">
+                                            <i class="fas fa-user-shield me-2 text-primary"></i> Ubah Role
+                                        </button>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    
+                                    @if($user->is_suspended)
+                                        <li>
+                                            <form action="{{ route('admin.users.unsuspend', $user->id) }}" method="POST">
+                                                @csrf
+                                                <button type="submit" class="dropdown-item py-2 text-success">
+                                                    <i class="fas fa-unlock me-2"></i> Cabut Penangguhan
+                                                </button>
+                                            </form>
+                                        </li>
+                                    @else
+                                        <li>
+                                            <form action="{{ route('admin.users.suspend', $user->id) }}" method="POST">
+                                                @csrf
+                                                <button type="submit" class="dropdown-item py-2 text-warning" onclick="return confirm('Yakin ingin menangguhkan pengguna ini? Akses bot mereka akan diblokir.')">
+                                                    <i class="fas fa-ban me-2"></i> Suspend Pengguna
+                                                </button>
+                                            </form>
+                                        </li>
+                                    @endif
+                                    
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <form action="{{ route('admin.users.destroy', $user->id) }}" method="POST">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="dropdown-item py-2 text-danger" onclick="return confirm('Yakin ingin menghapus permanen pengguna ini? Proses ini tidak dapat dibatalkan.')">
+                                                <i class="fas fa-trash me-2"></i> Hapus Pengguna
+                                            </button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </div>
                             @else
-                            <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" disabled>Edit Role</button>
+                            <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" disabled>Ini Anda</button>
                             @endif
                         </td>
                     </tr>
-
-
                     @endforeach
                 </tbody>
             </table>
@@ -60,7 +131,7 @@
         @else
         <div class="text-center py-5">
             <i class="fas fa-users text-muted mb-3" style="font-size: 3rem;"></i>
-            <p class="text-muted mb-0">Belum ada pelanggan.</p>
+            <p class="text-muted mb-0">Tidak ada pengguna yang ditemukan.</p>
         </div>
         @endif
     </div>
