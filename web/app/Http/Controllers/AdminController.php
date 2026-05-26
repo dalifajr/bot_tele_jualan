@@ -422,7 +422,13 @@ class AdminController extends Controller
         $file = $request->file('qris_image');
         $imagePath = $file->path();
 
-        $venvPython = base_path('../.venv/Scripts/python.exe');
+        // Cross-platform: Linux uses bin/python, Windows uses Scripts/python.exe
+        $venvBase = base_path('../.venv');
+        if (PHP_OS_FAMILY === 'Windows') {
+            $venvPython = $venvBase . '/Scripts/python.exe';
+        } else {
+            $venvPython = $venvBase . '/bin/python';
+        }
         $scriptPath = base_path('../src/extract_qris_cli.py');
         $cmd = escapeshellcmd($venvPython) . ' ' . escapeshellarg($scriptPath) . ' ' . escapeshellarg($imagePath);
         
