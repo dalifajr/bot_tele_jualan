@@ -29,15 +29,14 @@ body {
     background: var(--bs-body-bg);
     border-right: 1px solid var(--bs-border-color-translucent);
     position: fixed;
-    top: 56px;
-    bottom: 0;
+    top: 57px !important;
+    height: calc(100vh - 57px) !important;
     left: 0;
-    z-index: 1020;
+    z-index: 1040 !important;
     display: flex;
     flex-direction: column;
-    overflow-y: auto;
+    overflow-y: auto !important;
     flex-shrink: 0;
-    padding-bottom: 80px;
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 

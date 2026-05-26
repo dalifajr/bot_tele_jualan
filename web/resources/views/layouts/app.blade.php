@@ -122,7 +122,7 @@
 
 <div class="app-container" style="padding-top: 80px;">
     {{-- Sidebar --}}
-    <div class="sidebar" id="sidebar">
+    <div id="sidebar" class="sidebar" style="top: 57px; height: calc(100vh - 57px); z-index: 1040; overflow-y: auto;">
         <div class="sidebar-header d-flex align-items-center gap-3">
             <div class="user-avatar rounded-circle d-flex align-items-center justify-content-center fw-bold text-white bg-primary" style="width: 40px; height: 40px;">
                 {{ strtoupper(substr(Auth::user()->full_name ?? Auth::user()->username ?? 'U', 0, 1)) }}
