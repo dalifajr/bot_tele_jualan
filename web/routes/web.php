@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\TelegramAuthController;
 use App\Http\Controllers\CatalogController;
+use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\OrderController;
 use App\Http\Middleware\EnsureTelegramAuthenticated;
