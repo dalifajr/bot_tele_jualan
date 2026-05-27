@@ -103,6 +103,18 @@
                 </li>
                 @endif
 
+                @if(isset($readyToVerifyCount) && $readyToVerifyCount > 0)
+                <li>
+                    <a class="dropdown-item py-2 d-flex align-items-start gap-3" href="{{ route('admin.stock.index', ['status' => 'saved_for_verification']) }}">
+                        <div class="text-primary mt-1"><i class="fas fa-clipboard-check"></i></div>
+                        <div>
+                            <div class="fw-bold">Siap Diverifikasi</div>
+                            <small class="text-muted text-wrap">Ada {{ $readyToVerifyCount }} akun yang siap untuk diverifikasi.</small>
+                        </div>
+                    </a>
+                </li>
+                @endif
+
                 @if(isset($readyStockCount))
                 <li>
                     <a class="dropdown-item py-2 d-flex align-items-start gap-3" href="{{ route('admin.stock.index') }}">
@@ -127,7 +139,7 @@
                 <li><hr class="dropdown-divider mb-0"></li>
                 <li class="d-flex justify-content-between px-3 py-2 bg-light" style="border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;">
                     <a href="javascript:void(0)" class="text-decoration-none small text-muted hover-primary" onclick="markNotificationsRead()"><i class="fas fa-check-double me-1"></i>Tandai Dibaca</a>
-                    <a href="{{ route('admin.logins.index') }}" class="text-decoration-none small fw-bold text-primary"><i class="fas fa-list me-1"></i>Lihat Semua</a>
+                    <a href="{{ route('admin.notifications.index') }}" class="text-decoration-none small fw-bold text-primary"><i class="fas fa-list me-1"></i>Lihat Semua</a>
                 </li>
             </ul>
         </div>
@@ -212,6 +224,9 @@
                 </a>
                 <a href="{{ route('admin.users.index') }}" class="menu-item {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
                     <i class="fas fa-users"></i> Kelola Pelanggan
+                </a>
+                <a href="{{ route('admin.logins.index') }}" class="menu-item {{ request()->routeIs('admin.logins.*') ? 'active' : '' }}">
+                    <i class="fas fa-sign-in-alt"></i> Percobaan Login
                 </a>
             </div>
 

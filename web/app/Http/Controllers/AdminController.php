@@ -293,6 +293,26 @@ class AdminController extends Controller
         return view('admin.logins.index', compact('loginTokens'));
     }
 
+    public function notifications()
+    {
+        $pendingOrders = \App\Models\Order::whereIn('status', ['pending_payment', 'paid'])->orderBy('created_at', 'desc')->get();
+        $pendingLogins = \App\Models\TelegramLoginToken::where('status', 'pending')->orderBy('created_at', 'desc')->get();
+        
+        $saveHours = \App\Models\BotSetting::where('key', 'github_pack.save_hours')->value('value') ?? 80;
+        $readyToVerify = \App\Models\StockUnit::where('stock_status', 'saved_for_verification')
+            ->where('is_sold', false)
+            ->where(function($query) use ($saveHours) {
+                $query->whereNotNull('available_at')
+                      ->where('available_at', '<=', now())
+                      ->orWhere(function($q) use ($saveHours) {
+                          $q->whereNull('available_at')
+                            ->where('created_at', '<=', now()->subHours((int)$saveHours));
+                      });
+            })->get();
+            
+        return view('admin.notifications.index', compact('pendingOrders', 'pendingLogins', 'readyToVerify'));
+    }
+
     public function markNotificationsRead()
     {
         session(['notifications_read_at' => now()->toDateTimeString()]);

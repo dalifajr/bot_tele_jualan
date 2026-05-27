@@ -25,8 +25,25 @@ class NotificationComposer
         $pendingLoginsCount = $pendingLoginsQuery->count();
         $readyStockCount = StockUnit::where('stock_status', 'ready')->where('is_sold', false)->count();
 
-        $totalNotifications = $pendingOrdersCount + $pendingLoginsCount;
+        $saveHours = \App\Models\BotSetting::where('key', 'github_pack.save_hours')->value('value') ?? 80;
+        $readyToVerifyQuery = StockUnit::where('stock_status', 'saved_for_verification')
+            ->where('is_sold', false)
+            ->where(function($query) use ($saveHours) {
+                $query->whereNotNull('available_at')
+                      ->where('available_at', '<=', now())
+                      ->orWhere(function($q) use ($saveHours) {
+                          $q->whereNull('available_at')
+                            ->where('created_at', '<=', now()->subHours((int)$saveHours));
+                      });
+            });
+            
+        if ($readAt) {
+            $readyToVerifyQuery->where('updated_at', '>', $readAt);
+        }
+        $readyToVerifyCount = $readyToVerifyQuery->count();
 
-        $view->with(compact('pendingOrdersCount', 'pendingLoginsCount', 'readyStockCount', 'totalNotifications'));
+        $totalNotifications = $pendingOrdersCount + $pendingLoginsCount + $readyToVerifyCount;
+
+        $view->with(compact('pendingOrdersCount', 'pendingLoginsCount', 'readyStockCount', 'readyToVerifyCount', 'totalNotifications'));
     }
 }

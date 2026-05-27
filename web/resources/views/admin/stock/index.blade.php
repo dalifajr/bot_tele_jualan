@@ -168,15 +168,17 @@
                         </td>
                         @elseif(request('status') === 'saved_for_verification')
                         <td class="text-secondary small fw-bold">
-                            @if($unit->available_at)
-                                {{ \Carbon\Carbon::parse($unit->available_at)->format('d M Y H:i') }}
-                            @else
-                                @php
+                            @php
+                                if ($unit->available_at) {
+                                    $verifyAt = \Carbon\Carbon::parse($unit->available_at);
+                                } else {
                                     $saveHours = \App\Models\BotSetting::where('key', 'github_pack.save_hours')->value('value') ?? 80;
                                     $verifyAt = $unit->created_at->addHours((int)$saveHours);
-                                @endphp
+                                }
+                            @endphp
+                            <span class="verification-countdown" data-timestamp="{{ $verifyAt->timestamp }}" data-id="{{ $unit->id }}">
                                 {{ $verifyAt->format('d M Y H:i') }}
-                            @endif
+                            </span>
                         </td>
                         @else
                         <td class="text-secondary small">{{ $unit->created_at->format('d M Y') }}</td>
@@ -357,5 +359,63 @@
 </div>
 @endif
 @endforeach
+@endpush
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const countdownElements = document.querySelectorAll('.verification-countdown');
+        let notificationShown = false; // Prevents spamming toasts if multiple accounts are ready
+        
+        if (countdownElements.length > 0) {
+            function updateCountdowns() {
+                const now = Math.floor(Date.now() / 1000);
+                let newReadyCount = 0;
+                
+                countdownElements.forEach(el => {
+                    if (el.dataset.ready === 'true') return;
+                    
+                    const targetTimestamp = parseInt(el.dataset.timestamp);
+                    const diff = targetTimestamp - now;
+                    
+                    if (diff <= 0) {
+                        el.dataset.ready = 'true';
+                        el.innerHTML = '<span class="text-success"><i class="fas fa-check-circle me-1"></i>Siap Diverifikasi</span>';
+                        newReadyCount++;
+                    } else {
+                        const hours = Math.floor(diff / 3600);
+                        const minutes = Math.floor((diff % 3600) / 60);
+                        const seconds = diff % 60;
+                        
+                        let timeString = '';
+                        if (hours > 0) timeString += hours + 'j ';
+                        if (minutes > 0 || hours > 0) timeString += minutes + 'm ';
+                        timeString += seconds + 'd';
+                        
+                        el.innerHTML = '<span class="text-info"><i class="fas fa-clock me-1"></i>' + timeString + '</span>';
+                    }
+                });
+                
+                if (newReadyCount > 0 && !notificationShown && typeof Swal !== 'undefined') {
+                    notificationShown = true;
+                    const Toast = Swal.mixin({
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 5000,
+                        timerProgressBar: true,
+                    });
+                    Toast.fire({
+                        icon: 'info',
+                        title: 'Ada stok akun yang sudah siap diverifikasi!'
+                    });
+                }
+            }
+            
+            updateCountdowns();
+            setInterval(updateCountdowns, 1000);
+        }
+    });
+</script>
 @endpush
 @endsection

@@ -99,8 +99,9 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         Route::post('/users/{id}/suspend', [\App\Http\Controllers\AdminController::class, 'suspendUser'])->name('users.suspend');
         Route::post('/users/{id}/unsuspend', [\App\Http\Controllers\AdminController::class, 'unsuspendUser'])->name('users.unsuspend');
 
-        // Logins Notification Page
+        // Logins & Notifications
         Route::get('/logins', [\App\Http\Controllers\AdminController::class, 'logins'])->name('logins.index');
+        Route::get('/notifications', [\App\Http\Controllers\AdminController::class, 'notifications'])->name('notifications.index');
         Route::post('/notifications/mark-read', [\App\Http\Controllers\AdminController::class, 'markNotificationsRead'])->name('notifications.markRead');
         
         // New features ported from Bot
