@@ -38,7 +38,7 @@ class NotificationComposer
             });
             
         if ($readAt) {
-            $readyToVerifyQuery->where('updated_at', '>', $readAt);
+            $readyToVerifyQuery->where('created_at', '>', $readAt);
         }
         $readyToVerifyCount = $readyToVerifyQuery->count();
 
