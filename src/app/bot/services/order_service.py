@@ -648,24 +648,29 @@ def _reserve_stock_fifo(
     if promote_first:
         promote_awaiting_stocks(session, product_id=product_id)
 
-    candidate_ids = (
-        select(StockUnit.id)
-        .where(
-            StockUnit.product_id == product_id,
-            StockUnit.is_sold.is_(False),
-            StockUnit.sold_order_id.is_(None),
-            or_(
-                StockUnit.stock_status == STOCK_STATUS_READY,
-                StockUnit.stock_status.is_(None),
-            ),
-        )
-        .order_by(StockUnit.id.asc())
-        .limit(quantity)
+    candidate_id_list = list(
+        session.scalars(
+            select(StockUnit.id)
+            .where(
+                StockUnit.product_id == product_id,
+                StockUnit.is_sold.is_(False),
+                StockUnit.sold_order_id.is_(None),
+                or_(
+                    StockUnit.stock_status == STOCK_STATUS_READY,
+                    StockUnit.stock_status.is_(None),
+                ),
+            )
+            .order_by(StockUnit.id.asc())
+            .limit(quantity)
+        ).all()
     )
+
+    if len(candidate_id_list) < quantity:
+        return []
 
     reserve_stmt = (
         update(StockUnit)
-        .where(StockUnit.id.in_(candidate_ids))
+        .where(StockUnit.id.in_(candidate_id_list))
         .values(stock_status=STOCK_STATUS_RESERVED_CHECKOUT, sold_order_id=order_id)
     )
     reserved_count = int(session.execute(reserve_stmt).rowcount or 0)
