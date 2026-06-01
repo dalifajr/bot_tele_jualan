@@ -741,7 +741,7 @@ def list_saved_github_ready_notification_batch(
     if not rows:
         return []
 
-    earliest_ready_at = _resolve_saved_ready_at(rows[0])
+    earliest_ready_at = _resolve_saved_ready_at(rows[0], session)
     cluster_deadline = earliest_ready_at + timedelta(minutes=window_minutes)
 
     cluster_rows: list[StockUnit] = []

@@ -2995,6 +2995,21 @@ async def _send_checkout_result(
 
         result_reason = "send_failed"
         return False
+    except Exception as exc:
+        logger.exception("Gagal memproses checkout untuk telegram_id=%s, product_id=%s: %s", telegram_id, product_id, exc)
+        result_reason = f"error: {type(exc).__name__}"
+        try:
+            await _respond(
+                update,
+                f"❌ <b>Checkout gagal karena terjadi kesalahan internal:</b>\n"
+                f"<code>{html.escape(str(exc))}</code>\n\n"
+                "Silakan hubungi admin atau coba lagi nanti.",
+                _back_keyboard("cus_cat"),
+                parse_mode=ParseMode.HTML,
+            )
+        except Exception as respond_exc:
+            logger.warning("Gagal mengirim pesan error checkout: %s", respond_exc)
+        return False
     finally:
         log_telemetry(
             logger,
