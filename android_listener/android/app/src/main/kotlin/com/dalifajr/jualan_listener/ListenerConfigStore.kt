@@ -5,6 +5,7 @@ import android.content.Context
 object ListenerConfigStore {
     private const val PREF_NAME = "listener_config"
     private const val KEY_ENDPOINT = "endpoint"
+    private const val KEY_ENDPOINT_SECONDARY = "endpoint_secondary"
     private const val KEY_SECRET = "secret"
     private const val KEY_MONITOR_ALL = "monitor_all"
     private const val KEY_SELECTED_APPS = "selected_apps"
@@ -21,6 +22,11 @@ object ListenerConfigStore {
     fun getEndpoint(context: Context): String =
         context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
             .getString(KEY_ENDPOINT, "")
+            .orEmpty()
+
+    fun getEndpointSecondary(context: Context): String =
+        context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+            .getString(KEY_ENDPOINT_SECONDARY, "")
             .orEmpty()
 
     fun getSecret(context: Context): String =
@@ -51,13 +57,27 @@ object ListenerConfigStore {
             .apply()
     }
 
-    fun setConfig(context: Context, endpoint: String, secret: String, monitorAll: Boolean) {
+    fun setConfig(
+        context: Context,
+        endpoint: String,
+        endpointSecondary: String,
+        secret: String,
+        monitorAll: Boolean,
+    ) {
         context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
             .edit()
             .putString(KEY_ENDPOINT, endpoint.trim())
+            .putString(KEY_ENDPOINT_SECONDARY, endpointSecondary.trim())
             .putString(KEY_SECRET, secret.trim())
             .putBoolean(KEY_MONITOR_ALL, monitorAll)
             .apply()
+    }
+
+    fun getActiveEndpoints(context: Context): List<String> {
+        return listOf(getEndpoint(context), getEndpointSecondary(context))
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
+            .distinct()
     }
 
     fun setSelectedApps(context: Context, packageNames: Set<String>) {

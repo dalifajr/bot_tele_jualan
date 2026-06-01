@@ -54,6 +54,7 @@ class MainActivity : FlutterActivity() {
 						ListenerConfigStore.setConfig(
 							this,
 							ListenerConfigStore.getEndpoint(this),
+							ListenerConfigStore.getEndpointSecondary(this),
 							ListenerConfigStore.getSecret(this),
 							false,
 						)
@@ -78,6 +79,7 @@ class MainActivity : FlutterActivity() {
 					"getConfig" -> {
 						val payload = mapOf(
 							"endpoint" to ListenerConfigStore.getEndpoint(this),
+							"endpointSecondary" to ListenerConfigStore.getEndpointSecondary(this),
 							"secret" to ListenerConfigStore.getSecret(this),
 							"monitorAll" to ListenerConfigStore.isMonitorAll(this),
 						)
@@ -86,9 +88,10 @@ class MainActivity : FlutterActivity() {
 
 					"setConfig" -> {
 						val endpoint = call.argument<String>("endpoint").orEmpty()
+						val endpointSecondary = call.argument<String>("endpointSecondary").orEmpty()
 						val secret = call.argument<String>("secret").orEmpty()
 						val monitorAll = call.argument<Boolean>("monitorAll") ?: true
-						ListenerConfigStore.setConfig(this, endpoint, secret, monitorAll)
+						ListenerConfigStore.setConfig(this, endpoint, endpointSecondary, secret, monitorAll)
 						RetryScheduler.enqueue(applicationContext)
 						result.success(true)
 					}
@@ -143,29 +146,53 @@ class MainActivity : FlutterActivity() {
 							"Pembayaran berhasil Rp$amount"
 						}
 
-						val endpoint = ListenerConfigStore.getEndpoint(this)
+						val endpoints = ListenerConfigStore.getActiveEndpoints(this)
 						val secret = ListenerConfigStore.getSecret(this)
-						if (endpoint.isBlank() || secret.isBlank()) {
+						if (endpoints.isEmpty() || secret.isBlank()) {
 							result.error("CONFIG_EMPTY", "Endpoint/secret belum diatur", null)
 						} else if (amount <= 0L) {
 							result.error("INVALID_AMOUNT", "Amount harus > 0", null)
 						} else {
 							CoroutineScope(Dispatchers.IO).launch {
-								val event = QueuedPaymentEvent(
-									id = UUID.randomUUID().toString(),
-									idempotencyKey = UUID.randomUUID().toString(),
-									endpoint = endpoint,
-									secret = secret,
-									amount = amount,
-									sourceApp = sourceApp,
-									reference = reference,
-									rawText = rawText,
-								)
-								EventQueueStore.enqueue(applicationContext, event)
-								RetryScheduler.enqueue(applicationContext)
+								val idempotencyKey = UUID.randomUUID().toString()
+								var queuedRetry = false
+								val results = endpoints.map { endpoint ->
+									val event = QueuedPaymentEvent(
+										id = UUID.randomUUID().toString(),
+										idempotencyKey = idempotencyKey,
+										endpoint = endpoint,
+										secret = secret,
+										amount = amount,
+										sourceApp = sourceApp,
+										reference = reference,
+										rawText = rawText,
+									)
+									val response = ListenerApiClient.sendPaymentEvent(event)
+									if (!response.isSuccess && response.shouldRetry) {
+										if (EventQueueStore.enqueue(applicationContext, event)) {
+											queuedRetry = true
+										}
+									}
+									endpoint to response
+								}
 
+								if (queuedRetry) {
+									RetryScheduler.enqueue(applicationContext)
+								}
+
+								val failures = results.filter {
+									!it.second.isSuccess && !it.second.shouldRetry
+								}
 								withContext(Dispatchers.Main) {
-									result.success(true)
+									if (failures.isEmpty()) {
+										result.success(true)
+									} else {
+										val message = failures.joinToString(" | ") { (endpoint, failure) ->
+											val detail = failure.error.ifBlank { "Gagal kirim" }
+											"$endpoint: $detail"
+										}
+										result.error("SEND_FAILED", message, null)
+									}
 								}
 							}
 						}

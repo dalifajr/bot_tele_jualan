@@ -41,6 +41,7 @@ class _ListenerHomePageState extends State<ListenerHomePage> {
   static const MethodChannel _channel = MethodChannel('jualan_listener/native');
 
   final TextEditingController _endpointController = TextEditingController();
+  final TextEditingController _endpointSecondaryController = TextEditingController();
   final TextEditingController _secretController = TextEditingController();
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _amountController = TextEditingController(text: '50123');
@@ -70,6 +71,7 @@ class _ListenerHomePageState extends State<ListenerHomePage> {
   @override
   void dispose() {
     _endpointController.dispose();
+    _endpointSecondaryController.dispose();
     _secretController.dispose();
     _searchController.dispose();
     _amountController.dispose();
@@ -116,6 +118,7 @@ class _ListenerHomePageState extends State<ListenerHomePage> {
       if (mounted) {
         setState(() {
           _endpointController.text = (config['endpoint'] ?? '').toString();
+          _endpointSecondaryController.text = (config['endpointSecondary'] ?? '').toString();
           _secretController.text = (config['secret'] ?? '').toString();
           _monitorAll = config['monitorAll'] == true;
           _selectedPackages = (selectedRaw ?? const <Object?>[])
@@ -177,6 +180,7 @@ class _ListenerHomePageState extends State<ListenerHomePage> {
     await _runBusy(() async {
       await _channel.invokeMethod('setConfig', {
         'endpoint': _endpointController.text.trim(),
+        'endpointSecondary': _endpointSecondaryController.text.trim(),
         'secret': _secretController.text.trim(),
         'monitorAll': _monitorAll,
       });
@@ -259,23 +263,46 @@ class _ListenerHomePageState extends State<ListenerHomePage> {
 
   Future<void> _testConnection() async {
     await _runBusy(() async {
-      final response = await _channel.invokeMethod<Map<Object?, Object?>>(
-        'testConnectionNative',
-        {
-          'endpoint': _endpointController.text.trim(),
-          'secret': _secretController.text.trim(),
-        },
-      );
+      final endpointPrimary = _endpointController.text.trim();
+      final endpointSecondary = _endpointSecondaryController.text.trim();
+      final secret = _secretController.text.trim();
 
-      final ok = response?['ok'] == true;
-      final code = response?['statusCode'];
-      final body = response?['body'];
-      final err = response?['error'];
+      if (secret.isEmpty || (endpointPrimary.isEmpty && endpointSecondary.isEmpty)) {
+        setState(() {
+          _status = 'Endpoint/secret belum diatur';
+        });
+        return;
+      }
+
+      Future<String> testOne(String label, String endpoint) async {
+        final response = await _channel.invokeMethod<Map<Object?, Object?>>(
+          'testConnectionNative',
+          {
+            'endpoint': endpoint,
+            'secret': secret,
+          },
+        );
+
+        final ok = response?['ok'] == true;
+        final code = response?['statusCode'];
+        final body = response?['body'];
+        final err = response?['error'];
+
+        return ok
+            ? '$label: sukses (HTTP $code)'
+            : '$label: gagal (HTTP $code): ${err ?? body}';
+      }
+
+      final messages = <String>[];
+      if (endpointPrimary.isNotEmpty) {
+        messages.add(await testOne('Endpoint utama', endpointPrimary));
+      }
+      if (endpointSecondary.isNotEmpty) {
+        messages.add(await testOne('Endpoint sekunder', endpointSecondary));
+      }
 
       setState(() {
-        _status = ok
-            ? 'Test koneksi sukses (HTTP $code)'
-            : 'Test koneksi gagal (HTTP $code): ${err ?? body}';
+        _status = messages.join('\n');
       });
     });
   }
@@ -298,10 +325,9 @@ class _ListenerHomePageState extends State<ListenerHomePage> {
             : _referenceController.text.trim(),
         'rawText': _rawTextController.text.trim(),
       });
-      await _channel.invokeMethod('enqueueFlush');
       await _loadQueueCount();
       setState(() {
-        _status = 'Payload test dimasukkan ke queue dan dikirim';
+        _status = 'Payload test dikirim (retry otomatis jika gagal)';
       });
     });
   }
@@ -630,6 +656,14 @@ class _ListenerHomePageState extends State<ListenerHomePage> {
                         decoration: const InputDecoration(
                           labelText: 'Endpoint payment',
                           hintText: 'https://domain/listener/payment',
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _endpointSecondaryController,
+                        decoration: const InputDecoration(
+                          labelText: 'Endpoint payment (sekunder)',
+                          hintText: 'https://domain-2/listener/payment',
                         ),
                       ),
                       const SizedBox(height: 8),

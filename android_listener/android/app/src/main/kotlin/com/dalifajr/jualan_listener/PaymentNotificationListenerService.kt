@@ -2,8 +2,10 @@ package com.dalifajr.jualan_listener
 
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
+import android.util.Log
 import com.dalifajr.jualan_listener.data.EventQueueStore
 import com.dalifajr.jualan_listener.data.QueuedPaymentEvent
+import com.dalifajr.jualan_listener.network.ListenerApiClient
 import com.dalifajr.jualan_listener.utils.NotificationTextExtractor
 import com.dalifajr.jualan_listener.utils.RupiahParser
 import com.dalifajr.jualan_listener.worker.RetryScheduler
@@ -19,9 +21,9 @@ class PaymentNotificationListenerService : NotificationListenerService() {
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
         if (sbn == null) return
 
-        val endpoint = ListenerConfigStore.getEndpoint(this)
+        val endpoints = ListenerConfigStore.getActiveEndpoints(this)
         val secret = ListenerConfigStore.getSecret(this)
-        if (endpoint.isBlank() || secret.isBlank()) {
+        if (endpoints.isEmpty() || secret.isBlank()) {
             return
         }
 
@@ -45,20 +47,36 @@ class PaymentNotificationListenerService : NotificationListenerService() {
         if (amount <= 0) return
 
         val reference = NotificationTextExtractor.extractReference(rawText)
-        val event = QueuedPaymentEvent(
-            id = UUID.randomUUID().toString(),
-            idempotencyKey = UUID.randomUUID().toString(),
-            endpoint = endpoint,
-            secret = secret,
-            amount = amount,
-            sourceApp = packageName,
-            reference = reference,
-            rawText = rawText,
-        )
+        val idempotencyKey = UUID.randomUUID().toString()
 
         scope.launch {
-            EventQueueStore.enqueue(applicationContext, event)
-            RetryScheduler.enqueue(applicationContext)
+            var queuedRetry = false
+            endpoints.forEach { endpoint ->
+                val event = QueuedPaymentEvent(
+                    id = UUID.randomUUID().toString(),
+                    idempotencyKey = idempotencyKey,
+                    endpoint = endpoint,
+                    secret = secret,
+                    amount = amount,
+                    sourceApp = packageName,
+                    reference = reference,
+                    rawText = rawText,
+                )
+                val result = ListenerApiClient.sendPaymentEvent(event)
+                if (!result.isSuccess) {
+                    Log.w(TAG, "Direct send failed for $endpoint: ${result.error}")
+                    if (result.shouldRetry && EventQueueStore.enqueue(applicationContext, event)) {
+                        queuedRetry = true
+                    }
+                }
+            }
+            if (queuedRetry) {
+                RetryScheduler.enqueue(applicationContext)
+            }
         }
+    }
+
+    companion object {
+        private const val TAG = "PaymentNotifListener"
     }
 }
