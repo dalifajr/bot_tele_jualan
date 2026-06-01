@@ -687,14 +687,10 @@ class AdminController extends Controller
         $image = $request->file('proof_image');
         $fileName = 'proof_' . $withdrawal->id . '_' . time() . '.' . $image->getClientOriginalExtension();
         
-        // Ensure folder exists
-        $uploadPath = public_path('uploads/proofs');
-        if (!file_exists($uploadPath)) {
-            mkdir($uploadPath, 0755, true);
-        }
+        // Store on public storage disk under 'proofs' folder
+        $path = \Illuminate\Support\Facades\Storage::disk('public')->putFileAs('proofs', $image, $fileName);
         
-        $image->move($uploadPath, $fileName);
-        $withdrawal->proof_image_path = 'uploads/proofs/' . $fileName;
+        $withdrawal->proof_image_path = 'storage/' . $path;
 
         // Deduct balance and update status
         $seller->wallet_balance -= $withdrawal->amount;
