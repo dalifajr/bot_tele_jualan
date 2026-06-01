@@ -137,7 +137,7 @@
                         <textarea name="description" class="form-control" rows="3">{{ $product->description }}</textarea>
                     </div>
                     <div class="form-check form-switch mb-3">
-                        <input class="form-check-input" type="checkbox" role="switch" name="is_suspended" id="suspend{{ $product->id }}" {{ $product->is_suspended ? 'checked' : '' }}>
+                        <input class="form-check-input" type="checkbox" role="switch" name="is_suspended" value="1" id="suspend{{ $product->id }}" {{ $product->is_suspended ? 'checked' : '' }}>
                         <label class="form-check-label" for="suspend{{ $product->id }}">Suspend (Sembunyikan dari katalog)</label>
                     </div>
                 </div>

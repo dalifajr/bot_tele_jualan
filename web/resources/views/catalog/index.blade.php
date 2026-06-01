@@ -42,6 +42,14 @@
                     <p class="text-muted small mb-3 flex-grow-1">Produk digital</p>
                 @endif
 
+                <div class="mb-3 small">
+                    @if($product->creator)
+                        <span class="text-muted"><i class="fas fa-store me-1 text-info"></i>Seller: <strong>{{ $product->creator->full_name ?? $product->creator->username }}</strong></span>
+                    @else
+                        <span class="text-muted"><i class="fas fa-store me-1 text-primary"></i>Seller: <strong>Admin Utama</strong></span>
+                    @endif
+                </div>
+
                 <div class="d-flex justify-content-between align-items-center mt-auto">
                     <span class="product-price">{{ $product->formatted_price }}</span>
                     <div class="d-flex gap-2">

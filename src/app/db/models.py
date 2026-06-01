@@ -300,3 +300,16 @@ class WithdrawalRequest(Base):
     proof_image_path: Mapped[str | None] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     processed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
+class SellerBankAccount(Base):
+    __tablename__ = "seller_bank_accounts"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    bank_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    account_number: Mapped[str] = mapped_column(String(100), nullable=False)
+    account_holder: Mapped[str] = mapped_column(String(255), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+

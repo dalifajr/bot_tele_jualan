@@ -29,6 +29,15 @@
 
                 <hr>
 
+                <div class="mb-4">
+                    <span class="text-muted small d-block mb-1">Seller</span>
+                    @if($product->creator)
+                        <h6 class="fw-bold"><i class="fas fa-store text-info me-1"></i>{{ $product->creator->full_name ?? $product->creator->username }}</h6>
+                    @else
+                        <h6 class="fw-bold"><i class="fas fa-store text-primary me-1"></i>Admin Utama</h6>
+                    @endif
+                </div>
+
                 <h5 class="fw-bold mb-2">Deskripsi</h5>
                 <p class="text-muted">{{ $product->description ?: 'Tidak ada deskripsi tersedia.' }}</p>
             </div>

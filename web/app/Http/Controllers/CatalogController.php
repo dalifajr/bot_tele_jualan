@@ -10,7 +10,8 @@ class CatalogController extends Controller
 {
     public function index()
     {
-        $products = Product::where('is_suspended', false)
+        $products = Product::with('creator')
+            ->where('is_suspended', false)
             ->orderByDesc('id')
             ->get()
             ->map(function ($product) {
@@ -26,7 +27,7 @@ class CatalogController extends Controller
 
     public function show($id)
     {
-        $product = Product::findOrFail($id);
+        $product = Product::with('creator')->findOrFail($id);
 
         if ($product->is_suspended) {
             return redirect()->route('catalog.index')->with('error', 'Produk tidak tersedia.');

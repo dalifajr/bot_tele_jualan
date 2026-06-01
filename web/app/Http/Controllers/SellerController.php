@@ -22,7 +22,7 @@ class SellerController extends Controller
 
         // Stock stats
         $readyStockCount = StockUnit::where('seller_id', $sellerId)->where('stock_status', 'ready')->where('is_sold', false)->count();
-        $savedStockCount = StockUnit::where('seller_id', $sellerId)->where('stock_status', 'saved_for_verification')->where('is_sold', false)->count();
+        $savedStockCount = StockUnit::where('seller_id', $sellerId)->whereIn('stock_status', ['saved_for_verification', 'saved_ready_notified'])->where('is_sold', false)->count();
         $soldStockCount = StockUnit::where('seller_id', $sellerId)->where('is_sold', true)->count();
 
         // Finance stats
@@ -56,17 +56,37 @@ class SellerController extends Controller
         $sellerId = Auth::id();
         $status = $request->get('status');
 
-        $query = StockUnit::with(['product', 'uploader'])->where('seller_id', $sellerId);
+        $query = StockUnit::with(['product', 'uploader', 'order.customer'])->where('seller_id', $sellerId);
 
         if ($status === 'ready') {
             $query->where('stock_status', 'ready')->where('is_sold', false);
         } elseif ($status === 'saved_for_verification') {
-            $query->where('stock_status', 'saved_for_verification')->where('is_sold', false);
+            $query->where('is_sold', false)->whereIn('stock_status', ['saved_for_verification', 'saved_ready_notified']);
         } elseif ($status === 'terjual') {
             $query->where('is_sold', true);
         }
 
-        $stocks = $query->orderBy('created_at', 'desc')->paginate(20);
+        if ($request->filled('product_id')) {
+            $query->where('product_id', $request->product_id);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('raw_text', 'like', "%{$search}%")
+                  ->orWhere('stock_status', 'like', "%{$search}%")
+                  ->orWhereHas('product', function ($pq) use ($search) {
+                      $pq->where('name', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('order.customer', function ($cq) use ($search) {
+                      $cq->where('username', 'like', "%{$search}%")
+                         ->orWhere('full_name', 'like', "%{$search}%")
+                         ->orWhere('telegram_id', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        $stocks = $query->orderBy('created_at', 'desc')->paginate(15);
 
         // Fetch products available for this seller to upload stock (either created by them or they are workers)
         $products = Product::where('creator_id', $sellerId)
@@ -84,6 +104,7 @@ class SellerController extends Controller
 
         $request->validate([
             'product_id' => 'required|exists:products,id',
+            'stock_status' => 'required|in:ready,saved_for_verification',
             'raw_text' => 'required|string',
         ]);
 
@@ -100,14 +121,11 @@ class SellerController extends Controller
             return redirect()->back()->with('error', 'Anda tidak memiliki hak untuk mengunggah stok pada produk ini.');
         }
 
-        // Determine quarantine and available_at based on seller's own configuration
-        $saveHours = (int)($user->seller_save_hours ?? 80);
-        $stockStatus = 'saved_for_verification';
-        $availableAt = now()->addHours($saveHours);
-
-        if ($saveHours <= 0) {
-            $stockStatus = 'ready';
-            $availableAt = null;
+        $stockStatus = $request->stock_status;
+        $availableAt = null;
+        if ($stockStatus === 'saved_for_verification') {
+            $saveHours = (int)($user->seller_save_hours ?? 80);
+            $availableAt = now()->addHours($saveHours);
         }
 
         // Split raw text by double-newlines
@@ -132,6 +150,113 @@ class SellerController extends Controller
         return redirect()->route('seller.stock.index')->with('success', "$count stok berhasil diunggah.");
     }
 
+    public function moveStock(Request $request, $id)
+    {
+        $sellerId = Auth::id();
+        $user = Auth::user();
+
+        $request->validate([
+            'product_id' => 'required|exists:products,id',
+            'stock_status' => 'required|in:ready,saved_for_verification,terjual',
+        ]);
+
+        $stock = StockUnit::where('seller_id', $sellerId)->findOrFail($id);
+
+        // Verify seller is allowed to move stock to this product
+        $allowed = Product::where('id', $request->product_id)
+            ->where(function($q) use ($sellerId) {
+                $q->where('creator_id', $sellerId)
+                  ->orWhereHas('workers', function($w) use ($sellerId) {
+                      $w->where('user_id', $sellerId);
+                  });
+            })->exists();
+
+        if (!$allowed) {
+            return redirect()->back()->with('error', 'Anda tidak memiliki hak untuk memindahkan stok ke produk ini.');
+        }
+
+        $stock->product_id = $request->product_id;
+
+        if ($request->stock_status === 'terjual') {
+            $stock->is_sold = true;
+        } else {
+            $stock->is_sold = false;
+            $stock->sold_order_id = null;
+            $stock->stock_status = $request->stock_status;
+
+            if ($request->stock_status === 'saved_for_verification') {
+                $saveHours = (int)($user->seller_save_hours ?? 80);
+                $stock->available_at = now()->addHours($saveHours);
+            } else {
+                $stock->available_at = null;
+            }
+        }
+
+        $stock->save();
+
+        return back()->with('success', 'Status/Produk stok berhasil dipindahkan.');
+    }
+
+    public function bulkMoveStock(Request $request)
+    {
+        $sellerId = Auth::id();
+        $user = Auth::user();
+
+        $request->validate([
+            'ids' => 'required|string',
+            'product_id' => 'nullable|exists:products,id',
+            'stock_status' => 'required|in:ready,saved_for_verification',
+        ]);
+
+        $ids = json_decode($request->ids, true);
+        if (!is_array($ids) || empty($ids)) {
+            return back()->with('error', 'Tidak ada stok terpilih.');
+        }
+
+        // Verify product if filled
+        if ($request->filled('product_id')) {
+            $allowed = Product::where('id', $request->product_id)
+                ->where(function($q) use ($sellerId) {
+                    $q->where('creator_id', $sellerId)
+                      ->orWhereHas('workers', function($w) use ($sellerId) {
+                          $w->where('user_id', $sellerId);
+                      });
+                })->exists();
+
+            if (!$allowed) {
+                return redirect()->back()->with('error', 'Anda tidak memiliki hak untuk memindahkan stok ke produk ini.');
+            }
+        }
+
+        $stockUnits = StockUnit::whereIn('id', $ids)->where('seller_id', $sellerId)->where('is_sold', false)->get();
+        if ($stockUnits->isEmpty()) {
+            return back()->with('error', 'Stok terpilih tidak ditemukan atau sudah terjual.');
+        }
+
+        $saveHours = (int)($user->seller_save_hours ?? 80);
+
+        $count = 0;
+        foreach ($stockUnits as $stock) {
+            if ($request->filled('product_id')) {
+                $stock->product_id = $request->product_id;
+            }
+            $stock->stock_status = $stock->stock_status; // Keep or change
+            $stock->stock_status = $request->stock_status;
+            $stock->sold_order_id = null;
+
+            if ($request->stock_status === 'saved_for_verification') {
+                $stock->available_at = now()->addHours($saveHours);
+            } else {
+                $stock->available_at = null;
+            }
+
+            $stock->save();
+            $count++;
+        }
+
+        return back()->with('success', "$count status/produk stok berhasil dipindahkan secara masal.");
+    }
+
     public function destroyStock($id)
     {
         $stock = StockUnit::where('seller_id', Auth::id())->findOrFail($id);
@@ -140,6 +265,24 @@ class SellerController extends Controller
         }
         $stock->delete();
         return redirect()->back()->with('success', 'Stok berhasil dihapus.');
+    }
+
+    public function bulkDestroyStock(Request $request)
+    {
+        $sellerId = Auth::id();
+
+        $request->validate([
+            'ids' => 'required|string',
+        ]);
+
+        $ids = json_decode($request->ids, true);
+        if (!is_array($ids) || empty($ids)) {
+            return back()->with('error', 'Tidak ada stok terpilih.');
+        }
+
+        $count = StockUnit::whereIn('id', $ids)->where('seller_id', $sellerId)->where('is_sold', false)->delete();
+
+        return back()->with('success', "$count stok berhasil dihapus secara masal.");
     }
 
     // ==========================================
@@ -238,7 +381,10 @@ class SellerController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(15);
 
-        return view('seller.finance.index', compact('user', 'withdrawals'));
+        // Fetch saved bank accounts
+        $bankAccounts = \App\Models\SellerBankAccount::where('user_id', $sellerId)->get();
+
+        return view('seller.finance.index', compact('user', 'withdrawals', 'bankAccounts'));
     }
 
     public function requestWithdrawal(Request $request)
@@ -248,25 +394,67 @@ class SellerController extends Controller
 
         $request->validate([
             'amount' => 'required|integer|min:10000',
-            'bank_name' => 'required|string|max:100',
-            'account_number' => 'required|string|max:100',
-            'account_holder' => 'required|string|max:255',
+            'bank_account_id' => 'required|exists:seller_bank_accounts,id',
         ]);
 
         if ($user->wallet_balance < $request->amount) {
             return redirect()->back()->with('error', 'Saldo wallet Anda tidak mencukupi untuk melakukan penarikan.');
         }
 
+        // Get bank account and verify it belongs to this seller
+        $bankAccount = \App\Models\SellerBankAccount::where('user_id', $sellerId)->findOrFail($request->bank_account_id);
+
         WithdrawalRequest::create([
             'seller_id' => $sellerId,
             'amount' => $request->amount,
-            'bank_name' => $request->bank_name,
-            'account_number' => $request->account_number,
-            'account_holder' => $request->account_holder,
+            'bank_name' => $bankAccount->bank_name,
+            'account_number' => $bankAccount->account_number,
+            'account_holder' => $bankAccount->account_holder,
             'status' => 'pending',
         ]);
 
         return redirect()->route('seller.finance.index')->with('success', 'Pengajuan penarikan dana berhasil dikirim dan sedang menunggu verifikasi admin.');
+    }
+
+    // ==========================================
+    // SELLER SAVED BANK ACCOUNTS
+    // ==========================================
+    public function bankAccounts()
+    {
+        $sellerId = Auth::id();
+        $user = Auth::user();
+
+        $bankAccounts = \App\Models\SellerBankAccount::where('user_id', $sellerId)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('seller.finance.bank_accounts', compact('user', 'bankAccounts'));
+    }
+
+    public function storeBankAccount(Request $request)
+    {
+        $request->validate([
+            'bank_name' => 'required|string|max:100',
+            'account_number' => 'required|string|max:100',
+            'account_holder' => 'required|string|max:255',
+        ]);
+
+        \App\Models\SellerBankAccount::create([
+            'user_id' => Auth::id(),
+            'bank_name' => $request->bank_name,
+            'account_number' => $request->account_number,
+            'account_holder' => $request->account_holder,
+        ]);
+
+        return redirect()->route('seller.bank-accounts.index')->with('success', 'Rekening bank berhasil disimpan.');
+    }
+
+    public function destroyBankAccount($id)
+    {
+        $bankAccount = \App\Models\SellerBankAccount::where('user_id', Auth::id())->findOrFail($id);
+        $bankAccount->delete();
+
+        return redirect()->route('seller.bank-accounts.index')->with('success', 'Rekening bank berhasil dihapus.');
     }
 
     // ==========================================

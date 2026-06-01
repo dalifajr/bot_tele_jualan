@@ -18,6 +18,20 @@
     <div class="alert alert-danger small py-2 mb-4"><i class="fas fa-exclamation-circle me-1"></i>{{ session('error') }}</div>
 @endif
 
+{{-- Sub Navigation Tabs --}}
+<ul class="nav nav-pills mb-4 gap-2">
+    <li class="nav-item">
+        <a class="nav-link active rounded-pill px-4" href="{{ route('seller.finance.index') }}">
+            <i class="fas fa-wallet me-2"></i>Dompet & Penarikan
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link text-secondary rounded-pill px-4 bg-light" href="{{ route('seller.bank-accounts.index') }}">
+            <i class="fas fa-university me-2"></i>Konfigurasi Rekening
+        </a>
+    </li>
+</ul>
+
 <div class="row g-4">
     {{-- Wallet Balance & Withdrawal Form --}}
     <div class="col-12 col-lg-5">
@@ -48,26 +62,30 @@
                     <div class="form-text small">Minimal penarikan Rp 10.000. Maksimal sesuai saldo Anda.</div>
                 </div>
 
-                <div class="mb-3">
-                    <label class="form-label text-muted small fw-bold">Nama Bank / E-Wallet Tujuan</label>
-                    <input type="text" name="bank_name" class="form-control" placeholder="Contoh: BCA, Mandiri, DANA, GoPay" required>
+                @if($bankAccounts->isEmpty())
+                <div class="alert alert-warning small rounded-4 p-3 mb-3">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Anda belum menyimpan rekening bank. Silakan simpan rekening bank terlebih dahulu di menu <strong><a href="{{ route('seller.bank-accounts.index') }}">Konfigurasi Rekening</a></strong>.
                 </div>
-
+                @else
                 <div class="mb-3">
-                    <label class="form-label text-muted small fw-bold">Nomor Rekening / Akun E-Wallet</label>
-                    <input type="text" name="account_number" class="form-control" placeholder="Contoh: 8012345678" required>
+                    <label class="form-label text-muted small fw-bold">Pilih Rekening Tujuan Payout</label>
+                    <select name="bank_account_id" class="form-select" required>
+                        <option value="" disabled selected>-- Pilih Rekening Payout --</option>
+                        @foreach($bankAccounts as $acc)
+                            <option value="{{ $acc->id }}">{{ strtoupper($acc->bank_name) }} — {{ $acc->account_number }} (a.n. {{ $acc->account_holder }})</option>
+                        @endforeach
+                    </select>
                 </div>
+                @endif
 
-                <div class="mb-3">
-                    <label class="form-label text-muted small fw-bold">Nama Pemilik Rekening (Sesuai Bank)</label>
-                    <input type="text" name="account_holder" class="form-control" placeholder="Contoh: Dzulfikri Alifajri" required>
-                </div>
-
-                <button type="submit" class="btn btn-primary rounded-pill w-100 py-2.5 fw-bold" {{ $user->wallet_balance < 10000 ? 'disabled' : '' }}>
+                <button type="submit" class="btn btn-primary rounded-pill w-100 py-2.5 fw-bold" {{ $user->wallet_balance < 10000 || $bankAccounts->isEmpty() ? 'disabled' : '' }}>
                     <i class="fas fa-paper-plane me-1"></i> Ajukan Penarikan Dana
                 </button>
                 @if($user->wallet_balance < 10000)
                     <div class="text-danger small mt-2 text-center"><i class="fas fa-exclamation-circle me-1"></i> Saldo Anda belum mencukupi untuk melakukan penarikan.</div>
+                @elseif($bankAccounts->isEmpty())
+                    <div class="text-danger small mt-2 text-center"><i class="fas fa-exclamation-circle me-1"></i> Hubungkan rekening bank payout terlebih dahulu.</div>
                 @endif
             </form>
         </div>

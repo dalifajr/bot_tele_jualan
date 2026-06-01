@@ -35,7 +35,7 @@ class AdminController extends Controller
 
     public function stock(Request $request)
     {
-        $query = StockUnit::with(['product', 'order.customer'])->orderBy('created_at', 'desc');
+        $query = StockUnit::with(['product', 'order.customer', 'uploader'])->orderBy('created_at', 'desc');
 
         if ($request->filled('status')) {
             if ($request->status === 'terjual') {

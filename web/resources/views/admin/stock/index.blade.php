@@ -111,6 +111,7 @@
                         <th class="px-4 py-3 border-0">ID</th>
                         @endif
                         <th class="py-3 border-0">Produk</th>
+                        <th class="py-3 border-0">Uploader</th>
                         <th class="py-3 border-0">Username</th>
                         @if(request('status') === 'terjual')
                         <th class="py-3 border-0">Pembeli</th>
@@ -148,6 +149,16 @@
                         <td class="px-4 fw-bold text-muted">#{{ $unit->id }}</td>
                         @endif
                         <td>{{ Str::limit($unit->product->name ?? 'Unknown', 25) }}</td>
+                        <td>
+                            @if($unit->uploader)
+                                <span class="fw-bold text-dark">{{ $unit->uploader->full_name ?? $unit->uploader->username }}</span>
+                                @if($unit->uploader->role)
+                                    <br><span class="badge bg-secondary-subtle text-secondary px-2 py-0.5 rounded-pill" style="font-size: 0.7rem; font-weight: normal;">{{ ucfirst($unit->uploader->role) }}</span>
+                                @endif
+                            @else
+                                <span class="text-muted small">Admin Utama</span>
+                            @endif
+                        </td>
                         <td class="fw-medium text-dark">{{ Str::limit($extractedUsername, 20) }}</td>
                         
                         @if(request('status') === 'terjual')

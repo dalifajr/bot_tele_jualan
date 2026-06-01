@@ -143,6 +143,9 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         
         Route::get('/stock', [\App\Http\Controllers\SellerController::class, 'stock'])->name('stock.index');
         Route::post('/stock', [\App\Http\Controllers\SellerController::class, 'storeStock'])->name('stock.store');
+        Route::post('/stock/bulk-move', [\App\Http\Controllers\SellerController::class, 'bulkMoveStock'])->name('stock.bulkMove');
+        Route::post('/stock/bulk-delete', [\App\Http\Controllers\SellerController::class, 'bulkDestroyStock'])->name('stock.bulkDestroy');
+        Route::put('/stock/{id}/move', [\App\Http\Controllers\SellerController::class, 'moveStock'])->name('stock.move');
         Route::delete('/stock/{id}', [\App\Http\Controllers\SellerController::class, 'destroyStock'])->name('stock.destroy');
 
         Route::get('/products', [\App\Http\Controllers\SellerController::class, 'products'])->name('products.index');
@@ -153,6 +156,10 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         Route::get('/finance', [\App\Http\Controllers\SellerController::class, 'finance'])->name('finance.index');
         Route::post('/finance/withdraw', [\App\Http\Controllers\SellerController::class, 'requestWithdrawal'])->name('finance.withdraw');
         
+        Route::get('/bank-accounts', [\App\Http\Controllers\SellerController::class, 'bankAccounts'])->name('bank-accounts.index');
+        Route::post('/bank-accounts', [\App\Http\Controllers\SellerController::class, 'storeBankAccount'])->name('bank-accounts.store');
+        Route::delete('/bank-accounts/{id}', [\App\Http\Controllers\SellerController::class, 'destroyBankAccount'])->name('bank-accounts.destroy');
+
         Route::get('/settings', [\App\Http\Controllers\SellerController::class, 'settings'])->name('settings.index');
         Route::post('/settings', [\App\Http\Controllers\SellerController::class, 'updateSettings'])->name('settings.update');
     });
