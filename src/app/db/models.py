@@ -20,6 +20,9 @@ class User(Base):
     role: Mapped[str] = mapped_column(String(32), default="customer", index=True)
     remember_token: Mapped[str | None] = mapped_column(String(255), nullable=True)
     is_suspended: Mapped[bool] = mapped_column(Boolean, default=False)
+    wallet_balance: Mapped[int] = mapped_column(Integer, default=0)
+    platform_fee_percent: Mapped[int] = mapped_column(Integer, default=10)
+    seller_save_hours: Mapped[int] = mapped_column(Integer, default=80)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     last_seen_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
@@ -41,6 +44,7 @@ class Product(Base):
     __tablename__ = "products"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    creator_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str] = mapped_column(Text, default="")
     price: Mapped[int] = mapped_column(Integer, nullable=False)
@@ -56,6 +60,7 @@ class StockUnit(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     product_id: Mapped[int] = mapped_column(ForeignKey("products.id", ondelete="CASCADE"), index=True)
+    seller_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     raw_text: Mapped[str] = mapped_column(Text, nullable=False)
     parsed_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     stock_status: Mapped[str] = mapped_column(String(32), default="ready", index=True)
@@ -267,3 +272,30 @@ class TelegramLoginToken(Base):
     link_expires_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     used_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class ProductWorker(Base):
+    __tablename__ = "product_workers"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    product_id: Mapped[int] = mapped_column(ForeignKey("products.id", ondelete="CASCADE"))
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    __table_args__ = (UniqueConstraint("product_id", "user_id", name="uq_product_worker_user"),)
+
+
+class WithdrawalRequest(Base):
+    __tablename__ = "withdrawal_requests"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    seller_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    amount: Mapped[int] = mapped_column(Integer, nullable=False)
+    bank_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    account_number: Mapped[str] = mapped_column(String(100), nullable=False)
+    account_holder: Mapped[str] = mapped_column(String(255), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), default="pending", index=True)
+    rejection_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    proof_image_path: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    processed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)

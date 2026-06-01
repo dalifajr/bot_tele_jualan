@@ -25,6 +25,13 @@ def _run_compat_migrations() -> None:
         _ensure_column(conn, "stock_units", "stock_status", "stock_status VARCHAR(32) DEFAULT 'ready'")
         _ensure_column(conn, "stock_units", "available_at", "available_at DATETIME")
         _ensure_column(conn, "stock_units", "username_key", "username_key VARCHAR(255)")
+        _ensure_column(conn, "stock_units", "seller_id", "seller_id INTEGER")
+
+        _ensure_column(conn, "users", "wallet_balance", "wallet_balance INTEGER DEFAULT 0")
+        _ensure_column(conn, "users", "platform_fee_percent", "platform_fee_percent INTEGER DEFAULT 10")
+        _ensure_column(conn, "users", "seller_save_hours", "seller_save_hours INTEGER DEFAULT 80")
+
+        _ensure_column(conn, "products", "creator_id", "creator_id INTEGER")
 
         _ensure_column(conn, "orders", "expires_at", "expires_at DATETIME")
         _ensure_column(conn, "orders", "cancelled_at", "cancelled_at DATETIME")

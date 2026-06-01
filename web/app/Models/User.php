@@ -17,6 +17,9 @@ class User extends Authenticatable
         'password',
         'last_seen_at',
         'is_suspended',
+        'wallet_balance',
+        'platform_fee_percent',
+        'seller_save_hours',
     ];
 
     protected $hidden = [

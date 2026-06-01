@@ -13,6 +13,7 @@ class Product extends Model
         'price',
         'description',
         'is_suspended',
+        'creator_id',
     ];
 
     protected $casts = [
@@ -28,6 +29,16 @@ class Product extends Model
     public function stockUnits()
     {
         return $this->hasMany(StockUnit::class, 'product_id');
+    }
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'creator_id');
+    }
+
+    public function workers()
+    {
+        return $this->belongsToMany(User::class, 'product_workers', 'product_id', 'user_id');
     }
 
     /**

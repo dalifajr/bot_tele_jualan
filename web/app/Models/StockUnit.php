@@ -17,6 +17,7 @@ class StockUnit extends Model
         'sold_order_id',
         'stock_status',
         'available_at',
+        'seller_id',
     ];
 
     protected $casts = [
@@ -32,5 +33,10 @@ class StockUnit extends Model
     public function order()
     {
         return $this->belongsTo(Order::class, 'sold_order_id');
+    }
+
+    public function seller()
+    {
+        return $this->belongsTo(User::class, 'seller_id');
     }
 }
