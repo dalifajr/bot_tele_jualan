@@ -460,7 +460,6 @@
     </div>
 </div>
 @endif
-@endforeach
 @endpush
 
 @push('scripts')
