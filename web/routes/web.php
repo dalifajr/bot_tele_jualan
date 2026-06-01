@@ -122,5 +122,39 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         
         // System Actions
         Route::get('/website/settings', [\App\Http\Controllers\AdminController::class, 'websiteSettings'])->name('website.settings');
+
+        // Admin Payouts / Withdrawals
+        Route::get('/withdrawals', [\App\Http\Controllers\AdminController::class, 'withdrawals'])->name('withdrawals.index');
+        Route::post('/withdrawals/{id}/approve', [\App\Http\Controllers\AdminController::class, 'approveWithdrawal'])->name('withdrawals.approve');
+        Route::post('/withdrawals/{id}/reject', [\App\Http\Controllers\AdminController::class, 'rejectWithdrawal'])->name('withdrawals.reject');
+
+        // Admin Product Workers management
+        Route::post('/products/{id}/workers', [\App\Http\Controllers\AdminController::class, 'addWorker'])->name('products.workers.store');
+        Route::delete('/products/{id}/workers/{userId}', [\App\Http\Controllers\AdminController::class, 'removeWorker'])->name('products.workers.destroy');
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Seller Routes
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware('seller')->prefix('seller')->name('seller.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\SellerController::class, 'dashboard'])->name('dashboard');
+        
+        Route::get('/stock', [\App\Http\Controllers\SellerController::class, 'stock'])->name('stock.index');
+        Route::post('/stock', [\App\Http\Controllers\SellerController::class, 'storeStock'])->name('stock.store');
+        Route::delete('/stock/{id}', [\App\Http\Controllers\SellerController::class, 'destroyStock'])->name('stock.destroy');
+
+        Route::get('/products', [\App\Http\Controllers\SellerController::class, 'products'])->name('products.index');
+        Route::post('/products', [\App\Http\Controllers\SellerController::class, 'storeProduct'])->name('products.store');
+        Route::post('/products/{id}/workers', [\App\Http\Controllers\SellerController::class, 'addWorker'])->name('products.workers.store');
+        Route::delete('/products/{id}/workers/{userId}', [\App\Http\Controllers\SellerController::class, 'removeWorker'])->name('products.workers.destroy');
+        
+        Route::get('/finance', [\App\Http\Controllers\SellerController::class, 'finance'])->name('finance.index');
+        Route::post('/finance/withdraw', [\App\Http\Controllers\SellerController::class, 'requestWithdrawal'])->name('finance.withdraw');
+        
+        Route::get('/settings', [\App\Http\Controllers\SellerController::class, 'settings'])->name('settings.index');
+        Route::post('/settings', [\App\Http\Controllers\SellerController::class, 'updateSettings'])->name('settings.update');
     });
 });
+

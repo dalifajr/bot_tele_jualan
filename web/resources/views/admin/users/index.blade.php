@@ -65,7 +65,7 @@
                                     <span class="badge bg-success-subtle text-success rounded-pill px-2"><i class="fas fa-check me-1"></i>Aktif</span>
                                 @endif
                             </div>
-                            <span class="badge bg-{{ $user->role === 'admin' ? 'primary' : 'secondary' }}-subtle text-{{ $user->role === 'admin' ? 'primary' : 'secondary' }} rounded-pill px-2">
+                            <span class="badge bg-{{ $user->role === 'admin' ? 'primary' : ($user->role === 'seller' ? 'info' : 'secondary') }}-subtle text-{{ $user->role === 'admin' ? 'primary' : ($user->role === 'seller' ? 'info' : 'secondary') }} rounded-pill px-2">
                                 {{ ucfirst($user->role ?? 'customer') }}
                             </span>
                         </td>
@@ -79,7 +79,7 @@
                                 <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" style="border-radius: 12px; min-width: 200px;">
                                     <li>
                                         <button class="dropdown-item py-2" data-bs-toggle="modal" data-bs-target="#editUserModal{{ $user->id }}">
-                                            <i class="fas fa-user-shield me-2 text-primary"></i> Ubah Role
+                                            <i class="fas fa-user-shield me-2 text-primary"></i> Ubah Detail Akses
                                         </button>
                                     </li>
                                     <li><hr class="dropdown-divider"></li>
@@ -145,7 +145,7 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content" style="border-radius: 16px; border: none;">
             <div class="modal-header border-0 pb-0">
-                <h5 class="fw-bold">Ubah Hak Akses Pengguna</h5>
+                <h5 class="fw-bold">Ubah Hak Akses & Detail Pengguna</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form action="{{ route('admin.users.update', $user->id) }}" method="POST">
@@ -156,16 +156,47 @@
                         <p class="mb-1 text-muted small">Nama Pengguna</p>
                         <h6 class="fw-bold text-primary">{{ $user->full_name ?? $user->username ?? 'Unknown' }}</h6>
                     </div>
+                    
                     <div class="mb-3">
                         <label class="form-label text-muted small fw-bold">Role Akses</label>
-                        <select name="role" class="form-select" required>
+                        <select name="role" id="role_select_{{ $user->id }}" class="form-select" onchange="toggleSellerFields({{ $user->id }})" required>
                             <option value="customer" {{ $user->role === 'customer' ? 'selected' : '' }}>Customer (Biasa)</option>
+                            <option value="seller" {{ $user->role === 'seller' ? 'selected' : '' }}>Seller (Penjual Mitra)</option>
                             <option value="admin" {{ $user->role === 'admin' ? 'selected' : '' }}>Admin (Penuh)</option>
                         </select>
-                        <div class="form-text mt-2">
-                            <i class="fas fa-info-circle text-primary me-1"></i>
-                            Menjadikan pengguna sebagai Admin akan memberikan akses penuh ke Panel Web ini dan menu Bot Admin Telegram secara bersamaan.
+                    </div>
+
+                    <div id="seller_fields_{{ $user->id }}" class="{{ $user->role === 'seller' ? '' : 'd-none' }}">
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">Saldo Dompet (Wallet Balance)</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted">Rp</span>
+                                <input type="number" name="wallet_balance" class="form-control" value="{{ $user->wallet_balance ?? 0 }}" min="0">
+                            </div>
                         </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">Persentase Potongan Platform (Fee %)</label>
+                            <div class="input-group">
+                                <input type="number" name="platform_fee_percent" class="form-control" value="{{ $user->platform_fee_percent ?? 10 }}" min="0" max="100">
+                                <span class="input-group-text bg-light text-muted">%</span>
+                            </div>
+                            <div class="form-text small text-muted">Komisi bagi hasil yang dipotong oleh platform saat transaksi lunas.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">Jam Karantina Default (Save Hours)</label>
+                            <div class="input-group">
+                                <input type="number" name="seller_save_hours" class="form-control" value="{{ $user->seller_save_hours ?? 80 }}" min="0">
+                                <span class="input-group-text bg-light text-muted">jam</span>
+                            </div>
+                            <div class="form-text small text-muted">Durasi karantina stok sebelum pindah otomatis dari *Simpan Akun* ke *Ready*.</div>
+                        </div>
+                    </div>
+
+                    {{-- Hidden fallbacks if not seller to prevent validation failure --}}
+                    <div id="seller_hidden_{{ $user->id }}" class="{{ $user->role === 'seller' ? 'd-none' : '' }}">
+                        <input type="hidden" name="wallet_balance" id="hidden_balance_{{ $user->id }}" value="{{ $user->wallet_balance ?? 0 }}">
+                        <input type="hidden" name="platform_fee_percent" id="hidden_fee_{{ $user->id }}" value="{{ $user->platform_fee_percent ?? 10 }}">
+                        <input type="hidden" name="seller_save_hours" id="hidden_hours_{{ $user->id }}" value="{{ $user->seller_save_hours ?? 80 }}">
                     </div>
                 </div>
                 <div class="modal-footer border-0 pt-0">
@@ -178,6 +209,52 @@
 </div>
 @endif
 @endforeach
+@endpush
+
+@push('scripts')
+<script>
+function toggleSellerFields(userId) {
+    var roleSelect = document.getElementById('role_select_' + userId);
+    var sellerFields = document.getElementById('seller_fields_' + userId);
+    var sellerHidden = document.getElementById('seller_hidden_' + userId);
+    
+    // Find all inputs within sellerFields
+    var inputs = sellerFields.getElementsByTagName('input');
+    
+    if (roleSelect.value === 'seller') {
+        sellerFields.classList.remove('d-none');
+        sellerHidden.classList.add('d-none');
+        // Disable hidden fallbacks
+        document.getElementById('hidden_balance_' + userId).disabled = true;
+        document.getElementById('hidden_fee_' + userId).disabled = true;
+        document.getElementById('hidden_hours_' + userId).disabled = true;
+        // Enable visible inputs
+        for (var i = 0; i < inputs.length; i++) {
+            inputs[i].disabled = false;
+        }
+    } else {
+        sellerFields.classList.add('d-none');
+        sellerHidden.classList.remove('d-none');
+        // Enable hidden fallbacks to pass validation
+        document.getElementById('hidden_balance_' + userId).disabled = false;
+        document.getElementById('hidden_fee_' + userId).disabled = false;
+        document.getElementById('hidden_hours_' + userId).disabled = false;
+        // Disable visible inputs
+        for (var i = 0; i < inputs.length; i++) {
+            inputs[i].disabled = true;
+        }
+    }
+}
+
+// Run for all on load to initialize correct disabled states
+document.addEventListener("DOMContentLoaded", function() {
+    @foreach($users as $user)
+    @if($user->id !== Auth::id())
+    toggleSellerFields({{ $user->id }});
+    @endif
+    @endforeach
+});
+</script>
 @endpush
 @endsection
 

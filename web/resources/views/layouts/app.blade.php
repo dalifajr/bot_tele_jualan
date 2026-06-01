@@ -225,6 +225,9 @@
                 <a href="{{ route('admin.users.index') }}" class="menu-item {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
                     <i class="fas fa-users"></i> Kelola Pelanggan
                 </a>
+                <a href="{{ route('admin.withdrawals.index') }}" class="menu-item {{ request()->routeIs('admin.withdrawals.*') ? 'active' : '' }}">
+                    <i class="fas fa-hand-holding-usd"></i> Permintaan Payout
+                </a>
                 <a href="{{ route('admin.logins.index') }}" class="menu-item {{ request()->routeIs('admin.logins.*') ? 'active' : '' }}">
                     <i class="fas fa-sign-in-alt"></i> Percobaan Login
                 </a>
@@ -240,6 +243,27 @@
                 </a>
                 <a href="{{ route('admin.website.settings') }}" class="menu-item {{ request()->routeIs('admin.website.settings') ? 'active' : '' }}">
                     <i class="fas fa-globe"></i> Kelola Website
+                </a>
+            </div>
+            @endif
+
+            @if(Auth::user()->role === 'seller')
+            <div class="menu-group">
+                <div class="menu-header text-info"><i class="fas fa-store me-1"></i> Seller Portal</div>
+                <a href="{{ route('seller.dashboard') }}" class="menu-item {{ request()->routeIs('seller.dashboard') ? 'active' : '' }}">
+                    <i class="fas fa-chart-pie"></i> Dashboard Seller
+                </a>
+                <a href="{{ route('seller.products.index') }}" class="menu-item {{ request()->routeIs('seller.products.*') ? 'active' : '' }}">
+                    <i class="fas fa-box-open"></i> Produk Saya
+                </a>
+                <a href="{{ route('seller.stock.index') }}" class="menu-item {{ request()->routeIs('seller.stock.*') ? 'active' : '' }}">
+                    <i class="fas fa-cubes"></i> Stok Akun
+                </a>
+                <a href="{{ route('seller.finance.index') }}" class="menu-item {{ request()->routeIs('seller.finance.*') ? 'active' : '' }}">
+                    <i class="fas fa-wallet"></i> Dompet & Keuangan
+                </a>
+                <a href="{{ route('seller.settings.index') }}" class="menu-item {{ request()->routeIs('seller.settings.*') ? 'active' : '' }}">
+                    <i class="fas fa-user-cog"></i> Pengaturan Karantina
                 </a>
             </div>
             @endif

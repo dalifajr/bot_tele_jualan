@@ -311,6 +311,13 @@ def _main_menu_keyboard(role: str) -> InlineKeyboardMarkup:
                 [InlineKeyboardButton("ℹ️ Bantuan", callback_data="adm:help")],
             ] if row is not None])
 
+    if role == "seller":
+        return InlineKeyboardMarkup([
+            [InlineKeyboardButton("💰 Cek Saldo & Penjualan", callback_data="sel:wallet")],
+            [InlineKeyboardButton("📦 Stok Saya", callback_data="sel:stock")],
+            [InlineKeyboardButton("🧭 Panduan Seller", callback_data="sel:guide")],
+        ])
+
     return InlineKeyboardMarkup(
         [
             [InlineKeyboardButton("🛍️ Katalog", callback_data="cus:cat")],
@@ -869,16 +876,24 @@ async def _send_main_menu(
     now_text = _format_display_time(_now_display_time())
     total_text = str(total_transaksi)
 
-    text = (
-        f"✨ <b>Halo, {html.escape(display_name)}!</b>\n"
-        f"🕒 {now_text}\n"
-        f"📊 Total transaksi sukses: <b>{total_text}</b>\n\n"
-        "<i>created with love by:\n"
-        "dzulfikrialifajri_store</i>"
-    )
+    if role == "seller":
+        text = (
+            f"✨ <b>Halo, Seller {html.escape(display_name)}!</b>\n"
+            f"🕒 {now_text}\n\n"
+            f"💼 Anda terdaftar sebagai <b>Mitra Seller Resmi</b>.\n"
+            f"Silakan gunakan menu tombol di bawah untuk memantau keuangan dan penjualan Anda di Telegram, atau masuk ke portal web untuk pengelolaan stok penuh."
+        )
+    else:
+        text = (
+            f"✨ <b>Halo, {html.escape(display_name)}!</b>\n"
+            f"🕒 {now_text}\n"
+            f"📊 Total transaksi sukses: <b>{total_text}</b>\n\n"
+            f"<i>created with love by:\n"
+            f"dzulfikrialifajri_store</i>"
+        )
 
-    if welcome:
-        text += "\n\nSilakan pilih menu di bawah ya 👇"
+        if welcome:
+            text += "\n\nSilakan pilih menu di bawah ya 👇"
 
     await _respond(update, text, _main_menu_keyboard(role), parse_mode=ParseMode.HTML)
 
@@ -3974,6 +3989,65 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             await _respond_admin_only(update)
             return
         await _handle_restore_start(update, context)
+        return
+
+    if data == "sel:wallet":
+        with get_session() as session:
+            from app.db.models import User, StockUnit
+            db_user = session.query(User).filter_by(telegram_id=telegram_id).first()
+            if db_user is None:
+                await _respond(update, "❌ Akun Anda belum terdaftar di database.", _back_keyboard("main"))
+                return
+            ready_count = session.query(StockUnit).filter_by(seller_id=db_user.id, stock_status="ready", is_sold=False).count()
+            saved_count = session.query(StockUnit).filter_by(seller_id=db_user.id, stock_status="saved_for_verification", is_sold=False).count()
+            sold_count = session.query(StockUnit).filter_by(seller_id=db_user.id, is_sold=True).count()
+
+        text = (
+            f"💰 <b>Dompet & Penjualan Seller</b>\n\n"
+            f"• Saldo Wallet: <b>{_format_rupiah(db_user.wallet_balance)}</b>\n"
+            f"• Platform Fee: <b>{db_user.platform_fee_percent}%</b>\n\n"
+            f"📦 <b>Status Stok Anda:</b>\n"
+            f"• Ready: <b>{ready_count} unit</b>\n"
+            f"• Karantina: <b>{saved_count} unit</b>\n"
+            f"• Terjual: <b>{sold_count} unit</b>\n\n"
+            f"<i>Silakan kelola produk, stok, dan lakukan penarikan saldo (Withdrawal) langsung via portal web.</i>"
+        )
+        await _respond(update, text, _back_keyboard("main"), parse_mode=ParseMode.HTML)
+        return
+
+    if data == "sel:stock":
+        with get_session() as session:
+            from app.db.models import User, StockUnit
+            db_user = session.query(User).filter_by(telegram_id=telegram_id).first()
+            if db_user is None:
+                await _respond(update, "❌ Akun Anda belum terdaftar di database.", _back_keyboard("main"))
+                return
+            
+            stocks = session.query(StockUnit).filter_by(seller_id=db_user.id, is_sold=False).all()
+            counts = {}
+            for s in stocks:
+                counts[s.product.name] = counts.get(s.product.name, 0) + 1
+
+        text = "📦 <b>Ringkasan Stok Aktif Anda</b>\n\n"
+        if counts:
+            for prod_name, cnt in counts.items():
+                text += f"• {prod_name}: <b>{cnt} unit ready</b>\n"
+        else:
+            text += "<i>Anda belum mengunggah stok akun aktif apapun saat ini.</i>"
+        
+        text += "\n<i>Unggah stok baru melalui dashboard web seller Anda.</i>"
+        await _respond(update, text, _back_keyboard("main"), parse_mode=ParseMode.HTML)
+        return
+
+    if data == "sel:guide":
+        text = (
+            "🧭 <b>Panduan Mitra Seller</b>\n\n"
+            "1. <b>Upload Stok:</b> Masuk ke portal web seller, lalu klik tombol 'Unggah Stok Massal' pada menu Stok Akun.\n"
+            "2. <b>Masa Karantina:</b> Stok baru akan masuk ke status 'Simpan Akun' selama masa karantina (default 80 jam atau sesuai setting Anda).\n"
+            "3. <b>Penjualan Otomatis:</b> Bot akan otomatis mencocokkan stok Anda yang berstatus 'Ready' secara FIFO saat pembeli membayar lunas.\n"
+            "4. <b>Bagi Hasil & Payout:</b> Komisi dikreditkan langsung ke saldo wallet Anda setelah terpotong platform fee. Tarik dana kapan saja melalui menu Dompet di portal web."
+        )
+        await _respond(update, text, _back_keyboard("main"), parse_mode=ParseMode.HTML)
         return
 
     if data == "cus:cat":

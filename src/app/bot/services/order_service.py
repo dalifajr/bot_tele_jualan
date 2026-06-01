@@ -1032,6 +1032,57 @@ def reconcile_payment(
     session.add(payment)
     session.flush()
 
+    # Process Seller Commissions & Notifications
+    seller_sales = {}
+    for unit in delivered_units:
+        if unit.seller_id is not None:
+            s_id = int(unit.seller_id)
+            if s_id not in seller_sales:
+                seller_sales[s_id] = []
+            seller_sales[s_id].append(unit)
+
+    for s_id, units in seller_sales.items():
+        seller = session.get(User, s_id)
+        if seller is not None:
+            total_gross = 0
+            items_details = []
+            for u in units:
+                price = int(u.product.price)
+                total_gross += price
+                rupiah_price = f"Rp{price:,}".replace(",", ".")
+                items_details.append(f"• {u.product.name} (Harga: {rupiah_price})")
+            
+            fee_percent = int(seller.platform_fee_percent or 10)
+            fee_amount = int(total_gross * fee_percent / 100)
+            net_earnings = total_gross - fee_amount
+            
+            seller.wallet_balance = int(seller.wallet_balance or 0) + net_earnings
+            session.add(seller)
+            
+            if seller.telegram_id:
+                from app.bot.services.notification_retry_service import enqueue_notification_retry
+                detail_str = "\n".join(items_details)
+                gross_rp = f"Rp{total_gross:,}".replace(",", ".")
+                fee_rp = f"Rp{fee_amount:,}".replace(",", ".")
+                net_rp = f"Rp{net_earnings:,}".replace(",", ".")
+                
+                message_text = (
+                    f"🔔 <b>Notifikasi Penjualan!</b>\n\n"
+                    f"Stok produk Anda telah dibeli oleh customer:\n"
+                    f"{detail_str}\n\n"
+                    f"• Total Kotor: <b>{gross_rp}</b>\n"
+                    f"• Potongan Platform ({fee_percent}%): <b>{fee_rp}</b>\n"
+                    f"• Pendapatan Bersih (Masuk Wallet): <b>{net_rp}</b>\n\n"
+                    f"<i>Komisi bersih telah otomatis ditambahkan ke Saldo Wallet Anda. Silakan kelola penarikan dana via portal web seller.</i>"
+                )
+                enqueue_notification_retry(
+                    session=session,
+                    channel="seller_sales",
+                    chat_id=int(seller.telegram_id),
+                    payload_text=message_text,
+                    parse_mode="HTML",
+                )
+
     purchased_product_ids = {item.product_id for item in order_items}
     recommendations = _recommend_upsell_products(session, excluded_product_ids=purchased_product_ids, limit=2)
 

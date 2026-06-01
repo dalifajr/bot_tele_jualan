@@ -338,12 +338,18 @@ class AdminController extends Controller
     {
         $user = User::findOrFail($id);
         $request->validate([
-            'role' => 'required|in:admin,customer'
+            'role' => 'required|in:admin,customer,seller',
+            'wallet_balance' => 'required|integer|min:0',
+            'platform_fee_percent' => 'required|integer|between:0,100',
+            'seller_save_hours' => 'required|integer|min:0',
         ]);
         $user->role = $request->role;
+        $user->wallet_balance = $request->wallet_balance;
+        $user->platform_fee_percent = $request->platform_fee_percent;
+        $user->seller_save_hours = $request->seller_save_hours;
         $user->save();
         return redirect()->route('admin.users.index')
-            ->with('success', 'Hak akses pengguna berhasil diperbarui.');
+            ->with('success', 'Informasi pengguna berhasil diperbarui.');
     }
 
     // ==========================================
@@ -649,5 +655,125 @@ class AdminController extends Controller
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Gagal membatalkan pesanan: ' . $e->getMessage());
         }
+    }
+
+    // ==========================================
+    // SELLER WALLET WITHDRAWALS
+    // ==========================================
+    public function withdrawals()
+    {
+        $withdrawals = \App\Models\WithdrawalRequest::with('seller')->orderBy('created_at', 'desc')->paginate(15);
+        return view('admin.withdrawals.index', compact('withdrawals'));
+    }
+
+    public function approveWithdrawal(Request $request, $id)
+    {
+        $withdrawal = \App\Models\WithdrawalRequest::findOrFail($id);
+        
+        $request->validate([
+            'proof_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ]);
+
+        if ($withdrawal->status !== 'pending') {
+            return redirect()->back()->with('error', 'Permintaan penarikan ini sudah diproses sebelumnya.');
+        }
+
+        $seller = $withdrawal->seller;
+        if ($seller->wallet_balance < $withdrawal->amount) {
+            return redirect()->back()->with('error', 'Saldo wallet seller tidak mencukupi untuk penarikan ini.');
+        }
+
+        // Upload proof image
+        $image = $request->file('proof_image');
+        $fileName = 'proof_' . $withdrawal->id . '_' . time() . '.' . $image->getClientOriginalExtension();
+        
+        // Ensure folder exists
+        $uploadPath = public_path('uploads/proofs');
+        if (!file_exists($uploadPath)) {
+            mkdir($uploadPath, 0755, true);
+        }
+        
+        $image->move($uploadPath, $fileName);
+        $withdrawal->proof_image_path = 'uploads/proofs/' . $fileName;
+
+        // Deduct balance and update status
+        $seller->wallet_balance -= $withdrawal->amount;
+        $seller->save();
+
+        $withdrawal->status = 'approved';
+        $withdrawal->processed_at = now();
+        $withdrawal->save();
+
+        return redirect()->back()->with('success', 'Permintaan penarikan berhasil disetujui.');
+    }
+
+    public function rejectWithdrawal(Request $request, $id)
+    {
+        $withdrawal = \App\Models\WithdrawalRequest::findOrFail($id);
+        
+        $request->validate([
+            'rejection_reason' => 'required|string|max:500',
+        ]);
+
+        if ($withdrawal->status !== 'pending') {
+            return redirect()->back()->with('error', 'Permintaan penarikan ini sudah diproses sebelumnya.');
+        }
+
+        $withdrawal->status = 'rejected';
+        $withdrawal->rejection_reason = $request->rejection_reason;
+        $withdrawal->processed_at = now();
+        $withdrawal->save();
+
+        return redirect()->back()->with('success', 'Permintaan penarikan berhasil ditolak.');
+    }
+
+    // ==========================================
+    // PRODUCT WORKERS MANAGEMENT
+    // ==========================================
+    public function addWorker(Request $request, $id)
+    {
+        $product = \App\Models\Product::findOrFail($id);
+        
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+        ]);
+
+        $user = \App\Models\User::findOrFail($request->user_id);
+        if ($user->role !== 'seller') {
+            return redirect()->back()->with('error', 'Hanya pengguna dengan role seller yang dapat ditambahkan sebagai worker.');
+        }
+
+        // Attach worker if not already attached
+        if (!$product->workers()->where('user_id', $user->id)->exists()) {
+            $product->workers()->attach($user->id);
+        }
+
+        return redirect()->back()->with('success', 'Worker berhasil ditambahkan ke produk.');
+    }
+
+    public function removeWorker($id, $userId)
+    {
+        $product = \App\Models\Product::findOrFail($id);
+        
+        // Detach worker
+        $product->workers()->detach($userId);
+
+        // Transfer stock ownership to the original product owner (creator_id)
+        // If creator_id is null, it belongs to Admin (null)
+        $creatorId = $product->creator_id;
+
+        // Find all stock units of this product uploaded by the worker
+        $stocks = \App\Models\StockUnit::where('product_id', $product->id)
+            ->where('seller_id', $userId)
+            ->get();
+
+        foreach ($stocks as $stock) {
+            // Populate uploaded_by_id with worker ID if not set, to preserve the creator information
+            $stock->uploaded_by_id = $stock->uploaded_by_id ?? $userId;
+            $stock->seller_id = $creatorId;
+            $stock->save();
+        }
+
+        return redirect()->back()->with('success', 'Worker berhasil dihapus dari produk, dan stok miliknya telah dialihkan ke pemilik produk.');
     }
 }

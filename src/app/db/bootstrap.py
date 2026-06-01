@@ -26,6 +26,7 @@ def _run_compat_migrations() -> None:
         _ensure_column(conn, "stock_units", "available_at", "available_at DATETIME")
         _ensure_column(conn, "stock_units", "username_key", "username_key VARCHAR(255)")
         _ensure_column(conn, "stock_units", "seller_id", "seller_id INTEGER")
+        _ensure_column(conn, "stock_units", "uploaded_by_id", "uploaded_by_id INTEGER")
 
         _ensure_column(conn, "users", "wallet_balance", "wallet_balance INTEGER DEFAULT 0")
         _ensure_column(conn, "users", "platform_fee_percent", "platform_fee_percent INTEGER DEFAULT 10")

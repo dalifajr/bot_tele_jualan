@@ -61,6 +61,7 @@ class StockUnit(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     product_id: Mapped[int] = mapped_column(ForeignKey("products.id", ondelete="CASCADE"), index=True)
     seller_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    uploaded_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     raw_text: Mapped[str] = mapped_column(Text, nullable=False)
     parsed_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     stock_status: Mapped[str] = mapped_column(String(32), default="ready", index=True)

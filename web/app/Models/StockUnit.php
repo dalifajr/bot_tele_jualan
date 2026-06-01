@@ -18,6 +18,7 @@ class StockUnit extends Model
         'stock_status',
         'available_at',
         'seller_id',
+        'uploaded_by_id',
     ];
 
     protected $casts = [
@@ -38,5 +39,10 @@ class StockUnit extends Model
     public function seller()
     {
         return $this->belongsTo(User::class, 'seller_id');
+    }
+
+    public function uploader()
+    {
+        return $this->belongsTo(User::class, 'uploaded_by_id');
     }
 }

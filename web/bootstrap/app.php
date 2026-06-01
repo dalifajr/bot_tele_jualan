@@ -13,6 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'admin' => \App\Http\Middleware\EnsureAdmin::class,
+            'seller' => \App\Http\Middleware\EnsureSeller::class,
             'telegram.auth' => \App\Http\Middleware\EnsureTelegramAuthenticated::class,
         ]);
     })
