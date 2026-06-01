@@ -40,6 +40,8 @@ class AdminController extends Controller
         if ($request->filled('status')) {
             if ($request->status === 'terjual') {
                 $query->where('is_sold', true);
+            } elseif ($request->status === 'saved_for_verification') {
+                $query->where('is_sold', false)->whereIn('stock_status', ['saved_for_verification', 'saved_ready_notified']);
             } else {
                 $query->where('is_sold', false)->where('stock_status', $request->status);
             }
@@ -257,6 +259,66 @@ class AdminController extends Controller
         $stock = StockUnit::findOrFail($id);
         $stock->delete();
         return redirect()->route('admin.stock.index')->with('success', 'Stok berhasil dihapus.');
+    }
+
+    public function bulkMoveStock(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|string',
+            'product_id' => 'nullable|exists:products,id',
+            'stock_status' => 'required|in:ready,awaiting_benefits,saved_for_verification',
+        ]);
+
+        $ids = json_decode($request->ids, true);
+        if (!is_array($ids) || empty($ids)) {
+            return back()->with('error', 'Tidak ada stok terpilih.');
+        }
+
+        $stockUnits = StockUnit::whereIn('id', $ids)->where('is_sold', false)->get();
+        if ($stockUnits->isEmpty()) {
+            return back()->with('error', 'Stok terpilih tidak ditemukan atau sudah terjual.');
+        }
+
+        $awaitingHours = (int)(\App\Models\BotSetting::where('key', 'github_pack.awaiting_hours')->value('value') ?? 78);
+        $saveHours = (int)(\App\Models\BotSetting::where('key', 'github_pack.save_hours')->value('value') ?? 80);
+
+        $count = 0;
+        foreach ($stockUnits as $stock) {
+            if ($request->filled('product_id')) {
+                $stock->product_id = $request->product_id;
+            }
+            $stock->stock_status = $request->stock_status;
+            $stock->sold_order_id = null;
+
+            if ($request->stock_status === 'awaiting_benefits') {
+                $stock->available_at = now()->addHours($awaitingHours);
+            } elseif ($request->stock_status === 'saved_for_verification') {
+                $stock->available_at = now()->addHours($saveHours);
+            } else {
+                $stock->available_at = null;
+            }
+
+            $stock->save();
+            $count++;
+        }
+
+        return back()->with('success', "$count status/produk stok berhasil dipindahkan secara masal.");
+    }
+
+    public function bulkDestroyStock(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|string',
+        ]);
+
+        $ids = json_decode($request->ids, true);
+        if (!is_array($ids) || empty($ids)) {
+            return back()->with('error', 'Tidak ada stok terpilih.');
+        }
+
+        $count = StockUnit::whereIn('id', $ids)->where('is_sold', false)->delete();
+
+        return back()->with('success', "$count stok berhasil dihapus secara masal.");
     }
 
     // --- CRUD Orders ---

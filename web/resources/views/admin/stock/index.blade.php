@@ -82,11 +82,34 @@
     </div>
     <div class="card-body p-0 border-top">
         @if($stockUnits->count() > 0)
+        @if(request('status') !== 'terjual')
+        {{-- Bulk Action Bar --}}
+        <div id="bulk-actions-bar" class="bg-light border-bottom p-3 d-none align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-2">
+                <span class="fw-bold text-dark"><span id="selected-count">0</span> akun terpilih</span>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#bulkMoveModal">
+                    <i class="fas fa-exchange-alt me-1"></i>Ubah Status Masal
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#bulkDeleteModal">
+                    <i class="fas fa-trash-alt me-1"></i>Hapus Masal
+                </button>
+            </div>
+        </div>
+        @endif
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
                 <thead>
                     <tr class="text-secondary small border-bottom">
+                        @if(request('status') !== 'terjual')
+                        <th class="px-4 py-3 border-0" style="width: 40px;">
+                            <input type="checkbox" id="select-all-stocks" class="form-check-input">
+                        </th>
+                        <th class="py-3 border-0">ID</th>
+                        @else
                         <th class="px-4 py-3 border-0">ID</th>
+                        @endif
                         <th class="py-3 border-0">Produk</th>
                         <th class="py-3 border-0">Username</th>
                         @if(request('status') === 'terjual')
@@ -116,7 +139,14 @@
                         }
                     @endphp
                     <tr>
+                        @if(request('status') !== 'terjual')
+                        <td class="px-4">
+                            <input type="checkbox" value="{{ $unit->id }}" class="form-check-input stock-checkbox" {{ $unit->is_sold ? 'disabled' : '' }}>
+                        </td>
+                        <td class="fw-bold text-muted">#{{ $unit->id }}</td>
+                        @else
                         <td class="px-4 fw-bold text-muted">#{{ $unit->id }}</td>
+                        @endif
                         <td>{{ Str::limit($unit->product->name ?? 'Unknown', 25) }}</td>
                         <td class="fw-medium text-dark">{{ Str::limit($extractedUsername, 20) }}</td>
                         
@@ -152,6 +182,7 @@
                                         'ready' => ['bg' => 'success-subtle', 'text' => 'success', 'label' => 'Ready'],
                                         'awaiting_benefits' => ['bg' => 'warning-subtle', 'text' => 'warning', 'label' => 'Awaiting Benefits'],
                                         'saved_for_verification' => ['bg' => 'info-subtle', 'text' => 'info', 'label' => 'Simpan Akun'],
+                                        'saved_ready_notified' => ['bg' => 'primary-subtle', 'text' => 'primary', 'label' => 'Siap Diajukan'],
                                         default => ['bg' => 'secondary-subtle', 'text' => 'secondary', 'label' => $unit->stock_status]
                                     };
                                 @endphp
@@ -176,9 +207,13 @@
                                     $verifyAt = $unit->created_at->addHours((int)$saveHours);
                                 }
                             @endphp
-                            <span class="verification-countdown" data-timestamp="{{ $verifyAt->timestamp }}" data-id="{{ $unit->id }}">
-                                {{ $verifyAt->format('d M Y H:i') }}
-                            </span>
+                            @if($unit->stock_status === 'saved_ready_notified' || $verifyAt->isPast())
+                                <span class="text-success"><i class="fas fa-check-circle me-1"></i>Siap Diajukan</span>
+                            @else
+                                <span class="verification-countdown" data-timestamp="{{ $verifyAt->timestamp }}" data-id="{{ $unit->id }}">
+                                    {{ $verifyAt->format('d M Y H:i') }}
+                                </span>
+                            @endif
                         </td>
                         @else
                         <td class="text-secondary small">{{ $unit->created_at->format('d M Y') }}</td>
@@ -359,11 +394,137 @@
 </div>
 @endif
 @endforeach
+
+@if(request('status') !== 'terjual')
+{{-- Bulk Move Modal --}}
+<div class="modal fade" id="bulkMoveModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 16px; border: none;">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="fw-bold">Ubah Status Masal (<span class="bulk-selected-count">0</span> Akun)</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ route('admin.stock.bulkMove') }}" method="POST" id="bulk-move-form">
+                @csrf
+                <input type="hidden" name="ids" id="bulk-move-ids">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">Pindahkan ke Produk (Opsional)</label>
+                        <select name="product_id" class="form-select">
+                            <option value="">-- Pertahankan Produk Asli --</option>
+                            @php
+                                $allProducts = \App\Models\Product::where('is_suspended', false)->get();
+                            @endphp
+                            @foreach($allProducts as $p)
+                                <option value="{{ $p->id }}">{{ $p->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">Ubah Status Ke</label>
+                        <select name="stock_status" class="form-select" required>
+                            <option value="ready">Ready</option>
+                            <option value="awaiting_benefits">Awaiting Benefits</option>
+                            <option value="saved_for_verification">Simpan Akun</option>
+                        </select>
+                        <div class="form-text">Mengubah status massal akan menjadwal ulang masa karantina akun-akun tersebut sesuai pengaturan jam masing-masing status.</div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">Terapkan Masal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{{-- Bulk Delete Modal --}}
+<div class="modal fade" id="bulkDeleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content text-center" style="border-radius: 16px; border: none;">
+            <div class="modal-body p-4">
+                <i class="fas fa-trash-alt text-danger mb-3" style="font-size: 3rem;"></i>
+                <h5 class="fw-bold">Hapus Masal?</h5>
+                <p class="text-muted small">Anda akan menghapus <span class="bulk-selected-count">0</span> akun yang dipilih secara permanen.</p>
+                <div class="d-flex gap-2 justify-content-center mt-4">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
+                    <form action="{{ route('admin.stock.bulkDestroy') }}" method="POST" id="bulk-delete-form">
+                        @csrf
+                        <input type="hidden" name="ids" id="bulk-delete-ids">
+                        <button type="submit" class="btn btn-danger rounded-pill px-4">Ya, Hapus Masal</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
+@endforeach
 @endpush
 
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Bulk Action Logic
+        const selectAllCheckbox = document.getElementById('select-all-stocks');
+        const stockCheckboxes = document.querySelectorAll('.stock-checkbox');
+        const bulkActionBar = document.getElementById('bulk-actions-bar');
+        const selectedCountSpan = document.getElementById('selected-count');
+        const bulkSelectedCountSpans = document.querySelectorAll('.bulk-selected-count');
+        const bulkMoveIdsInput = document.getElementById('bulk-move-ids');
+        const bulkDeleteIdsInput = document.getElementById('bulk-delete-ids');
+
+        function updateBulkActions() {
+            const checkedBoxes = document.querySelectorAll('.stock-checkbox:checked');
+            const count = checkedBoxes.length;
+
+            if (count > 0) {
+                if (bulkActionBar) {
+                    bulkActionBar.classList.remove('d-none');
+                    bulkActionBar.classList.add('d-flex');
+                }
+                if (selectedCountSpan) selectedCountSpan.textContent = count;
+                bulkSelectedCountSpans.forEach(span => span.textContent = count);
+
+                const ids = Array.from(checkedBoxes).map(cb => cb.value);
+                const idsString = JSON.stringify(ids);
+                if (bulkMoveIdsInput) bulkMoveIdsInput.value = idsString;
+                if (bulkDeleteIdsInput) bulkDeleteIdsInput.value = idsString;
+            } else {
+                if (bulkActionBar) {
+                    bulkActionBar.classList.add('d-none');
+                    bulkActionBar.classList.remove('d-flex');
+                }
+                if (bulkMoveIdsInput) bulkMoveIdsInput.value = '';
+                if (bulkDeleteIdsInput) bulkDeleteIdsInput.value = '';
+            }
+        }
+
+        if (selectAllCheckbox) {
+            selectAllCheckbox.addEventListener('change', function() {
+                const isChecked = this.checked;
+                stockCheckboxes.forEach(cb => {
+                    if (!cb.disabled) {
+                        cb.checked = isChecked;
+                    }
+                });
+                updateBulkActions();
+            });
+        }
+
+        stockCheckboxes.forEach(cb => {
+            cb.addEventListener('change', function() {
+                if (selectAllCheckbox) {
+                    const allUnsoldCount = document.querySelectorAll('.stock-checkbox:not(:disabled)').length;
+                    const checkedUnsoldCount = document.querySelectorAll('.stock-checkbox:checked:not(:disabled)').length;
+                    selectAllCheckbox.checked = (allUnsoldCount === checkedUnsoldCount && allUnsoldCount > 0);
+                }
+                updateBulkActions();
+            });
+        });
+
+        // Countdown Logic
         const countdownElements = document.querySelectorAll('.verification-countdown');
         let notificationShown = false; // Prevents spamming toasts if multiple accounts are ready
         
