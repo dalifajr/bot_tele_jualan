@@ -33,8 +33,18 @@
         <div class="col-12 col-md-6 col-xl-4">
             <div class="card border-0 shadow-sm overflow-hidden h-100" style="border-radius: 20px;">
                 <div class="bg-primary p-3 text-white d-flex justify-content-between align-items-center">
-                    <h6 class="fw-bold m-0 text-truncate" style="max-width: 70%;">{{ $product->name }}</h6>
-                    <span class="badge bg-white text-primary rounded-pill fw-bold">Rp {{ number_format($product->price, 0, ',', '.') }}</span>
+                    <div class="text-truncate" style="max-width: 60%;">
+                        <h6 class="fw-bold m-0 text-truncate" title="{{ $product->name }}">{{ $product->name }}</h6>
+                    </div>
+                    <div class="d-flex align-items-center gap-1">
+                        <span class="badge bg-white text-primary rounded-pill fw-bold">Rp {{ number_format($product->price, 0, ',', '.') }}</span>
+                        <button class="btn btn-sm btn-light text-primary rounded-circle p-0" data-bs-toggle="modal" data-bs-target="#editProductModal{{ $product->id }}" title="Edit Info Produk" style="width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-edit" style="font-size: 0.7rem;"></i>
+                        </button>
+                        <button class="btn btn-sm btn-light text-danger rounded-circle p-0" data-bs-toggle="modal" data-bs-target="#deleteProductModal{{ $product->id }}" title="Hapus Produk" style="width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-trash-alt" style="font-size: 0.7rem;"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="card-body p-4 d-flex flex-column justify-content-between">
                     <div class="mb-3">
@@ -210,6 +220,66 @@
                     <button type="submit" class="btn btn-primary rounded-pill px-4">Tugaskan Worker</button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+@endforeach
+
+@foreach($myProducts as $product)
+{{-- Edit Product Modal --}}
+<div class="modal fade" id="editProductModal{{ $product->id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 16px; border: none;">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="fw-bold">Edit Informasi Produk</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ route('seller.products.update', $product->id) }}" method="POST">
+                @csrf
+                @method('PUT')
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">Nama Produk</label>
+                        <input type="text" name="name" class="form-control" value="{{ $product->name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">Harga Produk (Rupiah)</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light text-muted">Rp</span>
+                            <input type="number" name="price" class="form-control" value="{{ $product->price }}" min="0" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">Deskripsi Produk (Opsional)</label>
+                        <textarea name="description" class="form-control" rows="3">{{ $product->description }}</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">Simpan Perubahan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{{-- Delete Product Modal --}}
+<div class="modal fade" id="deleteProductModal{{ $product->id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content text-center" style="border-radius: 16px; border: none;">
+            <div class="modal-body p-4">
+                <i class="fas fa-exclamation-triangle text-danger mb-3" style="font-size: 3rem;"></i>
+                <h5 class="fw-bold">Hapus Produk?</h5>
+                <p class="text-muted small">Menghapus produk ini akan menghapus semua stok terkait milik Anda secara permanen. Lanjutkan?</p>
+                <div class="d-flex gap-2 justify-content-center mt-4">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
+                    <form action="{{ route('seller.products.destroy', $product->id) }}" method="POST" class="m-0">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="btn btn-danger rounded-pill px-4">Ya, Hapus</button>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 </div>

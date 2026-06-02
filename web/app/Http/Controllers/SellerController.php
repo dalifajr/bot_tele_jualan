@@ -369,6 +369,34 @@ class SellerController extends Controller
         return redirect()->back()->with('success', 'Worker berhasil dihapus dari produk Anda, dan kepemilikan stok miliknya telah dialihkan kepada Anda.');
     }
 
+    public function updateProduct(Request $request, $id)
+    {
+        $product = Product::where('creator_id', Auth::id())->findOrFail($id);
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'price' => 'required|integer|min:0',
+            'description' => 'nullable|string',
+        ]);
+
+        $product->update([
+            'name' => $request->name,
+            'price' => $request->price,
+            'description' => $request->description ?? '',
+        ]);
+
+        return redirect()->route('seller.products.index')->with('success', 'Informasi produk berhasil diperbarui.');
+    }
+
+    public function destroyProduct($id)
+    {
+        $product = Product::where('creator_id', Auth::id())->findOrFail($id);
+
+        $product->delete();
+
+        return redirect()->route('seller.products.index')->with('success', 'Produk berhasil dihapus.');
+    }
+
     // ==========================================
     // FINANCE & WITHDRAWALS
     // ==========================================

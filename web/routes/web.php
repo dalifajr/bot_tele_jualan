@@ -150,6 +150,8 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
 
         Route::get('/products', [\App\Http\Controllers\SellerController::class, 'products'])->name('products.index');
         Route::post('/products', [\App\Http\Controllers\SellerController::class, 'storeProduct'])->name('products.store');
+        Route::put('/products/{id}', [\App\Http\Controllers\SellerController::class, 'updateProduct'])->name('products.update');
+        Route::delete('/products/{id}', [\App\Http\Controllers\SellerController::class, 'destroyProduct'])->name('products.destroy');
         Route::post('/products/{id}/workers', [\App\Http\Controllers\SellerController::class, 'addWorker'])->name('products.workers.store');
         Route::delete('/products/{id}/workers/{userId}', [\App\Http\Controllers\SellerController::class, 'removeWorker'])->name('products.workers.destroy');
         
