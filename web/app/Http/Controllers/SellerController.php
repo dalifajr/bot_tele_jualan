@@ -392,11 +392,20 @@ class SellerController extends Controller
     {
         $product = Product::where('creator_id', Auth::id())->findOrFail($id);
 
+        // Check if there is still remaining stock (unsold stock units)
+        $hasRemainingStock = \App\Models\StockUnit::where('product_id', $product->id)
+            ->where('is_sold', false)
+            ->exists();
+
+        if ($hasRemainingStock) {
+            return redirect()->route('seller.products.index')->with('swal_error', 'Gagal menghapus produk! Masih terdapat sisa stok aktif di dalamnya. Harap kosongkan atau pindahkan stok terlebih dahulu sebelum menghapus produk.');
+        }
+
         try {
             $product->delete(); // Cascades to stock units automatically
             return redirect()->route('seller.products.index')->with('success', 'Produk berhasil dihapus.');
         } catch (\Exception $e) {
-            return redirect()->route('seller.products.index')->with('error', 'Produk tidak dapat dihapus karena sudah memiliki riwayat transaksi/pesanan. Silakan hubungi admin untuk menonaktifkan produk ini.');
+            return redirect()->route('seller.products.index')->with('swal_error', 'Produk tidak dapat dihapus karena sudah memiliki riwayat transaksi/penjualan. Silakan hubungi admin jika ingin menonaktifkan produk ini.');
         }
     }
 

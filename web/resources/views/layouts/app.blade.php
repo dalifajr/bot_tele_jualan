@@ -319,6 +319,40 @@
 
 @stack('scripts')
 
+{{-- Global SweetAlert2 Session Flash --}}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        @if(session('swal_error'))
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal',
+                text: "{{ session('swal_error') }}",
+                confirmButtonText: 'Tutup',
+                confirmButtonColor: '#dc3545',
+                customClass: {
+                    popup: 'rounded-4 border-0 shadow-lg',
+                    confirmButton: 'btn btn-danger rounded-pill px-4'
+                },
+                buttonsStyling: false
+            });
+        @endif
+        @if(session('swal_success'))
+            Swal.fire({
+                icon: 'success',
+                title: 'Berhasil',
+                text: "{{ session('swal_success') }}",
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#198754',
+                customClass: {
+                    popup: 'rounded-4 border-0 shadow-lg',
+                    confirmButton: 'btn btn-success rounded-pill px-4'
+                },
+                buttonsStyling: false
+            });
+        @endif
+    });
+</script>
+
 {{-- Modals Container --}}
 <script>
     function markNotificationsRead() {

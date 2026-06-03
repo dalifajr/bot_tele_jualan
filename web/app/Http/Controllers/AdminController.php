@@ -167,11 +167,49 @@ class AdminController extends Controller
     {
         $product = \App\Models\Product::findOrFail($id);
         
+        // Jika produk adalah milik seller (creator_id tidak null)
+        if ($product->creator_id !== null) {
+            try {
+                \Illuminate\Support\Facades\DB::beginTransaction();
+                
+                $seller = \App\Models\User::find($product->creator_id);
+                $sellerName = $seller ? ($seller->full_name ?? $seller->username) : 'Seller (ID: ' . $product->creator_id . ')';
+                
+                // Ambil alih semua stok unit:
+                // upload_by_id dipertahankan sebagai uploader asli
+                // seller_id dipindahkan ke null (Admin Utama)
+                $stockUnits = \App\Models\StockUnit::where('product_id', $product->id)->get();
+                foreach ($stockUnits as $unit) {
+                    $unit->uploaded_by_id = $unit->uploaded_by_id ?? $unit->seller_id;
+                    $unit->seller_id = null;
+                    $unit->save();
+                }
+                
+                // Tambahkan catatan di deskripsi produk jika belum ada catatan sebelumnya
+                $note = "\n\n[Catatan: Produk ini sebelumnya dikelola oleh " . $sellerName . "]";
+                if (strpos($product->description ?? '', '[Catatan:') === false) {
+                    $product->description = ($product->description ?? '') . $note;
+                }
+                
+                // Pindahkan kepemilikan produk ke Admin Utama (creator_id = null)
+                $product->creator_id = null;
+                $product->save();
+                
+                \Illuminate\Support\Facades\DB::commit();
+                
+                return redirect()->back()->with('success', 'Produk buatan seller dan sisa stoknya berhasil diambil alih oleh Admin Utama.');
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\DB::rollBack();
+                return redirect()->back()->with('error', 'Gagal mengambil alih produk seller: ' . $e->getMessage());
+            }
+        }
+        
+        // Jika produk milik admin utama, coba hapus secara fisik
         try {
             $product->delete(); // Cascades to stock units automatically
-            return redirect()->back()->with('success', 'Produk berhasil dihapus.');
+            return redirect()->back()->with('success', 'Produk berhasil dihapus secara permanen.');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Produk tidak dapat dihapus karena sudah memiliki riwayat transaksi/pesanan. Silakan gunakan fitur Suspend sebagai gantinya.');
+            return redirect()->back()->with('error', 'Produk tidak dapat dihapus permanen karena sudah memiliki riwayat transaksi/pesanan. Silakan gunakan fitur Suspend sebagai gantinya.');
         }
     }
 
