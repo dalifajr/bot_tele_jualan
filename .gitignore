@@ -10,3 +10,4 @@ __pycache__/
 data/
 ops/backups/*.tar.gz
 .vscode/
+github_accounts.txt

@@ -166,9 +166,13 @@ class AdminController extends Controller
     public function destroyProduct($id)
     {
         $product = \App\Models\Product::findOrFail($id);
-        $product->delete(); // Cascades to stock theoretically
-
-        return redirect()->back()->with('success', 'Produk berhasil dihapus.');
+        
+        try {
+            $product->delete(); // Cascades to stock units automatically
+            return redirect()->back()->with('success', 'Produk berhasil dihapus.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Produk tidak dapat dihapus karena sudah memiliki riwayat transaksi/pesanan. Silakan gunakan fitur Suspend sebagai gantinya.');
+        }
     }
 
     public function manageProduct($id)

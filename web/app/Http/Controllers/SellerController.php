@@ -392,9 +392,12 @@ class SellerController extends Controller
     {
         $product = Product::where('creator_id', Auth::id())->findOrFail($id);
 
-        $product->delete();
-
-        return redirect()->route('seller.products.index')->with('success', 'Produk berhasil dihapus.');
+        try {
+            $product->delete(); // Cascades to stock units automatically
+            return redirect()->route('seller.products.index')->with('success', 'Produk berhasil dihapus.');
+        } catch (\Exception $e) {
+            return redirect()->route('seller.products.index')->with('error', 'Produk tidak dapat dihapus karena sudah memiliki riwayat transaksi/pesanan. Silakan hubungi admin untuk menonaktifkan produk ini.');
+        }
     }
 
     // ==========================================
