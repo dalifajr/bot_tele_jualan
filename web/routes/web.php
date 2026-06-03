@@ -162,6 +162,9 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         Route::post('/bank-accounts', [\App\Http\Controllers\SellerController::class, 'storeBankAccount'])->name('bank-accounts.store');
         Route::delete('/bank-accounts/{id}', [\App\Http\Controllers\SellerController::class, 'destroyBankAccount'])->name('bank-accounts.destroy');
 
+        Route::get('/orders', [\App\Http\Controllers\SellerController::class, 'orders'])->name('orders.index');
+        Route::post('/orders/{id}/cancel', [\App\Http\Controllers\SellerController::class, 'cancelOrder'])->name('orders.cancel');
+
         Route::get('/settings', [\App\Http\Controllers\SellerController::class, 'settings'])->name('settings.index');
         Route::post('/settings', [\App\Http\Controllers\SellerController::class, 'updateSettings'])->name('settings.update');
     });

@@ -6,6 +6,7 @@ use App\Models\Product;
 use App\Models\StockUnit;
 use App\Models\WithdrawalRequest;
 use App\Models\User;
+use App\Models\Order;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -495,6 +496,42 @@ class SellerController extends Controller
         $bankAccount->delete();
 
         return redirect()->route('seller.bank-accounts.index')->with('success', 'Rekening bank berhasil dihapus.');
+    }
+
+    // ==========================================
+    // ORDER MANAGEMENT
+    // ==========================================
+    public function orders(Request $request)
+    {
+        $sellerId = Auth::id();
+        $query = Order::with(['customer', 'items.product', 'stockUnits'])
+            ->whereHas('items.product', function($q) use ($sellerId) {
+                $q->where('creator_id', $sellerId);
+            })
+            ->orderBy('created_at', 'desc');
+
+        if ($request->has('status') && $request->status !== '') {
+            $query->where('status', $request->status);
+        }
+
+        $orders = $query->paginate(10);
+        $status = $request->status;
+
+        return view('seller.orders.index', compact('orders', 'status'));
+    }
+
+    public function cancelOrder($id, \App\Services\OrderService $orderService)
+    {
+        $order = Order::whereHas('items.product', function($q) {
+            $q->where('creator_id', Auth::id());
+        })->findOrFail($id);
+
+        try {
+            $orderService->cancelOrder($order, 'cancelled_by_seller', Auth::id());
+            return redirect()->back()->with('success', 'Pesanan berhasil dibatalkan.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal membatalkan pesanan: ' . $e->getMessage());
+        }
     }
 
     // ==========================================

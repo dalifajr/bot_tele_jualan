@@ -259,6 +259,9 @@
                 <a href="{{ route('seller.stock.index') }}" class="menu-item {{ request()->routeIs('seller.stock.*') ? 'active' : '' }}">
                     <i class="fas fa-cubes"></i> Stok Akun
                 </a>
+                <a href="{{ route('seller.orders.index') }}" class="menu-item {{ request()->routeIs('seller.orders.*') ? 'active' : '' }}">
+                    <i class="fas fa-receipt"></i> Kelola Pesanan
+                </a>
                 <a href="{{ route('seller.finance.index') }}" class="menu-item {{ request()->routeIs('seller.finance.*') ? 'active' : '' }}">
                     <i class="fas fa-wallet"></i> Dompet & Keuangan
                 </a>
