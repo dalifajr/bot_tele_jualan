@@ -210,9 +210,9 @@
                         <td class="fw-medium text-dark">{{ Str::limit($extractedUsername, 20) }}</td>
                         <td>
                             @if($unit->github_joined_at)
-                                <span class="text-dark fw-semibold" title="Berdasarkan check GitHub">{{ \Carbon\Carbon::parse($unit->github_joined_at)->translatedFormat('d M Y') }}</span>
+                                <span class="text-dark fw-semibold" title="Berdasarkan check GitHub">{{ \Carbon\Carbon::parse($unit->github_joined_at)->diffInDays(now()) }} hari</span>
                             @else
-                                <span class="text-muted small" title="Tanggal input stok">{{ $unit->created_at->translatedFormat('d M Y') }}</span>
+                                <span class="text-muted small" title="Tanggal input stok">{{ $unit->created_at->diffInDays(now()) }} hari</span>
                             @endif
                         </td>
                         

@@ -242,9 +242,10 @@
             const date = new Date(isoString);
             if (isNaN(date.getTime())) return isoString;
             
-            // Format to "04 Jun 2026"
-            const options = { day: 'numeric', month: 'short', year: 'numeric' };
-            return date.toLocaleDateString('id-ID', options);
+            const now = new Date();
+            const diffTime = Math.abs(now - date);
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            return `${diffDays} hari`;
         } catch (e) {
             return isoString;
         }
