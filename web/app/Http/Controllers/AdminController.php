@@ -973,13 +973,27 @@ class AdminController extends Controller
             ->take(5)
             ->get();
 
+        // Calculate last 7 days sales trends
+        $chartLabels = [];
+        $chartData = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $dateObj = now()->subDays($i);
+            $date = $dateObj->toDateString();
+            $chartLabels[] = $dateObj->format('d M');
+            $chartData[] = \App\Models\Order::where('status', 'delivered')
+                ->whereDate('delivered_at', $date)
+                ->sum('total_amount');
+        }
+
         return view('admin.reports.index', compact(
             'totalSales',
             'totalOrders',
             'deliveredOrders',
             'cancelledOrders',
             'totalUsers',
-            'latestOrders'
+            'latestOrders',
+            'chartLabels',
+            'chartData'
         ));
     }
 

@@ -6,53 +6,109 @@
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h4 class="fw-bold mb-1">Laporan Operasional</h4>
-        <p class="text-muted mb-0">Ringkasan aktivitas dan pendapatan</p>
+        <h1 class="h4 fw-bold mb-1 text-body">Laporan Operasional</h1>
+        <p class="text-muted mb-0">Ringkasan aktivitas, tren pendapatan, dan performa penjualan</p>
+    </div>
+</div>
+
+{{-- Stat Cards --}}
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body p-4 d-flex align-items-center">
+                <div class="stat-icon bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px; font-size: 1.5rem;">
+                    <i class="fas fa-wallet"></i>
+                </div>
+                <div>
+                    <h6 class="text-muted mb-1 small fw-bold">Total Pendapatan</h6>
+                    <h4 class="fw-bold mb-0 text-primary">Rp {{ number_format($totalSales, 0, ',', '.') }}</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body p-4 d-flex align-items-center">
+                <div class="stat-icon bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px; font-size: 1.5rem;">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div>
+                    <h6 class="text-muted mb-1 small fw-bold">Pesanan Sukses</h6>
+                    <h4 class="fw-bold mb-0 text-success">{{ number_format($deliveredOrders) }}</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body p-4 d-flex align-items-center">
+                <div class="stat-icon bg-danger-subtle text-danger rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px; font-size: 1.5rem;">
+                    <i class="fas fa-times-circle"></i>
+                </div>
+                <div>
+                    <h6 class="text-muted mb-1 small fw-bold">Pesanan Batal/Expired</h6>
+                    <h4 class="fw-bold mb-0 text-danger">{{ number_format($cancelledOrders) }}</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body p-4 d-flex align-items-center">
+                <div class="stat-icon bg-info-subtle text-info rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px; font-size: 1.5rem;">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div>
+                    <h6 class="text-muted mb-1 small fw-bold">Total Pelanggan</h6>
+                    <h4 class="fw-bold mb-0 text-info">{{ number_format($totalUsers) }}</h4>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
 <div class="row g-4 mb-4">
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm" style="border-radius: 16px; background: linear-gradient(135deg, #primary, #blue);">
-            <div class="card-body p-4 text-center">
-                <i class="fas fa-wallet fs-1 text-primary mb-3"></i>
-                <h6 class="fw-bold text-muted mb-1">Total Pendapatan</h6>
-                <h3 class="fw-bold mb-0">Rp {{ number_format($totalSales, 0, ',', '.') }}</h3>
+    {{-- Chart --}}
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-transparent border-0 pt-4 px-4">
+                <h5 class="fw-bold mb-1 text-body"><i class="fas fa-chart-line text-primary me-2"></i>Tren Pendapatan Harian</h5>
+                <p class="text-muted small mb-0">Statistik omzet penjualan dalam 7 hari terakhir</p>
+            </div>
+            <div class="card-body px-4 pb-4">
+                <div id="salesChart" style="min-height: 350px;"></div>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm" style="border-radius: 16px;">
-            <div class="card-body p-4 text-center">
-                <i class="fas fa-shopping-cart fs-1 text-success mb-3"></i>
-                <h6 class="fw-bold text-muted mb-1">Pesanan Sukses</h6>
-                <h3 class="fw-bold mb-0">{{ number_format($deliveredOrders) }}</h3>
+
+    {{-- Order Completion Rate --}}
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-transparent border-0 pt-4 px-4">
+                <h5 class="fw-bold mb-1 text-body"><i class="fas fa-chart-pie text-success me-2"></i>Rasio Status Order</h5>
+                <p class="text-muted small mb-0">Persentase sukses vs batal/expired</p>
             </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm" style="border-radius: 16px;">
-            <div class="card-body p-4 text-center">
-                <i class="fas fa-times-circle fs-1 text-danger mb-3"></i>
-                <h6 class="fw-bold text-muted mb-1">Pesanan Batal</h6>
-                <h3 class="fw-bold mb-0">{{ number_format($cancelledOrders) }}</h3>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm" style="border-radius: 16px;">
-            <div class="card-body p-4 text-center">
-                <i class="fas fa-users fs-1 text-info mb-3"></i>
-                <h6 class="fw-bold text-muted mb-1">Total Pelanggan</h6>
-                <h3 class="fw-bold mb-0">{{ number_format($totalUsers) }}</h3>
+            <div class="card-body d-flex flex-column justify-content-center align-items-center px-4 pb-4">
+                <div id="completionChart" style="min-height: 250px;"></div>
+                <div class="d-flex justify-content-around w-100 mt-3 border-top pt-3">
+                    <div class="text-center">
+                        <span class="d-block text-muted small">Sukses</span>
+                        <strong class="text-success">{{ $totalOrders > 0 ? round(($deliveredOrders / $totalOrders) * 100) : 0 }}%</strong>
+                    </div>
+                    <div class="text-center">
+                        <span class="d-block text-muted small">Batal</span>
+                        <strong class="text-danger">{{ $totalOrders > 0 ? round(($cancelledOrders / $totalOrders) * 100) : 0 }}%</strong>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 16px;">
-    <div class="card-header bg-white py-3">
-        <h6 class="fw-bold mb-0"><i class="fas fa-clock text-primary me-2"></i>5 Pesanan Sukses Terakhir</h6>
+{{-- Recent Orders --}}
+<div class="card border-0 shadow-sm overflow-hidden mb-4">
+    <div class="card-header bg-transparent border-0 pt-4 px-4">
+        <h5 class="fw-bold mb-0 text-body"><i class="fas fa-history text-secondary me-2"></i>5 Pesanan Sukses Terakhir</h5>
     </div>
     <div class="card-body p-0">
         @if($latestOrders->count() > 0)
@@ -69,8 +125,13 @@
                 <tbody>
                     @foreach($latestOrders as $order)
                     <tr>
-                        <td class="px-4 fw-bold text-muted">{{ $order->order_ref }}</td>
-                        <td class="fw-bold text-primary">{{ $order->customer->full_name ?? 'Unknown' }}</td>
+                        <td class="px-4 fw-bold text-primary">{{ $order->order_ref }}</td>
+                        <td>
+                            <div class="d-flex flex-column">
+                                <span class="fw-bold">{{ $order->customer->full_name ?? 'Unknown' }}</span>
+                                <span class="small text-muted">{{ $order->customer->username ?? '' }}</span>
+                            </div>
+                        </td>
                         <td class="text-success fw-bold">Rp {{ number_format($order->total_amount, 0, ',', '.') }}</td>
                         <td class="text-secondary small">{{ $order->delivered_at ? $order->delivered_at->format('d M Y H:i') : '-' }}</td>
                     </tr>
@@ -80,9 +141,138 @@
         </div>
         @else
         <div class="text-center py-5">
+            <i class="fas fa-receipt text-muted mb-3" style="font-size: 3rem;"></i>
             <p class="text-muted mb-0">Belum ada pesanan sukses.</p>
         </div>
         @endif
     </div>
 </div>
+
+@push('scripts')
+{{-- Load ApexCharts --}}
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Theme config
+        const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+        const chartTheme = {
+            mode: isDark ? 'dark' : 'light'
+        };
+
+        // 1. Sales Trend Line/Area Chart
+        const salesOptions = {
+            series: [{
+                name: 'Pendapatan (Rp)',
+                data: @json($chartData)
+            }],
+            chart: {
+                height: 350,
+                type: 'area',
+                toolbar: { show: false },
+                zoom: { enabled: false },
+                background: 'transparent'
+            },
+            theme: chartTheme,
+            colors: ['#0d6efd'],
+            dataLabels: { enabled: false },
+            stroke: { curve: 'smooth', width: 3 },
+            fill: {
+                type: 'gradient',
+                gradient: {
+                    shadeIntensity: 1,
+                    opacityFrom: 0.45,
+                    opacityTo: 0.05,
+                    stops: [0, 90, 100]
+                }
+            },
+            grid: {
+                borderColor: isDark ? '#2d3748' : '#e2e8f0',
+                strokeDashArray: 4
+            },
+            xaxis: {
+                categories: @json($chartLabels),
+                labels: {
+                    style: { colors: isDark ? '#a0aec0' : '#4a5568' }
+                }
+            },
+            yaxis: {
+                labels: {
+                    formatter: function (value) {
+                        return "Rp " + value.toLocaleString('id-ID');
+                    },
+                    style: { colors: isDark ? '#a0aec0' : '#4a5568' }
+                }
+            },
+            tooltip: {
+                y: {
+                    formatter: function (val) {
+                        return "Rp " + val.toLocaleString('id-ID');
+                    }
+                }
+            }
+        };
+
+        const salesChart = new ApexCharts(document.querySelector("#salesChart"), salesOptions);
+        salesChart.render();
+
+        // 2. Status Distribution Donut Chart
+        const completionOptions = {
+            series: [{{ $deliveredOrders }}, {{ $cancelledOrders }}],
+            chart: {
+                type: 'donut',
+                height: 250,
+                background: 'transparent'
+            },
+            labels: ['Sukses', 'Batal/Expired'],
+            colors: ['#198754', '#dc3545'],
+            theme: chartTheme,
+            legend: { show: false },
+            dataLabels: { enabled: false },
+            plotOptions: {
+                pie: {
+                    donut: {
+                        size: '75%',
+                        labels: {
+                            show: true,
+                            total: {
+                                show: true,
+                                label: 'Total Pesanan',
+                                color: isDark ? '#a0aec0' : '#4a5568',
+                                formatter: function (w) {
+                                    return w.globals.seriesTotals.reduce((a, b) => a + b, 0);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        const completionChart = new ApexCharts(document.querySelector("#completionChart"), completionOptions);
+        completionChart.render();
+
+        // Respond to theme toggle events
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'data-bs-theme') {
+                    const newTheme = document.documentElement.getAttribute('data-bs-theme');
+                    const isNewDark = newTheme === 'dark';
+                    
+                    salesChart.updateOptions({
+                        theme: { mode: newTheme },
+                        grid: { borderColor: isNewDark ? '#2d3748' : '#e2e8f0' },
+                        xaxis: { labels: { style: { colors: isNewDark ? '#a0aec0' : '#4a5568' } } },
+                        yaxis: { labels: { style: { colors: isNewDark ? '#a0aec0' : '#4a5568' } } }
+                    });
+                    
+                    completionChart.updateOptions({
+                        theme: { mode: newTheme }
+                    });
+                }
+            });
+        });
+        observer.observe(document.documentElement, { attributes: true });
+    });
+</script>
+@endpush
 @endsection
