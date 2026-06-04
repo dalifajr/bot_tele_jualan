@@ -69,4 +69,46 @@ class GithubCheckerRouteTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('GitHub Live Checker');
     }
+
+    /**
+     * Admin user can access batch page.
+     */
+    public function test_admin_can_access_batch_page(): void
+    {
+        $batch = GithubCheckBatch::create([
+            'admin_id' => $this->admin->id,
+            'total_accounts' => 1,
+            'checked_count' => 0,
+            'status' => 'running',
+            'started_at' => now(),
+        ]);
+
+        $response = $this->actingAs($this->admin)
+            ->get(route('admin.tools.github-checker.batch', $batch->id));
+
+        $response->assertStatus(200);
+        $response->assertSee('Batch #' . $batch->id);
+    }
+
+    /**
+     * Admin user can export batch to Excel (xlsx format).
+     */
+    public function test_admin_can_export_batch_xlsx(): void
+    {
+        $batch = GithubCheckBatch::create([
+            'admin_id' => $this->admin->id,
+            'total_accounts' => 1,
+            'checked_count' => 1,
+            'status' => 'completed',
+            'started_at' => now(),
+            'completed_at' => now(),
+        ]);
+
+        $response = $this->actingAs($this->admin)
+            ->get(route('admin.tools.github-checker.export', $batch->id));
+
+        $response->assertStatus(200);
+        $this->assertStringContainsString('github_check_batch_' . $batch->id, $response->headers->get('Content-Disposition'));
+        $this->assertStringContainsString('.xlsx', $response->headers->get('Content-Disposition'));
+    }
 }

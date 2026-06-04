@@ -11,6 +11,11 @@ use App\Services\GithubCheckerService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 
 class GithubCheckerController extends Controller
 {
@@ -49,6 +54,24 @@ class GithubCheckerController extends Controller
     }
 
     /**
+     * Show batch progress and detail.
+     */
+    public function showBatch($batchId)
+    {
+        $batch = GithubCheckBatch::findOrFail($batchId);
+        $delay = session("github_batch_{$batchId}_delay", 2);
+
+        $usernames = session("github_batch_{$batchId}_usernames");
+        if (!$usernames) {
+            $usernames = $batch->results->pluck('username')->toArray();
+        }
+
+        $stockMap = session("github_batch_{$batchId}_stock_map", []);
+
+        return view('admin.tools.github-checker.batch', compact('batch', 'delay', 'usernames', 'stockMap'));
+    }
+
+    /**
      * Validate and store GitHub cookie in session.
      */
     public function setCookie(Request $request)
@@ -82,6 +105,7 @@ class GithubCheckerController extends Controller
         $request->validate([
             'usernames' => 'required|string',
             'delay' => 'nullable|integer|min:1|max:10',
+            'stock_map' => 'nullable|array',
         ]);
 
         $cookie = session('github_cookie');
@@ -114,12 +138,14 @@ class GithubCheckerController extends Controller
         // Store usernames in session for this batch (to process one by one via AJAX)
         session(["github_batch_{$batch->id}_usernames" => $usernames]);
         session(["github_batch_{$batch->id}_delay" => $request->input('delay', 2)]);
+        session(["github_batch_{$batch->id}_stock_map" => $request->input('stock_map', [])]);
 
         return response()->json([
             'success' => true,
             'batch_id' => $batch->id,
             'total' => count($usernames),
             'usernames' => $usernames,
+            'redirect_url' => route('admin.tools.github-checker.batch', $batch->id),
             'message' => "Batch #{$batch->id} dibuat. Memulai pengecekan " . count($usernames) . " akun...",
         ]);
     }
@@ -235,8 +261,7 @@ class GithubCheckerController extends Controller
     public function export(Request $request, $batchId)
     {
         $batch = GithubCheckBatch::with('results')->findOrFail($batchId);
-
-        $filterStatus = $request->input('status'); // optional: filter by status
+        $filterStatus = $request->input('status');
 
         $results = $batch->results;
         if ($filterStatus && $filterStatus !== 'all') {
@@ -244,44 +269,139 @@ class GithubCheckerController extends Controller
         }
 
         $statusLabels = [
-            'approved' => 'APPROVED (PRO)',
-            'not_approved' => 'BELUM DI-APPROVE / REVOKED',
-            'suspended' => 'TIDAK DITEMUKAN / SUSPEN',
-            'error' => 'ERROR',
+            'approved' => '✅ APPROVED',
+            'not_approved' => '⚠️ REVOKED',
+            'suspended' => '❌ SUSPENDED',
+            'error' => '🔄 ERROR',
         ];
 
-        // Generate CSV with BOM for Excel compatibility
+        // Create spreadsheet
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Batch #' . $batchId);
+
+        // Show grid lines explicitly
+        $sheet->setShowGridlines(true);
+
+        // Header style
+        $headerStyle = [
+            'font' => [
+                'bold' => true,
+                'color' => ['rgb' => 'FFFFFF'],
+                'size' => 11,
+            ],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => ['rgb' => '0D6EFD'], // Bootstrap primary color
+            ],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER,
+            ],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color' => ['rgb' => 'D3D3D3'],
+                ],
+            ],
+        ];
+
+        // Data border style
+        $dataBorderStyle = [
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color' => ['rgb' => 'E0E0E0'],
+                ],
+            ],
+        ];
+
+        // Headers
+        $headers = ['No', 'Username', 'Status', 'Detail', 'Waktu Cek'];
+        $col = 'A';
+        foreach ($headers as $header) {
+            $sheet->setCellValue($col . '1', $header);
+            $col++;
+        }
+        $sheet->getStyle('A1:E1')->applyFromArray($headerStyle);
+        $sheet->getRowDimension(1)->setRowHeight(25);
+
+        // Populate data
+        $row = 2;
+        $no = 1;
+        foreach ($results as $result) {
+            $sheet->setCellValue('A' . $row, $no++);
+            $sheet->setCellValue('B' . $row, $result->username);
+            
+            $statusText = $statusLabels[$result->result] ?? strtoupper($result->result);
+            $sheet->setCellValue('C' . $row, $statusText);
+            
+            $sheet->setCellValue('D' . $row, $result->detail);
+            $sheet->setCellValue('E' . $row, $result->checked_at ? $result->checked_at->format('Y-m-d H:i:s') : '-');
+
+            // Set alignment
+            $sheet->getStyle('A' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('C' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('E' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+            // Apply borders
+            $sheet->getStyle('A' . $row . ':E' . $row)->applyFromArray($dataBorderStyle);
+
+            // Color status column
+            $statusColor = '000000';
+            $statusBg = 'FFFFFF';
+            if ($result->result === 'approved') {
+                $statusColor = '198754';
+                $statusBg = 'D1E7DD';
+            } elseif ($result->result === 'not_approved') {
+                $statusColor = 'A18000';
+                $statusBg = 'FFF3CD';
+            } elseif ($result->result === 'suspended') {
+                $statusColor = 'DC3545';
+                $statusBg = 'F8D7DA';
+            } elseif ($result->result === 'error') {
+                $statusColor = '6C757D';
+                $statusBg = 'E2E3E5';
+            }
+
+            if ($statusBg !== 'FFFFFF') {
+                $sheet->getStyle('C' . $row)->applyFromArray([
+                    'font' => [
+                        'bold' => true,
+                        'color' => ['rgb' => $statusColor],
+                    ],
+                    'fill' => [
+                        'fillType' => Fill::FILL_SOLID,
+                        'startColor' => ['rgb' => $statusBg],
+                    ],
+                ]);
+            }
+
+            $sheet->getRowDimension($row)->setRowHeight(20);
+            $row++;
+        }
+
+        // Auto-fit column widths
+        foreach (range('A', 'E') as $colChar) {
+            $sheet->getColumnDimension($colChar)->setAutoSize(true);
+        }
+
         $filename = "github_check_batch_{$batchId}";
         if ($filterStatus && $filterStatus !== 'all') {
             $filename .= "_{$filterStatus}";
         }
-        $filename .= '_' . now()->format('Y-m-d_His') . '.csv';
+        $filename .= '_' . now()->format('Y-m-d_His') . '.xlsx';
 
-        $headers = [
-            'Content-Type' => 'text/csv; charset=UTF-8',
+        $responseHeaders = [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+            'Cache-Control' => 'max-age=0',
         ];
 
-        $callback = function () use ($results, $statusLabels) {
-            $file = fopen('php://output', 'w');
-            // BOM for UTF-8 Excel compatibility
-            fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
-            fputcsv($file, ['No', 'Username', 'Status', 'Detail', 'Waktu Cek']);
-
-            $no = 1;
-            foreach ($results as $result) {
-                fputcsv($file, [
-                    $no++,
-                    $result->username,
-                    $statusLabels[$result->result] ?? strtoupper($result->result),
-                    $result->detail,
-                    $result->checked_at ? $result->checked_at->format('Y-m-d H:i:s') : '-',
-                ]);
-            }
-            fclose($file);
-        };
-
-        return response()->stream($callback, 200, $headers);
+        return response()->stream(function () use ($spreadsheet) {
+            $writer = new Xlsx($spreadsheet);
+            $writer->save('php://output');
+        }, 200, $responseHeaders);
     }
 
     /**
