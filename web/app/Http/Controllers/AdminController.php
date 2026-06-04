@@ -68,11 +68,33 @@ class AdminController extends Controller
         }
 
         // Metrics
-        $totalStock = StockUnit::count();
-        $readyStock = StockUnit::where('is_sold', false)->where('stock_status', 'ready')->count();
-        $awaitingStock = StockUnit::where('is_sold', false)->where('stock_status', 'awaiting_benefits')->count();
-        $savedStock = StockUnit::where('is_sold', false)->whereIn('stock_status', ['saved_for_verification', 'saved_ready_notified'])->count();
-        $soldStock = StockUnit::where('is_sold', true)->count();
+        $metricsQuery = StockUnit::query();
+
+        if ($request->filled('product_id')) {
+            $metricsQuery->where('product_id', $request->product_id);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $metricsQuery->where(function ($q) use ($search) {
+                $q->where('raw_text', 'like', "%{$search}%")
+                  ->orWhere('stock_status', 'like', "%{$search}%")
+                  ->orWhereHas('product', function ($pq) use ($search) {
+                      $pq->where('name', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('order.customer', function ($cq) use ($search) {
+                      $cq->where('username', 'like', "%{$search}%")
+                         ->orWhere('full_name', 'like', "%{$search}%")
+                         ->orWhere('telegram_id', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        $totalStock = (clone $metricsQuery)->count();
+        $readyStock = (clone $metricsQuery)->where('is_sold', false)->where('stock_status', 'ready')->count();
+        $awaitingStock = (clone $metricsQuery)->where('is_sold', false)->where('stock_status', 'awaiting_benefits')->count();
+        $savedStock = (clone $metricsQuery)->where('is_sold', false)->whereIn('stock_status', ['saved_for_verification', 'saved_ready_notified'])->count();
+        $soldStock = (clone $metricsQuery)->where('is_sold', true)->count();
 
         $stockUnits = $query->paginate(15);
         $status = $request->status;

@@ -87,6 +87,35 @@ class SellerController extends Controller
             });
         }
 
+        // Metrics
+        $metricsQuery = StockUnit::where('seller_id', $sellerId);
+
+        if ($request->filled('product_id')) {
+            $metricsQuery->where('product_id', $request->product_id);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $metricsQuery->where(function ($q) use ($search) {
+                $q->where('raw_text', 'like', "%{$search}%")
+                  ->orWhere('stock_status', 'like', "%{$search}%")
+                  ->orWhereHas('product', function ($pq) use ($search) {
+                      $pq->where('name', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('order.customer', function ($cq) use ($search) {
+                      $cq->where('username', 'like', "%{$search}%")
+                         ->orWhere('full_name', 'like', "%{$search}%")
+                         ->orWhere('telegram_id', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        $totalStock = (clone $metricsQuery)->count();
+        $readyStock = (clone $metricsQuery)->where('is_sold', false)->where('stock_status', 'ready')->count();
+        $awaitingStock = (clone $metricsQuery)->where('is_sold', false)->where('stock_status', 'awaiting_benefits')->count();
+        $savedStock = (clone $metricsQuery)->where('is_sold', false)->whereIn('stock_status', ['saved_for_verification', 'saved_ready_notified'])->count();
+        $soldStock = (clone $metricsQuery)->where('is_sold', true)->count();
+
         $stocks = $query->orderBy('created_at', 'desc')->paginate(15);
 
         // Fetch products available for this seller to upload stock (either created by them or they are workers)
@@ -95,7 +124,10 @@ class SellerController extends Controller
                 $q->where('user_id', $sellerId);
             })->get();
 
-        return view('seller.stock.index', compact('stocks', 'products', 'status'));
+        return view('seller.stock.index', compact(
+            'stocks', 'products', 'status',
+            'totalStock', 'readyStock', 'awaitingStock', 'savedStock', 'soldStock'
+        ));
     }
 
     public function storeStock(Request $request)

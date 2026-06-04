@@ -157,7 +157,7 @@
     </div>
 
     {{-- Action Bar --}}
-    <div class="card shadow-sm action-bar-card mb-3" id="action-bar" style="z-index: 10;">
+    <div class="card shadow-sm action-bar-card mb-3" id="action-bar" style="z-index: 1025;">
         <div class="card-body p-3">
             <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
                 <div class="d-flex align-items-center gap-2">
