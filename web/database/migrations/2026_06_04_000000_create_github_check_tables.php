@@ -9,6 +9,9 @@ return new class extends Migration
 {
     public function up(): void
     {
+        Schema::dropIfExists('github_check_results');
+        Schema::dropIfExists('github_check_batches');
+
         Schema::create('github_check_batches', function (Blueprint $table) {
             $table->id();
             $this->addMatchingForeignColumn($table, 'admin_id', 'users');
