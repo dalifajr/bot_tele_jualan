@@ -648,7 +648,9 @@
                 <p class="small text-muted mb-3">${stockItems.length} akun stok akan diupdate</p>
                 <select id="swal-stock-status" class="form-select">
                     <option value="ready">Ready</option>
+                    @if(Auth::user()->role === 'admin')
                     <option value="awaiting_benefits">Awaiting Benefits</option>
+                    @endif
                     <option value="saved_for_verification">Simpan Akun</option>
                 </select>
             `,

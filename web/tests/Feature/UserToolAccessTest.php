@@ -179,4 +179,35 @@ class UserToolAccessTest extends TestCase
         $response->assertStatus(200);
         $response->assertHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     }
+
+    public function test_non_admin_cannot_update_status_to_awaiting_benefits_github()
+    {
+        $seller = User::create([
+            'username' => 'seller_test_bulk_gh',
+            'full_name' => 'Seller Test',
+            'email' => 'seller_bulk_gh@test.com',
+            'role' => 'seller',
+            'allowed_tools' => ['github_checker'],
+            'password' => bcrypt('password'),
+        ]);
+
+        $product = Product::create(['name' => 'Product GH', 'price' => 100, 'creator_id' => $seller->id]);
+
+        $stock = StockUnit::create([
+            'product_id' => $product->id,
+            'raw_text' => "Username: seller_gh_user\nPassword: 123",
+            'is_sold' => false,
+            'stock_status' => 'ready',
+            'seller_id' => $seller->id
+        ]);
+
+        $response = $this->actingAs($seller)->post(route('admin.tools.github-checker.bulk-update-stock'), [
+            'stock_ids' => [$stock->id],
+            'stock_status' => 'awaiting_benefits'
+        ]);
+
+        $response->assertStatus(403);
+        $response->assertJson(['success' => false]);
+        $this->assertEquals('ready', $stock->fresh()->stock_status);
+    }
 }

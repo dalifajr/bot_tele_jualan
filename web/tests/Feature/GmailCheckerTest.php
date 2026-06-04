@@ -154,4 +154,38 @@ class GmailCheckerTest extends TestCase
         $response2->assertJson(['success' => true]);
         $this->assertNull(StockUnit::find($stock2->id));
     }
+
+    /**
+     * Seller/Non-admin cannot update stock status to awaiting_benefits.
+     */
+    public function test_non_admin_cannot_update_status_to_awaiting_benefits_gmail(): void
+    {
+        $seller = User::create([
+            'username' => 'seller_test_bulk',
+            'full_name' => 'Seller Test',
+            'email' => 'seller_bulk@test.com',
+            'role' => 'seller',
+            'allowed_tools' => ['gmail_checker'],
+            'password' => bcrypt('password'),
+        ]);
+
+        $stock = StockUnit::create([
+            'product_id' => $this->product->id,
+            'raw_text' => 'sjurokanda@gmail.com:123',
+            'is_sold' => false,
+            'stock_status' => 'ready',
+            'seller_id' => $seller->id,
+        ]);
+
+        $response = $this->actingAs($seller)
+            ->post(route('admin.tools.gmail-checker.bulk-action'), [
+                'action' => 'update_status',
+                'stock_ids' => [$stock->id],
+                'status' => 'awaiting_benefits',
+            ]);
+
+        $response->assertStatus(403);
+        $response->assertJson(['success' => false]);
+        $this->assertEquals('ready', $stock->fresh()->stock_status);
+    }
 }

@@ -113,6 +113,14 @@ class GmailCheckerController extends Controller
 
         if ($action === 'update_status') {
             $status = $request->input('status');
+
+            if ($status === 'awaiting_benefits' && Auth::user()->role !== 'admin') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Status Awaiting Benefits hanya diperbolehkan untuk Admin.',
+                ], 403);
+            }
+
             $updated = $query->update(['stock_status' => $status]);
 
             return response()->json([

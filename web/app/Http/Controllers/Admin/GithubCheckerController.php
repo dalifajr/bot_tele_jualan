@@ -530,6 +530,15 @@ class GithubCheckerController extends Controller
             'stock_status' => 'required|string',
         ]);
 
+        $status = $request->input('stock_status');
+
+        if ($status === 'awaiting_benefits' && Auth::user()->role !== 'admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Status Awaiting Benefits hanya diperbolehkan untuk Admin.',
+            ], 403);
+        }
+
         $query = StockUnit::whereIn('id', $request->input('stock_ids'))
             ->where('is_sold', false);
 
@@ -537,7 +546,7 @@ class GithubCheckerController extends Controller
             $query->where('seller_id', Auth::id());
         }
 
-        $updated = $query->update(['stock_status' => $request->input('stock_status')]);
+        $updated = $query->update(['stock_status' => $status]);
 
         return response()->json([
             'success' => true,
