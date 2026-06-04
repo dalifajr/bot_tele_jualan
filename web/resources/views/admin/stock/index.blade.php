@@ -9,10 +9,57 @@
         <h4 class="fw-bold mb-1">Manajemen Stok</h4>
         <p class="text-muted mb-0">Kelola stok unit produk digital</p>
     </div>
-    <div>
+    <div class="d-flex gap-2 align-items-center">
+        <a href="{{ route('admin.stock.export', request()->all()) }}" class="btn btn-success rounded-pill px-3">
+            <i class="fas fa-file-excel me-2"></i>Ekspor Excel
+        </a>
         <button class="btn btn-primary rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#addStockModal">
             <i class="fas fa-plus me-2"></i>Tambah Stok
         </button>
+    </div>
+</div>
+
+{{-- Stock Metrics Row --}}
+<div class="row g-3 mb-4">
+    <div class="col-xl col-md-4 col-6">
+        <div class="card border-0 shadow-sm h-100" style="border-radius: 12px;">
+            <div class="card-body p-3 text-center">
+                <div class="text-secondary small fw-bold mb-1">Total Stok</div>
+                <h3 class="fw-bold mb-0 text-primary">{{ $totalStock }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl col-md-4 col-6">
+        <div class="card border-0 shadow-sm h-100" style="border-radius: 12px;">
+            <div class="card-body p-3 text-center">
+                <div class="text-secondary small fw-bold mb-1">Ready</div>
+                <h3 class="fw-bold mb-0 text-success">{{ $readyStock }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl col-md-4 col-6">
+        <div class="card border-0 shadow-sm h-100" style="border-radius: 12px;">
+            <div class="card-body p-3 text-center">
+                <div class="text-secondary small fw-bold mb-1">Awaiting</div>
+                <h3 class="fw-bold mb-0 text-warning">{{ $awaitingStock }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl col-md-4 col-6">
+        <div class="card border-0 shadow-sm h-100" style="border-radius: 12px;">
+            <div class="card-body p-3 text-center">
+                <div class="text-secondary small fw-bold mb-1">Simpan Akun</div>
+                <h3 class="fw-bold mb-0 text-info">{{ $savedStock }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl col-md-4 col-6">
+        <div class="card border-0 shadow-sm h-100" style="border-radius: 12px;">
+            <div class="card-body p-3 text-center">
+                <div class="text-secondary small fw-bold mb-1">Terjual</div>
+                <h3 class="fw-bold mb-0 text-secondary">{{ $soldStock }}</h3>
+            </div>
+        </div>
     </div>
 </div>
 

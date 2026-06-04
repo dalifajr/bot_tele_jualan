@@ -16,11 +16,28 @@ class GmailCheckerController extends Controller
      */
     public function index()
     {
+        $productsQuery = Product::query();
+
+        if (Auth::user()->role !== 'admin') {
+            $productsQuery->where(function($query) {
+                $query->where('creator_id', Auth::id())
+                    ->orWhereHas('workers', function($q) {
+                        $q->where('user_id', Auth::id());
+                    });
+            });
+        }
+
         // Get products that have stock
-        $products = Product::whereHas('stockUnits', function ($q) {
+        $products = $productsQuery->whereHas('stockUnits', function ($q) {
             $q->where('is_sold', false);
+            if (Auth::user()->role !== 'admin') {
+                $q->where('seller_id', Auth::id());
+            }
         })->withCount(['stockUnits' => function ($q) {
             $q->where('is_sold', false);
+            if (Auth::user()->role !== 'admin') {
+                $q->where('seller_id', Auth::id());
+            }
         }])->get();
 
         return view('admin.tools.gmail-checker.index', compact('products'));
@@ -35,9 +52,14 @@ class GmailCheckerController extends Controller
             'product_id' => 'required|integer|exists:products,id',
         ]);
 
-        $stockUnits = StockUnit::where('product_id', $request->input('product_id'))
-            ->where('is_sold', false)
-            ->get();
+        $query = StockUnit::where('product_id', $request->input('product_id'))
+            ->where('is_sold', false);
+
+        if (Auth::user()->role !== 'admin') {
+            $query->where('seller_id', Auth::id());
+        }
+
+        $stockUnits = $query->get();
 
         $emails = [];
         foreach ($stockUnits as $stock) {
@@ -73,10 +95,15 @@ class GmailCheckerController extends Controller
         $stockIds = $request->input('stock_ids');
         $action = $request->input('action');
 
+        $query = StockUnit::whereIn('id', $stockIds)
+            ->where('is_sold', false);
+
+        if (Auth::user()->role !== 'admin') {
+            $query->where('seller_id', Auth::id());
+        }
+
         if ($action === 'delete') {
-            $deleted = StockUnit::whereIn('id', $stockIds)
-                ->where('is_sold', false)
-                ->delete();
+            $deleted = $query->delete();
 
             return response()->json([
                 'success' => true,
@@ -86,9 +113,7 @@ class GmailCheckerController extends Controller
 
         if ($action === 'update_status') {
             $status = $request->input('status');
-            $updated = StockUnit::whereIn('id', $stockIds)
-                ->where('is_sold', false)
-                ->update(['stock_status' => $status]);
+            $updated = $query->update(['stock_status' => $status]);
 
             return response()->json([
                 'success' => true,

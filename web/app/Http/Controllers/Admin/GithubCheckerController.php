@@ -31,11 +31,27 @@ class GithubCheckerController extends Controller
      */
     public function index()
     {
+        $productsQuery = Product::query();
+        if (Auth::user()->role !== 'admin') {
+            $productsQuery->where(function($query) {
+                $query->where('creator_id', Auth::id())
+                    ->orWhereHas('workers', function($q) {
+                        $q->where('user_id', Auth::id());
+                    });
+            });
+        }
+
         // Get products that have stock (for "Load from Stock" feature)
-        $products = Product::whereHas('stockUnits', function ($q) {
+        $products = $productsQuery->whereHas('stockUnits', function ($q) {
             $q->where('is_sold', false);
+            if (Auth::user()->role !== 'admin') {
+                $q->where('seller_id', Auth::id());
+            }
         })->withCount(['stockUnits' => function ($q) {
             $q->where('is_sold', false);
+            if (Auth::user()->role !== 'admin') {
+                $q->where('seller_id', Auth::id());
+            }
         }])->get();
 
         // Get recent batches for history
@@ -58,7 +74,7 @@ class GithubCheckerController extends Controller
      */
     public function showBatch($batchId)
     {
-        $batch = GithubCheckBatch::findOrFail($batchId);
+        $batch = GithubCheckBatch::where('admin_id', Auth::id())->findOrFail($batchId);
         $delay = session("github_batch_{$batchId}_delay", 2);
 
         $usernames = session("github_batch_{$batchId}_usernames");
@@ -179,7 +195,7 @@ class GithubCheckerController extends Controller
      */
     public function checkNext(Request $request, $batchId)
     {
-        $batch = GithubCheckBatch::findOrFail($batchId);
+        $batch = GithubCheckBatch::where('admin_id', Auth::id())->findOrFail($batchId);
         $cookie = session('github_cookie');
 
         if (!$cookie) {
@@ -249,7 +265,7 @@ class GithubCheckerController extends Controller
      */
     public function progress($batchId)
     {
-        $batch = GithubCheckBatch::with('results')->findOrFail($batchId);
+        $batch = GithubCheckBatch::with('results')->where('admin_id', Auth::id())->findOrFail($batchId);
 
         return response()->json([
             'batch' => [
@@ -283,7 +299,7 @@ class GithubCheckerController extends Controller
      */
     public function export(Request $request, $batchId)
     {
-        $batch = GithubCheckBatch::with('results')->findOrFail($batchId);
+        $batch = GithubCheckBatch::with('results')->where('admin_id', Auth::id())->findOrFail($batchId);
         $filterStatus = $request->input('status');
 
         $results = $batch->results;
@@ -436,9 +452,14 @@ class GithubCheckerController extends Controller
             'product_id' => 'required|integer|exists:products,id',
         ]);
 
-        $stockUnits = StockUnit::where('product_id', $request->input('product_id'))
-            ->where('is_sold', false)
-            ->get();
+        $query = StockUnit::where('product_id', $request->input('product_id'))
+            ->where('is_sold', false);
+
+        if (Auth::user()->role !== 'admin') {
+            $query->where('seller_id', Auth::id());
+        }
+
+        $stockUnits = $query->get();
 
         // Parse usernames from raw_text field
         $usernames = [];
@@ -470,9 +491,14 @@ class GithubCheckerController extends Controller
             'stock_ids.*' => 'integer|exists:stock_units,id',
         ]);
 
-        $deleted = StockUnit::whereIn('id', $request->input('stock_ids'))
-            ->where('is_sold', false)
-            ->delete();
+        $query = StockUnit::whereIn('id', $request->input('stock_ids'))
+            ->where('is_sold', false);
+
+        if (Auth::user()->role !== 'admin') {
+            $query->where('seller_id', Auth::id());
+        }
+
+        $deleted = $query->delete();
 
         return response()->json([
             'success' => true,
@@ -492,9 +518,14 @@ class GithubCheckerController extends Controller
             'stock_status' => 'required|string',
         ]);
 
-        $updated = StockUnit::whereIn('id', $request->input('stock_ids'))
-            ->where('is_sold', false)
-            ->update(['stock_status' => $request->input('stock_status')]);
+        $query = StockUnit::whereIn('id', $request->input('stock_ids'))
+            ->where('is_sold', false);
+
+        if (Auth::user()->role !== 'admin') {
+            $query->where('seller_id', Auth::id());
+        }
+
+        $updated = $query->update(['stock_status' => $request->input('stock_status')]);
 
         return response()->json([
             'success' => true,

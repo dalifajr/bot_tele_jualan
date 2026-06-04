@@ -84,6 +84,7 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         Route::get('/products/{id}/manage', [\App\Http\Controllers\AdminController::class, 'manageProduct'])->name('products.manage');
         
         Route::get('/stock', [\App\Http\Controllers\AdminController::class, 'stock'])->name('stock.index');
+        Route::get('/stock/export', [\App\Http\Controllers\AdminController::class, 'exportStock'])->name('stock.export');
         Route::post('/stock', [\App\Http\Controllers\AdminController::class, 'storeStock'])->name('stock.store');
         Route::post('/stock/bulk-move', [\App\Http\Controllers\AdminController::class, 'bulkMoveStock'])->name('stock.bulkMove');
         Route::post('/stock/bulk-delete', [\App\Http\Controllers\AdminController::class, 'bulkDestroyStock'])->name('stock.bulkDestroy');
@@ -96,6 +97,7 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         Route::post('/orders/{id}/reject', [\App\Http\Controllers\AdminController::class, 'rejectOrder'])->name('orders.reject');
         
         Route::get('/users', [\App\Http\Controllers\AdminController::class, 'users'])->name('users.index');
+        Route::get('/users/export', [\App\Http\Controllers\AdminController::class, 'exportUsers'])->name('users.export');
         Route::put('/users/{id}', [\App\Http\Controllers\AdminController::class, 'updateUser'])->name('users.update');
         Route::delete('/users/{id}', [\App\Http\Controllers\AdminController::class, 'deleteUser'])->name('users.destroy');
         Route::post('/users/{id}/suspend', [\App\Http\Controllers\AdminController::class, 'suspendUser'])->name('users.suspend');
@@ -132,8 +134,11 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         Route::post('/products/{id}/workers', [\App\Http\Controllers\AdminController::class, 'addWorker'])->name('products.workers.store');
         Route::delete('/products/{id}/workers/{userId}', [\App\Http\Controllers\AdminController::class, 'removeWorker'])->name('products.workers.destroy');
 
-        // Tools
-        Route::prefix('tools')->name('tools.')->group(function () {
+    });
+
+    // Tools (accessible by admin and authorized sellers)
+    Route::prefix('admin/tools')->name('admin.tools.')->group(function () {
+        Route::middleware('tool.access:github_checker')->group(function () {
             Route::get('/github-checker', [\App\Http\Controllers\Admin\GithubCheckerController::class, 'index'])->name('github-checker');
             Route::get('/github-checker/batch/{batchId}', [\App\Http\Controllers\Admin\GithubCheckerController::class, 'showBatch'])->name('github-checker.batch');
             Route::post('/github-checker/set-cookie', [\App\Http\Controllers\Admin\GithubCheckerController::class, 'setCookie'])->name('github-checker.set-cookie');
@@ -146,8 +151,9 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
             Route::post('/github-checker/load-stock', [\App\Http\Controllers\Admin\GithubCheckerController::class, 'loadStockUsernames'])->name('github-checker.load-stock');
             Route::post('/github-checker/bulk-delete-stock', [\App\Http\Controllers\Admin\GithubCheckerController::class, 'bulkDeleteStock'])->name('github-checker.bulk-delete-stock');
             Route::post('/github-checker/bulk-update-stock', [\App\Http\Controllers\Admin\GithubCheckerController::class, 'bulkUpdateStockStatus'])->name('github-checker.bulk-update-stock');
+        });
 
-            // Gmail Checker
+        Route::middleware('tool.access:gmail_checker')->group(function () {
             Route::get('/gmail-checker', [\App\Http\Controllers\Admin\GmailCheckerController::class, 'index'])->name('gmail-checker');
             Route::post('/gmail-checker/load-stock', [\App\Http\Controllers\Admin\GmailCheckerController::class, 'loadStock'])->name('gmail-checker.load-stock');
             Route::post('/gmail-checker/bulk-action', [\App\Http\Controllers\Admin\GmailCheckerController::class, 'bulkAction'])->name('gmail-checker.bulk-action');

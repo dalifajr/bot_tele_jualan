@@ -11,17 +11,69 @@
     </div>
 </div>
 
+{{-- Metrics Row --}}
+<div class="row g-3 mb-4">
+    <div class="col-xl col-md-3 col-6">
+        <div class="card border-0 shadow-sm h-100" style="border-radius: 16px;">
+            <div class="card-body p-3 text-center">
+                <div class="text-secondary small fw-bold mb-1">Customer (Pelanggan)</div>
+                <h3 class="fw-bold mb-0 text-primary">{{ $customerCount }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl col-md-3 col-6">
+        <div class="card border-0 shadow-sm h-100" style="border-radius: 16px;">
+            <div class="card-body p-3 text-center">
+                <div class="text-secondary small fw-bold mb-1">Seller (Penjual Mitra)</div>
+                <h3 class="fw-bold mb-0 text-info">{{ $sellerCount }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl col-md-3 col-6">
+        <div class="card border-0 shadow-sm h-100" style="border-radius: 16px;">
+            <div class="card-body p-3 text-center">
+                <div class="text-secondary small fw-bold mb-1">Admin</div>
+                <h3 class="fw-bold mb-0 text-dark">{{ $adminCount }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl col-md-3 col-6">
+        <div class="card border-0 shadow-sm h-100" style="border-radius: 16px;">
+            <div class="card-body p-3 text-center">
+                <div class="text-secondary small fw-bold mb-1">Suspended</div>
+                <h3 class="fw-bold mb-0 text-danger">{{ $suspendedCount }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
     <div class="card-body p-3">
-        <form action="{{ route('admin.users.index') }}" method="GET" class="d-flex gap-2">
-            <div class="input-group">
-                <span class="input-group-text bg-light border-0"><i class="fas fa-search text-muted"></i></span>
-                <input type="text" name="search" class="form-control border-0 bg-light" placeholder="Cari username, nama, email, atau ID Telegram..." value="{{ request('search') }}">
+        <form action="{{ route('admin.users.index') }}" method="GET" class="row g-2 align-items-center">
+            <div class="col-md-5">
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-0"><i class="fas fa-search text-muted"></i></span>
+                    <input type="text" name="search" class="form-control border-0 bg-light" placeholder="Cari username, nama, email, atau ID Telegram..." value="{{ request('search') }}">
+                </div>
             </div>
-            <button type="submit" class="btn btn-primary px-4 rounded-pill">Cari</button>
-            @if(request('search'))
-                <a href="{{ route('admin.users.index') }}" class="btn btn-light px-4 rounded-pill">Reset</a>
-            @endif
+            <div class="col-md-3 col-6">
+                <select name="role" class="form-select border-0 bg-light">
+                    <option value="">Semua Role / Status</option>
+                    <option value="customer" {{ request('role') === 'customer' ? 'selected' : '' }}>Customer (Biasa)</option>
+                    <option value="seller" {{ request('role') === 'seller' ? 'selected' : '' }}>Seller (Penjual Mitra)</option>
+                    <option value="admin" {{ request('role') === 'admin' ? 'selected' : '' }}>Admin (Penuh)</option>
+                    <option value="suspended" {{ request('role') === 'suspended' ? 'selected' : '' }}>Suspended</option>
+                </select>
+            </div>
+            <div class="col-md-4 col-6 d-flex gap-2 justify-content-end">
+                <button type="submit" class="btn btn-primary px-3 rounded-pill flex-fill">Cari & Filter</button>
+                @if(request('search') || request('role'))
+                    <a href="{{ route('admin.users.index') }}" class="btn btn-light px-3 rounded-pill">Reset</a>
+                @endif
+                <a href="{{ route('admin.users.export', request()->all()) }}" class="btn btn-success px-3 rounded-pill" title="Ekspor ke Excel">
+                    <i class="fas fa-file-excel me-1"></i>Ekspor
+                </a>
+            </div>
         </form>
     </div>
 </div>
@@ -189,6 +241,17 @@
                                 <span class="input-group-text bg-light text-muted">jam</span>
                             </div>
                             <div class="form-text small text-muted">Durasi karantina stok sebelum pindah otomatis dari *Simpan Akun* ke *Ready*.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold d-block">Akses Fitur Tool</label>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" name="allowed_tools[]" value="github_checker" id="tool_github_{{ $user->id }}" {{ is_array($user->allowed_tools) && in_array('github_checker', $user->allowed_tools) ? 'checked' : '' }}>
+                                <label class="form-check-label small" for="tool_github_{{ $user->id }}">GitHub Live Checker</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" name="allowed_tools[]" value="gmail_checker" id="tool_gmail_{{ $user->id }}" {{ is_array($user->allowed_tools) && in_array('gmail_checker', $user->allowed_tools) ? 'checked' : '' }}>
+                                <label class="form-check-label small" for="tool_gmail_{{ $user->id }}">Gmail Live Checker</label>
+                            </div>
                         </div>
                     </div>
 

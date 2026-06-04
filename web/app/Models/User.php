@@ -20,6 +20,7 @@ class User extends Authenticatable
         'wallet_balance',
         'platform_fee_percent',
         'seller_save_hours',
+        'allowed_tools',
     ];
 
     protected $hidden = [
@@ -30,6 +31,7 @@ class User extends Authenticatable
     protected $casts = [
         'telegram_id' => 'integer',
         'is_suspended' => 'boolean',
+        'allowed_tools' => 'array',
     ];
 
     /**

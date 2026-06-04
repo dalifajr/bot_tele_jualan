@@ -67,9 +67,176 @@ class AdminController extends Controller
             });
         }
 
+        // Metrics
+        $totalStock = StockUnit::count();
+        $readyStock = StockUnit::where('is_sold', false)->where('stock_status', 'ready')->count();
+        $awaitingStock = StockUnit::where('is_sold', false)->where('stock_status', 'awaiting_benefits')->count();
+        $savedStock = StockUnit::where('is_sold', false)->whereIn('stock_status', ['saved_for_verification', 'saved_ready_notified'])->count();
+        $soldStock = StockUnit::where('is_sold', true)->count();
+
         $stockUnits = $query->paginate(15);
         $status = $request->status;
-        return view('admin.stock.index', compact('stockUnits', 'status'));
+        return view('admin.stock.index', compact(
+            'stockUnits', 'status', 'totalStock', 'readyStock', 'awaitingStock', 'savedStock', 'soldStock'
+        ));
+    }
+
+    public function exportStock(Request $request)
+    {
+        $query = StockUnit::with(['product', 'order.customer', 'uploader'])->orderBy('created_at', 'desc');
+
+        if ($request->filled('status')) {
+            if ($request->status === 'terjual') {
+                $query->where('is_sold', true);
+            } elseif ($request->status === 'saved_for_verification') {
+                $query->where('is_sold', false)->whereIn('stock_status', ['saved_for_verification', 'saved_ready_notified']);
+            } else {
+                $query->where('is_sold', false)->where('stock_status', $request->status);
+            }
+        }
+
+        if ($request->filled('product_id')) {
+            $query->where('product_id', $request->product_id);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('raw_text', 'like', "%{$search}%")
+                  ->orWhere('stock_status', 'like', "%{$search}%")
+                  ->orWhereHas('product', function ($pq) use ($search) {
+                      $pq->where('name', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('order.customer', function ($cq) use ($search) {
+                      $cq->where('username', 'like', "%{$search}%")
+                         ->orWhere('full_name', 'like', "%{$search}%")
+                         ->orWhere('telegram_id', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        $stockUnits = $query->get();
+
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Data Stok');
+        $sheet->setShowGridlines(true);
+
+        // Header style
+        $headerStyle = [
+            'font' => [
+                'bold' => true,
+                'color' => ['rgb' => 'FFFFFF'],
+                'size' => 11,
+            ],
+            'fill' => [
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                'startColor' => ['rgb' => '198754'], // Green for stock
+            ],
+            'alignment' => [
+                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+            ],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                    'color' => ['rgb' => 'D3D3D3'],
+                ],
+            ],
+        ];
+
+        // Data border style
+        $dataBorderStyle = [
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                    'color' => ['rgb' => 'E0E0E0'],
+                ],
+            ],
+        ];
+
+        $headers = ['No', 'Produk', 'Detail Akun (Raw Text)', 'Status', 'Uploader', 'Pembeli', 'No Order', 'Tanggal Input'];
+        $col = 'A';
+        foreach ($headers as $header) {
+            $sheet->setCellValue($col . '1', $header);
+            $col++;
+        }
+        $sheet->getStyle('A1:H1')->applyFromArray($headerStyle);
+        $sheet->getRowDimension(1)->setRowHeight(25);
+
+        $row = 2;
+        $no = 1;
+        foreach ($stockUnits as $unit) {
+            $sheet->setCellValue('A' . $row, $no++);
+            $sheet->setCellValue('B' . $row, $unit->product->name ?? '-');
+            $sheet->setCellValue('C' . $row, $unit->raw_text);
+            
+            $statusText = $unit->is_sold ? 'TERJUAL' : strtoupper($unit->stock_status);
+            $sheet->setCellValue('D' . $row, $statusText);
+            
+            $uploaderName = $unit->uploader->full_name ?? $unit->uploader->username ?? ($unit->seller->full_name ?? $unit->seller->username ?? 'Admin Utama');
+            $sheet->setCellValue('E' . $row, $uploaderName);
+            $sheet->setCellValue('F' . $row, $unit->order->customer->full_name ?? $unit->order->customer->username ?? '-');
+            $sheet->setCellValue('G' . $row, $unit->order->reference ?? '-');
+            $sheet->setCellValue('H' . $row, $unit->created_at ? $unit->created_at->format('Y-m-d H:i:s') : '-');
+
+            $sheet->getStyle('A' . $row)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('D' . $row)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('G' . $row)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('H' . $row)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+            $sheet->getStyle('A' . $row . ':H' . $row)->applyFromArray($dataBorderStyle);
+            
+            // Color status column
+            $statusColor = '000000';
+            $statusBg = 'FFFFFF';
+            if ($unit->is_sold) {
+                $statusColor = '6C757D';
+                $statusBg = 'E2E3E5';
+            } elseif ($unit->stock_status === 'ready') {
+                $statusColor = '198754';
+                $statusBg = 'D1E7DD';
+            } elseif ($unit->stock_status === 'awaiting_benefits') {
+                $statusColor = 'A18000';
+                $statusBg = 'FFF3CD';
+            } elseif ($unit->stock_status === 'saved_for_verification') {
+                $statusColor = '0D6EFD';
+                $statusBg = 'CFF4FC';
+            }
+
+            if ($statusBg !== 'FFFFFF') {
+                $sheet->getStyle('D' . $row)->applyFromArray([
+                    'font' => [
+                        'bold' => true,
+                        'color' => ['rgb' => $statusColor],
+                    ],
+                    'fill' => [
+                        'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                        'startColor' => ['rgb' => $statusBg],
+                    ],
+                ]);
+            }
+
+            $sheet->getRowDimension($row)->setRowHeight(20);
+            $row++;
+        }
+
+        foreach (range('A', 'H') as $colChar) {
+            $sheet->getColumnDimension($colChar)->setAutoSize(true);
+        }
+
+        $filename = 'data_stok_' . now()->format('Y-m-d_His') . '.xlsx';
+
+        $responseHeaders = [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+            'Cache-Control' => 'max-age=0',
+        ];
+
+        return response()->stream(function () use ($spreadsheet) {
+            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+            $writer->save('php://output');
+        }, 200, $responseHeaders);
     }
 
     public function orders(Request $request)
@@ -100,8 +267,24 @@ class AdminController extends Controller
             });
         }
 
+        if ($request->filled('role')) {
+            if ($request->role === 'suspended') {
+                $query->where('is_suspended', true);
+            } else {
+                $query->where('role', $request->role);
+            }
+        }
+
+        // Metrics
+        $customerCount = User::where('role', 'customer')->count();
+        $sellerCount = User::where('role', 'seller')->count();
+        $adminCount = User::where('role', 'admin')->count();
+        $suspendedCount = User::where('is_suspended', true)->count();
+
         $users = $query->paginate(10);
-        return view('admin.users.index', compact('users'));
+        return view('admin.users.index', compact(
+            'users', 'customerCount', 'sellerCount', 'adminCount', 'suspendedCount'
+        ));
     }
 
     public function deleteUser($id)
@@ -384,14 +567,129 @@ class AdminController extends Controller
             'wallet_balance' => 'required|integer|min:0',
             'platform_fee_percent' => 'required|integer|between:0,100',
             'seller_save_hours' => 'required|integer|min:0',
+            'allowed_tools' => 'nullable|array',
+            'allowed_tools.*' => 'string|in:github_checker,gmail_checker',
         ]);
         $user->role = $request->role;
         $user->wallet_balance = $request->wallet_balance;
         $user->platform_fee_percent = $request->platform_fee_percent;
         $user->seller_save_hours = $request->seller_save_hours;
+        $user->allowed_tools = $request->role === 'seller' ? ($request->allowed_tools ?? []) : null;
         $user->save();
         return redirect()->route('admin.users.index')
             ->with('success', 'Informasi pengguna berhasil diperbarui.');
+    }
+
+    public function exportUsers(Request $request)
+    {
+        $query = User::orderBy('created_at', 'desc');
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('username', 'like', "%{$search}%")
+                  ->orWhere('full_name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('telegram_id', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('role')) {
+            if ($request->role === 'suspended') {
+                $query->where('is_suspended', true);
+            } else {
+                $query->where('role', $request->role);
+            }
+        }
+
+        $users = $query->get();
+
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Daftar Pengguna');
+        $sheet->setShowGridlines(true);
+
+        // Header style
+        $headerStyle = [
+            'font' => [
+                'bold' => true,
+                'color' => ['rgb' => 'FFFFFF'],
+                'size' => 11,
+            ],
+            'fill' => [
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                'startColor' => ['rgb' => '0D6EFD'],
+            ],
+            'alignment' => [
+                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+            ],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                    'color' => ['rgb' => 'D3D3D3'],
+                ],
+            ],
+        ];
+
+        // Data border style
+        $dataBorderStyle = [
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                    'color' => ['rgb' => 'E0E0E0'],
+                ],
+            ],
+        ];
+
+        $headers = ['No', 'ID Telegram', 'Username', 'Nama Lengkap', 'Email', 'Role', 'Status', 'Tanggal Bergabung'];
+        $col = 'A';
+        foreach ($headers as $header) {
+            $sheet->setCellValue($col . '1', $header);
+            $col++;
+        }
+        $sheet->getStyle('A1:H1')->applyFromArray($headerStyle);
+        $sheet->getRowDimension(1)->setRowHeight(25);
+
+        $row = 2;
+        $no = 1;
+        foreach ($users as $user) {
+            $sheet->setCellValue('A' . $row, $no++);
+            $sheet->setCellValue('B' . $row, $user->telegram_id ?? '-');
+            $sheet->setCellValue('C' . $row, $user->username ? '@' . $user->username : '-');
+            $sheet->setCellValue('D' . $row, $user->full_name ?? '-');
+            $sheet->setCellValue('E' . $row, $user->email ?? '-');
+            $sheet->setCellValue('F' . $row, ucfirst($user->role));
+            $sheet->setCellValue('G' . $row, $user->is_suspended ? 'Suspended' : 'Aktif');
+            $sheet->setCellValue('H' . $row, $user->created_at ? $user->created_at->format('Y-m-d H:i:s') : '-');
+
+            $sheet->getStyle('A' . $row)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('B' . $row)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('F' . $row)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('G' . $row)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('H' . $row)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+            $sheet->getStyle('A' . $row . ':H' . $row)->applyFromArray($dataBorderStyle);
+            $sheet->getRowDimension($row)->setRowHeight(20);
+            $row++;
+        }
+
+        foreach (range('A', 'H') as $colChar) {
+            $sheet->getColumnDimension($colChar)->setAutoSize(true);
+        }
+
+        $filename = 'daftar_pengguna_' . now()->format('Y-m-d_His') . '.xlsx';
+
+        $responseHeaders = [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+            'Cache-Control' => 'max-age=0',
+        ];
+
+        return response()->stream(function () use ($spreadsheet) {
+            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+            $writer->save('php://output');
+        }, 200, $responseHeaders);
     }
 
     // ==========================================

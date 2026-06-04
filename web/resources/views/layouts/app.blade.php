@@ -279,6 +279,21 @@
                     <i class="fas fa-user-cog"></i> Pengaturan Karantina
                 </a>
             </div>
+            @if(is_array(Auth::user()->allowed_tools) && count(Auth::user()->allowed_tools) > 0)
+            <div class="menu-group">
+                <div class="menu-header text-success"><i class="fas fa-tools me-1"></i> Tool</div>
+                @if(in_array('github_checker', Auth::user()->allowed_tools))
+                <a href="{{ route('admin.tools.github-checker') }}" class="menu-item {{ request()->routeIs('admin.tools.github-checker*') ? 'active' : '' }}">
+                    <i class="fab fa-github"></i> GitHub Live Checker
+                </a>
+                @endif
+                @if(in_array('gmail_checker', Auth::user()->allowed_tools))
+                <a href="{{ route('admin.tools.gmail-checker') }}" class="menu-item {{ request()->routeIs('admin.tools.gmail-checker*') ? 'active' : '' }}">
+                    <i class="fas fa-envelope"></i> Gmail Live Checker
+                </a>
+                @endif
+            </div>
+            @endif
             @endif
         </div>
     </div>
