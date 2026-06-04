@@ -238,6 +238,9 @@
                 <a href="{{ route('admin.tools.github-checker') }}" class="menu-item {{ request()->routeIs('admin.tools.github-checker*') ? 'active' : '' }}">
                     <i class="fab fa-github"></i> GitHub Live Checker
                 </a>
+                <a href="{{ route('admin.tools.gmail-checker') }}" class="menu-item {{ request()->routeIs('admin.tools.gmail-checker*') ? 'active' : '' }}">
+                    <i class="fas fa-envelope"></i> Gmail Live Checker
+                </a>
             </div>
 
             <div class="menu-group">

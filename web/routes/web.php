@@ -146,6 +146,11 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
             Route::post('/github-checker/load-stock', [\App\Http\Controllers\Admin\GithubCheckerController::class, 'loadStockUsernames'])->name('github-checker.load-stock');
             Route::post('/github-checker/bulk-delete-stock', [\App\Http\Controllers\Admin\GithubCheckerController::class, 'bulkDeleteStock'])->name('github-checker.bulk-delete-stock');
             Route::post('/github-checker/bulk-update-stock', [\App\Http\Controllers\Admin\GithubCheckerController::class, 'bulkUpdateStockStatus'])->name('github-checker.bulk-update-stock');
+
+            // Gmail Checker
+            Route::get('/gmail-checker', [\App\Http\Controllers\Admin\GmailCheckerController::class, 'index'])->name('gmail-checker');
+            Route::post('/gmail-checker/load-stock', [\App\Http\Controllers\Admin\GmailCheckerController::class, 'loadStock'])->name('gmail-checker.load-stock');
+            Route::post('/gmail-checker/bulk-action', [\App\Http\Controllers\Admin\GmailCheckerController::class, 'bulkAction'])->name('gmail-checker.bulk-action');
         });
     });
 
