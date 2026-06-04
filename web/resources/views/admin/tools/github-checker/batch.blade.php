@@ -243,9 +243,18 @@
             if (isNaN(date.getTime())) return isoString;
             
             const now = new Date();
-            const diffTime = Math.abs(now - date);
-            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-            return `${diffDays} hari`;
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / (1000 * 60));
+            const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
+            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+            if (diffMins < 60) {
+                return Math.max(0, diffMins) + ' menit yang lalu';
+            } else if (diffHrs < 24) {
+                return diffHrs + ' jam yang lalu';
+            } else {
+                return diffDays + ' hari yang lalu';
+            }
         } catch (e) {
             return isoString;
         }

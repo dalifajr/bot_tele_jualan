@@ -136,4 +136,26 @@ class StockMetricsTest extends TestCase
         $responseSearch->assertViewHas('readyStock', 0);
         $responseSearch->assertViewHas('soldStock', 1);
     }
+
+    public function test_stock_unit_umur_akun_accessor_relative_formatting()
+    {
+        $product = Product::create(['name' => 'Product 1', 'price' => 100]);
+
+        // Case 1: joined 5 hours ago (should return "5 jam yang lalu")
+        $stock1 = StockUnit::create([
+            'product_id' => $product->id,
+            'raw_text' => 'Ready stock',
+            'github_joined_at' => now()->subHours(5)->toIso8601String(),
+        ]);
+        $this->assertEquals('5 jam yang lalu', $stock1->umur_akun);
+
+        // Case 2: joined 3 days ago (should return "3 hari yang lalu")
+        $date = now()->subDays(3);
+        $stock2 = StockUnit::create([
+            'product_id' => $product->id,
+            'raw_text' => 'Ready stock',
+            'github_joined_at' => $date->toIso8601String(),
+        ]);
+        $this->assertEquals('3 hari yang lalu', $stock2->umur_akun);
+    }
 }

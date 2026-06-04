@@ -46,4 +46,22 @@ class StockUnit extends Model
     {
         return $this->belongsTo(User::class, 'uploaded_by_id');
     }
+
+    public function getUmurAkunAttribute()
+    {
+        $date = $this->github_joined_at ? \Carbon\Carbon::parse($this->github_joined_at) : $this->created_at;
+        $diffInMinutes = (int) $date->diffInMinutes(now());
+
+        if ($diffInMinutes < 60) {
+            return $diffInMinutes . ' menit yang lalu';
+        }
+
+        $diffInHours = (int) $date->diffInHours(now());
+        if ($diffInHours < 24) {
+            return $diffInHours . ' jam yang lalu';
+        }
+
+        $diffInDays = (int) $date->diffInDays(now());
+        return $diffInDays . ' hari yang lalu';
+    }
 }
