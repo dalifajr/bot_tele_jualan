@@ -74,13 +74,14 @@ class GithubCheckerServiceTest extends TestCase
         // Mock search response (JSON format) and profile response (with PRO badge)
         Http::fake([
             'https://github.com/search*' => Http::response($this->getMockSearchHtml($username), 200),
-            'https://github.com/*' => Http::response($this->getMockProfileHtml(true), 200),
+            'https://github.com/*' => Http::response($this->getMockProfileHtml(true, '2026-06-04T06:30:13Z'), 200),
         ]);
 
         $result = $this->service->checkUsername($username, $cookie);
 
         $this->assertEquals('approved', $result['result']);
         $this->assertStringContainsString('PRO', $result['detail']);
+        $this->assertEquals('2026-06-04T06:30:13Z', $result['github_joined_at']);
     }
 
     /**
@@ -155,7 +156,7 @@ class GithubCheckerServiceTest extends TestCase
     /**
      * Helper to generate mock profile HTML.
      */
-    private function getMockProfileHtml(bool $hasPro): string
+    private function getMockProfileHtml(bool $hasPro, string $joinedAt = '2026-06-04T06:30:13Z'): string
     {
         $badge = $hasPro ? '
             <span title="Label: Pro" data-view-component="true"
@@ -169,6 +170,7 @@ class GithubCheckerServiceTest extends TestCase
             <div class="user-profile">
                 <h1>Mock Profile</h1>
                 {$badge}
+                <span>Joined <relative-time datetime="{$joinedAt}" class="no-wrap" title="Jun 4, 2026, 1:30 PM GMT+7"><template shadowrootmode="open">11 hours ago</template>Jun 3, 2026</relative-time></span>
             </div>
         </body>
         </html>

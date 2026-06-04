@@ -210,6 +210,7 @@
                         <th class="py-3 border-0">#</th>
                         <th class="py-3 border-0">Username</th>
                         <th class="py-3 border-0">Status</th>
+                        <th class="py-3 border-0">Umur Akun</th>
                         <th class="py-3 border-0">Detail</th>
                         <th class="py-3 border-0">Waktu</th>
                     </tr>
@@ -234,6 +235,20 @@
     let currentIndex = 0;
     let counts = { approved: 0, not_approved: 0, suspended: 0, error: 0 };
     let stockMap = @json($stockMap);
+
+    function formatJoinedDate(isoString) {
+        if (!isoString) return '<span class="text-muted">-</span>';
+        try {
+            const date = new Date(isoString);
+            if (isNaN(date.getTime())) return isoString;
+            
+            // Format to "04 Jun 2026"
+            const options = { day: 'numeric', month: 'short', year: 'numeric' };
+            return date.toLocaleDateString('id-ID', options);
+        } catch (e) {
+            return isoString;
+        }
+    }
 
     document.addEventListener("DOMContentLoaded", function () {
         loadBatchData();
@@ -271,6 +286,7 @@
                     <td class="fw-bold text-muted">${i + 1}</td>
                     <td class="fw-medium">${r.username}</td>
                     <td><span class="badge ${cfg.badge} status-badge rounded-pill px-3">${cfg.icon} ${cfg.label}</span></td>
+                    <td class="fw-semibold small text-dark">${formatJoinedDate(r.github_joined_at)}</td>
                     <td class="text-muted small">${r.detail}</td>
                     <td class="text-muted small">${r.checked_at}</td>
                 `;
@@ -328,7 +344,7 @@
             }
         })
         .catch(err => {
-            appendResult({ username: username, result: 'error', detail: 'Request error: ' + err.message });
+            appendResult({ username: username, result: 'error', detail: 'Request error: ' + err.message, github_joined_at: null });
             counts.error++;
             updateCounters();
             currentIndex++;
@@ -354,6 +370,7 @@
             <td class="fw-bold text-muted">${currentIndex + 1}</td>
             <td class="fw-medium">${username}</td>
             <td><span class="spinner-border spinner-border-sm text-primary me-1"></span><span class="text-primary small">Checking...</span></td>
+            <td class="text-muted small">-</td>
             <td class="text-muted small">Sedang memeriksa...</td>
             <td class="text-muted small">-</td>
         `;
@@ -387,6 +404,7 @@
             <td class="fw-bold text-muted">${currentIndex + 1}</td>
             <td class="fw-medium">${result.username}</td>
             <td><span class="badge ${cfg.badge} status-badge rounded-pill px-3">${cfg.icon} ${cfg.label}</span></td>
+            <td class="fw-semibold small text-dark">${formatJoinedDate(result.github_joined_at)}</td>
             <td class="text-muted small" style="max-width:300px;">${result.detail}</td>
             <td class="text-muted small">${now}</td>
         `;

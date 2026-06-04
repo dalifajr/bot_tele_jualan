@@ -78,6 +78,7 @@ class GithubCheckerService
                 'username' => $username,
                 'result' => 'error',
                 'detail' => 'Username kosong',
+                'github_joined_at' => null,
             ];
         }
 
@@ -90,6 +91,7 @@ class GithubCheckerService
                     'username' => $username,
                     'result' => 'error',
                     'detail' => 'Gagal melakukan pencarian di GitHub',
+                    'github_joined_at' => null,
                 ];
             }
 
@@ -98,6 +100,7 @@ class GithubCheckerService
                     'username' => $username,
                     'result' => 'error',
                     'detail' => 'Rate limited oleh GitHub (HTTP 429). Coba tingkatkan delay.',
+                    'github_joined_at' => null,
                 ];
             }
 
@@ -107,6 +110,7 @@ class GithubCheckerService
                     'username' => $username,
                     'result' => 'suspended',
                     'detail' => 'Akun tidak ditemukan saat pencarian (Suspended / Tidak Ada)',
+                    'github_joined_at' => null,
                 ];
             }
 
@@ -120,6 +124,7 @@ class GithubCheckerService
                 'username' => $username,
                 'result' => 'error',
                 'detail' => 'Timeout koneksi ke GitHub',
+                'github_joined_at' => null,
             ];
         } catch (\Exception $e) {
             Log::error("GitHub check error for {$username}: " . $e->getMessage());
@@ -127,6 +132,7 @@ class GithubCheckerService
                 'username' => $username,
                 'result' => 'error',
                 'detail' => 'Error: ' . $e->getMessage(),
+                'github_joined_at' => null,
             ];
         }
     }
@@ -233,6 +239,7 @@ class GithubCheckerService
                     'username' => $username,
                     'result' => 'suspended',
                     'detail' => 'Profil tidak dapat diakses (HTTP 404)',
+                    'github_joined_at' => null,
                 ];
             }
 
@@ -241,17 +248,24 @@ class GithubCheckerService
                     'username' => $username,
                     'result' => 'error',
                     'detail' => 'Rate limited oleh GitHub (HTTP 429). Coba tingkatkan delay.',
+                    'github_joined_at' => null,
                 ];
             }
 
             if ($statusCode === 200) {
                 $hasProBadge = $this->detectProBadge($html);
 
+                $joinedAt = null;
+                if (preg_match('/Joined[\s\S]{0,100}<relative-time[^>]*datetime="([^"]+)"/i', $html, $matches)) {
+                    $joinedAt = $matches[1];
+                }
+
                 if ($hasProBadge) {
                     return [
                         'username' => $username,
                         'result' => 'approved',
                         'detail' => 'Akun live dengan badge PRO aktif',
+                        'github_joined_at' => $joinedAt,
                     ];
                 }
 
@@ -259,6 +273,7 @@ class GithubCheckerService
                     'username' => $username,
                     'result' => 'not_approved',
                     'detail' => 'Akun live tetapi tidak memiliki badge PRO (Belum di-approve / Revoked)',
+                    'github_joined_at' => $joinedAt,
                 ];
             }
 
@@ -266,6 +281,7 @@ class GithubCheckerService
                 'username' => $username,
                 'result' => 'error',
                 'detail' => "Response tidak terduga: HTTP {$statusCode}",
+                'github_joined_at' => null,
             ];
 
         } catch (\Exception $e) {
@@ -274,6 +290,7 @@ class GithubCheckerService
                 'username' => $username,
                 'result' => 'error',
                 'detail' => 'Error membuka profil: ' . $e->getMessage(),
+                'github_joined_at' => null,
             ];
         }
     }

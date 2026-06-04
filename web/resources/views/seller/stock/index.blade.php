@@ -149,6 +149,7 @@
                         @endif
                         <th class="py-3 border-0">Produk</th>
                         <th class="py-3 border-0">Username</th>
+                        <th class="py-3 border-0">Umur Akun</th>
                         @if(request('status') === 'terjual')
                         <th class="py-3 border-0">Pembeli</th>
                         <th class="py-3 border-0">ID Telegram</th>
@@ -184,6 +185,13 @@
                         @endif
                         <td>{{ Str::limit($unit->product->name ?? 'Unknown', 25) }}</td>
                         <td class="fw-medium text-dark">{{ Str::limit($extractedUsername, 20) }}</td>
+                        <td>
+                            @if($unit->github_joined_at)
+                                <span class="text-dark fw-semibold" title="Berdasarkan check GitHub">{{ \Carbon\Carbon::parse($unit->github_joined_at)->translatedFormat('d M Y') }}</span>
+                            @else
+                                <span class="text-muted small" title="Tanggal input stok">{{ $unit->created_at->translatedFormat('d M Y') }}</span>
+                            @endif
+                        </td>
                         
                         @if(request('status') === 'terjual')
                         <td>

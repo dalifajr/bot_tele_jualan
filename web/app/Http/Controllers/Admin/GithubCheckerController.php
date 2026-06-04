@@ -217,8 +217,19 @@ class GithubCheckerController extends Controller
             'result' => $result['result'],
             'detail' => $result['detail'],
             'stock_unit_id' => $request->input('stock_id'),
+            'github_joined_at' => $result['github_joined_at'] ?? null,
             'checked_at' => now(),
         ]);
+
+        // Update corresponding StockUnit if stock_id is provided
+        if ($request->filled('stock_id')) {
+            $stockUnit = StockUnit::find($request->input('stock_id'));
+            if ($stockUnit) {
+                $stockUnit->update([
+                    'github_joined_at' => $result['github_joined_at'] ?? null
+                ]);
+            }
+        }
 
         // Update batch progress
         $batch->increment('checked_count');
@@ -288,6 +299,7 @@ class GithubCheckerController extends Controller
                     'result' => $r->result,
                     'detail' => $r->detail,
                     'stock_id' => $r->stock_unit_id,
+                    'github_joined_at' => $r->github_joined_at,
                     'checked_at' => $r->checked_at ? $r->checked_at->format('H:i:s') : '-',
                 ];
             }),

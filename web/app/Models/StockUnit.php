@@ -19,6 +19,7 @@ class StockUnit extends Model
         'available_at',
         'seller_id',
         'uploaded_by_id',
+        'github_joined_at',
     ];
 
     protected $casts = [

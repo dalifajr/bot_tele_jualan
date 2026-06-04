@@ -17,6 +17,7 @@ class GithubCheckResult extends Model
         'detail',
         'stock_unit_id',
         'checked_at',
+        'github_joined_at',
     ];
 
     protected $casts = [
