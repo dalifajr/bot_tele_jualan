@@ -97,6 +97,19 @@ class GithubCheckerController extends Controller
     }
 
     /**
+     * Clear GitHub cookie from session.
+     */
+    public function clearCookie()
+    {
+        session()->forget(['github_cookie', 'github_cookie_valid', 'github_cookie_user']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Cookie GitHub berhasil dihapus.',
+        ]);
+    }
+
+    /**
      * Start a new checking batch.
      * Receives list of usernames, creates batch and stores them for processing.
      */
@@ -113,6 +126,16 @@ class GithubCheckerController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Cookie GitHub belum diset. Silakan validasi cookie terlebih dahulu.',
+            ], 422);
+        }
+
+        // Live check if the session cookie is valid
+        $validation = $this->service->validateCookie($cookie);
+        if (!$validation['valid']) {
+            session()->forget(['github_cookie', 'github_cookie_valid', 'github_cookie_user']);
+            return response()->json([
+                'success' => false,
+                'message' => 'Cookie GitHub yang tersimpan tidak valid atau telah kedaluwarsa. Silakan validasi ulang.',
             ], 422);
         }
 

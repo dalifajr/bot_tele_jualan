@@ -137,6 +137,7 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
             Route::get('/github-checker', [\App\Http\Controllers\Admin\GithubCheckerController::class, 'index'])->name('github-checker');
             Route::get('/github-checker/batch/{batchId}', [\App\Http\Controllers\Admin\GithubCheckerController::class, 'showBatch'])->name('github-checker.batch');
             Route::post('/github-checker/set-cookie', [\App\Http\Controllers\Admin\GithubCheckerController::class, 'setCookie'])->name('github-checker.set-cookie');
+            Route::post('/github-checker/clear-cookie', [\App\Http\Controllers\Admin\GithubCheckerController::class, 'clearCookie'])->name('github-checker.clear-cookie');
             Route::post('/github-checker/start', [\App\Http\Controllers\Admin\GithubCheckerController::class, 'start'])->name('github-checker.start');
             Route::post('/github-checker/check-next/{batchId}', [\App\Http\Controllers\Admin\GithubCheckerController::class, 'checkNext'])->name('github-checker.check-next');
             Route::post('/github-checker/stop/{batchId}', [\App\Http\Controllers\Admin\GithubCheckerController::class, 'stopBatch'])->name('github-checker.stop');

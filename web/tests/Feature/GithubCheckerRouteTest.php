@@ -111,4 +111,38 @@ class GithubCheckerRouteTest extends TestCase
         $this->assertStringContainsString('github_check_batch_' . $batch->id, $response->headers->get('Content-Disposition'));
         $this->assertStringContainsString('.xlsx', $response->headers->get('Content-Disposition'));
     }
+
+    /**
+     * Admin user can clear cookie session.
+     */
+    public function test_admin_can_clear_cookie(): void
+    {
+        $response = $this->actingAs($this->admin)
+            ->withSession(['github_cookie' => 'somecookie'])
+            ->post(route('admin.tools.github-checker.clear-cookie'));
+
+        $response->assertStatus(200);
+        $response->assertJson(['success' => true]);
+        $this->assertNull(session('github_cookie'));
+    }
+
+    /**
+     * Start action verifies stored cookie session live.
+     */
+    public function test_start_verifies_cookie_live(): void
+    {
+        \Illuminate\Support\Facades\Http::fake([
+            'https://github.com/' => \Illuminate\Support\Facades\Http::response('<html><body>Mocked guest page</body></html>', 200),
+        ]);
+
+        $response = $this->actingAs($this->admin)
+            ->withSession(['github_cookie' => 'invalid_or_expired_cookie'])
+            ->post(route('admin.tools.github-checker.start'), [
+                'usernames' => 'testuser',
+                'delay' => 2
+            ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonFragment(['success' => false]);
+    }
 }

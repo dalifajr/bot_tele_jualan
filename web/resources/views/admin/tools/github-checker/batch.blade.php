@@ -184,6 +184,10 @@
                 <button class="btn btn-sm btn-outline-info rounded-pill" onclick="showBulkStockModal()" id="btn-bulk-stock" style="display:none;">
                     <i class="fas fa-exchange-alt me-1"></i>Update Stok Masal
                 </button>
+                {{-- Delete Selected Stock --}}
+                <button class="btn btn-sm btn-outline-danger rounded-pill" onclick="showDeleteSelectedStockModal()" id="btn-delete-selected-stock" style="display:none;">
+                    <i class="fas fa-trash-alt me-1"></i>Hapus Stok Terpilih
+                </button>
                 {{-- Delete Suspended --}}
                 <button class="btn btn-sm btn-outline-danger rounded-pill" onclick="showDeleteSuspendedModal()" id="btn-delete-suspended" style="display:none;">
                     <i class="fas fa-trash-alt me-1"></i>Hapus Stok Suspended
@@ -477,8 +481,20 @@
     }
 
     function updateActionCount() {
-        const count = document.querySelectorAll('.result-cb:checked').length;
-        document.getElementById('action-selected-count').textContent = count;
+        const checked = document.querySelectorAll('.result-cb:checked');
+        document.getElementById('action-selected-count').textContent = checked.length;
+
+        // Toggle delete selected stock button dynamically
+        const hasSelectedStock = Array.from(checked).some(cb => cb.dataset.stockId);
+        const btnDeleteSelected = document.getElementById('btn-delete-selected-stock');
+        
+        if (btnDeleteSelected) {
+            if (!isRunning && hasSelectedStock) {
+                btnDeleteSelected.style.display = 'inline-block';
+            } else {
+                btnDeleteSelected.style.display = 'none';
+            }
+        }
     }
 
     function filterResults(status) {
@@ -525,6 +541,48 @@
         }).then(result => {
             if (result.isConfirmed) {
                 const stockIds = suspendedItems.map(item => parseInt(item.stockId));
+                fetch('{{ route("admin.tools.github-checker.bulk-delete-stock") }}', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN, 'Accept': 'application/json' },
+                    body: JSON.stringify({ stock_ids: stockIds })
+                })
+                .then(r => r.json())
+                .then(data => {
+                    Swal.fire({ icon: 'success', title: 'Berhasil!', text: data.message, timer: 2000, showConfirmButton: false });
+                    loadBatchData();
+                });
+            }
+        });
+    }
+
+    function showDeleteSelectedStockModal() {
+        const checked = document.querySelectorAll('.result-cb:checked');
+        if (checked.length === 0) {
+            Swal.fire({ icon: 'info', title: 'Pilih Akun', text: 'Pilih akun yang ingin dihapus dari stok menggunakan checkbox.' });
+            return;
+        }
+
+        const stockItems = Array.from(checked).filter(cb => cb.dataset.stockId).map(cb => ({
+            username: cb.value,
+            stockId: parseInt(cb.dataset.stockId)
+        }));
+
+        if (stockItems.length === 0) {
+            Swal.fire({ icon: 'info', title: 'Tidak Ada Stok', text: 'Akun terpilih tidak terhubung dengan stok produk.' });
+            return;
+        }
+
+        Swal.fire({
+            icon: 'warning',
+            title: 'Hapus Stok Terpilih?',
+            html: `<p>Anda akan menghapus <strong>${stockItems.length}</strong> stok akun terpilih.</p><p class="text-danger small">Tindakan ini tidak dapat dibatalkan!</p>`,
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonText: 'Batal',
+            confirmButtonText: 'Ya, Hapus',
+        }).then(result => {
+            if (result.isConfirmed) {
+                const stockIds = stockItems.map(item => item.stockId);
                 fetch('{{ route("admin.tools.github-checker.bulk-delete-stock") }}', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN, 'Accept': 'application/json' },

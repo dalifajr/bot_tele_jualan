@@ -106,12 +106,18 @@
             <div class="col">
                 <label class="form-label text-muted small fw-bold mb-1">Cookie Value <code class="text-muted">(user_session / _gh_sess)</code></label>
                 <input type="text" id="github-cookie-input" class="form-control"
-                       placeholder="Paste cookie value dari browser..." value="{{ $cookieValid ? '••••••••••••••••••••••••••' : '' }}">
+                       placeholder="Paste cookie value dari browser..." value="{{ $cookieValid ? '••••••••••••••••••••••••••' : '' }}" {{ $cookieValid ? 'disabled' : '' }}>
             </div>
-            <div class="col-auto">
-                <button type="button" class="btn btn-primary rounded-pill px-4" id="btn-validate-cookie" onclick="validateCookie()">
-                    <i class="fas fa-check-circle me-1"></i>Validasi
-                </button>
+            <div class="col-auto" id="cookie-action-container">
+                @if($cookieValid)
+                    <button type="button" class="btn btn-danger rounded-pill px-4" id="btn-clear-cookie" onclick="clearCookie()">
+                        <i class="fas fa-trash me-1"></i>Hapus Cookie
+                    </button>
+                @else
+                    <button type="button" class="btn btn-primary rounded-pill px-4" id="btn-validate-cookie" onclick="validateCookie()">
+                        <i class="fas fa-check-circle me-1"></i>Validasi
+                    </button>
+                @endif
             </div>
         </div>
         <div class="form-text mt-2">
@@ -336,6 +342,15 @@
                 indicator.className = 'cookie-status-indicator valid';
                 statusText.innerHTML = '<span class="text-success">Login sebagai: <strong>' + data.logged_in_as + '</strong></span>';
                 cookieInput.value = '••••••••••••••••••••••••••';
+                cookieInput.disabled = true;
+
+                // Replace action button with Clear button
+                document.getElementById('cookie-action-container').innerHTML = `
+                    <button type="button" class="btn btn-danger rounded-pill px-4" id="btn-clear-cookie" onclick="clearCookie()">
+                        <i class="fas fa-trash me-1"></i>Hapus Cookie
+                    </button>
+                `;
+
                 Swal.fire({ icon: 'success', title: 'Cookie Valid!', text: data.message, timer: 2000, showConfirmButton: false });
             } else {
                 indicator.className = 'cookie-status-indicator invalid';
@@ -347,8 +362,51 @@
             Swal.fire({ icon: 'error', title: 'Error', text: 'Gagal memvalidasi cookie: ' + err.message });
         })
         .finally(() => {
+            const validateBtn = document.getElementById('btn-validate-cookie');
+            if (validateBtn) {
+                validateBtn.disabled = false;
+                validateBtn.innerHTML = '<i class="fas fa-check-circle me-1"></i>Validasi';
+            }
+        });
+    }
+
+    // ─── Clear Cookie ───
+    function clearCookie() {
+        const btn = document.getElementById('btn-clear-cookie');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Menghapus...';
+
+        fetch('{{ route("admin.tools.github-checker.clear-cookie") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN, 'Accept': 'application/json' }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                const statusArea = document.getElementById('cookie-status-area');
+                const indicator = statusArea.querySelector('.cookie-status-indicator');
+                const statusText = document.getElementById('cookie-status-text');
+
+                indicator.className = 'cookie-status-indicator pending';
+                statusText.innerHTML = '<span class="text-muted">Belum divalidasi</span>';
+
+                const cookieInput = document.getElementById('github-cookie-input');
+                cookieInput.value = '';
+                cookieInput.disabled = false;
+
+                document.getElementById('cookie-action-container').innerHTML = `
+                    <button type="button" class="btn btn-primary rounded-pill px-4" id="btn-validate-cookie" onclick="validateCookie()">
+                        <i class="fas fa-check-circle me-1"></i>Validasi
+                    </button>
+                `;
+
+                Swal.fire({ icon: 'success', title: 'Berhasil!', text: data.message, timer: 1500, showConfirmButton: false });
+            }
+        })
+        .catch(err => {
+            Swal.fire({ icon: 'error', title: 'Error', text: 'Gagal menghapus cookie: ' + err.message });
             btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-check-circle me-1"></i>Validasi';
+            btn.innerHTML = '<i class="fas fa-trash me-1"></i>Hapus Cookie';
         });
     }
 
