@@ -11,3 +11,6 @@ data/
 ops/backups/*.tar.gz
 .vscode/
 github_accounts.txt
+github.html
+profile.html
+search.html

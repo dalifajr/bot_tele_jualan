@@ -234,6 +234,13 @@
             </div>
 
             <div class="menu-group">
+                <div class="menu-header text-success"><i class="fas fa-tools me-1"></i> Tool</div>
+                <a href="{{ route('admin.tools.github-checker') }}" class="menu-item {{ request()->routeIs('admin.tools.github-checker*') ? 'active' : '' }}">
+                    <i class="fab fa-github"></i> GitHub Live Checker
+                </a>
+            </div>
+
+            <div class="menu-group">
                 <div class="menu-header text-danger"><i class="fas fa-cogs me-1"></i> Sistem & Konfigurasi</div>
                 <a href="{{ route('admin.settings.index') }}" class="menu-item {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
                     <i class="fas fa-sliders-h"></i> Konfigurasi Sistem

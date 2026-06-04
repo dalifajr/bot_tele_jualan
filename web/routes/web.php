@@ -131,6 +131,20 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         // Admin Product Workers management
         Route::post('/products/{id}/workers', [\App\Http\Controllers\AdminController::class, 'addWorker'])->name('products.workers.store');
         Route::delete('/products/{id}/workers/{userId}', [\App\Http\Controllers\AdminController::class, 'removeWorker'])->name('products.workers.destroy');
+
+        // Tools
+        Route::prefix('tools')->name('tools.')->group(function () {
+            Route::get('/github-checker', [\App\Http\Controllers\Admin\GithubCheckerController::class, 'index'])->name('github-checker');
+            Route::post('/github-checker/set-cookie', [\App\Http\Controllers\Admin\GithubCheckerController::class, 'setCookie'])->name('github-checker.set-cookie');
+            Route::post('/github-checker/start', [\App\Http\Controllers\Admin\GithubCheckerController::class, 'start'])->name('github-checker.start');
+            Route::post('/github-checker/check-next/{batchId}', [\App\Http\Controllers\Admin\GithubCheckerController::class, 'checkNext'])->name('github-checker.check-next');
+            Route::post('/github-checker/stop/{batchId}', [\App\Http\Controllers\Admin\GithubCheckerController::class, 'stopBatch'])->name('github-checker.stop');
+            Route::get('/github-checker/progress/{batchId}', [\App\Http\Controllers\Admin\GithubCheckerController::class, 'progress'])->name('github-checker.progress');
+            Route::get('/github-checker/export/{batchId}', [\App\Http\Controllers\Admin\GithubCheckerController::class, 'export'])->name('github-checker.export');
+            Route::post('/github-checker/load-stock', [\App\Http\Controllers\Admin\GithubCheckerController::class, 'loadStockUsernames'])->name('github-checker.load-stock');
+            Route::post('/github-checker/bulk-delete-stock', [\App\Http\Controllers\Admin\GithubCheckerController::class, 'bulkDeleteStock'])->name('github-checker.bulk-delete-stock');
+            Route::post('/github-checker/bulk-update-stock', [\App\Http\Controllers\Admin\GithubCheckerController::class, 'bulkUpdateStockStatus'])->name('github-checker.bulk-update-stock');
+        });
     });
 
     /*
