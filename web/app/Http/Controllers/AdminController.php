@@ -1155,6 +1155,14 @@ class AdminController extends Controller
             });
         }
 
+        if ($request->filled('start_date')) {
+            $query->whereDate('created_at', '>=', $request->start_date);
+        }
+
+        if ($request->filled('end_date')) {
+            $query->whereDate('created_at', '<=', $request->end_date);
+        }
+
         $logs = $query->paginate(20);
 
         return view('admin.audit_logs.index', compact('logs'));

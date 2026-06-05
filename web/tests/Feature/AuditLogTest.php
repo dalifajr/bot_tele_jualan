@@ -82,4 +82,45 @@ class AuditLogTest extends TestCase
         $response->assertSee('ADD_STOCK');
         $response->assertSee('Added 5 accounts to product A');
     }
+
+    public function test_admin_can_filter_audit_logs_by_date(): void
+    {
+        // Log 1: Older log (5 days ago)
+        AuditLog::create([
+            'action' => 'OLD_ACTION',
+            'detail' => 'Old change',
+            'actor_id' => $this->admin->id,
+            'created_at' => now()->subDays(5),
+        ]);
+
+        // Log 2: Newer log (today)
+        AuditLog::create([
+            'action' => 'NEW_ACTION',
+            'detail' => 'New change',
+            'actor_id' => $this->admin->id,
+            'created_at' => now(),
+        ]);
+
+        // Querying for today's logs
+        $response = $this->actingAs($this->admin)
+            ->get(route('admin.audit-logs.index', [
+                'start_date' => now()->subDay()->toDateString(),
+                'end_date' => now()->addDay()->toDateString(),
+            ]));
+
+        $response->assertStatus(200);
+        $response->assertSee('NEW_ACTION');
+        $response->assertDontSee('OLD_ACTION');
+
+        // Querying for old logs
+        $responseOld = $this->actingAs($this->admin)
+            ->get(route('admin.audit-logs.index', [
+                'start_date' => now()->subDays(6)->toDateString(),
+                'end_date' => now()->subDays(4)->toDateString(),
+            ]));
+
+        $responseOld->assertStatus(200);
+        $responseOld->assertSee('OLD_ACTION');
+        $responseOld->assertDontSee('NEW_ACTION');
+    }
 }

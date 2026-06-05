@@ -11,17 +11,31 @@
     </div>
 </div>
 
-<div class="card border-0 shadow-sm mb-4">
+<div class="card border-0 shadow-sm mb-4" style="border-radius: 12px;">
     <div class="card-body p-3">
-        <form action="{{ route('admin.audit-logs.index') }}" method="GET" class="row g-2 align-items-center">
-            <div class="col-md-9 col-sm-8">
+        <form action="{{ route('admin.audit-logs.index') }}" method="GET" class="row g-3 align-items-end">
+            <div class="col-lg-5 col-md-12">
+                <label class="form-label text-secondary small fw-bold mb-1">Cari Kata Kunci</label>
                 <div class="input-group">
                     <span class="input-group-text bg-transparent border-end-0"><i class="fas fa-search text-muted"></i></span>
                     <input type="text" name="search" class="form-control border-start-0" placeholder="Cari berdasarkan aksi, detail, atau nama pelaku..." value="{{ request('search') }}">
                 </div>
             </div>
-            <div class="col-md-3 col-sm-4 d-grid">
-                <button type="submit" class="btn btn-primary rounded-pill"><i class="fas fa-filter me-1"></i>Filter</button>
+            <div class="col-lg-3 col-md-6 col-sm-6">
+                <label class="form-label text-secondary small fw-bold mb-1">Tanggal Mulai</label>
+                <input type="date" name="start_date" class="form-control" value="{{ request('start_date') }}">
+            </div>
+            <div class="col-lg-3 col-md-6 col-sm-6">
+                <label class="form-label text-secondary small fw-bold mb-1">Tanggal Selesai</label>
+                <input type="date" name="end_date" class="form-control" value="{{ request('end_date') }}">
+            </div>
+            <div class="col-lg-1 col-md-12">
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary w-100 rounded-pill" title="Terapkan Filter"><i class="fas fa-filter"></i></button>
+                    @if(request()->filled('search') || request()->filled('start_date') || request()->filled('end_date'))
+                        <a href="{{ route('admin.audit-logs.index') }}" class="btn btn-outline-secondary rounded-pill" title="Reset Filter"><i class="fas fa-undo"></i></a>
+                    @endif
+                </div>
             </div>
         </form>
     </div>
