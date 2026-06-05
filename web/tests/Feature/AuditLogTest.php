@@ -123,4 +123,41 @@ class AuditLogTest extends TestCase
         $responseOld->assertSee('OLD_ACTION');
         $responseOld->assertDontSee('NEW_ACTION');
     }
+
+    public function test_audit_logs_displays_correct_role_labels(): void
+    {
+        // 1. Admin log
+        AuditLog::create([
+            'action' => 'ADMIN_ACTION',
+            'detail' => 'Admin did something',
+            'actor_id' => $this->admin->id,
+            'created_at' => now(),
+        ]);
+
+        // 2. Seller log
+        AuditLog::create([
+            'action' => 'SELLER_ACTION',
+            'detail' => 'Seller did something',
+            'actor_id' => $this->seller->id,
+            'created_at' => now(),
+        ]);
+
+        // 3. Customer log
+        AuditLog::create([
+            'action' => 'CUSTOMER_ACTION',
+            'detail' => 'Customer did something',
+            'actor_id' => $this->customer->id,
+            'created_at' => now(),
+        ]);
+
+        $response = $this->actingAs($this->admin)
+            ->get(route('admin.audit-logs.index'));
+
+        $response->assertStatus(200);
+
+        // Check labels
+        $response->assertSee('Admin');
+        $response->assertSee('Seller');
+        $response->assertSee('Customer');
+    }
 }

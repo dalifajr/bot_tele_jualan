@@ -66,7 +66,7 @@
                                 </div>
                                 <div class="d-flex flex-column">
                                     <span class="fw-bold text-body" style="font-size: 0.85rem;">{{ $log->actor->full_name ?? $log->actor->username }}</span>
-                                    <span class="text-muted small">@if($log->actor->role === 'admin') Admin @else Seller @endif</span>
+                                    <span class="text-muted small">@if($log->actor->role === 'admin') Admin @elseif($log->actor->role === 'seller') Seller @else Customer @endif</span>
                                 </div>
                             </div>
                             @else
