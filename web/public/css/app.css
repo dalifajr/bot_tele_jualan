@@ -150,6 +150,12 @@ body {
     overflow: hidden;
 }
 
+/* Mengatur ulang padding atas pada container agar sesuai keinginan */
+.container-fluid.position-relative.px-4 {
+    padding-top: 1.5rem !important; /* Setara dengan pt-4 */
+    padding-bottom: 1.5rem !important; /* Setara dengan pb-4 */
+}
+
 .main-background {
     position: absolute;
     top: 0; left: 0; right: 0;
@@ -609,7 +615,14 @@ body {
     align-items: center;
     justify-content: center;
     background-color: rgba(255, 255, 255, 0.8);
+    opacity: 1;
+    visibility: visible;
     transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+#pageLoader.fade-out {
+    opacity: 0;
+    visibility: hidden;
 }
 
 [data-bs-theme="dark"] #pageLoader {

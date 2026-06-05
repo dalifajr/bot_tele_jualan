@@ -331,7 +331,7 @@
     {{-- Main Content --}}
     <main class="main-content position-relative">
         <div class="main-background"></div>
-        <div class="container-fluid position-relative px-4 py-4" style="z-index: 1;">
+        <div class="container-fluid position-relative px-4 pb-4 pt-4" style="z-index: 1;">
             {{-- Flash Messages --}}
             @if(session('success'))
                 <div class="alert alert-success alert-dismissible fade show" role="alert">

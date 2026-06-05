@@ -195,9 +195,51 @@
             .auth-left { padding: 2rem; }
             .auth-right { display: none !important; }
         }
+
+        /* Page Loader Overlay */
+        #pageLoader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: rgba(255, 255, 255, 0.8);
+            opacity: 1;
+            visibility: visible;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        #pageLoader.fade-out {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        /* Spinner Element */
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4.44px solid #e0e0e0;
+            border-top: 4.44px solid var(--primary-color, #1976d2);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        /* Spin Rotation Animation */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
+
+<div id="pageLoader">
+    <div class="spinner"></div>
+</div>
 
 <div class="container d-flex justify-content-center">
     <div class="auth-container">
@@ -455,5 +497,6 @@
         }
     });
 </script>
+<script src="{{ asset('js/app.js') }}"></script>
 </body>
 </html>

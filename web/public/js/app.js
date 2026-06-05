@@ -113,17 +113,18 @@ function finishTopLoadingBar() {
 function initPageLoader() {
     const pageLoader = document.getElementById('pageLoader');
 
-    // Hide loader on initial DOM load
-    if (pageLoader) {
-        pageLoader.style.display = 'none';
-    }
-
-    // Hide on window load event
-    window.addEventListener('load', () => {
+    // Hide on window load event, or immediately if page already loaded
+    if (document.readyState === 'complete') {
         if (pageLoader) {
-            pageLoader.style.display = 'none';
+            pageLoader.classList.add('fade-out');
         }
-    });
+    } else {
+        window.addEventListener('load', () => {
+            if (pageLoader) {
+                pageLoader.classList.add('fade-out');
+            }
+        });
+    }
 
     // Show loader on navigation
     document.querySelectorAll('a[href]:not([target="_blank"]):not([href^="#"]):not([href^="javascript"])').forEach(link => {
@@ -131,7 +132,7 @@ function initPageLoader() {
             if (e.ctrlKey || e.metaKey || e.shiftKey) return;
             startTopLoadingBar();
             if (pageLoader) {
-                pageLoader.style.display = 'flex';
+                pageLoader.classList.remove('fade-out');
             }
         });
     });
@@ -141,7 +142,7 @@ function initPageLoader() {
         form.addEventListener('submit', () => {
             startTopLoadingBar();
             if (pageLoader) {
-                pageLoader.style.display = 'flex';
+                pageLoader.classList.remove('fade-out');
             }
         });
     });
@@ -150,7 +151,7 @@ function initPageLoader() {
     window.addEventListener('pageshow', () => {
         finishTopLoadingBar();
         if (pageLoader) {
-            pageLoader.style.display = 'none';
+            pageLoader.classList.add('fade-out');
         }
     });
 }
@@ -220,7 +221,7 @@ function initTelegramWebApp() {
         if (!window.isAuthenticated) {
             const pageLoader = document.getElementById('pageLoader');
             if (pageLoader) {
-                pageLoader.style.display = 'flex';
+                pageLoader.classList.remove('fade-out');
             }
             
             const tokenMeta = document.querySelector('meta[name="csrf-token"]');
@@ -241,7 +242,7 @@ function initTelegramWebApp() {
                     window.location.reload();
                 } else {
                     console.error('Telegram WebApp login failed:', data.message);
-                    if (pageLoader) pageLoader.style.display = 'none';
+                    if (pageLoader) pageLoader.classList.add('fade-out');
                     
                     if (typeof Swal !== 'undefined') {
                         Swal.fire({
@@ -255,7 +256,7 @@ function initTelegramWebApp() {
             })
             .catch(error => {
                 console.error('Telegram WebApp login error:', error);
-                if (pageLoader) pageLoader.style.display = 'none';
+                if (pageLoader) pageLoader.classList.add('fade-out');
             });
         }
     }
