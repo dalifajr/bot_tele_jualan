@@ -42,8 +42,21 @@ class NotificationComposer
         }
         $readyToVerifyCount = $readyToVerifyQuery->count();
 
-        $totalNotifications = $pendingOrdersCount + $pendingLoginsCount + $readyToVerifyCount;
+        // Completed Broadcasts
+        $completedBroadcastsQuery = \App\Models\BroadcastJob::where('status', 'completed')->where('is_read', false);
+        $completedBroadcastsCount = $completedBroadcastsQuery->count();
+        $completedBroadcasts = $completedBroadcastsQuery->get();
 
-        $view->with(compact('pendingOrdersCount', 'pendingLoginsCount', 'readyStockCount', 'readyToVerifyCount', 'totalNotifications'));
+        $totalNotifications = $pendingOrdersCount + $pendingLoginsCount + $readyToVerifyCount + $completedBroadcastsCount;
+
+        $view->with(compact(
+            'pendingOrdersCount', 
+            'pendingLoginsCount', 
+            'readyStockCount', 
+            'readyToVerifyCount', 
+            'completedBroadcastsCount',
+            'completedBroadcasts',
+            'totalNotifications'
+        ));
     }
 }

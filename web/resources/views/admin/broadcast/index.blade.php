@@ -38,8 +38,8 @@
                         <div class="d-flex gap-3">
                             <i class="fas fa-info-circle fs-4 mt-1"></i>
                             <div>
-                                <h6 class="fw-bold mb-1">Informasi Broadcast</h6>
-                                <p class="mb-0 small text-body">Broadcast akan dikirimkan ke seluruh pelanggan yang memiliki ID Telegram. Jangan tutup halaman ini sebelum proses pengiriman selesai agar *progress bar* dapat berjalan hingga tuntas.</p>
+                                <h6 class="fw-bold mb-1">Broadcast Latar Belakang</h6>
+                                <p class="mb-0 small text-body">Broadcast berjalan sepenuhnya di latar belakang. Anda dapat berpindah halaman atau menutup panel tanpa menghentikan pengiriman pesan. Progress akan tersimpan otomatis.</p>
                             </div>
                         </div>
                     </div>
@@ -58,6 +58,102 @@
 
 @push('scripts')
 <script>
+let pollInterval = null;
+let currentJobId = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    checkActiveBroadcast();
+});
+
+async function checkActiveBroadcast() {
+    try {
+        const response = await fetch("{{ route('admin.broadcast.active') }}");
+        const data = await response.json();
+        
+        if (data.status === 'success' && data.has_active) {
+            currentJobId = data.job.id;
+            setupActiveBroadcastUI(data.job);
+            startPolling(data.job.id);
+        }
+    } catch (e) {
+        console.error("Gagal memeriksa broadcast aktif:", e);
+    }
+}
+
+function setupActiveBroadcastUI(job) {
+    const btnSend = document.getElementById('btnSend');
+    const messageTextarea = document.getElementById('broadcastMessage');
+    
+    messageTextarea.value = job.message;
+    messageTextarea.disabled = true;
+    
+    btnSend.disabled = true;
+    btnSend.innerHTML = 'Sedang Mengirim (Latar Belakang)...';
+    
+    document.getElementById('progressSection').classList.remove('d-none');
+    
+    updateProgressUI(job.sent + job.failed, job.total, job.sent, job.failed);
+}
+
+function updateProgressUI(current, total, success, failed) {
+    const percentage = total > 0 ? Math.round((current / total) * 100) : 0;
+    
+    document.getElementById('progressBar').style.width = percentage + '%';
+    document.getElementById('progressBar').innerText = percentage + '%';
+    document.getElementById('progressText').innerText = `${current}/${total}`;
+    document.getElementById('successCount').innerText = success;
+    document.getElementById('failedCount').innerText = failed;
+}
+
+function startPolling(jobId) {
+    if (pollInterval) clearInterval(pollInterval);
+    
+    pollInterval = setInterval(async () => {
+        try {
+            const response = await fetch(`/admin/broadcast/status/${jobId}`);
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                const job = data.job;
+                const processed = job.sent + job.failed;
+                
+                updateProgressUI(processed, job.total, job.sent, job.failed);
+                
+                if (job.status === 'completed' || job.status === 'failed') {
+                    clearInterval(pollInterval);
+                    pollInterval = null;
+                    finishBroadcastUI(job.status, job.sent, job.failed);
+                }
+            }
+        } catch (e) {
+            console.error("Error polling status:", e);
+        }
+    }, 1500);
+}
+
+function finishBroadcastUI(status, success, failed) {
+    const btnSend = document.getElementById('btnSend');
+    const messageTextarea = document.getElementById('broadcastMessage');
+    
+    btnSend.innerHTML = '<i class="fas fa-check-circle me-2"></i>Selesai';
+    btnSend.classList.replace('btn-primary', 'btn-success');
+    
+    Swal.fire({
+        icon: status === 'completed' ? 'success' : 'error',
+        title: status === 'completed' ? 'Broadcast Selesai!' : 'Broadcast Gagal',
+        html: `Laporan Pengiriman Latar Belakang:<br>Berhasil terkirim: <b>${success}</b><br>Gagal terkirim: <b>${failed}</b>`,
+        confirmButtonColor: status === 'completed' ? '#198754' : '#dc3545'
+    }).then(() => {
+        // Reset form
+        messageTextarea.disabled = false;
+        messageTextarea.value = '';
+        btnSend.disabled = false;
+        btnSend.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Mulai Kirim Broadcast';
+        btnSend.classList.replace('btn-success', 'btn-primary');
+        document.getElementById('progressSection').classList.add('d-none');
+    });
+}
+
 async function startBroadcast() {
     const btnSend = document.getElementById('btnSend');
     const message = document.getElementById('broadcastMessage').value;
@@ -71,15 +167,12 @@ async function startBroadcast() {
         });
     }
     
-    // UI Update
     btnSend.disabled = true;
     btnSend.innerHTML = 'Mempersiapkan...';
-    document.getElementById('progressSection').classList.remove('d-none');
-    
-    let targets = [];
+    document.getElementById('broadcastMessage').disabled = true;
     
     try {
-        const response = await fetch("{{ route('admin.broadcast.prepare') }}", {
+        const response = await fetch("{{ route('admin.broadcast.start') }}", {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -89,9 +182,24 @@ async function startBroadcast() {
         });
         
         const data = await response.json();
-        if (data.status !== 'success') throw new Error(data.message || 'Gagal menyiapkan broadcast');
+        if (data.status !== 'success') throw new Error(data.message || 'Gagal memulai broadcast');
         
-        targets = data.targets;
+        currentJobId = data.job_id;
+        document.getElementById('progressSection').classList.remove('d-none');
+        btnSend.innerHTML = 'Sedang Mengirim (Latar Belakang)...';
+        updateProgressUI(0, data.total, 0, 0);
+        
+        startPolling(data.job_id);
+        
+        Swal.fire({
+            icon: 'info',
+            title: 'Broadcast Dimulai',
+            text: 'Proses pengiriman pesan sekarang berjalan di latar belakang. Anda dapat berpindah halaman dengan aman!',
+            timer: 4000,
+            showConfirmButton: true,
+            confirmButtonColor: '#0d6efd'
+        });
+        
     } catch (error) {
         Swal.fire({
             icon: 'error',
@@ -100,63 +208,9 @@ async function startBroadcast() {
             confirmButtonColor: '#d33'
         });
         btnSend.disabled = false;
+        document.getElementById('broadcastMessage').disabled = false;
         btnSend.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Mulai Kirim Broadcast';
-        return;
     }
-    
-    const total = targets.length;
-    let success = 0;
-    let failed = 0;
-    
-    btnSend.innerHTML = 'Sedang Mengirim...';
-    document.getElementById('progressText').innerText = `0/${total}`;
-    
-    // Loop through targets one by one
-    for (let i = 0; i < total; i++) {
-        try {
-            const res = await fetch("{{ route('admin.broadcast.send') }}", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                },
-                body: JSON.stringify({
-                    telegram_id: targets[i],
-                    message: message
-                })
-            });
-            
-            const resData = await res.json();
-            if (resData.status === 'success') {
-                success++;
-            } else {
-                failed++;
-            }
-        } catch (error) {
-            failed++;
-        }
-        
-        // Update Progress Bar
-        const current = i + 1;
-        const percentage = Math.round((current / total) * 100);
-        
-        document.getElementById('progressBar').style.width = percentage + '%';
-        document.getElementById('progressBar').innerText = percentage + '%';
-        document.getElementById('progressText').innerText = `${current}/${total}`;
-        document.getElementById('successCount').innerText = success;
-        document.getElementById('failedCount').innerText = failed;
-    }
-    
-    // Finished
-    btnSend.innerHTML = '<i class="fas fa-check-circle me-2"></i>Selesai';
-    btnSend.classList.replace('btn-primary', 'btn-success');
-    
-    Swal.fire({
-        icon: 'success',
-        title: 'Broadcast Selesai!',
-        html: `Berhasil terkirim: <b>${success}</b><br>Gagal terkirim: <b>${failed}</b>`,
-        confirmButtonColor: '#198754'
-    });
 }
 </script>
 @endpush

@@ -770,49 +770,83 @@ class AdminController extends Controller
         return view('admin.broadcast.index');
     }
 
-    public function prepareBroadcast(Request $request)
+    public function startBroadcast(Request $request)
     {
         $request->validate(['message' => 'required|string']);
-        
-        // Dapatkan semua user dengan role customer dan punya telegram_id valid
-        $customers = \App\Models\User::whereNotNull('telegram_id')
+
+        $targets = \App\Models\User::whereNotNull('telegram_id')
             ->where('role', 'customer')
-            ->pluck('telegram_id');
-            
+            ->pluck('telegram_id')
+            ->toArray();
+
+        if (empty($targets)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Tidak ada pelanggan dengan Telegram ID untuk dikirimi broadcast.'
+            ], 422);
+        }
+
+        // Create the background job record
+        $job = \App\Models\BroadcastJob::create([
+            'message' => $request->message,
+            'total_targets' => count($targets),
+            'sent_count' => 0,
+            'failed_count' => 0,
+            'status' => 'pending',
+            'admin_id' => \Illuminate\Support\Facades\Auth::id(),
+            'is_read' => false,
+        ]);
+
+        // Dispatch background job
+        \App\Jobs\SendBroadcastJob::dispatch($job->id, $targets, $request->message);
+
         return response()->json([
             'status' => 'success',
-            'total' => $customers->count(),
-            'targets' => $customers
+            'job_id' => $job->id,
+            'total' => $job->total_targets
         ]);
     }
 
-    public function sendBroadcast(Request $request)
+    public function getBroadcastStatus($jobId)
     {
-        $request->validate([
-            'telegram_id' => 'required',
-            'message' => 'required|string'
+        $job = \App\Models\BroadcastJob::findOrFail($jobId);
+        return response()->json([
+            'status' => 'success',
+            'job' => [
+                'id' => $job->id,
+                'status' => $job->status,
+                'total' => $job->total_targets,
+                'sent' => $job->sent_count,
+                'failed' => $job->failed_count,
+            ]
         ]);
+    }
 
-        $token = config('telegram.bot_token');
-        if (!$token) {
-            return response()->json(['status' => 'error', 'message' => 'Bot token tidak dikonfigurasi.']);
-        }
+    public function getActiveBroadcast()
+    {
+        $job = \App\Models\BroadcastJob::whereIn('status', ['pending', 'processing'])
+            ->orderBy('created_at', 'desc')
+            ->first();
 
-        try {
-            $response = \Illuminate\Support\Facades\Http::post("https://api.telegram.org/bot{$token}/sendMessage", [
-                'chat_id' => $request->telegram_id,
-                'text' => $request->message,
-                'parse_mode' => 'HTML'
-            ]);
+        return response()->json([
+            'status' => 'success',
+            'has_active' => $job ? true : false,
+            'job' => $job ? [
+                'id' => $job->id,
+                'message' => $job->message,
+                'status' => $job->status,
+                'total' => $job->total_targets,
+                'sent' => $job->sent_count,
+                'failed' => $job->failed_count,
+            ] : null
+        ]);
+    }
 
-            if ($response->successful()) {
-                return response()->json(['status' => 'success']);
-            } else {
-                return response()->json(['status' => 'error', 'message' => 'Telegram API Error']);
-            }
-        } catch (\Exception $e) {
-            return response()->json(['status' => 'error', 'message' => $e->getMessage()]);
-        }
+    public function markBroadcastRead($jobId)
+    {
+        $job = \App\Models\BroadcastJob::findOrFail($jobId);
+        $job->update(['is_read' => true]);
+        return response()->json(['success' => true]);
     }
 
     // ==========================================
@@ -995,6 +1029,27 @@ class AdminController extends Controller
             'chartLabels',
             'chartData'
         ));
+    }
+
+    public function auditLogs(Request $request)
+    {
+        $query = \App\Models\AuditLog::with('actor')->orderBy('created_at', 'desc');
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('action', 'like', "%{$search}%")
+                  ->orWhere('detail', 'like', "%{$search}%")
+                  ->orWhereHas('actor', function($aq) use ($search) {
+                      $aq->where('username', 'like', "%{$search}%")
+                         ->orWhere('full_name', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        $logs = $query->paginate(20);
+
+        return view('admin.audit_logs.index', compact('logs'));
     }
 
     // ==========================================

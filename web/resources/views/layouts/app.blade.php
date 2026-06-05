@@ -115,6 +115,23 @@
                 </li>
                 @endif
 
+                @if(isset($completedBroadcasts) && $completedBroadcasts->count() > 0)
+                    @foreach($completedBroadcasts as $bJob)
+                    <li>
+                        <a class="dropdown-item py-2 d-flex align-items-start gap-3" href="{{ route('admin.broadcast.index') }}" onclick="event.preventDefault(); markBroadcastRead({{ $bJob->id }}, this.href);">
+                            <div class="text-success mt-1"><i class="fas fa-bullhorn text-success"></i></div>
+                            <div>
+                                <div class="fw-bold">Broadcast Selesai</div>
+                                <small class="text-muted text-wrap">
+                                    {{ Str::limit(strip_tags($bJob->message), 40) }}<br>
+                                    <span class="text-success">Sukses: {{ $bJob->sent_count }}</span> | <span class="text-danger">Gagal: {{ $bJob->failed_count }}</span>
+                                </small>
+                            </div>
+                        </a>
+                    </li>
+                    @endforeach
+                @endif
+
                 @if(isset($readyStockCount))
                 <li>
                     <a class="dropdown-item py-2 d-flex align-items-start gap-3" href="{{ route('admin.stock.index') }}">
@@ -250,6 +267,9 @@
                 </a>
                 <a href="{{ route('admin.reports.index') }}" class="menu-item {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}">
                     <i class="fas fa-chart-bar"></i> Laporan Operasional
+                </a>
+                <a href="{{ route('admin.audit-logs.index') }}" class="menu-item {{ request()->routeIs('admin.audit-logs.*') ? 'active' : '' }}">
+                    <i class="fas fa-history"></i> Log Audit
                 </a>
                 <a href="{{ route('admin.website.settings') }}" class="menu-item {{ request()->routeIs('admin.website.settings') ? 'active' : '' }}">
                     <i class="fas fa-globe"></i> Kelola Website
@@ -408,6 +428,23 @@
                     timer: 3000
                 });
             }
+        });
+    }
+
+    function markBroadcastRead(jobId, redirectUrl) {
+        fetch('/admin/broadcast/mark-read/' + jobId, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(() => {
+            window.location.href = redirectUrl;
+        })
+        .catch(() => {
+            window.location.href = redirectUrl;
         });
     }
 </script>
