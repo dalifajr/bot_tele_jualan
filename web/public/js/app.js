@@ -113,7 +113,7 @@ function finishTopLoadingBar() {
 function initPageLoader() {
     const pageLoader = document.getElementById('pageLoader');
 
-    // Hide loader immediately as DOM is now interactive
+    // Hide loader immediately on DOMContentLoaded (which is now)
     if (pageLoader) {
         pageLoader.classList.add('fade-out');
     }
