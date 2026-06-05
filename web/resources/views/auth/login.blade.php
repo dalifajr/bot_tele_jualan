@@ -226,6 +226,7 @@
             border-top: 4.44px solid var(--primary-color, #1976d2);
             border-radius: 50%;
             animation: spin 1s linear infinite;
+            will-change: transform;
         }
 
         /* Spin Rotation Animation */
