@@ -40,8 +40,6 @@ class BroadcastBackgroundTest extends TestCase
 
     public function test_admin_can_start_background_broadcast(): void
     {
-        Queue::fake();
-
         $response = $this->actingAs($this->admin)
             ->post(route('admin.broadcast.start'), [
                 'message' => '<b>Promo Spesial!</b>'
@@ -58,8 +56,6 @@ class BroadcastBackgroundTest extends TestCase
             'total_targets' => 1,
             'status' => 'pending'
         ]);
-
-        Queue::assertPushed(SendBroadcastJob::class);
     }
 
     public function test_can_retrieve_broadcast_status(): void
@@ -110,5 +106,53 @@ class BroadcastBackgroundTest extends TestCase
                 'status' => 'processing'
             ]
         ]);
+    }
+
+    public function test_artisan_command_executes_broadcast_successfully()
+    {
+        config(['telegram.bot_token' => 'mock_telegram_token_here']);
+
+        \Illuminate\Support\Facades\Http::fake([
+            'https://api.telegram.org/*' => \Illuminate\Support\Facades\Http::response(['ok' => true], 200)
+        ]);
+
+        $job = BroadcastJob::create([
+            'message' => 'Test message',
+            'total_targets' => 1,
+            'status' => 'pending',
+            'admin_id' => $this->admin->id
+        ]);
+
+        $this->artisan('broadcast:run', ['jobId' => $job->id])
+            ->assertExitCode(0);
+
+        $this->assertEquals('completed', $job->fresh()->status);
+        $this->assertEquals(1, $job->fresh()->sent_count);
+    }
+
+    public function test_loopback_fallback_executes_broadcast_successfully()
+    {
+        config(['telegram.bot_token' => 'mock_telegram_token_here']);
+
+        \Illuminate\Support\Facades\Http::fake([
+            'https://api.telegram.org/*' => \Illuminate\Support\Facades\Http::response(['ok' => true], 200)
+        ]);
+
+        $job = BroadcastJob::create([
+            'message' => 'Test message',
+            'total_targets' => 1,
+            'status' => 'pending',
+            'admin_id' => $this->admin->id
+        ]);
+
+        $token = hash_hmac('sha256', $job->id, config('app.key'));
+
+        $response = $this->get(route('admin.broadcast.run-bg', ['jobId' => $job->id, 'token' => $token]));
+
+        $response->assertStatus(200);
+        $response->assertJson(['status' => 'success']);
+
+        $this->assertEquals('completed', $job->fresh()->status);
+        $this->assertEquals(1, $job->fresh()->sent_count);
     }
 }

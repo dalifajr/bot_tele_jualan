@@ -797,14 +797,122 @@ class AdminController extends Controller
             'is_read' => false,
         ]);
 
-        // Dispatch background job
-        \App\Jobs\SendBroadcastJob::dispatch($job->id, $targets, $request->message);
+        // 1. Try background CLI execution
+        $artisan = base_path('artisan');
+        $phpFinder = new \Symfony\Component\Process\PhpExecutableFinder();
+        $php = $phpFinder->find(false);
+        if (!$php) {
+            $php = 'php';
+        }
+
+        $logFile = storage_path('logs/broadcast_command_' . $job->id . '.log');
+
+        try {
+            if (PHP_OS_FAMILY === 'Windows') {
+                // Windows background execution
+                pclose(popen("start /B " . escapeshellarg($php) . " " . escapeshellarg($artisan) . " broadcast:run {$job->id} > " . escapeshellarg($logFile) . " 2>&1", "r"));
+            } else {
+                // Linux/Unix background execution
+                exec(escapeshellarg($php) . " " . escapeshellarg($artisan) . " broadcast:run {$job->id} > " . escapeshellarg($logFile) . " 2>&1 &");
+            }
+        } catch (\Exception $e) {
+            \Log::warning("Gagal memulai Artisan command untuk broadcast: " . $e->getMessage());
+        }
+
+        // 2. Trigger HTTP loopback fallback
+        // We generate a signed URL and ping it asynchronously with a 1-second timeout
+        $token = hash_hmac('sha256', $job->id, config('app.key'));
+        $url = route('admin.broadcast.run-bg', ['jobId' => $job->id, 'token' => $token]);
+
+        try {
+            \Illuminate\Support\Facades\Http::timeout(1)
+                ->connectTimeout(1)
+                ->withoutVerifying()
+                ->get($url);
+        } catch (\Exception $e) {
+            // Timeout is expected and indicates the loopback was triggered successfully
+        }
 
         return response()->json([
             'status' => 'success',
             'job_id' => $job->id,
             'total' => $job->total_targets
         ]);
+    }
+
+    public function runBroadcastBackground(Request $request, $jobId)
+    {
+        $expectedToken = hash_hmac('sha256', $jobId, config('app.key'));
+        if ($request->query('token') !== $expectedToken) {
+            abort(403, 'Unauthorized');
+        }
+
+        // Run the broadcast logic here in the background
+        ignore_user_abort(true);
+        set_time_limit(0);
+
+        $job = \App\Models\BroadcastJob::find($jobId);
+        if (!$job) {
+            return response()->json(['status' => 'not_found'], 404);
+        }
+
+        // Atomic update check to avoid duplicate running
+        $updated = \App\Models\BroadcastJob::where('id', $jobId)
+            ->where('status', 'pending')
+            ->update(['status' => 'processing']);
+
+        if (!$updated) {
+            return response()->json(['status' => 'already_started']);
+        }
+
+        $targets = \App\Models\User::whereNotNull('telegram_id')
+            ->where('role', 'customer')
+            ->pluck('telegram_id')
+            ->toArray();
+
+        $token = config('telegram.bot_token');
+        if (!$token) {
+            \App\Models\BroadcastJob::where('id', $jobId)->update(['status' => 'failed']);
+            return response()->json(['status' => 'failed', 'reason' => 'no_token'], 422);
+        }
+
+        $success = 0;
+        $failed = 0;
+
+        foreach ($targets as $targetId) {
+            // Check if job was manually updated/cancelled
+            $currentJob = \App\Models\BroadcastJob::find($jobId);
+            if (!$currentJob || in_array($currentJob->status, ['failed', 'completed'])) {
+                break;
+            }
+
+            try {
+                $response = \Illuminate\Support\Facades\Http::post("https://api.telegram.org/bot{$token}/sendMessage", [
+                    'chat_id' => $targetId,
+                    'text' => $job->message,
+                    'parse_mode' => 'HTML'
+                ]);
+
+                if ($response->successful()) {
+                    $success++;
+                } else {
+                    $failed++;
+                }
+            } catch (\Exception $e) {
+                $failed++;
+            }
+
+            \App\Models\BroadcastJob::where('id', $jobId)->update([
+                'sent_count' => $success,
+                'failed_count' => $failed,
+            ]);
+
+            // Delay to avoid hitting rate limits
+            usleep(50000); // 50ms
+        }
+
+        \App\Models\BroadcastJob::where('id', $jobId)->update(['status' => 'completed']);
+        return response()->json(['status' => 'success']);
     }
 
     public function getBroadcastStatus($jobId)
