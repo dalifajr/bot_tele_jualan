@@ -200,6 +200,7 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
 
         Route::get('/settings', [\App\Http\Controllers\SellerController::class, 'settings'])->name('settings.index');
         Route::post('/settings', [\App\Http\Controllers\SellerController::class, 'updateSettings'])->name('settings.update');
+        Route::get('/reports', [\App\Http\Controllers\SellerController::class, 'reports'])->name('reports.index');
     });
 });
 

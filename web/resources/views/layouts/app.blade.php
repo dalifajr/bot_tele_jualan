@@ -248,6 +248,9 @@
                 <a href="{{ route('admin.logins.index') }}" class="menu-item {{ request()->routeIs('admin.logins.*') ? 'active' : '' }}">
                     <i class="fas fa-sign-in-alt"></i> Percobaan Login
                 </a>
+                <a href="{{ route('admin.reports.index') }}" class="menu-item {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}">
+                    <i class="fas fa-chart-bar"></i> Laporan Operasional
+                </a>
             </div>
 
             <div class="menu-group">
@@ -264,9 +267,6 @@
                 <div class="menu-header text-danger"><i class="fas fa-cogs me-1"></i> Sistem & Konfigurasi</div>
                 <a href="{{ route('admin.settings.index') }}" class="menu-item {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
                     <i class="fas fa-sliders-h"></i> Konfigurasi Sistem
-                </a>
-                <a href="{{ route('admin.reports.index') }}" class="menu-item {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}">
-                    <i class="fas fa-chart-bar"></i> Laporan Operasional
                 </a>
                 <a href="{{ route('admin.audit-logs.index') }}" class="menu-item {{ request()->routeIs('admin.audit-logs.*') ? 'active' : '' }}">
                     <i class="fas fa-history"></i> Log Audit
@@ -297,6 +297,9 @@
                 </a>
                 <a href="{{ route('seller.settings.index') }}" class="menu-item {{ request()->routeIs('seller.settings.*') ? 'active' : '' }}">
                     <i class="fas fa-user-cog"></i> Pengaturan Karantina
+                </a>
+                <a href="{{ route('seller.reports.index') }}" class="menu-item {{ request()->routeIs('seller.reports.*') ? 'active' : '' }}">
+                    <i class="fas fa-chart-bar"></i> Laporan Operasional
                 </a>
             </div>
             @if(is_array(Auth::user()->allowed_tools) && count(Auth::user()->allowed_tools) > 0)
