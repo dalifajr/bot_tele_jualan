@@ -118,6 +118,7 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         Route::get('/broadcast/status/{jobId}', [\App\Http\Controllers\AdminController::class, 'getBroadcastStatus'])->name('broadcast.status');
         Route::get('/broadcast/active', [\App\Http\Controllers\AdminController::class, 'getActiveBroadcast'])->name('broadcast.active');
         Route::post('/broadcast/mark-read/{jobId}', [\App\Http\Controllers\AdminController::class, 'markBroadcastRead'])->name('broadcast.mark-read');
+        Route::post('/broadcast/cancel/{jobId}', [\App\Http\Controllers\AdminController::class, 'cancelBroadcast'])->name('broadcast.cancel');
         
         Route::get('/settings', [\App\Http\Controllers\AdminController::class, 'settings'])->name('settings.index');
         Route::post('/settings', [\App\Http\Controllers\AdminController::class, 'updateSettings'])->name('settings.update');

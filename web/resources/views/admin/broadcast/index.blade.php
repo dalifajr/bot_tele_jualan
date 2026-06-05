@@ -28,9 +28,14 @@
                         <div class="progress" style="height: 20px; border-radius: 10px;">
                             <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%;">0%</div>
                         </div>
-                        <div class="d-flex justify-content-between mt-2 small">
-                            <span class="text-success"><i class="fas fa-check-circle me-1"></i>Berhasil: <span id="successCount" class="fw-bold">0</span></span>
-                            <span class="text-danger"><i class="fas fa-times-circle me-1"></i>Gagal: <span id="failedCount" class="fw-bold">0</span></span>
+                        <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
+                            <div class="d-flex gap-3 small">
+                                <span class="text-success"><i class="fas fa-check-circle me-1"></i>Berhasil: <span id="successCount" class="fw-bold">0</span></span>
+                                <span class="text-danger"><i class="fas fa-times-circle me-1"></i>Gagal: <span id="failedCount" class="fw-bold">0</span></span>
+                            </div>
+                            <button type="button" id="btnCancelBroadcast" class="btn btn-sm btn-danger rounded-pill px-3 fw-bold shadow-sm" onclick="cancelBroadcast()">
+                                <i class="fas fa-stop me-1"></i>Hentikan Broadcast
+                            </button>
                         </div>
                     </div>
                     
@@ -210,6 +215,63 @@ async function startBroadcast() {
         btnSend.disabled = false;
         document.getElementById('broadcastMessage').disabled = false;
         btnSend.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Mulai Kirim Broadcast';
+    }
+}
+
+async function cancelBroadcast() {
+    if (!currentJobId) return;
+
+    const result = await Swal.fire({
+        title: 'Hentikan Broadcast?',
+        text: 'Apakah Anda yakin ingin membatalkan dan menghentikan pengiriman broadcast yang sedang berjalan?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Ya, Hentikan!',
+        cancelButtonText: 'Batal',
+        customClass: {
+            popup: 'rounded-4 border-0 shadow-lg',
+            confirmButton: 'btn btn-danger rounded-pill px-4 me-2',
+            cancelButton: 'btn btn-secondary rounded-pill px-4'
+        },
+        buttonsStyling: false
+    });
+
+    if (result.isConfirmed) {
+        try {
+            const response = await fetch(`/admin/broadcast/cancel/${currentJobId}`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json'
+                }
+            });
+            const data = await response.json();
+            if (data.status === 'success') {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil Dihentikan',
+                    text: data.message,
+                    timer: 2000,
+                    showConfirmButton: false,
+                    customClass: {
+                        popup: 'rounded-4 border-0 shadow-lg'
+                    }
+                });
+            } else {
+                throw new Error(data.message || 'Gagal menghentikan broadcast');
+            }
+        } catch (e) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal',
+                text: e.message,
+                customClass: {
+                    popup: 'rounded-4 border-0 shadow-lg'
+                }
+            });
+        }
     }
 }
 </script>

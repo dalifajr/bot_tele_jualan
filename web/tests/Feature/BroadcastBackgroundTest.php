@@ -155,4 +155,25 @@ class BroadcastBackgroundTest extends TestCase
         $this->assertEquals('completed', $job->fresh()->status);
         $this->assertEquals(1, $job->fresh()->sent_count);
     }
+
+    public function test_admin_can_cancel_active_broadcast(): void
+    {
+        $job = BroadcastJob::create([
+            'message' => 'To be cancelled',
+            'total_targets' => 10,
+            'status' => 'processing',
+            'admin_id' => $this->admin->id
+        ]);
+
+        $response = $this->actingAs($this->admin)
+            ->post(route('admin.broadcast.cancel', $job->id));
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'status' => 'success',
+            'message' => 'Broadcast berhasil dihentikan.'
+        ]);
+
+        $this->assertEquals('failed', $job->fresh()->status);
+    }
 }

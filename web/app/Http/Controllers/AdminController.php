@@ -957,6 +957,24 @@ class AdminController extends Controller
         return response()->json(['success' => true]);
     }
 
+    public function cancelBroadcast($jobId)
+    {
+        $job = \App\Models\BroadcastJob::findOrFail($jobId);
+
+        if (in_array($job->status, ['pending', 'processing'])) {
+            $job->update(['status' => 'failed']);
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Broadcast berhasil dihentikan.'
+            ]);
+        }
+
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Broadcast tidak dapat dihentikan karena sudah selesai atau gagal.'
+        ], 422);
+    }
+
     // ==========================================
     // SETTINGS (Payment)
     // ==========================================
