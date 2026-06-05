@@ -71,9 +71,20 @@
     {{-- Chart --}}
     <div class="col-lg-8">
         <div class="card border-0 shadow-sm h-100">
-            <div class="card-header bg-transparent border-0 pt-4 px-4">
-                <h5 class="fw-bold mb-1 text-body"><i class="fas fa-chart-line text-primary me-2"></i>Tren Pendapatan Harian</h5>
-                <p class="text-muted small mb-0">Statistik omzet penjualan dalam 7 hari terakhir</p>
+            <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div>
+                    <h5 class="fw-bold mb-1 text-body"><i class="fas fa-chart-line text-primary me-2"></i>Tren Pendapatan Harian</h5>
+                    <p class="text-muted small mb-0">Statistik omzet penjualan dalam {{ $days == 180 ? '6 bulan' : ($days == 365 ? '1 tahun' : $days . ' hari') }} terakhir</p>
+                </div>
+                <div>
+                    <select class="form-select form-select-sm rounded-pill px-3" style="width: auto;" onchange="window.location.href = '{{ route('admin.reports.index') }}?days=' + this.value">
+                        <option value="7" {{ $days == 7 ? 'selected' : '' }}>7 Hari Terakhir</option>
+                        <option value="14" {{ $days == 14 ? 'selected' : '' }}>14 Hari Terakhir</option>
+                        <option value="30" {{ $days == 30 ? 'selected' : '' }}>30 Hari Terakhir</option>
+                        <option value="180" {{ $days == 180 ? 'selected' : '' }}>6 Bulan Terakhir</option>
+                        <option value="365" {{ $days == 365 ? 'selected' : '' }}>1 Tahun Terakhir</option>
+                    </select>
+                </div>
             </div>
             <div class="card-body px-4 pb-4">
                 <div id="salesChart" style="min-height: 350px;"></div>

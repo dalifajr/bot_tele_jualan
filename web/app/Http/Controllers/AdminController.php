@@ -1117,7 +1117,7 @@ class AdminController extends Controller
     // ==========================================
     // REPORTS
     // ==========================================
-    public function reports()
+    public function reports(Request $request)
     {
         // Simple aggregate data
         $totalSales = \App\Models\Order::where('status', 'delivered')->sum('total_amount');
@@ -1133,13 +1133,24 @@ class AdminController extends Controller
             ->take(5)
             ->get();
 
-        // Calculate last 7 days sales trends
+        // Calculate sales trends based on filtered days
+        $days = (int)$request->query('days', 7);
+        if (!in_array($days, [7, 14, 30, 180, 365])) {
+            $days = 7;
+        }
+
         $chartLabels = [];
         $chartData = [];
-        for ($i = 6; $i >= 0; $i--) {
+        for ($i = $days - 1; $i >= 0; $i--) {
             $dateObj = now()->subDays($i);
             $date = $dateObj->toDateString();
-            $chartLabels[] = $dateObj->format('d M');
+            
+            if ($days > 30) {
+                $chartLabels[] = $dateObj->format('d M y');
+            } else {
+                $chartLabels[] = $dateObj->format('d M');
+            }
+
             $chartData[] = \App\Models\Order::where('status', 'delivered')
                 ->whereDate('delivered_at', $date)
                 ->sum('total_amount');
@@ -1153,7 +1164,8 @@ class AdminController extends Controller
             'totalUsers',
             'latestOrders',
             'chartLabels',
-            'chartData'
+            'chartData',
+            'days'
         ));
     }
 
