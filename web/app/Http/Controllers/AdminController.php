@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 
 class AdminController extends Controller
 {
-    public function dashboard()
+    public function dashboard(Request $request)
     {
         $totalRevenue = Order::where('status', 'delivered')->sum('total_amount');
         $totalOrders = Order::count();
@@ -22,8 +22,35 @@ class AdminController extends Controller
             ->limit(5)
             ->get();
 
+        $deliveredOrders = Order::where('status', 'delivered')->count();
+        $cancelledOrders = Order::whereIn('status', ['cancelled', 'expired'])->count();
+
+        // Calculate sales trends based on filtered days
+        $days = (int)$request->query('days', 7);
+        if (!in_array($days, [7, 14, 30, 180, 365])) {
+            $days = 7;
+        }
+
+        $chartLabels = [];
+        $chartData = [];
+        for ($i = $days - 1; $i >= 0; $i--) {
+            $dateObj = now()->subDays($i);
+            $date = $dateObj->toDateString();
+            
+            if ($days > 30) {
+                $chartLabels[] = $dateObj->format('d M y');
+            } else {
+                $chartLabels[] = $dateObj->format('d M');
+            }
+
+            $chartData[] = Order::where('status', 'delivered')
+                ->whereDate('delivered_at', $date)
+                ->sum('total_amount');
+        }
+
         return view('admin.dashboard', compact(
-            'totalRevenue', 'totalOrders', 'totalProducts', 'totalUsers', 'recentOrders'
+            'totalRevenue', 'totalOrders', 'totalProducts', 'totalUsers', 'recentOrders',
+            'deliveredOrders', 'cancelledOrders', 'chartLabels', 'chartData', 'days'
         ));
     }
 
@@ -1114,60 +1141,7 @@ class AdminController extends Controller
         return response()->file($fullPath, ['Content-Type' => $mime]);
     }
 
-    // ==========================================
-    // REPORTS
-    // ==========================================
-    public function reports(Request $request)
-    {
-        // Simple aggregate data
-        $totalSales = \App\Models\Order::where('status', 'delivered')->sum('total_amount');
-        $totalOrders = \App\Models\Order::count();
-        $deliveredOrders = \App\Models\Order::where('status', 'delivered')->count();
-        $cancelledOrders = \App\Models\Order::whereIn('status', ['cancelled', 'expired'])->count();
-        $totalUsers = \App\Models\User::count();
-        
-        // Latest 5 delivered orders for table
-        $latestOrders = \App\Models\Order::with('customer')
-            ->where('status', 'delivered')
-            ->orderBy('created_at', 'desc')
-            ->take(5)
-            ->get();
 
-        // Calculate sales trends based on filtered days
-        $days = (int)$request->query('days', 7);
-        if (!in_array($days, [7, 14, 30, 180, 365])) {
-            $days = 7;
-        }
-
-        $chartLabels = [];
-        $chartData = [];
-        for ($i = $days - 1; $i >= 0; $i--) {
-            $dateObj = now()->subDays($i);
-            $date = $dateObj->toDateString();
-            
-            if ($days > 30) {
-                $chartLabels[] = $dateObj->format('d M y');
-            } else {
-                $chartLabels[] = $dateObj->format('d M');
-            }
-
-            $chartData[] = \App\Models\Order::where('status', 'delivered')
-                ->whereDate('delivered_at', $date)
-                ->sum('total_amount');
-        }
-
-        return view('admin.reports.index', compact(
-            'totalSales',
-            'totalOrders',
-            'deliveredOrders',
-            'cancelledOrders',
-            'totalUsers',
-            'latestOrders',
-            'chartLabels',
-            'chartData',
-            'days'
-        ));
-    }
 
     public function auditLogs(Request $request)
     {

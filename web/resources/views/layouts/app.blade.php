@@ -248,9 +248,6 @@
                 <a href="{{ route('admin.logins.index') }}" class="menu-item {{ request()->routeIs('admin.logins.*') ? 'active' : '' }}">
                     <i class="fas fa-sign-in-alt"></i> Percobaan Login
                 </a>
-                <a href="{{ route('admin.reports.index') }}" class="menu-item {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}">
-                    <i class="fas fa-chart-bar"></i> Laporan Operasional
-                </a>
             </div>
 
             <div class="menu-group">
@@ -297,9 +294,6 @@
                 </a>
                 <a href="{{ route('seller.settings.index') }}" class="menu-item {{ request()->routeIs('seller.settings.*') ? 'active' : '' }}">
                     <i class="fas fa-user-cog"></i> Pengaturan Karantina
-                </a>
-                <a href="{{ route('seller.reports.index') }}" class="menu-item {{ request()->routeIs('seller.reports.*') ? 'active' : '' }}">
-                    <i class="fas fa-chart-bar"></i> Laporan Operasional
                 </a>
             </div>
             @if(is_array(Auth::user()->allowed_tools) && count(Auth::user()->allowed_tools) > 0)

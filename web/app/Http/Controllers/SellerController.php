@@ -16,7 +16,7 @@ class SellerController extends Controller
     // ==========================================
     // SELLER DASHBOARD
     // ==========================================
-    public function dashboard()
+    public function dashboard(Request $request)
     {
         $sellerId = Auth::id();
         $user = Auth::user();
@@ -38,6 +38,70 @@ class SellerController extends Controller
             ->where('stock_units.is_sold', true)
             ->sum('products.price');
 
+        // 1. Total Sales (earnings sum of their sold stock units where orders are delivered)
+        $totalSales = (int) DB::table('stock_units')
+            ->join('products', 'stock_units.product_id', '=', 'products.id')
+            ->join('orders', 'stock_units.sold_order_id', '=', 'orders.id')
+            ->where('stock_units.seller_id', $sellerId)
+            ->where('stock_units.is_sold', true)
+            ->where('orders.status', 'delivered')
+            ->sum('products.price');
+
+        // 2. Delivered orders containing their stock units
+        $deliveredOrders = Order::where('status', 'delivered')
+            ->whereHas('stockUnits', function ($query) use ($sellerId) {
+                $query->where('seller_id', $sellerId);
+            })->count();
+
+        // 3. Cancelled and expired orders containing their stock units
+        $cancelledOrders = Order::whereIn('status', ['cancelled', 'expired'])
+            ->whereHas('stockUnits', function ($query) use ($sellerId) {
+                $query->where('seller_id', $sellerId);
+            })->count();
+
+        $totalOrders = $deliveredOrders + $cancelledOrders;
+
+        // 4. Total products owned by them
+        $totalProducts = Product::where('creator_id', $sellerId)->count();
+
+        // 5. Latest 5 delivered orders containing their stock units
+        $latestOrders = Order::with(['customer', 'stockUnits.product'])
+            ->where('status', 'delivered')
+            ->whereHas('stockUnits', function ($query) use ($sellerId) {
+                $query->where('seller_id', $sellerId);
+            })
+            ->orderBy('created_at', 'desc')
+            ->take(5)
+            ->get();
+
+        // 6. Dynamic trend logic based on filtered days
+        $days = (int) $request->query('days', 7);
+        if (!in_array($days, [7, 14, 30, 180, 365])) {
+            $days = 7;
+        }
+
+        $chartLabels = [];
+        $chartData = [];
+        for ($i = $days - 1; $i >= 0; $i--) {
+            $dateObj = now()->subDays($i);
+            $date = $dateObj->toDateString();
+
+            if ($days > 30) {
+                $chartLabels[] = $dateObj->format('d M y');
+            } else {
+                $chartLabels[] = $dateObj->format('d M');
+            }
+
+            $chartData[] = (int) DB::table('stock_units')
+                ->join('products', 'stock_units.product_id', '=', 'products.id')
+                ->join('orders', 'stock_units.sold_order_id', '=', 'orders.id')
+                ->where('stock_units.seller_id', $sellerId)
+                ->where('stock_units.is_sold', true)
+                ->where('orders.status', 'delivered')
+                ->whereDate('orders.delivered_at', $date)
+                ->sum('products.price');
+        }
+
         return view('seller.dashboard', compact(
             'user',
             'readyStockCount',
@@ -45,7 +109,16 @@ class SellerController extends Controller
             'soldStockCount',
             'pendingWithdrawalCount',
             'approvedWithdrawalCount',
-            'monthlyEarnings'
+            'monthlyEarnings',
+            'totalSales',
+            'deliveredOrders',
+            'cancelledOrders',
+            'totalOrders',
+            'totalProducts',
+            'latestOrders',
+            'chartLabels',
+            'chartData',
+            'days'
         ));
     }
 
@@ -588,84 +661,5 @@ class SellerController extends Controller
         return redirect()->route('seller.settings.index')->with('success', 'Pengaturan jam karantina berhasil disimpan.');
     }
 
-    public function reports(Request $request)
-    {
-        $sellerId = Auth::id();
 
-        // 1. Total Sales (earnings sum of their sold stock units where orders are delivered)
-        $totalSales = (int) DB::table('stock_units')
-            ->join('products', 'stock_units.product_id', '=', 'products.id')
-            ->join('orders', 'stock_units.sold_order_id', '=', 'orders.id')
-            ->where('stock_units.seller_id', $sellerId)
-            ->where('stock_units.is_sold', true)
-            ->where('orders.status', 'delivered')
-            ->sum('products.price');
-
-        // 2. Delivered orders containing their stock units
-        $deliveredOrders = Order::where('status', 'delivered')
-            ->whereHas('stockUnits', function ($query) use ($sellerId) {
-                $query->where('seller_id', $sellerId);
-            })->count();
-
-        // 3. Cancelled and expired orders containing their stock units
-        $cancelledOrders = Order::whereIn('status', ['cancelled', 'expired'])
-            ->whereHas('stockUnits', function ($query) use ($sellerId) {
-                $query->where('seller_id', $sellerId);
-            })->count();
-
-        $totalOrders = $deliveredOrders + $cancelledOrders;
-
-        // 4. Total products owned by them (created by them)
-        $totalProducts = Product::where('creator_id', $sellerId)->count();
-
-        // 5. Latest 5 delivered orders containing their stock units
-        $latestOrders = Order::with(['customer', 'stockUnits.product'])
-            ->where('status', 'delivered')
-            ->whereHas('stockUnits', function ($query) use ($sellerId) {
-                $query->where('seller_id', $sellerId);
-            })
-            ->orderBy('created_at', 'desc')
-            ->take(5)
-            ->get();
-
-        // 6. Dynamic trend logic based on filtered days
-        $days = (int) $request->query('days', 7);
-        if (!in_array($days, [7, 14, 30, 180, 365])) {
-            $days = 7;
-        }
-
-        $chartLabels = [];
-        $chartData = [];
-        for ($i = $days - 1; $i >= 0; $i--) {
-            $dateObj = now()->subDays($i);
-            $date = $dateObj->toDateString();
-
-            if ($days > 30) {
-                $chartLabels[] = $dateObj->format('d M y');
-            } else {
-                $chartLabels[] = $dateObj->format('d M');
-            }
-
-            $chartData[] = (int) DB::table('stock_units')
-                ->join('products', 'stock_units.product_id', '=', 'products.id')
-                ->join('orders', 'stock_units.sold_order_id', '=', 'orders.id')
-                ->where('stock_units.seller_id', $sellerId)
-                ->where('stock_units.is_sold', true)
-                ->where('orders.status', 'delivered')
-                ->whereDate('orders.delivered_at', $date)
-                ->sum('products.price');
-        }
-
-        return view('seller.reports.index', compact(
-            'totalSales',
-            'deliveredOrders',
-            'cancelledOrders',
-            'totalOrders',
-            'totalProducts',
-            'latestOrders',
-            'chartLabels',
-            'chartData',
-            'days'
-        ));
-    }
 }

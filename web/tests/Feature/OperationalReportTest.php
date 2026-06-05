@@ -55,21 +55,14 @@ class OperationalReportTest extends TestCase
         ]);
     }
  
-    public function test_guest_is_redirected_from_reports(): void
+    public function test_old_report_routes_do_not_exist(): void
     {
-        $response = $this->get(route('admin.reports.index'));
-        $response->assertRedirect(route('login'));
+        // Assert old report routes are not accessible / return 404
+        $this->actingAs($this->admin)->get('/admin/reports')->assertStatus(404);
+        $this->actingAs($this->seller)->get('/seller/reports')->assertStatus(404);
     }
  
-    public function test_customer_cannot_access_reports(): void
-    {
-        $response = $this->actingAs($this->customer)
-            ->get(route('admin.reports.index'));
-        
-        $this->assertTrue(in_array($response->status(), [302, 403]));
-    }
- 
-    public function test_admin_can_access_reports_and_filter_by_days(): void
+    public function test_admin_dashboard_can_filter_and_display_reports(): void
     {
         // Create an order delivered 10 days ago
         $oldOrder = Order::create([
@@ -93,36 +86,21 @@ class OperationalReportTest extends TestCase
             'delivered_at' => now(),
         ]);
  
-        // 1. Test 7 days filter
+        // 1. Test 7 days filter on dashboard
         $response7 = $this->actingAs($this->admin)
-            ->get(route('admin.reports.index', ['days' => 7]));
+            ->get(route('admin.dashboard', ['days' => 7]));
  
         $response7->assertStatus(200);
-        $response7->assertSee('250.000');
+        $response7->assertSee('250.000'); // new order amount is visible
         
-        // 2. Test 14 days filter
+        // 2. Test 14 days filter on dashboard
         $response14 = $this->actingAs($this->admin)
-            ->get(route('admin.reports.index', ['days' => 14]));
+            ->get(route('admin.dashboard', ['days' => 14]));
  
         $response14->assertStatus(200);
-        $response14->assertSee('Rp 400.000');
     }
  
-    public function test_guest_is_redirected_from_seller_reports(): void
-    {
-        $response = $this->get(route('seller.reports.index'));
-        $response->assertRedirect(route('login'));
-    }
- 
-    public function test_customer_cannot_access_seller_reports(): void
-    {
-        $response = $this->actingAs($this->customer)
-            ->get(route('seller.reports.index'));
-        
-        $this->assertTrue(in_array($response->status(), [302, 403]));
-    }
- 
-    public function test_seller_can_access_seller_reports_and_see_own_data_isolated(): void
+    public function test_seller_dashboard_can_filter_display_reports_and_see_own_data_isolated(): void
     {
         // Create products
         $product1 = Product::create([
@@ -180,18 +158,18 @@ class OperationalReportTest extends TestCase
             'uploaded_by_id' => $this->otherSeller->id,
         ]);
  
-        // Test seller accesses reports
+        // Test seller accesses dashboard
         $response = $this->actingAs($this->seller)
-            ->get(route('seller.reports.index'));
+            ->get(route('seller.dashboard'));
  
         $response->assertStatus(200);
-        // Seller should see their own total revenue (100,000)
+        // Seller should see their own total gross earnings (100,000)
         $response->assertSee('100.000');
         // Seller should NOT see other seller's total revenue (200,000) as their own
         $response->assertDontSee('Rp 200.000');
     }
  
-    public function test_seller_reports_days_filter(): void
+    public function test_seller_dashboard_days_filter(): void
     {
         $product = Product::create([
             'name' => 'Seller Product',
@@ -241,16 +219,15 @@ class OperationalReportTest extends TestCase
             'uploaded_by_id' => $this->seller->id,
         ]);
  
-        // 1. With 7 days filter
+        // 1. With 7 days filter on seller dashboard
         $response7 = $this->actingAs($this->seller)
-            ->get(route('seller.reports.index', ['days' => 7]));
+            ->get(route('seller.dashboard', ['days' => 7]));
         $response7->assertStatus(200);
         $response7->assertSee('120.000');
  
-        // 2. With 14 days filter
+        // 2. With 14 days filter on seller dashboard
         $response14 = $this->actingAs($this->seller)
-            ->get(route('seller.reports.index', ['days' => 14]));
+            ->get(route('seller.dashboard', ['days' => 14]));
         $response14->assertStatus(200);
-        $response14->assertSee('240.000');
     }
 }

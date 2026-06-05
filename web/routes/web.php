@@ -125,7 +125,6 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         Route::post('/settings/qris', [\App\Http\Controllers\AdminController::class, 'uploadQris'])->name('settings.qris.upload');
         Route::delete('/settings/qris', [\App\Http\Controllers\AdminController::class, 'deleteQris'])->name('settings.qris.delete');
         Route::get('/settings/qris/image', [\App\Http\Controllers\AdminController::class, 'showQrisImage'])->name('settings.qris.image');
-        Route::get('/reports', [\App\Http\Controllers\AdminController::class, 'reports'])->name('reports.index');
         Route::get('/audit-logs', [\App\Http\Controllers\AdminController::class, 'auditLogs'])->name('audit-logs.index');
         
         // System Actions
@@ -200,7 +199,6 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
 
         Route::get('/settings', [\App\Http\Controllers\SellerController::class, 'settings'])->name('settings.index');
         Route::post('/settings', [\App\Http\Controllers\SellerController::class, 'updateSettings'])->name('settings.update');
-        Route::get('/reports', [\App\Http\Controllers\SellerController::class, 'reports'])->name('reports.index');
     });
 });
 
