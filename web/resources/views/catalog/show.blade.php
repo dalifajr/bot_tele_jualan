@@ -53,16 +53,26 @@
                 </div>
 
                 @if($stockCount > 0)
-                    <div class="alert alert-info border-0 rounded-3 mb-4">
+                    <div class="alert alert-info border-0 rounded-3 mb-3">
                         <i class="fas fa-info-circle me-2"></i>
-                        Untuk membeli produk ini, gunakan bot Telegram kami.
+                        Anda dapat membeli produk ini langsung di website atau melalui bot Telegram kami.
                     </div>
                     @if(config('telegram.bot_username'))
                         <a href="https://t.me/{{ config('telegram.bot_username') }}" target="_blank"
-                           class="btn btn-primary w-100 rounded-pill py-3 fw-bold">
+                           class="btn btn-primary w-100 rounded-pill py-3 fw-bold mb-3">
                             <i class="fab fa-telegram me-2"></i>Beli via Telegram
                         </a>
                     @endif
+                    <form action="{{ route('checkout.store', $product->id) }}" method="POST">
+                        @csrf
+                        <div class="mb-3 d-flex align-items-center justify-content-between bg-light p-2 rounded-pill px-3">
+                            <label for="quantity" class="text-muted small fw-bold mb-0">Jumlah Beli:</label>
+                            <input type="number" id="quantity" name="quantity" class="form-control form-control-sm border-0 bg-transparent text-end fw-bold px-0" value="1" min="1" max="{{ $stockCount }}" required style="width: 70px; outline: none; box-shadow: none;">
+                        </div>
+                        <button type="submit" class="btn btn-success w-100 rounded-pill py-3 fw-bold">
+                            <i class="fas fa-shopping-bag me-2"></i>Beli Sekarang (via Website)
+                        </button>
+                    </form>
                 @else
                     <div class="alert alert-warning border-0 rounded-3 mb-4">
                         <i class="fas fa-exclamation-triangle me-2"></i>
