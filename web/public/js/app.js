@@ -113,17 +113,9 @@ function finishTopLoadingBar() {
 function initPageLoader() {
     const pageLoader = document.getElementById('pageLoader');
 
-    // Hide on window load event, or immediately if page already loaded
-    if (document.readyState === 'complete') {
-        if (pageLoader) {
-            pageLoader.classList.add('fade-out');
-        }
-    } else {
-        window.addEventListener('load', () => {
-            if (pageLoader) {
-                pageLoader.classList.add('fade-out');
-            }
-        });
+    // Hide loader immediately as DOM is now interactive
+    if (pageLoader) {
+        pageLoader.classList.add('fade-out');
     }
 
     // Show loader on navigation
