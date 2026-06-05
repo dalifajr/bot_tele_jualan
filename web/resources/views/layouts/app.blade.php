@@ -45,6 +45,13 @@
                 cancelButtonText: 'Batal'
             }).then((result) => {
                 if (result.isConfirmed) {
+                    let loader = document.getElementById('pageLoader');
+                    if (loader) {
+                        loader.classList.remove('fade-out');
+                    }
+                    if (typeof startTopLoadingBar === 'function') {
+                        startTopLoadingBar();
+                    }
                     if (form.tagName === 'FORM') {
                         form.submit();
                     } else if (element.href) {

@@ -131,7 +131,8 @@ function initPageLoader() {
 
     // Show loader on form submit
     document.querySelectorAll('form:not(.no-loader)').forEach(form => {
-        form.addEventListener('submit', () => {
+        form.addEventListener('submit', (e) => {
+            if (e.defaultPrevented) return;
             startTopLoadingBar();
             if (pageLoader) {
                 pageLoader.classList.remove('fade-out');
@@ -189,6 +190,11 @@ function initSweetAlertConfirms() {
                 buttonsStyling: false
             }).then((result) => {
                 if (result.isConfirmed) {
+                    const pageLoader = document.getElementById('pageLoader');
+                    if (pageLoader) {
+                        pageLoader.classList.remove('fade-out');
+                    }
+                    startTopLoadingBar();
                     if (this.tagName === 'FORM') {
                         this.submit();
                     } else if (this.closest('form')) {
