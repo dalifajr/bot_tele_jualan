@@ -1,13 +1,13 @@
 @extends('layouts.app')
 
-@section('title', 'Kelola Komplain')
+@section('title', 'Kelola Komplain Pelanggan')
 @section('page_subtitle', 'Komplain')
 
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h4 class="fw-bold mb-1">Kelola Komplain</h4>
-        <p class="text-muted mb-0">Daftar keluhan dari pelanggan</p>
+        <h4 class="fw-bold mb-1">Kelola Komplain Pelanggan</h4>
+        <p class="text-muted mb-0">Daftar keluhan dari pembeli produk digital Anda</p>
     </div>
 </div>
 
@@ -47,7 +47,7 @@
                         </td>
                         <td class="text-secondary small">{{ $complaint->created_at->format('d M Y H:i') }}</td>
                         <td class="text-end px-4">
-                            <a href="{{ route('admin.complaints.show', $complaint->id) }}" class="btn btn-sm btn-light text-primary rounded-circle" title="Lihat Detail & Resolusi">
+                            <a href="{{ route('seller.complaints.show', $complaint->id) }}" class="btn btn-sm btn-light text-primary rounded-circle" title="Lihat Detail & Resolusi">
                                 <i class="fas fa-eye"></i>
                             </a>
                         </td>
@@ -62,7 +62,7 @@
         @else
         <div class="text-center py-5">
             <i class="fas fa-toolbox text-muted mb-3" style="font-size: 3rem;"></i>
-            <p class="text-muted mb-0">Belum ada komplain saat ini.</p>
+            <p class="text-muted mb-0">Belum ada komplain pelanggan saat ini.</p>
         </div>
         @endif
     </div>

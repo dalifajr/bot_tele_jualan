@@ -356,7 +356,24 @@
                     <div class="mb-3">
                         <label class="form-label text-muted small fw-bold">Data Akun (Mendukung Multi-baris)</label>
                         <textarea name="raw_text" class="form-control" rows="5" required placeholder="Username: x&#10;Password: y&#10;2FA: z&#10;&#10;Username: a&#10;Password: b..."></textarea>
-                        <div class="form-text">Pisahkan antar akun dengan <b>baris kosong (Enter 2x)</b> jika ingin menginput banyak akun sekaligus.</div>
+                        <div class="form-text mb-2">Pisahkan antar akun dengan <b>baris kosong (Enter 2x)</b> jika ingin menginput banyak akun sekaligus.</div>
+
+                        {{-- Live Preview Parser --}}
+                        <div id="stock-preview-container" class="mt-3 d-none">
+                            <h6 class="fw-bold mb-2 text-primary small"><i class="fas fa-eye me-1"></i>Pratinjau Hasil Pemecahan Akun (<span id="preview-count">0</span>)</h6>
+                            <div class="table-responsive border rounded-3 bg-body-tertiary" style="max-height: 200px; overflow-y: auto;">
+                                <table class="table table-sm table-hover align-middle mb-0" style="font-size: 0.8rem;">
+                                    <thead>
+                                        <tr class="table-light">
+                                            <th class="px-2 py-1" style="width: 40px;">#</th>
+                                            <th class="py-1">Username</th>
+                                            <th class="py-1">Detail Kredensial</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="stock-preview-body"></tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer border-0 pt-0">
@@ -531,6 +548,93 @@
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Live Preview Parser
+        const rawTextArea = document.querySelector('#addStockModal textarea[name="raw_text"]');
+        const previewContainer = document.getElementById('stock-preview-container');
+        const previewCount = document.getElementById('preview-count');
+        const previewBody = document.getElementById('stock-preview-body');
+
+        if (rawTextArea && previewContainer && previewCount && previewBody) {
+            rawTextArea.addEventListener('input', function() {
+                const text = this.value.trim();
+                if (!text) {
+                    previewContainer.classList.add('d-none');
+                    previewBody.innerHTML = '';
+                    return;
+                }
+
+                // Split by double newlines or empty lines
+                const blocks = text.split(/\n\s*\n+/);
+                let html = '';
+                let validCount = 0;
+
+                blocks.forEach((block, index) => {
+                    const cleanBlock = block.trim();
+                    if (!cleanBlock) return;
+
+                    validCount++;
+                    let username = 'Tidak Terdeteksi';
+                    let lines = cleanBlock.split('\n');
+                    let details = [];
+
+                    lines.forEach(line => {
+                        line = line.trim();
+                        if (!line) return;
+
+                        // Check common username formats
+                        let userMatch = line.match(/^(username|user|email|login)\s*:\s*(.+)$/i);
+                        if (userMatch) {
+                            username = userMatch[2].trim();
+                        } else {
+                            let parts = line.split(':');
+                            if (parts.length === 2 && username === 'Tidak Terdeteksi') {
+                                username = parts[0].trim();
+                                details.push(`Password: ${parts[1].trim()}`);
+                            } else {
+                                details.push(line);
+                            }
+                        }
+                    });
+
+                    // Fallback to colon or pipe split if no username was explicitly matched
+                    if (username === 'Tidak Terdeteksi' && lines.length > 0) {
+                        let firstLine = lines[0].trim();
+                        let parts = firstLine.split(/[|:]/);
+                        if (parts.length >= 2) {
+                            username = parts[0].trim();
+                            details.push(`Password: ${parts[1].trim()}`);
+                            for (let i = 2; i < parts.length; i++) {
+                                details.push(parts[i].trim());
+                            }
+                        } else {
+                            username = firstLine.substring(0, 30);
+                            if (firstLine.length > 30) username += '...';
+                        }
+                    }
+
+                    // Remove username duplicate from details array if it is present
+                    details = details.filter(d => !d.toLowerCase().includes('username:') && !d.toLowerCase().includes('user:'));
+
+                    html += `
+                        <tr>
+                            <td class="text-muted px-2 py-1">${validCount}</td>
+                            <td class="fw-bold text-primary py-1">${username}</td>
+                            <td class="text-secondary py-1">${details.join(' | ') || cleanBlock.replace(/\n/g, ', ')}</td>
+                        </tr>
+                    `;
+                });
+
+                if (validCount > 0) {
+                    previewCount.textContent = validCount;
+                    previewBody.innerHTML = html;
+                    previewContainer.classList.remove('d-none');
+                } else {
+                    previewContainer.classList.add('d-none');
+                    previewBody.innerHTML = '';
+                }
+            });
+        }
+
         // Bulk Action Logic
         const selectAllCheckbox = document.getElementById('select-all-stocks');
         const stockCheckboxes = document.querySelectorAll('.stock-checkbox');

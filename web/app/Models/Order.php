@@ -73,6 +73,11 @@ class Order extends Model
         return $this->hasMany(StockUnit::class, 'sold_order_id');
     }
 
+    public function complaintCase()
+    {
+        return $this->hasOne(ComplaintCase::class, 'order_id');
+    }
+
     public function getUserAttribute()
     {
         return $this->customer;

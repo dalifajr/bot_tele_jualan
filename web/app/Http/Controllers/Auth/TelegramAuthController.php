@@ -113,4 +113,106 @@ class TelegramAuthController extends Controller
 
         return redirect()->route('login')->with('success', 'Anda berhasil logout.');
     }
+
+    /**
+     * Authenticate session from Telegram WebApp initData.
+     */
+    public function webAppLogin(Request $request)
+    {
+        $initData = $request->input('init_data');
+        if (empty($initData)) {
+            return response()->json(['success' => false, 'message' => 'Init data kosong.'], 400);
+        }
+
+        $botToken = config('telegram.bot_token');
+        if (empty($botToken)) {
+            return response()->json(['success' => false, 'message' => 'Token bot belum dikonfigurasi di server.'], 500);
+        }
+
+        // Parse query string
+        parse_str($initData, $params);
+        if (!isset($params['hash'])) {
+            return response()->json(['success' => false, 'message' => 'Hash tidak ditemukan.'], 400);
+        }
+        
+        $hash = $params['hash'];
+        unset($params['hash']);
+
+        // Sort keys alphabetically
+        ksort($params);
+        $dataCheckArr = [];
+        foreach ($params as $key => $value) {
+            $dataCheckArr[] = "{$key}={$value}";
+        }
+        $dataCheckString = implode("\n", $dataCheckArr);
+
+        // Verification signature key is HMAC-SHA256 of botToken with key "WebAppData"
+        $secretKey = hash_hmac('sha256', $botToken, 'WebAppData', true);
+        $signature = hash_hmac('sha256', $dataCheckString, $secretKey);
+
+        if (!hash_equals($signature, $hash)) {
+            return response()->json(['success' => false, 'message' => 'Verifikasi signature Telegram gagal.'], 403);
+        }
+
+        // Verify auth date (limit to 30 days to prevent replay attacks)
+        if (isset($params['auth_date'])) {
+            $authDate = (int) $params['auth_date'];
+            if (time() - $authDate > 86400 * 30) {
+                return response()->json(['success' => false, 'message' => 'Sesi Telegram WebApp kedaluwarsa.'], 403);
+            }
+        }
+
+        // Parse user field
+        if (!isset($params['user'])) {
+            return response()->json(['success' => false, 'message' => 'Data user Telegram tidak lengkap.'], 400);
+        }
+
+        $telegramUser = json_decode($params['user'], true);
+        if (!$telegramUser || !isset($telegramUser['id'])) {
+            return response()->json(['success' => false, 'message' => 'Data user Telegram tidak valid.'], 400);
+        }
+
+        $telegramId = $telegramUser['id'];
+
+        // Find or create user
+        $user = User::where('telegram_id', $telegramId)->first();
+        if (!$user) {
+            $username = $telegramUser['username'] ?? ('tg_' . $telegramId);
+            $fullName = trim(($telegramUser['first_name'] ?? '') . ' ' . ($telegramUser['last_name'] ?? ''));
+            if (empty($fullName)) {
+                $fullName = $username;
+            }
+
+            // Ensure username uniqueness
+            $baseUsername = $username;
+            $counter = 1;
+            while (User::where('username', $username)->exists()) {
+                $username = $baseUsername . $counter;
+                $counter++;
+            }
+
+            $user = User::create([
+                'telegram_id' => $telegramId,
+                'username' => $username,
+                'full_name' => $fullName,
+                'password' => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(16)),
+                'role' => 'customer',
+                'wallet_balance' => 0,
+                'last_seen_at' => now(),
+            ]);
+        }
+
+        if ($user->is_suspended) {
+            return response()->json(['success' => false, 'message' => 'Akun Anda ditangguhkan oleh Admin.'], 403);
+        }
+
+        // Login session
+        Auth::login($user, true);
+        
+        $rememberDays = (int) config('telegram.remember_me_days', 30);
+        config(['session.lifetime' => $rememberDays * 24 * 60]);
+        $request->session()->regenerate();
+
+        return response()->json(['success' => true]);
+    }
 }

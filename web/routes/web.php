@@ -34,6 +34,7 @@ Route::get('/suspended', [AuthController::class, 'suspended'])->name('suspended'
 // Telegram Login Flow
 Route::post('/auth/telegram/request', [TelegramAuthController::class, 'requestLogin'])->name('auth.telegram.request');
 Route::get('/auth/telegram/callback', [TelegramAuthController::class, 'callback'])->name('auth.telegram.callback');
+Route::post('/auth/telegram/webapp', [TelegramAuthController::class, 'webAppLogin'])->name('auth.telegram.webapp');
 Route::post('/logout', [TelegramAuthController::class, 'logout'])->name('logout');
 
 /*
@@ -59,6 +60,7 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
     
     // Manage Orders
     Route::post('/orders/{id}/cancel', [\App\Http\Controllers\OrderController::class, 'cancel'])->name('orders.cancel');
+    Route::post('/orders/{id}/complaint', [\App\Http\Controllers\OrderController::class, 'submitComplaint'])->name('orders.complaint');
     Route::get('/orders/{id}/status', function ($id) {
         $order = \App\Models\Order::where('customer_id', \Illuminate\Support\Facades\Auth::id())->findOrFail($id);
         return response()->json(['status' => $order->status]);
@@ -112,6 +114,8 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         
         // New features ported from Bot
         Route::get('/complaints', [\App\Http\Controllers\AdminController::class, 'complaints'])->name('complaints.index');
+        Route::get('/complaints/{id}', [\App\Http\Controllers\AdminController::class, 'showComplaint'])->name('complaints.show');
+        Route::post('/complaints/{id}/status', [\App\Http\Controllers\AdminController::class, 'updateComplaintStatus'])->name('complaints.updateStatus');
         
         Route::get('/broadcast', [\App\Http\Controllers\AdminController::class, 'broadcast'])->name('broadcast.index');
         Route::post('/broadcast/start', [\App\Http\Controllers\AdminController::class, 'startBroadcast'])->name('broadcast.start');
@@ -196,6 +200,10 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
 
         Route::get('/orders', [\App\Http\Controllers\SellerController::class, 'orders'])->name('orders.index');
         Route::post('/orders/{id}/cancel', [\App\Http\Controllers\SellerController::class, 'cancelOrder'])->name('orders.cancel');
+
+        Route::get('/complaints', [\App\Http\Controllers\SellerController::class, 'complaints'])->name('complaints.index');
+        Route::get('/complaints/{id}', [\App\Http\Controllers\SellerController::class, 'showComplaint'])->name('complaints.show');
+        Route::post('/complaints/{id}/status', [\App\Http\Controllers\SellerController::class, 'updateComplaintStatus'])->name('complaints.updateStatus');
 
         Route::get('/settings', [\App\Http\Controllers\SellerController::class, 'settings'])->name('settings.index');
         Route::post('/settings', [\App\Http\Controllers\SellerController::class, 'updateSettings'])->name('settings.update');

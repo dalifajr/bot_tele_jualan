@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import TypeVar
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Message, Update
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Message, Update, WebAppInfo
 from telegram.constants import ParseMode
 from telegram.error import BadRequest
 from telegram.ext import (
@@ -318,14 +318,20 @@ def _main_menu_keyboard(role: str) -> InlineKeyboardMarkup:
             [InlineKeyboardButton("🧭 Panduan Seller", callback_data="sel:guide")],
         ])
 
-    return InlineKeyboardMarkup(
-        [
-            [InlineKeyboardButton("🛍️ Katalog", callback_data="cus:cat")],
-            [InlineKeyboardButton("📦 Pesanan Saya", callback_data="cus:ord")],
-            [InlineKeyboardButton("🆘 Komplain", callback_data="cus:cmp")],
-            [InlineKeyboardButton("ℹ️ Bantuan", callback_data="cus:help")],
-        ]
-    )
+    url = settings.website_domain
+    buttons = []
+    if url:
+        if not url.startswith(("http://", "https://")):
+            url = f"https://{url}"
+        buttons.append([InlineKeyboardButton("📱 Mini App Belanja", web_app=WebAppInfo(url=f"{url}/catalog"))])
+
+    buttons.extend([
+        [InlineKeyboardButton("🛍️ Katalog", callback_data="cus:cat")],
+        [InlineKeyboardButton("📦 Pesanan Saya", callback_data="cus:ord")],
+        [InlineKeyboardButton("🆘 Komplain", callback_data="cus:cmp")],
+        [InlineKeyboardButton("ℹ️ Bantuan", callback_data="cus:help")],
+    ])
+    return InlineKeyboardMarkup(buttons)
 
 
 def _admin_catalog_menu_keyboard() -> InlineKeyboardMarkup:

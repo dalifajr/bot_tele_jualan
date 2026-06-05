@@ -28,6 +28,15 @@ class CheckoutController extends Controller
         $quantity = $request->input('quantity');
         $user = Auth::user();
 
+        // Rate limiting order check (max 2 active pending orders)
+        $pendingOrdersCount = Order::where('customer_id', $user->id)
+            ->where('status', 'pending_payment')
+            ->count();
+
+        if ($pendingOrdersCount >= 2) {
+            return back()->with('error', 'Anda memiliki terlalu banyak pesanan yang menunggu pembayaran. Silakan selesaikan atau batalkan pesanan Anda sebelumnya.');
+        }
+
         if ($product->is_suspended) {
             return back()->with('error', 'Maaf, produk ini sedang tidak aktif.');
         }

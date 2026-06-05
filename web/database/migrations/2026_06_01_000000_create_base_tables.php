@@ -85,6 +85,21 @@ return new class extends Migration
             });
         }
 
+        if (!Schema::hasTable('payments')) {
+            Schema::create('payments', function (Blueprint $table) {
+                $table->id();
+                $table->unsignedBigInteger('order_id')->unique();
+                $table->string('payment_ref', 64)->unique();
+                $table->integer('expected_amount');
+                $table->integer('received_amount')->nullable();
+                $table->string('source_app', 128)->nullable();
+                $table->string('status', 32)->default('pending');
+                $table->text('payload_json')->nullable();
+                $table->timestamp('matched_at')->nullable();
+                $table->timestamps();
+            });
+        }
+
         if (!Schema::hasTable('stock_units')) {
             Schema::create('stock_units', function (Blueprint $table) {
                 $table->id();

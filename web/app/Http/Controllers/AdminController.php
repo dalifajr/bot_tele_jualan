@@ -789,6 +789,53 @@ class AdminController extends Controller
         return view('admin.complaints.index', compact('complaints'));
     }
 
+    public function showComplaint($id)
+    {
+        $complaint = \App\Models\ComplaintCase::with(['customer', 'order.items.product', 'order.stockUnits'])->findOrFail($id);
+        return view('admin.complaints.show', compact('complaint'));
+    }
+
+    public function updateComplaintStatus(Request $request, $id)
+    {
+        $complaint = \App\Models\ComplaintCase::findOrFail($id);
+        
+        $request->validate([
+            'status' => 'required|string|in:review,done,rejected',
+            'rejected_reason' => 'required_if:status,rejected|nullable|string|max:500',
+            'refund_note' => 'required_if:status,done|nullable|string|max:500',
+        ], [
+            'rejected_reason.required_if' => 'Alasan penolakan wajib diisi jika status ditolak.',
+            'refund_note.required_if' => 'Catatan penyelesaian wajib diisi jika status selesai.',
+        ]);
+
+        $updateData = [
+            'status' => $request->status,
+            'updated_at' => now(),
+        ];
+
+        if ($request->status === 'rejected') {
+            $updateData['rejected_reason'] = $request->rejected_reason;
+            $updateData['closed_at'] = now();
+        } elseif ($request->status === 'done') {
+            $updateData['refund_note'] = $request->refund_note;
+            $updateData['closed_at'] = now();
+        }
+
+        $complaint->update($updateData);
+
+        // Put an audit log entry
+        \Illuminate\Support\Facades\DB::table('audit_logs')->insert([
+            'action' => 'complaint_update_status',
+            'actor_id' => \Illuminate\Support\Facades\Auth::id(),
+            'entity_type' => 'complaint_case',
+            'entity_id' => $complaint->id,
+            'detail' => "status={$request->status}; ref={$complaint->complaint_ref}",
+            'created_at' => now(),
+        ]);
+
+        return redirect()->route('admin.complaints.index')->with('success', 'Status komplain berhasil diperbarui.');
+    }
+
     // ==========================================
     // BROADCAST
     // ==========================================

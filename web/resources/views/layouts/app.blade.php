@@ -21,6 +21,12 @@
     {{-- Custom SIMAK-style CSS --}}
     <link href="{{ asset('css/app.css') }}" rel="stylesheet">
 
+    {{-- Telegram WebApp SDK --}}
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script>
+        window.isAuthenticated = @json(auth()->check());
+    </script>
+
     {{-- SweetAlert2 --}}
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
@@ -292,6 +298,9 @@
                 </a>
                 <a href="{{ route('seller.orders.index') }}" class="menu-item {{ request()->routeIs('seller.orders.*') ? 'active' : '' }}">
                     <i class="fas fa-receipt"></i> Kelola Pesanan
+                </a>
+                <a href="{{ route('seller.complaints.index') }}" class="menu-item {{ request()->routeIs('seller.complaints.*') ? 'active' : '' }}">
+                    <i class="fas fa-toolbox"></i> Kelola Komplain
                 </a>
                 <a href="{{ route('seller.finance.index') }}" class="menu-item {{ request()->routeIs('seller.finance.*') ? 'active' : '' }}">
                     <i class="fas fa-wallet"></i> Dompet & Keuangan

@@ -36,14 +36,16 @@
     {{-- Wallet Balance & Withdrawal Form --}}
     <div class="col-12 col-lg-5">
         {{-- Wallet Balance Card --}}
-        <div class="card border-0 shadow-sm text-white mb-4" style="border-radius: 20px; background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
-            <div class="card-body p-4 position-relative overflow-hidden">
-                <div class="position-absolute end-0 bottom-0 opacity-10" style="font-size: 8rem; transform: translate(20px, 20px);">
+        <div class="card border-0 shadow-sm text-white mb-4 overflow-hidden" style="border-radius: 20px; background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+            <div class="card-body p-4 position-relative">
+                <div class="position-absolute end-0 bottom-0 text-white" style="font-size: 8rem; transform: translate(20px, 20px); opacity: 0.1; pointer-events: none; z-index: 0;">
                     <i class="fas fa-wallet"></i>
                 </div>
-                <p class="small text-white-50 fw-bold mb-2">SALDO DOMPET SAYA</p>
-                <h2 class="fw-bold mb-1">Rp {{ number_format($user->wallet_balance, 0, ',', '.') }}</h2>
-                <div class="small text-white-50 mt-1">Potongan Platform: <strong>{{ $user->platform_fee_percent }}%</strong> per penjualan</div>
+                <div class="position-relative" style="z-index: 1;">
+                    <p class="small text-white-50 fw-bold mb-2">SALDO DOMPET SAYA</p>
+                    <h2 class="fw-bold mb-1">Rp {{ number_format($user->wallet_balance, 0, ',', '.') }}</h2>
+                    <div class="small text-white-50 mt-1">Potongan Platform: <strong>{{ $user->platform_fee_percent }}%</strong> per penjualan</div>
+                </div>
             </div>
         </div>
 

@@ -661,5 +661,81 @@ class SellerController extends Controller
         return redirect()->route('seller.settings.index')->with('success', 'Pengaturan jam karantina berhasil disimpan.');
     }
 
+    // ==========================================
+    // COMPLAINTS MANAGEMENT
+    // ==========================================
+    public function complaints()
+    {
+        $sellerId = Auth::id();
 
+        $complaints = \App\Models\ComplaintCase::whereHas('order.stockUnits', function ($query) use ($sellerId) {
+            $query->where('seller_id', $sellerId);
+        })
+        ->with(['customer', 'order'])
+        ->orderBy('created_at', 'desc')
+        ->paginate(15);
+
+        return view('seller.complaints.index', compact('complaints'));
+    }
+
+    public function showComplaint($id)
+    {
+        $sellerId = Auth::id();
+
+        $complaint = \App\Models\ComplaintCase::whereHas('order.stockUnits', function ($query) use ($sellerId) {
+            $query->where('seller_id', $sellerId);
+        })
+        ->with(['customer', 'order.items.product', 'order.stockUnits' => function ($query) use ($sellerId) {
+            $query->where('seller_id', $sellerId);
+        }])
+        ->findOrFail($id);
+
+        return view('seller.complaints.show', compact('complaint'));
+    }
+
+    public function updateComplaintStatus(Request $request, $id)
+    {
+        $sellerId = Auth::id();
+
+        $complaint = \App\Models\ComplaintCase::whereHas('order.stockUnits', function ($query) use ($sellerId) {
+            $query->where('seller_id', $sellerId);
+        })
+        ->findOrFail($id);
+
+        $request->validate([
+            'status' => 'required|string|in:review,done,rejected',
+            'rejected_reason' => 'required_if:status,rejected|nullable|string|max:500',
+            'refund_note' => 'required_if:status,done|nullable|string|max:500',
+        ], [
+            'rejected_reason.required_if' => 'Alasan penolakan wajib diisi jika status ditolak.',
+            'refund_note.required_if' => 'Catatan penyelesaian wajib diisi jika status selesai.',
+        ]);
+
+        $updateData = [
+            'status' => $request->status,
+            'updated_at' => now(),
+        ];
+
+        if ($request->status === 'rejected') {
+            $updateData['rejected_reason'] = $request->rejected_reason;
+            $updateData['closed_at'] = now();
+        } elseif ($request->status === 'done') {
+            $updateData['refund_note'] = $request->refund_note;
+            $updateData['closed_at'] = now();
+        }
+
+        $complaint->update($updateData);
+
+        // Put an audit log entry
+        \Illuminate\Support\Facades\DB::table('audit_logs')->insert([
+            'action' => 'seller_complaint_update_status',
+            'actor_id' => $sellerId,
+            'entity_type' => 'complaint_case',
+            'entity_id' => $complaint->id,
+            'detail' => "status={$request->status}; ref={$complaint->complaint_ref}",
+            'created_at' => now(),
+        ]);
+
+        return redirect()->route('seller.complaints.index')->with('success', 'Status komplain berhasil diperbarui.');
+    }
 }
