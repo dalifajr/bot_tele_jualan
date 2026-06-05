@@ -53,6 +53,10 @@
 </head>
 <body class="bg-body-tertiary">
 
+<div id="pageLoader">
+    <div class="spinner"></div>
+</div>
+
 {{-- Top Navbar --}}
 <nav class="navbar navbar-expand fixed-top shadow-sm px-4 bg-body border-bottom" style="z-index: 1030; top: 0;">
     <div class="d-flex align-items-center gap-3">
