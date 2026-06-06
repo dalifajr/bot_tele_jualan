@@ -24,7 +24,21 @@ class BackupRestoreTest extends TestCase
 
     protected function setUp(): void
     {
+        $this->refreshApplication();
+
+        $testDbPath = database_path('test_backup.sqlite');
+        
+        $dir = dirname($testDbPath);
+        if (!is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+        file_put_contents($testDbPath, '');
+        
+        config(['database.connections.sqlite.database' => $testDbPath]);
+
         parent::setUp();
+
+        $this->artisan('migrate');
 
         $this->admin = User::create([
             'username' => 'admin_test',
@@ -49,6 +63,16 @@ class BackupRestoreTest extends TestCase
             'role' => 'customer',
             'password' => bcrypt('password'),
         ]);
+    }
+
+    protected function tearDown(): void
+    {
+        parent::tearDown();
+
+        $testDbPath = database_path('test_backup.sqlite');
+        if (file_exists($testDbPath)) {
+            @unlink($testDbPath);
+        }
     }
 
     /**
@@ -209,6 +233,10 @@ class BackupRestoreTest extends TestCase
             'backup_file' => $uploadedFile,
             'mode' => 'overwrite'
         ]);
+
+        if (session('error')) {
+            dd(session('error'));
+        }
 
         $response->assertRedirect();
         

@@ -142,6 +142,7 @@ class TelegramService
             } catch (\Exception $e) {
                 Log::error("Gagal mengirim text invoice ke {$customerTelegramId}: " . $e->getMessage());
             }
+        }
     }
 
     /**

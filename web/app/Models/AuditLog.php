@@ -17,6 +17,10 @@ class AuditLog extends Model
         'created_at',
     ];
 
+    protected $casts = [
+        'created_at' => 'datetime',
+    ];
+
     public function actor()
     {
         return $this->belongsTo(User::class, 'actor_id');

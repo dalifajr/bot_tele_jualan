@@ -288,10 +288,10 @@
                 <tbody>
                     @forelse($logs as $log)
                     <tr>
-                        <td class="text-muted">{{ $log->created_at->format('Y-m-d H:i:s') }}</td>
+                        <td class="text-muted">{{ \Carbon\Carbon::parse($log->created_at)->format('Y-m-d H:i:s') }}</td>
                         <td class="fw-bold">
-                            @if($log->user)
-                            {{ $log->user->full_name ?: $log->user->username }}
+                            @if($log->actor)
+                            {{ $log->actor->full_name ?: $log->actor->username }}
                             @else
                             <span class="text-success"><i class="fas fa-robot me-1"></i>System Cron</span>
                             @endif
@@ -393,4 +393,4 @@
         });
     });
 </script>
-@endsection
+@endpush

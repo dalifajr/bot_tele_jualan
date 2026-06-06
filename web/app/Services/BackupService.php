@@ -39,7 +39,14 @@ class BackupService
      */
     public static function getDatabasePath()
     {
-        return base_path(config('database.connections.sqlite.database'));
+        $dbPath = config('database.connections.sqlite.database');
+        
+        // Check if path is absolute (starts with / or \ or drive letter like C:)
+        if (strpos($dbPath, '/') === 0 || strpos($dbPath, '\\') === 0 || preg_match('/^[a-zA-Z]:/', $dbPath)) {
+            return $dbPath;
+        }
+        
+        return base_path($dbPath);
     }
 
     /**
@@ -238,8 +245,9 @@ class BackupService
     public static function restore($zipPath, $mode = 'overwrite')
     {
         $zip = new ZipArchive();
-        if ($zip->open($zipPath) !== true) {
-            throw new \Exception("Invalid ZIP file or could not open file.");
+        $openResult = $zip->open($zipPath);
+        if ($openResult !== true) {
+            throw new \Exception("Invalid ZIP file or could not open file. (Error Code: {$openResult})");
         }
 
         // Determine if it is a snapshot or JSON backup

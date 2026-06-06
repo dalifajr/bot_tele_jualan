@@ -60,7 +60,7 @@ class BackupController extends Controller
         $history = BackupService::getBackupHistory();
 
         // 4. Audit Logs
-        $logs = AuditLog::with('user')
+        $logs = AuditLog::with('actor')
             ->whereIn('action', ['backup_create', 'backup_restore', 'backup_delete', 'system_auto_backup'])
             ->orderBy('created_at', 'desc')
             ->take(15)
@@ -88,7 +88,7 @@ class BackupController extends Controller
                 $path = BackupService::createSnapshot();
                 
                 AuditLog::create([
-                    'user_id' => auth()->id(),
+                    'actor_id' => auth()->id(),
                     'action' => 'backup_create',
                     'entity_type' => 'backup',
                     'entity_id' => 0,
@@ -106,7 +106,7 @@ class BackupController extends Controller
                 $path = BackupService::createJsonBackup();
 
                 AuditLog::create([
-                    'user_id' => auth()->id(),
+                    'actor_id' => auth()->id(),
                     'action' => 'backup_create',
                     'entity_type' => 'backup',
                     'entity_id' => 0,
@@ -154,14 +154,14 @@ class BackupController extends Controller
 
         // Save file to temporary path
         $tempPath = $file->storeAs('temp', 'restore_' . time() . '.zip');
-        $absoluteTempPath = storage_path('app/' . $tempPath);
+        $absoluteTempPath = \Illuminate\Support\Facades\Storage::disk('local')->path($tempPath);
 
         try {
             BackupService::restore($absoluteTempPath, $request->mode);
 
             // Audit log
             AuditLog::create([
-                'user_id' => auth()->id(),
+                'actor_id' => auth()->id(),
                 'action' => 'backup_restore',
                 'entity_type' => 'backup',
                 'entity_id' => 0,
@@ -200,7 +200,7 @@ class BackupController extends Controller
                 File::delete($filePath);
 
                 AuditLog::create([
-                    'user_id' => auth()->id(),
+                    'actor_id' => auth()->id(),
                     'action' => 'backup_delete',
                     'entity_type' => 'backup',
                     'entity_id' => 0,
@@ -241,7 +241,7 @@ class BackupController extends Controller
 
         // Audit log
         AuditLog::create([
-            'user_id' => auth()->id(),
+            'actor_id' => auth()->id(),
             'action' => 'backup_settings_update',
             'entity_type' => 'settings',
             'entity_id' => 0,

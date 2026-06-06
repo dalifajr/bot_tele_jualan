@@ -83,7 +83,7 @@ class AutoBackupCommand extends Command
 
             // Log Audit
             AuditLog::create([
-                'user_id' => null, // null represents system/cron
+                'actor_id' => null, // null represents system/cron
                 'action' => 'system_auto_backup',
                 'entity_type' => 'backup',
                 'entity_id' => 0,
