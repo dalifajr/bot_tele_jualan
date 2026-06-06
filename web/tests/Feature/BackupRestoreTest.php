@@ -76,29 +76,79 @@ class BackupRestoreTest extends TestCase
     }
 
     /**
-     * Test access control for backup dashboard.
+     * Test guest access control.
      */
-    public function test_access_control()
+    public function test_guest_access_control()
     {
-        // 1. Guest is redirected
-        $response = $this->get(route('admin.backup.index'));
-        $response->assertRedirect('/login');
+        $routes = [
+            route('admin.backup.index'),
+            route('admin.backup.restore.show'),
+            route('admin.backup.settings.show'),
+            route('admin.backup.history'),
+        ];
 
-        // 2. Customer is blocked (using Auth middleware which redirects customers)
+        foreach ($routes as $route) {
+            $response = $this->get($route);
+            $response->assertRedirect('/login');
+        }
+    }
+
+    /**
+     * Test customer access control.
+     */
+    public function test_customer_access_control()
+    {
         $this->actingAs($this->customer);
-        $response = $this->get(route('admin.backup.index'));
-        $response->assertRedirect(); // should redirect to dashboard or somewhere based on EnsureTelegramAuthenticated
+        $routes = [
+            route('admin.backup.index'),
+            route('admin.backup.restore.show'),
+            route('admin.backup.settings.show'),
+            route('admin.backup.history'),
+        ];
 
-        // 3. Seller is blocked
+        foreach ($routes as $route) {
+            $response = $this->get($route);
+            $response->assertRedirect(route('dashboard'));
+        }
+    }
+
+    /**
+     * Test seller access control.
+     */
+    public function test_seller_access_control()
+    {
         $this->actingAs($this->seller);
-        $response = $this->get(route('admin.backup.index'));
-        $response->assertStatus(302); // redirects because seller middleware blocks it
+        $routes = [
+            route('admin.backup.index'),
+            route('admin.backup.restore.show'),
+            route('admin.backup.settings.show'),
+            route('admin.backup.history'),
+        ];
 
-        // 4. Admin is allowed
+        foreach ($routes as $route) {
+            $response = $this->get($route);
+            $response->assertRedirect(route('dashboard'));
+        }
+    }
+
+    /**
+     * Test admin access control.
+     */
+    public function test_admin_access_control()
+    {
         $this->actingAs($this->admin);
-        $response = $this->get(route('admin.backup.index'));
-        $response->assertStatus(200);
-        $response->assertSee('Backup & Restore');
+        $routes = [
+            route('admin.backup.index'),
+            route('admin.backup.restore.show'),
+            route('admin.backup.settings.show'),
+            route('admin.backup.history'),
+        ];
+
+        foreach ($routes as $route) {
+            $response = $this->get($route);
+            $response->assertStatus(200);
+            $response->assertSee('Backup & Restore');
+        }
     }
 
     /**
@@ -177,6 +227,17 @@ class BackupRestoreTest extends TestCase
                 File::delete($backup['path']);
             }
         }
+    }
+
+    /**
+     * Test dynamic SQL dump generation.
+     */
+    public function test_sql_dump_generation()
+    {
+        $sql = BackupService::generateSqlDump();
+        $this->assertNotEmpty($sql);
+        $this->assertStringContainsString('DROP TABLE IF EXISTS `users`', $sql);
+        $this->assertStringContainsString('INSERT INTO `users`', $sql);
     }
 
     /**

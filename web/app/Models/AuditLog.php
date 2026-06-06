@@ -25,4 +25,13 @@ class AuditLog extends Model
     {
         return $this->belongsTo(User::class, 'actor_id');
     }
+
+    protected static function booted()
+    {
+        static::creating(function ($model) {
+            if (empty($model->created_at)) {
+                $model->created_at = now();
+            }
+        });
+    }
 }

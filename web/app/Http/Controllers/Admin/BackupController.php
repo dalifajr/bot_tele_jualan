@@ -16,17 +16,74 @@ class BackupController extends Controller
     /**
      * Display the backup and restore dashboard.
      */
+    /**
+     * Display the backup and restore dashboard.
+     */
     public function index()
     {
         // 1. Database Stats
-        $dbPath = BackupService::getDatabasePath();
-        $dbSize = File::exists($dbPath) ? File::size($dbPath) : 0;
+        $dbSize = 0;
+        $dbConnection = config('database.default');
+
+        if ($dbConnection === 'sqlite') {
+            $dbPath = BackupService::getDatabasePath();
+            $dbSize = File::exists($dbPath) ? File::size($dbPath) : 0;
+        } elseif ($dbConnection === 'mysql') {
+            try {
+                $dbName = config('database.connections.mysql.database');
+                $result = DB::select("SELECT SUM(data_length + index_length) AS size FROM information_schema.TABLES WHERE table_schema = ?", [$dbName]);
+                $dbSize = !empty($result) ? ($result[0]->size ?? 0) : 0;
+            } catch (\Exception $e) {
+                // Fallback
+            }
+        }
         $dbSizeFormatted = $this->formatBytes($dbSize);
 
-        $tablesStats = [];
         $totalRecords = 0;
+        $tables = ['users', 'products', 'stock_units', 'orders', 'order_items', 'payments', 'complaint_cases', 'bot_settings', 'audit_logs'];
 
-        // Count records in tables
+        foreach ($tables as $table) {
+            if (Schema::hasTable($table)) {
+                $totalRecords += DB::table($table)->count();
+            }
+        }
+
+        // 2. Settings Status
+        $autoBackupEnabled = BotSetting::where('key', 'auto_backup_enabled')->value('value') ?: '0';
+
+        // 3. Audit Logs
+        $logs = AuditLog::with('actor')
+            ->whereIn('action', ['backup_create', 'backup_restore', 'backup_delete', 'system_auto_backup'])
+            ->orderBy('created_at', 'desc')
+            ->take(15)
+            ->get();
+
+        return view('admin.backup.index', compact(
+            'dbSizeFormatted',
+            'totalRecords',
+            'autoBackupEnabled',
+            'logs'
+        ));
+    }
+
+    /**
+     * Show restore database form.
+     */
+    public function showRestore()
+    {
+        return view('admin.backup.restore');
+    }
+
+    /**
+     * Show backup settings.
+     */
+    public function showSettings()
+    {
+        $autoBackupEnabled = BotSetting::where('key', 'auto_backup_enabled')->value('value') ?: '0';
+        $autoBackupSchedule = BotSetting::where('key', 'auto_backup_schedule')->value('value') ?: 'daily';
+        $autoBackupLastRun = BotSetting::where('key', 'auto_backup_last_run')->value('value') ?: '-';
+
+        $tablesStats = [];
         $tables = [
             'users' => 'Pengguna/Pelanggan',
             'products' => 'Produk',
@@ -47,35 +104,24 @@ class BackupController extends Controller
                     'label' => $label,
                     'count' => $count
                 ];
-                $totalRecords += $count;
             }
         }
 
-        // 2. Settings
-        $autoBackupEnabled = BotSetting::where('key', 'auto_backup_enabled')->value('value') ?: '0';
-        $autoBackupSchedule = BotSetting::where('key', 'auto_backup_schedule')->value('value') ?: 'daily';
-        $autoBackupLastRun = BotSetting::where('key', 'auto_backup_last_run')->value('value') ?: '-';
-
-        // 3. History
-        $history = BackupService::getBackupHistory();
-
-        // 4. Audit Logs
-        $logs = AuditLog::with('actor')
-            ->whereIn('action', ['backup_create', 'backup_restore', 'backup_delete', 'system_auto_backup'])
-            ->orderBy('created_at', 'desc')
-            ->take(15)
-            ->get();
-
-        return view('admin.backup.index', compact(
-            'dbSizeFormatted',
-            'tablesStats',
-            'totalRecords',
+        return view('admin.backup.settings', compact(
             'autoBackupEnabled',
             'autoBackupSchedule',
             'autoBackupLastRun',
-            'history',
-            'logs'
+            'tablesStats'
         ));
+    }
+
+    /**
+     * Show backup history list.
+     */
+    public function history()
+    {
+        $history = BackupService::getBackupHistory();
+        return view('admin.backup.history', compact('history'));
     }
 
     /**

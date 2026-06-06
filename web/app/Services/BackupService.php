@@ -104,15 +104,10 @@ class BackupService
     }
 
     /**
-     * Generate snapshot backup (Raw SQLite database + media files).
+     * Generate snapshot backup (Raw SQLite database or SQL dump + media files).
      */
     public static function createSnapshot()
     {
-        $dbPath = self::getDatabasePath();
-        if (!File::exists($dbPath)) {
-            throw new \Exception("Database file not found at: {$dbPath}");
-        }
-
         $backupDir = storage_path('app/backups');
         if (!File::exists($backupDir)) {
             File::makeDirectory($backupDir, 0755, true);
@@ -127,8 +122,23 @@ class BackupService
             throw new \Exception("Could not create ZIP archive at: {$zipPath}");
         }
 
-        // Add SQLite Database
-        $zip->addFile($dbPath, 'database.sqlite');
+        $isSqlite = (config('database.default') === 'sqlite');
+        $dbSize = 0;
+
+        if ($isSqlite) {
+            $dbPath = self::getDatabasePath();
+            if (!File::exists($dbPath)) {
+                throw new \Exception("Database file not found at: {$dbPath}");
+            }
+            // Add SQLite Database
+            $zip->addFile($dbPath, 'database.sqlite');
+            $dbSize = File::size($dbPath);
+        } else {
+            // Generate SQL dump in pure PHP
+            $sqlContent = self::generateSqlDump();
+            $zip->addFromString('database.sql', $sqlContent);
+            $dbSize = strlen($sqlContent);
+        }
 
         // Add Uploaded Media from public storage
         $publicPath = storage_path('app/public');
@@ -151,7 +161,8 @@ class BackupService
             'type' => 'snapshot',
             'version' => '1.0',
             'created_at' => Carbon::now()->toIso8601String(),
-            'db_size' => File::size($dbPath),
+            'db_type' => config('database.default'),
+            'db_size' => $dbSize,
         ];
         $zip->addFromString('manifest.json', json_encode($manifest, JSON_PRETTY_PRINT));
 
@@ -287,8 +298,16 @@ class BackupService
     protected static function restoreSnapshot(ZipArchive $zip)
     {
         $dbContent = $zip->getFromName('database.sqlite');
+        
         if (!$dbContent) {
-            throw new \Exception("database.sqlite file is missing in the snapshot ZIP.");
+            // Fallback: Check if database.sql exists
+            $sqlContent = $zip->getFromName('database.sql');
+            if ($sqlContent) {
+                self::restoreSqlDump($sqlContent);
+                self::restoreMediaFromZip($zip);
+                return;
+            }
+            throw new \Exception("database.sqlite or database.sql file is missing in the snapshot ZIP.");
         }
 
         // Write to temporary SQLite database file
@@ -296,26 +315,7 @@ class BackupService
         File::put($tempDb, $dbContent);
 
         // Extract media files
-        for ($i = 0; $i < $zip->numFiles; $i++) {
-            $filename = $zip->getNameIndex($i);
-            if (strpos($filename, 'media/') === 0) {
-                $relativePath = substr($filename, 6); // Remove 'media/'
-                if (empty($relativePath)) continue;
-
-                $fileData = $zip->getFromIndex($i);
-                $destPath = storage_path("app/public/{$relativePath}");
-                
-                File::ensureDirectoryExists(dirname($destPath));
-                File::put($destPath, $fileData);
-
-                // Copy to bot QRIS if relevant
-                if ($relativePath === 'bot_qris.png' || $relativePath === 'qris/qris_latest.png') {
-                    $botQris = base_path('../src/data/qris.png');
-                    File::ensureDirectoryExists(dirname($botQris));
-                    File::put($botQris, $fileData);
-                }
-            }
-        }
+        self::restoreMediaFromZip($zip);
 
         // Overwrite active database file safely
         $activeDb = self::getDatabasePath();
@@ -445,5 +445,125 @@ class BackupService
         $pow = min($pow, count($units) - 1);
         $bytes /= pow(1024, $pow);
         return round($bytes, $precision) . ' ' . $units[$pow];
+    }
+
+    /**
+     * Generate SQL dump of tables dynamically in pure PHP.
+     */
+    public static function generateSqlDump()
+    {
+        $sql = "";
+        $tables = [];
+
+        try {
+            if (method_exists(Schema::class, 'getTables')) {
+                $tableInfos = Schema::getTables();
+                foreach ($tableInfos as $info) {
+                    $name = is_array($info) ? ($info['name'] ?? null) : ($info->name ?? null);
+                    if ($name && !str_starts_with($name, 'sqlite_')) {
+                        $tables[] = $name;
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            // Ignore schema reading errors
+        }
+
+        if (empty($tables)) {
+            $tables = array_keys(self::$entities);
+        }
+
+        $connection = config('database.default');
+
+        foreach ($tables as $table) {
+            if (!Schema::hasTable($table)) {
+                continue;
+            }
+
+            $sql .= "DROP TABLE IF EXISTS `{$table}`;\n";
+
+            if ($connection === 'mysql') {
+                try {
+                    $result = DB::select("SHOW CREATE TABLE `{$table}`");
+                    if (!empty($result)) {
+                        $createTableSql = ((array)$result[0])['Create Table'] ?? '';
+                        $sql .= $createTableSql . ";\n\n";
+                    }
+                } catch (\Exception $e) {
+                }
+            } elseif ($connection === 'sqlite') {
+                try {
+                    $result = DB::select("SELECT sql FROM sqlite_master WHERE type='table' AND name='{$table}'");
+                    if (!empty($result)) {
+                        $createTableSql = $result[0]->sql ?? '';
+                        $sql .= $createTableSql . ";\n\n";
+                    }
+                } catch (\Exception $e) {
+                }
+            }
+
+            $rows = DB::table($table)->get();
+            foreach ($rows as $row) {
+                $rowArray = (array)$row;
+                if (empty($rowArray)) continue;
+
+                $columns = array_map(function($col) {
+                    return "`{$col}`";
+                }, array_keys($rowArray));
+
+                $values = array_map(function($val) {
+                    if ($val === null) {
+                        return 'NULL';
+                    }
+                    return DB::getPdo()->quote($val);
+                }, array_values($rowArray));
+
+                $sql .= "INSERT INTO `{$table}` (" . implode(', ', $columns) . ") VALUES (" . implode(', ', $values) . ");\n";
+            }
+            $sql .= "\n";
+        }
+
+        return $sql;
+    }
+
+    /**
+     * Restore database from raw SQL content.
+     */
+    protected static function restoreSqlDump($sql)
+    {
+        DB::transaction(function () use ($sql) {
+            Schema::disableForeignKeyConstraints();
+            try {
+                DB::unprepared($sql);
+            } finally {
+                Schema::enableForeignKeyConstraints();
+            }
+        });
+    }
+
+    /**
+     * Restore media files from ZIP backup.
+     */
+    protected static function restoreMediaFromZip(ZipArchive $zip)
+    {
+        for ($i = 0; $i < $zip->numFiles; $i++) {
+            $filename = $zip->getNameIndex($i);
+            if (strpos($filename, 'media/') === 0) {
+                $relativePath = substr($filename, 6); // Remove 'media/'
+                if (empty($relativePath)) continue;
+
+                $fileData = $zip->getFromIndex($i);
+                $destPath = storage_path("app/public/{$relativePath}");
+                
+                File::ensureDirectoryExists(dirname($destPath));
+                File::put($destPath, $fileData);
+
+                if ($relativePath === 'bot_qris.png' || $relativePath === 'qris/qris_latest.png') {
+                    $botQris = base_path('../src/data/qris.png');
+                    File::ensureDirectoryExists(dirname($botQris));
+                    File::put($botQris, $fileData);
+                }
+            }
+        }
     }
 }
