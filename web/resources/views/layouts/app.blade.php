@@ -288,6 +288,9 @@
                 <a href="{{ route('admin.website.settings') }}" class="menu-item {{ request()->routeIs('admin.website.settings') ? 'active' : '' }}">
                     <i class="fas fa-globe"></i> Kelola Website
                 </a>
+                <a href="{{ route('admin.backup.index') }}" class="menu-item {{ request()->routeIs('admin.backup.*') ? 'active' : '' }}">
+                    <i class="fas fa-database"></i> Backup & Restore
+                </a>
             </div>
             @endif
 

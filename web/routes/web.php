@@ -131,6 +131,13 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         Route::get('/settings/qris/image', [\App\Http\Controllers\AdminController::class, 'showQrisImage'])->name('settings.qris.image');
         Route::get('/audit-logs', [\App\Http\Controllers\AdminController::class, 'auditLogs'])->name('audit-logs.index');
         
+        // Backup & Restore
+        Route::get('/backup', [\App\Http\Controllers\Admin\BackupController::class, 'index'])->name('backup.index');
+        Route::get('/backup/download/{type}', [\App\Http\Controllers\Admin\BackupController::class, 'download'])->name('backup.download');
+        Route::post('/backup/restore', [\App\Http\Controllers\Admin\BackupController::class, 'restore'])->name('backup.restore');
+        Route::delete('/backup/{filename}', [\App\Http\Controllers\Admin\BackupController::class, 'destroy'])->name('backup.destroy');
+        Route::post('/backup/settings', [\App\Http\Controllers\Admin\BackupController::class, 'updateSettings'])->name('backup.settings.update');
+        
         // System Actions
         Route::get('/website/settings', [\App\Http\Controllers\AdminController::class, 'websiteSettings'])->name('website.settings');
 

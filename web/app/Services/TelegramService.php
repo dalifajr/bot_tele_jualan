@@ -142,6 +142,50 @@ class TelegramService
             } catch (\Exception $e) {
                 Log::error("Gagal mengirim text invoice ke {$customerTelegramId}: " . $e->getMessage());
             }
+    }
+
+    /**
+     * Kirim file backup ke semua admin Telegram.
+     */
+    public static function sendBackupFile(string $filePath, string $caption = '')
+    {
+        $botToken = env('TELEGRAM_BOT_TOKEN');
+        if (empty($botToken)) {
+            Log::warning("TELEGRAM_BOT_TOKEN kosong, kirim backup dilewati.");
+            return false;
         }
+
+        $admins = User::where('role', 'admin')->whereNotNull('telegram_id')->get();
+        if ($admins->isEmpty()) {
+            Log::warning("Tidak ada admin dengan telegram_id untuk dikirimi backup.");
+            return false;
+        }
+
+        $apiUrl = "https://api.telegram.org/bot{$botToken}/sendDocument";
+        $success = false;
+
+        foreach ($admins as $admin) {
+            try {
+                $response = Http::attach(
+                    'document',
+                    file_get_contents($filePath),
+                    basename($filePath)
+                )->post($apiUrl, [
+                    'chat_id' => $admin->telegram_id,
+                    'caption' => $caption,
+                    'parse_mode' => 'HTML',
+                ]);
+
+                if ($response->successful()) {
+                    $success = true;
+                } else {
+                    Log::error("Gagal kirim file backup ke Telegram Admin {$admin->telegram_id}: " . $response->body());
+                }
+            } catch (\Exception $e) {
+                Log::error("Gagal mengirim backup ke {$admin->telegram_id}: " . $e->getMessage());
+            }
+        }
+
+        return $success;
     }
 }
