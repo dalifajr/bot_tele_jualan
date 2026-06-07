@@ -370,4 +370,223 @@ class RoadmapFeaturesTest extends TestCase
         $fund2 = DB::table('held_funds')->where('amount', 30000)->first();
         $this->assertEquals('held', $fund2->status);
     }
+
+    /**
+     * Test admin can replace stock units in bulk.
+     */
+    public function test_replace_stock_bulk_by_admin()
+    {
+        $admin = User::create([
+            'username' => 'admin_bulk_rep',
+            'full_name' => 'Admin Bulk Replace',
+            'email' => 'admin_bulk_rep@test.com',
+            'role' => 'admin',
+            'password' => bcrypt('password'),
+        ]);
+
+        $seller = User::create([
+            'username' => 'seller_bulk_rep',
+            'full_name' => 'Seller Bulk Replace',
+            'email' => 'seller_bulk_rep@test.com',
+            'role' => 'seller',
+            'seller_save_hours' => 12,
+            'password' => bcrypt('password'),
+        ]);
+
+        $product = Product::create([
+            'name' => 'Product Bulk Replace',
+            'price' => 50000,
+            'creator_id' => $seller->id,
+        ]);
+
+        $order = Order::create([
+            'order_ref' => 'ORD-REP-BULK',
+            'customer_id' => $seller->id,
+            'subtotal' => 100000,
+            'unique_code' => 0,
+            'total_amount' => 100000,
+            'status' => 'delivered',
+        ]);
+
+        $problem1 = StockUnit::create([
+            'product_id' => $product->id,
+            'raw_text' => 'Problem 1',
+            'is_sold' => true,
+            'stock_status' => 'ready',
+            'sold_order_id' => $order->id,
+            'seller_id' => $seller->id,
+        ]);
+
+        $problem2 = StockUnit::create([
+            'product_id' => $product->id,
+            'raw_text' => 'Problem 2',
+            'is_sold' => true,
+            'stock_status' => 'ready',
+            'sold_order_id' => $order->id,
+            'seller_id' => $seller->id,
+        ]);
+
+        $rep1 = StockUnit::create([
+            'product_id' => $product->id,
+            'raw_text' => 'Replacement 1',
+            'is_sold' => false,
+            'stock_status' => 'ready',
+            'seller_id' => $seller->id,
+        ]);
+
+        $rep2 = StockUnit::create([
+            'product_id' => $product->id,
+            'raw_text' => 'Replacement 2',
+            'is_sold' => false,
+            'stock_status' => 'ready',
+            'seller_id' => $seller->id,
+        ]);
+
+        $this->actingAs($admin);
+
+        $response = $this->post(route('admin.orders.replace-stock-bulk', $order->id), [
+            'stock_unit_ids' => json_encode([$problem1->id, $problem2->id])
+        ]);
+
+        $response->assertRedirect();
+
+        $problem1->refresh();
+        $problem2->refresh();
+        $rep1->refresh();
+        $rep2->refresh();
+
+        $this->assertFalse($problem1->is_sold);
+        $this->assertEquals('saved_for_verification', $problem1->stock_status);
+        $this->assertFalse($problem2->is_sold);
+        $this->assertEquals('saved_for_verification', $problem2->stock_status);
+
+        $this->assertTrue($rep1->is_sold);
+        $this->assertEquals($order->id, $rep1->sold_order_id);
+        $this->assertTrue($rep2->is_sold);
+        $this->assertEquals($order->id, $rep2->sold_order_id);
+    }
+
+    /**
+     * Test admin can refund stock units in bulk.
+     */
+    public function test_refund_stock_bulk_by_admin()
+    {
+        $admin = User::create([
+            'username' => 'admin_bulk_ref',
+            'full_name' => 'Admin Bulk Refund',
+            'email' => 'admin_bulk_ref@test.com',
+            'role' => 'admin',
+            'password' => bcrypt('password'),
+        ]);
+
+        $seller = User::create([
+            'username' => 'seller_bulk_ref',
+            'full_name' => 'Seller Bulk Refund',
+            'email' => 'seller_bulk_ref@test.com',
+            'role' => 'seller',
+            'password' => bcrypt('password'),
+        ]);
+
+        $product = Product::create([
+            'name' => 'Product Bulk Refund',
+            'price' => 50000,
+            'creator_id' => $seller->id,
+        ]);
+
+        $order = Order::create([
+            'order_ref' => 'ORD-REF-BULK2',
+            'customer_id' => $seller->id,
+            'subtotal' => 150000,
+            'unique_code' => 0,
+            'total_amount' => 150000,
+            'status' => 'delivered',
+        ]);
+
+        $unit1 = StockUnit::create([
+            'product_id' => $product->id,
+            'raw_text' => 'Unit 1',
+            'is_sold' => true,
+            'stock_status' => 'ready',
+            'sold_order_id' => $order->id,
+            'seller_id' => $seller->id,
+        ]);
+
+        $unit2 = StockUnit::create([
+            'product_id' => $product->id,
+            'raw_text' => 'Unit 2',
+            'is_sold' => true,
+            'stock_status' => 'ready',
+            'sold_order_id' => $order->id,
+            'seller_id' => $seller->id,
+        ]);
+
+        $unit3 = StockUnit::create([
+            'product_id' => $product->id,
+            'raw_text' => 'Unit 3',
+            'is_sold' => true,
+            'stock_status' => 'ready',
+            'sold_order_id' => $order->id,
+            'seller_id' => $seller->id,
+        ]);
+
+        // 3 held funds records
+        for ($i = 0; $i < 3; $i++) {
+            DB::table('held_funds')->insert([
+                'seller_id' => $seller->id,
+                'order_id' => $order->id,
+                'product_id' => $product->id,
+                'amount' => 45000,
+                'status' => 'held',
+                'release_at' => now()->addDays(3),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        $this->actingAs($admin);
+
+        // Refund 2 of 3 units (Partial Refund)
+        $response = $this->post(route('admin.orders.refund-bulk', $order->id), [
+            'stock_unit_ids' => json_encode([$unit1->id, $unit2->id])
+        ]);
+
+        $response->assertRedirect();
+
+        $order->refresh();
+        $unit1->refresh();
+        $unit2->refresh();
+        $unit3->refresh();
+
+        // Order should still be delivered since 1 unit remains
+        $this->assertEquals('delivered', $order->status);
+        $this->assertFalse($unit1->is_sold);
+        $this->assertEquals('saved_for_verification', $unit1->stock_status);
+        $this->assertFalse($unit2->is_sold);
+        $this->assertEquals('saved_for_verification', $unit2->stock_status);
+        $this->assertTrue($unit3->is_sold);
+
+        // 2 of the held funds should be cancelled, 1 should remain held
+        $cancelledFunds = DB::table('held_funds')->where('order_id', $order->id)->where('status', 'cancelled')->count();
+        $heldFunds = DB::table('held_funds')->where('order_id', $order->id)->where('status', 'held')->count();
+
+        $this->assertEquals(2, $cancelledFunds);
+        $this->assertEquals(1, $heldFunds);
+
+        // Now refund the last unit (which should trigger full cancellation of order)
+        $response2 = $this->post(route('admin.orders.refund-bulk', $order->id), [
+            'stock_unit_ids' => json_encode([$unit3->id])
+        ]);
+
+        $response2->assertRedirect();
+
+        $order->refresh();
+        $unit3->refresh();
+
+        $this->assertEquals('cancelled', $order->status);
+        $this->assertFalse($unit3->is_sold);
+        $this->assertEquals('saved_for_verification', $unit3->stock_status);
+
+        $totalCancelled = DB::table('held_funds')->where('order_id', $order->id)->where('status', 'cancelled')->count();
+        $this->assertEquals(3, $totalCancelled);
+    }
 }

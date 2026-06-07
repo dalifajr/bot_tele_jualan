@@ -100,7 +100,9 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         Route::post('/orders/{id}/accept', [\App\Http\Controllers\AdminController::class, 'acceptOrder'])->name('orders.accept');
         Route::post('/orders/{id}/reject', [\App\Http\Controllers\AdminController::class, 'rejectOrder'])->name('orders.reject');
         Route::post('/orders/{id}/replace-stock/{stockUnitId}', [\App\Http\Controllers\AdminController::class, 'replaceStock'])->name('orders.replace-stock');
+        Route::post('/orders/{id}/replace-stock-bulk', [\App\Http\Controllers\AdminController::class, 'replaceStockBulk'])->name('orders.replace-stock-bulk');
         Route::post('/orders/{id}/refund', [\App\Http\Controllers\AdminController::class, 'refundOrder'])->name('orders.refund');
+        Route::post('/orders/{id}/refund-bulk', [\App\Http\Controllers\AdminController::class, 'refundBulk'])->name('orders.refund-bulk');
         
         Route::get('/users', [\App\Http\Controllers\AdminController::class, 'users'])->name('users.index');
         Route::get('/users/export', [\App\Http\Controllers\AdminController::class, 'exportUsers'])->name('users.export');

@@ -1492,4 +1492,166 @@ class AdminController extends Controller
             return redirect()->back()->with('error', 'Gagal memproses refund: ' . $e->getMessage());
         }
     }
+
+    public function replaceStockBulk(Request $request, $orderId)
+    {
+        $order = \App\Models\Order::findOrFail($orderId);
+        $stockUnitIds = json_decode($request->input('stock_unit_ids', '[]'), true);
+
+        if (!is_array($stockUnitIds) || empty($stockUnitIds)) {
+            return redirect()->back()->with('error', 'Tidak ada akun terpilih.');
+        }
+
+        try {
+            \Illuminate\Support\Facades\DB::beginTransaction();
+
+            $assignedReplacementIds = [];
+            $replacedCount = 0;
+
+            foreach ($stockUnitIds as $stockUnitId) {
+                $problemUnit = \App\Models\StockUnit::where('id', $stockUnitId)
+                    ->where('sold_order_id', $orderId)
+                    ->where('is_sold', true)
+                    ->first();
+
+                if (!$problemUnit) continue;
+
+                // Find a replacement unit of same product & same seller
+                $newUnit = \App\Models\StockUnit::where('product_id', $problemUnit->product_id)
+                    ->where('seller_id', $problemUnit->seller_id)
+                    ->where('stock_status', 'ready')
+                    ->where('is_sold', false)
+                    ->whereNotIn('id', $assignedReplacementIds)
+                    ->orderBy('id', 'asc')
+                    ->first();
+
+                if (!$newUnit) {
+                    \Illuminate\Support\Facades\DB::rollBack();
+                    return redirect()->back()->with('error', 'Stok pengganti tidak mencukupi untuk semua akun terpilih.');
+                }
+
+                $assignedReplacementIds[] = $newUnit->id;
+
+                // Cooldown for problem unit is seller's cooldown hours
+                $seller = \App\Models\User::find($problemUnit->seller_id);
+                $saveHours = $seller ? ($seller->seller_save_hours ?? 80) : 80;
+
+                // Pull back problem unit to karantina
+                $problemUnit->is_sold = false;
+                $problemUnit->sold_order_id = null;
+                $problemUnit->stock_status = 'saved_for_verification';
+                $problemUnit->available_at = now()->addHours($saveHours);
+                $problemUnit->save();
+
+                // Assign new replacement unit to order
+                $newUnit->is_sold = true;
+                $newUnit->sold_order_id = $orderId;
+                $newUnit->save();
+
+                $replacedCount++;
+
+                // Audit Log
+                \Illuminate\Support\Facades\DB::table('audit_logs')->insert([
+                    'action' => 'stock_replaced',
+                    'actor_id' => \Illuminate\Support\Facades\Auth::id(),
+                    'entity_type' => 'order',
+                    'entity_id' => $orderId,
+                    'detail' => "problem_stock_id={$stockUnitId}; new_stock_id={$newUnit->id} (Bulk)",
+                    'created_at' => now(),
+                ]);
+            }
+
+            \Illuminate\Support\Facades\DB::commit();
+
+            return redirect()->back()->with('success', "Berhasil mengganti {$replacedCount} akun terpilih.");
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\DB::rollBack();
+            return redirect()->back()->with('error', 'Gagal mengganti akun: ' . $e->getMessage());
+        }
+    }
+
+    public function refundBulk(Request $request, $orderId)
+    {
+        $order = \App\Models\Order::findOrFail($orderId);
+        $stockUnitIds = json_decode($request->input('stock_unit_ids', '[]'), true);
+
+        if (!is_array($stockUnitIds) || empty($stockUnitIds)) {
+            return redirect()->back()->with('error', 'Tidak ada akun terpilih.');
+        }
+
+        try {
+            \Illuminate\Support\Facades\DB::beginTransaction();
+
+            $refundedCount = 0;
+
+            foreach ($stockUnitIds as $stockUnitId) {
+                $unit = \App\Models\StockUnit::where('id', $stockUnitId)
+                    ->where('sold_order_id', $orderId)
+                    ->where('is_sold', true)
+                    ->first();
+
+                if (!$unit) continue;
+
+                $seller = \App\Models\User::find($unit->seller_id);
+                $saveHours = $seller ? ($seller->seller_save_hours ?? 80) : 80;
+
+                // Pull back stock unit to saved_for_verification (karantina)
+                $unit->is_sold = false;
+                $unit->sold_order_id = null;
+                $unit->stock_status = 'saved_for_verification';
+                $unit->available_at = now()->addHours($saveHours);
+                $unit->save();
+
+                $refundedCount++;
+            }
+
+            if ($refundedCount > 0) {
+                // Cancel matching number of held funds
+                $heldFunds = \App\Models\HeldFund::where('order_id', $orderId)
+                    ->where('status', 'held')
+                    ->limit($refundedCount)
+                    ->get();
+
+                foreach ($heldFunds as $fund) {
+                    $fund->status = 'cancelled';
+                    $fund->save();
+                }
+
+                // Check if there are any remaining stock units sold in this order
+                $remainingUnitsCount = \App\Models\StockUnit::where('sold_order_id', $orderId)
+                    ->where('is_sold', true)
+                    ->count();
+
+                if ($remainingUnitsCount === 0) {
+                    $order->status = 'cancelled';
+                    $order->cancelled_at = now();
+                    $order->cancel_reason = 'Refunded & Dibatalkan penuh oleh Admin (Bulk)';
+                    $order->save();
+
+                    $payment = $order->payment;
+                    if ($payment) {
+                        $payment->status = 'cancelled';
+                        $payment->save();
+                    }
+                }
+
+                // Audit Log
+                \Illuminate\Support\Facades\DB::table('audit_logs')->insert([
+                    'action' => 'order_partially_refunded',
+                    'actor_id' => \Illuminate\Support\Facades\Auth::id(),
+                    'entity_type' => 'order',
+                    'entity_id' => $orderId,
+                    'detail' => "refunded_count={$refundedCount}; remaining_units={$remainingUnitsCount}",
+                    'created_at' => now(),
+                ]);
+            }
+
+            \Illuminate\Support\Facades\DB::commit();
+
+            return redirect()->back()->with('success', "Berhasil me-refund {$refundedCount} akun terpilih.");
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\DB::rollBack();
+            return redirect()->back()->with('error', 'Gagal memproses refund sebagian: ' . $e->getMessage());
+        }
+    }
 }

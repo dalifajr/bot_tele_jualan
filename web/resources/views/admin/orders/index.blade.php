@@ -141,23 +141,44 @@
                     @if($order->stockUnits && $order->stockUnits->count() > 0)
                     <div class="col-12 mt-2">
                         <h6 class="fw-bold text-muted border-bottom pb-2 mb-3">Data Akun yang Dikirim ({{ $order->stockUnits->count() }} unit)</h6>
+                        @php $isMultiUnit = $order->stockUnits->count() > 1; @endphp
                         <div class="d-flex flex-column gap-3" style="max-height: 300px; overflow-y: auto;">
                             @foreach($order->stockUnits as $unit)
                             <div class="p-3 bg-light rounded-3 border d-flex justify-content-between align-items-center gap-3">
                                 <div class="text-break flex-grow-1" style="font-family: monospace; white-space: pre-wrap; font-size: 0.85rem;">{{ $unit->raw_text }}</div>
                                 @if($order->status === 'delivered')
                                 <div class="flex-shrink-0">
-                                    <form action="{{ route('admin.orders.replace-stock', [$order->id, $unit->id]) }}" method="POST" class="m-0" onsubmit="confirmAction(event, 'Apakah Anda yakin ingin mengganti akun ini dengan stok baru milik seller yang sama?');">
-                                        @csrf
-                                        <button type="submit" class="btn btn-sm btn-outline-warning text-warning-emphasis border-warning rounded-pill px-3">
-                                            <i class="fas fa-sync-alt me-1"></i> Ganti Akun
-                                        </button>
-                                    </form>
+                                    @if($isMultiUnit)
+                                        <input type="checkbox" class="form-check-input stock-checkbox" data-order-id="{{ $order->id }}" value="{{ $unit->id }}" onchange="updateStockCheckboxes('{{ $order->id }}')" style="width: 1.5rem; height: 1.5rem; border-radius: 4px; cursor: pointer; border: 2px solid #ccc;">
+                                    @else
+                                        <form action="{{ route('admin.orders.replace-stock', [$order->id, $unit->id]) }}" method="POST" class="m-0" onsubmit="confirmAction(event, 'Apakah Anda yakin ingin mengganti akun ini dengan stok baru milik seller yang sama?');">
+                                            @csrf
+                                            <button type="submit" class="btn btn-sm btn-outline-warning text-warning-emphasis border-warning rounded-pill px-3">
+                                                <i class="fas fa-sync-alt me-1"></i> Ganti Akun
+                                            </button>
+                                        </form>
+                                    @endif
                                 </div>
                                 @endif
                             </div>
                             @endforeach
                         </div>
+                        
+                        @if($isMultiUnit && $order->status === 'delivered')
+                        <div class="selected-actions-container mt-3 d-none" id="actions-{{ $order->id }}">
+                            <div class="d-flex justify-content-between align-items-center bg-warning-subtle p-3 rounded-3 border border-warning">
+                                <span class="small text-warning-emphasis fw-bold"><span class="checked-count" id="count-{{ $order->id }}">0</span> akun terpilih:</span>
+                                <div class="d-flex gap-2">
+                                    <button type="button" class="btn btn-sm btn-warning rounded-pill px-3" onclick="submitBulkAction('{{ $order->id }}', 'replace')">
+                                        <i class="fas fa-sync-alt me-1"></i> Ganti Akun
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-danger rounded-pill px-3" onclick="submitBulkAction('{{ $order->id }}', 'refund')">
+                                        <i class="fas fa-undo-alt me-1"></i> Refund Terpilih
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
                     </div>
                     @endif
 
@@ -235,4 +256,91 @@
 </div>
 @endforeach
 @endpush
+
+@push('scripts')
+<script>
+    function updateStockCheckboxes(orderId) {
+        const checkboxes = document.querySelectorAll(`.stock-checkbox[data-order-id="${orderId}"]`);
+        const checked = document.querySelectorAll(`.stock-checkbox[data-order-id="${orderId}"]:checked`);
+        const container = document.getElementById(`actions-${orderId}`);
+        const countSpan = document.getElementById(`count-${orderId}`);
+        
+        if (container && countSpan) {
+            if (checked.length > 0) {
+                countSpan.textContent = checked.length;
+                container.classList.remove('d-none');
+            } else {
+                container.classList.add('d-none');
+            }
+        }
+    }
+
+    function submitBulkAction(orderId, actionType) {
+        const checked = document.querySelectorAll(`.stock-checkbox[data-order-id="${orderId}"]:checked`);
+        if (checked.length === 0) return;
+        
+        const ids = Array.from(checked).map(cb => cb.value);
+        
+        let confirmMsg = '';
+        let url = '';
+        
+        if (actionType === 'replace') {
+            confirmMsg = `Apakah Anda yakin ingin mengganti ${ids.length} akun terpilih dengan stok baru dari seller?`;
+            url = `/admin/orders/${orderId}/replace-stock-bulk`;
+        } else {
+            confirmMsg = `Apakah Anda yakin ingin melakukan refund sebagian untuk ${ids.length} akun terpilih ini? (Dana tertahan seller akan dikurangi)`;
+            url = `/admin/orders/${orderId}/refund-bulk`;
+        }
+        
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Konfirmasi Aksi',
+                text: confirmMsg,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: actionType === 'refund' ? '#dc3545' : '#ffc107',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Ya, Lanjutkan',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    executeBulkFormSubmit(url, ids);
+                }
+            });
+        } else {
+            if (confirm(confirmMsg)) {
+                executeBulkFormSubmit(url, ids);
+            }
+        }
+    }
+
+    function executeBulkFormSubmit(url, ids) {
+        const loader = document.getElementById('pageLoader');
+        if (loader) loader.classList.remove('d-none');
+        
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = url;
+        
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+        if (csrfToken) {
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = '_token';
+            csrfInput.value = csrfToken;
+            form.appendChild(csrfInput);
+        }
+        
+        const idsInput = document.createElement('input');
+        idsInput.type = 'hidden';
+        idsInput.name = 'stock_unit_ids';
+        idsInput.value = JSON.stringify(ids);
+        form.appendChild(idsInput);
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+</script>
+@endpush
+
 @endsection
