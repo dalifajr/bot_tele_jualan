@@ -372,10 +372,12 @@ class AdminController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
+            'warranty_days' => 'required_if:enable_warranty,1|nullable|integer|min:1',
         ]);
         $data = $request->only(['name', 'description', 'price']);
         $data['description'] = $data['description'] ?? '';
         $data['is_suspended'] = false;
+        $data['warranty_days'] = $request->has('enable_warranty') ? $request->warranty_days : 0;
         Product::create($data);
         return redirect()->route('admin.products.index')->with('success', 'Produk berhasil ditambahkan.');
     }
@@ -387,10 +389,12 @@ class AdminController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
-            'is_suspended' => 'boolean'
+            'is_suspended' => 'boolean',
+            'warranty_days' => 'required_if:enable_warranty,1|nullable|integer|min:1',
         ]);
         $data = $request->only(['name', 'description', 'price']);
         $data['is_suspended'] = $request->has('is_suspended');
+        $data['warranty_days'] = $request->has('enable_warranty') ? $request->warranty_days : 0;
         $product->update($data);
         return redirect()->route('admin.products.index')->with('success', 'Produk berhasil diperbarui.');
     }
@@ -1369,5 +1373,123 @@ class AdminController extends Controller
         }
 
         return redirect()->back()->with('success', 'Worker berhasil dihapus dari produk, dan stok miliknya telah dialihkan ke pemilik produk.');
+    }
+
+    public function replaceStock($orderId, $stockUnitId)
+    {
+        $order = \App\Models\Order::findOrFail($orderId);
+        $problemUnit = \App\Models\StockUnit::where('id', $stockUnitId)
+            ->where('sold_order_id', $orderId)
+            ->where('is_sold', true)
+            ->firstOrFail();
+
+        // Find a replacement unit of same product & same seller
+        $newUnit = \App\Models\StockUnit::where('product_id', $problemUnit->product_id)
+            ->where('seller_id', $problemUnit->seller_id)
+            ->where('stock_status', 'ready')
+            ->where('is_sold', false)
+            ->orderBy('id', 'asc')
+            ->first();
+
+        if (!$newUnit) {
+            return redirect()->back()->with('error', 'Stok pengganti dari seller ini tidak tersedia. Silakan gunakan opsi refund.');
+        }
+
+        try {
+            \Illuminate\Support\Facades\DB::beginTransaction();
+
+            // Cooldown for problem unit is seller's cooldown hours
+            $seller = \App\Models\User::find($problemUnit->seller_id);
+            $saveHours = $seller ? ($seller->seller_save_hours ?? 80) : 80;
+
+            // Pull back problem unit to karantina (saved_for_verification)
+            $problemUnit->is_sold = false;
+            $problemUnit->sold_order_id = null;
+            $problemUnit->stock_status = 'saved_for_verification';
+            $problemUnit->available_at = now()->addHours($saveHours);
+            $problemUnit->save();
+
+            // Assign new replacement unit to order
+            $newUnit->is_sold = true;
+            $newUnit->sold_order_id = $orderId;
+            $newUnit->save();
+
+            // Audit Log
+            \Illuminate\Support\Facades\DB::table('audit_logs')->insert([
+                'action' => 'stock_replaced',
+                'actor_id' => \Illuminate\Support\Facades\Auth::id(),
+                'entity_type' => 'order',
+                'entity_id' => $orderId,
+                'detail' => "problem_stock_id={$stockUnitId}; new_stock_id={$newUnit->id}",
+                'created_at' => now(),
+            ]);
+
+            \Illuminate\Support\Facades\DB::commit();
+
+            return redirect()->back()->with('success', 'Akun berhasil diganti dengan stok baru dari seller.');
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\DB::rollBack();
+            return redirect()->back()->with('error', 'Gagal mengganti akun: ' . $e->getMessage());
+        }
+    }
+
+    public function refundOrder($orderId)
+    {
+        $order = \App\Models\Order::findOrFail($orderId);
+
+        try {
+            \Illuminate\Support\Facades\DB::beginTransaction();
+
+            // 1. Update Order & Payment
+            $order->status = 'cancelled';
+            $order->cancelled_at = now();
+            $order->cancel_reason = 'Refunded & Dibatalkan oleh Admin';
+            $order->save();
+
+            $payment = $order->payment;
+            if ($payment) {
+                $payment->status = 'cancelled';
+                $payment->save();
+            }
+
+            // 2. Pull all stock units back to saved_for_verification (karantina)
+            $units = \App\Models\StockUnit::where('sold_order_id', $orderId)->get();
+            foreach ($units as $unit) {
+                $seller = \App\Models\User::find($unit->seller_id);
+                $saveHours = $seller ? ($seller->seller_save_hours ?? 80) : 80;
+
+                $unit->is_sold = false;
+                $unit->sold_order_id = null;
+                $unit->stock_status = 'saved_for_verification';
+                $unit->available_at = now()->addHours($saveHours);
+                $unit->save();
+            }
+
+            // 3. Cancel held funds
+            \Illuminate\Support\Facades\DB::table('held_funds')
+                ->where('order_id', $orderId)
+                ->where('status', 'held')
+                ->update([
+                    'status' => 'cancelled',
+                    'updated_at' => now()
+                ]);
+
+            // 4. Audit Log
+            \Illuminate\Support\Facades\DB::table('audit_logs')->insert([
+                'action' => 'order_refunded',
+                'actor_id' => \Illuminate\Support\Facades\Auth::id(),
+                'entity_type' => 'order',
+                'entity_id' => $orderId,
+                'detail' => "order_ref={$order->order_ref}; held_funds_cancelled",
+                'created_at' => now(),
+            ]);
+
+            \Illuminate\Support\Facades\DB::commit();
+
+            return redirect()->back()->with('success', 'Pesanan berhasil direfund. Semua stok dikembalikan ke karantina dan saldo tertahan seller dibatalkan.');
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\DB::rollBack();
+            return redirect()->back()->with('error', 'Gagal memproses refund: ' . $e->getMessage());
+        }
     }
 }

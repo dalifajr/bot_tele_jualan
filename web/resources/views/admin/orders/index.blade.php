@@ -141,16 +141,23 @@
                     @if($order->stockUnits && $order->stockUnits->count() > 0)
                     <div class="col-12 mt-2">
                         <h6 class="fw-bold text-muted border-bottom pb-2 mb-3">Data Akun yang Dikirim ({{ $order->stockUnits->count() }} unit)</h6>
-                        <div class="bg-light rounded-3 p-3 text-break" style="max-height: 250px; overflow-y: auto; font-family: monospace; white-space: pre-wrap; font-size: 0.85rem;">
-@foreach($order->stockUnits as $unit)
-{{ $unit->raw_text }}
-@if(!$loop->last)
-
-----------------------------------------
-
-@endif
-@endforeach
-</div>
+                        <div class="d-flex flex-column gap-3" style="max-height: 300px; overflow-y: auto;">
+                            @foreach($order->stockUnits as $unit)
+                            <div class="p-3 bg-light rounded-3 border d-flex justify-content-between align-items-center gap-3">
+                                <div class="text-break flex-grow-1" style="font-family: monospace; white-space: pre-wrap; font-size: 0.85rem;">{{ $unit->raw_text }}</div>
+                                @if($order->status === 'delivered')
+                                <div class="flex-shrink-0">
+                                    <form action="{{ route('admin.orders.replace-stock', [$order->id, $unit->id]) }}" method="POST" class="m-0" onsubmit="confirmAction(event, 'Apakah Anda yakin ingin mengganti akun ini dengan stok baru milik seller yang sama?');">
+                                        @csrf
+                                        <button type="submit" class="btn btn-sm btn-outline-warning text-warning-emphasis border-warning rounded-pill px-3">
+                                            <i class="fas fa-sync-alt me-1"></i> Ganti Akun
+                                        </button>
+                                    </form>
+                                </div>
+                                @endif
+                            </div>
+                            @endforeach
+                        </div>
                     </div>
                     @endif
 
@@ -177,6 +184,14 @@
                 </div>
             </div>
             <div class="modal-footer border-0">
+                @if($order->status === 'delivered')
+                <form action="{{ route('admin.orders.refund', $order->id) }}" method="POST" class="m-0 d-inline" onsubmit="confirmAction(event, 'Apakah Anda yakin ingin membatalkan pesanan ini, merefund penuh (stok ditarik ke karantina), dan membatalkan/menghapus saldo tertahan seller?');">
+                    @csrf
+                    <button type="submit" class="btn btn-danger rounded-pill px-4">
+                        <i class="fas fa-undo-alt me-1"></i> Refund & Batalkan
+                    </button>
+                </form>
+                @endif
                 <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Tutup</button>
             </div>
         </div>

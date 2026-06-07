@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Order;
 use App\Models\StockUnit;
 use App\Models\Payment;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
@@ -91,15 +92,64 @@ class OrderService
             }
 
             // 3. Consume Stock
-            StockUnit::where('sold_order_id', $order->id)
+            $reservedStock = StockUnit::where('sold_order_id', $order->id)
                 ->where('stock_status', 'reserved_checkout')
                 ->where('is_sold', false)
-                ->update([
-                    'stock_status' => 'ready', // Kembali ke 'ready' (atau bisa dibiarkan/null) tapi is_sold = true
-                    'is_sold' => true
-                ]);
+                ->get();
 
-            // 4. Audit Log
+            foreach ($reservedStock as $unit) {
+                $unit->stock_status = 'ready';
+                $unit->is_sold = true;
+                $unit->save();
+            }
+
+            // 4. Process Seller Commissions
+            $sellerSales = [];
+            foreach ($reservedStock as $unit) {
+                if ($unit->seller_id) {
+                    $sellerSales[$unit->seller_id][] = $unit;
+                }
+            }
+
+            foreach ($sellerSales as $sellerId => $units) {
+                $seller = User::find($sellerId);
+                if ($seller) {
+                    $feePercent = $seller->platform_fee_percent ?? 10;
+                    $totalWalletAdded = 0;
+
+                    foreach ($units as $unit) {
+                        $product = $unit->product;
+                        if (!$product) continue;
+                        $price = $product->price;
+                        $feeAmount = (int)($price * $feePercent / 100);
+                        $netEarnings = $price - $feeAmount;
+
+                        $warrantyDays = $product->warranty_days ?? 0;
+                        if ($warrantyDays > 0) {
+                            // Insert into held_funds
+                            DB::table('held_funds')->insert([
+                                'seller_id' => $sellerId,
+                                'order_id' => $order->id,
+                                'product_id' => $product->id,
+                                'amount' => $netEarnings,
+                                'status' => 'held',
+                                'release_at' => now()->addDays($warrantyDays),
+                                'created_at' => now(),
+                                'updated_at' => now()
+                            ]);
+                        } else {
+                            $totalWalletAdded += $netEarnings;
+                        }
+                    }
+
+                    if ($totalWalletAdded > 0) {
+                        $seller->wallet_balance = ($seller->wallet_balance ?? 0) + $totalWalletAdded;
+                        $seller->save();
+                    }
+                }
+            }
+
+            // 5. Audit Log
             DB::table('audit_logs')->insert([
                 'action' => 'payment_confirmed',
                 'actor_id' => $adminId,
@@ -110,12 +160,6 @@ class OrderService
             ]);
 
             DB::commit();
-            
-            // TODO: Seharusnya mengirim pesan delivery ke telegram customer.
-            // Karena ini sistem hybrid, kita bisa mengandalkan bot untuk sweep/deteksi atau biarkan customer cek web.
-            // Pada bot python, `reconcile_payment` mengirim message ke customer.
-            // Di sini kita bisa biarkan saja atau buat notifikasi telegram jika memungkinkan.
-            // Untuk sekarang, kita selesaikan state DB-nya saja.
             
             return true;
         } catch (Exception $e) {

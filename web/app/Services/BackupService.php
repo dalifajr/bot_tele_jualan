@@ -27,6 +27,7 @@ class BackupService
         'orders' => Order::class,
         'order_items' => OrderItem::class,
         'payments' => Payment::class,
+        'held_funds' => \App\Models\HeldFund::class,
         'restock_subscriptions' => 'restock_subscriptions',
         'complaint_cases' => \App\Models\ComplaintCase::class,
         'complaint_attachments' => 'complaint_attachments',

@@ -49,10 +49,29 @@ class Product(Base):
     description: Mapped[str] = mapped_column(Text, default="")
     price: Mapped[int] = mapped_column(Integer, nullable=False)
     is_suspended: Mapped[bool] = mapped_column(Boolean, default=False)
+    warranty_days: Mapped[int | None] = mapped_column(Integer, nullable=True, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     stocks: Mapped[list["StockUnit"]] = relationship(back_populates="product", cascade="all, delete-orphan")
+
+
+class HeldFund(Base):
+    __tablename__ = "held_funds"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    seller_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    order_id: Mapped[int] = mapped_column(ForeignKey("orders.id", ondelete="CASCADE"), index=True)
+    product_id: Mapped[int] = mapped_column(ForeignKey("products.id", ondelete="CASCADE"), index=True)
+    amount: Mapped[int] = mapped_column(Integer, nullable=False)
+    status: Mapped[str] = mapped_column(String(32), default="held", index=True)
+    release_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    seller: Mapped["User"] = relationship()
+    order: Mapped["Order"] = relationship()
+    product: Mapped["Product"] = relationship()
 
 
 class StockUnit(Base):

@@ -18,7 +18,7 @@ from app.bot.services.catalog_service import (
     promote_awaiting_stocks,
 )
 from app.common.config import get_settings
-from app.db.models import Order, OrderItem, Payment, Product, StockUnit, User
+from app.db.models import Order, OrderItem, Payment, Product, StockUnit, User, HeldFund
 
 settings = get_settings()
 STOCK_STATUS_RESERVED_CHECKOUT = "reserved_checkout"
@@ -1044,36 +1044,55 @@ def reconcile_payment(
     for s_id, units in seller_sales.items():
         seller = session.get(User, s_id)
         if seller is not None:
-            total_gross = 0
+            fee_percent = int(seller.platform_fee_percent or 10)
+            total_wallet_added = 0
+            total_held_added = 0
+            
             items_details = []
+            
             for u in units:
                 price = int(u.product.price)
-                total_gross += price
+                fee_amount = int(price * fee_percent / 100)
+                net_earnings = price - fee_amount
+                
                 rupiah_price = f"Rp{price:,}".replace(",", ".")
-                items_details.append(f"• {u.product.name} (Harga: {rupiah_price})")
-            
-            fee_percent = int(seller.platform_fee_percent or 10)
-            fee_amount = int(total_gross * fee_percent / 100)
-            net_earnings = total_gross - fee_amount
-            
-            seller.wallet_balance = int(seller.wallet_balance or 0) + net_earnings
-            session.add(seller)
+                warranty_days = int(getattr(u.product, 'warranty_days', 0) or 0)
+                
+                if warranty_days > 0:
+                    total_held_added += net_earnings
+                    release_date = datetime.utcnow() + timedelta(days=warranty_days)
+                    held_fund = HeldFund(
+                        seller_id=s_id,
+                        order_id=order.id,
+                        product_id=u.product.id,
+                        amount=net_earnings,
+                        status="held",
+                        release_at=release_date
+                    )
+                    session.add(held_fund)
+                    items_details.append(f"• {u.product.name} (Garansi {warranty_days} Hari): {rupiah_price} (Saldo Tertahan)")
+                else:
+                    total_wallet_added += net_earnings
+                    items_details.append(f"• {u.product.name}: {rupiah_price} (Masuk Wallet)")
+
+            if total_wallet_added > 0:
+                seller.wallet_balance = int(seller.wallet_balance or 0) + total_wallet_added
+                session.add(seller)
             
             if seller.telegram_id:
                 from app.bot.services.notification_retry_service import enqueue_notification_retry
                 detail_str = "\n".join(items_details)
-                gross_rp = f"Rp{total_gross:,}".replace(",", ".")
-                fee_rp = f"Rp{fee_amount:,}".replace(",", ".")
-                net_rp = f"Rp{net_earnings:,}".replace(",", ".")
+                wallet_rp = f"Rp{total_wallet_added:,}".replace(",", ".")
+                held_rp = f"Rp{total_held_added:,}".replace(",", ".")
                 
                 message_text = (
                     f"🔔 <b>Notifikasi Penjualan!</b>\n\n"
                     f"Stok produk Anda telah dibeli oleh customer:\n"
                     f"{detail_str}\n\n"
-                    f"• Total Kotor: <b>{gross_rp}</b>\n"
-                    f"• Potongan Platform ({fee_percent}%): <b>{fee_rp}</b>\n"
-                    f"• Pendapatan Bersih (Masuk Wallet): <b>{net_rp}</b>\n\n"
-                    f"<i>Komisi bersih telah otomatis ditambahkan ke Saldo Wallet Anda. Silakan kelola penarikan dana via portal web seller.</i>"
+                    f"• Platform Fee: <b>{fee_percent}%</b>\n"
+                    f"• Masuk Saldo Wallet: <b>{wallet_rp}</b>\n"
+                    f"• Masuk Saldo Tertahan (Garansi): <b>{held_rp}</b>\n\n"
+                    f"<i>Dana garansi (saldo tertahan) akan otomatis cair ke wallet Anda setelah masa garansi produk berakhir.</i>"
                 )
                 enqueue_notification_retry(
                     session=session,

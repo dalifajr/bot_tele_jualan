@@ -12,6 +12,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withSchedule(function (\Illuminate\Console\Scheduling\Schedule $schedule) {
         $schedule->command('orders:release-expired')->everyMinute();
+        $schedule->command('funds:release-held')->hourly();
         $schedule->command('app:auto-backup')->hourly();
     })
     ->withMiddleware(function (Middleware $middleware): void {

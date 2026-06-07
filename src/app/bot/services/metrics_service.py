@@ -9,6 +9,7 @@ from sqlalchemy import and_, func, select
 from sqlalchemy.orm import Session
 
 from app.common.config import get_settings
+from app.common.timezone import get_system_timezone
 from app.db.models import BotSetting, ListenerEvent, NotificationRetryJob, Order, OrderItem, Payment, Product, TelemetryEvent
 
 settings = get_settings()
@@ -93,7 +94,7 @@ def _format_rupiah(amount: int) -> str:
 def _display_now() -> datetime:
     now_utc = datetime.now(timezone.utc)
     try:
-        return now_utc.astimezone(ZoneInfo(settings.display_timezone))
+        return now_utc.astimezone(ZoneInfo(get_system_timezone()))
     except ZoneInfoNotFoundError:
         return now_utc
 

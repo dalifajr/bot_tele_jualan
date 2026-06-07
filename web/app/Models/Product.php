@@ -14,11 +14,13 @@ class Product extends Model
         'description',
         'is_suspended',
         'creator_id',
+        'warranty_days',
     ];
 
     protected $casts = [
         'price' => 'integer',
         'is_suspended' => 'boolean',
+        'warranty_days' => 'integer',
     ];
 
     public function orders()

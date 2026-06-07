@@ -21,6 +21,12 @@ class SellerController extends Controller
         $sellerId = Auth::id();
         $user = Auth::user();
 
+        // Held Balance
+        $heldBalance = (int) DB::table('held_funds')
+            ->where('seller_id', $sellerId)
+            ->where('status', 'held')
+            ->sum('amount');
+
         // Stock stats
         $readyStockCount = StockUnit::where('seller_id', $sellerId)->where('stock_status', 'ready')->where('is_sold', false)->count();
         $savedStockCount = StockUnit::where('seller_id', $sellerId)->whereIn('stock_status', ['saved_for_verification', 'saved_ready_notified'])->where('is_sold', false)->count();
@@ -118,7 +124,8 @@ class SellerController extends Controller
             'latestOrders',
             'chartLabels',
             'chartData',
-            'days'
+            'days',
+            'heldBalance'
         ));
     }
 
@@ -419,6 +426,7 @@ class SellerController extends Controller
             'name' => 'required|string|max:255',
             'price' => 'required|integer|min:0',
             'description' => 'nullable|string',
+            'warranty_days' => 'required_if:enable_warranty,1|nullable|integer|min:1',
         ]);
 
         Product::create([
@@ -427,6 +435,7 @@ class SellerController extends Controller
             'description' => $request->description ?? '',
             'creator_id' => Auth::id(),
             'is_suspended' => false,
+            'warranty_days' => $request->has('enable_warranty') ? $request->warranty_days : 0,
         ]);
 
         return redirect()->route('seller.products.index')->with('success', 'Produk baru berhasil dibuat.');
@@ -525,12 +534,23 @@ class SellerController extends Controller
 
         $withdrawals = WithdrawalRequest::where('seller_id', $sellerId)
             ->orderBy('created_at', 'desc')
-            ->paginate(15);
+            ->paginate(15, ['*'], 'page');
 
         // Fetch saved bank accounts
         $bankAccounts = \App\Models\SellerBankAccount::where('user_id', $sellerId)->get();
 
-        return view('seller.finance.index', compact('user', 'withdrawals', 'bankAccounts'));
+        // Held funds
+        $heldBalance = (int) DB::table('held_funds')
+            ->where('seller_id', $sellerId)
+            ->where('status', 'held')
+            ->sum('amount');
+
+        $heldFunds = \App\Models\HeldFund::with(['product', 'order'])
+            ->where('seller_id', $sellerId)
+            ->orderBy('created_at', 'desc')
+            ->paginate(10, ['*'], 'held_page');
+
+        return view('seller.finance.index', compact('user', 'withdrawals', 'bankAccounts', 'heldBalance', 'heldFunds'));
     }
 
     public function requestWithdrawal(Request $request)

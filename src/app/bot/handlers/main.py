@@ -14,6 +14,8 @@ from pathlib import Path
 from typing import TypeVar
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
+from app.common.timezone import get_system_timezone
+
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Message, Update, WebAppInfo
 from telegram.constants import ParseMode
 from telegram.error import BadRequest
@@ -499,14 +501,14 @@ async def _respond(
 
 def _now_display_time() -> datetime:
     try:
-        return datetime.now(ZoneInfo(settings.display_timezone))
+        return datetime.now(ZoneInfo(get_system_timezone()))
     except ZoneInfoNotFoundError:
         return datetime.now()
 
 
 def _format_display_time(value: datetime) -> str:
     try:
-        tz = ZoneInfo(settings.display_timezone)
+        tz = ZoneInfo(get_system_timezone())
     except ZoneInfoNotFoundError:
         tz = None
 
@@ -521,7 +523,7 @@ def _format_display_time(value: datetime) -> str:
 
 def _format_display_day_time(value: datetime) -> str:
     try:
-        tz = ZoneInfo(settings.display_timezone)
+        tz = ZoneInfo(get_system_timezone())
     except ZoneInfoNotFoundError:
         tz = None
 

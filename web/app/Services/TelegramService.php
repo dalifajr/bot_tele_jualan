@@ -189,4 +189,39 @@ class TelegramService
 
         return $success;
     }
+
+    /**
+     * Kirim notifikasi ke seller ketika saldo tertahan dicairkan.
+     */
+    public static function notifySellerFundsReleased(User $seller, int $amount, string $orderRef, string $productName)
+    {
+        $botToken = env('TELEGRAM_BOT_TOKEN');
+        
+        if (empty($botToken)) {
+            Log::warning("TELEGRAM_BOT_TOKEN kosong, notifikasi pelepasan dana seller dilewati.");
+            return;
+        }
+
+        if (!$seller->telegram_id) {
+            return;
+        }
+
+        $formattedAmount = "Rp " . number_format($amount, 0, ',', '.');
+        $text = "💰 <b>Saldo Tertahan Dicairkan!</b>\n\n"
+              . "Halo " . htmlspecialchars($seller->full_name ?? $seller->username) . ",\n"
+              . "Garansi produk telah berakhir dan saldo tertahan Anda sebesar <b>{$formattedAmount}</b> dari penjualan <b>" . htmlspecialchars($productName) . "</b> (Ref: <code>{$orderRef}</code>) telah berhasil dicairkan ke saldo wallet utama Anda.\n\n"
+              . "Silakan periksa saldo wallet Anda di panel seller.";
+
+        $apiUrl = "https://api.telegram.org/bot{$botToken}/sendMessage";
+        try {
+            Http::post($apiUrl, [
+                'chat_id' => $seller->telegram_id,
+                'text' => $text,
+                'parse_mode' => 'HTML',
+            ]);
+        } catch (\Exception $e) {
+            Log::error("Gagal mengirim notifikasi pelepasan dana seller ke {$seller->telegram_id}: " . $e->getMessage());
+        }
+    }
 }
+

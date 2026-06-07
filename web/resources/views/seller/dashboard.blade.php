@@ -12,7 +12,7 @@
 {{-- Stats Row --}}
 <div class="row g-4 mb-4">
     {{-- Card Wallet Balance --}}
-    <div class="col-12 col-md-6 col-lg-4">
+    <div class="col-12 col-md-6 col-lg-3">
         <div class="card border-0 shadow-sm text-white overflow-hidden" style="border-radius: 20px; background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);">
             <div class="card-body p-4 position-relative">
                 <div class="position-absolute end-0 bottom-0 text-white" style="font-size: 8rem; transform: translate(20px, 20px); opacity: 0.1; pointer-events: none; z-index: 0;">
@@ -22,7 +22,7 @@
                     <p class="small text-white-50 fw-bold mb-2">SALDO DOMPET SAYA</p>
                     <h2 class="fw-bold mb-3">Rp {{ number_format($user->wallet_balance, 0, ',', '.') }}</h2>
                     <div class="d-flex align-items-center justify-content-between pt-2 border-top border-white-10">
-                        <span class="small text-white-50">Komisi Platform: <strong>{{ $user->platform_fee_percent }}%</strong></span>
+                        <span class="small text-white-50">Komisi: <strong>{{ $user->platform_fee_percent }}%</strong></span>
                         <a href="{{ route('seller.finance.index') }}" class="btn btn-light btn-sm rounded-pill px-3 fw-bold text-primary">Tarik Saldo <i class="fas fa-arrow-right ms-1"></i></a>
                     </div>
                 </div>
@@ -30,24 +30,43 @@
         </div>
     </div>
 
+    {{-- Card Held Balance --}}
+    <div class="col-12 col-md-6 col-lg-3">
+        <div class="card border-0 shadow-sm text-white overflow-hidden" style="border-radius: 20px; background: linear-gradient(135deg, hsl(35, 90%, 50%) 0%, hsl(45, 95%, 55%) 100%);">
+            <div class="card-body p-4 position-relative">
+                <div class="position-absolute end-0 bottom-0 text-white" style="font-size: 8rem; transform: translate(20px, 20px); opacity: 0.15; pointer-events: none; z-index: 0;">
+                    <i class="fas fa-lock"></i>
+                </div>
+                <div class="position-relative" style="z-index: 1;">
+                    <p class="small text-white-50 fw-bold mb-2">SALDO TERTAHAN (GARANSI)</p>
+                    <h2 class="fw-bold mb-3">Rp {{ number_format($heldBalance, 0, ',', '.') }}</h2>
+                    <div class="d-flex align-items-center justify-content-between pt-2 border-top border-white-10">
+                        <span class="small text-white-50">Menunggu Garansi</span>
+                        <a href="{{ route('seller.finance.index') }}" class="btn btn-light btn-sm rounded-pill px-3 fw-bold text-warning-emphasis">Rincian <i class="fas fa-arrow-right ms-1"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     {{-- Card Monthly Earnings --}}
-    <div class="col-12 col-sm-6 col-lg-4">
+    <div class="col-12 col-md-6 col-lg-3">
         <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 20px; background: rgba(255,255,255,0.7); backdrop-filter: blur(10px);">
             <div class="card-body p-4 position-relative">
                 <div class="position-absolute end-0 bottom-0 text-success" style="font-size: 8rem; transform: translate(20px, 20px); opacity: 0.1; pointer-events: none; z-index: 0;">
                     <i class="fas fa-coins"></i>
                 </div>
                 <div class="position-relative" style="z-index: 1;">
-                    <p class="small text-muted fw-bold mb-2">TOTAL PENDAPATAN KOTOR</p>
+                    <p class="small text-muted fw-bold mb-2">PENDAPATAN KOTOR</p>
                     <h2 class="fw-bold text-success mb-3">Rp {{ number_format($monthlyEarnings, 0, ',', '.') }}</h2>
-                    <span class="small text-muted"><i class="fas fa-info-circle text-primary me-1"></i>Akumulasi pendapatan kotor dari produk milik Anda yang terjual.</span>
+                    <span class="small text-muted"><i class="fas fa-info-circle text-primary me-1"></i>Akumulasi pendapatan kotor produk Anda.</span>
                 </div>
             </div>
         </div>
     </div>
 
     {{-- Card Active Stock --}}
-    <div class="col-12 col-sm-6 col-lg-4">
+    <div class="col-12 col-md-6 col-lg-3">
         <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 20px; background: rgba(255,255,255,0.7); backdrop-filter: blur(10px);">
             <div class="card-body p-4 position-relative">
                 <div class="position-absolute end-0 bottom-0 text-info" style="font-size: 8rem; transform: translate(20px, 20px); opacity: 0.1; pointer-events: none; z-index: 0;">
@@ -55,7 +74,7 @@
                 </div>
                 <div class="position-relative" style="z-index: 1;">
                     <p class="small text-muted fw-bold mb-2">STATUS STOK PENJUALAN</p>
-                    <h2 class="fw-bold text-info mb-3">{{ $readyStockCount }} <span class="fs-6 text-muted fw-normal">unit ready</span></h2>
+                    <h2 class="fw-bold text-info mb-3">{{ $readyStockCount }} <span class="fs-6 text-muted fw-normal">ready</span></h2>
                     <div class="d-flex gap-2">
                         <span class="badge bg-warning-subtle text-warning rounded-pill px-2 small">{{ $savedStockCount }} karantina</span>
                         <span class="badge bg-secondary-subtle text-secondary rounded-pill px-2 small">{{ $soldStockCount }} terjual</span>

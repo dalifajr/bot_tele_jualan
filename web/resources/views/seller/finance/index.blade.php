@@ -49,6 +49,20 @@
             </div>
         </div>
 
+        {{-- Held Balance Card --}}
+        <div class="card border-0 shadow-sm text-white mb-4 overflow-hidden" style="border-radius: 20px; background: linear-gradient(135deg, hsl(35, 90%, 50%) 0%, hsl(45, 95%, 55%) 100%);">
+            <div class="card-body p-4 position-relative">
+                <div class="position-absolute end-0 bottom-0 text-white" style="font-size: 8rem; transform: translate(20px, 20px); opacity: 0.15; pointer-events: none; z-index: 0;">
+                    <i class="fas fa-lock"></i>
+                </div>
+                <div class="position-relative" style="z-index: 1;">
+                    <p class="small text-white-50 fw-bold mb-2">SALDO TERTAHAN (GARANSI)</p>
+                    <h2 class="fw-bold mb-1">Rp {{ number_format($heldBalance, 0, ',', '.') }}</h2>
+                    <div class="small text-white-50 mt-1">Saldo komisi bersih yang ditangguhkan karena produk memiliki garansi.</div>
+                </div>
+            </div>
+        </div>
+
         {{-- Withdrawal Form Card --}}
         <div class="card border-0 shadow-sm p-4" style="border-radius: 20px;">
             <h5 class="fw-bold mb-3"><i class="fas fa-money-bill-wave text-primary me-2"></i>Tarik Saldo (Withdrawal)</h5>
@@ -151,12 +165,67 @@
                     </table>
                 </div>
                 <div class="px-4 py-3 border-top">
-                    {{ $withdrawals->links() }}
+                    {{ $withdrawals->appends(request()->except('page'))->links() }}
                 </div>
                 @else
                 <div class="text-center py-5">
                     <i class="fas fa-history text-muted mb-3" style="font-size: 3rem;"></i>
                     <p class="text-muted mb-0">Belum ada pengajuan pencairan dana.</p>
+                </div>
+                @endif
+            </div>
+        </div>
+
+        {{-- Held Funds Details --}}
+        <div class="card border-0 shadow-sm overflow-hidden mt-4" style="border-radius: 20px;">
+            <div class="card-header border-0 bg-white px-4 py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold m-0"><i class="fas fa-lock text-warning me-2"></i>Rincian Saldo Tertahan</h5>
+            </div>
+            <div class="card-body p-0">
+                @if($heldFunds->count() > 0)
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr class="text-secondary small border-bottom">
+                                <th class="px-4 py-3 border-0">Order Ref</th>
+                                <th class="py-3 border-0">Produk</th>
+                                <th class="py-3 border-0">Komisi Bersih</th>
+                                <th class="py-3 border-0">Estimasi Cair</th>
+                                <th class="py-3 border-0 text-end px-4">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($heldFunds as $fund)
+                            <tr>
+                                <td class="px-4 fw-bold text-primary">{{ $fund->order->order_ref ?? 'N/A' }}</td>
+                                <td>{{ Str::limit($fund->product->name ?? 'N/A', 20) }}</td>
+                                <td class="fw-bold text-success">
+                                    Rp {{ number_format($fund->amount, 0, ',', '.') }}
+                                </td>
+                                <td class="text-muted small">
+                                    {{ $fund->release_at ? $fund->release_at->format('d M Y H:i') : '-' }}
+                                </td>
+                                <td class="text-end px-4">
+                                    @if($fund->status === 'held')
+                                        <span class="badge bg-warning-subtle text-warning rounded-pill px-2.5 py-1 small">Tertahan</span>
+                                    @elseif($fund->status === 'released')
+                                        <span class="badge bg-success-subtle text-success rounded-pill px-2.5 py-1 small">Dicairkan</span>
+                                    @else
+                                        <span class="badge bg-danger-subtle text-danger rounded-pill px-2.5 py-1 small">Batal</span>
+                                    @endif
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                <div class="px-4 py-3 border-top">
+                    {{ $heldFunds->appends(request()->except('held_page'))->links() }}
+                </div>
+                @else
+                <div class="text-center py-5">
+                    <i class="fas fa-lock text-muted mb-3" style="font-size: 3rem;"></i>
+                    <p class="text-muted mb-0">Belum ada saldo tertahan aktif.</p>
                 </div>
                 @endif
             </div>

@@ -19,9 +19,24 @@
             <div class="card-body p-4">
                 <form action="{{ route('admin.settings.update') }}" method="POST" id="formTimerBot">
                     @csrf
-                    <h5 class="fw-bold mb-1"><i class="fas fa-clock text-primary me-2"></i>Atur Waktu Bot</h5>
-                    <p class="text-muted small mb-3">Atur durasi waktu tunggu untuk status stok. Perubahan akan langsung berlaku untuk akun stok yang baru ditambahkan.</p>
+                    <h5 class="fw-bold mb-1"><i class="fas fa-clock text-primary me-2"></i>Atur Waktu Bot & Sistem</h5>
+                    <p class="text-muted small mb-3">Atur wilayah waktu dan durasi waktu tunggu untuk status stok. Perubahan akan langsung berlaku untuk sistem website dan bot Telegram.</p>
                     
+                    <div class="mb-4">
+                        <label class="form-label fw-bold small">Region Zona Waktu (Timezone)</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-primary-subtle border-0"><i class="fas fa-globe text-primary"></i></span>
+                            <select name="settings[system_timezone]" class="form-select" required>
+                                <option value="Asia/Jakarta" {{ ($settings['system_timezone'] ?? '') === 'Asia/Jakarta' ? 'selected' : '' }}>WIB - Asia/Jakarta (GMT+7)</option>
+                                <option value="Asia/Makassar" {{ ($settings['system_timezone'] ?? '') === 'Asia/Makassar' ? 'selected' : '' }}>WITA - Asia/Makassar (GMT+8)</option>
+                                <option value="Asia/Jayapura" {{ ($settings['system_timezone'] ?? '') === 'Asia/Jayapura' ? 'selected' : '' }}>WIT - Asia/Jayapura (GMT+9)</option>
+                                <option value="Asia/Singapore" {{ ($settings['system_timezone'] ?? '') === 'Asia/Singapore' ? 'selected' : '' }}>SGT - Asia/Singapore (GMT+8)</option>
+                                <option value="UTC" {{ ($settings['system_timezone'] ?? '') === 'UTC' ? 'selected' : '' }}>UTC / GMT</option>
+                            </select>
+                        </div>
+                        <div class="form-text">Mengatur zona waktu untuk web admin, seller, dan pesan bot Telegram. Zona aktif saat ini: <strong>{{ config('app.timezone') }}</strong> (Server: {{ now()->format('Y-m-d H:i:s') }}).</div>
+                    </div>
+
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label fw-bold small">Awaiting Benefits → Ready (Jam)</label>

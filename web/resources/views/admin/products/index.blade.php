@@ -101,6 +101,18 @@
                         <label class="form-label text-muted small fw-bold">Deskripsi</label>
                         <textarea name="description" class="form-control" rows="3" placeholder="Informasi produk..."></textarea>
                     </div>
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" role="switch" id="enableWarrantyAdd" name="enable_warranty" value="1">
+                        <label class="form-check-label text-muted small fw-bold" for="enableWarrantyAdd">Aktifkan garansi?</label>
+                    </div>
+                    <div class="mb-3" id="warrantyDaysAddContainer" style="display: none;">
+                        <label class="form-label text-muted small fw-bold">Masa Garansi (Hari)</label>
+                        <div class="input-group">
+                            <input type="number" name="warranty_days" id="warrantyDaysAdd" class="form-control" placeholder="Contoh: 3" min="1">
+                            <span class="input-group-text bg-light text-muted">hari</span>
+                        </div>
+                        <div class="form-text small">Menahan saldo seller hingga masa garansi berakhir.</div>
+                    </div>
                 </div>
                 <div class="modal-footer border-0 pt-0">
                     <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
@@ -137,6 +149,18 @@
                         <textarea name="description" class="form-control" rows="3">{{ $product->description }}</textarea>
                     </div>
                     <div class="form-check form-switch mb-3">
+                        <input class="form-check-input toggle-warranty-edit" type="checkbox" role="switch" name="enable_warranty" value="1" id="enableWarrantyEdit{{ $product->id }}" data-target="warrantyDaysEditContainer{{ $product->id }}" {{ $product->warranty_days > 0 ? 'checked' : '' }}>
+                        <label class="form-check-label text-muted small fw-bold" for="enableWarrantyEdit{{ $product->id }}">Aktifkan garansi?</label>
+                    </div>
+                    <div class="mb-3" id="warrantyDaysEditContainer{{ $product->id }}" style="display: {{ $product->warranty_days > 0 ? 'block' : 'none' }};">
+                        <label class="form-label text-muted small fw-bold">Masa Garansi (Hari)</label>
+                        <div class="input-group">
+                            <input type="number" name="warranty_days" id="warrantyDaysEdit{{ $product->id }}" class="form-control" value="{{ $product->warranty_days }}" min="1">
+                            <span class="input-group-text bg-light text-muted">hari</span>
+                        </div>
+                        <div class="form-text small">Menahan saldo seller hingga masa garansi berakhir.</div>
+                    </div>
+                    <div class="form-check form-switch mb-3">
                         <input class="form-check-input" type="checkbox" role="switch" name="is_suspended" value="1" id="suspend{{ $product->id }}" {{ $product->is_suspended ? 'checked' : '' }}>
                         <label class="form-check-label" for="suspend{{ $product->id }}">Suspend (Sembunyikan dari katalog)</label>
                     </div>
@@ -171,5 +195,25 @@
     </div>
 </div>
 @endforeach
+
+<script>
+    document.getElementById('enableWarrantyAdd').addEventListener('change', function() {
+        document.getElementById('warrantyDaysAddContainer').style.display = this.checked ? 'block' : 'none';
+        if (!this.checked) {
+            document.getElementById('warrantyDaysAdd').value = '';
+        }
+    });
+
+    document.querySelectorAll('.toggle-warranty-edit').forEach(function(toggle) {
+        toggle.addEventListener('change', function() {
+            var targetId = this.getAttribute('data-target');
+            var container = document.getElementById(targetId);
+            container.style.display = this.checked ? 'block' : 'none';
+            if (!this.checked) {
+                container.querySelector('input[type="number"]').value = '';
+            }
+        });
+    });
+</script>
 @endpush
 @endsection

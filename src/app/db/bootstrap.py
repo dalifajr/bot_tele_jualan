@@ -33,6 +33,7 @@ def _run_compat_migrations() -> None:
         _ensure_column(conn, "users", "seller_save_hours", "seller_save_hours INTEGER DEFAULT 80")
 
         _ensure_column(conn, "products", "creator_id", "creator_id INTEGER")
+        _ensure_column(conn, "products", "warranty_days", "warranty_days INTEGER DEFAULT 0")
 
         _ensure_column(conn, "orders", "expires_at", "expires_at DATETIME")
         _ensure_column(conn, "orders", "cancelled_at", "cancelled_at DATETIME")
