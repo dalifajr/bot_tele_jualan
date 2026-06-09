@@ -365,6 +365,60 @@ class AdminController extends Controller
         return redirect()->back()->with('success', 'Penangguhan akun telah dicabut. Pengguna dapat menggunakan bot kembali.');
     }
 
+    public function impersonate(Request $request, $id)
+    {
+        $targetUser = User::findOrFail($id);
+        
+        if ($targetUser->id === \Illuminate\Support\Facades\Auth::id()) {
+            return redirect()->back()->with('error', 'Tidak dapat login sebagai diri sendiri.');
+        }
+
+        // Store original admin ID in session
+        $adminId = \Illuminate\Support\Facades\Auth::id();
+        session(['admin_impersonator_id' => $adminId]);
+
+        // Audit Log
+        \Illuminate\Support\Facades\DB::table('audit_logs')->insert([
+            'action' => 'admin_impersonate_start',
+            'actor_id' => $adminId,
+            'entity_type' => 'user',
+            'entity_id' => $targetUser->id,
+            'detail' => "admin_id={$adminId} impersonating user_id={$targetUser->id} (username: {$targetUser->username})",
+            'created_at' => now(),
+        ]);
+
+        // Login as the target user
+        \Illuminate\Support\Facades\Auth::loginUsingId($targetUser->id);
+
+        $name = $targetUser->full_name ?? $targetUser->username;
+        return redirect()->route('dashboard')->with('success', "Berhasil masuk sebagai " . $name . ".");
+    }
+
+    public function stopImpersonating(Request $request)
+    {
+        if (!session()->has('admin_impersonator_id')) {
+            return redirect()->route('dashboard')->with('error', 'Sesi impersonasi tidak ditemukan.');
+        }
+
+        $adminId = session()->pull('admin_impersonator_id');
+        $targetUser = \Illuminate\Support\Facades\Auth::user();
+
+        // Audit Log
+        \Illuminate\Support\Facades\DB::table('audit_logs')->insert([
+            'action' => 'admin_impersonate_stop',
+            'actor_id' => $adminId,
+            'entity_type' => 'user',
+            'entity_id' => $targetUser ? $targetUser->id : 0,
+            'detail' => "admin_id={$adminId} stopped impersonating",
+            'created_at' => now(),
+        ]);
+
+        // Login back as admin
+        \Illuminate\Support\Facades\Auth::loginUsingId($adminId);
+
+        return redirect()->route('admin.users.index')->with('success', 'Kembali ke sesi Admin.');
+    }
+
     // --- CRUD Products ---
     public function storeProduct(Request $request)
     {

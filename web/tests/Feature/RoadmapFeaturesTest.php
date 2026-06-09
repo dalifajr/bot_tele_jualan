@@ -589,4 +589,86 @@ class RoadmapFeaturesTest extends TestCase
         $totalCancelled = DB::table('held_funds')->where('order_id', $order->id)->where('status', 'cancelled')->count();
         $this->assertEquals(3, $totalCancelled);
     }
+
+    /**
+     * Test admin can impersonate another user.
+     */
+    public function test_admin_can_impersonate_user()
+    {
+        $admin = User::create([
+            'username' => 'admin_imp',
+            'full_name' => 'Admin Impersonator',
+            'email' => 'admin_imp@test.com',
+            'role' => 'admin',
+            'password' => bcrypt('password'),
+        ]);
+
+        $customer = User::create([
+            'username' => 'customer_imp',
+            'full_name' => 'Customer Impersonated',
+            'email' => 'customer_imp@test.com',
+            'role' => 'customer',
+            'password' => bcrypt('password'),
+        ]);
+
+        $this->actingAs($admin);
+
+        $response = $this->post(route('admin.users.impersonate', $customer->id));
+
+        $response->assertRedirect(route('dashboard'));
+        $response->assertSessionHas('admin_impersonator_id', $admin->id);
+
+        // Assert currently authenticated user is now the customer
+        $this->assertEquals($customer->id, \Illuminate\Support\Facades\Auth::id());
+
+        // Assert audit log was recorded
+        $log = DB::table('audit_logs')
+            ->where('action', 'admin_impersonate_start')
+            ->where('entity_id', $customer->id)
+            ->first();
+        $this->assertNotNull($log);
+        $this->assertStringContainsString("impersonating user_id={$customer->id}", $log->detail);
+    }
+
+    /**
+     * Test impersonated user can stop impersonating and return to admin session.
+     */
+    public function test_impersonated_user_can_stop_impersonating()
+    {
+        $admin = User::create([
+            'username' => 'admin_imp2',
+            'full_name' => 'Admin Impersonator 2',
+            'email' => 'admin_imp2@test.com',
+            'role' => 'admin',
+            'password' => bcrypt('password'),
+        ]);
+
+        $customer = User::create([
+            'username' => 'customer_imp2',
+            'full_name' => 'Customer Impersonated 2',
+            'email' => 'customer_imp2@test.com',
+            'role' => 'customer',
+            'password' => bcrypt('password'),
+        ]);
+
+        // Start session as impersonated customer
+        $this->actingAs($customer);
+        session(['admin_impersonator_id' => $admin->id]);
+
+        $response = $this->post(route('admin.users.stop-impersonating'));
+
+        $response->assertRedirect(route('admin.users.index'));
+        $this->assertFalse(session()->has('admin_impersonator_id'));
+
+        // Assert currently authenticated user is back to the admin
+        $this->assertEquals($admin->id, \Illuminate\Support\Facades\Auth::id());
+
+        // Assert audit log was recorded
+        $log = DB::table('audit_logs')
+            ->where('action', 'admin_impersonate_stop')
+            ->where('actor_id', $admin->id)
+            ->first();
+        $this->assertNotNull($log);
+    }
 }
+

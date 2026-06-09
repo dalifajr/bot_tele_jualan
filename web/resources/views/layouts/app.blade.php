@@ -70,6 +70,33 @@
     <div class="spinner"></div>
 </div>
 
+@if(session()->has('admin_impersonator_id'))
+<div class="bg-warning text-warning-emphasis py-2 px-4 d-flex justify-content-between align-items-center position-fixed w-100 shadow-sm" style="z-index: 1060; top: 0; left: 0; font-size: 0.9rem; height: 40px;">
+    <div class="d-flex align-items-center gap-2">
+        <i class="fas fa-user-secret"></i> 
+        <span>Anda sedang login sebagai <strong>{{ Auth::user()->full_name ?? Auth::user()->username }}</strong> (Sesi Admin)</span>
+    </div>
+    <form action="{{ route('admin.users.stop-impersonating') }}" method="POST" class="m-0">
+        @csrf
+        <button type="submit" class="btn btn-xs btn-outline-dark rounded-pill px-3 py-0 font-weight-bold" style="font-size: 0.8rem; border-width: 2px; line-height: 1.5;">
+            <i class="fas fa-sign-out-alt me-1"></i> Kembali ke Admin
+        </button>
+    </form>
+</div>
+<style>
+    body {
+        padding-top: 40px !important;
+    }
+    .navbar {
+        top: 40px !important;
+    }
+    #sidebar {
+        top: 97px !important;
+        height: calc(100vh - 97px) !important;
+    }
+</style>
+@endif
+
 {{-- Top Navbar --}}
 <nav class="navbar navbar-expand fixed-top shadow-sm px-4 bg-body border-bottom" style="z-index: 1030; top: 0;">
     <div class="d-flex align-items-center gap-3">

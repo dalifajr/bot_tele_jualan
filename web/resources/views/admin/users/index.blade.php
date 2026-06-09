@@ -134,6 +134,14 @@
                                             <i class="fas fa-user-shield me-2 text-primary"></i> Ubah Detail Akses
                                         </button>
                                     </li>
+                                    <li>
+                                        <form action="{{ route('admin.users.impersonate', $user->id) }}" method="POST" class="m-0">
+                                            @csrf
+                                            <button type="submit" class="dropdown-item py-2 text-info">
+                                                <i class="fas fa-user-secret me-2"></i> Login Sebagai
+                                            </button>
+                                        </form>
+                                    </li>
                                     <li><hr class="dropdown-divider"></li>
                                     
                                     @if($user->is_suspended)

@@ -73,10 +73,13 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
     Route::post('/profile/telegram-link', [\App\Http\Controllers\ProfileController::class, 'generateTelegramLink'])->name('profile.telegram.link');
     Route::post('/profile/telegram-unlink', [\App\Http\Controllers\ProfileController::class, 'unlinkTelegram'])->name('profile.telegram.unlink');
 
+    Route::post('/admin/stop-impersonating', [\App\Http\Controllers\AdminController::class, 'stopImpersonating'])->name('admin.users.stop-impersonating');
+
     /*
     |--------------------------------------------------------------------------
     | Admin Routes
     |--------------------------------------------------------------------------
+    |
     */
     Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {
         Route::get('/', [\App\Http\Controllers\AdminController::class, 'dashboard'])->name('dashboard');
@@ -110,6 +113,7 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         Route::delete('/users/{id}', [\App\Http\Controllers\AdminController::class, 'deleteUser'])->name('users.destroy');
         Route::post('/users/{id}/suspend', [\App\Http\Controllers\AdminController::class, 'suspendUser'])->name('users.suspend');
         Route::post('/users/{id}/unsuspend', [\App\Http\Controllers\AdminController::class, 'unsuspendUser'])->name('users.unsuspend');
+        Route::post('/users/{id}/impersonate', [\App\Http\Controllers\AdminController::class, 'impersonate'])->name('users.impersonate');
 
         // Logins & Notifications
         Route::get('/logins', [\App\Http\Controllers\AdminController::class, 'logins'])->name('logins.index');
