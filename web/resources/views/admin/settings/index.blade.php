@@ -67,6 +67,32 @@
             </div>
         </div>
 
+        {{-- Utilitas & Pemeliharaan Sistem --}}
+        <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
+            <div class="card-body p-4">
+                <h5 class="fw-bold mb-1 text-danger"><i class="fas fa-tools me-2"></i>Utilitas & Pemeliharaan Sistem</h5>
+                <p class="text-muted small mb-3">Jalankan aksi pemeliharaan sistem secara manual jika cron job/scheduler di server hosting Anda tidak aktif.</p>
+                
+                <div class="d-flex flex-column gap-2">
+                    <form action="{{ route('admin.settings.run-held-funds') }}" method="POST" class="m-0" onsubmit="confirmAction(event, 'Jalankan pencarian dan pelepasan saldo garansi yang telah habis masa berlakunya sekarang?');">
+                        @csrf
+                        <button type="submit" class="btn btn-warning rounded-pill w-100 fw-bold py-2 text-start px-3 d-flex justify-content-between align-items-center">
+                            <span><i class="fas fa-hand-holding-usd me-2"></i>Jalankan Pencairan Saldo Garansi (funds:release-held)</span>
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </form>
+                    
+                    <form action="{{ route('admin.settings.run-release-expired') }}" method="POST" class="m-0" onsubmit="confirmAction(event, 'Jalankan pelepasan stok dari pesanan yang kedaluwarsa sekarang?');">
+                        @csrf
+                        <button type="submit" class="btn btn-outline-secondary rounded-pill w-100 fw-bold py-2 text-start px-3 d-flex justify-content-between align-items-center">
+                            <span><i class="fas fa-hourglass-end me-2"></i>Batalkan Pesanan Expired & Lepas Stok (orders:release-expired)</span>
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
         {{-- Konfigurasi Payment / QRIS --}}
         <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
             <div class="card-body p-4">

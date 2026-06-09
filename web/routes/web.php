@@ -137,6 +137,8 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         Route::post('/settings/qris', [\App\Http\Controllers\AdminController::class, 'uploadQris'])->name('settings.qris.upload');
         Route::delete('/settings/qris', [\App\Http\Controllers\AdminController::class, 'deleteQris'])->name('settings.qris.delete');
         Route::get('/settings/qris/image', [\App\Http\Controllers\AdminController::class, 'showQrisImage'])->name('settings.qris.image');
+        Route::post('/settings/run-held-funds', [\App\Http\Controllers\AdminController::class, 'runHeldFunds'])->name('settings.run-held-funds');
+        Route::post('/settings/run-release-expired', [\App\Http\Controllers\AdminController::class, 'runReleaseExpired'])->name('settings.run-release-expired');
         Route::get('/audit-logs', [\App\Http\Controllers\AdminController::class, 'auditLogs'])->name('audit-logs.index');
         
         // Backup & Restore

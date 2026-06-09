@@ -1246,6 +1246,32 @@ class AdminController extends Controller
         return response()->file($fullPath, ['Content-Type' => $mime]);
     }
 
+    public function runHeldFunds()
+    {
+        try {
+            $exitCode = \Illuminate\Support\Facades\Artisan::call('funds:release-held');
+            $output = \Illuminate\Support\Facades\Artisan::output();
+            
+            $msg = trim($output) ?: 'Proses selesai tanpa output tambahan.';
+            return redirect()->back()->with('success', 'Berhasil menjalankan pelepasan saldo tertahan: ' . $msg);
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal menjalankan pelepasan saldo: ' . $e->getMessage());
+        }
+    }
+
+    public function runReleaseExpired()
+    {
+        try {
+            $exitCode = \Illuminate\Support\Facades\Artisan::call('orders:release-expired');
+            $output = \Illuminate\Support\Facades\Artisan::output();
+            
+            $msg = trim($output) ?: 'Proses selesai tanpa output tambahan.';
+            return redirect()->back()->with('success', 'Berhasil membatalkan pesanan kedaluwarsa: ' . $msg);
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal membatalkan pesanan: ' . $e->getMessage());
+        }
+    }
+
 
 
     public function auditLogs(Request $request)

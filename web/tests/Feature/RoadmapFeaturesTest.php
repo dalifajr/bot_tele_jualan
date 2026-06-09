@@ -670,5 +670,34 @@ class RoadmapFeaturesTest extends TestCase
             ->first();
         $this->assertNotNull($log);
     }
+
+    /**
+     * Test admin can trigger maintenance commands via settings web interface.
+     */
+    public function test_admin_can_run_maintenance_commands_via_web()
+    {
+        $admin = User::create([
+            'username' => 'admin_maint',
+            'full_name' => 'Admin Maintenance',
+            'email' => 'admin_maint@test.com',
+            'role' => 'admin',
+            'password' => bcrypt('password'),
+        ]);
+
+        $this->actingAs($admin);
+
+        // 1. Run funds release
+        $response1 = $this->post(route('admin.settings.run-held-funds'));
+        $response1->assertRedirect();
+        $response1->assertSessionHas('success');
+        $this->assertStringContainsString('pelepasan saldo tertahan', session('success'));
+
+        // 2. Run release expired
+        $response2 = $this->post(route('admin.settings.run-release-expired'));
+        $response2->assertRedirect();
+        $response2->assertSessionHas('success');
+        $this->assertStringContainsString('membatalkan pesanan kedaluwarsa', session('success'));
+    }
 }
+
 
