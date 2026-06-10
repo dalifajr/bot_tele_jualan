@@ -173,15 +173,20 @@ class OperationalReportTest extends TestCase
 
         // Expected platform commission calculation:
         // - From seller order (10000 * 15% = 1500)
+        // Total expected platformCommission = 1500
+        //
+        // Expected adminEarnings:
         // - From admin order (20000 * 100% = 20000)
         // - Unique codes (5 + 12 = 17)
-        // Total expected = 1500 + 20000 + 17 = 21517
+        // Total expected adminEarnings = 20000 + 17 = 20017
 
         $response = $this->actingAs($this->admin)->get(route('admin.dashboard'));
         
         $response->assertStatus(200);
-        $response->assertViewHas('platformCommission', 21517);
-        $response->assertSee('21.517');
+        $response->assertViewHas('platformCommission', 1500);
+        $response->assertViewHas('adminEarnings', 20017);
+        $response->assertSee('1.500');
+        $response->assertSee('20.017');
     }
  
     public function test_seller_dashboard_can_filter_display_reports_and_see_own_data_isolated(): void

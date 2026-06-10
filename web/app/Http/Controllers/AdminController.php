@@ -17,26 +17,37 @@ class AdminController extends Controller
         $totalProducts = Product::count();
         $totalUsers = User::count();
 
-        // Platform Commission Calculation
-        $commissionFromSales = \Illuminate\Support\Facades\DB::table('stock_units')
+        // 1. Komisi dari Penjualan Seller Mitra
+        $platformCommission = \Illuminate\Support\Facades\DB::table('stock_units')
             ->join('products', 'stock_units.product_id', '=', 'products.id')
-            ->leftJoin('users', 'stock_units.seller_id', '=', 'users.id')
+            ->join('users', 'stock_units.seller_id', '=', 'users.id')
             ->where('stock_units.is_sold', true)
+            ->where('users.role', 'seller')
             ->whereIn('stock_units.sold_order_id', function ($query) {
                 $query->select('id')->from('orders')->where('status', 'delivered');
             })
             ->selectRaw("
-                SUM(
-                    CASE 
-                        WHEN users.role = 'seller' THEN (products.price * COALESCE(users.platform_fee_percent, 10) / 100)
-                        ELSE products.price 
-                    END
-                ) as total_commission
+                SUM(products.price * COALESCE(users.platform_fee_percent, 10) / 100) as total_commission
             ")
             ->value('total_commission') ?? 0;
 
+        // 2. Pendapatan Penuh dari Penjualan Admin (seller_id is null, atau seller memiliki role != seller)
+        $adminSalesEarnings = \Illuminate\Support\Facades\DB::table('stock_units')
+            ->join('products', 'stock_units.product_id', '=', 'products.id')
+            ->leftJoin('users', 'stock_units.seller_id', '=', 'users.id')
+            ->where('stock_units.is_sold', true)
+            ->where(function ($query) {
+                $query->whereNull('stock_units.seller_id')
+                      ->orWhere('users.role', '!=', 'seller');
+            })
+            ->whereIn('stock_units.sold_order_id', function ($query) {
+                $query->select('id')->from('orders')->where('status', 'delivered');
+            })
+            ->selectRaw("SUM(products.price) as total_earnings")
+            ->value('total_earnings') ?? 0;
+
         $totalUniqueCodes = Order::where('status', 'delivered')->sum('unique_code');
-        $platformCommission = (int)$commissionFromSales + (int)$totalUniqueCodes;
+        $adminEarnings = (int)$adminSalesEarnings + (int)$totalUniqueCodes;
 
         $recentOrders = Order::with(['customer', 'items.product'])
             ->orderBy('created_at', 'desc')
@@ -70,7 +81,7 @@ class AdminController extends Controller
         }
 
         return view('admin.dashboard', compact(
-            'totalRevenue', 'platformCommission', 'totalOrders', 'totalProducts', 'totalUsers', 'recentOrders',
+            'totalRevenue', 'platformCommission', 'adminEarnings', 'totalOrders', 'totalProducts', 'totalUsers', 'recentOrders',
             'deliveredOrders', 'cancelledOrders', 'chartLabels', 'chartData', 'days'
         ));
     }
