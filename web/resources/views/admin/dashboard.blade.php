@@ -18,7 +18,7 @@
 
 {{-- Stat Cards --}}
 <div class="row g-3 mb-5">
-    <div class="col-md-6 col-lg-4 col-xl-2">
+    <div class="col-md-6 col-lg-4">
         <div class="card stat-card border-0 shadow-sm h-100" style="border-radius: 16px;">
             <div class="card-body p-3 d-flex align-items-center">
                 <div class="stat-icon bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 42px; height: 42px; font-size: 1.2rem; flex-shrink: 0; margin-bottom: 0 !important;">
@@ -31,7 +31,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-6 col-lg-4 col-xl-2">
+    <div class="col-md-6 col-lg-4">
         <div class="card stat-card border-0 shadow-sm h-100" style="border-radius: 16px;">
             <div class="card-body p-3 d-flex align-items-center">
                 <div class="stat-icon rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 42px; height: 42px; font-size: 1.2rem; flex-shrink: 0; background-color: rgba(111, 66, 193, 0.15) !important; color: var(--bs-purple, #6f42c1) !important; margin-bottom: 0 !important;">
@@ -44,7 +44,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-6 col-lg-4 col-xl-2">
+    <div class="col-md-6 col-lg-4">
         <div class="card stat-card border-0 shadow-sm h-100" style="border-radius: 16px;">
             <div class="card-body p-3 d-flex align-items-center">
                 <div class="stat-icon bg-danger-subtle text-danger rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 42px; height: 42px; font-size: 1.2rem; flex-shrink: 0; margin-bottom: 0 !important;">
@@ -57,7 +57,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-6 col-lg-4 col-xl-2">
+    <div class="col-md-6 col-lg-4">
         <div class="card stat-card border-0 shadow-sm h-100" style="border-radius: 16px;">
             <div class="card-body p-3 d-flex align-items-center">
                 <div class="stat-icon bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 42px; height: 42px; font-size: 1.2rem; flex-shrink: 0; margin-bottom: 0 !important;">
@@ -70,7 +70,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-6 col-lg-4 col-xl-2">
+    <div class="col-md-6 col-lg-4">
         <div class="card stat-card border-0 shadow-sm h-100" style="border-radius: 16px;">
             <div class="card-body p-3 d-flex align-items-center">
                 <div class="stat-icon bg-info-subtle text-info rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 42px; height: 42px; font-size: 1.2rem; flex-shrink: 0; margin-bottom: 0 !important;">
@@ -83,7 +83,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-6 col-lg-4 col-xl-2">
+    <div class="col-md-6 col-lg-4">
         <div class="card stat-card border-0 shadow-sm h-100" style="border-radius: 16px;">
             <div class="card-body p-3 d-flex align-items-center">
                 <div class="stat-icon bg-warning-subtle text-warning rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 42px; height: 42px; font-size: 1.2rem; flex-shrink: 0; margin-bottom: 0 !important;">
