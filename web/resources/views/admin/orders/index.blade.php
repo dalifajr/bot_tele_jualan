@@ -12,17 +12,56 @@
 </div>
 
 {{-- Status Filter --}}
-<div class="mb-4 d-flex flex-wrap gap-2">
-    <a href="{{ route('admin.orders.index') }}"
+<div class="mb-3 d-flex flex-wrap gap-2">
+    <a href="{{ request()->fullUrlWithQuery(['status' => null]) }}"
        class="btn btn-sm rounded-pill px-3 {{ is_null($status) ? 'btn-primary' : 'btn-outline-secondary' }}">
         Semua
     </a>
     @foreach(['pending_payment' => 'Pending', 'paid' => 'Paid', 'delivered' => 'Delivered', 'cancelled' => 'Cancelled', 'expired' => 'Expired'] as $key => $label)
-    <a href="{{ route('admin.orders.index', ['status' => $key]) }}"
+    <a href="{{ request()->fullUrlWithQuery(['status' => $key]) }}"
        class="btn btn-sm rounded-pill px-3 {{ $status === $key ? 'btn-primary' : 'btn-outline-secondary' }}">
         {{ $label }}
     </a>
     @endforeach
+</div>
+
+{{-- Filters Row --}}
+<div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
+    <div class="card-body p-3">
+        <form action="{{ route('admin.orders.index') }}" method="GET" class="row g-2 align-items-center">
+            @if(request('status'))
+                <input type="hidden" name="status" value="{{ request('status') }}">
+            @endif
+            
+            <div class="col-md-6">
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-0"><i class="fas fa-search text-muted"></i></span>
+                    <input type="text" name="search" class="form-control border-0 bg-light" placeholder="Cari No. Order, nama pelanggan, username, ID Telegram, nama produk..." value="{{ request('search') }}">
+                </div>
+            </div>
+
+            {{-- Product Filter --}}
+            <div class="col-md-3 col-6">
+                <select name="product_id" class="form-select border-0 bg-light">
+                    <option value="">Semua Produk</option>
+                    @php
+                        $filterProducts = \App\Models\Product::orderBy('name')->get();
+                    @endphp
+                    @foreach($filterProducts as $fp)
+                        <option value="{{ $fp->id }}" {{ request('product_id') == $fp->id ? 'selected' : '' }}>{{ $fp->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            {{-- Buttons --}}
+            <div class="col-md-3 col-6 d-flex gap-2 justify-content-end">
+                <button type="submit" class="btn btn-primary px-3 rounded-pill flex-fill">Cari & Filter</button>
+                @if(request('search') || request('product_id'))
+                    <a href="{{ route('admin.orders.index', request('status') ? ['status' => request('status')] : []) }}" class="btn btn-light px-3 rounded-pill">Reset</a>
+                @endif
+            </div>
+        </form>
+    </div>
 </div>
 
 <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 16px;">

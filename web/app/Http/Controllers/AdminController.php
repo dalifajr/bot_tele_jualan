@@ -324,8 +324,29 @@ class AdminController extends Controller
     {
         $query = Order::with(['customer', 'items.product', 'stockUnits'])->orderBy('created_at', 'desc');
 
-        if ($request->has('status') && $request->status !== '') {
+        if ($request->filled('status')) {
             $query->where('status', $request->status);
+        }
+
+        if ($request->filled('product_id')) {
+            $query->whereHas('items', function ($iq) use ($request) {
+                $iq->where('product_id', $request->product_id);
+            });
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('order_ref', 'like', "%{$search}%")
+                  ->orWhereHas('customer', function ($cq) use ($search) {
+                      $cq->where('username', 'like', "%{$search}%")
+                         ->orWhere('full_name', 'like', "%{$search}%")
+                         ->orWhere('telegram_id', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('items.product', function ($pq) use ($search) {
+                      $pq->where('name', 'like', "%{$search}%");
+                  });
+            });
         }
 
         $orders = $query->paginate(10);

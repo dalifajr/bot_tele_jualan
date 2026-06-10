@@ -698,6 +698,111 @@ class RoadmapFeaturesTest extends TestCase
         $response2->assertSessionHas('success');
         $this->assertStringContainsString('membatalkan pesanan kedaluwarsa', session('success'));
     }
+
+    /**
+     * Test admin orders filtering and search.
+     */
+    public function test_admin_orders_filtering_and_search()
+    {
+        $admin = User::create([
+            'username' => 'admin_orders_test',
+            'full_name' => 'Admin Orders Test',
+            'email' => 'admin_orders@test.com',
+            'role' => 'admin',
+            'password' => bcrypt('password'),
+        ]);
+
+        $productNetflix = Product::create(['name' => 'Netflix Premium', 'price' => 5000]);
+        $productYoutube = Product::create(['name' => 'Youtube Premium', 'price' => 10000]);
+
+        $customerAlice = User::create([
+            'username' => 'alice_buyer',
+            'full_name' => 'Alice Smith',
+            'email' => 'alice@test.com',
+            'telegram_id' => '111111',
+            'role' => 'customer',
+            'password' => bcrypt('password'),
+        ]);
+
+        $customerBob = User::create([
+            'username' => 'bob_buyer',
+            'full_name' => 'Bob Jones',
+            'email' => 'bob@test.com',
+            'telegram_id' => '222222',
+            'role' => 'customer',
+            'password' => bcrypt('password'),
+        ]);
+
+        // Order 1: Alice, Netflix, pending_payment
+        $order1 = Order::create([
+            'order_ref' => 'ORD-NETFLIX-ALICE',
+            'customer_id' => $customerAlice->id,
+            'subtotal' => 5000,
+            'unique_code' => 1,
+            'total_amount' => 5001,
+            'status' => 'pending_payment',
+        ]);
+        OrderItem::create([
+            'order_id' => $order1->id,
+            'product_id' => $productNetflix->id,
+            'quantity' => 1,
+            'unit_price' => 5000,
+        ]);
+
+        // Order 2: Bob, Youtube, delivered
+        $order2 = Order::create([
+            'order_ref' => 'ORD-YOUTUBE-BOB',
+            'customer_id' => $customerBob->id,
+            'subtotal' => 10000,
+            'unique_code' => 2,
+            'total_amount' => 10002,
+            'status' => 'delivered',
+        ]);
+        OrderItem::create([
+            'order_id' => $order2->id,
+            'product_id' => $productYoutube->id,
+            'quantity' => 1,
+            'unit_price' => 10000,
+        ]);
+
+        $this->actingAs($admin);
+
+        // 1. Search by reference
+        $response = $this->get(route('admin.orders.index', ['search' => 'ORD-NETFLIX']));
+        $response->assertStatus(200);
+        $response->assertSee('ORD-NETFLIX-ALICE');
+        $response->assertDontSee('ORD-YOUTUBE-BOB');
+
+        // 2. Search by customer username
+        $response = $this->get(route('admin.orders.index', ['search' => 'alice_buyer']));
+        $response->assertSee('ORD-NETFLIX-ALICE');
+        $response->assertDontSee('ORD-YOUTUBE-BOB');
+
+        // 3. Search by customer full name
+        $response = $this->get(route('admin.orders.index', ['search' => 'Bob Jones']));
+        $response->assertDontSee('ORD-NETFLIX-ALICE');
+        $response->assertSee('ORD-YOUTUBE-BOB');
+
+        // 4. Search by customer Telegram ID
+        $response = $this->get(route('admin.orders.index', ['search' => '222222']));
+        $response->assertDontSee('ORD-NETFLIX-ALICE');
+        $response->assertSee('ORD-YOUTUBE-BOB');
+
+        // 5. Search by product name
+        $response = $this->get(route('admin.orders.index', ['search' => 'Netflix']));
+        $response->assertSee('ORD-NETFLIX-ALICE');
+        $response->assertDontSee('ORD-YOUTUBE-BOB');
+
+        // 6. Filter by status
+        $response = $this->get(route('admin.orders.index', ['status' => 'pending_payment']));
+        $response->assertSee('ORD-NETFLIX-ALICE');
+        $response->assertDontSee('ORD-YOUTUBE-BOB');
+
+        // 7. Filter by product_id
+        $response = $this->get(route('admin.orders.index', ['product_id' => $productYoutube->id]));
+        $response->assertDontSee('ORD-NETFLIX-ALICE');
+        $response->assertSee('ORD-YOUTUBE-BOB');
+    }
 }
 
 
