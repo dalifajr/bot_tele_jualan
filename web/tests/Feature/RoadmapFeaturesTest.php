@@ -765,6 +765,14 @@ class RoadmapFeaturesTest extends TestCase
             'unit_price' => 10000,
         ]);
 
+        StockUnit::create([
+            'product_id' => $productYoutube->id,
+            'raw_text' => 'YoutubePremiumCredentialPass123',
+            'is_sold' => true,
+            'stock_status' => 'ready',
+            'sold_order_id' => $order2->id,
+        ]);
+
         $this->actingAs($admin);
 
         // 1. Search by reference
@@ -800,6 +808,11 @@ class RoadmapFeaturesTest extends TestCase
 
         // 7. Filter by product_id
         $response = $this->get(route('admin.orders.index', ['product_id' => $productYoutube->id]));
+        $response->assertDontSee('ORD-NETFLIX-ALICE');
+        $response->assertSee('ORD-YOUTUBE-BOB');
+
+        // 8. Search by stock unit credentials raw text
+        $response = $this->get(route('admin.orders.index', ['search' => 'CredentialPass123']));
         $response->assertDontSee('ORD-NETFLIX-ALICE');
         $response->assertSee('ORD-YOUTUBE-BOB');
     }

@@ -345,6 +345,9 @@ class AdminController extends Controller
                   })
                   ->orWhereHas('items.product', function ($pq) use ($search) {
                       $pq->where('name', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('stockUnits', function ($suq) use ($search) {
+                      $suq->where('raw_text', 'like', "%{$search}%");
                   });
             });
         }
