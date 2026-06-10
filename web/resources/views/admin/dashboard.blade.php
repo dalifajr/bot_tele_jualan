@@ -17,55 +17,68 @@
 </div>
 
 {{-- Stat Cards --}}
-<div class="row g-4 mb-5">
-    <div class="col-md-3">
+<div class="row g-3 mb-5">
+    <div class="col-md-6 col-lg-4 col-xl">
         <div class="card stat-card border-0 shadow-sm h-100" style="border-radius: 16px;">
-            <div class="card-body p-4 d-flex align-items-center">
-                <div class="stat-icon bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px; font-size: 1.5rem;">
+            <div class="card-body p-3 d-flex align-items-center">
+                <div class="stat-icon bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 42px; height: 42px; font-size: 1.2rem; flex-shrink: 0; margin-bottom: 0 !important;">
                     <i class="fas fa-wallet"></i>
                 </div>
-                <div>
-                    <h6 class="text-muted mb-1 small">Total Pendapatan</h6>
-                    <h4 class="fw-bold mb-0">Rp {{ number_format($totalRevenue, 0, ',', '.') }}</h4>
+                <div class="text-truncate">
+                    <h6 class="text-muted mb-1 small text-nowrap">Total Pendapatan</h6>
+                    <h5 class="fw-bold mb-0 text-nowrap">Rp {{ number_format($totalRevenue, 0, ',', '.') }}</h5>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-md-6 col-lg-4 col-xl">
         <div class="card stat-card border-0 shadow-sm h-100" style="border-radius: 16px;">
-            <div class="card-body p-4 d-flex align-items-center">
-                <div class="stat-icon bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px; font-size: 1.5rem;">
+            <div class="card-body p-3 d-flex align-items-center">
+                <div class="stat-icon rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 42px; height: 42px; font-size: 1.2rem; flex-shrink: 0; background-color: rgba(111, 66, 193, 0.15) !important; color: var(--bs-purple, #6f42c1) !important; margin-bottom: 0 !important;">
+                    <i class="fas fa-coins"></i>
+                </div>
+                <div class="text-truncate">
+                    <h6 class="text-muted mb-1 small text-nowrap">Komisi Platform</h6>
+                    <h5 class="fw-bold mb-0 text-nowrap">Rp {{ number_format($platformCommission, 0, ',', '.') }}</h5>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-4 col-xl">
+        <div class="card stat-card border-0 shadow-sm h-100" style="border-radius: 16px;">
+            <div class="card-body p-3 d-flex align-items-center">
+                <div class="stat-icon bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 42px; height: 42px; font-size: 1.2rem; flex-shrink: 0; margin-bottom: 0 !important;">
                     <i class="fas fa-shopping-cart"></i>
                 </div>
-                <div>
-                    <h6 class="text-muted mb-1 small">Total Order</h6>
-                    <h4 class="fw-bold mb-0">{{ number_format($totalOrders, 0, ',', '.') }}</h4>
+                <div class="text-truncate">
+                    <h6 class="text-muted mb-1 small text-nowrap">Total Order</h6>
+                    <h5 class="fw-bold mb-0 text-nowrap">{{ number_format($totalOrders, 0, ',', '.') }}</h5>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-md-6 col-lg-4 col-xl">
         <div class="card stat-card border-0 shadow-sm h-100" style="border-radius: 16px;">
-            <div class="card-body p-4 d-flex align-items-center">
-                <div class="stat-icon bg-info-subtle text-info rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px; font-size: 1.5rem;">
+            <div class="card-body p-3 d-flex align-items-center">
+                <div class="stat-icon bg-info-subtle text-info rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 42px; height: 42px; font-size: 1.2rem; flex-shrink: 0; margin-bottom: 0 !important;">
                     <i class="fas fa-box"></i>
                 </div>
-                <div>
-                    <h6 class="text-muted mb-1 small">Total Produk</h6>
-                    <h4 class="fw-bold mb-0">{{ number_format($totalProducts, 0, ',', '.') }}</h4>
+                <div class="text-truncate">
+                    <h6 class="text-muted mb-1 small text-nowrap">Total Produk</h6>
+                    <h5 class="fw-bold mb-0 text-nowrap">{{ number_format($totalProducts, 0, ',', '.') }}</h5>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-md-6 col-lg-4 col-xl">
         <div class="card stat-card border-0 shadow-sm h-100" style="border-radius: 16px;">
-            <div class="card-body p-4 d-flex align-items-center">
-                <div class="stat-icon bg-warning-subtle text-warning rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px; font-size: 1.5rem;">
+            <div class="card-body p-3 d-flex align-items-center">
+                <div class="stat-icon bg-warning-subtle text-warning rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 42px; height: 42px; font-size: 1.2rem; flex-shrink: 0; margin-bottom: 0 !important;">
                     <i class="fas fa-users"></i>
                 </div>
-                <div>
-                    <h6 class="text-muted mb-1 small">Total User</h6>
-                    <h4 class="fw-bold mb-0">{{ number_format($totalUsers, 0, ',', '.') }}</h4>
+                <div class="text-truncate">
+                    <h6 class="text-muted mb-1 small text-nowrap">Total User</h6>
+                    <h5 class="fw-bold mb-0 text-nowrap">{{ number_format($totalUsers, 0, ',', '.') }}</h5>
                 </div>
             </div>
         </div>

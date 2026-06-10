@@ -17,6 +17,27 @@ class AdminController extends Controller
         $totalProducts = Product::count();
         $totalUsers = User::count();
 
+        // Platform Commission Calculation
+        $commissionFromSales = \Illuminate\Support\Facades\DB::table('stock_units')
+            ->join('products', 'stock_units.product_id', '=', 'products.id')
+            ->leftJoin('users', 'stock_units.seller_id', '=', 'users.id')
+            ->where('stock_units.is_sold', true)
+            ->whereIn('stock_units.sold_order_id', function ($query) {
+                $query->select('id')->from('orders')->where('status', 'delivered');
+            })
+            ->selectRaw("
+                SUM(
+                    CASE 
+                        WHEN users.role = 'seller' THEN (products.price * COALESCE(users.platform_fee_percent, 10) / 100)
+                        ELSE products.price 
+                    END
+                ) as total_commission
+            ")
+            ->value('total_commission') ?? 0;
+
+        $totalUniqueCodes = Order::where('status', 'delivered')->sum('unique_code');
+        $platformCommission = (int)$commissionFromSales + (int)$totalUniqueCodes;
+
         $recentOrders = Order::with(['customer', 'items.product'])
             ->orderBy('created_at', 'desc')
             ->limit(5)
@@ -49,7 +70,7 @@ class AdminController extends Controller
         }
 
         return view('admin.dashboard', compact(
-            'totalRevenue', 'totalOrders', 'totalProducts', 'totalUsers', 'recentOrders',
+            'totalRevenue', 'platformCommission', 'totalOrders', 'totalProducts', 'totalUsers', 'recentOrders',
             'deliveredOrders', 'cancelledOrders', 'chartLabels', 'chartData', 'days'
         ));
     }

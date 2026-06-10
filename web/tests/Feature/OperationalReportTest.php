@@ -100,6 +100,90 @@ class OperationalReportTest extends TestCase
         $response14->assertStatus(200);
     }
  
+    public function test_admin_dashboard_displays_platform_commission_accurately(): void
+    {
+        // 1. Create a seller with a 15% platform fee percent
+        $seller = User::create([
+            'username' => 'commission_seller',
+            'full_name' => 'Commission Seller',
+            'email' => 'commseller@test.com',
+            'role' => 'seller',
+            'platform_fee_percent' => 15,
+            'password' => bcrypt('password'),
+        ]);
+
+        $productSeller = Product::create([
+            'name' => 'Seller Item',
+            'price' => 10000,
+            'description' => 'Test Desc',
+            'creator_id' => $seller->id,
+            'is_suspended' => false,
+        ]);
+
+        // 2. Create an admin product (which should yield 100% commission/revenue to platform)
+        $productAdmin = Product::create([
+            'name' => 'Admin Item',
+            'price' => 20000,
+            'description' => 'Test Desc',
+            'creator_id' => $this->admin->id,
+            'is_suspended' => false,
+        ]);
+
+        // 3. Create a delivered order for the seller product
+        $order1 = Order::create([
+            'order_ref' => 'REFCOMM1',
+            'customer_id' => $this->customer->id,
+            'subtotal' => 10000,
+            'unique_code' => 5,
+            'total_amount' => 10005,
+            'status' => 'delivered',
+            'delivered_at' => now(),
+        ]);
+
+        StockUnit::create([
+            'product_id' => $productSeller->id,
+            'raw_text' => 'creds_seller_1',
+            'is_sold' => true,
+            'sold_order_id' => $order1->id,
+            'stock_status' => 'ready',
+            'seller_id' => $seller->id,
+            'uploaded_by_id' => $seller->id,
+        ]);
+
+        // 4. Create a delivered order for the admin product
+        $order2 = Order::create([
+            'order_ref' => 'REFCOMM2',
+            'customer_id' => $this->customer->id,
+            'subtotal' => 20000,
+            'unique_code' => 12,
+            'total_amount' => 20012,
+            'status' => 'delivered',
+            'delivered_at' => now(),
+        ]);
+
+        StockUnit::create([
+            'product_id' => $productAdmin->id,
+            'raw_text' => 'creds_admin_1',
+            'is_sold' => true,
+            'sold_order_id' => $order2->id,
+            'stock_status' => 'ready',
+            'seller_id' => null, // admin / platform sale
+            'uploaded_by_id' => $this->admin->id,
+        ]);
+
+        // Expected platform commission calculation:
+        // - From seller order (10000 * 15% = 1500)
+        // - From admin order (20000 * 100% = 20000)
+        // - Unique codes (5 + 12 = 17)
+        // Total expected = 1500 + 20000 + 17 = 21517
+
+        $response = $this->actingAs($this->admin)->get(route('admin.dashboard'));
+        
+        $response->assertStatus(200);
+        $response->assertViewHas('platformCommission', 21517);
+        $response->assertSee('21.517');
+    }
+ 
     public function test_seller_dashboard_can_filter_display_reports_and_see_own_data_isolated(): void
     {
         // Create products

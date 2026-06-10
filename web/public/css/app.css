@@ -514,9 +514,10 @@ body {
 }
 
 /* stagger animation */
-.col-md-3:nth-child(2) .stat-card { animation-delay: 0.05s; }
-.col-md-3:nth-child(3) .stat-card { animation-delay: 0.1s; }
-.col-md-3:nth-child(4) .stat-card { animation-delay: 0.15s; }
+.row > div:nth-child(2) .stat-card { animation-delay: 0.05s; }
+.row > div:nth-child(3) .stat-card { animation-delay: 0.1s; }
+.row > div:nth-child(4) .stat-card { animation-delay: 0.15s; }
+.row > div:nth-child(5) .stat-card { animation-delay: 0.2s; }
 
 /* Modal Z-Index Fix */
 .modal {
