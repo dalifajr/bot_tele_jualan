@@ -663,17 +663,28 @@ body {
     }
 }
 
-/* === CARD TABLE CUSTOM STYLES (Fixes Dropdown Clipping) === */
-@media (min-width: 992px) {
-    .card-table {
-        overflow: visible !important;
-    }
-    .card-table .table-responsive {
-        overflow: visible !important;
-    }
-    .card-table:hover {
-        transform: none !important;
-        box-shadow: var(--card-shadow) !important;
-    }
+/* === DYNAMIC DROPDOWN OVERFLOW FIX === */
+/* 
+   1. Remove containing block behavior on the table card.
+      Disabling backdrop-filter and animation/transform on the card containing the table
+      allows the viewport-fixed dropdown menu to position itself correctly.
+*/
+.card:has(.table-responsive) {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    animation: none !important;
+    transform: none !important;
 }
+
+/* 
+   2. Ensure the table is horizontally scrollable on mobile.
+      Ensure overflow-x is set to auto even when a dropdown is open, since the dropdown
+      uses viewport-fixed positioning and doesn't get clipped.
+*/
+.table-responsive:has(.dropdown-menu.show), 
+.table-responsive {
+    overflow: auto !important;
+    overflow-x: auto !important;
+}
+
 
