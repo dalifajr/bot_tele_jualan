@@ -85,7 +85,7 @@
     <div class="alert alert-danger small py-2 mb-4"><i class="fas fa-exclamation-circle me-1"></i>{{ session('error') }}</div>
 @endif
 
-<div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 16px;">
+<div class="card border-0 shadow-sm card-table" style="border-radius: 16px;">
     <div class="card-body p-0">
         @if($users->count() > 0)
         <div class="table-responsive">

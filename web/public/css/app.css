@@ -663,3 +663,17 @@ body {
     }
 }
 
+/* === CARD TABLE CUSTOM STYLES (Fixes Dropdown Clipping) === */
+@media (min-width: 992px) {
+    .card-table {
+        overflow: visible !important;
+    }
+    .card-table .table-responsive {
+        overflow: visible !important;
+    }
+    .card-table:hover {
+        transform: none !important;
+        box-shadow: var(--card-shadow) !important;
+    }
+}
+
