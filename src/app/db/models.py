@@ -20,6 +20,7 @@ class User(Base):
     role: Mapped[str] = mapped_column(String(32), default="customer", index=True)
     remember_token: Mapped[str | None] = mapped_column(String(255), nullable=True)
     is_suspended: Mapped[bool] = mapped_column(Boolean, default=False)
+    suspension_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     wallet_balance: Mapped[int] = mapped_column(Integer, default=0)
     platform_fee_percent: Mapped[int] = mapped_column(Integer, default=10)
     seller_save_hours: Mapped[int] = mapped_column(Integer, default=80)

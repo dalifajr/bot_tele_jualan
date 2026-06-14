@@ -157,9 +157,9 @@
                                         <li>
                                             <form action="{{ route('admin.users.suspend', $user->id) }}" method="POST">
                                                 @csrf
-                                                <button type="button" class="dropdown-item py-2 text-warning" onclick="confirmAction(event, 'Yakin ingin menangguhkan pengguna ini? Akses bot mereka akan diblokir.')">
-                                                    <i class="fas fa-ban me-2"></i> Suspend Pengguna
-                                                </button>
+                                                 <button type="button" class="dropdown-item py-2 text-warning" onclick="confirmSuspend(event)">
+                                                     <i class="fas fa-ban me-2"></i> Suspend Pengguna
+                                                 </button>
                                             </form>
                                         </li>
                                     @endif
@@ -325,6 +325,82 @@ document.addEventListener("DOMContentLoaded", function() {
     @endif
     @endforeach
 });
+
+function confirmSuspend(event) {
+    event.preventDefault();
+    let element = event.currentTarget;
+    let form = element.closest('form');
+    
+    // First popup: Ask for reason (optional)
+    Swal.fire({
+        title: 'Alasan Penangguhan',
+        input: 'text',
+        inputLabel: 'Masukkan alasan penangguhan (opsional):',
+        inputPlaceholder: 'Tulis alasan di sini...',
+        showCancelButton: true,
+        showDenyButton: true,
+        confirmButtonText: 'Lanjut',
+        denyButtonText: 'Lewati',
+        cancelButtonText: 'Batal',
+        confirmButtonColor: '#3085d6',
+        denyButtonColor: '#6c757d',
+        cancelButtonColor: '#d33',
+        customClass: {
+            input: 'form-control rounded-pill px-3',
+            popup: 'rounded-4'
+        }
+    }).then((result) => {
+        // If Cancel was clicked, abort
+        if (result.isDismissed && result.dismiss === Swal.DismissReason.cancel) {
+            return;
+        }
+        
+        let reason = '';
+        if (result.isConfirmed) {
+            reason = result.value || '';
+        } else if (result.isDenied) {
+            reason = '';
+        } else {
+            // Clicked backdrop or escape
+            return;
+        }
+        
+        // Second popup: Confirmation
+        Swal.fire({
+            title: 'Konfirmasi Penangguhan',
+            text: 'Apakah Anda yakin ingin menangguhkan pengguna ini? Akses bot mereka akan diblokir.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Ya, Tangguhkan!',
+            cancelButtonText: 'Batal',
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            customClass: {
+                popup: 'rounded-4'
+            }
+        }).then((confirmResult) => {
+            if (confirmResult.isConfirmed) {
+                // Show page loader
+                let loader = document.getElementById('pageLoader');
+                if (loader) {
+                    loader.classList.remove('fade-out');
+                }
+                if (typeof startTopLoadingBar === 'function') {
+                    startTopLoadingBar();
+                }
+                
+                // Add reason input dynamically to the form
+                let inputReason = document.createElement('input');
+                inputReason.type = 'hidden';
+                inputReason.name = 'reason';
+                inputReason.value = reason;
+                form.appendChild(inputReason);
+                
+                form.submit();
+            }
+        });
+    });
+}
 </script>
 @endpush
 @endsection

@@ -3204,7 +3204,9 @@ async def _run_auto_update_flow() -> str:
     return f"{check_message}\n\n{apply_message}"
 
 class UserSuspendedError(Exception):
-    pass
+    def __init__(self, message: str, reason: str | None = None):
+        super().__init__(message)
+        self.reason = reason
 
 
 async def _ensure_user(
@@ -3239,7 +3241,7 @@ async def _ensure_user(
         if db_user.id is None:
             raise ValueError("Gagal menyimpan user Telegram.")
         if db_user.is_suspended:
-            raise UserSuspendedError("Akun Anda telah ditangguhkan.")
+            raise UserSuspendedError("Akun Anda telah ditangguhkan.", db_user.suspension_reason)
         user_ctx = UserContext(id=int(db_user.id), telegram_id=int(db_user.telegram_id))
 
     if context is not None:

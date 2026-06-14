@@ -405,10 +405,11 @@ class AdminController extends Controller
         return redirect()->back()->with('success', 'Pengguna berhasil dihapus.');
     }
 
-    public function suspendUser($id)
+    public function suspendUser(Request $request, $id)
     {
         $user = User::findOrFail($id);
         $user->is_suspended = true;
+        $user->suspension_reason = $request->input('reason');
         $user->save();
         return redirect()->back()->with('success', 'Akun pengguna berhasil ditangguhkan (suspended). Akses bot telah dicabut.');
     }
@@ -417,6 +418,7 @@ class AdminController extends Controller
     {
         $user = User::findOrFail($id);
         $user->is_suspended = false;
+        $user->suspension_reason = null;
         $user->save();
         return redirect()->back()->with('success', 'Penangguhan akun telah dicabut. Pengguna dapat menggunakan bot kembali.');
     }

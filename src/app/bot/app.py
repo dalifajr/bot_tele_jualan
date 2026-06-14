@@ -581,9 +581,12 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> N
     from telegram import Update
     if isinstance(context.error, UserSuspendedError):
         if isinstance(update, Update) and update.effective_chat:
+            msg = "❌ <b>Akses Ditolak</b>\nAkun Anda telah ditangguhkan oleh Admin."
+            if getattr(context.error, "reason", None):
+                msg += f"\n\n<b>Alasan:</b> {html.escape(context.error.reason)}"
             await context.bot.send_message(
                 chat_id=update.effective_chat.id,
-                text="❌ <b>Akses Ditolak</b>\nAkun Anda telah ditangguhkan oleh Admin.",
+                text=msg,
                 parse_mode="HTML"
             )
         return
