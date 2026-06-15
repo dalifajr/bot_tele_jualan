@@ -12,94 +12,241 @@ class AdminController extends Controller
 {
     public function dashboard(Request $request)
     {
-        $totalRevenue = Order::where('status', 'delivered')->sum('total_amount');
-        $totalOrders = Order::count();
-        $totalProducts = Product::count();
-        $totalUsers = User::count();
+        $period = $request->query('period');
+        if (!$period && $request->has('days')) {
+            $daysParam = (int)$request->query('days');
+            if ($daysParam <= 1) {
+                $period = '24_hours';
+            } elseif ($daysParam <= 7) {
+                $period = '7_days';
+            } elseif ($daysParam <= 30) {
+                $period = '30_days';
+            } else {
+                $period = '6_months';
+            }
+        }
+        if (!in_array($period, ['24_hours', '7_days', '30_days', '6_months'])) {
+            $period = '24_hours';
+        }
 
-        // 1. Komisi dari Penjualan Seller Mitra
-        $platformCommission = \Illuminate\Support\Facades\DB::table('stock_units')
-            ->join('products', 'stock_units.product_id', '=', 'products.id')
-            ->join('users', 'stock_units.seller_id', '=', 'users.id')
-            ->where('stock_units.is_sold', true)
-            ->where('users.role', 'seller')
-            ->whereIn('stock_units.sold_order_id', function ($query) {
-                $query->select('id')->from('orders')->where('status', 'delivered');
-            })
-            ->selectRaw("
-                SUM(products.price * COALESCE(users.platform_fee_percent, 10) / 100) as total_commission
-            ")
-            ->value('total_commission') ?? 0;
+        // Set date limits
+        $currentEnd = now();
+        if ($period === '24_hours') {
+            $currentStart = now()->subHours(24);
+            $previousEnd = $currentStart;
+            $previousStart = now()->subHours(48);
+            $days = 1;
+        } elseif ($period === '7_days') {
+            $currentStart = now()->subDays(7)->startOfDay();
+            $previousEnd = $currentStart;
+            $previousStart = now()->subDays(14)->startOfDay();
+            $days = 7;
+        } elseif ($period === '30_days') {
+            $currentStart = now()->subDays(30)->startOfDay();
+            $previousEnd = $currentStart;
+            $previousStart = now()->subDays(60)->startOfDay();
+            $days = 30;
+        } else { // 6_months
+            $currentStart = now()->subMonths(6)->startOfDay();
+            $previousEnd = $currentStart;
+            $previousStart = now()->subMonths(12)->startOfDay();
+            $days = 180;
+        }
 
-        // 2. Pendapatan Penuh dari Penjualan Admin (seller_id is null, atau seller memiliki role != seller)
-        $adminSalesEarnings = \Illuminate\Support\Facades\DB::table('stock_units')
-            ->join('products', 'stock_units.product_id', '=', 'products.id')
-            ->leftJoin('users', 'stock_units.seller_id', '=', 'users.id')
-            ->where('stock_units.is_sold', true)
-            ->where(function ($query) {
-                $query->whereNull('stock_units.seller_id')
-                      ->orWhere('users.role', '!=', 'seller');
-            })
-            ->whereIn('stock_units.sold_order_id', function ($query) {
-                $query->select('id')->from('orders')->where('status', 'delivered');
-            })
-            ->selectRaw("SUM(products.price) as total_earnings")
-            ->value('total_earnings') ?? 0;
+        // Helper to query metrics
+        $getMetrics = function ($start, $end) {
+            // 1. Total Revenue
+            $totalRevenue = Order::where('status', 'delivered')
+                ->whereBetween('created_at', [$start, $end])
+                ->sum('total_amount');
 
-        $totalUniqueCodes = Order::where('status', 'delivered')->sum('unique_code');
-        $adminEarnings = (int)$adminSalesEarnings + (int)$totalUniqueCodes;
+            // 2. Platform Commission
+            $platformCommission = \Illuminate\Support\Facades\DB::table('stock_units')
+                ->join('products', 'stock_units.product_id', '=', 'products.id')
+                ->join('users', 'stock_units.seller_id', '=', 'users.id')
+                ->where('stock_units.is_sold', true)
+                ->where('users.role', 'seller')
+                ->whereIn('stock_units.sold_order_id', function ($query) use ($start, $end) {
+                    $query->select('id')->from('orders')
+                        ->where('status', 'delivered')
+                        ->whereBetween('created_at', [$start, $end]);
+                })
+                ->selectRaw("SUM(products.price * COALESCE(users.platform_fee_percent, 10) / 100) as total_commission")
+                ->value('total_commission') ?? 0;
+
+            // 3. Admin Earnings
+            $adminSalesEarnings = \Illuminate\Support\Facades\DB::table('stock_units')
+                ->join('products', 'stock_units.product_id', '=', 'products.id')
+                ->leftJoin('users', 'stock_units.seller_id', '=', 'users.id')
+                ->where('stock_units.is_sold', true)
+                ->where(function ($query) {
+                    $query->whereNull('stock_units.seller_id')
+                          ->orWhere('users.role', '!=', 'seller');
+                })
+                ->whereIn('stock_units.sold_order_id', function ($query) use ($start, $end) {
+                    $query->select('id')->from('orders')
+                        ->where('status', 'delivered')
+                        ->whereBetween('created_at', [$start, $end]);
+                })
+                ->selectRaw("SUM(products.price) as total_earnings")
+                ->value('total_earnings') ?? 0;
+
+            $totalUniqueCodes = Order::where('status', 'delivered')
+                ->whereBetween('created_at', [$start, $end])
+                ->sum('unique_code');
+            $adminEarnings = (int)$adminSalesEarnings + (int)$totalUniqueCodes;
+
+            // 4. Seller Earnings
+            $totalSellerEarnings = \Illuminate\Support\Facades\DB::table('stock_units')
+                ->join('products', 'stock_units.product_id', '=', 'products.id')
+                ->join('users', 'stock_units.seller_id', '=', 'users.id')
+                ->where('stock_units.is_sold', true)
+                ->where('users.role', 'seller')
+                ->whereIn('stock_units.sold_order_id', function ($query) use ($start, $end) {
+                    $query->select('id')->from('orders')
+                        ->where('status', 'delivered')
+                        ->whereBetween('created_at', [$start, $end]);
+                })
+                ->selectRaw("SUM(products.price - (products.price * COALESCE(users.platform_fee_percent, 10) / 100)) as total_earnings")
+                ->value('total_earnings') ?? 0;
+
+            // 5. Total Orders
+            $totalOrders = Order::whereBetween('created_at', [$start, $end])->count();
+
+            // 8. Delivered and Cancelled Orders for chart
+            $deliveredOrders = Order::where('status', 'delivered')
+                ->whereBetween('created_at', [$start, $end])
+                ->count();
+            $cancelledOrders = Order::whereIn('status', ['cancelled', 'expired'])
+                ->whereBetween('created_at', [$start, $end])
+                ->count();
+
+            return compact(
+                'totalRevenue', 'platformCommission', 'adminEarnings', 'totalSellerEarnings',
+                'totalOrders', 'deliveredOrders', 'cancelledOrders'
+            );
+        };
+
+        $currentMetrics = $getMetrics($currentStart, $currentEnd);
+        $previousMetrics = $getMetrics($previousStart, $previousEnd);
+
+        // For Products and Users, we want cumulative counts up to end dates
+        $currentProducts = Product::where('created_at', '<=', $currentEnd)->count();
+        $previousProducts = Product::where('created_at', '<=', $previousEnd)->count();
+
+        $currentUsers = User::where('created_at', '<=', $currentEnd)->count();
+        $previousUsers = User::where('created_at', '<=', $previousEnd)->count();
+
+        $webUsersCount = User::whereNotNull('password')
+            ->where('created_at', '<=', $currentEnd)
+            ->count();
+        $tgUsersCount = User::whereNotNull('telegram_id')
+            ->where('created_at', '<=', $currentEnd)
+            ->count();
+
+        // Helper to calculate percentage growth / change
+        $calculateChange = function ($current, $previous) {
+            $diff = $current - $previous;
+            if ($previous > 0) {
+                $percent = round(($diff / $previous) * 100, 1);
+            } else {
+                $percent = $current > 0 ? 100.0 : 0.0;
+            }
+            return [
+                'value' => $current,
+                'diff' => $diff,
+                'percent' => $percent,
+                'formatted_percent' => ($percent >= 0 ? '+' : '') . $percent . '%',
+                'class' => $percent >= 0 ? 'text-success' : 'text-danger',
+                'icon' => $percent >= 0 ? 'fa-arrow-up' : 'fa-arrow-down'
+            ];
+        };
+
+        $revenueStats = $calculateChange($currentMetrics['totalRevenue'], $previousMetrics['totalRevenue']);
+        $commissionStats = $calculateChange($currentMetrics['platformCommission'], $previousMetrics['platformCommission']);
+        $adminEarningsStats = $calculateChange($currentMetrics['adminEarnings'], $previousMetrics['adminEarnings']);
+        $sellerEarningsStats = $calculateChange($currentMetrics['totalSellerEarnings'], $previousMetrics['totalSellerEarnings']);
+        $ordersStats = $calculateChange($currentMetrics['totalOrders'], $previousMetrics['totalOrders']);
+        $productsStats = $calculateChange($currentProducts, $previousProducts);
+        $usersStats = $calculateChange($currentUsers, $previousUsers);
+
+        // Unpack for blade compatibility
+        $totalRevenue = $currentMetrics['totalRevenue'];
+        $platformCommission = $currentMetrics['platformCommission'];
+        $adminEarnings = $currentMetrics['adminEarnings'];
+        $totalSellerEarnings = $currentMetrics['totalSellerEarnings'];
+        $totalOrders = $currentMetrics['totalOrders'];
+        $totalProducts = $currentProducts;
+        $totalUsers = $currentUsers;
+        $deliveredOrders = $currentMetrics['deliveredOrders'];
+        $cancelledOrders = $currentMetrics['cancelledOrders'];
 
         $recentOrders = Order::with(['customer', 'items.product'])
             ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get();
 
-        $deliveredOrders = Order::where('status', 'delivered')->count();
-        $cancelledOrders = Order::whereIn('status', ['cancelled', 'expired'])->count();
-
-        // Calculate sales trends based on filtered days
-        $days = (int)$request->query('days', 7);
-        if (!in_array($days, [7, 14, 30, 180, 365])) {
-            $days = 7;
-        }
-
+        // Generate Chart Data based on period
         $chartLabels = [];
         $chartData = [];
-        for ($i = $days - 1; $i >= 0; $i--) {
-            $dateObj = now()->subDays($i);
-            $date = $dateObj->toDateString();
-            
-            if ($days > 30) {
-                $chartLabels[] = $dateObj->format('d M y');
-            } else {
-                $chartLabels[] = $dateObj->format('d M');
-            }
 
-            $chartData[] = Order::where('status', 'delivered')
-                ->whereDate('delivered_at', $date)
-                ->sum('total_amount');
+        if ($period === '24_hours') {
+            for ($i = 23; $i >= 0; $i--) {
+                $hourObj = now()->subHours($i);
+                $start = (clone $hourObj)->startOfHour();
+                $end = (clone $hourObj)->endOfHour();
+                
+                $chartLabels[] = $hourObj->format('H:00');
+                $chartData[] = Order::where('status', 'delivered')
+                    ->whereBetween('created_at', [$start, $end])
+                    ->sum('total_amount');
+            }
+        } elseif ($period === '7_days') {
+            for ($i = 6; $i >= 0; $i--) {
+                $dayObj = now()->subDays($i);
+                $start = (clone $dayObj)->startOfDay();
+                $end = (clone $dayObj)->endOfDay();
+                
+                $chartLabels[] = $dayObj->format('d M');
+                $chartData[] = Order::where('status', 'delivered')
+                    ->whereBetween('created_at', [$start, $end])
+                    ->sum('total_amount');
+            }
+        } elseif ($period === '30_days') {
+            for ($i = 29; $i >= 0; $i--) {
+                $dayObj = now()->subDays($i);
+                $start = (clone $dayObj)->startOfDay();
+                $end = (clone $dayObj)->endOfDay();
+                
+                $chartLabels[] = $dayObj->format('d M');
+                $chartData[] = Order::where('status', 'delivered')
+                    ->whereBetween('created_at', [$start, $end])
+                    ->sum('total_amount');
+            }
+        } else { // 6_months
+            for ($i = 5; $i >= 0; $i--) {
+                $monthObj = now()->subMonths($i);
+                $start = (clone $monthObj)->startOfMonth()->startOfDay();
+                $end = (clone $monthObj)->endOfMonth()->endOfDay();
+                
+                $chartLabels[] = $monthObj->format('M Y');
+                $chartData[] = Order::where('status', 'delivered')
+                    ->whereBetween('created_at', [$start, $end])
+                    ->sum('total_amount');
+            }
         }
 
-        // Total Pendapatan Seller (Net Sales Earnings: price - commission)
-        $totalSellerEarnings = \Illuminate\Support\Facades\DB::table('stock_units')
-            ->join('products', 'stock_units.product_id', '=', 'products.id')
-            ->join('users', 'stock_units.seller_id', '=', 'users.id')
-            ->where('stock_units.is_sold', true)
-            ->where('users.role', 'seller')
-            ->whereIn('stock_units.sold_order_id', function ($query) {
-                $query->select('id')->from('orders')->where('status', 'delivered');
-            })
-            ->selectRaw("
-                SUM(products.price - (products.price * COALESCE(users.platform_fee_percent, 10) / 100)) as total_earnings
-            ")
-            ->value('total_earnings') ?? 0;
-
-        $webUsersCount = User::whereNotNull('password')->count();
-        $tgUsersCount = User::whereNotNull('telegram_id')->count();
+        $periodLabel = match($period) {
+            '24_hours' => '24 jam terakhir',
+            '7_days' => '7 hari terakhir',
+            '30_days' => '30 hari terakhir',
+            '6_months' => '6 bulan terakhir',
+        };
 
         return view('admin.dashboard', compact(
             'totalRevenue', 'platformCommission', 'adminEarnings', 'totalSellerEarnings', 'totalOrders', 'totalProducts', 'totalUsers', 'webUsersCount', 'tgUsersCount', 'recentOrders',
-            'deliveredOrders', 'cancelledOrders', 'chartLabels', 'chartData', 'days'
+            'deliveredOrders', 'cancelledOrders', 'chartLabels', 'chartData', 'days', 'period', 'periodLabel',
+            'revenueStats', 'commissionStats', 'adminEarningsStats', 'sellerEarningsStats', 'ordersStats', 'productsStats', 'usersStats'
         ));
     }
 
