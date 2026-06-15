@@ -31,6 +31,14 @@ Route::post('/login/password', [AuthController::class, 'login'])->name('login.po
 Route::post('/register', [AuthController::class, 'register'])->name('register.post');
 Route::get('/suspended', [AuthController::class, 'suspended'])->name('suspended');
 
+// Language Switcher
+Route::get('/lang/{locale}', function ($locale) {
+    if (in_array($locale, ['id', 'en'])) {
+        session()->put('locale', $locale);
+    }
+    return redirect()->back();
+})->name('lang.switch');
+
 // Telegram Login Flow
 Route::post('/auth/telegram/request', [TelegramAuthController::class, 'requestLogin'])->name('auth.telegram.request');
 Route::get('/auth/telegram/callback', [TelegramAuthController::class, 'callback'])->name('auth.telegram.callback');

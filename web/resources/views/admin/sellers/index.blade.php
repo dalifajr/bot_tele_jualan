@@ -1,13 +1,13 @@
 @extends('layouts.app')
 
-@section('title', 'Manajemen Seller & Pendapatan')
-@section('page_subtitle', 'Sellers')
+@section('title', __('Manajemen Seller & Pendapatan'))
+@section('page_subtitle', __('Sellers'))
 
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h4 class="fw-bold mb-1">Manajemen Seller & Kemitraan</h4>
-        <p class="text-muted mb-0">Daftar mitra seller, status penangguhan, dan detail saldo pendapatan</p>
+        <h4 class="fw-bold mb-1">{{ __('Manajemen Seller & Kemitraan') }}</h4>
+        <p class="text-muted mb-0">{{ __('Daftar mitra seller, status penangguhan, dan detail saldo pendapatan') }}</p>
     </div>
 </div>
 
@@ -16,7 +16,7 @@
     <div class="col-xl col-md-4 col-6">
         <div class="card border-0 shadow-sm h-100" style="border-radius: 16px;">
             <div class="card-body p-3 text-center">
-                <div class="text-secondary small fw-bold mb-1">Total Seller Mitra</div>
+                <div class="text-secondary small fw-bold mb-1">{{ __('Total Seller Mitra') }}</div>
                 <h3 class="fw-bold mb-0 text-primary">{{ $totalSellers }}</h3>
             </div>
         </div>
@@ -24,7 +24,7 @@
     <div class="col-xl col-md-4 col-6">
         <div class="card border-0 shadow-sm h-100" style="border-radius: 16px;">
             <div class="card-body p-3 text-center">
-                <div class="text-secondary small fw-bold mb-1">Seller Aktif</div>
+                <div class="text-secondary small fw-bold mb-1">{{ __('Seller Aktif') }}</div>
                 <h3 class="fw-bold mb-0 text-success">{{ $activeSellers }}</h3>
             </div>
         </div>
@@ -32,7 +32,7 @@
     <div class="col-xl col-md-4 col-12">
         <div class="card border-0 shadow-sm h-100" style="border-radius: 16px;">
             <div class="card-body p-3 text-center">
-                <div class="text-secondary small fw-bold mb-1">Seller Ditangguhkan</div>
+                <div class="text-secondary small fw-bold mb-1">{{ __('Seller Ditangguhkan') }}</div>
                 <h3 class="fw-bold mb-0 text-danger">{{ $suspendedSellers }}</h3>
             </div>
         </div>
@@ -45,28 +45,28 @@
             <div class="col-md-4">
                 <div class="input-group">
                     <span class="input-group-text bg-light border-0"><i class="fas fa-search text-muted"></i></span>
-                    <input type="text" name="search" class="form-control border-0 bg-light" placeholder="Cari username, nama, email, atau ID Telegram..." value="{{ request('search') }}">
+                    <input type="text" name="search" class="form-control border-0 bg-light" placeholder="{{ __('Cari username, nama, email, atau ID Telegram...') }}" value="{{ request('search') }}">
                 </div>
             </div>
             <div class="col-md-2 col-6">
                 <select name="status" class="form-select border-0 bg-light">
-                    <option value="">Semua Status</option>
-                    <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Aktif</option>
-                    <option value="suspended" {{ request('status') === 'suspended' ? 'selected' : '' }}>Ditangguhkan</option>
+                    <option value="">{{ __('Semua Status') }}</option>
+                    <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>{{ __('Aktif') }}</option>
+                    <option value="suspended" {{ request('status') === 'suspended' ? 'selected' : '' }}>{{ __('Ditangguhkan') }}</option>
                 </select>
             </div>
             <div class="col-md-3 col-6">
                 <select name="period" class="form-select border-0 bg-light">
-                    <option value="7_days" {{ request('period') === '7_days' || !request('period') ? 'selected' : '' }}>7 Hari Terakhir</option>
-                    <option value="30_days" {{ request('period') === '30_days' ? 'selected' : '' }}>30 Hari Terakhir</option>
-                    <option value="6_months" {{ request('period') === '6_months' ? 'selected' : '' }}>6 Bulan Terakhir</option>
-                    <option value="1_year" {{ request('period') === '1_year' ? 'selected' : '' }}>1 Tahun Terakhir</option>
+                    <option value="7_days" {{ request('period') === '7_days' || !request('period') ? 'selected' : '' }}>{{ __('7 Hari Terakhir') }}</option>
+                    <option value="30_days" {{ request('period') === '30_days' ? 'selected' : '' }}>{{ __('30 Hari Terakhir') }}</option>
+                    <option value="6_months" {{ request('period') === '6_months' ? 'selected' : '' }}>{{ __('6 Bulan Terakhir') }}</option>
+                    <option value="1_year" {{ request('period') === '1_year' ? 'selected' : '' }}>{{ __('1 Tahun Terakhir') }}</option>
                 </select>
             </div>
             <div class="col-md-3 col-12 d-flex gap-2 justify-content-end">
-                <button type="submit" class="btn btn-primary px-3 rounded-pill flex-fill">Cari & Filter</button>
+                <button type="submit" class="btn btn-primary px-3 rounded-pill flex-fill">{{ __('Cari & Filter') }}</button>
                 @if(request('search') || request('status') || request('period'))
-                    <a href="{{ route('admin.sellers.index') }}" class="btn btn-light px-3 rounded-pill">Reset</a>
+                    <a href="{{ route('admin.sellers.index') }}" class="btn btn-light px-3 rounded-pill">{{ __('Reset') }}</a>
                 @endif
             </div>
         </form>
@@ -87,15 +87,15 @@
             <table class="table table-hover align-middle mb-0">
                 <thead>
                     <tr class="text-secondary small border-bottom">
-                        <th class="px-4 py-3 border-0">No</th>
-                        <th class="py-3 border-0">Nama Seller & Telegram</th>
-                        <th class="py-3 border-0">Status</th>
-                        <th class="py-3 border-0 text-center">Jumlah Produk</th>
-                        <th class="py-3 border-0">Saldo Seller</th>
-                        <th class="py-3 border-0">Pendapatan Bersih</th>
-                        <th class="py-3 border-0">Kontribusi</th>
-                        <th class="py-3 border-0">Tren Penjualan</th>
-                        <th class="py-3 border-0 text-end px-4">Aksi</th>
+                        <th class="px-4 py-3 border-0">{{ __('No') }}</th>
+                        <th class="py-3 border-0">{{ __('Nama Seller & Telegram') }}</th>
+                        <th class="py-3 border-0">{{ __('Status') }}</th>
+                        <th class="py-3 border-0 text-center">{{ __('Jumlah Produk') }}</th>
+                        <th class="py-3 border-0">{{ __('Saldo Seller') }}</th>
+                        <th class="py-3 border-0">{{ __('Pendapatan Bersih') }}</th>
+                        <th class="py-3 border-0">{{ __('Kontribusi') }}</th>
+                        <th class="py-3 border-0">{{ __('Tren Penjualan') }}</th>
+                        <th class="py-3 border-0 text-end px-4">{{ __('Aksi') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -115,9 +115,9 @@
                         </td>
                         <td>
                             @if($seller->is_suspended)
-                                <span class="badge bg-danger-subtle text-danger rounded-pill px-2"><i class="fas fa-ban me-1"></i>Ditangguhkan</span>
+                                <span class="badge bg-danger-subtle text-danger rounded-pill px-2"><i class="fas fa-ban me-1"></i>{{ __('Ditangguhkan') }}</span>
                             @else
-                                <span class="badge bg-success-subtle text-success rounded-pill px-2"><i class="fas fa-check me-1"></i>Aktif</span>
+                                <span class="badge bg-success-subtle text-success rounded-pill px-2"><i class="fas fa-check me-1"></i>{{ __('Aktif') }}</span>
                             @endif
                         </td>
                         <td class="text-center fw-bold">{{ $seller->products_count }}</td>
@@ -136,7 +136,7 @@
                         </td>
                         <td>
                             <div class="fw-bold text-dark">{{ $seller->contribution_percentage }}%</div>
-                            <small class="text-muted" style="font-size: 0.72rem; display: block; white-space: nowrap;">Komisi: Rp {{ number_format($seller->commission_amount, 0, ',', '.') }}</small>
+                            <small class="text-muted" style="font-size: 0.72rem; display: block; white-space: nowrap;">{{ __('Komisi') }}: Rp {{ number_format($seller->commission_amount, 0, ',', '.') }}</small>
                         </td>
                         <td>
                             <div class="d-flex align-items-center gap-2">
@@ -171,14 +171,14 @@
                                 <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" style="border-radius: 12px; min-width: 200px;">
                                     <li>
                                         <button class="dropdown-item py-2" data-bs-toggle="modal" data-bs-target="#editUserModal{{ $seller->id }}">
-                                            <i class="fas fa-user-shield me-2 text-primary"></i> Ubah Detail Akses
+                                            <i class="fas fa-user-shield me-2 text-primary"></i> {{ __('Ubah Detail Akses') }}
                                         </button>
                                     </li>
                                     <li>
                                         <form action="{{ route('admin.users.impersonate', $seller->id) }}" method="POST" class="m-0">
                                             @csrf
                                             <button type="submit" class="dropdown-item py-2 text-info">
-                                                <i class="fas fa-user-secret me-2"></i> Login Sebagai
+                                                <i class="fas fa-user-secret me-2"></i> {{ __('Masuk sebagai') }}
                                             </button>
                                         </form>
                                     </li>
@@ -189,7 +189,7 @@
                                             <form action="{{ route('admin.users.unsuspend', $seller->id) }}" method="POST">
                                                 @csrf
                                                 <button type="submit" class="dropdown-item py-2 text-success">
-                                                    <i class="fas fa-unlock me-2"></i> Cabut Penangguhan
+                                                    <i class="fas fa-unlock me-2"></i> {{ __('Cabut Penangguhan') }}
                                                 </button>
                                             </form>
                                         </li>
@@ -198,7 +198,7 @@
                                             <form action="{{ route('admin.users.suspend', $seller->id) }}" method="POST">
                                                 @csrf
                                                 <button type="button" class="dropdown-item py-2 text-warning" onclick="confirmSuspend(event)">
-                                                    <i class="fas fa-ban me-2"></i> Suspend Pengguna
+                                                    <i class="fas fa-ban me-2"></i> {{ __('Suspend Pengguna') }}
                                                 </button>
                                             </form>
                                         </li>
@@ -210,14 +210,14 @@
                                             @csrf
                                             @method('DELETE')
                                             <button type="button" class="dropdown-item py-2 text-danger" onclick="confirmAction(event, 'Yakin ingin menghapus permanen seller ini? Data login & akses bot akan terhapus.')">
-                                                <i class="fas fa-trash me-2"></i> Hapus Pengguna
+                                                <i class="fas fa-trash me-2"></i> {{ __('Hapus Pengguna') }}
                                             </button>
                                         </form>
                                     </li>
                                 </ul>
                             </div>
                             @else
-                            <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" disabled>Ini Anda</button>
+                            <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" disabled>{{ __('Ini Anda') }}</button>
                             @endif
                         </td>
                     </tr>
@@ -231,7 +231,7 @@
         @else
         <div class="text-center py-5">
             <i class="fas fa-store text-muted mb-3" style="font-size: 3rem;"></i>
-            <p class="text-muted mb-0">Tidak ada seller yang ditemukan.</p>
+            <p class="text-muted mb-0">{{ __('Tidak ada seller yang ditemukan.') }}</p>
         </div>
         @endif
     </div>

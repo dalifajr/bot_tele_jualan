@@ -16,6 +16,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('app:auto-backup')->hourly();
     })
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->web(append: [
+            \App\Http\Middleware\SetLocale::class,
+        ]);
         $middleware->alias([
             'admin' => \App\Http\Middleware\EnsureAdmin::class,
             'seller' => \App\Http\Middleware\EnsureSeller::class,
