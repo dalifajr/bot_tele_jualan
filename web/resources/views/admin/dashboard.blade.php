@@ -59,6 +59,24 @@
     </div>
     <div class="col-md-6 col-lg-4">
         <div class="card stat-card border-0 shadow-sm h-100" style="border-radius: 16px;">
+            <div class="card-body p-3 d-flex align-items-center justify-content-between w-100">
+                <div class="d-flex align-items-center text-truncate">
+                    <div class="stat-icon rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 42px; height: 42px; font-size: 1.2rem; flex-shrink: 0; background-color: rgba(32, 201, 151, 0.15) !important; color: #20c997 !important; margin-bottom: 0 !important;">
+                        <i class="fas fa-store"></i>
+                    </div>
+                    <div class="text-truncate">
+                        <h6 class="text-muted mb-1 small text-nowrap">Pendapatan Seller</h6>
+                        <h5 class="fw-bold mb-0 text-nowrap">Rp {{ number_format($totalSellerEarnings, 0, ',', '.') }}</h5>
+                    </div>
+                </div>
+                <div class="ms-2">
+                    <a href="{{ route('admin.sellers.index') }}" class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1">Detail</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-4">
+        <div class="card stat-card border-0 shadow-sm h-100" style="border-radius: 16px;">
             <div class="card-body p-3 d-flex align-items-center">
                 <div class="stat-icon bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 42px; height: 42px; font-size: 1.2rem; flex-shrink: 0; margin-bottom: 0 !important;">
                     <i class="fas fa-shopping-cart"></i>
@@ -92,6 +110,10 @@
                 <div class="text-truncate">
                     <h6 class="text-muted mb-1 small text-nowrap">Total User</h6>
                     <h5 class="fw-bold mb-0 text-nowrap">{{ number_format($totalUsers, 0, ',', '.') }}</h5>
+                    <div class="d-flex gap-2 mt-1" style="font-size: 0.75rem;">
+                        <span class="badge bg-primary-subtle text-primary rounded-pill"><i class="fas fa-desktop me-1"></i>Web: {{ $webUsersCount }}</span>
+                        <span class="badge bg-success-subtle text-success rounded-pill"><i class="fab fa-telegram-plane me-1"></i>TG: {{ $tgUsersCount }}</span>
+                    </div>
                 </div>
             </div>
         </div>

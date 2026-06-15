@@ -286,6 +286,9 @@
                 <a href="{{ route('admin.users.index') }}" class="menu-item {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
                     <i class="fas fa-users"></i> Kelola Pelanggan
                 </a>
+                <a href="{{ route('admin.sellers.index') }}" class="menu-item {{ request()->routeIs('admin.sellers.*') ? 'active' : '' }}">
+                    <i class="fas fa-store"></i> Kelola Seller
+                </a>
                 <a href="{{ route('admin.withdrawals.index') }}" class="menu-item {{ request()->routeIs('admin.withdrawals.*') ? 'active' : '' }}">
                     <i class="fas fa-hand-holding-usd"></i> Permintaan Payout
                 </a>

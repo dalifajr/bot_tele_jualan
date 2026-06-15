@@ -516,6 +516,15 @@ class SellerController extends Controller
             return redirect()->route('seller.products.index')->with('swal_error', 'Gagal menghapus produk! Masih terdapat sisa stok aktif di dalamnya. Harap kosongkan atau pindahkan stok terlebih dahulu sebelum menghapus produk.');
         }
 
+        // Check for transaction history
+        $hasTransactionHistory = \Illuminate\Support\Facades\DB::table('order_items')
+            ->where('product_id', $product->id)
+            ->exists();
+
+        if ($hasTransactionHistory) {
+            return redirect()->route('seller.products.index')->with('swal_error', 'Produk tidak dapat dihapus karena sudah memiliki riwayat transaksi/penjualan. Silakan hubungi admin jika ingin menonaktifkan produk ini.');
+        }
+
         try {
             $product->delete(); // Cascades to stock units automatically
             return redirect()->route('seller.products.index')->with('success', 'Produk berhasil dihapus.');

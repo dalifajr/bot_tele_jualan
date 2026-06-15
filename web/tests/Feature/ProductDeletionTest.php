@@ -15,12 +15,13 @@ class ProductDeletionTest extends TestCase
     use RefreshDatabase;
 
     /** @test */
-    public function admin_can_take_over_seller_product_and_stocks()
+    public function test_admin_can_take_over_seller_product_and_stocks()
     {
         // 1. Create Admin & Seller
         $admin = User::create([
             'username' => 'admin_test',
             'full_name' => 'Admin Test',
+            'email' => 'admin_test@example.com',
             'password' => bcrypt('password'),
             'role' => 'admin',
         ]);
@@ -28,6 +29,7 @@ class ProductDeletionTest extends TestCase
         $seller = User::create([
             'username' => 'seller_test',
             'full_name' => 'Seller Test',
+            'email' => 'seller_test@example.com',
             'password' => bcrypt('password'),
             'role' => 'seller',
         ]);
@@ -82,12 +84,13 @@ class ProductDeletionTest extends TestCase
     }
 
     /** @test */
-    public function seller_cannot_delete_product_with_remaining_stock()
+    public function test_seller_cannot_delete_product_with_remaining_stock()
     {
         // 1. Create Seller
         $seller = User::create([
             'username' => 'seller_test',
             'full_name' => 'Seller Test',
+            'email' => 'seller_test@example.com',
             'password' => bcrypt('password'),
             'role' => 'seller',
         ]);
@@ -124,12 +127,13 @@ class ProductDeletionTest extends TestCase
     }
 
     /** @test */
-    public function seller_cannot_delete_product_with_transaction_history()
+    public function test_seller_cannot_delete_product_with_transaction_history()
     {
         // 1. Create Seller & Customer
         $seller = User::create([
             'username' => 'seller_test',
             'full_name' => 'Seller Test',
+            'email' => 'seller_test@example.com',
             'password' => bcrypt('password'),
             'role' => 'seller',
         ]);
@@ -137,6 +141,7 @@ class ProductDeletionTest extends TestCase
         $customer = User::create([
             'username' => 'customer_test',
             'full_name' => 'Customer Test',
+            'email' => 'customer_test@example.com',
             'password' => bcrypt('password'),
             'role' => 'customer',
         ]);
@@ -154,6 +159,8 @@ class ProductDeletionTest extends TestCase
         $order = Order::create([
             'customer_id' => $customer->id,
             'status' => 'delivered',
+            'subtotal' => 50000,
+            'unique_code' => 12,
             'total_amount' => 50000,
             'payment_status' => 'paid',
             'order_ref' => 'ORD-TEST123',
@@ -163,7 +170,7 @@ class ProductDeletionTest extends TestCase
             'order_id' => $order->id,
             'product_id' => $product->id,
             'quantity' => 1,
-            'price' => 50000,
+            'unit_price' => 50000,
         ]);
 
         // 4. Authenticate as Seller and perform deletion
@@ -179,12 +186,13 @@ class ProductDeletionTest extends TestCase
     }
 
     /** @test */
-    public function seller_can_delete_product_without_stock_or_transactions()
+    public function test_seller_can_delete_product_without_stock_or_transactions()
     {
         // 1. Create Seller
         $seller = User::create([
             'username' => 'seller_test',
             'full_name' => 'Seller Test',
+            'email' => 'seller_test@example.com',
             'password' => bcrypt('password'),
             'role' => 'seller',
         ]);

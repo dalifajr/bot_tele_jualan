@@ -15,12 +15,13 @@ class SellerOrderManagementTest extends TestCase
     use RefreshDatabase;
 
     /** @test */
-    public function seller_can_only_see_orders_associated_with_their_products()
+    public function test_seller_can_only_see_orders_associated_with_their_products()
     {
         // 1. Create two sellers & one customer
         $seller1 = User::create([
             'username' => 'seller1',
             'full_name' => 'Seller One',
+            'email' => 'seller1@example.com',
             'password' => bcrypt('password'),
             'role' => 'seller',
         ]);
@@ -28,6 +29,7 @@ class SellerOrderManagementTest extends TestCase
         $seller2 = User::create([
             'username' => 'seller2',
             'full_name' => 'Seller Two',
+            'email' => 'seller2@example.com',
             'password' => bcrypt('password'),
             'role' => 'seller',
         ]);
@@ -35,6 +37,7 @@ class SellerOrderManagementTest extends TestCase
         $customer = User::create([
             'username' => 'customer_test',
             'full_name' => 'Customer',
+            'email' => 'customer_test@example.com',
             'password' => bcrypt('password'),
             'role' => 'customer',
         ]);
@@ -60,6 +63,8 @@ class SellerOrderManagementTest extends TestCase
         $order1 = Order::create([
             'customer_id' => $customer->id,
             'status' => 'pending_payment',
+            'subtotal' => 10000,
+            'unique_code' => 5,
             'total_amount' => 10000,
             'payment_status' => 'pending',
             'order_ref' => 'ORD-11111',
@@ -74,6 +79,8 @@ class SellerOrderManagementTest extends TestCase
         $order2 = Order::create([
             'customer_id' => $customer->id,
             'status' => 'pending_payment',
+            'subtotal' => 20000,
+            'unique_code' => 87,
             'total_amount' => 20000,
             'payment_status' => 'pending',
             'order_ref' => 'ORD-22222',
@@ -95,12 +102,13 @@ class SellerOrderManagementTest extends TestCase
     }
 
     /** @test */
-    public function seller_can_cancel_their_own_pending_order()
+    public function test_seller_can_cancel_their_own_pending_order()
     {
         // 1. Create seller, customer, product & pending order
         $seller = User::create([
             'username' => 'seller_test',
             'full_name' => 'Seller Test',
+            'email' => 'seller_test@example.com',
             'password' => bcrypt('password'),
             'role' => 'seller',
         ]);
@@ -108,6 +116,7 @@ class SellerOrderManagementTest extends TestCase
         $customer = User::create([
             'username' => 'customer_test',
             'full_name' => 'Customer',
+            'email' => 'customer_test@example.com',
             'password' => bcrypt('password'),
             'role' => 'customer',
         ]);
@@ -122,6 +131,8 @@ class SellerOrderManagementTest extends TestCase
         $order = Order::create([
             'customer_id' => $customer->id,
             'status' => 'pending_payment',
+            'subtotal' => 15000,
+            'unique_code' => 23,
             'total_amount' => 15000,
             'order_ref' => 'ORD-PENDING',
         ]);

@@ -80,8 +80,25 @@ class AdminController extends Controller
                 ->sum('total_amount');
         }
 
+        // Total Pendapatan Seller (Net Sales Earnings: price - commission)
+        $totalSellerEarnings = \Illuminate\Support\Facades\DB::table('stock_units')
+            ->join('products', 'stock_units.product_id', '=', 'products.id')
+            ->join('users', 'stock_units.seller_id', '=', 'users.id')
+            ->where('stock_units.is_sold', true)
+            ->where('users.role', 'seller')
+            ->whereIn('stock_units.sold_order_id', function ($query) {
+                $query->select('id')->from('orders')->where('status', 'delivered');
+            })
+            ->selectRaw("
+                SUM(products.price - (products.price * COALESCE(users.platform_fee_percent, 10) / 100)) as total_earnings
+            ")
+            ->value('total_earnings') ?? 0;
+
+        $webUsersCount = User::whereNotNull('password')->count();
+        $tgUsersCount = User::whereNotNull('telegram_id')->count();
+
         return view('admin.dashboard', compact(
-            'totalRevenue', 'platformCommission', 'adminEarnings', 'totalOrders', 'totalProducts', 'totalUsers', 'recentOrders',
+            'totalRevenue', 'platformCommission', 'adminEarnings', 'totalSellerEarnings', 'totalOrders', 'totalProducts', 'totalUsers', 'webUsersCount', 'tgUsersCount', 'recentOrders',
             'deliveredOrders', 'cancelledOrders', 'chartLabels', 'chartData', 'days'
         ));
     }
@@ -392,6 +409,49 @@ class AdminController extends Controller
         ));
     }
 
+    public function sellers(Request $request)
+    {
+        $query = User::where('role', 'seller')->orderBy('created_at', 'desc');
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('username', 'like', "%{$search}%")
+                  ->orWhere('full_name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('telegram_id', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('status')) {
+            if ($request->status === 'suspended') {
+                $query->where('is_suspended', true);
+            } elseif ($request->status === 'active') {
+                $query->where('is_suspended', false);
+            }
+        }
+
+        $sellers = $query->paginate(10);
+
+        foreach ($sellers as $seller) {
+            $seller->products_count = \App\Models\Product::where('creator_id', $seller->id)->count();
+            $seller->held_balance = (int) \Illuminate\Support\Facades\DB::table('held_funds')
+                ->where('seller_id', $seller->id)
+                ->where('status', 'held')
+                ->sum('amount');
+        }
+
+        $totalSellers = User::where('role', 'seller')->count();
+        $activeSellers = User::where('role', 'seller')->where('is_suspended', false)->count();
+        $suspendedSellers = User::where('role', 'seller')->where('is_suspended', true)->count();
+
+        $users = $sellers; // Maintain naming compatibility for modal hooks
+
+        return view('admin.sellers.index', compact(
+            'sellers', 'users', 'totalSellers', 'activeSellers', 'suspendedSellers'
+        ));
+    }
+
     public function deleteUser($id)
     {
         $user = User::findOrFail($id);
@@ -553,6 +613,14 @@ class AdminController extends Controller
         }
         
         // Jika produk milik admin utama, coba hapus secara fisik
+        $hasTransactionHistory = \Illuminate\Support\Facades\DB::table('order_items')
+            ->where('product_id', $product->id)
+            ->exists();
+
+        if ($hasTransactionHistory) {
+            return redirect()->back()->with('error', 'Produk tidak dapat dihapus permanen karena sudah memiliki riwayat transaksi/pesanan. Silakan gunakan fitur Suspend sebagai gantinya.');
+        }
+
         try {
             $product->delete(); // Cascades to stock units automatically
             return redirect()->back()->with('success', 'Produk berhasil dihapus secara permanen.');
