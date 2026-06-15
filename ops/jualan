@@ -100,6 +100,8 @@ Commands:
   website-logs   Show website logs
   website-domain [domain]
                Configure/change website domain + SSL
+  turnstile-config
+               Configure Cloudflare Turnstile captcha keys for website
   uninstall    Stop/disable services and remove alias
 EOF
 }
@@ -229,6 +231,44 @@ website_domain_cmd() {
   sudo bash "${WEBSITE_SCRIPT}" configure-domain "${1:-}"
 }
 
+configure_turnstile() {
+  local WEB_ENV="${PROJECT_DIR}/web/.env"
+  if [[ ! -f "${WEB_ENV}" ]]; then
+    echo "File web/.env tidak ditemukan. Jalankan 'jualan install-website' terlebih dahulu." >&2
+    exit 1
+  fi
+
+  echo "=== Konfigurasi Cloudflare Turnstile ==="
+  echo "Dapatkan key dari: https://dash.cloudflare.com/turnstile"
+  echo ""
+
+  local site_key secret_key
+  read -r -p "Turnstile Site Key: " site_key
+  read -r -p "Turnstile Secret Key: " secret_key
+
+  if [[ -z "${site_key}" || -z "${secret_key}" ]]; then
+    echo "Kedua key harus diisi. Batal." >&2
+    exit 1
+  fi
+
+  # Update or append to web/.env
+  if grep -q "^CLOUDFLARE_TURNSTILE_SITE_KEY=" "${WEB_ENV}"; then
+    sed -i "s|^CLOUDFLARE_TURNSTILE_SITE_KEY=.*|CLOUDFLARE_TURNSTILE_SITE_KEY=${site_key}|" "${WEB_ENV}"
+  else
+    printf '\nCLOUDFLARE_TURNSTILE_SITE_KEY=%s\n' "${site_key}" >> "${WEB_ENV}"
+  fi
+
+  if grep -q "^CLOUDFLARE_TURNSTILE_SECRET_KEY=" "${WEB_ENV}"; then
+    sed -i "s|^CLOUDFLARE_TURNSTILE_SECRET_KEY=.*|CLOUDFLARE_TURNSTILE_SECRET_KEY=${secret_key}|" "${WEB_ENV}"
+  else
+    printf 'CLOUDFLARE_TURNSTILE_SECRET_KEY=%s\n' "${secret_key}" >> "${WEB_ENV}"
+  fi
+
+  echo ""
+  echo "Turnstile key berhasil disimpan ke web/.env"
+  echo "Restart website agar perubahan aktif: jualan website-restart"
+}
+
 uninstall_bot() {
   local confirm
   read -r -p "Yakin uninstall bot service? ketik YES: " confirm
@@ -266,8 +306,9 @@ Panel Jualan
 15) website-restart
 16) website-logs
 17) website-domain
-18) uninstall-website
-19) uninstall bot service
+18) turnstile-config
+19) uninstall-website
+20) uninstall bot service
 0) keluar
 EOF
   read -r -p "Pilih menu: " choice
@@ -289,8 +330,9 @@ EOF
     15) website_restart_cmd ;;
     16) website_logs_cmd ;;
     17) website_domain_cmd ;;
-    18) sudo bash "${WEBSITE_SCRIPT}" uninstall ;;
-    19) uninstall_bot ;;
+    18) configure_turnstile ;;
+    19) sudo bash "${WEBSITE_SCRIPT}" uninstall ;;
+    20) uninstall_bot ;;
     0) exit 0 ;;
     *) echo "Pilihan tidak valid." ;;
   esac
@@ -316,6 +358,7 @@ case "${cmd}" in
   website-restart) website_restart_cmd ;;
   website-logs) website_logs_cmd ;;
   website-domain) website_domain_cmd "${2:-}" ;;
+  turnstile-config) configure_turnstile ;;
   uninstall-website) sudo bash "${WEBSITE_SCRIPT}" uninstall ;;
   uninstall) uninstall_bot ;;
   "") menu ;;

@@ -828,6 +828,136 @@
             color: #1d4ed8;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
         }
+
+        /* ===== Responsive: Tablet & Small Desktop ===== */
+        @media (max-width: 968px) {
+            body {
+                padding: 1rem;
+                align-items: flex-start;
+                padding-top: 2rem;
+            }
+
+            .login-wrapper {
+                border-radius: 24px;
+                flex-direction: column;
+                height: auto;
+                min-height: 0px;
+                max-width: 100%;
+            }
+
+            .login-section {
+                padding: 2.5rem 2rem;
+                border-radius: 24px;
+                box-shadow: none;
+            }
+
+            .info-section {
+                display: none;
+            }
+        }
+
+        /* ===== Responsive: Smartphones (425px and below) ===== */
+        @media (max-width: 480px) {
+            body {
+                padding: 0.5rem;
+                align-items: flex-start;
+                padding-top: 0.75rem;
+            }
+
+            .ambient-glow-1,
+            .ambient-glow-2 {
+                width: 300px;
+                height: 300px;
+            }
+
+            .login-wrapper {
+                border-radius: 20px;
+                min-height: 0;
+                box-shadow: rgba(0, 0, 0, 0.3) 0px 15px 30px -10px, rgba(59, 130, 246, 0.08) 0px 0px 60px -20px;
+            }
+
+            .login-section {
+                padding: 1.75rem 1.25rem;
+                border-radius: 20px;
+            }
+
+            .mb-8 {
+                margin-bottom: 1.25rem;
+            }
+
+            .mb-4 {
+                margin-bottom: 0.75rem;
+            }
+
+            .text-3xl {
+                font-size: 1.5rem;
+                line-height: 1.8rem;
+            }
+
+            .text-2xl {
+                font-size: 1.25rem;
+                line-height: 1.6rem;
+            }
+
+            .text-\[0\.8rem\] {
+                font-size: 0.7rem;
+            }
+
+            .form-control {
+                padding: 0.8rem 0.85rem 0.8rem 2.6rem;
+                border-radius: 14px;
+                font-size: 0.88rem;
+            }
+
+            .form-icon {
+                left: 0.9rem;
+                font-size: 0.95rem;
+            }
+
+            .btn-primary {
+                padding: 0.8rem;
+                border-radius: 14px;
+                font-size: 0.92rem;
+            }
+
+            .btn-outline {
+                padding: 0.75rem;
+                border-radius: 14px;
+                font-size: 0.88rem;
+            }
+
+            .auth-tabs-container {
+                padding: 4px;
+                border-radius: 14px;
+            }
+
+            .auth-tab-btn {
+                padding: 10px;
+                border-radius: 10px;
+                font-size: 0.88rem;
+            }
+
+            .mt-10 {
+                margin-top: 1.5rem;
+            }
+
+            .pt-6 {
+                padding-top: 1rem;
+            }
+
+            .gap-4 {
+                gap: 0.75rem;
+            }
+
+            .space-y-4 > :not([hidden]) ~ :not([hidden]) {
+                margin-top: 0.75rem;
+            }
+
+            .row.g-2 > [class*="col-"] {
+                flex: 0 0 100%;
+                max-width: 100%;
+            }
+        }
     </style>
 </head>
 <body style="cursor: default;">
