@@ -124,11 +124,9 @@
                         <td>
                             <div class="d-flex flex-column gap-1" style="line-height: 1.2;">
                                 <div>
-                                    <span class="text-secondary small d-inline-block" style="width: 55px; font-size: 0.72rem;">Tersedia:</span>
                                     <span class="fw-bold text-success" style="font-size: 0.85rem;">Rp {{ number_format($seller->wallet_balance ?? 0, 0, ',', '.') }}</span>
                                 </div>
                                 <div>
-                                    <span class="text-secondary small d-inline-block" style="width: 55px; font-size: 0.72rem;">Tertahan:</span>
                                     <span class="fw-bold text-warning" style="font-size: 0.85rem;">Rp {{ number_format($seller->held_balance ?? 0, 0, ',', '.') }}</span>
                                 </div>
                             </div>
