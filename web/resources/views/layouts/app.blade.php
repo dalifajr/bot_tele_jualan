@@ -100,7 +100,7 @@
 {{-- Top Navbar --}}
 <nav class="navbar navbar-expand fixed-top shadow-sm px-4 bg-body border-bottom" style="z-index: 1030; top: 0;">
     <div class="d-flex align-items-center gap-3">
-        <button class="btn btn-link link-body-emphasis text-decoration-none p-0" id="sidebarToggle" aria-label="Buka/Tutup Menu Navigasi">
+        <button class="btn btn-link link-body-emphasis text-decoration-none p-0 d-md-none" id="sidebarToggle" aria-label="Buka/Tutup Menu Navigasi">
             <i class="fas fa-bars fs-4"></i>
         </button>
         <div class="navbar-brand d-flex align-items-center gap-2 text-primary fw-bold m-0">

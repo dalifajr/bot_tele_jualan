@@ -85,6 +85,8 @@
                         <th class="py-3 border-0 text-center">Jumlah Produk</th>
                         <th class="py-3 border-0">Saldo Tersedia</th>
                         <th class="py-3 border-0">Saldo Tertahan</th>
+                        <th class="py-3 border-0">Kontribusi</th>
+                        <th class="py-3 border-0">Tren Penjualan</th>
                         <th class="py-3 border-0 text-end px-4">Aksi</th>
                     </tr>
                 </thead>
@@ -113,6 +115,34 @@
                         <td class="text-center fw-bold">{{ $seller->products_count }}</td>
                         <td class="fw-bold text-success">Rp {{ number_format($seller->wallet_balance ?? 0, 0, ',', '.') }}</td>
                         <td class="text-warning">Rp {{ number_format($seller->held_balance ?? 0, 0, ',', '.') }}</td>
+                        <td>
+                            <div class="fw-bold text-dark">{{ $seller->contribution_percentage }}%</div>
+                            <small class="text-muted" style="font-size: 0.72rem; display: block; white-space: nowrap;">Komisi: Rp {{ number_format($seller->commission_amount, 0, ',', '.') }}</small>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <svg viewBox="0 0 100 30" width="70" height="22" style="overflow: visible; flex-shrink: 0;">
+                                    <path d="{{ $seller->sparkline_path }}" fill="none" 
+                                          stroke="{{ $seller->trend_direction === 'up' ? '#20c997' : ($seller->trend_direction === 'down' ? '#dc3545' : '#6c757d') }}" 
+                                          stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                <div style="flex-shrink: 0;">
+                                    @if($seller->trend_direction === 'up')
+                                        <span class="badge bg-success-subtle text-success rounded-pill" style="font-size: 0.7rem; white-space: nowrap;">
+                                            <i class="fas fa-arrow-up me-1"></i>+{{ $seller->percentage_change }}%
+                                        </span>
+                                    @elseif($seller->trend_direction === 'down')
+                                        <span class="badge bg-danger-subtle text-danger rounded-pill" style="font-size: 0.7rem; white-space: nowrap;">
+                                            <i class="fas fa-arrow-down me-1"></i>{{ $seller->percentage_change }}%
+                                        </span>
+                                    @else
+                                        <span class="badge bg-secondary-subtle text-secondary rounded-pill" style="font-size: 0.7rem; white-space: nowrap;">
+                                            <i class="fas fa-minus me-1"></i>0.0%
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
+                        </td>
                         <td class="text-end px-4">
                             @if($seller->id !== Auth::id())
                             <div class="dropdown">
@@ -187,6 +217,7 @@
         @endif
     </div>
 </div>
+@endsection
 
 @push('modals')
 @foreach($sellers as $user)

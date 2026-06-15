@@ -433,12 +433,83 @@ class AdminController extends Controller
 
         $sellers = $query->paginate(10);
 
+        // Calculate total platform commission from ALL sellers to determine contribution denominator
+        $totalSellersCommission = \Illuminate\Support\Facades\DB::table('stock_units')
+            ->join('products', 'stock_units.product_id', '=', 'products.id')
+            ->join('users', 'stock_units.seller_id', '=', 'users.id')
+            ->where('stock_units.is_sold', true)
+            ->where('users.role', 'seller')
+            ->whereIn('stock_units.sold_order_id', function ($q) {
+                $q->select('id')->from('orders')->where('status', 'delivered');
+            })
+            ->selectRaw("SUM(products.price * COALESCE(users.platform_fee_percent, 10) / 100) as total")
+            ->value('total') ?? 0;
+
         foreach ($sellers as $seller) {
             $seller->products_count = \App\Models\Product::where('creator_id', $seller->id)->count();
             $seller->held_balance = (int) \Illuminate\Support\Facades\DB::table('held_funds')
                 ->where('seller_id', $seller->id)
                 ->where('status', 'held')
                 ->sum('amount');
+
+            // 1. Commission Contribution
+            $sellerCommission = \Illuminate\Support\Facades\DB::table('stock_units')
+                ->join('products', 'stock_units.product_id', '=', 'products.id')
+                ->where('stock_units.is_sold', true)
+                ->where('stock_units.seller_id', $seller->id)
+                ->whereIn('stock_units.sold_order_id', function ($q) {
+                    $q->select('id')->from('orders')->where('status', 'delivered');
+                })
+                ->selectRaw("SUM(products.price * " . (int)($seller->platform_fee_percent ?? 10) . " / 100) as total")
+                ->value('total') ?? 0;
+
+            $seller->commission_amount = $sellerCommission;
+            $seller->contribution_percentage = $totalSellersCommission > 0 
+                ? round(($sellerCommission / $totalSellersCommission) * 100, 1) 
+                : 0;
+
+            // 2. Sales Trend & Sparkline (last 14 days)
+            // Generate last 14 dates
+            $dates = [];
+            for ($i = 13; $i >= 0; $i--) {
+                $dates[] = now()->subDays($i)->format('Y-m-d');
+            }
+
+            $salesData = \Illuminate\Support\Facades\DB::table('stock_units')
+                ->join('products', 'stock_units.product_id', '=', 'products.id')
+                ->join('orders', 'stock_units.sold_order_id', '=', 'orders.id')
+                ->where('stock_units.seller_id', $seller->id)
+                ->where('stock_units.is_sold', true)
+                ->where('orders.status', 'delivered')
+                ->where('orders.created_at', '>=', now()->subDays(14)->startOfDay())
+                ->selectRaw("DATE(orders.created_at) as date, SUM(products.price) as total_sales")
+                ->groupBy('date')
+                ->get()
+                ->pluck('total_sales', 'date')
+                ->toArray();
+
+            $points = [];
+            foreach ($dates as $date) {
+                $points[$date] = $salesData[$date] ?? 0;
+            }
+
+            // Slice into two 7-day windows
+            $salesA = array_sum(array_slice($points, 7, 7)); // Current 7 days
+            $salesB = array_sum(array_slice($points, 0, 7)); // Previous 7 days
+
+            if ($salesB > 0) {
+                $seller->percentage_change = round((($salesA - $salesB) / $salesB) * 100, 1);
+            } else {
+                $seller->percentage_change = $salesA > 0 ? 100.0 : 0.0;
+            }
+
+            $seller->trend_direction = $seller->percentage_change > 0 
+                ? 'up' 
+                : ($seller->percentage_change < 0 ? 'down' : 'neutral');
+
+            // Generate sparkline path using the last 7 days data
+            $sparklinePoints = array_slice(array_values($points), 7, 7);
+            $seller->sparkline_path = $this->generateSparklinePath($sparklinePoints);
         }
 
         $totalSellers = User::where('role', 'seller')->count();
@@ -450,6 +521,31 @@ class AdminController extends Controller
         return view('admin.sellers.index', compact(
             'sellers', 'users', 'totalSellers', 'activeSellers', 'suspendedSellers'
         ));
+    }
+
+    private function generateSparklinePath($points) {
+        $count = count($points);
+        if ($count === 0) return 'M 0 15 L 100 15';
+        
+        $max = max($points);
+        $min = min($points);
+        $range = $max - $min;
+        
+        $width = 100;
+        $height = 30;
+        $padding = 2;
+        
+        $path = [];
+        for ($i = 0; $i < $count; $i++) {
+            $x = ($i / ($count - 1)) * $width;
+            if ($range > 0) {
+                $y = $height - (($points[$i] - $min) / $range) * ($height - 2 * $padding) - $padding;
+            } else {
+                $y = $height / 2;
+            }
+            $path[] = ($i === 0 ? 'M' : 'L') . " " . number_format($x, 1) . " " . number_format($y, 1);
+        }
+        return implode(' ', $path);
     }
 
     public function deleteUser($id)
