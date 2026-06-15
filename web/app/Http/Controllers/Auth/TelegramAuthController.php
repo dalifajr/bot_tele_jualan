@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Auth;
 
 use App\Models\TelegramLoginToken;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use App\Http\Controllers\Controller;
 
@@ -35,22 +37,21 @@ class TelegramAuthController extends Controller
         }
 
         // Create pending login token (must be < 64 chars total with prefix for Telegram start param)
-        $botUsername = config('telegram.bot_username');
         $ttlMinutes = config('telegram.login_token_ttl_minutes', 5);
 
         // Generate shorter token (8 chars) so Telegram deep link doesn't reject it
-        $token = \Illuminate\Support\Str::random(8);
+        $token = Str::random(8);
 
         TelegramLoginToken::create([
             'token' => $token,
             'status' => 'pending',
             'ip_address' => $request->ip(),
             'user_agent' => $request->userAgent(),
-            'expires_at' => now()->addMinutes($ttlMinutes),
+            'expires_at' => Carbon::now('UTC')->addMinutes($ttlMinutes),
         ]);
 
-        // Redirect to Telegram deep-link (using ?text= to ensure it pre-fills the message box, avoiding Telegram Desktop bugs)
-        $telegramUrl = "https://t.me/{$botUsername}?text=/start%20weblogin_{$token}";
+        // Redirect to Telegram deep-link using ?start= for automatic trigger
+        $telegramUrl = "https://t.me/{$botUsername}?start=weblogin_{$token}";
 
         return redirect()->away($telegramUrl);
     }
@@ -66,21 +67,51 @@ class TelegramAuthController extends Controller
             return redirect()->route('login')->with('error', 'Token login tidak valid.');
         }
 
-        // Find verified, non-expired, unused token
+        $nowUtc = Carbon::now('UTC');
+
+        // Find verified, non-expired, unused token.
+        // Use whereRaw with strftime to handle potential microsecond precision
+        // differences between Python (bot) and PHP (website) datetime formats.
         $record = TelegramLoginToken::where('link_token', $linkToken)
             ->where('status', 'verified')
-            ->where('link_expires_at', '>', now())
+            ->whereRaw("strftime('%Y-%m-%d %H:%M:%S', link_expires_at) > ?", [$nowUtc->format('Y-m-d H:i:s')])
             ->whereNull('used_at')
             ->first();
 
+        // Fallback: try standard comparison if strftime-based query didn't work (e.g. MySQL)
         if (!$record) {
+            $record = TelegramLoginToken::where('link_token', $linkToken)
+                ->where('status', 'verified')
+                ->where('link_expires_at', '>', $nowUtc)
+                ->whereNull('used_at')
+                ->first();
+        }
+
+        if (!$record) {
+            // Log debug info for diagnosis
+            $debugRecord = TelegramLoginToken::where('link_token', $linkToken)->first();
+            if ($debugRecord) {
+                Log::warning('Telegram login callback failed', [
+                    'link_token' => substr($linkToken, 0, 10) . '...',
+                    'status' => $debugRecord->status,
+                    'link_expires_at' => $debugRecord->link_expires_at,
+                    'used_at' => $debugRecord->used_at,
+                    'now_utc' => $nowUtc->toDateTimeString(),
+                    'is_expired' => $debugRecord->link_expires_at ? Carbon::parse($debugRecord->link_expires_at)->lt($nowUtc) : 'null',
+                ]);
+            } else {
+                Log::warning('Telegram login callback: link_token not found in DB', [
+                    'link_token_prefix' => substr($linkToken, 0, 10) . '...',
+                ]);
+            }
+
             return redirect()->route('login')->with('error', 'Link login sudah kedaluwarsa atau sudah digunakan. Silakan coba lagi.');
         }
 
         // Mark token as used
         $record->update([
             'status' => 'used',
-            'used_at' => now(),
+            'used_at' => $nowUtc,
         ]);
 
         // Find or create user

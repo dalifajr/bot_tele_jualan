@@ -102,6 +102,8 @@ Commands:
                Configure/change website domain + SSL
   turnstile-config
                Configure Cloudflare Turnstile captcha keys for website
+  reset-password [username]
+               Reset password for a website admin user
   uninstall    Stop/disable services and remove alias
 EOF
 }
@@ -286,6 +288,121 @@ uninstall_bot() {
   echo "Uninstall selesai (kode project tidak dihapus)."
 }
 
+reset_admin_password() {
+  local target_username="${1:-}"
+  local WEB_DIR="${PROJECT_DIR}/web"
+
+  if [[ ! -f "${WEB_DIR}/artisan" ]]; then
+    echo "Laravel project tidak ditemukan di ${WEB_DIR}." >&2
+    exit 1
+  fi
+
+  echo "=== Reset Password Admin Website ==="
+  echo ""
+
+  # Fetch admin list from database
+  local admin_list
+  admin_list=$(php "${WEB_DIR}/artisan" tinker --execute="\
+    \$admins = App\\Models\\User::where('role','admin')->get(['id','username','full_name','email']);\
+    if(\$admins->isEmpty()){echo '__EMPTY__';return;}\
+    foreach(\$admins as \$a){echo \$a->id.'|'.\$a->username.'|'.(\$a->full_name??'-').'|'.(\$a->email??'-').PHP_EOL;}\
+  " 2>/dev/null)
+
+  if [[ -z "${admin_list}" || "${admin_list}" == *"__EMPTY__"* ]]; then
+    echo "Tidak ada user admin ditemukan di database."
+    exit 1
+  fi
+
+  # Count admins
+  local admin_count
+  admin_count=$(echo "${admin_list}" | grep -c '|')
+
+  if [[ -z "${target_username}" ]]; then
+    if [[ "${admin_count}" -le 1 ]]; then
+      # Only one admin, auto-select
+      target_username=$(echo "${admin_list}" | head -1 | cut -d'|' -f2)
+      echo "Admin ditemukan: ${target_username}"
+    else
+      # Multiple admins, show list
+      echo "Ditemukan ${admin_count} admin:"
+      echo "-------------------------------------------"
+      printf "%-4s %-20s %-25s %s\n" "No" "Username" "Nama" "Email"
+      echo "-------------------------------------------"
+      local idx=1
+      while IFS='|' read -r id uname fname email; do
+        [[ -z "${id}" ]] && continue
+        printf "%-4s %-20s %-25s %s\n" "${idx})" "${uname}" "${fname}" "${email}"
+        idx=$((idx + 1))
+      done <<< "${admin_list}"
+      echo "-------------------------------------------"
+      echo ""
+      read -r -p "Masukkan username admin yang ingin direset: " target_username
+    fi
+  fi
+
+  if [[ -z "${target_username}" ]]; then
+    echo "Username tidak boleh kosong. Batal."
+    exit 1
+  fi
+
+  # Verify the username exists and is admin
+  local verify
+  verify=$(php "${WEB_DIR}/artisan" tinker --execute="\
+    \$u = App\\Models\\User::where('username','${target_username}')->where('role','admin')->first();\
+    echo \$u ? 'FOUND' : 'NOT_FOUND';\
+  " 2>/dev/null)
+
+  if [[ "${verify}" != *"FOUND"* || "${verify}" == *"NOT_FOUND"* ]]; then
+    echo "Admin dengan username '${target_username}' tidak ditemukan." >&2
+    exit 1
+  fi
+
+  echo ""
+  local new_password new_password_confirm
+  read -r -s -p "Password baru: " new_password
+  echo ""
+  read -r -s -p "Ulangi password baru: " new_password_confirm
+  echo ""
+
+  if [[ -z "${new_password}" ]]; then
+    echo "Password tidak boleh kosong. Batal."
+    exit 1
+  fi
+
+  if [[ "${new_password}" != "${new_password_confirm}" ]]; then
+    echo "Password tidak cocok. Batal."
+    exit 1
+  fi
+
+  if [[ ${#new_password} -lt 6 ]]; then
+    echo "Password minimal 6 karakter. Batal."
+    exit 1
+  fi
+
+  # Escape single quotes in password for PHP
+  local escaped_pw
+  escaped_pw="${new_password//\'/\\\'}"
+
+  local result
+  result=$(php "${WEB_DIR}/artisan" tinker --execute="\
+    \$u = App\\Models\\User::where('username','${target_username}')->where('role','admin')->first();\
+    if(!\$u){echo 'FAIL';return;}\
+    \$u->password = Illuminate\\Support\\Facades\\Hash::make('${escaped_pw}');\
+    \$u->save();\
+    echo 'OK';\
+  " 2>/dev/null)
+
+  if [[ "${result}" == *"OK"* ]]; then
+    echo ""
+    echo "Password admin '${target_username}' berhasil direset."
+    echo "Silakan login ke website menggunakan password baru."
+  else
+    echo ""
+    echo "Gagal mereset password. Silakan coba lagi." >&2
+    exit 1
+  fi
+}
+
 menu() {
   cat <<'EOF'
 Panel Jualan
@@ -307,8 +424,9 @@ Panel Jualan
 16) website-logs
 17) website-domain
 18) turnstile-config
-19) uninstall-website
-20) uninstall bot service
+19) reset-password
+20) uninstall-website
+21) uninstall bot service
 0) keluar
 EOF
   read -r -p "Pilih menu: " choice
@@ -331,8 +449,9 @@ EOF
     16) website_logs_cmd ;;
     17) website_domain_cmd ;;
     18) configure_turnstile ;;
-    19) sudo bash "${WEBSITE_SCRIPT}" uninstall ;;
-    20) uninstall_bot ;;
+    19) reset_admin_password ;;
+    20) sudo bash "${WEBSITE_SCRIPT}" uninstall ;;
+    21) uninstall_bot ;;
     0) exit 0 ;;
     *) echo "Pilihan tidak valid." ;;
   esac
@@ -359,6 +478,7 @@ case "${cmd}" in
   website-logs) website_logs_cmd ;;
   website-domain) website_domain_cmd "${2:-}" ;;
   turnstile-config) configure_turnstile ;;
+  reset-password) reset_admin_password "${2:-}" ;;
   uninstall-website) sudo bash "${WEBSITE_SCRIPT}" uninstall ;;
   uninstall) uninstall_bot ;;
   "") menu ;;
