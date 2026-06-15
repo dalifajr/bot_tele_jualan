@@ -4,14 +4,20 @@
  * Handles: theme toggle, sidebar, page loader, CSRF, WebApp login
  */
 
-document.addEventListener('DOMContentLoaded', () => {
+function initAll() {
     initThemeToggle();
     initSidebar();
     initPageLoader();
     initCsrfToken();
     initTelegramWebApp();
     initSweetAlertConfirms();
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAll);
+} else {
+    initAll();
+}
 
 /* === THEME TOGGLE (Dark/Light) === */
 function initThemeToggle() {

@@ -433,23 +433,61 @@ class AdminController extends Controller
 
         $sellers = $query->paginate(10);
 
-        // Calculate total platform commission from ALL sellers to determine contribution denominator
+        // Determine period filter limits
+        $period = $request->input('period', '7_days');
+        if ($period === '30_days') {
+            $currentPeriodStartDate = now()->subDays(30)->startOfDay();
+            $startDate = now()->subDays(60)->startOfDay();
+            $totalPointsCount = 60;
+            $sparklineLength = 30;
+            $dateFormat = 'Y-m-d';
+            $dateStep = 'day';
+        } elseif ($period === '6_months') {
+            $currentPeriodStartDate = now()->subMonths(6)->startOfMonth()->startOfDay();
+            $startDate = now()->subMonths(12)->startOfMonth()->startOfDay();
+            $totalPointsCount = 12;
+            $sparklineLength = 6;
+            $dateFormat = 'Y-m';
+            $dateStep = 'month';
+        } elseif ($period === '1_year') {
+            $currentPeriodStartDate = now()->subMonths(12)->startOfMonth()->startOfDay();
+            $startDate = now()->subMonths(24)->startOfMonth()->startOfDay();
+            $totalPointsCount = 24;
+            $sparklineLength = 12;
+            $dateFormat = 'Y-m';
+            $dateStep = 'month';
+        } else { // 7_days (default)
+            $currentPeriodStartDate = now()->subDays(7)->startOfDay();
+            $startDate = now()->subDays(14)->startOfDay();
+            $totalPointsCount = 14;
+            $sparklineLength = 7;
+            $dateFormat = 'Y-m-d';
+            $dateStep = 'day';
+        }
+
+        // Calculate total platform commission from ALL sellers in the selected period
         $totalSellersCommission = \Illuminate\Support\Facades\DB::table('stock_units')
             ->join('products', 'stock_units.product_id', '=', 'products.id')
             ->join('users', 'stock_units.seller_id', '=', 'users.id')
             ->where('stock_units.is_sold', true)
             ->where('users.role', 'seller')
-            ->whereIn('stock_units.sold_order_id', function ($q) {
-                $q->select('id')->from('orders')->where('status', 'delivered');
+            ->whereIn('stock_units.sold_order_id', function ($q) use ($currentPeriodStartDate) {
+                $q->select('id')->from('orders')
+                  ->where('status', 'delivered')
+                  ->where('orders.created_at', '>=', $currentPeriodStartDate);
             })
             ->selectRaw("SUM(products.price * COALESCE(users.platform_fee_percent, 10) / 100) as total")
             ->value('total') ?? 0;
 
         foreach ($sellers as $seller) {
             $seller->products_count = \App\Models\Product::where('creator_id', $seller->id)->count();
+            
+            // Available Wallet balance is absolute and does not depend on date filter
+            // Held balance is filtered by period limit
             $seller->held_balance = (int) \Illuminate\Support\Facades\DB::table('held_funds')
                 ->where('seller_id', $seller->id)
                 ->where('status', 'held')
+                ->where('created_at', '>=', $currentPeriodStartDate)
                 ->sum('amount');
 
             // 1. Commission Contribution
@@ -457,8 +495,10 @@ class AdminController extends Controller
                 ->join('products', 'stock_units.product_id', '=', 'products.id')
                 ->where('stock_units.is_sold', true)
                 ->where('stock_units.seller_id', $seller->id)
-                ->whereIn('stock_units.sold_order_id', function ($q) {
-                    $q->select('id')->from('orders')->where('status', 'delivered');
+                ->whereIn('stock_units.sold_order_id', function ($q) use ($currentPeriodStartDate) {
+                    $q->select('id')->from('orders')
+                      ->where('status', 'delivered')
+                      ->where('orders.created_at', '>=', $currentPeriodStartDate);
                 })
                 ->selectRaw("SUM(products.price * " . (int)($seller->platform_fee_percent ?? 10) . " / 100) as total")
                 ->value('total') ?? 0;
@@ -468,11 +508,29 @@ class AdminController extends Controller
                 ? round(($sellerCommission / $totalSellersCommission) * 100, 1) 
                 : 0;
 
-            // 2. Sales Trend & Sparkline (last 14 days)
-            // Generate last 14 dates
+            // 2. Total Net Sales Earnings (Total Pendapatan Bersih)
+            $sellerNetEarnings = \Illuminate\Support\Facades\DB::table('stock_units')
+                ->join('products', 'stock_units.product_id', '=', 'products.id')
+                ->where('stock_units.is_sold', true)
+                ->where('stock_units.seller_id', $seller->id)
+                ->whereIn('stock_units.sold_order_id', function ($q) use ($currentPeriodStartDate) {
+                    $q->select('id')->from('orders')
+                      ->where('status', 'delivered')
+                      ->where('orders.created_at', '>=', $currentPeriodStartDate);
+                })
+                ->selectRaw("SUM(products.price - (products.price * " . (int)($seller->platform_fee_percent ?? 10) . " / 100)) as total")
+                ->value('total') ?? 0;
+            
+            $seller->net_earnings = $sellerNetEarnings;
+
+            // 3. Sales Trend & Sparkline (last 14 days / 60 days / 12 months / 24 months)
             $dates = [];
-            for ($i = 13; $i >= 0; $i--) {
-                $dates[] = now()->subDays($i)->format('Y-m-d');
+            for ($i = $totalPointsCount - 1; $i >= 0; $i--) {
+                if ($dateStep === 'month') {
+                    $dates[] = now()->subMonths($i)->format('Y-m');
+                } else {
+                    $dates[] = now()->subDays($i)->format('Y-m-d');
+                }
             }
 
             $salesData = \Illuminate\Support\Facades\DB::table('stock_units')
@@ -481,21 +539,27 @@ class AdminController extends Controller
                 ->where('stock_units.seller_id', $seller->id)
                 ->where('stock_units.is_sold', true)
                 ->where('orders.status', 'delivered')
-                ->where('orders.created_at', '>=', now()->subDays(14)->startOfDay())
-                ->selectRaw("DATE(orders.created_at) as date, SUM(products.price) as total_sales")
-                ->groupBy('date')
-                ->get()
-                ->pluck('total_sales', 'date')
-                ->toArray();
+                ->where('orders.created_at', '>=', $startDate)
+                ->selectRaw("orders.created_at, products.price")
+                ->get();
+
+            $salesByDate = [];
+            foreach ($salesData as $row) {
+                $formattedDate = date($dateFormat, strtotime($row->created_at));
+                if (!isset($salesByDate[$formattedDate])) {
+                    $salesByDate[$formattedDate] = 0;
+                }
+                $salesByDate[$formattedDate] += $row->price;
+            }
 
             $points = [];
             foreach ($dates as $date) {
-                $points[$date] = $salesData[$date] ?? 0;
+                $points[] = $salesByDate[$date] ?? 0;
             }
 
-            // Slice into two 7-day windows
-            $salesA = array_sum(array_slice($points, 7, 7)); // Current 7 days
-            $salesB = array_sum(array_slice($points, 0, 7)); // Previous 7 days
+            // Slice into two halves (current vs previous)
+            $salesA = array_sum(array_slice($points, $sparklineLength, $sparklineLength)); // Current period
+            $salesB = array_sum(array_slice($points, 0, $sparklineLength)); // Previous period
 
             if ($salesB > 0) {
                 $seller->percentage_change = round((($salesA - $salesB) / $salesB) * 100, 1);
@@ -507,8 +571,8 @@ class AdminController extends Controller
                 ? 'up' 
                 : ($seller->percentage_change < 0 ? 'down' : 'neutral');
 
-            // Generate sparkline path using the last 7 days data
-            $sparklinePoints = array_slice(array_values($points), 7, 7);
+            // Generate sparkline path using the last half (current period)
+            $sparklinePoints = array_slice($points, $sparklineLength, $sparklineLength);
             $seller->sparkline_path = $this->generateSparklinePath($sparklinePoints);
         }
 

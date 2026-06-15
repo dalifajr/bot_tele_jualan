@@ -42,22 +42,30 @@
 <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
     <div class="card-body p-3">
         <form action="{{ route('admin.sellers.index') }}" method="GET" class="row g-2 align-items-center">
-            <div class="col-md-5">
+            <div class="col-md-4">
                 <div class="input-group">
                     <span class="input-group-text bg-light border-0"><i class="fas fa-search text-muted"></i></span>
                     <input type="text" name="search" class="form-control border-0 bg-light" placeholder="Cari username, nama, email, atau ID Telegram..." value="{{ request('search') }}">
                 </div>
             </div>
-            <div class="col-md-3 col-6">
+            <div class="col-md-2 col-6">
                 <select name="status" class="form-select border-0 bg-light">
                     <option value="">Semua Status</option>
                     <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Aktif</option>
                     <option value="suspended" {{ request('status') === 'suspended' ? 'selected' : '' }}>Ditangguhkan</option>
                 </select>
             </div>
-            <div class="col-md-4 col-6 d-flex gap-2 justify-content-end">
+            <div class="col-md-3 col-6">
+                <select name="period" class="form-select border-0 bg-light">
+                    <option value="7_days" {{ request('period') === '7_days' || !request('period') ? 'selected' : '' }}>7 Hari Terakhir</option>
+                    <option value="30_days" {{ request('period') === '30_days' ? 'selected' : '' }}>30 Hari Terakhir</option>
+                    <option value="6_months" {{ request('period') === '6_months' ? 'selected' : '' }}>6 Bulan Terakhir</option>
+                    <option value="1_year" {{ request('period') === '1_year' ? 'selected' : '' }}>1 Tahun Terakhir</option>
+                </select>
+            </div>
+            <div class="col-md-3 col-12 d-flex gap-2 justify-content-end">
                 <button type="submit" class="btn btn-primary px-3 rounded-pill flex-fill">Cari & Filter</button>
-                @if(request('search') || request('status'))
+                @if(request('search') || request('status') || request('period'))
                     <a href="{{ route('admin.sellers.index') }}" class="btn btn-light px-3 rounded-pill">Reset</a>
                 @endif
             </div>
@@ -83,8 +91,8 @@
                         <th class="py-3 border-0">Nama Seller & Telegram</th>
                         <th class="py-3 border-0">Status</th>
                         <th class="py-3 border-0 text-center">Jumlah Produk</th>
-                        <th class="py-3 border-0">Saldo Tersedia</th>
-                        <th class="py-3 border-0">Saldo Tertahan</th>
+                        <th class="py-3 border-0">Saldo Seller</th>
+                        <th class="py-3 border-0">Pendapatan Bersih</th>
                         <th class="py-3 border-0">Kontribusi</th>
                         <th class="py-3 border-0">Tren Penjualan</th>
                         <th class="py-3 border-0 text-end px-4">Aksi</th>
@@ -113,8 +121,21 @@
                             @endif
                         </td>
                         <td class="text-center fw-bold">{{ $seller->products_count }}</td>
-                        <td class="fw-bold text-success">Rp {{ number_format($seller->wallet_balance ?? 0, 0, ',', '.') }}</td>
-                        <td class="text-warning">Rp {{ number_format($seller->held_balance ?? 0, 0, ',', '.') }}</td>
+                        <td>
+                            <div class="d-flex flex-column gap-1" style="line-height: 1.2;">
+                                <div>
+                                    <span class="text-secondary small d-inline-block" style="width: 55px; font-size: 0.72rem;">Tersedia:</span>
+                                    <span class="fw-bold text-success" style="font-size: 0.85rem;">Rp {{ number_format($seller->wallet_balance ?? 0, 0, ',', '.') }}</span>
+                                </div>
+                                <div>
+                                    <span class="text-secondary small d-inline-block" style="width: 55px; font-size: 0.72rem;">Tertahan:</span>
+                                    <span class="fw-bold text-warning" style="font-size: 0.85rem;">Rp {{ number_format($seller->held_balance ?? 0, 0, ',', '.') }}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="fw-bold text-primary" style="font-size: 0.88rem;">Rp {{ number_format($seller->net_earnings ?? 0, 0, ',', '.') }}</div>
+                        </td>
                         <td>
                             <div class="fw-bold text-dark">{{ $seller->contribution_percentage }}%</div>
                             <small class="text-muted" style="font-size: 0.72rem; display: block; white-space: nowrap;">Komisi: Rp {{ number_format($seller->commission_amount, 0, ',', '.') }}</small>
