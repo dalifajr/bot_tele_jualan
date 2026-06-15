@@ -70,22 +70,13 @@ class TelegramAuthController extends Controller
         $nowUtc = Carbon::now('UTC');
 
         // Find verified, non-expired, unused token.
-        // Use whereRaw with strftime to handle potential microsecond precision
-        // differences between Python (bot) and PHP (website) datetime formats.
+        // Carbon formats as 'Y-m-d H:i:s' (no microseconds), which compares
+        // correctly against both MySQL DATETIME and SQLite text columns.
         $record = TelegramLoginToken::where('link_token', $linkToken)
             ->where('status', 'verified')
-            ->whereRaw("strftime('%Y-%m-%d %H:%M:%S', link_expires_at) > ?", [$nowUtc->format('Y-m-d H:i:s')])
+            ->where('link_expires_at', '>', $nowUtc->format('Y-m-d H:i:s'))
             ->whereNull('used_at')
             ->first();
-
-        // Fallback: try standard comparison if strftime-based query didn't work (e.g. MySQL)
-        if (!$record) {
-            $record = TelegramLoginToken::where('link_token', $linkToken)
-                ->where('status', 'verified')
-                ->where('link_expires_at', '>', $nowUtc)
-                ->whereNull('used_at')
-                ->first();
-        }
 
         if (!$record) {
             // Log debug info for diagnosis
