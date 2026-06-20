@@ -27,9 +27,11 @@ Route::get('/admin/broadcast/run-bg/{jobId}', [\App\Http\Controllers\AdminContro
 */
 Route::post('/api/check-telegram-id', [\App\Http\Controllers\ProfileController::class, 'checkTelegramId'])->name('api.check.telegram');
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login')->middleware(\App\Http\Middleware\TrackVisitor::class);
-Route::post('/login/password', [AuthController::class, 'login'])->name('login.post');
-Route::post('/register', [AuthController::class, 'register'])->name('register.post');
+Route::post('/login/password', [AuthController::class, 'login'])->name('login.post')->middleware('throttle:5,1');
+Route::post('/register', [AuthController::class, 'register'])->name('register.post')->middleware('throttle:3,1');
 Route::get('/suspended', [AuthController::class, 'suspended'])->name('suspended');
+Route::get('/auth/two-factor', [AuthController::class, 'showTwoFactor'])->name('auth.two-factor');
+Route::post('/auth/two-factor/verify', [AuthController::class, 'verifyTwoFactor'])->name('auth.two-factor.verify');
 
 // Language Switcher
 Route::get('/lang/{locale}', function ($locale) {
@@ -40,7 +42,7 @@ Route::get('/lang/{locale}', function ($locale) {
 })->name('lang.switch');
 
 // Telegram Login Flow
-Route::post('/auth/telegram/request', [TelegramAuthController::class, 'requestLogin'])->name('auth.telegram.request');
+Route::post('/auth/telegram/request', [TelegramAuthController::class, 'requestLogin'])->name('auth.telegram.request')->middleware('throttle:5,1');
 Route::get('/auth/telegram/callback', [TelegramAuthController::class, 'callback'])->name('auth.telegram.callback');
 Route::post('/auth/telegram/webapp', [TelegramAuthController::class, 'webAppLogin'])->name('auth.telegram.webapp');
 Route::post('/logout', [TelegramAuthController::class, 'logout'])->name('logout');
@@ -49,6 +51,7 @@ Route::post('/logout', [TelegramAuthController::class, 'logout'])->name('logout'
 |--------------------------------------------------------------------------
 | Protected Routes (require Telegram authentication)
 |--------------------------------------------------------------------------
+|
 */
 Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
     // Dashboard
@@ -80,6 +83,7 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
     Route::post('/profile/password', [\App\Http\Controllers\Auth\AuthController::class, 'updatePassword'])->name('profile.password.update');
     Route::post('/profile/telegram-link', [\App\Http\Controllers\ProfileController::class, 'generateTelegramLink'])->name('profile.telegram.link');
     Route::post('/profile/telegram-unlink', [\App\Http\Controllers\ProfileController::class, 'unlinkTelegram'])->name('profile.telegram.unlink');
+    Route::post('/profile/2fa/toggle', [\App\Http\Controllers\Auth\AuthController::class, 'toggleTwoFactor'])->name('profile.2fa.toggle');
 
     Route::post('/admin/stop-impersonating', [\App\Http\Controllers\AdminController::class, 'stopImpersonating'])->name('admin.users.stop-impersonating');
 
@@ -99,7 +103,7 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         Route::get('/products/{id}/manage', [\App\Http\Controllers\AdminController::class, 'manageProduct'])->name('products.manage');
         
         Route::get('/stock', [\App\Http\Controllers\AdminController::class, 'stock'])->name('stock.index');
-        Route::get('/stock/export', [\App\Http\Controllers\AdminController::class, 'exportStock'])->name('stock.export');
+        Route::match(['get', 'post'], '/stock/export', [\App\Http\Controllers\AdminController::class, 'exportStock'])->name('stock.export');
         Route::post('/stock', [\App\Http\Controllers\AdminController::class, 'storeStock'])->name('stock.store');
         Route::post('/stock/bulk-move', [\App\Http\Controllers\AdminController::class, 'bulkMoveStock'])->name('stock.bulkMove');
         Route::post('/stock/bulk-delete', [\App\Http\Controllers\AdminController::class, 'bulkDestroyStock'])->name('stock.bulkDestroy');
@@ -117,7 +121,7 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         
         Route::get('/users', [\App\Http\Controllers\AdminController::class, 'users'])->name('users.index');
         Route::get('/sellers', [\App\Http\Controllers\AdminController::class, 'sellers'])->name('sellers.index');
-        Route::get('/users/export', [\App\Http\Controllers\AdminController::class, 'exportUsers'])->name('users.export');
+        Route::match(['get', 'post'], '/users/export', [\App\Http\Controllers\AdminController::class, 'exportUsers'])->name('users.export');
         Route::put('/users/{id}', [\App\Http\Controllers\AdminController::class, 'updateUser'])->name('users.update');
         Route::delete('/users/{id}', [\App\Http\Controllers\AdminController::class, 'deleteUser'])->name('users.destroy');
         Route::post('/users/{id}/suspend', [\App\Http\Controllers\AdminController::class, 'suspendUser'])->name('users.suspend');

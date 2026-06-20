@@ -180,7 +180,33 @@
                 </div>
             </div>
             <div class="card-body px-4 pb-4">
-                <div id="salesChart" style="min-height: 350px;"></div>
+                <div id="salesChart" style="min-height: 350px;">
+                    <!-- Skeleton Chart Loading Placeholder -->
+                    <div class="skeleton-chart d-flex flex-column justify-content-between h-100 p-3" style="min-height: 350px;">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <div class="skeleton-shimmer" style="width: 120px; height: 16px;"></div>
+                            <div class="skeleton-shimmer" style="width: 80px; height: 16px;"></div>
+                        </div>
+                        <div class="d-flex align-items-end justify-content-between flex-grow-1 mb-3" style="height: 200px; gap: 8px;">
+                            <div class="skeleton-shimmer flex-grow-1" style="height: 40%; border-radius: 4px;"></div>
+                            <div class="skeleton-shimmer flex-grow-1" style="height: 60%; border-radius: 4px;"></div>
+                            <div class="skeleton-shimmer flex-grow-1" style="height: 35%; border-radius: 4px;"></div>
+                            <div class="skeleton-shimmer flex-grow-1" style="height: 75%; border-radius: 4px;"></div>
+                            <div class="skeleton-shimmer flex-grow-1" style="height: 50%; border-radius: 4px;"></div>
+                            <div class="skeleton-shimmer flex-grow-1" style="height: 90%; border-radius: 4px;"></div>
+                            <div class="skeleton-shimmer flex-grow-1" style="height: 45%; border-radius: 4px;"></div>
+                            <div class="skeleton-shimmer flex-grow-1" style="height: 80%; border-radius: 4px;"></div>
+                            <div class="skeleton-shimmer flex-grow-1" style="height: 65%; border-radius: 4px;"></div>
+                            <div class="skeleton-shimmer flex-grow-1" style="height: 70%; border-radius: 4px;"></div>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <div class="skeleton-shimmer" style="width: 40px; height: 12px;"></div>
+                            <div class="skeleton-shimmer" style="width: 40px; height: 12px;"></div>
+                            <div class="skeleton-shimmer" style="width: 40px; height: 12px;"></div>
+                            <div class="skeleton-shimmer" style="width: 40px; height: 12px;"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -193,7 +219,12 @@
                 <p class="text-muted small mb-0">Persentase sukses vs batal/expired</p>
             </div>
             <div class="card-body d-flex flex-column justify-content-center align-items-center px-4 pb-4">
-                <div id="completionChart" style="min-height: 250px;"></div>
+                <div id="completionChart" style="min-height: 250px; display: flex; align-items: center; justify-content: center; width: 100%;">
+                    <!-- Skeleton Donut Loading Placeholder -->
+                    <div class="skeleton-donut skeleton-shimmer rounded-circle" style="width: 180px; height: 180px; display: flex; align-items: center; justify-content: center; position: relative;">
+                        <div class="bg-body rounded-circle" style="width: 120px; height: 120px; position: absolute; top: 30px; left: 30px;"></div>
+                    </div>
+                </div>
                 <div class="d-flex justify-content-around w-100 mt-3 border-top pt-3">
                     <div class="text-center">
                         <span class="d-block text-muted small">Sukses</span>
@@ -345,6 +376,17 @@
                         size: '75%',
                         labels: {
                             show: true,
+                            name: {
+                                show: true,
+                                color: isDark ? '#a0aec0' : '#4a5568'
+                            },
+                            value: {
+                                show: true,
+                                color: isDark ? '#ffffff' : '#0f172a',
+                                formatter: function (val) {
+                                    return val;
+                                }
+                            },
                             total: {
                                 show: true,
                                 label: 'Total Pesanan',
@@ -377,7 +419,18 @@
                     });
                     
                     completionChart.updateOptions({
-                        theme: { mode: newTheme }
+                        theme: { mode: newTheme },
+                        plotOptions: {
+                            pie: {
+                                donut: {
+                                    labels: {
+                                        name: { color: isNewDark ? '#a0aec0' : '#4a5568' },
+                                        value: { color: isNewDark ? '#ffffff' : '#0f172a' },
+                                        total: { color: isNewDark ? '#a0aec0' : '#4a5568' }
+                                    }
+                                }
+                            }
+                        }
                     });
                 }
             });

@@ -14,6 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('orders:release-expired')->everyMinute();
         $schedule->command('funds:release-held')->hourly();
         $schedule->command('app:auto-backup')->hourly();
+        $schedule->command('tokens:clean')->daily();
     })
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [

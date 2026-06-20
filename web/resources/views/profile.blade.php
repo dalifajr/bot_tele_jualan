@@ -134,6 +134,23 @@
                         </form>
                     @endif
 
+                    {{-- Tombol Toggle 2FA --}}
+                    <form action="{{ route('profile.2fa.toggle') }}" method="POST">
+                        @csrf
+                        <button type="submit" class="quick-action-btn w-100 {{ Auth::user()->two_factor_enabled ? 'border-success' : 'border-secondary' }} text-start">
+                            <div class="qa-icon" style="{{ Auth::user()->two_factor_enabled ? 'background: #e8f5e9;' : 'background: #f5f5f5;' }}">
+                                <i class="fas fa-shield-alt {{ Auth::user()->two_factor_enabled ? 'text-success' : 'text-secondary' }}"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold {{ Auth::user()->two_factor_enabled ? 'text-success' : 'text-secondary' }}">Verifikasi Dua Langkah (2FA)</div>
+                                <small class="text-muted">Kirim OTP via Telegram saat login (Status: <strong>{{ Auth::user()->two_factor_enabled ? 'Aktif' : 'Nonaktif' }}</strong>)</small>
+                            </div>
+                            <span class="badge {{ Auth::user()->two_factor_enabled ? 'bg-success' : 'bg-secondary' }} rounded-pill ms-auto">
+                                {{ Auth::user()->two_factor_enabled ? 'Aktif' : 'Nonaktif' }}
+                            </span>
+                        </button>
+                    </form>
+
                     <form action="{{ route('logout') }}" method="POST">
                         @csrf
                         <button type="submit" class="quick-action-btn w-100 border-danger text-start">

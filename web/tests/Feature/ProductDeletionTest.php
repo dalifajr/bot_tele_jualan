@@ -214,6 +214,6 @@ class ProductDeletionTest extends TestCase
         $response->assertSessionHas('success');
 
         // Verify product is deleted
-        $this->assertDatabaseMissing('products', ['id' => $product->id]);
+        $this->assertSoftDeleted($product);
     }
 }

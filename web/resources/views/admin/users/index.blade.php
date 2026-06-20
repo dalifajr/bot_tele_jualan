@@ -70,9 +70,9 @@
                 @if(request('search') || request('role'))
                     <a href="{{ route('admin.users.index') }}" class="btn btn-light px-3 rounded-pill">Reset</a>
                 @endif
-                <a href="{{ route('admin.users.export', request()->all()) }}" class="btn btn-success px-3 rounded-pill" title="Ekspor ke Excel">
+                <button type="button" class="btn btn-success px-3 rounded-pill" title="Ekspor ke Excel" onclick="confirmExport()">
                     <i class="fas fa-file-excel me-1"></i>Ekspor
-                </a>
+                </button>
             </div>
         </form>
     </div>
@@ -399,6 +399,33 @@ function confirmSuspend(event) {
                 form.submit();
             }
         });
+    });
+}
+function confirmExport() {
+    Swal.fire({
+        title: 'Konfirmasi Ekspor Data',
+        html: '<p class="text-muted small mb-3">Untuk keamanan, masukkan password admin Anda sebelum mengekspor data pengguna.</p>',
+        input: 'password',
+        inputPlaceholder: 'Masukkan password Anda...',
+        inputAttributes: { autocomplete: 'current-password' },
+        showCancelButton: true,
+        confirmButtonText: '<i class="fas fa-file-excel me-1"></i> Ekspor',
+        cancelButtonText: 'Batal',
+        confirmButtonColor: '#198754',
+        cancelButtonColor: '#6c757d',
+        customClass: { input: 'form-control', popup: 'rounded-4' },
+        inputValidator: (value) => {
+            if (!value) return 'Password wajib diisi!';
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            let form = document.createElement('form');
+            form.method = 'POST';
+            form.action = "{{ route('admin.users.export', request()->all()) }}";
+            form.innerHTML = '@csrf<input type="hidden" name="password" value="' + result.value + '">';
+            document.body.appendChild(form);
+            form.submit();
+        }
     });
 }
 </script>

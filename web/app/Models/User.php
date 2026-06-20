@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class User extends Authenticatable
 {
+    use SoftDeletes;
     protected $table = 'users';
 
     protected $fillable = [
@@ -23,6 +25,9 @@ class User extends Authenticatable
         'platform_fee_percent',
         'seller_save_hours',
         'allowed_tools',
+        'two_factor_enabled',
+        'two_factor_code',
+        'two_factor_expires_at',
     ];
 
     protected $hidden = [
@@ -34,6 +39,8 @@ class User extends Authenticatable
         'telegram_id' => 'integer',
         'is_suspended' => 'boolean',
         'allowed_tools' => 'array',
+        'two_factor_enabled' => 'boolean',
+        'two_factor_expires_at' => 'datetime',
     ];
 
     /**

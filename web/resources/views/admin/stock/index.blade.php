@@ -10,9 +10,9 @@
         <p class="text-muted mb-0">Kelola stok unit produk digital</p>
     </div>
     <div class="d-flex gap-2 align-items-center">
-        <a href="{{ route('admin.stock.export', request()->all()) }}" class="btn btn-success rounded-pill px-3">
+        <button type="button" class="btn btn-success rounded-pill px-3" onclick="confirmExportStock()">
             <i class="fas fa-file-excel me-2"></i>Ekspor Excel
-        </a>
+        </button>
         <button class="btn btn-primary rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#addStockModal">
             <i class="fas fa-plus me-2"></i>Tambah Stok
         </button>
@@ -746,6 +746,34 @@
             setInterval(updateCountdowns, 1000);
         }
     });
+
+function confirmExportStock() {
+    Swal.fire({
+        title: 'Konfirmasi Ekspor Data',
+        html: '<p class="text-muted small mb-3">Untuk keamanan, masukkan password admin Anda sebelum mengekspor data stok.</p>',
+        input: 'password',
+        inputPlaceholder: 'Masukkan password Anda...',
+        inputAttributes: { autocomplete: 'current-password' },
+        showCancelButton: true,
+        confirmButtonText: '<i class="fas fa-file-excel me-1"></i> Ekspor',
+        cancelButtonText: 'Batal',
+        confirmButtonColor: '#198754',
+        cancelButtonColor: '#6c757d',
+        customClass: { input: 'form-control', popup: 'rounded-4' },
+        inputValidator: (value) => {
+            if (!value) return 'Password wajib diisi!';
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            let form = document.createElement('form');
+            form.method = 'POST';
+            form.action = "{{ route('admin.stock.export', request()->all()) }}";
+            form.innerHTML = '@csrf<input type="hidden" name="password" value="' + result.value + '">';
+            document.body.appendChild(form);
+            form.submit();
+        }
+    });
+}
 </script>
 @endpush
 @endsection

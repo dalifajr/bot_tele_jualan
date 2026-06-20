@@ -48,14 +48,14 @@ class AuthController extends Controller
             'password' => 'required|string',
         ];
 
-        if (!app()->environment('testing')) {
+        if (!app()->environment('testing', 'local')) {
             $rules['cf-turnstile-response'] = 'required|string';
         }
 
         $request->validate($rules);
 
         // Validate Captcha
-        if (!app()->environment('testing')) {
+        if (!app()->environment('testing', 'local')) {
             $turnstileSecret = config('services.turnstile.secret_key');
             $captchaResponse = Http::asForm()->post('https://challenges.cloudflare.com/turnstile/v0/siteverify', [
                 'secret' => $turnstileSecret,
@@ -80,6 +80,41 @@ class AuthController extends Controller
         $remember = $request->has('remember');
 
         if (Auth::attempt($credentials, $remember)) {
+            $user = Auth::user();
+
+            // Check if 2FA is enabled
+            if ($user->two_factor_enabled && $user->telegram_id) {
+                // Generate 6-digit OTP
+                $code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+                $user->update([
+                    'two_factor_code' => $code,
+                    'two_factor_expires_at' => now()->addMinutes(5),
+                ]);
+
+                // Send OTP via Telegram Bot
+                $botToken = config('telegram.bot_token');
+                if ($botToken) {
+                    try {
+                        Http::post("https://api.telegram.org/bot{$botToken}/sendMessage", [
+                            'chat_id' => $user->telegram_id,
+                            'text' => "🔐 Kode Verifikasi 2FA\n\nKode Anda: *{$code}*\n\nKode ini berlaku selama 5 menit. Jangan bagikan kode ini kepada siapapun.",
+                            'parse_mode' => 'Markdown',
+                        ]);
+                    } catch (\Exception $e) {
+                        // Log but don't block login
+                        \Illuminate\Support\Facades\Log::warning('Failed to send 2FA code via Telegram', ['error' => $e->getMessage()]);
+                    }
+                }
+
+                // Store user ID in session for 2FA verification, then logout
+                $userId = $user->id;
+                Auth::logout();
+                $request->session()->put('2fa_user_id', $userId);
+                $request->session()->put('2fa_remember', $remember);
+
+                return redirect()->route('auth.two-factor');
+            }
+
             $request->session()->regenerate();
             return redirect()->intended(route('dashboard'));
         }
@@ -102,14 +137,14 @@ class AuthController extends Controller
             'password' => 'required|string|min:6|confirmed',
         ];
 
-        if (!app()->environment('testing')) {
+        if (!app()->environment('testing', 'local')) {
             $rules['cf-turnstile-response'] = 'required|string';
         }
 
         $request->validate($rules);
 
         // Validate Captcha
-        if (!app()->environment('testing')) {
+        if (!app()->environment('testing', 'local')) {
             $turnstileSecret = config('services.turnstile.secret_key');
             $captchaResponse = Http::asForm()->post('https://challenges.cloudflare.com/turnstile/v0/siteverify', [
                 'secret' => $turnstileSecret,
@@ -178,5 +213,87 @@ class AuthController extends Controller
         $user->save();
 
         return redirect()->back()->with('success', 'Password berhasil diatur! Anda kini bisa login menggunakan Username/Email dan Password ini.');
+    }
+
+    /**
+     * Tampilkan halaman verifikasi 2FA.
+     */
+    public function showTwoFactor(Request $request)
+    {
+        if (!$request->session()->has('2fa_user_id')) {
+            return redirect()->route('login');
+        }
+
+        return view('auth.two-factor');
+    }
+
+    /**
+     * Verifikasi kode 2FA.
+     */
+    public function verifyTwoFactor(Request $request)
+    {
+        $request->validate([
+            'code' => 'required|string|size:6',
+        ]);
+
+        $userId = $request->session()->get('2fa_user_id');
+        if (!$userId) {
+            return redirect()->route('login')->with('error', 'Sesi verifikasi 2FA sudah berakhir.');
+        }
+
+        $user = User::find($userId);
+        if (!$user) {
+            $request->session()->forget(['2fa_user_id', '2fa_remember']);
+            return redirect()->route('login')->with('error', 'Pengguna tidak ditemukan.');
+        }
+
+        if ($user->two_factor_code !== $request->code) {
+            return back()->withErrors(['code' => 'Kode verifikasi salah.']);
+        }
+
+        if ($user->two_factor_expires_at && $user->two_factor_expires_at->isPast()) {
+            $request->session()->forget(['2fa_user_id', '2fa_remember']);
+            return redirect()->route('login')->with('error', 'Kode verifikasi sudah kedaluwarsa. Silakan login ulang.');
+        }
+
+        // Clear 2FA code
+        $user->update([
+            'two_factor_code' => null,
+            'two_factor_expires_at' => null,
+        ]);
+
+        // Login the user
+        $remember = $request->session()->get('2fa_remember', false);
+        $request->session()->forget(['2fa_user_id', '2fa_remember']);
+        Auth::login($user, $remember);
+        $request->session()->regenerate();
+
+        return redirect()->intended(route('dashboard'));
+    }
+
+    /**
+     * Toggle 2FA setting (dari halaman profil).
+     */
+    public function toggleTwoFactor(Request $request)
+    {
+        $user = Auth::user();
+
+        // User harus punya telegram_id dan password untuk mengaktifkan 2FA
+        if (!$user->telegram_id) {
+            return redirect()->back()->with('error', 'Anda harus menautkan akun Telegram terlebih dahulu untuk mengaktifkan 2FA.');
+        }
+
+        if (!$user->password) {
+            return redirect()->back()->with('error', 'Anda harus mengatur password terlebih dahulu untuk mengaktifkan 2FA.');
+        }
+
+        $user->update([
+            'two_factor_enabled' => !$user->two_factor_enabled,
+            'two_factor_code' => null,
+            'two_factor_expires_at' => null,
+        ]);
+
+        $status = $user->two_factor_enabled ? 'diaktifkan' : 'dinonaktifkan';
+        return redirect()->back()->with('success', "Verifikasi dua langkah (2FA) berhasil {$status}.");
     }
 }

@@ -21,23 +21,10 @@ class ProfileController extends Controller
 
         $rules = [
             'full_name' => 'required|string|max:255',
-            'username' => 'required|string|max:255',
-            'email' => 'nullable|string|email|max:255',
-            'telegram_id' => 'nullable|integer',
+            'username' => 'required|string|max:255|unique:users,username,' . $user->id,
+            'email' => 'nullable|string|email|max:255|unique:users,email,' . $user->id,
+            'telegram_id' => 'nullable|integer|unique:users,telegram_id,' . $user->id,
         ];
-
-        // Only validate uniqueness if the value is actually changed
-        if (strtolower($request->username) !== strtolower($user->username)) {
-            $rules['username'] .= '|unique:users,username';
-        }
-
-        if (strtolower($request->email ?? '') !== strtolower($user->email ?? '')) {
-            $rules['email'] .= '|unique:users,email';
-        }
-
-        if ($request->telegram_id != $user->telegram_id) {
-            $rules['telegram_id'] .= '|unique:users,telegram_id';
-        }
 
         $request->validate($rules);
 

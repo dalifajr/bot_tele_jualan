@@ -328,6 +328,24 @@ class AdminController extends Controller
 
     public function exportStock(Request $request)
     {
+        // Validate admin password before export
+        if ($request->isMethod('post') || $request->has('password')) {
+            $request->validate(['password' => 'required|string']);
+            if (!\Illuminate\Support\Facades\Hash::check($request->password, \Illuminate\Support\Facades\Auth::user()->password)) {
+                return redirect()->back()->with('error', 'Password salah. Ekspor data dibatalkan.');
+            }
+        }
+
+        // Audit log
+        \Illuminate\Support\Facades\DB::table('audit_logs')->insert([
+            'action' => 'admin_export_stock',
+            'actor_id' => \Illuminate\Support\Facades\Auth::id(),
+            'entity_type' => 'stock_unit',
+            'entity_id' => null,
+            'detail' => 'Admin exported stock data',
+            'created_at' => now(),
+        ]);
+
         $query = StockUnit::with(['product', 'order.customer', 'uploader'])->orderBy('created_at', 'desc');
 
         if ($request->filled('status')) {
@@ -768,6 +786,16 @@ class AdminController extends Controller
             return redirect()->back()->with('error', 'Tidak dapat menghapus pengguna karena memiliki riwayat pesanan. Silakan gunakan fitur Suspend sebagai gantinya.');
         }
 
+        // Audit log
+        \Illuminate\Support\Facades\DB::table('audit_logs')->insert([
+            'action' => 'admin_delete_user',
+            'actor_id' => \Illuminate\Support\Facades\Auth::id(),
+            'entity_type' => 'user',
+            'entity_id' => $user->id,
+            'detail' => "Deleted user: {$user->username} (ID: {$user->id})",
+            'created_at' => now(),
+        ]);
+
         $user->delete();
         return redirect()->back()->with('success', 'Pengguna berhasil dihapus.');
     }
@@ -778,6 +806,17 @@ class AdminController extends Controller
         $user->is_suspended = true;
         $user->suspension_reason = $request->input('reason');
         $user->save();
+
+        // Audit log
+        \Illuminate\Support\Facades\DB::table('audit_logs')->insert([
+            'action' => 'admin_suspend_user',
+            'actor_id' => \Illuminate\Support\Facades\Auth::id(),
+            'entity_type' => 'user',
+            'entity_id' => $user->id,
+            'detail' => "Suspended user: {$user->username}; reason: {$request->input('reason')}",
+            'created_at' => now(),
+        ]);
+
         return redirect()->back()->with('success', 'Akun pengguna berhasil ditangguhkan (suspended). Akses bot telah dicabut.');
     }
 
@@ -787,6 +826,17 @@ class AdminController extends Controller
         $user->is_suspended = false;
         $user->suspension_reason = null;
         $user->save();
+
+        // Audit log
+        \Illuminate\Support\Facades\DB::table('audit_logs')->insert([
+            'action' => 'admin_unsuspend_user',
+            'actor_id' => \Illuminate\Support\Facades\Auth::id(),
+            'entity_type' => 'user',
+            'entity_id' => $user->id,
+            'detail' => "Unsuspended user: {$user->username}",
+            'created_at' => now(),
+        ]);
+
         return redirect()->back()->with('success', 'Penangguhan akun telah dicabut. Pengguna dapat menggunakan bot kembali.');
     }
 
@@ -910,6 +960,16 @@ class AdminController extends Controller
                 $product->creator_id = null;
                 $product->save();
                 
+                // Audit log for takeover
+                \Illuminate\Support\Facades\DB::table('audit_logs')->insert([
+                    'action' => 'admin_takeover_product',
+                    'actor_id' => \Illuminate\Support\Facades\Auth::id(),
+                    'entity_type' => 'product',
+                    'entity_id' => $product->id,
+                    'detail' => "Admin took over seller product: {$product->name} (Original Seller ID: {$seller->id})",
+                    'created_at' => now(),
+                ]);
+
                 \Illuminate\Support\Facades\DB::commit();
                 
                 return redirect()->back()->with('success', 'Produk buatan seller dan sisa stoknya berhasil diambil alih oleh Admin Utama.');
@@ -929,7 +989,20 @@ class AdminController extends Controller
         }
 
         try {
+            $productId = $product->id;
+            $productName = $product->name;
             $product->delete(); // Cascades to stock units automatically
+
+            // Audit log for delete
+            \Illuminate\Support\Facades\DB::table('audit_logs')->insert([
+                'action' => 'admin_delete_product',
+                'actor_id' => \Illuminate\Support\Facades\Auth::id(),
+                'entity_type' => 'product',
+                'entity_id' => $productId,
+                'detail' => "Deleted product: {$productName} (ID: {$productId})",
+                'created_at' => now(),
+            ]);
+
             return redirect()->back()->with('success', 'Produk berhasil dihapus secara permanen.');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Produk tidak dapat dihapus permanen karena sudah memiliki riwayat transaksi/pesanan. Silakan gunakan fitur Suspend sebagai gantinya.');
@@ -1022,6 +1095,17 @@ class AdminController extends Controller
     public function destroyStock($id)
     {
         $stock = StockUnit::findOrFail($id);
+
+        // Audit log
+        \Illuminate\Support\Facades\DB::table('audit_logs')->insert([
+            'action' => 'admin_delete_stock',
+            'actor_id' => \Illuminate\Support\Facades\Auth::id(),
+            'entity_type' => 'stock_unit',
+            'entity_id' => $stock->id,
+            'detail' => "Deleted stock ID: {$stock->id}, product_id: {$stock->product_id}",
+            'created_at' => now(),
+        ]);
+
         $stock->delete();
         return redirect()->route('admin.stock.index')->with('success', 'Stok berhasil dihapus.');
     }
@@ -1083,6 +1167,16 @@ class AdminController extends Controller
 
         $count = StockUnit::whereIn('id', $ids)->where('is_sold', false)->delete();
 
+        // Audit log
+        \Illuminate\Support\Facades\DB::table('audit_logs')->insert([
+            'action' => 'admin_bulk_delete_stock',
+            'actor_id' => \Illuminate\Support\Facades\Auth::id(),
+            'entity_type' => 'stock_unit',
+            'entity_id' => null,
+            'detail' => "Bulk deleted {$count} stock units (IDs: " . implode(',', $ids) . ")",
+            'created_at' => now(),
+        ]);
+
         return back()->with('success', "$count stok berhasil dihapus secara masal.");
     }
 
@@ -1110,18 +1204,49 @@ class AdminController extends Controller
             'allowed_tools' => 'nullable|array',
             'allowed_tools.*' => 'string|in:github_checker,gmail_checker',
         ]);
+
+        $oldRole = $user->role;
         $user->role = $request->role;
         $user->wallet_balance = $request->wallet_balance;
         $user->platform_fee_percent = $request->platform_fee_percent;
         $user->seller_save_hours = $request->seller_save_hours;
         $user->allowed_tools = $request->role === 'seller' ? ($request->allowed_tools ?? []) : null;
         $user->save();
+
+        // Audit log
+        \Illuminate\Support\Facades\DB::table('audit_logs')->insert([
+            'action' => 'admin_update_user',
+            'actor_id' => \Illuminate\Support\Facades\Auth::id(),
+            'entity_type' => 'user',
+            'entity_id' => $user->id,
+            'detail' => "Updated user: {$user->username}; role: {$oldRole}->{$request->role}; balance: {$request->wallet_balance}",
+            'created_at' => now(),
+        ]);
+
         return redirect()->route('admin.users.index')
             ->with('success', 'Informasi pengguna berhasil diperbarui.');
     }
 
     public function exportUsers(Request $request)
     {
+        // Validate admin password before export
+        if ($request->isMethod('post') || $request->has('password')) {
+            $request->validate(['password' => 'required|string']);
+            if (!\Illuminate\Support\Facades\Hash::check($request->password, \Illuminate\Support\Facades\Auth::user()->password)) {
+                return redirect()->back()->with('error', 'Password salah. Ekspor data dibatalkan.');
+            }
+        }
+
+        // Audit log
+        \Illuminate\Support\Facades\DB::table('audit_logs')->insert([
+            'action' => 'admin_export_users',
+            'actor_id' => \Illuminate\Support\Facades\Auth::id(),
+            'entity_type' => 'user',
+            'entity_id' => null,
+            'detail' => 'Admin exported users data',
+            'created_at' => now(),
+        ]);
+
         $query = User::orderBy('created_at', 'desc');
 
         if ($request->filled('search')) {
