@@ -662,6 +662,120 @@ class BackupService
                 Log::warning("Failed to create missing cache_locks table: " . $e->getMessage());
             }
         }
+
+        if (!Schema::hasTable('visitors')) {
+            try {
+                Schema::create('visitors', function (\Illuminate\Database\Schema\Blueprint $table) {
+                    $table->id();
+                    $table->string('ip_address', 45);
+                    $table->date('visited_date');
+                    $table->timestamps();
+                    $table->unique(['ip_address', 'visited_date']);
+                });
+            } catch (\Exception $e) {
+                Log::warning("Failed to create missing visitors table: " . $e->getMessage());
+            }
+        }
+
+        if (!Schema::hasTable('coupons')) {
+            try {
+                Schema::create('coupons', function (\Illuminate\Database\Schema\Blueprint $table) {
+                    $table->id();
+                    $table->string('code', 64)->unique();
+                    $table->string('type', 32)->default('fixed');
+                    $table->integer('value');
+                    $table->integer('min_spend')->default(0);
+                    $table->integer('max_discount')->nullable();
+                    $table->integer('qty')->default(0);
+                    $table->integer('used_qty')->default(0);
+                    $table->timestamp('expires_at')->nullable();
+                    $table->boolean('is_active')->default(true);
+                    $table->timestamps();
+                });
+            } catch (\Exception $e) {
+                Log::warning("Failed to create missing coupons table: " . $e->getMessage());
+            }
+        }
+
+        if (!Schema::hasTable('coupon_user')) {
+            try {
+                Schema::create('coupon_user', function (\Illuminate\Database\Schema\Blueprint $table) {
+                    $table->id();
+                    $table->unsignedBigInteger('coupon_id');
+                    $table->unsignedBigInteger('user_id');
+                    $table->timestamp('created_at')->useCurrent();
+                });
+            } catch (\Exception $e) {
+                Log::warning("Failed to create missing coupon_user table: " . $e->getMessage());
+            }
+        }
+
+        if (!Schema::hasTable('cart_items')) {
+            try {
+                Schema::create('cart_items', function (\Illuminate\Database\Schema\Blueprint $table) {
+                    $table->id();
+                    $table->unsignedBigInteger('user_id');
+                    $table->unsignedBigInteger('product_id');
+                    $table->integer('quantity')->default(1);
+                    $table->timestamps();
+                });
+            } catch (\Exception $e) {
+                Log::warning("Failed to create missing cart_items table: " . $e->getMessage());
+            }
+        }
+
+        if (!Schema::hasTable('chat_messages')) {
+            try {
+                Schema::create('chat_messages', function (\Illuminate\Database\Schema\Blueprint $table) {
+                    $table->id();
+                    $table->unsignedBigInteger('sender_id');
+                    $table->unsignedBigInteger('receiver_id');
+                    $table->text('message');
+                    $table->boolean('is_read')->default(false);
+                    $table->timestamps();
+                });
+            } catch (\Exception $e) {
+                Log::warning("Failed to create missing chat_messages table: " . $e->getMessage());
+            }
+        }
+
+        if (!Schema::hasTable('broadcast_jobs')) {
+            try {
+                Schema::create('broadcast_jobs', function (\Illuminate\Database\Schema\Blueprint $table) {
+                    $table->id();
+                    $table->text('message');
+                    $table->integer('total_targets')->default(0);
+                    $table->integer('sent_count')->default(0);
+                    $table->integer('failed_count')->default(0);
+                    $table->string('status', 32)->default('pending');
+                    $table->unsignedBigInteger('admin_id')->nullable();
+                    $table->boolean('is_read')->default(false);
+                    $table->timestamps();
+                });
+            } catch (\Exception $e) {
+                Log::warning("Failed to create missing broadcast_jobs table: " . $e->getMessage());
+            }
+        }
+
+        if (!Schema::hasTable('withdrawal_requests')) {
+            try {
+                Schema::create('withdrawal_requests', function (\Illuminate\Database\Schema\Blueprint $table) {
+                    $table->id();
+                    $table->unsignedBigInteger('seller_id');
+                    $table->integer('amount');
+                    $table->string('bank_name', 100);
+                    $table->string('account_number', 100);
+                    $table->string('account_holder', 255);
+                    $table->string('status', 32)->default('pending');
+                    $table->text('rejection_reason')->nullable();
+                    $table->string('proof_image_path', 255)->nullable();
+                    $table->timestamp('created_at')->useCurrent();
+                    $table->timestamp('processed_at')->nullable();
+                });
+            } catch (\Exception $e) {
+                Log::warning("Failed to create missing withdrawal_requests table: " . $e->getMessage());
+            }
+        }
     }
 
     /**
