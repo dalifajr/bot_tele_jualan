@@ -254,7 +254,7 @@ class BackupService
     /**
      * Restore database and media from a uploaded backup ZIP file.
      */
-    public static function restore($zipPath, $mode = 'overwrite', callable $progressCallback = null)
+    public static function restore($zipPath, $mode = 'overwrite', ?callable $progressCallback = null)
     {
         $zip = new ZipArchive();
         $openResult = $zip->open($zipPath);
@@ -312,7 +312,7 @@ class BackupService
     /**
      * Restore snapshot raw SQLite & media files.
      */
-    protected static function restoreSnapshot(ZipArchive $zip, callable $progressCallback = null)
+    protected static function restoreSnapshot(ZipArchive $zip, ?callable $progressCallback = null)
     {
         $dbContent = $zip->getFromName('database.sqlite');
         
@@ -383,7 +383,7 @@ class BackupService
     /**
      * Restore tables using exported JSON records.
      */
-    protected static function restoreJson(ZipArchive $zip, $manifest, $mode, callable $progressCallback = null)
+    protected static function restoreJson(ZipArchive $zip, $manifest, $mode, ?callable $progressCallback = null)
     {
         $entitiesData = [];
 
