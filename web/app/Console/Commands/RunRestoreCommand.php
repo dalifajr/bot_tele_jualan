@@ -51,6 +51,10 @@ class RunRestoreCommand extends Command
                 usleep(100000); // Small sleep for frontend log readability
             });
 
+            // Run database migrations to align schema with the codebase
+            $this->updateStatus($statusFile, 92, 'Menjalankan migrasi database...', 'processing');
+            \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+
             // Re-insert preserved admin user & session
             $this->restorePreservedData($statusFile);
 

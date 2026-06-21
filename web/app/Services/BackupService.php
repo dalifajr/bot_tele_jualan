@@ -299,6 +299,9 @@ class BackupService
             self::restoreJson($zip, $manifest, $mode, $progressCallback);
         }
 
+        // Ensure critical system tables exist after restore
+        self::ensureSystemTablesExist();
+
         $zip->close();
         if ($progressCallback) {
             $progressCallback(100, "Proses restore selesai dengan sukses!");
@@ -581,25 +584,83 @@ class BackupService
     {
         Schema::disableForeignKeyConstraints();
         try {
-            // Drop all known tables in reverse dependency order first
+            // Drop all known tables in reverse dependency order first if defined in the SQL dump
             $tables = array_reverse(array_keys(self::$entities));
             foreach ($tables as $table) {
-                Schema::dropIfExists($table);
+                if (self::sqlContainsTable($sql, $table)) {
+                    Schema::dropIfExists($table);
+                }
             }
 
-            // Drop sessions, cache, and other tables if they exist
+            // Drop sessions, cache, and other tables if they exist and are defined in the SQL dump
             $extraTables = [
                 'sessions', 'cache', 'cache_locks', 'visitors', 
                 'coupons', 'withdrawal_requests', 'chat_messages', 
                 'cart_items', 'broadcast_jobs'
             ];
             foreach ($extraTables as $table) {
-                Schema::dropIfExists($table);
+                if (self::sqlContainsTable($sql, $table)) {
+                    Schema::dropIfExists($table);
+                }
             }
 
             DB::unprepared($sql);
         } finally {
             Schema::enableForeignKeyConstraints();
+        }
+    }
+
+    /**
+     * Check if a table definition exists in the SQL string.
+     */
+    protected static function sqlContainsTable($sql, $table)
+    {
+        $pattern = '/(?:CREATE\s+TABLE|DROP\s+TABLE(?:\s+IF\s+EXISTS)?|INSERT\s+INTO)\s+[`"]?' . preg_quote($table, '/') . '[`"]?/i';
+        return (bool) preg_match($pattern, $sql);
+    }
+
+    /**
+     * Ensure crucial framework tables exist after restore.
+     */
+    public static function ensureSystemTablesExist()
+    {
+        if (!Schema::hasTable('sessions')) {
+            try {
+                Schema::create('sessions', function (\Illuminate\Database\Schema\Blueprint $table) {
+                    $table->string('id')->primary();
+                    $table->foreignId('user_id')->nullable()->index();
+                    $table->string('ip_address', 45)->nullable();
+                    $table->text('user_agent')->nullable();
+                    $table->longText('payload');
+                    $table->integer('last_activity')->index();
+                });
+            } catch (\Exception $e) {
+                Log::warning("Failed to create missing sessions table: " . $e->getMessage());
+            }
+        }
+
+        if (!Schema::hasTable('cache')) {
+            try {
+                Schema::create('cache', function (\Illuminate\Database\Schema\Blueprint $table) {
+                    $table->string('key')->primary();
+                    $table->mediumText('value');
+                    $table->bigInteger('expiration')->index();
+                });
+            } catch (\Exception $e) {
+                Log::warning("Failed to create missing cache table: " . $e->getMessage());
+            }
+        }
+
+        if (!Schema::hasTable('cache_locks')) {
+            try {
+                Schema::create('cache_locks', function (\Illuminate\Database\Schema\Blueprint $table) {
+                    $table->string('key')->primary();
+                    $table->string('owner');
+                    $table->bigInteger('expiration')->index();
+                });
+            } catch (\Exception $e) {
+                Log::warning("Failed to create missing cache_locks table: " . $e->getMessage());
+            }
         }
     }
 
