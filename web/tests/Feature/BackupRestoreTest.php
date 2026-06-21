@@ -334,4 +334,32 @@ class BackupRestoreTest extends TestCase
             File::delete($tempZipPath);
         }
     }
+
+    /**
+     * Test database wipe functionality.
+     */
+    public function test_database_wipe()
+    {
+        $this->actingAs($this->admin);
+
+        // Verify products exist or create one
+        \App\Models\Product::create([
+            'name' => 'Wipe Test Product',
+            'price' => 15000,
+            'creator_id' => $this->admin->id
+        ]);
+
+        $this->assertTrue(\App\Models\Product::where('name', 'Wipe Test Product')->exists());
+
+        // Call the wipe run endpoint
+        $response = $this->get(route('admin.backup.wipe.run'));
+        $response->assertStatus(200);
+        $response->assertJson(['success' => true]);
+
+        // Verify the product is gone
+        $this->assertFalse(\App\Models\Product::where('name', 'Wipe Test Product')->exists());
+
+        // Verify the admin user still exists
+        $this->assertTrue(User::where('username', 'admin_test')->exists());
+    }
 }

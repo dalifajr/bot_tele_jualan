@@ -243,52 +243,126 @@ class BackupController extends Controller
             return response()->json(['error' => 'File backup tidak ditemukan atau tidak valid.'], 400);
         }
 
-        return response()->stream(function () use ($realFile, $relativePath, $filename, $mode) {
-            @set_time_limit(0);
-            @ini_set('memory_limit', '512M');
-
-            echo json_encode(['percent' => 5, 'message' => 'Menghubungkan ke proses restore...']) . "\n";
-            ob_flush();
-            flush();
-            sleep(1); // Small delay to let connection open smoothly
-
-            try {
-                BackupService::restore($realFile, $mode, function ($percent, $message) {
-                    echo json_encode(['percent' => $percent, 'message' => $message]) . "\n";
-                    ob_flush();
-                    flush();
-                    usleep(150000); // Slight delay for human readability
-                });
-
-                // Audit log
-                AuditLog::create([
-                    'actor_id' => auth()->id(),
-                    'action' => 'backup_restore',
-                    'entity_type' => 'backup',
-                    'entity_id' => 0,
-                    'detail' => "Database restored via Live Web Progress from file: {$filename} (Mode: {$mode})",
-                    'ip_address' => request()->ip(),
-                    'user_agent' => request()->userAgent(),
-                ]);
-
-                // Clean temp file
-                if (\Illuminate\Support\Facades\Storage::exists($relativePath)) {
-                    \Illuminate\Support\Facades\Storage::delete($relativePath);
-                }
-            } catch (\Exception $e) {
-                echo json_encode(['percent' => -1, 'message' => 'ERROR: ' . $e->getMessage()]) . "\n";
-                ob_flush();
-                flush();
-                // Clean temp file
-                if (\Illuminate\Support\Facades\Storage::exists($relativePath)) {
-                    \Illuminate\Support\Facades\Storage::delete($relativePath);
-                }
+        // 1. Capture active user and session for preservation
+        $adminData = null;
+        $currentAdmin = auth()->user();
+        if ($currentAdmin) {
+            $adminRow = DB::table('users')->where('id', $currentAdmin->id)->first();
+            if ($adminRow) {
+                $adminData = (array)$adminRow;
             }
-        }, 200, [
-            'Content-Type' => 'text/event-stream',
-            'Cache-Control' => 'no-cache',
-            'Connection' => 'keep-alive',
-            'X-Accel-Buffering' => 'no' // Disable Nginx output buffering
+        }
+        $sessionData = null;
+        if (config('session.driver') === 'database') {
+            $sessionData = (array)DB::table('sessions')->where('id', session()->getId())->first();
+        }
+        File::put(storage_path('app/restore_preserve.json'), json_encode([
+            'admin' => $adminData,
+            'session' => $sessionData
+        ]));
+
+        // 2. Initialize restore_status.json
+        $statusFile = storage_path('app/restore_status.json');
+        File::put($statusFile, json_encode([
+            'status' => 'processing',
+            'percent' => 5,
+            'message' => 'Menghubungkan ke proses restore...',
+            'error' => null,
+            'logs' => [
+                '['.date('H:i:s').'] Menghubungkan ke proses restore...'
+            ]
+        ]));
+
+        // 3. Start restore in background (or synchronously in testing)
+        if (app()->runningUnitTests()) {
+            \Illuminate\Support\Facades\Artisan::call('restore:run', [
+                'file' => $file,
+                'mode' => $mode,
+                'filename' => $filename
+            ]);
+        } else {
+            $artisan = base_path('artisan');
+            $phpFinder = new \Symfony\Component\Process\PhpExecutableFinder();
+            $php = $phpFinder->find(false) ?: 'php';
+
+            if (PHP_OS_FAMILY === 'Windows') {
+                pclose(popen("start /B " . escapeshellarg($php) . " " . escapeshellarg($artisan) . " restore:run " . escapeshellarg($file) . " " . escapeshellarg($mode) . " " . escapeshellarg($filename) . " > NUL 2>&1", "r"));
+            } else {
+                exec(escapeshellarg($php) . " " . escapeshellarg($artisan) . " restore:run " . escapeshellarg($file) . " " . escapeshellarg($mode) . " " . escapeshellarg($filename) . " > /dev/null 2>&1 &");
+            }
+        }
+
+        return response()->json(['success' => true]);
+    }
+
+    public function restoreStatus()
+    {
+        $statusFile = storage_path('app/restore_status.json');
+        if (File::exists($statusFile)) {
+            $data = json_decode(File::get($statusFile), true);
+            return response()->json($data);
+        }
+        return response()->json([
+            'status' => 'pending',
+            'percent' => 0,
+            'message' => 'Menunggu proses restore...',
+            'logs' => []
+        ]);
+    }
+
+    public function wipeProgress()
+    {
+        return view('admin.backup.wipe_progress');
+    }
+
+    public function runWipe()
+    {
+        $currentUserId = auth()->id();
+        $currentSessionId = session()->getId();
+
+        $statusFile = storage_path('app/wipe_status.json');
+        File::put($statusFile, json_encode([
+            'status' => 'processing',
+            'percent' => 5,
+            'message' => 'Menghubungkan ke proses pembersihan data...',
+            'error' => null,
+            'logs' => [
+                '['.date('H:i:s').'] Menghubungkan ke proses pembersihan data...'
+            ]
+        ]));
+
+        if (app()->runningUnitTests()) {
+            \Illuminate\Support\Facades\Artisan::call('app:wipe-data', [
+                'current_user_id' => $currentUserId,
+                'current_session_id' => $currentSessionId
+            ]);
+        } else {
+            $artisan = base_path('artisan');
+            $phpFinder = new \Symfony\Component\Process\PhpExecutableFinder();
+            $php = $phpFinder->find(false) ?: 'php';
+
+            if (PHP_OS_FAMILY === 'Windows') {
+                pclose(popen("start /B " . escapeshellarg($php) . " " . escapeshellarg($artisan) . " app:wipe-data " . escapeshellarg($currentUserId) . " " . escapeshellarg($currentSessionId) . " > NUL 2>&1", "r"));
+            } else {
+                exec(escapeshellarg($php) . " " . escapeshellarg($artisan) . " app:wipe-data " . escapeshellarg($currentUserId) . " " . escapeshellarg($currentSessionId) . " > /dev/null 2>&1 &");
+            }
+        }
+
+        return response()->json(['success' => true]);
+    }
+
+    public function wipeStatus()
+    {
+        $statusFile = storage_path('app/wipe_status.json');
+        if (File::exists($statusFile)) {
+            $data = json_decode(File::get($statusFile), true);
+            return response()->json($data);
+        }
+        return response()->json([
+            'status' => 'pending',
+            'percent' => 0,
+            'message' => 'Menunggu proses pembersihan data...',
+            'logs' => []
         ]);
     }
 

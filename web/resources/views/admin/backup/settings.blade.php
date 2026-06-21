@@ -122,4 +122,51 @@
         </div>
     </div>
 </div>
+
+<div class="row g-4 mt-2">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm" style="border-radius: 16px; border-left: 5px solid var(--bs-danger) !important;">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                    <div>
+                        <h5 class="fw-bold mb-2 text-danger"><i class="fas fa-trash-alt me-2"></i>Kosongkan Seluruh Data (Wipe Database)</h5>
+                        <p class="text-muted small mb-0">Tindakan ini akan mengosongkan seluruh tabel database (produk, stok, pesanan, riwayat, log, dll) secara permanen. Pengaturan sistem dan akun administrator Anda akan tetap dipertahankan agar Anda tidak terputus dari panel admin ini.</p>
+                    </div>
+                    <div>
+                        <button type="button" id="btnWipeData" class="btn btn-danger rounded-pill px-4 py-2 fw-bold">
+                            <i class="fas fa-exclamation-triangle me-2"></i>Hapus Semua Data
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
+
+@push('scripts')
+<script>
+    document.getElementById('btnWipeData').addEventListener('click', function() {
+        Swal.fire({
+            title: 'Apakah Anda Yakin?',
+            text: "Tindakan ini akan menghapus SELURUH data produk, stok, pesanan, komplain, log, dan riwayat! Pengaturan bot dan akun admin tetap dipertahankan agar Anda bisa tetap login.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Ya, Hapus Semua Data!',
+            cancelButtonText: 'Batal',
+            customClass: {
+                popup: 'rounded-4',
+                confirmButton: 'btn btn-danger rounded-pill px-4 me-2',
+                cancelButton: 'btn btn-secondary rounded-pill px-4'
+            },
+            buttonsStyling: false
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = "{{ route('admin.backup.wipe.progress') }}";
+            }
+        });
+    });
+</script>
+@endpush

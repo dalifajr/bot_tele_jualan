@@ -184,11 +184,17 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         Route::post('/backup/restore', [\App\Http\Controllers\Admin\BackupController::class, 'restore'])->name('backup.restore');
         Route::get('/backup/restore/progress', [\App\Http\Controllers\Admin\BackupController::class, 'restoreProgress'])->name('backup.restore.progress');
         Route::get('/backup/restore/run', [\App\Http\Controllers\Admin\BackupController::class, 'runRestore'])->name('backup.restore.run');
+        Route::get('/backup/restore/status', [\App\Http\Controllers\Admin\BackupController::class, 'restoreStatus'])->name('backup.restore.status');
         Route::get('/backup/settings', [\App\Http\Controllers\Admin\BackupController::class, 'showSettings'])->name('backup.settings.show');
         Route::post('/backup/settings', [\App\Http\Controllers\Admin\BackupController::class, 'updateSettings'])->name('backup.settings.update');
         Route::get('/backup/history', [\App\Http\Controllers\Admin\BackupController::class, 'history'])->name('backup.history');
         Route::get('/backup/download/{type}', [\App\Http\Controllers\Admin\BackupController::class, 'download'])->name('backup.download');
         Route::delete('/backup/{filename}', [\App\Http\Controllers\Admin\BackupController::class, 'destroy'])->name('backup.destroy');
+        
+        // Wipe Database Action
+        Route::get('/backup/wipe/progress', [\App\Http\Controllers\Admin\BackupController::class, 'wipeProgress'])->name('backup.wipe.progress');
+        Route::get('/backup/wipe/run', [\App\Http\Controllers\Admin\BackupController::class, 'runWipe'])->name('backup.wipe.run');
+        Route::get('/backup/wipe/status', [\App\Http\Controllers\Admin\BackupController::class, 'wipeStatus'])->name('backup.wipe.status');
         
         // System Actions
         Route::get('/website/settings', [\App\Http\Controllers\AdminController::class, 'websiteSettings'])->name('website.settings');

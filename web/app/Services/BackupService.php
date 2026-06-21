@@ -420,7 +420,7 @@ class BackupService
                                 if ($progressCallback) {
                                     $progressCallback(55 + $index, "Mengosongkan tabel: {$tableName}...");
                                 }
-                                DB::table($tableName)->truncate();
+                                DB::table($tableName)->delete();
                             }
                         }
                     }
@@ -579,14 +579,12 @@ class BackupService
      */
     protected static function restoreSqlDump($sql)
     {
-        DB::transaction(function () use ($sql) {
-            Schema::disableForeignKeyConstraints();
-            try {
-                DB::unprepared($sql);
-            } finally {
-                Schema::enableForeignKeyConstraints();
-            }
-        });
+        Schema::disableForeignKeyConstraints();
+        try {
+            DB::unprepared($sql);
+        } finally {
+            Schema::enableForeignKeyConstraints();
+        }
     }
 
     /**
