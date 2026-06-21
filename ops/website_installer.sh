@@ -366,10 +366,13 @@ setup_laravel() {
 
 _set_env_value() {
   local file="$1" key="$2" value="$3"
+  # Trim outer quotes if already present to avoid double quoting
+  local clean_val
+  clean_val=$(echo "${value}" | sed -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'$//")
   if grep -q "^${key}=" "${file}" 2>/dev/null; then
-    sed -i "s|^${key}=.*|${key}=${value}|" "${file}"
+    sed -i "s|^${key}=.*|${key}=\"${clean_val}\"|" "${file}"
   else
-    echo "${key}=${value}" >> "${file}"
+    echo "${key}=\"${clean_val}\"" >> "${file}"
   fi
 }
 
