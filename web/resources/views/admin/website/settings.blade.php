@@ -20,8 +20,8 @@
                     
                     <div class="mb-3">
                         <label class="form-label fw-bold text-muted small">NAMA TOKO / WEBSITE</label>
-                        <input type="text" class="form-control" value="{{ config('app.name', 'Dzulfikrialifajri Store') }}" readonly>
-                        <small class="text-muted">Nama toko tidak dapat diubah dari panel ini.</small>
+                        <input type="text" name="settings[app_name]" class="form-control" value="{{ config('app.name', 'Dzulfikrialifajri Store') }}" required>
+                        <small class="text-muted">Nama toko/website ini akan muncul di sidebar dashboard dan halaman login.</small>
                     </div>
 
                     <div class="mb-3">

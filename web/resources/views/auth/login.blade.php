@@ -987,7 +987,7 @@
           </div>
           <div>
             <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 font-outfit" style="line-height: 1; margin: 0;">Jualan</h1>
-            <div class="text-[0.8rem] font-bold text-slate-400 uppercase tracking-widest mt-1">Dzulfikrialifajri Store</div>
+            <div class="text-[0.8rem] font-bold text-slate-400 uppercase tracking-widest mt-1">{{ config('app.name', 'Dzulfikrialifajri Store') }}</div>
           </div>
         </div>
       </div>

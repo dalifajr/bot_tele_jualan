@@ -103,9 +103,9 @@
         <button class="btn btn-link link-body-emphasis text-decoration-none p-0 d-md-none" id="sidebarToggle" aria-label="Buka/Tutup Menu Navigasi">
             <i class="fas fa-bars fs-4"></i>
         </button>
-        <div class="navbar-brand d-flex align-items-center gap-2 text-primary fw-bold m-0">
-            <i class="fas fa-shopping-bag"></i>
-            <span>{{ config('app.name', 'Dzulfikrialifajri Store') }} <span class="fw-light text-secondary fs-6 d-none d-sm-inline">| @yield('page_subtitle', 'Dashboard')</span></span>
+        <div class="navbar-brand d-flex align-items-center gap-2 text-primary fw-bold m-0" style="font-size: 1.05rem;">
+            <i class="fas fa-shopping-bag fs-5"></i>
+            <span class="fw-semibold">{{ config('app.name', 'Dzulfikrialifajri Store') }} <span class="fw-normal text-secondary d-none d-sm-inline" style="font-size: 0.85rem; opacity: 0.8;">| @yield('page_subtitle', 'Dashboard')</span></span>
         </div>
     </div>
     <div class="ms-auto d-flex align-items-center gap-3">

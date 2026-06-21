@@ -255,7 +255,7 @@
           </div>
           <div class="text-start">
             <h1 class="fs-4 fw-extrabold text-slate-900 font-outfit m-0">Verifikasi 2FA</h1>
-            <div class="text-slate-400 font-bold uppercase tracking-wider" style="font-size: 0.65rem;">Dzulfikrialifajri Store</div>
+            <div class="text-slate-400 font-bold uppercase tracking-wider" style="font-size: 0.65rem;">{{ config('app.name', 'Dzulfikrialifajri Store') }}</div>
           </div>
         </div>
       </div>
