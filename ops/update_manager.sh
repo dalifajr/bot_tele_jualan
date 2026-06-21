@@ -204,31 +204,54 @@ install_requirements() {
 
 update_website() {
   cd "${PROJECT_DIR}"
-  
-  # Cek apakah website terinstall
+
   local web_dir="${PROJECT_DIR}/web"
+
+  # --- Deteksi apakah website terinstall dan aktif ---
+  # Cek 1: composer.json harus ada (struktur proyek Laravel)
   if [[ ! -f "${web_dir}/composer.json" ]]; then
+    log_step "website: dilewati (composer.json tidak ditemukan)"
     return
   fi
-  
-  # Cek apakah website enabled
+
+  # Cek 2: website dianggap aktif jika SALAH SATU terpenuhi:
+  #   a) WEBSITE_ENABLED=true di .env utama
+  #   b) web/.env DAN web/artisan ada (bukti konkret instalasi website)
+  #   c) Nginx config jualan-web aktif (bukti website sudah di-serve)
+  local website_active=0
+
   local website_enabled
   website_enabled="$(read_env_var WEBSITE_ENABLED || true)"
-  if [[ "${website_enabled}" != "true" ]]; then
+  if [[ "${website_enabled}" == "true" ]]; then
+    website_active=1
+  fi
+
+  if [[ "${website_active}" -eq 0 && -f "${web_dir}/.env" && -f "${web_dir}/artisan" ]]; then
+    website_active=1
+    log_step "website: terdeteksi aktif dari web/.env (WEBSITE_ENABLED belum diset)"
+  fi
+
+  if [[ "${website_active}" -eq 0 && -f "/etc/nginx/sites-enabled/jualan-web" ]]; then
+    website_active=1
+    log_step "website: terdeteksi aktif dari Nginx config"
+  fi
+
+  if [[ "${website_active}" -eq 0 ]]; then
+    log_step "website: dilewati (tidak aktif)"
     return
   fi
 
   log_step "update website Laravel..."
   cd "${web_dir}"
-  
+
   export COMPOSER_ALLOW_SUPERUSER=1
   composer install --no-dev --optimize-autoloader --no-interaction 2>&1 || true
-  
+
   php artisan config:clear 2>/dev/null || true
   php artisan view:clear 2>/dev/null || true
   php artisan route:clear 2>/dev/null || true
   php artisan migrate --force || echo "WARNING: Laravel migration failed."
-  
+
   log_step "memperbarui izin file (permissions)..."
   local run_user
   run_user="$(stat -c '%U' "${PROJECT_DIR}")"
@@ -238,13 +261,13 @@ update_website() {
   sudo chmod o+x /root 2>/dev/null || true
   sudo chmod o+x "${PROJECT_DIR}" 2>/dev/null || true
   sudo chmod -R o+rX "${web_dir}/public" 2>/dev/null || true
-  
+
   log_step "restart PHP-FPM dan Nginx..."
   local php_ver=""
   if command -v php >/dev/null 2>&1; then
     php_ver=$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;')
   fi
-  
+
   if [[ -n "${php_ver}" ]]; then
     sudo systemctl restart "php${php_ver}-fpm" 2>/dev/null || true
   fi
