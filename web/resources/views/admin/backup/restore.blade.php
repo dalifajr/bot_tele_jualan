@@ -92,9 +92,9 @@
 </div>
 
 {{-- Upload Progress Modal --}}
-<div class="modal fade" id="uploadProgressModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="uploadProgressModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true" style="z-index: 1070 !important;">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; background-color: var(--bs-card-bg);">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; background: var(--bs-body-bg); backdrop-filter: none; -webkit-backdrop-filter: none; opacity: 1;">
             <div class="modal-body p-4 text-center">
                 <div class="spinner-border text-danger mb-3" role="status" style="width: 3rem; height: 3rem;">
                     <span class="visually-hidden">Loading...</span>
@@ -134,7 +134,11 @@
             buttonsStyling: false
         }).then((result) => {
             if (result.isConfirmed) {
-                // Show Bootstrap upload modal
+                // Close SweetAlert completely before showing Bootstrap modal
+                Swal.close();
+
+                // Small delay to let SweetAlert's overlay fully close
+                setTimeout(() => {
                 const uploadModal = new bootstrap.Modal(document.getElementById('uploadProgressModal'));
                 uploadModal.show();
 
@@ -191,6 +195,7 @@
                 };
 
                 xhr.send(formData);
+                }, 300); // end setTimeout
             }
         });
     });

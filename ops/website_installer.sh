@@ -346,6 +346,19 @@ setup_laravel() {
   log_step "Menjalankan migrasi database Laravel..."
   php artisan migrate --force
 
+  # Pastikan PHP-FPM mengizinkan upload file besar (100M)
+  local fpm_php_ver
+  fpm_php_ver="$(detect_php_version)"
+  if [[ -n "${fpm_php_ver}" ]]; then
+    local fpm_ini="/etc/php/${fpm_php_ver}/fpm/php.ini"
+    if [[ -f "${fpm_ini}" ]]; then
+      log_step "Mengatur PHP upload_max_filesize dan post_max_size -> 100M..."
+      sed -i 's/^upload_max_filesize\s*=.*/upload_max_filesize = 100M/' "${fpm_ini}" 2>/dev/null || true
+      sed -i 's/^post_max_size\s*=.*/post_max_size = 100M/' "${fpm_ini}" 2>/dev/null || true
+      sed -i 's/^memory_limit\s*=.*/memory_limit = 256M/' "${fpm_ini}" 2>/dev/null || true
+    fi
+  fi
+
   # Set permissions
   local run_user
   run_user="$(stat -c '%U' "${PROJECT_DIR}")"

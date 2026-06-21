@@ -262,11 +262,34 @@ update_website() {
   sudo chmod o+x "${PROJECT_DIR}" 2>/dev/null || true
   sudo chmod -R o+rX "${web_dir}/public" 2>/dev/null || true
 
-  log_step "restart PHP-FPM dan Nginx..."
+  # Patch Nginx: tambahkan client_max_body_size jika belum ada
+  local nginx_conf="/etc/nginx/sites-available/jualan-web"
+  if [[ -f "${nginx_conf}" ]] && ! grep -q 'client_max_body_size' "${nginx_conf}"; then
+    log_step "patch Nginx: menambahkan client_max_body_size 100M..."
+    sudo sed -i '/charset utf-8;/a\    client_max_body_size 100M;' "${nginx_conf}" 2>/dev/null || true
+  fi
+
+  # Patch PHP: pastikan upload_max_filesize dan post_max_size cukup besar
   local php_ver=""
   if command -v php >/dev/null 2>&1; then
     php_ver=$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;')
   fi
+
+  if [[ -n "${php_ver}" ]]; then
+    local fpm_ini="/etc/php/${php_ver}/fpm/php.ini"
+    if [[ -f "${fpm_ini}" ]]; then
+      local current_upload
+      current_upload="$(grep -E '^upload_max_filesize\s*=' "${fpm_ini}" | head -1 | sed 's/.*=\s*//' | tr -d '[:space:]')"
+      # Patch if still at 2M default or not set
+      if [[ -z "${current_upload}" || "${current_upload}" == "2M" ]]; then
+        log_step "patch PHP: upload_max_filesize dan post_max_size -> 100M..."
+        sudo sed -i 's/^upload_max_filesize\s*=.*/upload_max_filesize = 100M/' "${fpm_ini}" 2>/dev/null || true
+        sudo sed -i 's/^post_max_size\s*=.*/post_max_size = 100M/' "${fpm_ini}" 2>/dev/null || true
+      fi
+    fi
+  fi
+
+  log_step "restart PHP-FPM dan Nginx..."
 
   if [[ -n "${php_ver}" ]]; then
     sudo systemctl restart "php${php_ver}-fpm" 2>/dev/null || true
