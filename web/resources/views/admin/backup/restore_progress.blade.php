@@ -148,26 +148,8 @@
             }
         }
 
-        try {
-            // Trigger background execution
-            const response = await fetch(runUrl);
-            if (!response.ok) {
-                throw new Error("HTTP status " + response.status);
-            }
-
-            // Start polling status
-            pollStatus();
-        } catch (err) {
-            appendLog("Koneksi ke server terputus atau gagal: " + err.message, 'error');
-            progressBar.classList.remove('bg-danger', 'progress-bar-animated');
-            progressBar.classList.add('bg-danger');
-            statusText.innerText = "Koneksi Bermasalah!";
-            statusText.className = "text-danger";
-            restoreIcon.className = "fas fa-times-circle text-danger";
-            btnDone.classList.remove('d-none');
-            btnDone.classList.remove('btn-secondary');
-            btnDone.classList.add('btn-danger');
-        }
+        // Start polling status immediately
+        pollStatus();
     });
 </script>
 @endpush

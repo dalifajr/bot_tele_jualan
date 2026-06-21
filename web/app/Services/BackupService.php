@@ -581,6 +581,22 @@ class BackupService
     {
         Schema::disableForeignKeyConstraints();
         try {
+            // Drop all known tables in reverse dependency order first
+            $tables = array_reverse(array_keys(self::$entities));
+            foreach ($tables as $table) {
+                Schema::dropIfExists($table);
+            }
+
+            // Drop sessions, cache, and other tables if they exist
+            $extraTables = [
+                'sessions', 'cache', 'cache_locks', 'visitors', 
+                'coupons', 'withdrawal_requests', 'chat_messages', 
+                'cart_items', 'broadcast_jobs'
+            ];
+            foreach ($extraTables as $table) {
+                Schema::dropIfExists($table);
+            }
+
             DB::unprepared($sql);
         } finally {
             Schema::enableForeignKeyConstraints();

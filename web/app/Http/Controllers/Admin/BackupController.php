@@ -181,9 +181,6 @@ class BackupController extends Controller
         }
     }
 
-    /**
-     * Restore database from uploaded ZIP backup (Save file and redirect to progress).
-     */
     public function restore(Request $request)
     {
         $request->validate([
@@ -200,48 +197,7 @@ class BackupController extends Controller
 
         // Save file to temporary path
         $tempPath = $file->storeAs('temp', 'restore_' . time() . '.zip');
-
-        return response()->json([
-            'success' => true,
-            'redirect_url' => route('admin.backup.restore.progress', [
-                'file' => basename($tempPath),
-                'filename' => $filename,
-                'mode' => $request->mode
-            ])
-        ]);
-    }
-
-    /**
-     * Display live restore progress page.
-     */
-    public function restoreProgress(Request $request)
-    {
-        $file = $request->query('file');
-        $filename = $request->query('filename');
-        $mode = $request->query('mode', 'overwrite');
-
-        return view('admin.backup.restore_progress', compact('file', 'filename', 'mode'));
-    }
-
-    public function runRestore(Request $request)
-    {
-        $file = $request->query('file');
-        $filename = $request->query('filename');
-        $mode = $request->query('mode', 'overwrite');
-
-        $relativePath = 'temp/' . $file;
-
-        if (!\Illuminate\Support\Facades\Storage::exists($relativePath)) {
-            return response()->json(['error' => 'File backup tidak ditemukan atau tidak valid.'], 400);
-        }
-
-        $fullPath = \Illuminate\Support\Facades\Storage::path($relativePath);
-        $realBase = realpath(\Illuminate\Support\Facades\Storage::path('temp'));
-        $realFile = realpath($fullPath);
-
-        if (!$realFile || !$realBase || strpos($realFile, $realBase) !== 0) {
-            return response()->json(['error' => 'File backup tidak ditemukan atau tidak valid.'], 400);
-        }
+        $fileBase = basename($tempPath);
 
         // 1. Capture active user and session for preservation
         $adminData = null;
@@ -276,8 +232,8 @@ class BackupController extends Controller
         // 3. Start restore in background (or synchronously in testing)
         if (app()->runningUnitTests()) {
             \Illuminate\Support\Facades\Artisan::call('restore:run', [
-                'file' => $file,
-                'mode' => $mode,
+                'file' => $fileBase,
+                'mode' => $request->mode,
                 'filename' => $filename
             ]);
         } else {
@@ -286,12 +242,36 @@ class BackupController extends Controller
             $php = $phpFinder->find(false) ?: 'php';
 
             if (PHP_OS_FAMILY === 'Windows') {
-                pclose(popen("start /B " . escapeshellarg($php) . " " . escapeshellarg($artisan) . " restore:run " . escapeshellarg($file) . " " . escapeshellarg($mode) . " " . escapeshellarg($filename) . " > NUL 2>&1", "r"));
+                pclose(popen("start /B " . escapeshellarg($php) . " " . escapeshellarg($artisan) . " restore:run " . escapeshellarg($fileBase) . " " . escapeshellarg($request->mode) . " " . escapeshellarg($filename) . " > NUL 2>&1", "r"));
             } else {
-                exec(escapeshellarg($php) . " " . escapeshellarg($artisan) . " restore:run " . escapeshellarg($file) . " " . escapeshellarg($mode) . " " . escapeshellarg($filename) . " > /dev/null 2>&1 &");
+                exec(escapeshellarg($php) . " " . escapeshellarg($artisan) . " restore:run " . escapeshellarg($fileBase) . " " . escapeshellarg($request->mode) . " " . escapeshellarg($filename) . " > /dev/null 2>&1 &");
             }
         }
 
+        return response()->json([
+            'success' => true,
+            'redirect_url' => route('admin.backup.restore.progress', [
+                'file' => $fileBase,
+                'filename' => $filename,
+                'mode' => $request->mode
+            ])
+        ]);
+    }
+
+    /**
+     * Display live restore progress page.
+     */
+    public function restoreProgress(Request $request)
+    {
+        $file = $request->query('file');
+        $filename = $request->query('filename');
+        $mode = $request->query('mode', 'overwrite');
+
+        return view('admin.backup.restore_progress', compact('file', 'filename', 'mode'));
+    }
+
+    public function runRestore(Request $request)
+    {
         return response()->json(['success' => true]);
     }
 
@@ -348,7 +328,10 @@ class BackupController extends Controller
             }
         }
 
-        return response()->json(['success' => true]);
+        return response()->json([
+            'success' => true,
+            'redirect_url' => route('admin.backup.wipe.progress')
+        ]);
     }
 
     public function wipeStatus()

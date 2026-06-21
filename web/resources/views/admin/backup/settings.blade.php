@@ -164,7 +164,44 @@
             buttonsStyling: false
         }).then((result) => {
             if (result.isConfirmed) {
-                window.location.href = "{{ route('admin.backup.wipe.progress') }}";
+                // Show loading indicator
+                Swal.fire({
+                    title: 'Memulai Proses...',
+                    text: 'Sedang menghubungi server...',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                // Send POST request
+                fetch("{{ route('admin.backup.wipe.run') }}", {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(res => {
+                    if (!res.ok) throw new Error("HTTP error " + res.status);
+                    return res.json();
+                })
+                .then(data => {
+                    if (data.success && data.redirect_url) {
+                        window.location.href = data.redirect_url;
+                    } else {
+                        throw new Error(data.message || "Gagal memulai proses pembersihan.");
+                    }
+                })
+                .catch(err => {
+                    Swal.fire({
+                        title: 'Error!',
+                        text: err.message,
+                        icon: 'error',
+                        confirmButtonText: 'OK'
+                    });
+                });
             }
         });
     });

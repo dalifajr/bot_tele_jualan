@@ -352,7 +352,7 @@ class BackupRestoreTest extends TestCase
         $this->assertTrue(\App\Models\Product::where('name', 'Wipe Test Product')->exists());
 
         // Call the wipe run endpoint
-        $response = $this->get(route('admin.backup.wipe.run'));
+        $response = $this->post(route('admin.backup.wipe.run'));
         $response->assertStatus(200);
         $response->assertJson(['success' => true]);
 

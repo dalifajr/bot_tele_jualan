@@ -193,7 +193,7 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         
         // Wipe Database Action
         Route::get('/backup/wipe/progress', [\App\Http\Controllers\Admin\BackupController::class, 'wipeProgress'])->name('backup.wipe.progress');
-        Route::get('/backup/wipe/run', [\App\Http\Controllers\Admin\BackupController::class, 'runWipe'])->name('backup.wipe.run');
+        Route::post('/backup/wipe/run', [\App\Http\Controllers\Admin\BackupController::class, 'runWipe'])->name('backup.wipe.run');
         Route::get('/backup/wipe/status', [\App\Http\Controllers\Admin\BackupController::class, 'wipeStatus'])->name('backup.wipe.status');
         
         // System Actions
