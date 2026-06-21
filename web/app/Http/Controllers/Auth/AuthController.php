@@ -115,6 +115,9 @@ class AuthController extends Controller
                 return redirect()->route('auth.two-factor');
             }
 
+            // Record login IP country
+            $this->recordLoginCountry($user, $request);
+
             $request->session()->regenerate();
             return redirect()->intended(route('dashboard'));
         }
@@ -134,7 +137,7 @@ class AuthController extends Controller
             'username' => 'required|string|max:255|unique:users',
             'email' => 'nullable|string|email|max:255|unique:users',
             'telegram_id' => 'nullable|integer|unique:users',
-            'password' => 'required|string|min:6|confirmed',
+            'password' => ['required', 'string', \Illuminate\Validation\Rules\Password::min(8)->letters()->numbers()->symbols(), 'confirmed'],
         ];
 
         if (!app()->environment('testing', 'local')) {
@@ -205,7 +208,7 @@ class AuthController extends Controller
     public function updatePassword(Request $request)
     {
         $request->validate([
-            'password' => 'required|string|min:6|confirmed',
+            'password' => ['required', 'string', \Illuminate\Validation\Rules\Password::min(8)->letters()->numbers()->symbols(), 'confirmed'],
         ]);
 
         $user = Auth::user();
@@ -266,6 +269,10 @@ class AuthController extends Controller
         $remember = $request->session()->get('2fa_remember', false);
         $request->session()->forget(['2fa_user_id', '2fa_remember']);
         Auth::login($user, $remember);
+        
+        // Record login IP country
+        $this->recordLoginCountry($user, $request);
+
         $request->session()->regenerate();
 
         return redirect()->intended(route('dashboard'));
@@ -295,5 +302,29 @@ class AuthController extends Controller
 
         $status = $user->two_factor_enabled ? 'diaktifkan' : 'dinonaktifkan';
         return redirect()->back()->with('success', "Verifikasi dua langkah (2FA) berhasil {$status}.");
+    }
+
+    /**
+     * Fetch and record IP location country.
+     */
+    private function recordLoginCountry(User $user, Request $request)
+    {
+        $ip = $request->ip();
+        $country = 'Local / Unknown';
+        
+        if ($ip && $ip !== '127.0.0.1' && $ip !== '::1' && !str_starts_with($ip, '192.168.') && !str_starts_with($ip, '10.')) {
+            try {
+                $response = Http::timeout(2)->get("http://ip-api.com/json/{$ip}");
+                if ($response->successful() && $response->json('status') === 'success') {
+                    $country = $response->json('country') ?? 'Unknown';
+                }
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::warning("IP Geolocation lookup failed: " . $e->getMessage());
+            }
+        }
+        
+        $user->update([
+            'last_login_country' => $country
+        ]);
     }
 }

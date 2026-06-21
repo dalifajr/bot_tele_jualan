@@ -51,7 +51,7 @@ class OrderService
                 'actor_id' => $actorId,
                 'entity_type' => 'order',
                 'entity_id' => $order->id,
-                'detail' => "order_ref={$order->order_ref}; reason={$reason}",
+                'detail' => \App\Models\AuditLog::maskSensitiveData("order_ref={$order->order_ref}; reason={$reason}"),
                 'created_at' => now(),
             ]);
 
@@ -155,7 +155,7 @@ class OrderService
                 'actor_id' => $adminId,
                 'entity_type' => 'payment',
                 'entity_id' => $payment->id ?? 0,
-                'detail' => "amount={$payment->expected_amount}; source_app=WEB_ADMIN:{$adminId}",
+                'detail' => \App\Models\AuditLog::maskSensitiveData("amount={$payment->expected_amount}; source_app=WEB_ADMIN:{$adminId}"),
                 'created_at' => now(),
             ]);
 

@@ -17,6 +17,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('tokens:clean')->daily();
     })
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->validateCsrfTokens(except: [
+            'api/payment/midtrans/callback',
+        ]);
         $middleware->web(append: [
             \App\Http\Middleware\SetLocale::class,
         ]);

@@ -108,6 +108,39 @@ class SellerController extends Controller
                 ->sum('products.price');
         }
 
+        // Advanced Analytics for Seller Dashboard
+        $avgRating = DB::table('reviews')
+            ->join('products', 'reviews.product_id', '=', 'products.id')
+            ->where('products.creator_id', $sellerId)
+            ->avg('reviews.rating') ?? 0;
+            
+        $totalReviews = DB::table('reviews')
+            ->join('products', 'reviews.product_id', '=', 'products.id')
+            ->where('products.creator_id', $sellerId)
+            ->count();
+
+        $topProducts = DB::table('stock_units')
+            ->join('products', 'stock_units.product_id', '=', 'products.id')
+            ->select('products.name', 'products.price', DB::raw('count(stock_units.id) as units_sold'), DB::raw('sum(products.price) as total_earnings'))
+            ->where('stock_units.seller_id', $sellerId)
+            ->where('stock_units.is_sold', true)
+            ->groupBy('products.id', 'products.name', 'products.price')
+            ->orderByDesc('units_sold')
+            ->take(5)
+            ->get();
+
+        $productShare = DB::table('stock_units')
+            ->join('products', 'stock_units.product_id', '=', 'products.id')
+            ->select('products.name', DB::raw('count(stock_units.id) as units_sold'))
+            ->where('stock_units.seller_id', $sellerId)
+            ->where('stock_units.is_sold', true)
+            ->groupBy('products.id', 'products.name')
+            ->orderByDesc('units_sold')
+            ->get();
+
+        $shareLabels = $productShare->pluck('name')->toArray();
+        $shareData = $productShare->pluck('units_sold')->toArray();
+
         return view('seller.dashboard', compact(
             'user',
             'readyStockCount',
@@ -125,7 +158,12 @@ class SellerController extends Controller
             'chartLabels',
             'chartData',
             'days',
-            'heldBalance'
+            'heldBalance',
+            'avgRating',
+            'totalReviews',
+            'topProducts',
+            'shareLabels',
+            'shareData'
         ));
     }
 

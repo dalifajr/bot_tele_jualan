@@ -19,18 +19,83 @@
                 </div>
             </div>
             <div class="card-body px-4 pb-4">
-                <div class="row g-3 mb-4">
-                    <div class="col-sm-6">
-                        <span class="text-muted small">Produk</span>
-                        <div class="fw-bold">{{ $order->product->name ?? '-' }}</div>
-                    </div>
-                    <div class="col-sm-3">
-                        <span class="text-muted small">Jumlah</span>
-                        <div class="fw-bold">{{ $order->quantity }}</div>
-                    </div>
-                    <div class="col-sm-3">
-                        <span class="text-muted small">Total</span>
-                        <div class="fw-bold product-price">{{ $order->formatted_total }}</div>
+                {{-- Flash Messages --}}
+                @if(session('success'))
+                <div class="alert alert-success border-0 shadow-sm d-flex align-items-center gap-2 mb-4" style="border-radius: 12px;">
+                    <i class="fas fa-check-circle fs-5"></i>
+                    <div>{{ session('success') }}</div>
+                </div>
+                @endif
+
+                @if(session('error'))
+                <div class="alert alert-danger border-0 shadow-sm d-flex align-items-center gap-2 mb-4" style="border-radius: 12px;">
+                    <i class="fas fa-exclamation-circle fs-5"></i>
+                    <div>{{ session('error') }}</div>
+                </div>
+                @endif
+
+                <div class="mb-4">
+                    <span class="text-muted small d-block mb-2">Item Pesanan:</span>
+                    <div class="list-group list-group-flush border rounded-3 overflow-hidden mb-3">
+                        @foreach($order->items as $item)
+                        <div class="list-group-item p-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="fw-bold text-dark">{{ $item->product->name ?? '-' }}</span>
+                                    <small class="text-muted d-block">{{ $item->quantity }} x Rp {{ number_format($item->unit_price, 0, ',', '.') }}</small>
+                                </div>
+                                <span class="fw-bold text-dark">Rp {{ number_format($item->unit_price * $item->quantity, 0, ',', '.') }}</span>
+                            </div>
+
+                            {{-- Product Review Section --}}
+                            @if($order->status === 'delivered' && $item->product)
+                                @php
+                                    $hasReview = \App\Models\Review::where('order_id', $order->id)
+                                        ->where('product_id', $item->product_id)
+                                        ->first();
+                                @endphp
+                                @if($hasReview)
+                                    <div class="mt-3 p-2 bg-success-subtle rounded-3" style="font-size: 0.85rem;">
+                                        <i class="fas fa-check-circle text-success me-1"></i> Anda telah memberikan ulasan:
+                                        <span class="text-warning ms-1">
+                                            @for($i=1; $i<=5; $i++)
+                                                <i class="fa{{ $i <= $hasReview->rating ? 's' : 'r' }} fa-star"></i>
+                                            @endfor
+                                        </span>
+                                        @if($hasReview->comment)
+                                            <p class="mb-0 mt-1 text-secondary italic">"{{ $hasReview->comment }}"</p>
+                                        @endif
+                                    </div>
+                                @else
+                                    <div class="mt-3 p-3 bg-light rounded-3" style="font-size: 0.85rem;">
+                                        <h6 class="fw-bold text-dark small mb-2"><i class="fas fa-star text-warning me-1"></i> Berikan Ulasan & Rating:</h6>
+                                        <form action="{{ route('reviews.store') }}" method="POST">
+                                            @csrf
+                                            <input type="hidden" name="order_id" value="{{ $order->id }}">
+                                            <input type="hidden" name="product_id" value="{{ $item->product_id }}">
+                                            
+                                            <div class="d-flex align-items-center gap-2 mb-2">
+                                                <span class="small text-muted">Rating:</span>
+                                                <div class="rating-input d-flex gap-1 text-warning">
+                                                    @for($star = 1; $star <= 5; $star++)
+                                                    <input type="radio" name="rating" id="star-{{ $order->id }}-{{ $item->product_id }}-{{ $star }}" value="{{ $star }}" class="d-none" required>
+                                                    <label for="star-{{ $order->id }}-{{ $item->product_id }}-{{ $star }}" style="cursor: pointer;" onclick="highlightStars({{ $order->id }}, {{ $item->product_id }}, {{ $star }})">
+                                                        <i class="far fa-star fs-5" id="icon-{{ $order->id }}-{{ $item->product_id }}-{{ $star }}"></i>
+                                                    </label>
+                                                    @endfor
+                                                </div>
+                                            </div>
+
+                                            <div class="input-group input-group-sm">
+                                                <input type="text" name="comment" class="form-control" placeholder="Tulis ulasan Anda (opsional)...">
+                                                <button class="btn btn-primary" type="submit">Kirim</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                @endif
+                            @endif
+                        </div>
+                        @endforeach
                     </div>
                 </div>
 
@@ -187,6 +252,14 @@
         </div>
 
         <div class="mt-3">
+            @php
+                $seller = $order->product->creator ?? null;
+            @endphp
+            @if($seller && $seller->id !== Auth::id())
+                <a href="{{ route('chat.index', ['contact_id' => $seller->id]) }}" class="btn btn-outline-primary w-100 rounded-pill mb-2">
+                    <i class="fas fa-comments me-2"></i>Chat dengan Penjual
+                </a>
+            @endif
             <a href="{{ route('orders.index') }}" class="btn btn-outline-secondary w-100 rounded-pill mb-2">
                 <i class="fas fa-arrow-left me-2"></i>Kembali ke Riwayat
             </a>
@@ -233,4 +306,27 @@
 </div>
 @endpush
 @endif
+
+@push('scripts')
+<script>
+    function highlightStars(orderId, productId, rating) {
+        for (let i = 1; i <= 5; i++) {
+            const starIcon = document.getElementById(`icon-${orderId}-${productId}-${i}`);
+            if (starIcon) {
+                if (i <= rating) {
+                    starIcon.classList.remove('far');
+                    starIcon.classList.add('fas');
+                } else {
+                    starIcon.classList.remove('fas');
+                    starIcon.classList.add('far');
+                }
+            }
+        }
+        const radioButton = document.getElementById(`star-${orderId}-${productId}-${rating}`);
+        if (radioButton) {
+            radioButton.checked = true;
+        }
+    }
+</script>
+@endpush
 @endsection

@@ -40,6 +40,49 @@
 
                 <h5 class="fw-bold mb-2">Deskripsi</h5>
                 <p class="text-muted">{{ $product->description ?: 'Tidak ada deskripsi tersedia.' }}</p>
+
+                <hr class="my-4">
+
+                <h5 class="fw-bold mb-3"><i class="fas fa-star text-warning me-2"></i>Ulasan & Rating</h5>
+                @php
+                    $reviews = \App\Models\Review::with('user')->where('product_id', $product->id)->orderBy('created_at', 'desc')->get();
+                    $avgRating = $reviews->avg('rating');
+                @endphp
+
+                <div class="d-flex align-items-center gap-3 mb-4">
+                    <div class="display-4 fw-bold text-primary">{{ $avgRating ? number_format($avgRating, 1) : '0.0' }}</div>
+                    <div>
+                        <div class="text-warning fs-5">
+                            @for($i = 1; $i <= 5; $i++)
+                                <i class="fa{{ $i <= round($avgRating) ? 's' : 'r' }} fa-star"></i>
+                            @endfor
+                        </div>
+                        <span class="text-muted small">Berdasarkan {{ $reviews->count() }} ulasan</span>
+                    </div>
+                </div>
+
+                <div class="reviews-list">
+                    @forelse($reviews as $rev)
+                    <div class="border-bottom pb-3 mb-3">
+                        <div class="d-flex justify-content-between align-items-start mb-1">
+                            <div>
+                                <span class="fw-bold text-dark small">{{ $rev->user->full_name ?? $rev->user->username ?? 'Pelanggan' }}</span>
+                                <span class="text-warning ms-2" style="font-size: 0.8rem;">
+                                    @for($i = 1; $i <= 5; $i++)
+                                        <i class="fa{{ $i <= $rev->rating ? 's' : 'r' }} fa-star"></i>
+                                    @endfor
+                                </span>
+                            </div>
+                            <span class="text-muted small" style="font-size: 0.75rem;">{{ $rev->created_at->format('d M Y') }}</span>
+                        </div>
+                        @if($rev->comment)
+                            <p class="mb-0 text-secondary small italic">"{{ $rev->comment }}"</p>
+                        @endif
+                    </div>
+                    @empty
+                    <p class="text-muted small mb-0">Belum ada ulasan untuk produk ini.</p>
+                    @endforelse
+                </div>
             </div>
         </div>
     </div>
@@ -69,8 +112,11 @@
                             <label for="quantity" class="text-muted small fw-bold mb-0">Jumlah Beli:</label>
                             <input type="number" id="quantity" name="quantity" class="form-control form-control-sm border-0 bg-transparent text-end fw-bold px-0" value="1" min="1" max="{{ $stockCount }}" required style="width: 70px; outline: none; box-shadow: none;">
                         </div>
-                        <button type="submit" class="btn btn-success w-100 rounded-pill py-3 fw-bold">
+                        <button type="submit" class="btn btn-success w-100 rounded-pill py-3 fw-bold mb-2">
                             <i class="fas fa-shopping-bag me-2"></i>Beli Sekarang (via Website)
+                        </button>
+                        <button type="submit" formaction="{{ route('cart.add', $product->id) }}" class="btn btn-outline-primary w-100 rounded-pill py-3 fw-bold">
+                            <i class="fas fa-cart-plus me-2"></i>Tambah ke Keranjang
                         </button>
                     </form>
                 @else

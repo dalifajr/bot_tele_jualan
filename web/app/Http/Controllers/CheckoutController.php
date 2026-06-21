@@ -131,7 +131,7 @@ class CheckoutController extends Controller
                 'actor_id' => $user->id,
                 'entity_type' => 'order',
                 'entity_id' => $order->id,
-                'detail' => "product_id={$product->id}; qty={$quantity}; subtotal={$subtotal}; total={$totalAmount}; reserved_stock_ids=[" . implode(',', $reservedIds) . "]",
+                'detail' => \App\Models\AuditLog::maskSensitiveData("product_id={$product->id}; qty={$quantity}; subtotal={$subtotal}; total={$totalAmount}; reserved_stock_ids=[" . implode(',', $reservedIds) . "]"),
                 'created_at' => now(),
             ]);
 
@@ -186,6 +186,22 @@ class CheckoutController extends Controller
             }
         }
 
-        return view('checkout.success', compact('order', 'dynamicQris'));
+        $snapToken = null;
+        if ($order->payment) {
+            $snapToken = $order->payment->snap_token;
+            if (!$snapToken) {
+                try {
+                    $midtransService = app(\App\Services\MidtransService::class);
+                    $snapToken = $midtransService->getSnapToken($order, $order->items);
+                    if ($snapToken) {
+                        $order->payment->update(['snap_token' => $snapToken]);
+                    }
+                } catch (\Exception $e) {
+                    \Log::error("Midtrans Snap Token Generation Error: " . $e->getMessage());
+                }
+            }
+        }
+
+        return view('checkout.success', compact('order', 'dynamicQris', 'snapToken'));
     }
 }

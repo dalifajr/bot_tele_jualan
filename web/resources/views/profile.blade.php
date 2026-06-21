@@ -99,6 +99,25 @@
             </div>
         </div>
 
+        {{-- Metadata / Security Info --}}
+        <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
+            <div class="card-header bg-transparent border-0 pt-4 px-4">
+                <h5 class="fw-bold mb-0"><i class="fas fa-shield-alt text-primary me-2"></i>Informasi Keamanan & Geolokasi</h5>
+            </div>
+            <div class="card-body px-4 pb-4">
+                <div class="row g-3 small">
+                    <div class="col-sm-6">
+                        <span class="text-muted d-block">IP Pendaftaran:</span>
+                        <strong class="text-dark">{{ Auth::user()->registration_ip ?: 'Tidak tercatat' }}</strong>
+                    </div>
+                    <div class="col-sm-6">
+                        <span class="text-muted d-block">Negara Asal (IP Terakhir):</span>
+                        <strong class="text-primary">{{ Auth::user()->last_login_country ?: 'Indonesia (Lokal)' }}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         {{-- Actions --}}
         <div class="card border-0 shadow-sm" style="border-radius: 16px;">
             <div class="card-body p-4">

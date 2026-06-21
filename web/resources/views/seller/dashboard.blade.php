@@ -83,6 +83,24 @@
             </div>
         </div>
     </div>
+
+    {{-- Card Average Review Rating --}}
+    <div class="col-12 col-md-6 col-lg-3">
+        <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 20px; background: rgba(255,255,255,0.7); backdrop-filter: blur(10px);">
+            <div class="card-body p-4 position-relative">
+                <div class="position-absolute end-0 bottom-0 text-warning" style="font-size: 8rem; transform: translate(20px, 20px); opacity: 0.1; pointer-events: none; z-index: 0;">
+                    <i class="fas fa-star"></i>
+                </div>
+                <div class="position-relative" style="z-index: 1;">
+                    <p class="small text-muted fw-bold mb-2">RATING ULASAN SELLER</p>
+                    <h2 class="fw-bold text-warning mb-3">
+                        <i class="fas fa-star text-warning me-1"></i>{{ $avgRating ? number_format($avgRating, 1) : '0.0' }}
+                    </h2>
+                    <span class="small text-muted"><i class="fas fa-comments text-primary me-1"></i>Berdasarkan {{ $totalReviews }} ulasan pembeli.</span>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 {{-- Charts & Operational Analytics --}}
@@ -130,6 +148,60 @@
                         <strong class="text-danger">{{ $totalOrders > 0 ? round(($cancelledOrders / $totalOrders) * 100) : 0 }}%</strong>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Advanced Analytics Row --}}
+<div class="row g-4 mb-4">
+    {{-- Top Performing Products Table --}}
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm h-100" style="border-radius: 20px;">
+            <div class="card-header bg-transparent border-0 pt-4 px-4">
+                <h5 class="fw-bold mb-1 text-body"><i class="fas fa-trophy text-warning me-2"></i>Produk Terlaris</h5>
+                <p class="text-muted small mb-0">5 produk dengan jumlah penjualan unit terbanyak</p>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr class="text-secondary small border-bottom">
+                                <th class="px-4 py-3 border-0">Nama Produk</th>
+                                <th class="py-3 border-0">Harga</th>
+                                <th class="py-3 border-0 text-center">Unit Terjual</th>
+                                <th class="px-4 py-3 border-0 text-end">Total Omset</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($topProducts as $prod)
+                            <tr>
+                                <td class="px-4 fw-bold text-dark">{{ $prod->name }}</td>
+                                <td>Rp {{ number_format($prod->price, 0, ',', '.') }}</td>
+                                <td class="text-center fw-bold text-primary">{{ $prod->units_sold }}</td>
+                                <td class="px-4 text-end fw-bold text-success">Rp {{ number_format($prod->total_earnings, 0, ',', '.') }}</td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="4" class="text-center py-4 text-muted px-4">Belum ada produk yang terjual.</td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Product Sales Share Donut Chart --}}
+    <div class="col-lg-5">
+        <div class="card border-0 shadow-sm h-100" style="border-radius: 20px;">
+            <div class="card-header bg-transparent border-0 pt-4 px-4">
+                <h5 class="fw-bold mb-1 text-body"><i class="fas fa-chart-pie text-info me-2"></i>Porsi Penjualan per Produk</h5>
+                <p class="text-muted small mb-0">Distribusi jumlah unit terjual untuk setiap produk</p>
+            </div>
+            <div class="card-body d-flex flex-column justify-content-center align-items-center px-4 pb-4">
+                <div id="shareChart" style="min-height: 250px; width: 100%;"></div>
             </div>
         </div>
     </div>
@@ -350,6 +422,26 @@
         const completionChart = new ApexCharts(document.querySelector("#completionChart"), completionOptions);
         completionChart.render();
 
+        // 3. Product Share Pie Chart
+        const shareOptions = {
+            series: @json($shareData),
+            chart: {
+                type: 'donut',
+                height: 250,
+                background: 'transparent'
+            },
+            labels: @json($shareLabels),
+            theme: chartTheme,
+            legend: {
+                position: 'bottom',
+                labels: { colors: isDark ? '#a0aec0' : '#4a5568' }
+            },
+            dataLabels: { enabled: true }
+        };
+
+        const shareChart = new ApexCharts(document.querySelector("#shareChart"), shareOptions);
+        shareChart.render();
+
         // Respond to theme toggle events
         const observer = new MutationObserver((mutations) => {
             mutations.forEach((mutation) => {
@@ -366,6 +458,11 @@
                     
                     completionChart.updateOptions({
                         theme: { mode: newTheme }
+                    });
+
+                    shareChart.updateOptions({
+                        theme: { mode: newTheme },
+                        legend: { labels: { colors: isNewDark ? '#a0aec0' : '#4a5568' } }
                     });
                 }
             });

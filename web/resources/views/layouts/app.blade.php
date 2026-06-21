@@ -206,6 +206,19 @@
         </div>
         @endif
 
+        {{-- Shopping Cart Icon --}}
+        <a href="{{ route('cart.index') }}" class="btn btn-link link-body-emphasis p-0 position-relative me-2" title="Keranjang Belanja">
+            <i class="fas fa-shopping-cart fs-5"></i>
+            @php
+                $cartCount = \App\Models\CartItem::where('user_id', Auth::id())->sum('quantity');
+            @endphp
+            @if($cartCount > 0)
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.65rem;" id="cart-badge-count">
+                {{ $cartCount }}
+            </span>
+            @endif
+        </a>
+
         {{-- Language Toggle --}}
         @php
             $currentLocale = App::getLocale();
@@ -263,6 +276,10 @@
                     <i class="fas fa-circle" style="font-size: 0.4rem; opacity: 0.6;"></i>
                     {{ __('Riwayat Pesanan') }}
                 </a>
+                <a href="{{ route('chat.index') }}" class="menu-item {{ request()->routeIs('chat.*') ? 'active' : '' }}">
+                    <i class="fas fa-circle" style="font-size: 0.4rem; opacity: 0.6;"></i>
+                    {{ __('Pusat Chat') }}
+                </a>
             </div>
 
             <div class="menu-group">
@@ -303,6 +320,9 @@
                 </a>
                 <a href="{{ route('admin.withdrawals.index') }}" class="menu-item {{ request()->routeIs('admin.withdrawals.*') ? 'active' : '' }}">
                     <i class="fas fa-hand-holding-usd"></i> {{ __('Permintaan Payout') }}
+                </a>
+                <a href="{{ route('admin.coupons.index') }}" class="menu-item {{ request()->routeIs('admin.coupons.*') ? 'active' : '' }}">
+                    <i class="fas fa-ticket-alt"></i> {{ __('Kelola Kupon') }}
                 </a>
                 <a href="{{ route('admin.logins.index') }}" class="menu-item {{ request()->routeIs('admin.logins.*') ? 'active' : '' }}">
                     <i class="fas fa-sign-in-alt"></i> {{ __('Percobaan Login') }}

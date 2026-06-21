@@ -20,8 +20,8 @@ class RegistrationSpamTest extends TestCase
             'full_name' => 'John Doe',
             'username' => 'johndoe',
             'email' => 'johndoe@example.com',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
+            'password' => 'P@ssword123!',
+            'password_confirmation' => 'P@ssword123!',
         ], [
             'REMOTE_ADDR' => '192.168.1.100'
         ]);
@@ -47,8 +47,8 @@ class RegistrationSpamTest extends TestCase
             'full_name' => 'User One',
             'username' => 'userone',
             'email' => 'userone@example.com',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
+            'password' => 'P@ssword123!',
+            'password_confirmation' => 'P@ssword123!',
         ], ['REMOTE_ADDR' => '10.0.0.1']);
         $response1->assertRedirect(route('dashboard'));
 
@@ -57,8 +57,8 @@ class RegistrationSpamTest extends TestCase
             'full_name' => 'User Two',
             'username' => 'usertwo',
             'email' => 'usertwo@example.com',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
+            'password' => 'P@ssword123!',
+            'password_confirmation' => 'P@ssword123!',
         ], ['REMOTE_ADDR' => '10.0.0.1']);
         $response2->assertRedirect(route('dashboard'));
 
@@ -71,8 +71,8 @@ class RegistrationSpamTest extends TestCase
             'full_name' => 'User Three',
             'username' => 'userthree',
             'email' => 'userthree@example.com',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
+            'password' => 'P@ssword123!',
+            'password_confirmation' => 'P@ssword123!',
         ], ['REMOTE_ADDR' => '10.0.0.1']);
 
         // Should redirect to login page with error

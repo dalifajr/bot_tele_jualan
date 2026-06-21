@@ -16,6 +16,8 @@ class Order extends Model
         'order_ref',
         'customer_id',
         'subtotal',
+        'coupon_code',
+        'discount_amount',
         'unique_code',
         'total_amount',
         'status',
@@ -27,6 +29,7 @@ class Order extends Model
 
     protected $casts = [
         'subtotal' => 'integer',
+        'discount_amount' => 'integer',
         'unique_code' => 'integer',
         'total_amount' => 'integer',
         'expires_at' => 'datetime',

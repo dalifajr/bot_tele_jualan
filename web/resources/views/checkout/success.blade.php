@@ -55,6 +55,17 @@
                     </div>
                 @endif
 
+                @if($snapToken)
+                    <div class="text-center mb-3">
+                        <span class="text-muted small d-block mb-2">— ATAU —</span>
+                        <div class="d-grid gap-2">
+                            <button id="pay-button" class="btn btn-success rounded-pill py-2 fw-bold">
+                                <i class="fas fa-credit-card me-1"></i> Bayar Otomatis (Midtrans)
+                            </button>
+                        </div>
+                    </div>
+                @endif
+
                 <div class="d-grid gap-2 mt-4">
                     <a href="{{ route('orders.show', $order->id) }}" class="btn btn-primary rounded-pill py-2">
                         <i class="fas fa-search me-1"></i> Cek Status Pembayaran
@@ -78,6 +89,48 @@
 @endsection
 
 @push('scripts')
+@if($snapToken)
+<script src="{{ env('MIDTRANS_IS_PRODUCTION', false) ? 'https://app.midtrans.com/snap/snap.js' : 'https://app.sandbox.midtrans.com/snap/snap.js' }}" data-client-key="{{ env('MIDTRANS_CLIENT_KEY') }}"></script>
+<script>
+    document.getElementById('pay-button').onclick = function(){
+        snap.pay('{{ $snapToken }}', {
+            onSuccess: function(result){
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Pembayaran Berhasil!',
+                    text: 'Pembayaran Anda telah sukses diverifikasi.',
+                    timer: 2000,
+                    showConfirmButton: false
+                }).then(() => {
+                    window.location.href = "{{ route('orders.show', $order->id) }}";
+                });
+            },
+            onPending: function(result){
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Menunggu Pembayaran',
+                    text: 'Silakan selesaikan pembayaran sesuai petunjuk.',
+                });
+            },
+            onError: function(result){
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Pembayaran Gagal',
+                    text: 'Terjadi kesalahan saat memproses pembayaran.',
+                });
+            },
+            onClose: function(){
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Pembayaran Dibatalkan',
+                    text: 'Anda menutup popup pembayaran sebelum selesai.',
+                });
+            }
+        });
+    };
+</script>
+@endif
+
 @if($dynamicQris)
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>

@@ -18,6 +18,8 @@ Route::get('/', function () {
     return auth()->check() ? redirect()->route('dashboard') : redirect()->route('login');
 });
 
+Route::post('/api/payment/midtrans/callback', [\App\Http\Controllers\MidtransController::class, 'callback'])->name('payment.midtrans.callback');
+
 Route::get('/admin/broadcast/run-bg/{jobId}', [\App\Http\Controllers\AdminController::class, 'runBroadcastBackground'])->name('admin.broadcast.run-bg');
 
 /*
@@ -68,6 +70,22 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
     // Checkout
     Route::post('/checkout/{product}', [CheckoutController::class, 'store'])->name('checkout.store');
     Route::get('/checkout/success/{order_ref}', [CheckoutController::class, 'success'])->name('checkout.success');
+
+    // Shopping Cart
+    Route::get('/cart', [\App\Http\Controllers\CartController::class, 'index'])->name('cart.index');
+    Route::post('/cart/add/{product}', [\App\Http\Controllers\CartController::class, 'add'])->name('cart.add');
+    Route::put('/cart/update/{id}', [\App\Http\Controllers\CartController::class, 'update'])->name('cart.update');
+    Route::delete('/cart/remove/{id}', [\App\Http\Controllers\CartController::class, 'remove'])->name('cart.remove');
+    Route::get('/cart/checkout', [\App\Http\Controllers\CartController::class, 'checkout'])->name('cart.checkout');
+    Route::post('/cart/process', [\App\Http\Controllers\CartController::class, 'processCheckout'])->name('cart.process');
+
+    // Reviews & Ratings
+    Route::post('/reviews', [\App\Http\Controllers\ReviewController::class, 'store'])->name('reviews.store');
+
+    // Chat System
+    Route::get('/chat', [\App\Http\Controllers\ChatController::class, 'index'])->name('chat.index');
+    Route::get('/chat/messages/{contactId}', [\App\Http\Controllers\ChatController::class, 'fetchMessages'])->name('chat.fetch');
+    Route::post('/chat/send', [\App\Http\Controllers\ChatController::class, 'sendMessage'])->name('chat.send');
     
     // Manage Orders
     Route::post('/orders/{id}/cancel', [\App\Http\Controllers\OrderController::class, 'cancel'])->name('orders.cancel');
@@ -153,6 +171,12 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         Route::post('/settings/run-held-funds', [\App\Http\Controllers\AdminController::class, 'runHeldFunds'])->name('settings.run-held-funds');
         Route::post('/settings/run-release-expired', [\App\Http\Controllers\AdminController::class, 'runReleaseExpired'])->name('settings.run-release-expired');
         Route::get('/audit-logs', [\App\Http\Controllers\AdminController::class, 'auditLogs'])->name('audit-logs.index');
+        
+        // Coupons Management
+        Route::get('/coupons', [\App\Http\Controllers\Admin\CouponController::class, 'index'])->name('coupons.index');
+        Route::post('/coupons', [\App\Http\Controllers\Admin\CouponController::class, 'store'])->name('coupons.store');
+        Route::put('/coupons/{id}', [\App\Http\Controllers\Admin\CouponController::class, 'update'])->name('coupons.update');
+        Route::delete('/coupons/{id}', [\App\Http\Controllers\Admin\CouponController::class, 'destroy'])->name('coupons.destroy');
         
         // Backup & Restore
         Route::get('/backup', [\App\Http\Controllers\Admin\BackupController::class, 'index'])->name('backup.index');
