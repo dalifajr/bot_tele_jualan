@@ -182,6 +182,8 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         Route::get('/backup', [\App\Http\Controllers\Admin\BackupController::class, 'index'])->name('backup.index');
         Route::get('/backup/restore', [\App\Http\Controllers\Admin\BackupController::class, 'showRestore'])->name('backup.restore.show');
         Route::post('/backup/restore', [\App\Http\Controllers\Admin\BackupController::class, 'restore'])->name('backup.restore');
+        Route::get('/backup/restore/progress', [\App\Http\Controllers\Admin\BackupController::class, 'restoreProgress'])->name('backup.restore.progress');
+        Route::get('/backup/restore/run', [\App\Http\Controllers\Admin\BackupController::class, 'runRestore'])->name('backup.restore.run');
         Route::get('/backup/settings', [\App\Http\Controllers\Admin\BackupController::class, 'showSettings'])->name('backup.settings.show');
         Route::post('/backup/settings', [\App\Http\Controllers\Admin\BackupController::class, 'updateSettings'])->name('backup.settings.update');
         Route::get('/backup/history', [\App\Http\Controllers\Admin\BackupController::class, 'history'])->name('backup.history');

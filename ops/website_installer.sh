@@ -388,7 +388,6 @@ setup_nginx() {
   local php_ver
   php_ver="$(detect_php_version)"
   local fpm_sock="/run/php/php${php_ver}-fpm.sock"
-
   local nginx_conf="/etc/nginx/sites-available/jualan-web"
 
   cat > "${nginx_conf}" <<NGINX_EOF
@@ -400,6 +399,7 @@ server {
     index index.php index.html;
 
     charset utf-8;
+    client_max_body_size 100M;
 
     # Laravel routes
     location / {

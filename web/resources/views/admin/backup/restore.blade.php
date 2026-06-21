@@ -90,6 +90,25 @@
         </form>
     </div>
 </div>
+
+{{-- Upload Progress Modal --}}
+<div class="modal fade" id="uploadProgressModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; background-color: var(--bs-card-bg);">
+            <div class="modal-body p-4 text-center">
+                <div class="spinner-border text-danger mb-3" role="status" style="width: 3rem; height: 3rem;">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <h5 class="fw-bold mb-2">Mengunggah File Cadangan</h5>
+                <p class="text-muted small mb-4">Mohon tunggu, berkas sedang dikirim ke server...</p>
+                <div class="progress mb-3" style="height: 10px; border-radius: 5px;">
+                    <div id="uploadProgressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-danger" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <div id="uploadProgressPercent" class="fw-bold text-danger">0%</div>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
@@ -115,14 +134,63 @@
             buttonsStyling: false
         }).then((result) => {
             if (result.isConfirmed) {
-                const pageLoader = document.getElementById('pageLoader');
-                if (pageLoader) {
-                    pageLoader.classList.remove('fade-out');
-                }
-                if (typeof startTopLoadingBar === 'function') {
-                    startTopLoadingBar();
-                }
-                this.submit();
+                // Show Bootstrap upload modal
+                const uploadModal = new bootstrap.Modal(document.getElementById('uploadProgressModal'));
+                uploadModal.show();
+
+                const formData = new FormData(this);
+                const xhr = new XMLHttpRequest();
+
+                xhr.open('POST', this.action, true);
+                
+                // Track upload progress
+                xhr.upload.addEventListener('progress', function(e) {
+                    if (e.lengthComputable) {
+                        const percentComplete = Math.round((e.loaded / e.total) * 100);
+                        document.getElementById('uploadProgressBar').style.width = percentComplete + '%';
+                        document.getElementById('uploadProgressPercent').innerText = percentComplete + '%';
+                        if (percentComplete === 100) {
+                            document.querySelector('#uploadProgressModal h5').innerText = "Memproses Berkas...";
+                            document.querySelector('#uploadProgressModal p').innerText = "Menyiapkan laman pemulihan...";
+                        }
+                    }
+                });
+
+                xhr.onload = function() {
+                    if (xhr.status === 200) {
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            if (response.success && response.redirect_url) {
+                                window.location.href = response.redirect_url;
+                            } else {
+                                uploadModal.hide();
+                                Swal.fire('Error', 'Gagal memproses pengunggahan.', 'error');
+                            }
+                        } catch (err) {
+                            uploadModal.hide();
+                            Swal.fire('Error', 'Terjadi kesalahan sistem parsing response.', 'error');
+                        }
+                    } else {
+                        uploadModal.hide();
+                        let errorMsg = 'Gagal mengunggah berkas backup.';
+                        if (xhr.status === 413) {
+                            errorMsg = 'Ukuran berkas terlalu besar (Limit Nginx/PHP).';
+                        } else {
+                            try {
+                                const response = JSON.parse(xhr.responseText);
+                                errorMsg = response.message || errorMsg;
+                            } catch(e) {}
+                        }
+                        Swal.fire('Error', errorMsg, 'error');
+                    }
+                };
+
+                xhr.onerror = function() {
+                    uploadModal.hide();
+                    Swal.fire('Error', 'Koneksi jaringan terputus.', 'error');
+                };
+
+                xhr.send(formData);
             }
         });
     });

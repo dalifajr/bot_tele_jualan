@@ -182,7 +182,7 @@ class BackupController extends Controller
     }
 
     /**
-     * Restore database from uploaded ZIP backup.
+     * Restore database from uploaded ZIP backup (Save file and redirect to progress).
      */
     public function restore(Request $request)
     {
@@ -200,35 +200,96 @@ class BackupController extends Controller
 
         // Save file to temporary path
         $tempPath = $file->storeAs('temp', 'restore_' . time() . '.zip');
-        $absoluteTempPath = \Illuminate\Support\Facades\Storage::disk('local')->path($tempPath);
 
-        try {
-            BackupService::restore($absoluteTempPath, $request->mode);
+        return response()->json([
+            'success' => true,
+            'redirect_url' => route('admin.backup.restore.progress', [
+                'file' => basename($tempPath),
+                'filename' => $filename,
+                'mode' => $request->mode
+            ])
+        ]);
+    }
 
-            // Audit log
-            AuditLog::create([
-                'actor_id' => auth()->id(),
-                'action' => 'backup_restore',
-                'entity_type' => 'backup',
-                'entity_id' => 0,
-                'detail' => "Database restored from file: {$filename} (Mode: {$request->mode})",
-                'ip_address' => $request->ip(),
-                'user_agent' => $request->userAgent(),
-            ]);
+    /**
+     * Display live restore progress page.
+     */
+    public function restoreProgress(Request $request)
+    {
+        $file = $request->query('file');
+        $filename = $request->query('filename');
+        $mode = $request->query('mode', 'overwrite');
 
-            // Clean temp file
-            if (File::exists($absoluteTempPath)) {
-                File::delete($absoluteTempPath);
-            }
+        return view('admin.backup.restore_progress', compact('file', 'filename', 'mode'));
+    }
 
-            return back()->with('success', 'Proses restore database berhasil diselesaikan. Seluruh data web & bot disinkronkan.');
-        } catch (\Exception $e) {
-            // Clean temp file
-            if (File::exists($absoluteTempPath)) {
-                File::delete($absoluteTempPath);
-            }
-            return back()->with('error', 'Restore gagal: ' . $e->getMessage());
+    public function runRestore(Request $request)
+    {
+        $file = $request->query('file');
+        $filename = $request->query('filename');
+        $mode = $request->query('mode', 'overwrite');
+
+        $relativePath = 'temp/' . $file;
+
+        if (!\Illuminate\Support\Facades\Storage::exists($relativePath)) {
+            return response()->json(['error' => 'File backup tidak ditemukan atau tidak valid.'], 400);
         }
+
+        $fullPath = \Illuminate\Support\Facades\Storage::path($relativePath);
+        $realBase = realpath(\Illuminate\Support\Facades\Storage::path('temp'));
+        $realFile = realpath($fullPath);
+
+        if (!$realFile || !$realBase || strpos($realFile, $realBase) !== 0) {
+            return response()->json(['error' => 'File backup tidak ditemukan atau tidak valid.'], 400);
+        }
+
+        return response()->stream(function () use ($realFile, $relativePath, $filename, $mode) {
+            @set_time_limit(0);
+            @ini_set('memory_limit', '512M');
+
+            echo json_encode(['percent' => 5, 'message' => 'Menghubungkan ke proses restore...']) . "\n";
+            ob_flush();
+            flush();
+            sleep(1); // Small delay to let connection open smoothly
+
+            try {
+                BackupService::restore($realFile, $mode, function ($percent, $message) {
+                    echo json_encode(['percent' => $percent, 'message' => $message]) . "\n";
+                    ob_flush();
+                    flush();
+                    usleep(150000); // Slight delay for human readability
+                });
+
+                // Audit log
+                AuditLog::create([
+                    'actor_id' => auth()->id(),
+                    'action' => 'backup_restore',
+                    'entity_type' => 'backup',
+                    'entity_id' => 0,
+                    'detail' => "Database restored via Live Web Progress from file: {$filename} (Mode: {$mode})",
+                    'ip_address' => request()->ip(),
+                    'user_agent' => request()->userAgent(),
+                ]);
+
+                // Clean temp file
+                if (\Illuminate\Support\Facades\Storage::exists($relativePath)) {
+                    \Illuminate\Support\Facades\Storage::delete($relativePath);
+                }
+            } catch (\Exception $e) {
+                echo json_encode(['percent' => -1, 'message' => 'ERROR: ' . $e->getMessage()]) . "\n";
+                ob_flush();
+                flush();
+                // Clean temp file
+                if (\Illuminate\Support\Facades\Storage::exists($relativePath)) {
+                    \Illuminate\Support\Facades\Storage::delete($relativePath);
+                }
+            }
+        }, 200, [
+            'Content-Type' => 'text/event-stream',
+            'Cache-Control' => 'no-cache',
+            'Connection' => 'keep-alive',
+            'X-Accel-Buffering' => 'no' // Disable Nginx output buffering
+        ]);
     }
 
     /**

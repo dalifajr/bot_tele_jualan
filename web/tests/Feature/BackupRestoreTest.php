@@ -295,11 +295,33 @@ class BackupRestoreTest extends TestCase
             'mode' => 'overwrite'
         ]);
 
-        if (session('error')) {
-            dd(session('error'));
-        }
+        $response->assertStatus(200);
+        $response->assertJson([
+            'success' => true,
+        ]);
 
-        $response->assertRedirect();
+        $data = $response->json();
+        $this->assertArrayHasKey('redirect_url', $data);
+
+        // Extract query parameters from redirect_url
+        $urlParts = parse_url($data['redirect_url']);
+        parse_str($urlParts['query'] ?? '', $query);
+
+        $this->assertArrayHasKey('file', $query);
+        $this->assertArrayHasKey('filename', $query);
+
+        // Now run the restore process via the run endpoint
+        ob_start();
+        $runResponse = $this->get(route('admin.backup.restore.run', [
+            'file' => $query['file'],
+            'filename' => $query['filename'],
+            'mode' => $query['mode'] ?? 'overwrite'
+        ]));
+        $output = ob_get_clean();
+        dd([
+            'status' => $runResponse->status(),
+            'output' => $output
+        ]);
         
         // 3. Verify user is restored in database
         $this->assertTrue(User::where('username', 'restored_user')->exists());

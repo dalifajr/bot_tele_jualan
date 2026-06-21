@@ -254,12 +254,16 @@ class BackupService
     /**
      * Restore database and media from a uploaded backup ZIP file.
      */
-    public static function restore($zipPath, $mode = 'overwrite')
+    public static function restore($zipPath, $mode = 'overwrite', callable $progressCallback = null)
     {
         $zip = new ZipArchive();
         $openResult = $zip->open($zipPath);
         if ($openResult !== true) {
             throw new \Exception("Invalid ZIP file or could not open file. (Error Code: {$openResult})");
+        }
+
+        if ($progressCallback) {
+            $progressCallback(10, "Mengekstrak berkas ZIP cadangan...");
         }
 
         // Determine if it is a snapshot or JSON backup
@@ -281,22 +285,31 @@ class BackupService
                 throw new \Exception("Invalid manifest configuration for snapshot restore.");
             }
 
-            self::restoreSnapshot($zip);
+            if ($progressCallback) {
+                $progressCallback(20, "Memulai restore snapshot database...");
+            }
+            self::restoreSnapshot($zip, $progressCallback);
         } else {
             // JSON restore
             $manifestContent = $zip->getFromName('MANIFEST.json');
             $manifest = json_decode($manifestContent, true);
-            self::restoreJson($zip, $manifest, $mode);
+            if ($progressCallback) {
+                $progressCallback(20, "Memulai restore data JSON...");
+            }
+            self::restoreJson($zip, $manifest, $mode, $progressCallback);
         }
 
         $zip->close();
+        if ($progressCallback) {
+            $progressCallback(100, "Proses restore selesai dengan sukses!");
+        }
         return true;
     }
 
     /**
      * Restore snapshot raw SQLite & media files.
      */
-    protected static function restoreSnapshot(ZipArchive $zip)
+    protected static function restoreSnapshot(ZipArchive $zip, callable $progressCallback = null)
     {
         $dbContent = $zip->getFromName('database.sqlite');
         
@@ -304,7 +317,13 @@ class BackupService
             // Fallback: Check if database.sql exists
             $sqlContent = $zip->getFromName('database.sql');
             if ($sqlContent) {
+                if ($progressCallback) {
+                    $progressCallback(40, "Menjalankan SQL Dump restore...");
+                }
                 self::restoreSqlDump($sqlContent);
+                if ($progressCallback) {
+                    $progressCallback(70, "Memulihkan berkas media dari ZIP...");
+                }
                 self::restoreMediaFromZip($zip);
                 return;
             }
@@ -312,13 +331,22 @@ class BackupService
         }
 
         // Write to temporary SQLite database file
+        if ($progressCallback) {
+            $progressCallback(30, "Menulis database sementara...");
+        }
         $tempDb = tempnam(sys_get_temp_dir(), 'sqlite_restore');
         File::put($tempDb, $dbContent);
 
         // Extract media files
+        if ($progressCallback) {
+            $progressCallback(60, "Memulihkan berkas media dari ZIP...");
+        }
         self::restoreMediaFromZip($zip);
 
         // Overwrite active database file safely
+        if ($progressCallback) {
+            $progressCallback(80, "Menimpa database aktif dengan snapshot...");
+        }
         $activeDb = self::getDatabasePath();
         
         // Temporarily close DB connection
@@ -352,9 +380,13 @@ class BackupService
     /**
      * Restore tables using exported JSON records.
      */
-    protected static function restoreJson(ZipArchive $zip, $manifest, $mode)
+    protected static function restoreJson(ZipArchive $zip, $manifest, $mode, callable $progressCallback = null)
     {
         $entitiesData = [];
+
+        if ($progressCallback) {
+            $progressCallback(30, "Mengekstrak data entitas dari ZIP...");
+        }
 
         // Load all data from ZIP
         foreach (self::$entities as $entityKey => $modelClass) {
@@ -367,8 +399,12 @@ class BackupService
             }
         }
 
+        if ($progressCallback) {
+            $progressCallback(50, "Memulai transaksi database dan menonaktifkan foreign keys...");
+        }
+
         // Run tables import in transaction to ensure consistency
-        DB::transaction(function () use ($entitiesData, $mode) {
+        DB::transaction(function () use ($entitiesData, $mode, $progressCallback) {
             // Disable foreign key constraints temporarily to allow truncates/updates
             Schema::disableForeignKeyConstraints();
 
@@ -376,11 +412,14 @@ class BackupService
                 if ($mode === 'overwrite') {
                     // Truncate tables in reverse dependency order
                     $tablesToClear = array_reverse(array_keys(self::$entities));
-                    foreach ($tablesToClear as $entityKey) {
+                    foreach ($tablesToClear as $index => $entityKey) {
                         $modelClass = self::$entities[$entityKey];
                         if (class_exists($modelClass)) {
                             $tableName = (new $modelClass)->getTable();
                             if (Schema::hasTable($tableName)) {
+                                if ($progressCallback) {
+                                    $progressCallback(55 + $index, "Mengosongkan tabel: {$tableName}...");
+                                }
                                 DB::table($tableName)->truncate();
                             }
                         }
@@ -388,7 +427,10 @@ class BackupService
                 }
 
                 // Insert entity records in dependency order
+                $totalEntities = count(self::$entities);
+                $index = 0;
                 foreach (self::$entities as $entityKey => $modelClass) {
+                    $index++;
                     if (!class_exists($modelClass)) continue;
 
                     $tableName = (new $modelClass)->getTable();
@@ -396,6 +438,11 @@ class BackupService
 
                     $rows = $entitiesData[$entityKey] ?? [];
                     if (empty($rows)) continue;
+
+                    $percent = 70 + (int) (($index / $totalEntities) * 25);
+                    if ($progressCallback) {
+                        $progressCallback($percent, "Mengimpor data ke tabel: {$tableName} (" . count($rows) . " baris)...");
+                    }
 
                     foreach ($rows as $row) {
                         $primaryKey = (new $modelClass)->getKeyName() ?: 'id';
