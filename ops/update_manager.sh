@@ -121,7 +121,13 @@ read_env_var() {
   if [[ ! -f "${ENV_FILE}" ]]; then
     return
   fi
-  grep -E "^${key}=" "${ENV_FILE}" | head -n1 | cut -d'=' -f2-
+  local val
+  val="$(grep -E "^${key}=" "${ENV_FILE}" | head -n1 | cut -d'=' -f2- || true)"
+  val="${val#\"}"
+  val="${val%\"}"
+  val="${val#\'}"
+  val="${val%\'}"
+  echo "${val}"
 }
 
 default_branch() {
