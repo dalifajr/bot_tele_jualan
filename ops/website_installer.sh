@@ -333,7 +333,11 @@ setup_laravel() {
   # Run migration script SQLite -> MySQL (or just init MySQL schema via python if SQLite is empty)
   if [[ -f "${OPS_DIR}/migrate_sqlite_to_mysql.py" ]]; then
       log_step "Menjalankan migrasi data dari SQLite ke MySQL..."
-      python3 "${OPS_DIR}/migrate_sqlite_to_mysql.py" --mysql-url="${python_mysql_url}"
+      local python_bin="python3"
+      if [[ -f "${PROJECT_DIR}/.venv/bin/python" ]]; then
+          python_bin="${PROJECT_DIR}/.venv/bin/python"
+      fi
+      "${python_bin}" "${OPS_DIR}/migrate_sqlite_to_mysql.py" --mysql-url="${python_mysql_url}"
   fi
 
   # Jalankan migrasi Laravel untuk membuat tabel bawaan (seperti sessions, jobs, cache)
