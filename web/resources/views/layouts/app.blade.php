@@ -63,6 +63,27 @@
     </script>
 
     @stack('styles')
+    <style>
+        @media (max-width: 576px) {
+            .navbar {
+                padding-left: 0.75rem !important;
+                padding-right: 0.75rem !important;
+            }
+            .navbar-brand {
+                font-size: 0.9rem !important;
+            }
+        }
+        @media (max-width: 375px) {
+            .navbar {
+                padding-left: 0.5rem !important;
+                padding-right: 0.5rem !important;
+            }
+            .navbar-brand {
+                font-size: 0.8rem !important;
+                gap: 0.25rem !important;
+            }
+        }
+    </style>
 </head>
 <body class="bg-body-tertiary">
 
@@ -219,17 +240,7 @@
             @endif
         </a>
 
-        {{-- Language Toggle --}}
-        @php
-            $currentLocale = App::getLocale();
-        @endphp
-        <a href="{{ route('lang.switch', $currentLocale === 'id' ? 'en' : 'id') }}" 
-           class="btn btn-link link-body-emphasis p-0 me-2 text-decoration-none d-flex align-items-center gap-1" 
-           title="{{ $currentLocale === 'id' ? 'Switch to English' : 'Ubah ke Bahasa Indonesia' }}" 
-           aria-label="Toggle Language">
-            <i class="fas fa-globe fs-5 text-secondary"></i>
-            <span class="fw-bold text-uppercase small" style="font-size: 0.78rem;">{{ $currentLocale }}</span>
-        </a>
+        
 
         {{-- Theme Toggle --}}
         <button class="btn btn-link link-body-emphasis p-0 me-2" id="themeToggle" title="{{ __('Toggle Theme') }}" aria-label="{{ __('Ganti Tema') }}">
@@ -397,6 +408,23 @@
             </div>
             @endif
             @endif
+
+            <div class="menu-group mt-3 border-top pt-3 px-3">
+                <div class="menu-header text-secondary"><i class="fas fa-language me-1"></i> {{ __('Bahasa / Language') }}</div>
+                @php
+                    $currentLocale = App::getLocale();
+                @endphp
+                <div class="d-flex align-items-center justify-content-between mt-2">
+                    <span class="small text-secondary">{{ __('Bahasa Aktif:') }} <strong class="text-uppercase">{{ $currentLocale }}</strong></span>
+                    <a href="{{ route('lang.switch', $currentLocale === 'id' ? 'en' : 'id') }}" 
+                       class="btn btn-xs btn-outline-secondary d-flex align-items-center gap-1 py-1 px-2 text-decoration-none"
+                       style="font-size: 0.78rem;"
+                       title="{{ $currentLocale === 'id' ? 'Switch to English' : 'Ubah ke Bahasa Indonesia' }}">
+                        <i class="fas fa-globe text-secondary"></i>
+                        <span>{{ $currentLocale === 'id' ? 'English' : 'Indonesia' }}</span>
+                    </a>
+                </div>
+            </div>
         </div>
     </div>
 
