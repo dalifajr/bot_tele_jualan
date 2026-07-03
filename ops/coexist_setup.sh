@@ -61,58 +61,58 @@ read -rp "Password Database baru [Default: ${RANDOM_PASS}]: " DB_PASSWORD
 DB_PASSWORD="${DB_PASSWORD:-${RANDOM_PASS}}"
 
 # 3. Create Database & User in MySQL
-read -rp "Apakah database & user MySQL di atas sudah Anda buat secara manual di server? [y/N]: " DB_PRECREATED
-DB_PRECREATED="${DB_PRECREATED:-n}"
+log_step "Membuat database dan user MySQL baru..."
 
 DB_CREATED_SUCCESSFULLY=false
 
-if [[ "${DB_PRECREATED}" =~ ^[yY]$ ]]; then
-    log_step "Menggunakan database pre-created '${DB_DATABASE}'."
+# Coba pertama: tanpa password (menggunakan auth_socket root)
+if mysql -e "CREATE DATABASE IF NOT EXISTS \`${DB_DATABASE}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>/dev/null; then
+    mysql -e "CREATE USER IF NOT EXISTS '${DB_USERNAME}'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';"
+    mysql -e "ALTER USER '${DB_USERNAME}'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';"
+    mysql -e "GRANT ALL PRIVILEGES ON \`${DB_DATABASE}\`.* TO '${DB_USERNAME}'@'localhost';"
+    mysql -e "FLUSH PRIVILEGES;"
+    echo "Database '${DB_DATABASE}' dan user '${DB_USERNAME}' berhasil dibuat (tanpa password)."
     DB_CREATED_SUCCESSFULLY=true
-else
-    log_step "Mencoba membuat database dan user MySQL baru secara otomatis..."
-    if mysql -e "CREATE DATABASE IF NOT EXISTS \`${DB_DATABASE}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>/dev/null; then
-        mysql -e "CREATE USER IF NOT EXISTS '${DB_USERNAME}'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';"
-        mysql -e "ALTER USER '${DB_USERNAME}'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';"
-        mysql -e "GRANT ALL PRIVILEGES ON \`${DB_DATABASE}\`.* TO '${DB_USERNAME}'@'localhost';"
-        mysql -e "FLUSH PRIVILEGES;"
-        echo "Database '${DB_DATABASE}' dan user '${DB_USERNAME}' berhasil dibuat."
-        DB_CREATED_SUCCESSFULLY=true
-    else
-        log_error "Gagal membuat database otomatis via MySQL auth_socket."
-        read -rp "Apakah Anda ingin mencoba membuat database dengan password root MySQL Anda? [y/N]: " TRY_ROOT_PASS
-        TRY_ROOT_PASS="${TRY_ROOT_PASS:-n}"
-        if [[ "${TRY_ROOT_PASS}" =~ ^[yY]$ ]]; then
-            read -s -rp "Masukkan password root MySQL: " MYSQL_ROOT_PASS
-            echo ""
-            if mysql -u root -p"${MYSQL_ROOT_PASS}" -e "CREATE DATABASE IF NOT EXISTS \`${DB_DATABASE}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>/dev/null; then
-                mysql -u root -p"${MYSQL_ROOT_PASS}" -e "CREATE USER IF NOT EXISTS '${DB_USERNAME}'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';"
-                mysql -u root -p"${MYSQL_ROOT_PASS}" -e "ALTER USER '${DB_USERNAME}'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';"
-                mysql -u root -p"${MYSQL_ROOT_PASS}" -e "GRANT ALL PRIVILEGES ON \`${DB_DATABASE}\`.* TO '${DB_USERNAME}'@'localhost';"
-                mysql -u root -p"${MYSQL_ROOT_PASS}" -e "FLUSH PRIVILEGES;"
-                echo "Database '${DB_DATABASE}' dan user '${DB_USERNAME}' berhasil dibuat."
-                DB_CREATED_SUCCESSFULLY=true
-            else
-                log_error "Gagal membuat database menggunakan password root yang diberikan."
-            fi
-        fi
-    fi
 fi
 
-if [[ "${DB_CREATED_SUCCESSFULLY}" == "false" ]]; then
-    echo "---------------------------------------------------------"
-    echo "Silakan jalankan kueri SQL berikut secara manual di MySQL:"
-    echo "  CREATE DATABASE \`${DB_DATABASE}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-    echo "  CREATE USER '${DB_USERNAME}'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';"
-    echo "  GRANT ALL PRIVILEGES ON \`${DB_DATABASE}\`.* TO '${DB_USERNAME}'@'localhost';"
-    echo "  FLUSH PRIVILEGES;"
-    echo "---------------------------------------------------------"
-    read -rp "Apakah Anda sudah menjalankan kueri tersebut secara manual dan ingin melanjutkan setup? [y/N]: " MANUAL_DONE
-    MANUAL_DONE="${MANUAL_DONE:-n}"
-    if [[ ! "${MANUAL_DONE}" =~ ^[yY]$ ]]; then
-        log_error "Setup dihentikan karena database belum siap."
-        exit 1
+# Jika gagal, minta input kredensial admin MySQL (biasanya diperlukan pada server dengan webpanel)
+while [[ "${DB_CREATED_SUCCESSFULLY}" == "false" ]]; do
+    echo -e "\nAutentikasi otomatis MySQL tanpa password gagal."
+    echo "Masukkan Username & Password Administrator/Root MySQL Anda untuk membuat database otomatis:"
+    read -rp "Username MySQL Admin [Default: root]: " MYSQL_ADMIN_USER
+    MYSQL_ADMIN_USER="${MYSQL_ADMIN_USER:-root}"
+    
+    read -s -rp "Password untuk user '${MYSQL_ADMIN_USER}': " MYSQL_ADMIN_PASS
+    echo ""
+
+    # Jalankan perintah pembuatan database dan tampilkan error jika gagal
+    if mysql -u "${MYSQL_ADMIN_USER}" -p"${MYSQL_ADMIN_PASS}" -e "CREATE DATABASE IF NOT EXISTS \`${DB_DATABASE}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"; then
+        if mysql -u "${MYSQL_ADMIN_USER}" -p"${MYSQL_ADMIN_PASS}" -e "
+            CREATE USER IF NOT EXISTS '${DB_USERNAME}'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';
+            ALTER USER '${DB_USERNAME}'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';
+            GRANT ALL PRIVILEGES ON \`${DB_DATABASE}\`.* TO '${DB_USERNAME}'@'localhost';
+            FLUSH PRIVILEGES;
+        "; then
+            echo "Database '${DB_DATABASE}' dan user '${DB_USERNAME}' berhasil dibuat otomatis."
+            DB_CREATED_SUCCESSFULLY=true
+            break
+        else
+            log_error "Koneksi berhasil, tetapi gagal mengatur privileges untuk user '${DB_USERNAME}'."
+        fi
+    else
+        log_error "Gagal menghubungkan ke MySQL. Silakan periksa kembali username/password Anda di atas."
     fi
+
+    read -rp "Apakah Anda ingin mencoba memasukkan kredensial MySQL lagi? [Y/n]: " RETRY_DB
+    RETRY_DB="${RETRY_DB:-y}"
+    if [[ ! "${RETRY_DB}" =~ ^[yY]$ ]]; then
+        break
+    fi
+done
+
+if [[ "${DB_CREATED_SUCCESSFULLY}" == "false" ]]; then
+    log_error "Skrip setup dihentikan karena database tidak dapat dibuat secara otomatis."
+    exit 1
 fi
 
 # 4. Prepare Environment Files (.env)
