@@ -61,20 +61,58 @@ read -rp "Password Database baru [Default: ${RANDOM_PASS}]: " DB_PASSWORD
 DB_PASSWORD="${DB_PASSWORD:-${RANDOM_PASS}}"
 
 # 3. Create Database & User in MySQL
-log_step "Membuat database dan user MySQL baru..."
-if mysql -e "CREATE DATABASE IF NOT EXISTS \`${DB_DATABASE}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>/dev/null; then
-    mysql -e "CREATE USER IF NOT EXISTS '${DB_USERNAME}'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';"
-    mysql -e "ALTER USER '${DB_USERNAME}'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';"
-    mysql -e "GRANT ALL PRIVILEGES ON \`${DB_DATABASE}\`.* TO '${DB_USERNAME}'@'localhost';"
-    mysql -e "FLUSH PRIVILEGES;"
-    echo "Database '${DB_DATABASE}' dan user '${DB_USERNAME}' berhasil dibuat."
+read -rp "Apakah database & user MySQL di atas sudah Anda buat secara manual di server? [y/N]: " DB_PRECREATED
+DB_PRECREATED="${DB_PRECREATED:-n}"
+
+DB_CREATED_SUCCESSFULLY=false
+
+if [[ "${DB_PRECREATED}" =~ ^[yY]$ ]]; then
+    log_step "Menggunakan database pre-created '${DB_DATABASE}'."
+    DB_CREATED_SUCCESSFULLY=true
 else
-    log_error "Gagal membuat database otomatis via MySQL auth_socket."
-    echo "Pastikan MySQL berjalan dan jalankan perintah berikut secara manual sebagai root MySQL:"
-    echo "  CREATE DATABASE ${DB_DATABASE};"
+    log_step "Mencoba membuat database dan user MySQL baru secara otomatis..."
+    if mysql -e "CREATE DATABASE IF NOT EXISTS \`${DB_DATABASE}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>/dev/null; then
+        mysql -e "CREATE USER IF NOT EXISTS '${DB_USERNAME}'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';"
+        mysql -e "ALTER USER '${DB_USERNAME}'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';"
+        mysql -e "GRANT ALL PRIVILEGES ON \`${DB_DATABASE}\`.* TO '${DB_USERNAME}'@'localhost';"
+        mysql -e "FLUSH PRIVILEGES;"
+        echo "Database '${DB_DATABASE}' dan user '${DB_USERNAME}' berhasil dibuat."
+        DB_CREATED_SUCCESSFULLY=true
+    else
+        log_error "Gagal membuat database otomatis via MySQL auth_socket."
+        read -rp "Apakah Anda ingin mencoba membuat database dengan password root MySQL Anda? [y/N]: " TRY_ROOT_PASS
+        TRY_ROOT_PASS="${TRY_ROOT_PASS:-n}"
+        if [[ "${TRY_ROOT_PASS}" =~ ^[yY]$ ]]; then
+            read -s -rp "Masukkan password root MySQL: " MYSQL_ROOT_PASS
+            echo ""
+            if mysql -u root -p"${MYSQL_ROOT_PASS}" -e "CREATE DATABASE IF NOT EXISTS \`${DB_DATABASE}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>/dev/null; then
+                mysql -u root -p"${MYSQL_ROOT_PASS}" -e "CREATE USER IF NOT EXISTS '${DB_USERNAME}'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';"
+                mysql -u root -p"${MYSQL_ROOT_PASS}" -e "ALTER USER '${DB_USERNAME}'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';"
+                mysql -u root -p"${MYSQL_ROOT_PASS}" -e "GRANT ALL PRIVILEGES ON \`${DB_DATABASE}\`.* TO '${DB_USERNAME}'@'localhost';"
+                mysql -u root -p"${MYSQL_ROOT_PASS}" -e "FLUSH PRIVILEGES;"
+                echo "Database '${DB_DATABASE}' dan user '${DB_USERNAME}' berhasil dibuat."
+                DB_CREATED_SUCCESSFULLY=true
+            else
+                log_error "Gagal membuat database menggunakan password root yang diberikan."
+            fi
+        fi
+    fi
+fi
+
+if [[ "${DB_CREATED_SUCCESSFULLY}" == "false" ]]; then
+    echo "---------------------------------------------------------"
+    echo "Silakan jalankan kueri SQL berikut secara manual di MySQL:"
+    echo "  CREATE DATABASE \`${DB_DATABASE}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
     echo "  CREATE USER '${DB_USERNAME}'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';"
-    echo "  GRANT ALL PRIVILEGES ON ${DB_DATABASE}.* TO '${DB_USERNAME}'@'localhost';"
-    exit 1
+    echo "  GRANT ALL PRIVILEGES ON \`${DB_DATABASE}\`.* TO '${DB_USERNAME}'@'localhost';"
+    echo "  FLUSH PRIVILEGES;"
+    echo "---------------------------------------------------------"
+    read -rp "Apakah Anda sudah menjalankan kueri tersebut secara manual dan ingin melanjutkan setup? [y/N]: " MANUAL_DONE
+    MANUAL_DONE="${MANUAL_DONE:-n}"
+    if [[ ! "${MANUAL_DONE}" =~ ^[yY]$ ]]; then
+        log_error "Setup dihentikan karena database belum siap."
+        exit 1
+    fi
 fi
 
 # 4. Prepare Environment Files (.env)
