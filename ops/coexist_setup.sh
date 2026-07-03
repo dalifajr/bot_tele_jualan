@@ -10,6 +10,15 @@ log_error() {
     echo -e "\n\e[1;31m[!] ERROR: $*\e[0m" >&2
 }
 
+# PHP version detection
+detect_php_version() {
+  if command -v php >/dev/null 2>&1; then
+    php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;'
+    return
+  fi
+  echo "8.2" # default fallback
+}
+
 # 1. Check Root Privilege
 if [[ "$(id -u)" -ne 0 ]]; then
     log_error "Skrip ini harus dijalankan sebagai root (gunakan sudo)."
@@ -117,6 +126,35 @@ EOF
 fi
 mkdir -p "${PROJECT_DIR}/data"
 
+# 5.5 Check and Install Missing PHP Extensions
+log_step "Memeriksa ekstensi PHP yang diperlukan..."
+PHP_VER="$(detect_php_version)"
+
+if [[ -n "${PHP_VER}" ]]; then
+    PKG_PREFIX="php${PHP_VER}-"
+else
+    PKG_PREFIX="php-"
+fi
+
+MISSING_EXTS=()
+for ext in gd curl mbstring xml zip sqlite3 bcmath intl; do
+    if ! php -m | grep -qi "^${ext}$"; then
+        MISSING_EXTS+=("${PKG_PREFIX}${ext}")
+    fi
+done
+
+if [ ${#MISSING_EXTS[@]} -gt 0 ]; then
+    log_step "Menginstal ekstensi PHP yang hilang: ${MISSING_EXTS[*]}..."
+    if command -v apt-get >/dev/null 2>&1; then
+        apt-get update -qq || true
+        apt-get install -y "${MISSING_EXTS[@]}"
+        # Restart php-fpm to load the new extensions
+        systemctl restart "php${PHP_VER}-fpm" 2>/dev/null || systemctl restart php-fpm 2>/dev/null || true
+    else
+        log_error "Sistem Anda tidak memiliki package manager 'apt-get'. Silakan instal ekstensi berikut secara manual: ${MISSING_EXTS[*]}"
+    fi
+fi
+
 # 6. Configure Laravel Application
 log_step "Mengonfigurasi Laravel Application..."
 mkdir -p "${WEB_DIR}/database"
@@ -144,15 +182,6 @@ chmod -R o+rX "${WEB_DIR}/public" 2>/dev/null || true
 
 # 8. Setup Nginx
 log_step "Mengonfigurasi Nginx untuk domain ${WEBSITE_DOMAIN}..."
-
-# PHP version detection
-detect_php_version() {
-  if command -v php >/dev/null 2>&1; then
-    php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;'
-    return
-  fi
-  echo "8.2" # default fallback
-}
 
 PHP_VER="$(detect_php_version)"
 FPM_SOCK="php${PHP_VER}-fpm.sock"
