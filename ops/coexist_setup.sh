@@ -21,6 +21,7 @@ PROJECT_DIR="$(cd "$(dirname "${SCRIPT_PATH}")/.." && pwd)"
 WEB_DIR="${PROJECT_DIR}/web"
 ENV_FILE="${PROJECT_DIR}/.env"
 WEB_ENV_FILE="${WEB_DIR}/.env"
+RUN_USER="${SUDO_USER:-$USER}"
 
 # 2. Gather Inputs
 echo "========================================================="
