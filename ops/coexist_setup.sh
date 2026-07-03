@@ -48,73 +48,6 @@ fi
 read -rp "Masukkan Port API Uvicorn baru [Default: 8085]: " API_PORT
 API_PORT="${API_PORT:-8085}"
 
-# Database Details
-read -rp "Nama Database baru [Default: bot_jualan_coexist]: " DB_DATABASE
-DB_DATABASE="${DB_DATABASE:-bot_jualan_coexist}"
-
-read -rp "User Database baru [Default: jualan_user_coexist]: " DB_USERNAME
-DB_USERNAME="${DB_USERNAME:-jualan_user_coexist}"
-
-# Generate a random password if not provided
-RANDOM_PASS="$(openssl rand -hex 16)"
-read -rp "Password Database baru [Default: ${RANDOM_PASS}]: " DB_PASSWORD
-DB_PASSWORD="${DB_PASSWORD:-${RANDOM_PASS}}"
-
-# 3. Create Database & User in MySQL
-log_step "Membuat database dan user MySQL baru..."
-
-DB_CREATED_SUCCESSFULLY=false
-
-# Coba pertama: tanpa password (menggunakan auth_socket root)
-if mysql -e "CREATE DATABASE IF NOT EXISTS \`${DB_DATABASE}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>/dev/null; then
-    mysql -e "CREATE USER IF NOT EXISTS '${DB_USERNAME}'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';"
-    mysql -e "ALTER USER '${DB_USERNAME}'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';"
-    mysql -e "GRANT ALL PRIVILEGES ON \`${DB_DATABASE}\`.* TO '${DB_USERNAME}'@'localhost';"
-    mysql -e "FLUSH PRIVILEGES;"
-    echo "Database '${DB_DATABASE}' dan user '${DB_USERNAME}' berhasil dibuat (tanpa password)."
-    DB_CREATED_SUCCESSFULLY=true
-fi
-
-# Jika gagal, minta input kredensial admin MySQL (biasanya diperlukan pada server dengan webpanel)
-while [[ "${DB_CREATED_SUCCESSFULLY}" == "false" ]]; do
-    echo -e "\nAutentikasi otomatis MySQL tanpa password gagal."
-    echo "Masukkan Username & Password Administrator/Root MySQL Anda untuk membuat database otomatis:"
-    read -rp "Username MySQL Admin [Default: root]: " MYSQL_ADMIN_USER
-    MYSQL_ADMIN_USER="${MYSQL_ADMIN_USER:-root}"
-    
-    read -s -rp "Password untuk user '${MYSQL_ADMIN_USER}': " MYSQL_ADMIN_PASS
-    echo ""
-
-    # Jalankan perintah pembuatan database dan tampilkan error jika gagal
-    if mysql -u "${MYSQL_ADMIN_USER}" -p"${MYSQL_ADMIN_PASS}" -e "CREATE DATABASE IF NOT EXISTS \`${DB_DATABASE}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"; then
-        if mysql -u "${MYSQL_ADMIN_USER}" -p"${MYSQL_ADMIN_PASS}" -e "
-            CREATE USER IF NOT EXISTS '${DB_USERNAME}'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';
-            ALTER USER '${DB_USERNAME}'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';
-            GRANT ALL PRIVILEGES ON \`${DB_DATABASE}\`.* TO '${DB_USERNAME}'@'localhost';
-            FLUSH PRIVILEGES;
-        "; then
-            echo "Database '${DB_DATABASE}' dan user '${DB_USERNAME}' berhasil dibuat otomatis."
-            DB_CREATED_SUCCESSFULLY=true
-            break
-        else
-            log_error "Koneksi berhasil, tetapi gagal mengatur privileges untuk user '${DB_USERNAME}'."
-        fi
-    else
-        log_error "Gagal menghubungkan ke MySQL. Silakan periksa kembali username/password Anda di atas."
-    fi
-
-    read -rp "Apakah Anda ingin mencoba memasukkan kredensial MySQL lagi? [Y/n]: " RETRY_DB
-    RETRY_DB="${RETRY_DB:-y}"
-    if [[ ! "${RETRY_DB}" =~ ^[yY]$ ]]; then
-        break
-    fi
-done
-
-if [[ "${DB_CREATED_SUCCESSFULLY}" == "false" ]]; then
-    log_error "Skrip setup dihentikan karena database tidak dapat dibuat secara otomatis."
-    exit 1
-fi
-
 # 4. Prepare Environment Files (.env)
 log_step "Mengonfigurasi file lingkungan (.env)..."
 
@@ -136,7 +69,7 @@ if [[ ! -f "${ENV_FILE}" ]]; then
 fi
 _set_env_value "${ENV_FILE}" "BOT_TOKEN" "${BOT_TOKEN}"
 _set_env_value "${ENV_FILE}" "API_PORT" "${API_PORT}"
-_set_env_value "${ENV_FILE}" "DATABASE_URL" "mysql+pymysql://${DB_USERNAME}:${DB_PASSWORD}@127.0.0.1:3306/${DB_DATABASE}"
+_set_env_value "${ENV_FILE}" "DATABASE_URL" "sqlite:///./data/bot_jualan.db"
 _set_env_value "${ENV_FILE}" "WEBSITE_ENABLED" "true"
 _set_env_value "${ENV_FILE}" "WEBSITE_DOMAIN" "${WEBSITE_DOMAIN}"
 
@@ -157,17 +90,14 @@ if [[ ! -f "${WEB_ENV_FILE}" ]]; then
 fi
 _set_env_value "${WEB_ENV_FILE}" "APP_URL" "https://${WEBSITE_DOMAIN}"
 _set_env_value "${WEB_ENV_FILE}" "APP_NAME" "Dzulfikrialifajri Store"
-_set_env_value "${WEB_ENV_FILE}" "DB_CONNECTION" "mysql"
-_set_env_value "${WEB_ENV_FILE}" "DB_HOST" "127.0.0.1"
-_set_env_value "${WEB_ENV_FILE}" "DB_PORT" "3306"
-_set_env_value "${WEB_ENV_FILE}" "DB_DATABASE" "${DB_DATABASE}"
-_set_env_value "${WEB_ENV_FILE}" "DB_USERNAME" "${DB_USERNAME}"
-_set_env_value "${WEB_ENV_FILE}" "DB_PASSWORD" "${DB_PASSWORD}"
+_set_env_value "${WEB_ENV_FILE}" "DB_CONNECTION" "sqlite"
+_set_env_value "${WEB_ENV_FILE}" "DB_DATABASE" "${WEB_DIR}/database/database.sqlite"
 _set_env_value "${WEB_ENV_FILE}" "TELEGRAM_BOT_TOKEN" "${BOT_TOKEN}"
 _set_env_value "${WEB_ENV_FILE}" "TELEGRAM_BOT_USERNAME" "${BOT_USERNAME}"
 _set_env_value "${WEB_ENV_FILE}" "WEBSITE_DOMAIN" "${WEBSITE_DOMAIN}"
 _set_env_value "${WEB_ENV_FILE}" "SESSION_DRIVER" "database"
 _set_env_value "${WEB_ENV_FILE}" "CACHE_STORE" "database"
+
 
 # 5. Build Python Virtual Environment
 log_step "Mempersiapkan Python Virtual Environment..."
@@ -188,6 +118,13 @@ mkdir -p "${PROJECT_DIR}/data"
 
 # 6. Configure Laravel Application
 log_step "Mengonfigurasi Laravel Application..."
+mkdir -p "${WEB_DIR}/database"
+touch "${WEB_DIR}/database/database.sqlite"
+
+# Pastikan folder dan file database dapat ditulis oleh user saat ini dan php-fpm (www-data)
+chown -R "${RUN_USER}:www-data" "${WEB_DIR}/database"
+chmod -R 775 "${WEB_DIR}/database"
+
 cd "${WEB_DIR}"
 export COMPOSER_ALLOW_SUPERUSER=1
 composer install --no-dev --optimize-autoloader --no-interaction
@@ -200,7 +137,7 @@ log_step "Mengatur hak akses file (permissions)..."
 RUN_USER="${SUDO_USER:-$USER}"
 chown -R "${RUN_USER}:www-data" "${WEB_DIR}"
 chmod -R g+rX "${WEB_DIR}"
-chmod -R 775 "${WEB_DIR}/storage" "${WEB_DIR}/bootstrap/cache"
+chmod -R 775 "${WEB_DIR}/storage" "${WEB_DIR}/bootstrap/cache" "${WEB_DIR}/database"
 chmod o+x "${PROJECT_DIR}" 2>/dev/null || true
 chmod -R o+rX "${WEB_DIR}/public" 2>/dev/null || true
 
@@ -275,7 +212,7 @@ log_step "INSTALASI BERHASIL!"
 echo "========================================================="
 echo "Website Jualan: https://${WEBSITE_DOMAIN}"
 echo "Uvicorn API Port: ${API_PORT}"
-echo "Database MySQL: ${DB_DATABASE}"
+echo "Database: SQLite (database/database.sqlite)"
 echo "========================================================="
 echo "Silakan gunakan perintah 'jualan' untuk mengelola:"
 echo "  jualan status"
