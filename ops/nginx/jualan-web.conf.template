@@ -21,9 +21,9 @@ server {
         fastcgi_hide_header X-Powered-By;
     }
 
-    # API listener proxy (existing FastAPI on port 8080)
+    # API listener proxy (existing FastAPI on custom port)
     location /listener/ {
-        proxy_pass http://127.0.0.1:8080;
+        proxy_pass http://127.0.0.1:__API_PORT__;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -31,7 +31,7 @@ server {
     }
 
     location /health {
-        proxy_pass http://127.0.0.1:8080;
+        proxy_pass http://127.0.0.1:__API_PORT__;
         proxy_set_header Host $host;
     }
 
