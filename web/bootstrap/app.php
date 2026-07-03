@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('tokens:clean')->daily();
     })
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->trustProxies(at: '*');
         $middleware->validateCsrfTokens(except: [
             'api/payment/midtrans/callback',
         ]);
