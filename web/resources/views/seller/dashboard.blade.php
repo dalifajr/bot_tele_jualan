@@ -59,7 +59,7 @@
                 <div class="position-relative" style="z-index: 1;">
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <p class="small text-muted fw-bold mb-0">PENDAPATAN KOTOR</p>
-                        <select onchange="let url = new URL(window.location.href); url.searchParams.set('earnings_days', this.value); window.location.href = url.toString();" class="form-select form-select-sm py-0 px-2 border-0 shadow-sm" style="width: auto; font-size: 0.7rem; border-radius: 8px; background-color: rgba(255,255,255,0.8); cursor: pointer;">
+                        <select onchange="window.location.href = window.location.pathname + '?days={{ $days ?? 7 }}&earnings_days=' + this.value;" class="form-select form-select-sm py-0 px-2 border-0 shadow-sm" style="width: auto; font-size: 0.7rem; border-radius: 8px; background-color: rgba(255,255,255,0.8); cursor: pointer;">
                             <option value="all" {{ $earningsDays == 'all' ? 'selected' : '' }}>Semua</option>
                             <option value="7" {{ $earningsDays == '7' ? 'selected' : '' }}>7 Hari</option>
                             <option value="30" {{ $earningsDays == '30' ? 'selected' : '' }}>30 Hari</option>
