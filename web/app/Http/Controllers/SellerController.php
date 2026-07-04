@@ -36,14 +36,30 @@ class SellerController extends Controller
         $pendingWithdrawalCount = WithdrawalRequest::where('seller_id', $sellerId)->where('status', 'pending')->count();
         $approvedWithdrawalCount = WithdrawalRequest::where('seller_id', $sellerId)->where('status', 'approved')->count();
 
-        // Calculate sales statistics for this month (Rupiah)
-        // We select the sum of prices of stock units sold that belong to this seller
-        $monthlyEarnings = DB::table('stock_units')
+        // Filter rentang waktu untuk pendapatan kotor
+        $earningsDays = $request->query('earnings_days', 'all');
+        if (!in_array($earningsDays, ['7', '30', '90', '365', 'all'])) {
+            $earningsDays = 'all';
+        }
+
+        $earningsQuery = DB::table('stock_units')
             ->join('products', 'stock_units.product_id', '=', 'products.id')
+            ->leftJoin('orders', 'stock_units.sold_order_id', '=', 'orders.id')
             ->where('stock_units.seller_id', $sellerId)
-            ->where('stock_units.is_sold', true)
-            ->sum('products.price');
-        $monthlyEarnings = (int) $monthlyEarnings;
+            ->where('stock_units.is_sold', true);
+
+        if ($earningsDays !== 'all') {
+            $dateLimit = now()->subDays((int) $earningsDays)->startOfDay();
+            $earningsQuery->where(function ($query) use ($dateLimit) {
+                $query->where('orders.created_at', '>=', $dateLimit)
+                      ->orWhere(function ($q) use ($dateLimit) {
+                          $q->whereNull('stock_units.sold_order_id')
+                            ->where('stock_units.updated_at', '>=', $dateLimit);
+                      });
+            });
+        }
+
+        $monthlyEarnings = (int) $earningsQuery->sum('products.price');
 
         $feePercent = $user->platform_fee_percent ?? 10;
         $monthlyCommission = (int) ($monthlyEarnings * $feePercent / 100);
@@ -156,6 +172,7 @@ class SellerController extends Controller
             'monthlyEarnings',
             'monthlyCommission',
             'monthlyNet',
+            'earningsDays',
             'totalSales',
             'deliveredOrders',
             'cancelledOrders',

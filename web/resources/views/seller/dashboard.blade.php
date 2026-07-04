@@ -57,7 +57,16 @@
                     <i class="fas fa-coins"></i>
                 </div>
                 <div class="position-relative" style="z-index: 1;">
-                    <p class="small text-muted fw-bold mb-2">PENDAPATAN KOTOR</p>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <p class="small text-muted fw-bold mb-0">PENDAPATAN KOTOR</p>
+                        <select onchange="let url = new URL(window.location.href); url.searchParams.set('earnings_days', this.value); window.location.href = url.toString();" class="form-select form-select-sm py-0 px-2 border-0 shadow-sm" style="width: auto; font-size: 0.7rem; border-radius: 8px; background-color: rgba(255,255,255,0.8); cursor: pointer;">
+                            <option value="all" {{ $earningsDays == 'all' ? 'selected' : '' }}>Semua</option>
+                            <option value="7" {{ $earningsDays == '7' ? 'selected' : '' }}>7 Hari</option>
+                            <option value="30" {{ $earningsDays == '30' ? 'selected' : '' }}>30 Hari</option>
+                            <option value="90" {{ $earningsDays == '90' ? 'selected' : '' }}>90 Hari</option>
+                            <option value="365" {{ $earningsDays == '365' ? 'selected' : '' }}>1 Tahun</option>
+                        </select>
+                    </div>
                     <h2 class="fw-bold text-success mb-2">Rp {{ number_format($monthlyEarnings, 0, ',', '.') }}</h2>
                     <div class="d-flex flex-column gap-1 mb-2 pt-2 border-top" style="font-size: 0.8rem; border-color: rgba(0,0,0,0.08) !important;">
                         <div class="d-flex justify-content-between text-muted">
@@ -69,7 +78,20 @@
                             <span class="fw-semibold text-danger">Rp {{ number_format($monthlyCommission, 0, ',', '.') }}</span>
                         </div>
                     </div>
-                    <span class="small text-muted" style="font-size: 0.72rem; display: block; line-height: 1.2;"><i class="fas fa-info-circle text-primary me-1"></i>Akumulasi pendapatan kotor produk Anda.</span>
+                    <span class="small text-muted" style="font-size: 0.72rem; display: block; line-height: 1.2;">
+                        <i class="fas fa-info-circle text-primary me-1"></i>
+                        @if($earningsDays == 'all')
+                            Akumulasi pendapatan kotor produk Anda (Semua Waktu).
+                        @elseif($earningsDays == '7')
+                            Akumulasi pendapatan kotor 7 hari terakhir.
+                        @elseif($earningsDays == '30')
+                            Akumulasi pendapatan kotor 30 hari terakhir.
+                        @elseif($earningsDays == '90')
+                            Akumulasi pendapatan kotor 90 hari terakhir.
+                        @elseif($earningsDays == '365')
+                            Akumulasi pendapatan kotor 1 tahun terakhir.
+                        @endif
+                    </span>
                 </div>
             </div>
         </div>
