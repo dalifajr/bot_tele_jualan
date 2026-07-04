@@ -44,19 +44,13 @@ class SellerController extends Controller
 
         $earningsQuery = DB::table('stock_units')
             ->join('products', 'stock_units.product_id', '=', 'products.id')
-            ->leftJoin('orders', 'stock_units.sold_order_id', '=', 'orders.id')
+            ->join('orders', 'stock_units.sold_order_id', '=', 'orders.id')
             ->where('stock_units.seller_id', $sellerId)
             ->where('stock_units.is_sold', true);
 
         if ($earningsDays !== 'all') {
             $dateLimit = now()->subDays((int) $earningsDays)->startOfDay();
-            $earningsQuery->where(function ($query) use ($dateLimit) {
-                $query->where('orders.created_at', '>=', $dateLimit)
-                      ->orWhere(function ($q) use ($dateLimit) {
-                          $q->whereNull('stock_units.sold_order_id')
-                            ->where('stock_units.updated_at', '>=', $dateLimit);
-                      });
-            });
+            $earningsQuery->where('orders.created_at', '>=', $dateLimit);
         }
 
         $monthlyEarnings = (int) $earningsQuery->sum('products.price');
