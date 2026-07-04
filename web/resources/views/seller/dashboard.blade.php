@@ -58,8 +58,18 @@
                 </div>
                 <div class="position-relative" style="z-index: 1;">
                     <p class="small text-muted fw-bold mb-2">PENDAPATAN KOTOR</p>
-                    <h2 class="fw-bold text-success mb-3">Rp {{ number_format($monthlyEarnings, 0, ',', '.') }}</h2>
-                    <span class="small text-muted"><i class="fas fa-info-circle text-primary me-1"></i>Akumulasi pendapatan kotor produk Anda.</span>
+                    <h2 class="fw-bold text-success mb-2">Rp {{ number_format($monthlyEarnings, 0, ',', '.') }}</h2>
+                    <div class="d-flex flex-column gap-1 mb-2 pt-2 border-top" style="font-size: 0.8rem; border-color: rgba(0,0,0,0.08) !important;">
+                        <div class="d-flex justify-content-between text-muted">
+                            <span>Pend. Bersih:</span>
+                            <span class="fw-semibold text-dark">Rp {{ number_format($monthlyNet, 0, ',', '.') }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between text-muted">
+                            <span>Komisi ({{ $user->platform_fee_percent ?? 10 }}%):</span>
+                            <span class="fw-semibold text-danger">Rp {{ number_format($monthlyCommission, 0, ',', '.') }}</span>
+                        </div>
+                    </div>
+                    <span class="small text-muted" style="font-size: 0.72rem; display: block; line-height: 1.2;"><i class="fas fa-info-circle text-primary me-1"></i>Akumulasi pendapatan kotor produk Anda.</span>
                 </div>
             </div>
         </div>

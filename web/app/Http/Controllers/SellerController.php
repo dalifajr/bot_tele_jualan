@@ -43,6 +43,11 @@ class SellerController extends Controller
             ->where('stock_units.seller_id', $sellerId)
             ->where('stock_units.is_sold', true)
             ->sum('products.price');
+        $monthlyEarnings = (int) $monthlyEarnings;
+
+        $feePercent = $user->platform_fee_percent ?? 10;
+        $monthlyCommission = (int) ($monthlyEarnings * $feePercent / 100);
+        $monthlyNet = $monthlyEarnings - $monthlyCommission;
 
         // 1. Total Sales (earnings sum of their sold stock units where orders are delivered)
         $totalSales = (int) DB::table('stock_units')
@@ -149,6 +154,8 @@ class SellerController extends Controller
             'pendingWithdrawalCount',
             'approvedWithdrawalCount',
             'monthlyEarnings',
+            'monthlyCommission',
+            'monthlyNet',
             'totalSales',
             'deliveredOrders',
             'cancelledOrders',
