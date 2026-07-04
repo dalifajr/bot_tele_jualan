@@ -55,6 +55,9 @@ class SellerController extends Controller
 
         $monthlyEarnings = (int) $earningsQuery->sum('products.price');
 
+        // Log diagnostik untuk didebug di laravel.log
+        \Log::info("DIAGNOSTIC - Seller Earnings Filter: days={$earningsDays}, sum={$monthlyEarnings}, sql=" . $earningsQuery->toSql() . ", bindings=" . json_encode($earningsQuery->getBindings()));
+
         $feePercent = $user->platform_fee_percent ?? 10;
         $monthlyCommission = (int) ($monthlyEarnings * $feePercent / 100);
         $monthlyNet = $monthlyEarnings - $monthlyCommission;
