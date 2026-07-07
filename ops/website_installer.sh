@@ -401,9 +401,109 @@ setup_nginx() {
   local php_ver
   php_ver="$(detect_php_version)"
   local fpm_sock="/run/php/php${php_ver}-fpm.sock"
-  local nginx_conf="/etc/nginx/sites-available/jualan-web-${domain}"
 
-  cat > "${nginx_conf}" <<NGINX_EOF
+  # Path Nginx default
+  local nginx_conf="/etc/nginx/sites-available/jualan-web-${domain}"
+  local nginx_enabled="/etc/nginx/sites-enabled/jualan-web-${domain}"
+
+  # Deteksi jika Nginx hanya menggunakan conf.d (seperti webpanel/VPN script)
+  if [[ ! -d "/etc/nginx/sites-enabled" ]] || ! grep -q "sites-enabled" /etc/nginx/nginx.conf 2>/dev/null; then
+    nginx_conf="/etc/nginx/conf.d/jualan-web.conf"
+    nginx_enabled=""
+  fi
+
+  # Deteksi jika HAProxy/Xray berjalan di port 80/443
+  local is_tunnel=0
+  if ss -tulpn 2>/dev/null | grep -E ":80|:443" | grep -q "haproxy\|xray"; then
+    is_tunnel=1
+  fi
+
+  # Load API_PORT dari env
+  load_env
+  local api_port="${API_PORT:-8080}"
+  # Jika API berjalan di port python custom (seperti 8086), gunakan port itu
+  local active_api_port
+  active_api_port=$(ss -tulpn 2>/dev/null | grep "python" | grep -oE ":[0-9]+" | head -1 | tr -d ":" || echo "")
+  if [[ -n "${active_api_port}" ]]; then
+    api_port="${active_api_port}"
+  fi
+
+  if [[ "${is_tunnel}" -eq 1 ]]; then
+    log_step "Mendeteksi HAProxy/Xray aktif di port 80/443. Mengonfigurasi Nginx untuk proxy_protocol (Port 1010 & 1013)..."
+    cat > "${nginx_conf}" <<NGINX_EOF
+server {
+    # Port 1010 (untuk HTTP/1.1)
+    listen 1010 proxy_protocol;
+    listen [::]:1010 proxy_protocol;
+
+    # Port 1013 (untuk HTTP/2)
+    listen 1013 http2 proxy_protocol;
+    listen [::]:1013 http2 proxy_protocol;
+
+    server_name ${domain};
+
+    # Wajib ada agar Nginx bisa mengurai header PROXY protocol dari HAProxy
+    set_real_ip_from 127.0.0.1;
+    real_ip_header proxy_protocol;
+
+    root ${WEB_DIR}/public;
+    index index.php index.html;
+
+    charset utf-8;
+    client_max_body_size 100M;
+
+    # Laravel routes
+    location / {
+        try_files \$uri \$uri/ /index.php?\$query_string;
+    }
+
+    # PHP-FPM
+    location ~ \.php\$ {
+        include fastcgi_params;
+        fastcgi_pass unix:${fpm_sock};
+        fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
+        fastcgi_hide_header X-Powered-By;
+        fastcgi_param HTTPS on;
+        fastcgi_param HTTP_X_FORWARDED_PROTO https;
+    }
+
+    # API listener proxy (FastAPI pada port ${api_port})
+    location /listener/ {
+        proxy_pass http://127.0.0.1:${api_port};
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+
+    location /health {
+        proxy_pass http://127.0.0.1:${api_port};
+        proxy_set_header Host \$host;
+    }
+
+    # Security headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
+    # Deny hidden files
+    location ~ /\.(?!well-known) {
+        deny all;
+    }
+
+    # Static assets caching
+    location ~* \.(css|js|ico|png|jpg|jpeg|gif|svg|woff2?|ttf|eot)\$ {
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+    }
+
+    access_log /var/log/nginx/jualan-web-${domain}-access.log;
+    error_log /var/log/nginx/jualan-web-${domain}-error.log;
+}
+NGINX_EOF
+  else
+    # Standar port 80/IPv6
+    cat > "${nginx_conf}" <<NGINX_EOF
 server {
     listen 80;
     listen [::]:80;
@@ -429,9 +529,9 @@ server {
         fastcgi_hide_header X-Powered-By;
     }
 
-    # API listener proxy (existing FastAPI)
+    # API listener proxy (FastAPI pada port ${api_port})
     location /listener/ {
-        proxy_pass http://127.0.0.1:8080;
+        proxy_pass http://127.0.0.1:${api_port};
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
@@ -439,7 +539,7 @@ server {
     }
 
     location /health {
-        proxy_pass http://127.0.0.1:8080;
+        proxy_pass http://127.0.0.1:${api_port};
         proxy_set_header Host \$host;
     }
 
@@ -454,7 +554,7 @@ server {
     }
 
     # Static assets caching
-    location ~* \.(css|js|ico|png|jpg|jpeg|gif|svg|woff2?|ttf|eot)$ {
+    location ~* \.(css|js|ico|png|jpg|jpeg|gif|svg|woff2?|ttf|eot)\$ {
         expires 30d;
         add_header Cache-Control "public, immutable";
     }
@@ -463,12 +563,14 @@ server {
     error_log /var/log/nginx/jualan-web-${domain}-error.log;
 }
 NGINX_EOF
+  fi
 
-  # Enable site
-  ln -sf "${nginx_conf}" "/etc/nginx/sites-enabled/jualan-web-${domain}"
-
-  # Remove default if exists
-  rm -f /etc/nginx/sites-enabled/default
+  # Enable site (jika sites-enabled digunakan)
+  if [[ -n "${nginx_enabled}" ]]; then
+    ln -sf "${nginx_conf}" "${nginx_enabled}"
+    # Remove default if exists
+    rm -f /etc/nginx/sites-enabled/default
+  fi
 
   # Test config
   nginx -t
@@ -483,18 +585,35 @@ NGINX_EOF
 setup_ssl() {
   local domain="$1"
 
-  log_step "Setup SSL certificate untuk ${domain}..."
+  # Deteksi jika HAProxy/Xray berjalan di port 80/443
+  local is_tunnel=0
+  if ss -tulpn 2>/dev/null | grep -E ":80|:443" | grep -q "haproxy\|xray"; then
+    is_tunnel=1
+  fi
 
-  certbot --nginx \
-    -d "${domain}" \
-    --non-interactive \
-    --agree-tos \
-    --redirect \
-    --register-unsafely-without-email \
-    || {
-      echo "WARNING: Certbot gagal. Website akan jalan di HTTP dulu." >&2
-      echo "Jalankan ulang: sudo certbot --nginx -d ${domain}" >&2
-    }
+  if [[ "${is_tunnel}" -eq 1 ]]; then
+    log_step "Mendeteksi sistem tunnel. Registrasi SSL otomatis dilewati."
+    echo "========================================================="
+    echo "Silakan jalankan perintah berikut secara manual di VPS:"
+    echo "  1. sudo systemctl stop haproxy nginx"
+    echo "  2. sudo certbot certonly --standalone -d ${domain}"
+    echo "  3. sudo sh -c \"cat /etc/letsencrypt/live/${domain}/fullchain.pem /etc/letsencrypt/live/${domain}/privkey.pem > /etc/haproxy/${domain}.pem\""
+    echo "  4. Tambahkan 'crt /etc/haproxy/${domain}.pem' ke baris bind :443 di /etc/haproxy/haproxy.cfg"
+    echo "  5. sudo systemctl start haproxy nginx"
+    echo "========================================================="
+  else
+    log_step "Setup SSL certificate untuk ${domain}..."
+    certbot --nginx \
+      -d "${domain}" \
+      --non-interactive \
+      --agree-tos \
+      --redirect \
+      --register-unsafely-without-email \
+      || {
+        echo "WARNING: Certbot gagal. Website akan jalan di HTTP dulu." >&2
+        echo "Jalankan ulang: sudo certbot --nginx -d ${domain}" >&2
+      }
+  fi
 
   log_step "SSL setup selesai."
 }
