@@ -406,6 +406,7 @@ setup_nginx() {
   cat > "${nginx_conf}" <<NGINX_EOF
 server {
     listen 80;
+    listen [::]:80;
     server_name ${domain};
 
     root ${WEB_DIR}/public;
