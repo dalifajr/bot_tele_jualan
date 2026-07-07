@@ -401,7 +401,7 @@ setup_nginx() {
   local php_ver
   php_ver="$(detect_php_version)"
   local fpm_sock="/run/php/php${php_ver}-fpm.sock"
-  local nginx_conf="/etc/nginx/sites-available/jualan-web"
+  local nginx_conf="/etc/nginx/sites-available/jualan-web-${domain}"
 
   cat > "${nginx_conf}" <<NGINX_EOF
 server {
@@ -458,13 +458,13 @@ server {
         add_header Cache-Control "public, immutable";
     }
 
-    access_log /var/log/nginx/jualan-web-access.log;
-    error_log /var/log/nginx/jualan-web-error.log;
+    access_log /var/log/nginx/jualan-web-${domain}-access.log;
+    error_log /var/log/nginx/jualan-web-${domain}-error.log;
 }
 NGINX_EOF
 
   # Enable site
-  ln -sf "${nginx_conf}" /etc/nginx/sites-enabled/jualan-web
+  ln -sf "${nginx_conf}" "/etc/nginx/sites-enabled/jualan-web-${domain}"
 
   # Remove default if exists
   rm -f /etc/nginx/sites-enabled/default
@@ -608,8 +608,15 @@ do_restart() {
 }
 
 do_logs() {
+  load_env
+  local domain="${WEBSITE_DOMAIN:-}"
+  local nginx_log="/var/log/nginx/jualan-web-${domain}-error.log"
+  if [[ -z "${domain}" || ! -f "${nginx_log}" ]]; then
+    nginx_log="/var/log/nginx/jualan-web-error.log"
+  fi
+
   echo "=== Nginx Error Log (last 30 lines) ==="
-  tail -n 30 /var/log/nginx/jualan-web-error.log 2>/dev/null || echo "(no log)"
+  tail -n 30 "${nginx_log}" 2>/dev/null || echo "(no log)"
   echo ""
   echo "=== Laravel Log (last 30 lines) ==="
   tail -n 30 "${WEB_DIR}/storage/logs/laravel.log" 2>/dev/null || echo "(no log)"
@@ -627,6 +634,13 @@ do_uninstall() {
 
   echo ""
   log_step "Menghapus konfigurasi Nginx..."
+  load_env
+  local domain="${WEBSITE_DOMAIN:-}"
+  if [[ -n "${domain}" ]]; then
+    rm -f "/etc/nginx/sites-enabled/jualan-web-${domain}"
+    rm -f "/etc/nginx/sites-available/jualan-web-${domain}"
+  fi
+  # Fallback/cleanup legacy config
   rm -f /etc/nginx/sites-enabled/jualan-web
   rm -f /etc/nginx/sites-available/jualan-web
   systemctl reload nginx 2>/dev/null || true

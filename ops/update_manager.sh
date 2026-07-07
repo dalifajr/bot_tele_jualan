@@ -231,9 +231,16 @@ update_website() {
     log_step "website: terdeteksi aktif dari web/.env (WEBSITE_ENABLED belum diset)"
   fi
 
-  if [[ "${website_active}" -eq 0 && -f "/etc/nginx/sites-enabled/jualan-web" ]]; then
-    website_active=1
-    log_step "website: terdeteksi aktif dari Nginx config"
+  local website_domain
+  website_domain="$(read_env_var WEBSITE_DOMAIN || true)"
+  if [[ "${website_active}" -eq 0 ]]; then
+    if [[ -n "${website_domain}" && -f "/etc/nginx/sites-enabled/jualan-web-${website_domain}" ]]; then
+      website_active=1
+      log_step "website: terdeteksi aktif dari Nginx config jualan-web-${website_domain}"
+    elif [[ -f "/etc/nginx/sites-enabled/jualan-web" ]]; then
+      website_active=1
+      log_step "website: terdeteksi aktif dari legacy Nginx config jualan-web"
+    fi
   fi
 
   if [[ "${website_active}" -eq 0 ]]; then
@@ -263,7 +270,13 @@ update_website() {
   sudo chmod -R o+rX "${web_dir}/public" 2>/dev/null || true
 
   # Patch Nginx: tambahkan client_max_body_size jika belum ada
-  local nginx_conf="/etc/nginx/sites-available/jualan-web"
+  local website_domain
+  website_domain="$(read_env_var WEBSITE_DOMAIN || true)"
+  local nginx_conf="/etc/nginx/sites-available/jualan-web-${website_domain}"
+  if [[ -z "${website_domain}" || ! -f "${nginx_conf}" ]]; then
+    nginx_conf="/etc/nginx/sites-available/jualan-web"
+  fi
+
   if [[ -f "${nginx_conf}" ]] && ! grep -q 'client_max_body_size' "${nginx_conf}"; then
     log_step "patch Nginx: menambahkan client_max_body_size 100M..."
     sudo sed -i '/charset utf-8;/a\    client_max_body_size 100M;' "${nginx_conf}" 2>/dev/null || true

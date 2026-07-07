@@ -185,7 +185,7 @@ log_step "Mengonfigurasi Nginx untuk domain ${WEBSITE_DOMAIN}..."
 
 PHP_VER="$(detect_php_version)"
 FPM_SOCK="php${PHP_VER}-fpm.sock"
-NGINX_CONF="/etc/nginx/sites-available/jualan-web"
+NGINX_CONF="/etc/nginx/sites-available/jualan-web-${WEBSITE_DOMAIN}"
 
 # Render Nginx configuration from template
 sed \
@@ -196,7 +196,7 @@ sed \
   "${PROJECT_DIR}/ops/nginx/jualan-web.conf.template" > "${NGINX_CONF}"
 
 # Enable site in Nginx
-ln -sf "${NGINX_CONF}" /etc/nginx/sites-enabled/jualan-web
+ln -sf "${NGINX_CONF}" "/etc/nginx/sites-enabled/jualan-web-${WEBSITE_DOMAIN}"
 nginx -t
 
 # Restart PHP-FPM and reload Nginx
