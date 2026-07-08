@@ -446,6 +446,40 @@ server {
     set_real_ip_from 127.0.0.1;
     real_ip_header proxy_protocol;
 
+    # Redirect HTTP (Port 80/8080/8880/2082) ke HTTPS secara otomatis
+    if (\$proxy_protocol_server_port = 80) {
+        return 301 https://\$host\$request_uri;
+    }
+    if (\$proxy_protocol_server_port = 8080) {
+        return 301 https://\$host\$request_uri;
+    }
+    if (\$proxy_protocol_server_port = 8880) {
+        return 301 https://\$host\$request_uri;
+    }
+    if (\$proxy_protocol_server_port = 2082) {
+        return 301 https://\$host\$request_uri;
+    }
+
+    # Deteksi skema HTTPS asal
+    set \$my_https "off";
+    set \$my_proto "http";
+    if (\$proxy_protocol_server_port = 443) {
+        set \$my_https "on";
+        set \$my_proto "https";
+    }
+    if (\$proxy_protocol_server_port = 8443) {
+        set \$my_https "on";
+        set \$my_proto "https";
+    }
+    if (\$proxy_protocol_server_port = 2096) {
+        set \$my_https "on";
+        set \$my_proto "https";
+    }
+    if (\$proxy_protocol_server_port = 2087) {
+        set \$my_https "on";
+        set \$my_proto "https";
+    }
+
     root ${WEB_DIR}/public;
     index index.php index.html;
 
@@ -463,8 +497,8 @@ server {
         fastcgi_pass unix:${fpm_sock};
         fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
         fastcgi_hide_header X-Powered-By;
-        fastcgi_param HTTPS on;
-        fastcgi_param HTTP_X_FORWARDED_PROTO https;
+        fastcgi_param HTTPS \$my_https;
+        fastcgi_param HTTP_X_FORWARDED_PROTO \$my_proto;
     }
 
     # API listener proxy (FastAPI pada port ${api_port})
@@ -473,7 +507,7 @@ server {
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Forwarded-Proto \$my_proto;
     }
 
     location /health {
