@@ -16,9 +16,17 @@ class VpnService
         $ip = $settings['vpn_server_ip'] ?? null;
         $port = $settings['vpn_server_port'] ?? 22;
         $username = $settings['vpn_server_username'] ?? 'root';
-        $keyPath = $settings['vpn_server_ssh_key'] ?? '/home/user/.ssh/id_rsa';
+        $rawKey = $settings['vpn_server_ssh_key_raw'] ?? null;
 
-        if ($ip && $keyPath && file_exists($keyPath)) {
+        if ($ip && $rawKey) {
+            $keyPath = storage_path('app/vpn_ssh_key.pem');
+            if (!file_exists(storage_path('app'))) {
+                mkdir(storage_path('app'), 0755, true);
+            }
+            file_put_contents($keyPath, $rawKey);
+            // Pada Windows chmod mungkin diabaikan, tapi penting untuk VPS Linux
+            @chmod($keyPath, 0600);
+
             $this->ssh = Ssh::create($username, $ip, $port)
                 ->usePrivateKey($keyPath)
                 ->disableStrictHostKeyChecking();
