@@ -8,6 +8,8 @@ return new class extends Migration
 {
     public function up(): void
     {
+        Schema::dropIfExists('vpn_accounts');
+
         Schema::create('vpn_accounts', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('user_id')->index();
