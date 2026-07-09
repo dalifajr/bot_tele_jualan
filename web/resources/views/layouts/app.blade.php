@@ -25,6 +25,31 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
         window.isAuthenticated = @json(auth()->check());
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.Telegram && window.Telegram.WebApp) {
+                const tg = window.Telegram.WebApp;
+                tg.ready();
+                tg.expand();
+                
+                if (!window.isAuthenticated && tg.initData) {
+                    fetch('/auth/telegram/webapp', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        },
+                        body: JSON.stringify({ init_data: tg.initData })
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            window.location.href = '/dashboard';
+                        }
+                    }).catch(err => console.error("WebApp Login Error:", err));
+                }
+            }
+        });
     </script>
 
     {{-- SweetAlert2 --}}

@@ -8,6 +8,8 @@ class BroadcastJob extends Model
 {
     protected $fillable = [
         'message',
+        'media_type',
+        'media_path',
         'total_targets',
         'sent_count',
         'failed_count',

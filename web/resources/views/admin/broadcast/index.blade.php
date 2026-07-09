@@ -19,7 +19,13 @@
                     @csrf
                     <div class="mb-4">
                         <label class="form-label fw-bold text-muted small">Pesan Broadcast (Mendukung Format HTML)</label>
-                        <textarea id="broadcastMessage" name="message" class="form-control" rows="8" required placeholder="<b>Halo Pelanggan Setia!</b><br>Dapatkan promo menarik hari ini..."></textarea>
+                        <textarea id="broadcastMessage" name="message" class="form-control" rows="8" placeholder="<b>Halo Pelanggan Setia!</b><br>Dapatkan promo menarik hari ini..."></textarea>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-muted small">Attachment Media (Opsional)</label>
+                        <input type="file" id="mediaFile" name="media_file" class="form-control" accept="image/*,video/mp4,.pdf,.doc,.docx,.zip">
+                        <div class="form-text">Maksimal 50MB. Format didukung: Foto (JPG/PNG), Video (MP4), Dokumen (PDF/DOC/ZIP).</div>
                     </div>
 
                     <!-- Progress Bar Section (Hidden initially) -->
@@ -88,9 +94,11 @@ async function checkActiveBroadcast() {
 function setupActiveBroadcastUI(job) {
     const btnSend = document.getElementById('btnSend');
     const messageTextarea = document.getElementById('broadcastMessage');
+    const mediaFileInput = document.getElementById('mediaFile');
     
     messageTextarea.value = job.message;
     messageTextarea.disabled = true;
+    if (mediaFileInput) mediaFileInput.disabled = true;
     
     btnSend.disabled = true;
     btnSend.innerHTML = 'Sedang Mengirim (Latar Belakang)...';
@@ -139,6 +147,7 @@ function startPolling(jobId) {
 function finishBroadcastUI(status, success, failed) {
     const btnSend = document.getElementById('btnSend');
     const messageTextarea = document.getElementById('broadcastMessage');
+    const mediaFileInput = document.getElementById('mediaFile');
     
     btnSend.innerHTML = '<i class="fas fa-check-circle me-2"></i>Selesai';
     btnSend.classList.replace('btn-primary', 'btn-success');
@@ -152,6 +161,10 @@ function finishBroadcastUI(status, success, failed) {
         // Reset form
         messageTextarea.disabled = false;
         messageTextarea.value = '';
+        if (mediaFileInput) {
+            mediaFileInput.disabled = false;
+            mediaFileInput.value = '';
+        }
         btnSend.disabled = false;
         btnSend.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Mulai Kirim Broadcast';
         btnSend.classList.replace('btn-success', 'btn-primary');
@@ -162,12 +175,13 @@ function finishBroadcastUI(status, success, failed) {
 async function startBroadcast() {
     const btnSend = document.getElementById('btnSend');
     const message = document.getElementById('broadcastMessage').value;
+    const mediaFile = document.getElementById('mediaFile').files[0];
     
-    if (!message.trim()) {
+    if (!message.trim() && !mediaFile) {
         return Swal.fire({
             icon: 'warning',
             title: 'Oops...',
-            text: 'Pesan tidak boleh kosong!',
+            text: 'Pesan atau file media tidak boleh kosong!',
             confirmButtonColor: '#3085d6'
         });
     }
@@ -175,15 +189,21 @@ async function startBroadcast() {
     btnSend.disabled = true;
     btnSend.innerHTML = 'Mempersiapkan...';
     document.getElementById('broadcastMessage').disabled = true;
+    document.getElementById('mediaFile').disabled = true;
+    
+    const formData = new FormData();
+    formData.append('message', message);
+    if (mediaFile) {
+        formData.append('media_file', mediaFile);
+    }
     
     try {
         const response = await fetch("{{ route('admin.broadcast.start') }}", {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
             },
-            body: JSON.stringify({ message: message })
+            body: formData
         });
         
         const data = await response.json();
@@ -214,6 +234,7 @@ async function startBroadcast() {
         });
         btnSend.disabled = false;
         document.getElementById('broadcastMessage').disabled = false;
+        document.getElementById('mediaFile').disabled = false;
         btnSend.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Mulai Kirim Broadcast';
     }
 }

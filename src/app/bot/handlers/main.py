@@ -325,10 +325,9 @@ def _main_menu_keyboard(role: str) -> InlineKeyboardMarkup:
     if url:
         if not url.startswith(("http://", "https://")):
             url = f"https://{url}"
-        buttons.append([InlineKeyboardButton("📱 Mini App Belanja", web_app=WebAppInfo(url=f"{url}/catalog"))])
+        buttons.append([InlineKeyboardButton("🛍️ Lihat Katalog", web_app=WebAppInfo(url=f"{url}/catalog"))])
 
     buttons.extend([
-        [InlineKeyboardButton("🛍️ Katalog", callback_data="cus:cat")],
         [InlineKeyboardButton("📦 Pesanan Saya", callback_data="cus:ord")],
         [InlineKeyboardButton("🆘 Komplain", callback_data="cus:cmp")],
         [InlineKeyboardButton("ℹ️ Bantuan", callback_data="cus:help")],

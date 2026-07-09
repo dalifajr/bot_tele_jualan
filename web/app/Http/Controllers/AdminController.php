@@ -1462,7 +1462,17 @@ class AdminController extends Controller
 
     public function startBroadcast(Request $request)
     {
-        $request->validate(['message' => 'required|string']);
+        $request->validate([
+            'message' => 'nullable|string',
+            'media_file' => 'nullable|file|max:51200' // max 50MB
+        ]);
+
+        if (empty($request->message) && !$request->hasFile('media_file')) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Harap isi pesan teks atau pilih file untuk broadcast.'
+            ], 422);
+        }
 
         $targets = \App\Models\User::whereNotNull('telegram_id')
             ->where('role', 'customer')
@@ -1476,9 +1486,27 @@ class AdminController extends Controller
             ], 422);
         }
 
+        $mediaType = null;
+        $mediaPath = null;
+        if ($request->hasFile('media_file')) {
+             $file = $request->file('media_file');
+             $ext = strtolower($file->getClientOriginalExtension());
+             if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif'])) {
+                 $mediaType = 'photo';
+             } elseif (in_array($ext, ['mp4'])) {
+                 $mediaType = 'video';
+             } else {
+                 $mediaType = 'document';
+             }
+             $filename = 'broadcast_' . time() . '.' . $ext;
+             $mediaPath = $file->storeAs('broadcasts', $filename, 'public');
+        }
+
         // Create the background job record
         $job = \App\Models\BroadcastJob::create([
-            'message' => $request->message,
+            'message' => $request->message ?? '',
+            'media_type' => $mediaType,
+            'media_path' => $mediaPath,
             'total_targets' => count($targets),
             'sent_count' => 0,
             'failed_count' => 0,
@@ -1577,11 +1605,43 @@ class AdminController extends Controller
             }
 
             try {
-                $response = \Illuminate\Support\Facades\Http::post("https://api.telegram.org/bot{$token}/sendMessage", [
-                    'chat_id' => $targetId,
-                    'text' => $job->message,
-                    'parse_mode' => 'HTML'
-                ]);
+                if ($job->media_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($job->media_path)) {
+                    $mediaFullPath = storage_path('app/public/' . $job->media_path);
+                    $mediaData = fopen($mediaFullPath, 'r');
+                    $filename = basename($mediaFullPath);
+                    
+                    if ($job->media_type === 'photo') {
+                        $response = \Illuminate\Support\Facades\Http::attach(
+                            'photo', $mediaData, $filename
+                        )->post("https://api.telegram.org/bot{$token}/sendPhoto", [
+                            'chat_id' => $targetId,
+                            'caption' => $job->message,
+                            'parse_mode' => 'HTML'
+                        ]);
+                    } elseif ($job->media_type === 'video') {
+                        $response = \Illuminate\Support\Facades\Http::attach(
+                            'video', $mediaData, $filename
+                        )->post("https://api.telegram.org/bot{$token}/sendVideo", [
+                            'chat_id' => $targetId,
+                            'caption' => $job->message,
+                            'parse_mode' => 'HTML'
+                        ]);
+                    } else {
+                        $response = \Illuminate\Support\Facades\Http::attach(
+                            'document', $mediaData, $filename
+                        )->post("https://api.telegram.org/bot{$token}/sendDocument", [
+                            'chat_id' => $targetId,
+                            'caption' => $job->message,
+                            'parse_mode' => 'HTML'
+                        ]);
+                    }
+                } else {
+                    $response = \Illuminate\Support\Facades\Http::post("https://api.telegram.org/bot{$token}/sendMessage", [
+                        'chat_id' => $targetId,
+                        'text' => $job->message,
+                        'parse_mode' => 'HTML'
+                    ]);
+                }
 
                 if ($response->successful()) {
                     $success++;
