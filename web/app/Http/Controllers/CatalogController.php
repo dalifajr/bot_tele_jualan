@@ -15,10 +15,14 @@ class CatalogController extends Controller
             ->orderByDesc('id')
             ->get()
             ->map(function ($product) {
-                $product->stock_count = StockUnit::where('product_id', $product->id)
-                    ->where('is_sold', false)
-                    ->where('stock_status', 'ready')
-                    ->count();
+                if ($product->is_vpn) {
+                    $product->stock_count = 999;
+                } else {
+                    $product->stock_count = StockUnit::where('product_id', $product->id)
+                        ->where('is_sold', false)
+                        ->where('stock_status', 'ready')
+                        ->count();
+                }
                 return $product;
             });
 
@@ -33,10 +37,14 @@ class CatalogController extends Controller
             return redirect()->route('catalog.index')->with('error', 'Produk tidak tersedia.');
         }
 
-        $stockCount = StockUnit::where('product_id', $product->id)
-            ->where('is_sold', false)
-            ->where('stock_status', 'ready')
-            ->count();
+        if ($product->is_vpn) {
+            $stockCount = 999;
+        } else {
+            $stockCount = StockUnit::where('product_id', $product->id)
+                ->where('is_sold', false)
+                ->where('stock_status', 'ready')
+                ->count();
+        }
 
         return view('catalog.show', compact('product', 'stockCount'));
     }

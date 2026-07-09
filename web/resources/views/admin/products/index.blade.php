@@ -113,6 +113,33 @@
                         </div>
                         <div class="form-text small">Menahan saldo seller hingga masa garansi berakhir.</div>
                     </div>
+                    
+                    <div class="form-check form-switch mb-3 border-top pt-3">
+                        <input class="form-check-input" type="checkbox" role="switch" id="isVpnAdd" name="is_vpn" value="1">
+                        <label class="form-check-label text-primary small fw-bold" for="isVpnAdd"><i class="fas fa-network-wired me-1"></i> Jadikan Produk VPN?</label>
+                    </div>
+                    
+                    <div id="vpnOptionsAddContainer" style="display: none;" class="bg-light p-3 rounded mb-3">
+                        <div class="mb-2">
+                            <label class="form-label text-muted small fw-bold">Protokol VPN</label>
+                            <select name="vpn_protocol" id="vpnProtocolAdd" class="form-select">
+                                <option value="">Pilih Protokol</option>
+                                <option value="vmess">VMESS</option>
+                                <option value="vless">VLESS</option>
+                                <option value="trojan">TROJAN</option>
+                                <option value="shadowsocks">SHADOWSOCKS</option>
+                                <option value="ssh">SSH</option>
+                            </select>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label text-muted small fw-bold">Durasi / Masa Aktif</label>
+                            <div class="input-group">
+                                <input type="number" name="vpn_duration_days" id="vpnDurationAdd" class="form-control" placeholder="30" min="1">
+                                <span class="input-group-text bg-white text-muted">hari</span>
+                            </div>
+                        </div>
+                        <div class="form-text text-muted small"><i class="fas fa-info-circle"></i> Stok untuk produk VPN tidak perlu ditambahkan secara manual. Saat pembeli melakukan checkout, sistem akan meng-generate akun secara otomatis di VPS sesuai durasi ini.</div>
+                    </div>
                 </div>
                 <div class="modal-footer border-0 pt-0">
                     <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
@@ -159,6 +186,32 @@
                             <span class="input-group-text bg-light text-muted">hari</span>
                         </div>
                         <div class="form-text small">Menahan saldo seller hingga masa garansi berakhir.</div>
+                    </div>
+
+                    <div class="form-check form-switch mb-3 border-top pt-3">
+                        <input class="form-check-input toggle-vpn-edit" type="checkbox" role="switch" name="is_vpn" value="1" id="isVpnEdit{{ $product->id }}" data-target="vpnOptionsEditContainer{{ $product->id }}" {{ $product->is_vpn ? 'checked' : '' }}>
+                        <label class="form-check-label text-primary small fw-bold" for="isVpnEdit{{ $product->id }}"><i class="fas fa-network-wired me-1"></i> Jadikan Produk VPN?</label>
+                    </div>
+
+                    <div id="vpnOptionsEditContainer{{ $product->id }}" style="display: {{ $product->is_vpn ? 'block' : 'none' }};" class="bg-light p-3 rounded mb-3">
+                        <div class="mb-2">
+                            <label class="form-label text-muted small fw-bold">Protokol VPN</label>
+                            <select name="vpn_protocol" class="form-select">
+                                <option value="">Pilih Protokol</option>
+                                <option value="vmess" {{ $product->vpn_protocol == 'vmess' ? 'selected' : '' }}>VMESS</option>
+                                <option value="vless" {{ $product->vpn_protocol == 'vless' ? 'selected' : '' }}>VLESS</option>
+                                <option value="trojan" {{ $product->vpn_protocol == 'trojan' ? 'selected' : '' }}>TROJAN</option>
+                                <option value="shadowsocks" {{ $product->vpn_protocol == 'shadowsocks' ? 'selected' : '' }}>SHADOWSOCKS</option>
+                                <option value="ssh" {{ $product->vpn_protocol == 'ssh' ? 'selected' : '' }}>SSH</option>
+                            </select>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label text-muted small fw-bold">Durasi / Masa Aktif</label>
+                            <div class="input-group">
+                                <input type="number" name="vpn_duration_days" class="form-control" value="{{ $product->vpn_duration_days }}" min="1">
+                                <span class="input-group-text bg-white text-muted">hari</span>
+                            </div>
+                        </div>
                     </div>
                     <div class="form-check form-switch mb-3">
                         <input class="form-check-input" type="checkbox" role="switch" name="is_suspended" value="1" id="suspend{{ $product->id }}" {{ $product->is_suspended ? 'checked' : '' }}>
@@ -212,6 +265,23 @@
             if (!this.checked) {
                 container.querySelector('input[type="number"]').value = '';
             }
+        });
+    });
+
+    // VPN Togglers
+    document.getElementById('isVpnAdd').addEventListener('change', function() {
+        document.getElementById('vpnOptionsAddContainer').style.display = this.checked ? 'block' : 'none';
+        if (!this.checked) {
+            document.getElementById('vpnProtocolAdd').value = '';
+            document.getElementById('vpnDurationAdd').value = '';
+        }
+    });
+
+    document.querySelectorAll('.toggle-vpn-edit').forEach(function(toggle) {
+        toggle.addEventListener('change', function() {
+            var targetId = this.getAttribute('data-target');
+            var container = document.getElementById(targetId);
+            container.style.display = this.checked ? 'block' : 'none';
         });
     });
 </script>

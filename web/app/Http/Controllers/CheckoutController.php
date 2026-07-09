@@ -41,22 +41,32 @@ class CheckoutController extends Controller
             return back()->with('error', 'Maaf, produk ini sedang tidak aktif.');
         }
 
+        if ($product->is_vpn) {
+            $request->validate([
+                'vpn_username' => 'required|string|alpha_dash|max:30',
+                'vpn_password' => $product->vpn_protocol === 'ssh' ? 'required|string|min:4|max:30' : 'nullable|string',
+            ]);
+        }
+
         // Mulai transaksi database untuk mengunci stok
         try {
             DB::beginTransaction();
 
             // Hitung ketersediaan stok
-            $availableStockCount = StockUnit::where('product_id', $product->id)
-                ->where('is_sold', false)
-                ->whereNull('sold_order_id')
-                ->where(function ($query) {
-                    $query->where('stock_status', 'ready')
-                          ->orWhereNull('stock_status');
-                })->count();
+            $availableStockCount = 999;
+            if (!$product->is_vpn) {
+                $availableStockCount = StockUnit::where('product_id', $product->id)
+                    ->where('is_sold', false)
+                    ->whereNull('sold_order_id')
+                    ->where(function ($query) {
+                        $query->where('stock_status', 'ready')
+                              ->orWhereNull('stock_status');
+                    })->count();
 
-            if ($availableStockCount < $quantity) {
-                DB::rollBack();
-                return back()->with('error', "Stok tidak cukup. Hanya tersisa {$availableStockCount} unit.");
+                if ($availableStockCount < $quantity) {
+                    DB::rollBack();
+                    return back()->with('error', "Stok tidak cukup. Hanya tersisa {$availableStockCount} unit.");
+                }
             }
 
             $subtotal = $product->price * $quantity;
@@ -88,6 +98,8 @@ class CheckoutController extends Controller
                 'product_id' => $product->id,
                 'quantity' => $quantity,
                 'unit_price' => $product->price,
+                'vpn_username' => $product->is_vpn ? $request->vpn_username : null,
+                'vpn_password' => $product->is_vpn ? $request->vpn_password : null,
             ]);
 
             // 3. Create Payment
@@ -99,30 +111,32 @@ class CheckoutController extends Controller
             ]);
 
             // 4. Reserve Stock Units (FIFO)
-            $stockUnitsToReserve = StockUnit::where('product_id', $product->id)
-                ->where('is_sold', false)
-                ->whereNull('sold_order_id')
-                ->where(function ($query) {
-                    $query->where('stock_status', 'ready')
-                          ->orWhereNull('stock_status');
-                })
-                ->orderBy('id', 'asc')
-                ->limit($quantity)
-                ->lockForUpdate()
-                ->get();
-
-            if ($stockUnitsToReserve->count() < $quantity) {
-                DB::rollBack();
-                return back()->with('error', "Stok baru saja dibeli oleh orang lain. Silakan coba kembali.");
-            }
-
             $reservedIds = [];
-            foreach ($stockUnitsToReserve as $unit) {
-                $unit->update([
-                    'stock_status' => 'reserved_checkout',
-                    'sold_order_id' => $order->id
-                ]);
-                $reservedIds[] = $unit->id;
+            if (!$product->is_vpn) {
+                $stockUnitsToReserve = StockUnit::where('product_id', $product->id)
+                    ->where('is_sold', false)
+                    ->whereNull('sold_order_id')
+                    ->where(function ($query) {
+                        $query->where('stock_status', 'ready')
+                              ->orWhereNull('stock_status');
+                    })
+                    ->orderBy('id', 'asc')
+                    ->limit($quantity)
+                    ->lockForUpdate()
+                    ->get();
+
+                if ($stockUnitsToReserve->count() < $quantity) {
+                    DB::rollBack();
+                    return back()->with('error', "Stok baru saja dibeli oleh orang lain. Silakan coba kembali.");
+                }
+
+                foreach ($stockUnitsToReserve as $unit) {
+                    $unit->update([
+                        'stock_status' => 'reserved_checkout',
+                        'sold_order_id' => $order->id
+                    ]);
+                    $reservedIds[] = $unit->id;
+                }
             }
 
             // 5. Insert Audit Log

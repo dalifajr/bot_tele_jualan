@@ -152,10 +152,11 @@
                 </div>
 
                 {{-- Stock content for delivered orders --}}
-                @if($order->status === 'delivered' && $order->stockUnits && $order->stockUnits->count() > 0)
-                <hr>
-                <h6 class="fw-bold mb-3"><i class="fas fa-key text-success me-2"></i>Detail Akun yang Dibeli</h6>
-                <div class="bg-body-secondary rounded-3 p-3 text-break" style="max-height: 300px; overflow-y: auto; font-family: monospace; white-space: pre-wrap; font-size: 0.9rem;">
+                @if($order->status === 'delivered')
+                    @if($order->stockUnits && $order->stockUnits->count() > 0)
+                    <hr>
+                    <h6 class="fw-bold mb-3"><i class="fas fa-key text-success me-2"></i>Detail Akun yang Dibeli</h6>
+                    <div class="bg-body-secondary rounded-3 p-3 text-break" style="max-height: 300px; overflow-y: auto; font-family: monospace; white-space: pre-wrap; font-size: 0.9rem;">
 @foreach($order->stockUnits as $unit)
 {{ $unit->raw_text }}
 @if(!$loop->last)
@@ -164,7 +165,33 @@
 
 @endif
 @endforeach
-                </div>
+                    </div>
+                    @endif
+
+                    @if($order->vpnAccounts && $order->vpnAccounts->count() > 0)
+                    <hr>
+                    <h6 class="fw-bold mb-3"><i class="fas fa-network-wired text-primary me-2"></i>Konfigurasi Akun VPN</h6>
+                    @foreach($order->vpnAccounts as $vpn)
+                        <div class="card mb-3 border-primary-subtle shadow-sm" style="border-radius: 12px;">
+                            <div class="card-header bg-primary-subtle border-0">
+                                <h6 class="mb-0 fw-bold text-primary">Protokol: {{ strtoupper($vpn->protocol) }} ({{ $vpn->username }})</h6>
+                            </div>
+                            <div class="card-body bg-light">
+                                <div class="mb-2">
+                                    <span class="text-muted small">Masa Aktif:</span>
+                                    <strong class="d-block">{{ $vpn->expired_at ? $vpn->expired_at->format('d M Y') : '-' }}</strong>
+                                </div>
+                                <div class="mb-2">
+                                    <span class="text-muted small">Status:</span>
+                                    <span class="badge {{ $vpn->status === 'active' ? 'bg-success' : 'bg-danger' }}">{{ ucfirst($vpn->status) }}</span>
+                                </div>
+                                <hr>
+                                <span class="text-muted small d-block mb-2">Konfigurasi Output / Link:</span>
+                                <div class="bg-dark text-light rounded-3 p-3 text-break" style="max-height: 250px; overflow-y: auto; font-family: monospace; white-space: pre-wrap; font-size: 0.85rem;">{{ $vpn->config_link ?: 'Tidak ada konfigurasi ditemukan.' }}</div>
+                            </div>
+                        </div>
+                    @endforeach
+                    @endif
                 @endif
 
                 {{-- Modul Komplain / Garansi --}}

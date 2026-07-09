@@ -17,12 +17,17 @@ class Product extends Model
         'is_suspended',
         'creator_id',
         'warranty_days',
+        'is_vpn',
+        'vpn_protocol',
+        'vpn_duration_days',
     ];
 
     protected $casts = [
         'price' => 'integer',
         'is_suspended' => 'boolean',
         'warranty_days' => 'integer',
+        'is_vpn' => 'boolean',
+        'vpn_duration_days' => 'integer',
     ];
 
     public function orders()

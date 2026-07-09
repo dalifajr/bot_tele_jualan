@@ -149,7 +149,40 @@ class OrderService
                 }
             }
 
-            // 5. Audit Log
+            // 5. Create VPN Accounts (if any)
+            $order->load('items.product');
+            foreach ($order->items as $item) {
+                if ($item->product && $item->product->is_vpn) {
+                    $vpnService = app(\App\Services\VpnService::class);
+                    
+                    for ($i = 0; $i < $item->quantity; $i++) {
+                        $username = $item->vpn_username;
+                        if ($item->quantity > 1) {
+                            $username .= '_' . ($i + 1);
+                        }
+                        
+                        $res = $vpnService->createVpnAccount(
+                            $item->product->vpn_protocol,
+                            $username,
+                            $item->vpn_password,
+                            $item->product->vpn_duration_days
+                        );
+                        
+                        \App\Models\VpnAccount::create([
+                            'user_id' => $order->customer_id,
+                            'order_id' => $order->id,
+                            'protocol' => $item->product->vpn_protocol,
+                            'username' => $username,
+                            'password' => $item->vpn_password,
+                            'config_link' => $res['output'] ?? 'Failed to generate',
+                            'expired_at' => now()->addDays($item->product->vpn_duration_days),
+                            'status' => $res['success'] ? 'active' : 'failed'
+                        ]);
+                    }
+                }
+            }
+
+            // 6. Audit Log
             DB::table('audit_logs')->insert([
                 'action' => 'payment_confirmed',
                 'actor_id' => $adminId,

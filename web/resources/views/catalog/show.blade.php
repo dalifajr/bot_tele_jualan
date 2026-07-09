@@ -16,7 +16,11 @@
                         <h3 class="fw-bold mb-1">{{ $product->name }}</h3>
                         <span class="text-muted">ID: #{{ $product->id }}</span>
                     </div>
-                    @if($stockCount > 0)
+                    @if($product->is_vpn)
+                        <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-2">
+                            <i class="fas fa-network-wired me-1"></i>VPN Produk ({{ strtoupper($product->vpn_protocol) }})
+                        </span>
+                    @elseif($stockCount > 0)
                         <span class="badge bg-success-subtle text-success rounded-pill px-3 py-2">
                             <i class="fas fa-check-circle me-1"></i>{{ $stockCount }} stok tersedia
                         </span>
@@ -108,16 +112,40 @@
                     @endif
                     <form action="{{ route('checkout.store', $product->id) }}" method="POST">
                         @csrf
+                        
+                        @if($product->is_vpn)
+                            <div class="bg-primary-subtle p-3 rounded-3 mb-3">
+                                <h6 class="fw-bold text-primary mb-2"><i class="fas fa-user-shield me-2"></i>Konfigurasi Akun VPN</h6>
+                                <p class="text-muted small mb-3">Sistem akan otomatis membuatkan akun VPN Anda.</p>
+                                
+                                <div class="mb-2">
+                                    <label class="form-label text-dark small fw-bold">Username VPN <span class="text-danger">*</span></label>
+                                    <input type="text" name="vpn_username" class="form-control form-control-sm" required placeholder="Contoh: user123" pattern="[a-zA-Z0-9_-]+" title="Hanya huruf, angka, dash, dan underscore">
+                                </div>
+                                
+                                @if($product->vpn_protocol === 'ssh')
+                                <div class="mb-2">
+                                    <label class="form-label text-dark small fw-bold">Password SSH <span class="text-danger">*</span></label>
+                                    <input type="password" name="vpn_password" class="form-control form-control-sm" required placeholder="Masukkan password">
+                                </div>
+                                @endif
+                                <div class="form-text text-muted" style="font-size: 0.7rem;">Masa Aktif: <strong>{{ $product->vpn_duration_days }} Hari</strong></div>
+                            </div>
+                        @endif
+
                         <div class="mb-3 d-flex align-items-center justify-content-between bg-light p-2 rounded-pill px-3">
                             <label for="quantity" class="text-muted small fw-bold mb-0">Jumlah Beli:</label>
-                            <input type="number" id="quantity" name="quantity" class="form-control form-control-sm border-0 bg-transparent text-end fw-bold px-0" value="1" min="1" max="{{ $stockCount }}" required style="width: 70px; outline: none; box-shadow: none;">
+                            <input type="number" id="quantity" name="quantity" class="form-control form-control-sm border-0 bg-transparent text-end fw-bold px-0" value="1" min="1" {{ !$product->is_vpn ? 'max=' . $stockCount : '' }} required style="width: 70px; outline: none; box-shadow: none;">
                         </div>
                         <button type="submit" class="btn btn-success w-100 rounded-pill py-3 fw-bold mb-2">
                             <i class="fas fa-shopping-bag me-2"></i>Beli Sekarang (via Website)
                         </button>
+                        
+                        @if(!$product->is_vpn)
                         <button type="submit" formaction="{{ route('cart.add', $product->id) }}" class="btn btn-outline-primary w-100 rounded-pill py-3 fw-bold">
                             <i class="fas fa-cart-plus me-2"></i>Tambah ke Keranjang
                         </button>
+                        @endif
                     </form>
                 @else
                     <div class="alert alert-warning border-0 rounded-3 mb-4">

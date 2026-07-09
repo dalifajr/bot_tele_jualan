@@ -15,6 +15,8 @@ class OrderItem extends Model
         'product_id',
         'quantity',
         'unit_price',
+        'vpn_username',
+        'vpn_password',
     ];
 
     public function order()

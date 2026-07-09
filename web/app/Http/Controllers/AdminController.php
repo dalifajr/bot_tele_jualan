@@ -902,10 +902,13 @@ class AdminController extends Controller
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
             'warranty_days' => 'required_if:enable_warranty,1|nullable|integer|min:1',
+            'vpn_protocol' => 'required_if:is_vpn,1|nullable|string',
+            'vpn_duration_days' => 'required_if:is_vpn,1|nullable|integer|min:1',
         ]);
-        $data = $request->only(['name', 'description', 'price']);
+        $data = $request->only(['name', 'description', 'price', 'vpn_protocol', 'vpn_duration_days']);
         $data['description'] = $data['description'] ?? '';
         $data['is_suspended'] = false;
+        $data['is_vpn'] = $request->has('is_vpn');
         $data['warranty_days'] = $request->has('enable_warranty') ? $request->warranty_days : 0;
         Product::create($data);
         return redirect()->route('admin.products.index')->with('success', 'Produk berhasil ditambahkan.');
@@ -920,9 +923,12 @@ class AdminController extends Controller
             'price' => 'required|numeric|min:0',
             'is_suspended' => 'boolean',
             'warranty_days' => 'required_if:enable_warranty,1|nullable|integer|min:1',
+            'vpn_protocol' => 'required_if:is_vpn,1|nullable|string',
+            'vpn_duration_days' => 'required_if:is_vpn,1|nullable|integer|min:1',
         ]);
-        $data = $request->only(['name', 'description', 'price']);
+        $data = $request->only(['name', 'description', 'price', 'vpn_protocol', 'vpn_duration_days']);
         $data['is_suspended'] = $request->has('is_suspended');
+        $data['is_vpn'] = $request->has('is_vpn');
         $data['warranty_days'] = $request->has('enable_warranty') ? $request->warranty_days : 0;
         $product->update($data);
         return redirect()->route('admin.products.index')->with('success', 'Produk berhasil diperbarui.');

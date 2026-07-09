@@ -67,6 +67,46 @@
             </div>
         </div>
 
+        {{-- Konfigurasi Server VPN --}}
+        <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
+            <div class="card-body p-4">
+                <form action="{{ route('admin.settings.update') }}" method="POST">
+                    @csrf
+                    <h5 class="fw-bold mb-1 text-primary"><i class="fas fa-server me-2"></i>Konfigurasi Server VPN (Xray)</h5>
+                    <p class="text-muted small mb-3">Atur koneksi SSH menuju server VPS VPN Anda. Web Jualan ini akan membuat akun VPN secara otomatis di server tersebut.</p>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-8">
+                            <label class="form-label fw-bold small">Alamat IP Server VPN</label>
+                            <input type="text" name="settings[vpn_server_ip]" class="form-control" value="{{ $settings['vpn_server_ip'] ?? '' }}" placeholder="103.x.x.x">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small">Port SSH</label>
+                            <input type="number" name="settings[vpn_server_port]" class="form-control" value="{{ $settings['vpn_server_port'] ?? '22' }}">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small">Username SSH</label>
+                        <input type="text" name="settings[vpn_server_username]" class="form-control" value="{{ $settings['vpn_server_username'] ?? 'root' }}">
+                        <div class="form-text">Biasanya `root`.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small">Absolute Path ke Private Key SSH (.pem / id_rsa)</label>
+                        <input type="text" name="settings[vpn_server_ssh_key]" class="form-control" value="{{ $settings['vpn_server_ssh_key'] ?? '/home/user/.ssh/id_rsa' }}" placeholder="/home/user/.ssh/id_rsa">
+                        <div class="form-text">Server ini menggunakan autentikasi Public/Private Key untuk melakukan eksekusi shell tanpa password demi keamanan.</div>
+                    </div>
+
+                    <div class="d-grid mt-4">
+                        <button type="submit" class="btn btn-primary rounded-pill py-2 fw-bold">
+                            <i class="fas fa-save me-2"></i>Simpan Konfigurasi VPN
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         {{-- Utilitas & Pemeliharaan Sistem --}}
         <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
             <div class="card-body p-4">
