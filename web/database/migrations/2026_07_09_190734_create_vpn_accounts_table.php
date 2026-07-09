@@ -10,8 +10,8 @@ return new class extends Migration
     {
         Schema::create('vpn_accounts', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->foreignId('order_id')->nullable()->constrained()->onDelete('set null');
+            $table->unsignedBigInteger('user_id')->index();
+            $table->unsignedBigInteger('order_id')->nullable()->index();
             $table->string('server_ip')->nullable();
             $table->string('protocol')->index(); // ssh, vmess, vless, trojan, shadowsocks
             $table->string('username')->index();
