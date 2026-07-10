@@ -723,6 +723,10 @@ def _consume_reserved_stock_fifo(
     quantity: int,
     order_id: int,
 ) -> list[StockUnit]:
+    product = session.get(Product, product_id)
+    if product and getattr(product, 'is_vpn', False):
+        return []
+
     reserved_units = list(
         session.scalars(
             select(StockUnit)
@@ -746,6 +750,10 @@ def _consume_reserved_stock_fifo(
 
 
 def _allocate_stock_fifo(session: Session, product_id: int, quantity: int, order_id: int) -> list[StockUnit]:
+    product = session.get(Product, product_id)
+    if product and getattr(product, 'is_vpn', False):
+        return []
+
     promote_awaiting_stocks(session, product_id=product_id)
     stmt = (
         select(StockUnit)
@@ -826,6 +834,7 @@ def _build_delivery_message(
     order: Order,
     units: list[StockUnit],
     recommendations: list[Product],
+    vpn_texts: list[str] = None
 ) -> str:
     parts = [
         "✅ <b>Pembayaran Berhasil Dikonfirmasi</b>",
@@ -837,6 +846,11 @@ def _build_delivery_message(
     for idx, unit in enumerate(units, start=1):
         parts.append(f"\n<b>Akun {idx}</b>")
         parts.append(f"<pre>{html.escape(unit.raw_text)}</pre>")
+
+    if vpn_texts:
+        for idx, text in enumerate(vpn_texts, start=1):
+            parts.append(f"\n<b>Akun VPN {idx}</b>")
+            parts.append(f"<pre>{html.escape(text)}</pre>")
 
     if recommendations:
         parts.append("")
@@ -1113,10 +1127,37 @@ def reconcile_payment(
         detail=f"amount={amount}; source_app={source_app}",
     )
 
+    vpn_texts = None
+    has_vpn = any(getattr(session.get(Product, int(item.product_id)), 'is_vpn', False) for item in order_items)
+    if has_vpn:
+        try:
+            import subprocess
+            import json
+            import logging
+            artisan_path = "artisan"
+            output = subprocess.check_output(
+                ["php", artisan_path, "vpn:create-for-order", str(order.id)],
+                cwd="d:/bot_tele_jualan/web",
+                stderr=subprocess.STDOUT,
+                text=True
+            )
+            for line in output.splitlines():
+                line = line.strip()
+                if line.startswith("[") and line.endswith("]"):
+                    try:
+                        vpn_texts = json.loads(line)
+                        break
+                    except json.JSONDecodeError:
+                        pass
+        except Exception as e:
+            import logging
+            logging.error(f"Failed to create VPN for order {order.id}: {e}")
+
     delivery_message = _build_delivery_message(
         order,
         delivered_units,
         recommendations=recommendations,
+        vpn_texts=vpn_texts,
     )
     return ReconcileResult(
         "paid",

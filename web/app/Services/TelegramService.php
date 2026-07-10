@@ -146,6 +146,51 @@ class TelegramService
     }
 
     /**
+     * Kirim pesan detail pesanan (Delivery Message) ke pelanggan.
+     */
+    public static function notifyCustomerOrderDelivered(Order $order, $reservedStock, $vpnConfigs = [])
+    {
+        $botToken = env('TELEGRAM_BOT_TOKEN');
+        if (empty($botToken)) return;
+
+        $customerTelegramId = $order->customer->telegram_id ?? null;
+        if (!$customerTelegramId) return;
+
+        $text = "✅ <b>Pembayaran Berhasil Dikonfirmasi</b>\n"
+              . "Order Ref: <code>{$order->order_ref}</code>\n\n"
+              . "🔐 <b>Detail Akun Pesanan</b>\n";
+
+        $idx = 1;
+        foreach ($reservedStock as $unit) {
+            $text .= "\n<b>Akun {$idx}</b>\n";
+            $text .= "<pre>" . htmlspecialchars($unit->raw_text) . "</pre>\n";
+            $idx++;
+        }
+
+        if (!empty($vpnConfigs)) {
+            foreach ($vpnConfigs as $vpnIdx => $config) {
+                $num = $vpnIdx + 1;
+                $text .= "\n<b>Akun VPN {$num}</b>\n";
+                $text .= "<pre>" . htmlspecialchars($config) . "</pre>\n";
+            }
+        }
+
+        $text .= "\n📌 Simpan data akun ini dengan aman.\n"
+               . "📲 Ketik /start kapan saja untuk kembali ke menu utama.";
+
+        $apiUrl = "https://api.telegram.org/bot{$botToken}/sendMessage";
+        try {
+            Http::post($apiUrl, [
+                'chat_id' => $customerTelegramId,
+                'text' => $text,
+                'parse_mode' => 'HTML',
+            ]);
+        } catch (\Exception $e) {
+            Log::error("Gagal mengirim delivery message ke {$customerTelegramId}: " . $e->getMessage());
+        }
+    }
+
+    /**
      * Kirim file backup ke semua admin Telegram.
      */
     public static function sendBackupFile(string $filePath, string $caption = '')

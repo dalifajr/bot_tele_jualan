@@ -151,6 +151,7 @@ class OrderService
 
             // 5. Create VPN Accounts (if any)
             $order->load('items.product');
+            $vpnDetails = [];
             foreach ($order->items as $item) {
                 if ($item->product && $item->product->is_vpn) {
                     $vpnService = app(\App\Services\VpnService::class);
@@ -168,7 +169,7 @@ class OrderService
                             $item->product->vpn_duration_days
                         );
                         
-                        \App\Models\VpnAccount::create([
+                        $vpn = \App\Models\VpnAccount::create([
                             'user_id' => $order->customer_id,
                             'order_id' => $order->id,
                             'protocol' => $item->product->vpn_protocol,
@@ -178,9 +179,12 @@ class OrderService
                             'expired_at' => now()->addDays($item->product->vpn_duration_days),
                             'status' => $res['success'] ? 'active' : 'failed'
                         ]);
+                        $vpnDetails[] = $vpn->config_link;
                     }
                 }
             }
+
+            \App\Services\TelegramService::notifyCustomerOrderDelivered($order, $reservedStock, $vpnDetails);
 
             // 6. Audit Log
             DB::table('audit_logs')->insert([
