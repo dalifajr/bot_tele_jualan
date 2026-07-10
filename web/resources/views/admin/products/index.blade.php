@@ -193,7 +193,7 @@
                     <div class="mb-3" id="warrantyDaysEditContainer{{ $product->id }}" style="display: {{ $product->warranty_days > 0 ? 'block' : 'none' }};">
                         <label class="form-label text-muted small fw-bold">Masa Garansi (Hari)</label>
                         <div class="input-group">
-                            <input type="number" name="warranty_days" id="warrantyDaysEdit{{ $product->id }}" class="form-control" value="{{ $product->warranty_days }}" min="1">
+                            <input type="number" name="warranty_days" id="warrantyDaysEdit{{ $product->id }}" class="form-control" value="{{ $product->warranty_days > 0 ? $product->warranty_days : '' }}" min="1">
                             <span class="input-group-text bg-light text-muted">hari</span>
                         </div>
                         <div class="form-text small">Menahan saldo seller hingga masa garansi berakhir.</div>
@@ -219,7 +219,7 @@
                         <div class="mb-2">
                             <label class="form-label text-muted small fw-bold">Durasi / Masa Aktif</label>
                             <div class="input-group">
-                                <input type="number" name="vpn_duration_days" class="form-control" value="{{ $product->vpn_duration_days }}" min="1">
+                                <input type="number" name="vpn_duration_days" class="form-control" value="{{ $product->vpn_duration_days > 0 ? $product->vpn_duration_days : '' }}" min="1">
                                 <span class="input-group-text bg-white text-muted">hari</span>
                             </div>
                         </div>

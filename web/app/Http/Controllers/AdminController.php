@@ -922,9 +922,9 @@ class AdminController extends Controller
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
             'is_suspended' => 'boolean',
-            'warranty_days' => 'required_if:enable_warranty,1|nullable|integer|min:1',
-            'vpn_protocol' => 'required_if:is_vpn,1|nullable|string',
-            'vpn_duration_days' => 'required_if:is_vpn,1|nullable|integer|min:1',
+            'warranty_days' => $request->has('enable_warranty') ? 'required|integer|min:1' : 'nullable',
+            'vpn_protocol' => $request->has('is_vpn') ? 'required|string' : 'nullable',
+            'vpn_duration_days' => $request->has('is_vpn') ? 'required|integer|min:1' : 'nullable',
         ]);
         $data = $request->only(['name', 'description', 'price', 'vpn_protocol', 'vpn_duration_days']);
         $data['is_suspended'] = $request->has('is_suspended');
