@@ -180,6 +180,18 @@ class TelegramService
 
         $apiUrl = "https://api.telegram.org/bot{$botToken}/sendMessage";
         try {
+            // Update original checkout message if possible
+            if ($order->checkout_chat_id && $order->checkout_message_id) {
+                $editUrl = "https://api.telegram.org/bot{$botToken}/editMessageText";
+                $editTxt = "✅ <b>Pembayaran Dikonfirmasi</b>\n\nOrder Ref: <code>{$order->order_ref}</code>\nPesanan telah dikirim! Silakan cek pesan terbaru.";
+                Http::post($editUrl, [
+                    'chat_id' => $order->checkout_chat_id,
+                    'message_id' => $order->checkout_message_id,
+                    'text' => $editTxt,
+                    'parse_mode' => 'HTML',
+                ]);
+            }
+
             Http::post($apiUrl, [
                 'chat_id' => $customerTelegramId,
                 'text' => $text,

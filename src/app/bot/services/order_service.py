@@ -1139,7 +1139,8 @@ def reconcile_payment(
                 ["php", artisan_path, "vpn:create-for-order", str(order.id)],
                 cwd="d:/bot_tele_jualan/web",
                 stderr=subprocess.STDOUT,
-                text=True
+                text=True,
+                timeout=15
             )
             for line in output.splitlines():
                 line = line.strip()

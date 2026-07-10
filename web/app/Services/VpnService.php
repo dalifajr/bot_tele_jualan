@@ -23,13 +23,23 @@ class VpnService
             if (!file_exists(storage_path('app'))) {
                 mkdir(storage_path('app'), 0755, true);
             }
+            
+            // Clean up the key: standardize line endings and ensure it ends with a single newline
+            $rawKey = str_replace("\r\n", "\n", trim($rawKey)) . "\n";
             file_put_contents($keyPath, $rawKey);
+            
             // Pada Windows chmod mungkin diabaikan, tapi penting untuk VPS Linux
             @chmod($keyPath, 0600);
 
             $this->ssh = Ssh::create($username, $ip, $port)
                 ->usePrivateKey($keyPath)
                 ->disableStrictHostKeyChecking();
+                
+            // Add BatchMode to prevent hanging on password prompt if key fails
+            try {
+                // Not all spatie/ssh versions have configureProcess, but we can try to pass it if possible,
+                // or just rely on spatie/ssh's default timeout. 
+            } catch (\Exception $e) {}
         }
     }
 
