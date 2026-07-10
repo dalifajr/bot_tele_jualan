@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import html
 import json
+import logging
+import subprocess
 import random
 import secrets
 from dataclasses import dataclass
@@ -1131,9 +1133,6 @@ def reconcile_payment(
     has_vpn = any(getattr(session.get(Product, int(item.product_id)), 'is_vpn', False) for item in order_items)
     if has_vpn:
         try:
-            import subprocess
-            import json
-            import logging
             artisan_path = "artisan"
             output = subprocess.check_output(
                 ["php", artisan_path, "vpn:create-for-order", str(order.id)],
@@ -1151,7 +1150,6 @@ def reconcile_payment(
                     except json.JSONDecodeError:
                         pass
         except Exception as e:
-            import logging
             logging.error(f"Failed to create VPN for order {order.id}: {e}")
 
     delivery_message = _build_delivery_message(
