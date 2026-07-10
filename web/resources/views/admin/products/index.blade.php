@@ -16,6 +16,17 @@
     </div>
 </div>
 
+@if ($errors->any())
+<div class="alert alert-danger shadow-sm rounded-4 mb-4">
+    <div class="fw-bold mb-1"><i class="fas fa-exclamation-circle me-2"></i>Terdapat kesalahan pada input Anda:</div>
+    <ul class="mb-0 small">
+        @foreach ($errors->all() as $error)
+            <li>{{ $error }}</li>
+        @endforeach
+    </ul>
+</div>
+@endif
+
 <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 16px;">
     <div class="card-body p-0">
         @if($products->count() > 0)

@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ __('Login / Daftar') }} — {{ config('app.name', 'Dzulfikrialifajri Store') }}</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -12,6 +13,40 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.Telegram && window.Telegram.WebApp) {
+                const tg = window.Telegram.WebApp;
+                tg.ready();
+                if (tg.initData) {
+                    // Tampilkan loading overlay jika ada
+                    const loader = document.getElementById('pageLoader');
+                    if(loader) loader.classList.remove('fade-out');
+
+                    fetch('/auth/telegram/webapp', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        },
+                        body: JSON.stringify({ init_data: tg.initData })
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            window.location.href = '/dashboard';
+                        } else {
+                            if(loader) loader.classList.add('fade-out');
+                        }
+                    }).catch(err => {
+                        console.error("WebApp Login Error:", err);
+                        if(loader) loader.classList.add('fade-out');
+                    });
+                }
+            }
+        });
+    </script>
 
     <style>
         /* CSS Variables */
