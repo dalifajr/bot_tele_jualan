@@ -92,13 +92,19 @@ class CheckoutController extends Controller
                 'expires_at' => $expiresAt,
             ]);
 
+            // Modify vpn_username to append 4 random characters
+            $vpnUsername = null;
+            if ($product->is_vpn) {
+                $vpnUsername = $request->vpn_username . '-' . strtolower(\Illuminate\Support\Str::random(4));
+            }
+
             // 2. Create OrderItem
             OrderItem::create([
                 'order_id' => $order->id,
                 'product_id' => $product->id,
                 'quantity' => $quantity,
                 'unit_price' => $product->price,
-                'vpn_username' => $product->is_vpn ? $request->vpn_username : null,
+                'vpn_username' => $vpnUsername,
                 'vpn_password' => $product->is_vpn ? $request->vpn_password : null,
             ]);
 

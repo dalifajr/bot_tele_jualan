@@ -598,6 +598,19 @@ def create_bot_application() -> Application:
     if not settings.bot_token:
         raise RuntimeError("BOT_TOKEN belum diisi di .env")
 
+    async def post_init(app):
+        url = settings.website_domain
+        if url:
+            if not url.startswith(("http://", "https://")):
+                url = f"https://{url}"
+            try:
+                from telegram import MenuButtonWebApp, WebAppInfo
+                await app.bot.set_chat_menu_button(
+                    menu_button=MenuButtonWebApp(text="Buka Toko", web_app=WebAppInfo(url=f"{url}/dashboard"))
+                )
+            except Exception as e:
+                logger.error(f"Failed to set chat menu button: {e}")
+
     application = (
         Application.builder()
         .token(settings.bot_token)
@@ -607,6 +620,7 @@ def create_bot_application() -> Application:
         .read_timeout(max(1.0, float(settings.bot_read_timeout_seconds)))
         .write_timeout(max(1.0, float(settings.bot_write_timeout_seconds)))
         .pool_timeout(max(1.0, float(settings.bot_pool_timeout_seconds)))
+        .post_init(post_init)
         .build()
     )
     register_handlers(application)

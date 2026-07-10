@@ -87,9 +87,30 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label text-muted small fw-bold">Kuantitas (QTY)</label>
-                            <input type="number" name="quantity" class="form-control" value="1" min="1" max="{{ $product->stock_count }}" required>
+                            <input type="number" name="quantity" class="form-control" value="1" min="1" max="{{ $product->stock_count }}" {{ $product->is_vpn ? '' : 'required' }}>
                             <div class="form-text">Maksimal pembelian: {{ $product->stock_count }} unit.</div>
                         </div>
+
+                        @if($product->is_vpn)
+                            <div class="bg-primary-subtle p-3 rounded-3 mb-3">
+                                <h6 class="fw-bold text-primary mb-2"><i class="fas fa-user-shield me-2"></i>Konfigurasi Akun VPN</h6>
+                                <p class="text-muted small mb-3">Sistem akan otomatis membuatkan akun VPN Anda.</p>
+                                
+                                <div class="mb-2">
+                                    <label class="form-label text-dark small fw-bold">Username VPN <span class="text-danger">*</span></label>
+                                    <input type="text" name="vpn_username" class="form-control form-control-sm" required placeholder="Contoh: user123" pattern="[a-zA-Z0-9_-]+" title="Hanya huruf, angka, dash, dan underscore">
+                                    <div class="form-text" style="font-size: 0.7rem;">(Sistem akan menambahkan 4 huruf acak di akhir untuk mencegah duplikasi)</div>
+                                </div>
+                                
+                                @if($product->vpn_protocol === 'ssh')
+                                <div class="mb-2">
+                                    <label class="form-label text-dark small fw-bold">Password SSH <span class="text-danger">*</span></label>
+                                    <input type="password" name="vpn_password" class="form-control form-control-sm" required placeholder="Masukkan password">
+                                </div>
+                                @endif
+                                <div class="form-text text-muted" style="font-size: 0.7rem;">Masa Aktif: <strong>{{ $product->vpn_duration_days }} Hari</strong></div>
+                            </div>
+                        @endif
                     </div>
                     <div class="modal-footer border-0">
                         <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
