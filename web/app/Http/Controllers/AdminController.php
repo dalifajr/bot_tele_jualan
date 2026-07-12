@@ -1610,64 +1610,91 @@ class AdminController extends Controller
                 break;
             }
 
-            try {
-                if ($job->media_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($job->media_path)) {
-                    $mediaFullPath = storage_path('app/public/' . $job->media_path);
-                    $mediaData = fopen($mediaFullPath, 'r');
-                    $filename = basename($mediaFullPath);
-                    
-                    if ($job->media_type === 'photo') {
-                        $response = \Illuminate\Support\Facades\Http::attach(
-                            'photo', $mediaData, $filename
-                        )->post("https://api.telegram.org/bot{$token}/sendPhoto", [
-                            'chat_id' => $targetId,
-                            'caption' => $job->message,
-                            'parse_mode' => 'HTML'
-                        ]);
-                    } elseif ($job->media_type === 'video') {
-                        $response = \Illuminate\Support\Facades\Http::attach(
-                            'video', $mediaData, $filename
-                        )->post("https://api.telegram.org/bot{$token}/sendVideo", [
-                            'chat_id' => $targetId,
-                            'caption' => $job->message,
-                            'parse_mode' => 'HTML'
-                        ]);
+            $retry = 0;
+            $maxRetries = 3;
+            $sentSuccessfully = false;
+
+            while ($retry < $maxRetries) {
+                try {
+                    if ($job->media_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($job->media_path)) {
+                        $mediaFullPath = storage_path('app/public/' . $job->media_path);
+                        $mediaData = fopen($mediaFullPath, 'r');
+                        $filename = basename($mediaFullPath);
+                        
+                        if ($job->media_type === 'photo') {
+                            $response = \Illuminate\Support\Facades\Http::timeout(15)
+                                ->attach('photo', $mediaData, $filename)
+                                ->post("https://api.telegram.org/bot{$token}/sendPhoto", [
+                                    'chat_id' => $targetId,
+                                    'caption' => $job->message,
+                                    'parse_mode' => 'HTML'
+                                ]);
+                        } elseif ($job->media_type === 'video') {
+                            $response = \Illuminate\Support\Facades\Http::timeout(15)
+                                ->attach('video', $mediaData, $filename)
+                                ->post("https://api.telegram.org/bot{$token}/sendVideo", [
+                                    'chat_id' => $targetId,
+                                    'caption' => $job->message,
+                                    'parse_mode' => 'HTML'
+                                ]);
+                        } else {
+                            $response = \Illuminate\Support\Facades\Http::timeout(15)
+                                ->attach('document', $mediaData, $filename)
+                                ->post("https://api.telegram.org/bot{$token}/sendDocument", [
+                                    'chat_id' => $targetId,
+                                    'caption' => $job->message,
+                                    'parse_mode' => 'HTML'
+                                ]);
+                        }
                     } else {
-                        $response = \Illuminate\Support\Facades\Http::attach(
-                            'document', $mediaData, $filename
-                        )->post("https://api.telegram.org/bot{$token}/sendDocument", [
+                        $response = \Illuminate\Support\Facades\Http::timeout(10)->post("https://api.telegram.org/bot{$token}/sendMessage", [
                             'chat_id' => $targetId,
-                            'caption' => $job->message,
+                            'text' => $job->message,
                             'parse_mode' => 'HTML'
                         ]);
                     }
-                } else {
-                    $response = \Illuminate\Support\Facades\Http::post("https://api.telegram.org/bot{$token}/sendMessage", [
-                        'chat_id' => $targetId,
-                        'text' => $job->message,
-                        'parse_mode' => 'HTML'
-                    ]);
-                }
 
-                if ($response->successful()) {
-                    $success++;
-                } else {
-                    $failed++;
+                    if ($response->status() === 429) {
+                        $retryAfter = $response->json('parameters.retry_after') ?? 2;
+                        sleep($retryAfter);
+                        $retry++;
+                        continue;
+                    }
+
+                    if ($response->successful()) {
+                        $success++;
+                        $sentSuccessfully = true;
+                    } else {
+                        $failed++;
+                    }
+                    break;
+                } catch (\Exception $e) {
+                    sleep(1);
+                    $retry++;
                 }
-            } catch (\Exception $e) {
+            }
+
+            if (!$sentSuccessfully && $retry === $maxRetries) {
                 $failed++;
             }
 
-            \App\Models\BroadcastJob::where('id', $jobId)->update([
-                'sent_count' => $success,
-                'failed_count' => $failed,
-            ]);
+            // Batch update database progress every 5 targets
+            if (($success + $failed) % 5 === 0) {
+                \App\Models\BroadcastJob::where('id', $jobId)->update([
+                    'sent_count' => $success,
+                    'failed_count' => $failed,
+                ]);
+            }
 
-            // Delay to avoid hitting rate limits
-            usleep(50000); // 50ms
+            // Small delay to prevent hitting rate limits aggressively
+            usleep(25000); // 25ms
         }
 
-        \App\Models\BroadcastJob::where('id', $jobId)->update(['status' => 'completed']);
+        \App\Models\BroadcastJob::where('id', $jobId)->update([
+            'sent_count' => $success,
+            'failed_count' => $failed,
+            'status' => 'completed'
+        ]);
         return response()->json(['status' => 'success']);
     }
 
@@ -1682,6 +1709,8 @@ class AdminController extends Controller
                 'total' => $job->total_targets,
                 'sent' => $job->sent_count,
                 'failed' => $job->failed_count,
+                'created_at' => $job->created_at ? $job->created_at->toIso8601String() : null,
+                'updated_at' => $job->updated_at ? $job->updated_at->toIso8601String() : null,
             ]
         ]);
     }
@@ -1702,6 +1731,8 @@ class AdminController extends Controller
                 'total' => $job->total_targets,
                 'sent' => $job->sent_count,
                 'failed' => $job->failed_count,
+                'created_at' => $job->created_at ? $job->created_at->toIso8601String() : null,
+                'updated_at' => $job->updated_at ? $job->updated_at->toIso8601String() : null,
             ] : null
         ]);
     }

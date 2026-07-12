@@ -6,6 +6,7 @@ use App\Models\BroadcastJob;
 use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 
 class RunBroadcastCommand extends Command
 {
@@ -66,32 +67,91 @@ class RunBroadcastCommand extends Command
                 break;
             }
 
-            try {
-                $response = Http::post("https://api.telegram.org/bot{$token}/sendMessage", [
-                    'chat_id' => $targetId,
-                    'text' => $job->message,
-                    'parse_mode' => 'HTML'
-                ]);
+            $retry = 0;
+            $maxRetries = 3;
+            $sentSuccessfully = false;
 
-                if ($response->successful()) {
-                    $success++;
-                } else {
-                    $failed++;
+            while ($retry < $maxRetries) {
+                try {
+                    if ($job->media_path && Storage::disk('public')->exists($job->media_path)) {
+                        $mediaFullPath = storage_path('app/public/' . $job->media_path);
+                        $mediaData = fopen($mediaFullPath, 'r');
+                        $filename = basename($mediaFullPath);
+
+                        if ($job->media_type === 'photo') {
+                            $response = Http::timeout(15)
+                                ->attach('photo', $mediaData, $filename)
+                                ->post("https://api.telegram.org/bot{$token}/sendPhoto", [
+                                    'chat_id' => $targetId,
+                                    'caption' => $job->message,
+                                    'parse_mode' => 'HTML'
+                                ]);
+                        } elseif ($job->media_type === 'video') {
+                            $response = Http::timeout(15)
+                                ->attach('video', $mediaData, $filename)
+                                ->post("https://api.telegram.org/bot{$token}/sendVideo", [
+                                    'chat_id' => $targetId,
+                                    'caption' => $job->message,
+                                    'parse_mode' => 'HTML'
+                                ]);
+                        } else {
+                            $response = Http::timeout(15)
+                                ->attach('document', $mediaData, $filename)
+                                ->post("https://api.telegram.org/bot{$token}/sendDocument", [
+                                    'chat_id' => $targetId,
+                                    'caption' => $job->message,
+                                    'parse_mode' => 'HTML'
+                                ]);
+                        }
+                    } else {
+                        $response = Http::timeout(10)->post("https://api.telegram.org/bot{$token}/sendMessage", [
+                            'chat_id' => $targetId,
+                            'text' => $job->message,
+                            'parse_mode' => 'HTML'
+                        ]);
+                    }
+
+                    if ($response->status() === 429) {
+                        $retryAfter = $response->json('parameters.retry_after') ?? 2;
+                        sleep($retryAfter);
+                        $retry++;
+                        continue;
+                    }
+
+                    if ($response->successful()) {
+                        $success++;
+                        $sentSuccessfully = true;
+                    } else {
+                        $failed++;
+                    }
+                    break;
+                } catch (\Exception $e) {
+                    sleep(1);
+                    $retry++;
                 }
-            } catch (\Exception $e) {
+            }
+
+            if (!$sentSuccessfully && $retry === $maxRetries) {
                 $failed++;
             }
 
-            $job->update([
-                'sent_count' => $success,
-                'failed_count' => $failed,
-            ]);
+            // Batch update database every 5 messages
+            if (($success + $failed) % 5 === 0) {
+                $job->update([
+                    'sent_count' => $success,
+                    'failed_count' => $failed,
+                ]);
+            }
 
-            // Delay to avoid hitting rate limits
-            usleep(50000); // 50ms
+            // Small delay to prevent hitting limits aggressively
+            usleep(25000); // 25ms
         }
 
-        $job->update(['status' => 'completed']);
+        $job->update([
+            'sent_count' => $success,
+            'failed_count' => $failed,
+            'status' => 'completed',
+        ]);
         $this->info("Broadcast completed successfully.");
         return 0;
     }

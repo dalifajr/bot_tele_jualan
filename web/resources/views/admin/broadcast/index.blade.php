@@ -34,6 +34,10 @@
                         <div class="progress" style="height: 20px; border-radius: 10px;">
                             <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%;">0%</div>
                         </div>
+                        <div class="d-flex justify-content-between mt-2 small text-secondary">
+                            <span><i class="fas fa-history me-1"></i>Waktu Berjalan: <span id="elapsedTime" class="fw-bold text-dark">-</span></span>
+                            <span><i class="fas fa-hourglass-half me-1"></i>Estimasi Selesai (ETA): <span id="etaTime" class="fw-bold text-dark">-</span></span>
+                        </div>
                         <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
                             <div class="d-flex gap-3 small">
                                 <span class="text-success"><i class="fas fa-check-circle me-1"></i>Berhasil: <span id="successCount" class="fw-bold">0</span></span>
@@ -91,6 +95,20 @@ async function checkActiveBroadcast() {
     }
 }
 
+function formatDuration(seconds) {
+    if (seconds <= 0) return '0s';
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    
+    let parts = [];
+    if (hrs > 0) parts.push(hrs + 'j');
+    if (mins > 0) parts.push(mins + 'm');
+    if (secs > 0 || parts.length === 0) parts.push(secs + 's');
+    
+    return parts.join(' ');
+}
+
 function setupActiveBroadcastUI(job) {
     const btnSend = document.getElementById('btnSend');
     const messageTextarea = document.getElementById('broadcastMessage');
@@ -105,10 +123,10 @@ function setupActiveBroadcastUI(job) {
     
     document.getElementById('progressSection').classList.remove('d-none');
     
-    updateProgressUI(job.sent + job.failed, job.total, job.sent, job.failed);
+    updateProgressUI(job.sent + job.failed, job.total, job.sent, job.failed, job);
 }
 
-function updateProgressUI(current, total, success, failed) {
+function updateProgressUI(current, total, success, failed, job) {
     const percentage = total > 0 ? Math.round((current / total) * 100) : 0;
     
     document.getElementById('progressBar').style.width = percentage + '%';
@@ -116,6 +134,30 @@ function updateProgressUI(current, total, success, failed) {
     document.getElementById('progressText').innerText = `${current}/${total}`;
     document.getElementById('successCount').innerText = success;
     document.getElementById('failedCount').innerText = failed;
+
+    if (job && (job.created_at || job.updated_at)) {
+        const startTime = new Date(job.created_at || job.updated_at).getTime();
+        const now = new Date().getTime();
+        const elapsedSeconds = Math.max(1, Math.round((now - startTime) / 1000));
+        
+        document.getElementById('elapsedTime').innerText = formatDuration(elapsedSeconds);
+        
+        const processed = success + failed;
+        const remaining = total - processed;
+        const speed = processed / elapsedSeconds; // messages per second
+        
+        if (processed > 0 && remaining > 0 && speed > 0) {
+            const etaSeconds = Math.round(remaining / speed);
+            document.getElementById('etaTime').innerText = formatDuration(etaSeconds);
+        } else if (remaining === 0) {
+            document.getElementById('etaTime').innerText = 'Selesai';
+        } else {
+            document.getElementById('etaTime').innerText = 'Menghitung...';
+        }
+    } else {
+        document.getElementById('elapsedTime').innerText = '-';
+        document.getElementById('etaTime').innerText = '-';
+    }
 }
 
 function startPolling(jobId) {
@@ -130,7 +172,7 @@ function startPolling(jobId) {
                 const job = data.job;
                 const processed = job.sent + job.failed;
                 
-                updateProgressUI(processed, job.total, job.sent, job.failed);
+                updateProgressUI(processed, job.total, job.sent, job.failed, job);
                 
                 if (job.status === 'completed' || job.status === 'failed') {
                     clearInterval(pollInterval);
