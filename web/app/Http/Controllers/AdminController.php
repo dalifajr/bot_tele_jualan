@@ -72,15 +72,10 @@ class AdminController extends Controller
                 ->join('users', 'stock_units.seller_id', '=', 'users.id')
                 ->where('stock_units.is_sold', true)
                 ->where('users.role', 'seller')
-                ->whereIn('stock_units.sold_order_id', function ($query) use ($start, $end, $productId) {
+                ->whereIn('stock_units.sold_order_id', function ($query) use ($start, $end) {
                     $query->select('id')->from('orders')
                         ->where('status', 'delivered')
                         ->whereBetween('created_at', [$start, $end]);
-                    if ($productId) {
-                        $query->whereHas('items', function($q) use ($productId) {
-                            $q->where('product_id', $productId);
-                        });
-                    }
                 });
             if ($productId) {
                 $commQuery->where('stock_units.product_id', $productId);
@@ -97,15 +92,10 @@ class AdminController extends Controller
                     $query->whereNull('stock_units.seller_id')
                           ->orWhere('users.role', '!=', 'seller');
                 })
-                ->whereIn('stock_units.sold_order_id', function ($query) use ($start, $end, $productId) {
+                ->whereIn('stock_units.sold_order_id', function ($query) use ($start, $end) {
                     $query->select('id')->from('orders')
                         ->where('status', 'delivered')
                         ->whereBetween('created_at', [$start, $end]);
-                    if ($productId) {
-                        $query->whereHas('items', function($q) use ($productId) {
-                            $q->where('product_id', $productId);
-                        });
-                    }
                 });
             if ($productId) {
                 $adminSalesQuery->where('stock_units.product_id', $productId);
@@ -129,15 +119,10 @@ class AdminController extends Controller
                 ->join('users', 'stock_units.seller_id', '=', 'users.id')
                 ->where('stock_units.is_sold', true)
                 ->where('users.role', 'seller')
-                ->whereIn('stock_units.sold_order_id', function ($query) use ($start, $end, $productId) {
+                ->whereIn('stock_units.sold_order_id', function ($query) use ($start, $end) {
                     $query->select('id')->from('orders')
                         ->where('status', 'delivered')
                         ->whereBetween('created_at', [$start, $end]);
-                    if ($productId) {
-                        $query->whereHas('items', function($q) use ($productId) {
-                            $q->where('product_id', $productId);
-                        });
-                    }
                 });
             if ($productId) {
                 $sellerEarningsQuery->where('stock_units.product_id', $productId);

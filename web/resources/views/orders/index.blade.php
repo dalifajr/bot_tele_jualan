@@ -180,7 +180,7 @@
             </div>
             <div class="modal-footer border-0">
                 @if($order->status === 'pending_payment')
-                <a href="{{ route('checkout.success', ['orderRef' => $order->order_ref]) }}" class="btn btn-success rounded-pill px-4">
+                <a href="{{ route('checkout.success', ['order_ref' => $order->order_ref]) }}" class="btn btn-success rounded-pill px-4">
                     <i class="fas fa-qrcode me-1"></i>Bayar Sekarang (QRIS)
                 </a>
                 <form action="{{ route('orders.cancel', $order->id) }}" method="POST" onsubmit="confirmAction(event, 'Apakah Anda yakin ingin membatalkan pesanan ini?');" class="m-0">
