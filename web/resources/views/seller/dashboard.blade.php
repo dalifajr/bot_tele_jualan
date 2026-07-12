@@ -4,9 +4,21 @@
 @section('page_subtitle', 'Dashboard')
 
 @section('content')
-<div class="mb-4">
-    <h4 class="fw-bold mb-1">Selamat Datang di Portal Seller, {{ $user->full_name ?? $user->username }}!</h4>
-    <p class="text-muted mb-0">Kelola produk Anda, kelola stok akun, dan pantau penghasilan penjualan Anda secara langsung.</p>
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+    <div>
+        <h4 class="fw-bold mb-1">Selamat Datang di Portal Seller, {{ $user->full_name ?? $user->username }}!</h4>
+        <p class="text-muted mb-0">Kelola produk Anda, kelola stok akun, dan pantau penghasilan penjualan Anda secara langsung.</p>
+    </div>
+    <div>
+        <select class="form-select form-select-sm rounded-pill px-3 shadow-sm border" style="width: auto;" onchange="let params = new URLSearchParams(window.location.search); if(this.value) { params.set('product_id', this.value); } else { params.delete('product_id'); } window.location.href = '{{ route('seller.dashboard') }}?' + params.toString()">
+            <option value="">Semua Produk</option>
+            @foreach($products as $p)
+                <option value="{{ $p->id }}" {{ $productId == $p->id ? 'selected' : '' }}>
+                    {{ $p->is_suspended ? '🔴' : '✅' }} {{ $p->name }}
+                </option>
+            @endforeach
+        </select>
+    </div>
 </div>
 
 {{-- Stats Row --}}
@@ -59,7 +71,7 @@
                 <div class="position-relative" style="z-index: 1;">
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <p class="small text-muted fw-bold mb-0">PENDAPATAN KOTOR</p>
-                        <select onchange="window.location.href = window.location.pathname + '?days={{ $days ?? 7 }}&earnings_days=' + this.value;" class="form-select form-select-sm py-0 px-2 border-0 shadow-sm" style="width: auto; font-size: 0.7rem; border-radius: 8px; background-color: rgba(255,255,255,0.8); cursor: pointer;">
+                        <select onchange="let params = new URLSearchParams(window.location.search); params.set('earnings_days', this.value); window.location.href = window.location.pathname + '?' + params.toString();" class="form-select form-select-sm py-0 px-2 border-0 shadow-sm" style="width: auto; font-size: 0.7rem; border-radius: 8px; background-color: rgba(255,255,255,0.8); cursor: pointer;">
                             <option value="all" {{ $earningsDays == 'all' ? 'selected' : '' }}>Semua</option>
                             <option value="7" {{ $earningsDays == '7' ? 'selected' : '' }}>7 Hari</option>
                             <option value="30" {{ $earningsDays == '30' ? 'selected' : '' }}>30 Hari</option>
@@ -146,7 +158,7 @@
                     <p class="text-muted small mb-0">Statistik omzet penjualan dalam {{ $days == 180 ? '6 bulan' : ($days == 365 ? '1 tahun' : $days . ' hari') }} terakhir</p>
                 </div>
                 <div>
-                    <select class="form-select form-select-sm rounded-pill px-3" style="width: auto;" onchange="window.location.href = '{{ route('seller.dashboard') }}?days=' + this.value">
+                    <select class="form-select form-select-sm rounded-pill px-3" style="width: auto;" onchange="let params = new URLSearchParams(window.location.search); params.set('days', this.value); window.location.href = '{{ route('seller.dashboard') }}?' + params.toString()">
                         <option value="7" {{ $days == 7 ? 'selected' : '' }}>7 Hari Terakhir</option>
                         <option value="14" {{ $days == 14 ? 'selected' : '' }}>14 Hari Terakhir</option>
                         <option value="30" {{ $days == 30 ? 'selected' : '' }}>30 Hari Terakhir</option>

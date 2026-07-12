@@ -12,6 +12,7 @@ class AdminController extends Controller
 {
     public function dashboard(Request $request)
     {
+        $productId = $request->query('product_id');
         $period = $request->query('period');
         if (!$period && $request->has('days')) {
             $daysParam = (int)$request->query('days');
@@ -54,28 +55,41 @@ class AdminController extends Controller
         }
 
         // Helper to query metrics
-        $getMetrics = function ($start, $end) {
+        $getMetrics = function ($start, $end) use ($productId) {
             // 1. Total Revenue
-            $totalRevenue = Order::where('status', 'delivered')
-                ->whereBetween('created_at', [$start, $end])
-                ->sum('total_amount');
+            $revQuery = Order::where('status', 'delivered')
+                ->whereBetween('created_at', [$start, $end]);
+            if ($productId) {
+                $revQuery->whereHas('items', function($q) use ($productId) {
+                    $q->where('product_id', $productId);
+                });
+            }
+            $totalRevenue = $revQuery->sum('total_amount');
 
             // 2. Platform Commission
-            $platformCommission = \Illuminate\Support\Facades\DB::table('stock_units')
+            $commQuery = \Illuminate\Support\Facades\DB::table('stock_units')
                 ->join('products', 'stock_units.product_id', '=', 'products.id')
                 ->join('users', 'stock_units.seller_id', '=', 'users.id')
                 ->where('stock_units.is_sold', true)
                 ->where('users.role', 'seller')
-                ->whereIn('stock_units.sold_order_id', function ($query) use ($start, $end) {
+                ->whereIn('stock_units.sold_order_id', function ($query) use ($start, $end, $productId) {
                     $query->select('id')->from('orders')
                         ->where('status', 'delivered')
                         ->whereBetween('created_at', [$start, $end]);
-                })
-                ->selectRaw("SUM(products.price * COALESCE(users.platform_fee_percent, 10) / 100) as total_commission")
+                    if ($productId) {
+                        $query->whereHas('items', function($q) use ($productId) {
+                            $q->where('product_id', $productId);
+                        });
+                    }
+                });
+            if ($productId) {
+                $commQuery->where('stock_units.product_id', $productId);
+            }
+            $platformCommission = $commQuery->selectRaw("SUM(products.price * COALESCE(users.platform_fee_percent, 10) / 100) as total_commission")
                 ->value('total_commission') ?? 0;
 
             // 3. Admin Earnings
-            $adminSalesEarnings = \Illuminate\Support\Facades\DB::table('stock_units')
+            $adminSalesQuery = \Illuminate\Support\Facades\DB::table('stock_units')
                 ->join('products', 'stock_units.product_id', '=', 'products.id')
                 ->leftJoin('users', 'stock_units.seller_id', '=', 'users.id')
                 ->where('stock_units.is_sold', true)
@@ -83,43 +97,81 @@ class AdminController extends Controller
                     $query->whereNull('stock_units.seller_id')
                           ->orWhere('users.role', '!=', 'seller');
                 })
-                ->whereIn('stock_units.sold_order_id', function ($query) use ($start, $end) {
+                ->whereIn('stock_units.sold_order_id', function ($query) use ($start, $end, $productId) {
                     $query->select('id')->from('orders')
                         ->where('status', 'delivered')
                         ->whereBetween('created_at', [$start, $end]);
-                })
-                ->selectRaw("SUM(products.price) as total_earnings")
+                    if ($productId) {
+                        $query->whereHas('items', function($q) use ($productId) {
+                            $q->where('product_id', $productId);
+                        });
+                    }
+                });
+            if ($productId) {
+                $adminSalesQuery->where('stock_units.product_id', $productId);
+            }
+            $adminSalesEarnings = $adminSalesQuery->selectRaw("SUM(products.price) as total_earnings")
                 ->value('total_earnings') ?? 0;
 
-            $totalUniqueCodes = Order::where('status', 'delivered')
-                ->whereBetween('created_at', [$start, $end])
-                ->sum('unique_code');
+            $codeQuery = Order::where('status', 'delivered')
+                ->whereBetween('created_at', [$start, $end]);
+            if ($productId) {
+                $codeQuery->whereHas('items', function($q) use ($productId) {
+                    $q->where('product_id', $productId);
+                });
+            }
+            $totalUniqueCodes = $codeQuery->sum('unique_code');
             $adminEarnings = (int)$adminSalesEarnings + (int)$totalUniqueCodes;
 
             // 4. Seller Earnings
-            $totalSellerEarnings = \Illuminate\Support\Facades\DB::table('stock_units')
+            $sellerEarningsQuery = \Illuminate\Support\Facades\DB::table('stock_units')
                 ->join('products', 'stock_units.product_id', '=', 'products.id')
                 ->join('users', 'stock_units.seller_id', '=', 'users.id')
                 ->where('stock_units.is_sold', true)
                 ->where('users.role', 'seller')
-                ->whereIn('stock_units.sold_order_id', function ($query) use ($start, $end) {
+                ->whereIn('stock_units.sold_order_id', function ($query) use ($start, $end, $productId) {
                     $query->select('id')->from('orders')
                         ->where('status', 'delivered')
                         ->whereBetween('created_at', [$start, $end]);
-                })
-                ->selectRaw("SUM(products.price - (products.price * COALESCE(users.platform_fee_percent, 10) / 100)) as total_earnings")
+                    if ($productId) {
+                        $query->whereHas('items', function($q) use ($productId) {
+                            $q->where('product_id', $productId);
+                        });
+                    }
+                });
+            if ($productId) {
+                $sellerEarningsQuery->where('stock_units.product_id', $productId);
+            }
+            $totalSellerEarnings = $sellerEarningsQuery->selectRaw("SUM(products.price - (products.price * COALESCE(users.platform_fee_percent, 10) / 100)) as total_earnings")
                 ->value('total_earnings') ?? 0;
 
             // 5. Total Orders
-            $totalOrders = Order::whereBetween('created_at', [$start, $end])->count();
+            $ordersQuery = Order::whereBetween('created_at', [$start, $end]);
+            if ($productId) {
+                $ordersQuery->whereHas('items', function($q) use ($productId) {
+                    $q->where('product_id', $productId);
+                });
+            }
+            $totalOrders = $ordersQuery->count();
 
             // 8. Delivered and Cancelled Orders for chart
-            $deliveredOrders = Order::where('status', 'delivered')
-                ->whereBetween('created_at', [$start, $end])
-                ->count();
-            $cancelledOrders = Order::whereIn('status', ['cancelled', 'expired'])
-                ->whereBetween('created_at', [$start, $end])
-                ->count();
+            $delQuery = Order::where('status', 'delivered')
+                ->whereBetween('created_at', [$start, $end]);
+            if ($productId) {
+                $delQuery->whereHas('items', function($q) use ($productId) {
+                    $q->where('product_id', $productId);
+                });
+            }
+            $deliveredOrders = $delQuery->count();
+
+            $canQuery = Order::whereIn('status', ['cancelled', 'expired'])
+                ->whereBetween('created_at', [$start, $end]);
+            if ($productId) {
+                $canQuery->whereHas('items', function($q) use ($productId) {
+                    $q->where('product_id', $productId);
+                });
+            }
+            $cancelledOrders = $canQuery->count();
 
             return compact(
                 'totalRevenue', 'platformCommission', 'adminEarnings', 'totalSellerEarnings',
@@ -181,10 +233,27 @@ class AdminController extends Controller
         $deliveredOrders = $currentMetrics['deliveredOrders'];
         $cancelledOrders = $currentMetrics['cancelledOrders'];
 
-        $recentOrders = Order::with(['customer', 'items.product'])
+        $recQuery = Order::with(['customer', 'items.product'])
             ->orderBy('created_at', 'desc')
-            ->limit(5)
-            ->get();
+            ->limit(5);
+        if ($productId) {
+            $recQuery->whereHas('items', function($q) use ($productId) {
+                $q->where('product_id', $productId);
+            });
+        }
+        $recentOrders = $recQuery->get();
+
+        // Helper for chart values
+        $getChartOrderSum = function ($start, $end) use ($productId) {
+            $query = Order::where('status', 'delivered')
+                ->whereBetween('created_at', [$start, $end]);
+            if ($productId) {
+                $query->whereHas('items', function($q) use ($productId) {
+                    $q->where('product_id', $productId);
+                });
+            }
+            return (int) $query->sum('total_amount');
+        };
 
         // Generate Chart Data based on period
         $chartLabels = [];
@@ -197,9 +266,7 @@ class AdminController extends Controller
                 $end = (clone $hourObj)->endOfHour();
                 
                 $chartLabels[] = $hourObj->format('H:00');
-                $chartData[] = Order::where('status', 'delivered')
-                    ->whereBetween('created_at', [$start, $end])
-                    ->sum('total_amount');
+                $chartData[] = $getChartOrderSum($start, $end);
             }
         } elseif ($period === '7_days') {
             for ($i = 6; $i >= 0; $i--) {
@@ -208,9 +275,7 @@ class AdminController extends Controller
                 $end = (clone $dayObj)->endOfDay();
                 
                 $chartLabels[] = $dayObj->format('d M');
-                $chartData[] = Order::where('status', 'delivered')
-                    ->whereBetween('created_at', [$start, $end])
-                    ->sum('total_amount');
+                $chartData[] = $getChartOrderSum($start, $end);
             }
         } elseif ($period === '30_days') {
             for ($i = 29; $i >= 0; $i--) {
@@ -219,9 +284,7 @@ class AdminController extends Controller
                 $end = (clone $dayObj)->endOfDay();
                 
                 $chartLabels[] = $dayObj->format('d M');
-                $chartData[] = Order::where('status', 'delivered')
-                    ->whereBetween('created_at', [$start, $end])
-                    ->sum('total_amount');
+                $chartData[] = $getChartOrderSum($start, $end);
             }
         } else { // 6_months
             for ($i = 5; $i >= 0; $i--) {
@@ -230,9 +293,7 @@ class AdminController extends Controller
                 $end = (clone $monthObj)->endOfMonth()->endOfDay();
                 
                 $chartLabels[] = $monthObj->format('M Y');
-                $chartData[] = Order::where('status', 'delivered')
-                    ->whereBetween('created_at', [$start, $end])
-                    ->sum('total_amount');
+                $chartData[] = $getChartOrderSum($start, $end);
             }
         }
 
@@ -243,10 +304,12 @@ class AdminController extends Controller
             '6_months' => '6 bulan terakhir',
         };
 
+        $products = \App\Models\Product::orderBy('name')->get();
+
         return view('admin.dashboard', compact(
             'totalRevenue', 'platformCommission', 'adminEarnings', 'totalSellerEarnings', 'totalOrders', 'totalProducts', 'totalUsers', 'webUsersCount', 'tgUsersCount', 'recentOrders',
             'deliveredOrders', 'cancelledOrders', 'chartLabels', 'chartData', 'days', 'period', 'periodLabel',
-            'revenueStats', 'commissionStats', 'adminEarningsStats', 'sellerEarningsStats', 'ordersStats', 'productsStats', 'usersStats'
+            'revenueStats', 'commissionStats', 'adminEarningsStats', 'sellerEarningsStats', 'ordersStats', 'productsStats', 'usersStats', 'products', 'productId'
         ));
     }
 
@@ -341,7 +404,7 @@ class AdminController extends Controller
             'action' => 'admin_export_stock',
             'actor_id' => \Illuminate\Support\Facades\Auth::id(),
             'entity_type' => 'stock_unit',
-            'entity_id' => null,
+            'entity_id' => 0,
             'detail' => 'Admin exported stock data',
             'created_at' => now(),
         ]);
@@ -1300,7 +1363,7 @@ class AdminController extends Controller
             'action' => 'admin_bulk_delete_stock',
             'actor_id' => \Illuminate\Support\Facades\Auth::id(),
             'entity_type' => 'stock_unit',
-            'entity_id' => null,
+            'entity_id' => 0,
             'detail' => "Bulk deleted {$count} stock units (IDs: " . implode(',', $ids) . ")",
             'created_at' => now(),
         ]);
@@ -1370,7 +1433,7 @@ class AdminController extends Controller
             'action' => 'admin_export_users',
             'actor_id' => \Illuminate\Support\Facades\Auth::id(),
             'entity_type' => 'user',
-            'entity_id' => null,
+            'entity_id' => 0,
             'detail' => 'Admin exported users data',
             'created_at' => now(),
         ]);

@@ -10,7 +10,15 @@
         <p class="text-muted mb-0">Ringkasan aktivitas toko Anda ({{ $periodLabel }})</p>
     </div>
     <div class="d-flex gap-2">
-        <select class="form-select form-select-sm rounded-pill px-3" style="width: auto;" onchange="window.location.href = '{{ route('admin.dashboard') }}?period=' + this.value">
+        <select class="form-select form-select-sm rounded-pill px-3" style="width: auto;" onchange="let params = new URLSearchParams(window.location.search); if(this.value) { params.set('product_id', this.value); } else { params.delete('product_id'); } window.location.href = '{{ route('admin.dashboard') }}?' + params.toString()">
+            <option value="">Semua Produk</option>
+            @foreach($products as $p)
+                <option value="{{ $p->id }}" {{ $productId == $p->id ? 'selected' : '' }}>
+                    {{ $p->is_suspended ? '🔴' : '✅' }} {{ $p->name }}
+                </option>
+            @endforeach
+        </select>
+        <select class="form-select form-select-sm rounded-pill px-3" style="width: auto;" onchange="let params = new URLSearchParams(window.location.search); params.set('period', this.value); window.location.href = '{{ route('admin.dashboard') }}?' + params.toString()">
             <option value="24_hours" {{ $period == '24_hours' ? 'selected' : '' }}>24 Jam Terakhir</option>
             <option value="7_days" {{ $period == '7_days' ? 'selected' : '' }}>7 Hari Terakhir</option>
             <option value="30_days" {{ $period == '30_days' ? 'selected' : '' }}>30 Hari Terakhir</option>

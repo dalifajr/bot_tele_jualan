@@ -20,17 +20,25 @@ class SellerController extends Controller
     {
         $sellerId = Auth::id();
         $user = Auth::user();
+        $productId = $request->query('product_id');
 
         // Held Balance
-        $heldBalance = (int) DB::table('held_funds')
+        $heldQuery = DB::table('held_funds')
             ->where('seller_id', $sellerId)
-            ->where('status', 'held')
-            ->sum('amount');
+            ->where('status', 'held');
+        if ($productId) {
+            $heldQuery->where('product_id', $productId);
+        }
+        $heldBalance = (int) $heldQuery->sum('amount');
 
         // Stock stats
-        $readyStockCount = StockUnit::where('seller_id', $sellerId)->where('stock_status', 'ready')->where('is_sold', false)->count();
-        $savedStockCount = StockUnit::where('seller_id', $sellerId)->whereIn('stock_status', ['saved_for_verification', 'saved_ready_notified'])->where('is_sold', false)->count();
-        $soldStockCount = StockUnit::where('seller_id', $sellerId)->where('is_sold', true)->count();
+        $stockQuery = StockUnit::where('seller_id', $sellerId);
+        if ($productId) {
+            $stockQuery->where('product_id', $productId);
+        }
+        $readyStockCount = (clone $stockQuery)->where('stock_status', 'ready')->where('is_sold', false)->count();
+        $savedStockCount = (clone $stockQuery)->whereIn('stock_status', ['saved_for_verification', 'saved_ready_notified'])->where('is_sold', false)->count();
+        $soldStockCount = (clone $stockQuery)->where('is_sold', true)->count();
 
         // Finance stats
         $pendingWithdrawalCount = WithdrawalRequest::where('seller_id', $sellerId)->where('status', 'pending')->count();
@@ -48,6 +56,10 @@ class SellerController extends Controller
             ->where('stock_units.seller_id', $sellerId)
             ->where('stock_units.is_sold', true);
 
+        if ($productId) {
+            $earningsQuery->where('stock_units.product_id', $productId);
+        }
+
         if ($earningsDays !== 'all') {
             $dateLimit = now()->subDays((int) $earningsDays)->startOfDay();
             $earningsQuery->where('orders.created_at', '>=', $dateLimit);
@@ -63,24 +75,33 @@ class SellerController extends Controller
         $monthlyNet = $monthlyEarnings - $monthlyCommission;
 
         // 1. Total Sales (earnings sum of their sold stock units where orders are delivered)
-        $totalSales = (int) DB::table('stock_units')
+        $totalSalesQuery = DB::table('stock_units')
             ->join('products', 'stock_units.product_id', '=', 'products.id')
             ->join('orders', 'stock_units.sold_order_id', '=', 'orders.id')
             ->where('stock_units.seller_id', $sellerId)
             ->where('stock_units.is_sold', true)
-            ->where('orders.status', 'delivered')
-            ->sum('products.price');
+            ->where('orders.status', 'delivered');
+        if ($productId) {
+            $totalSalesQuery->where('stock_units.product_id', $productId);
+        }
+        $totalSales = (int) $totalSalesQuery->sum('products.price');
 
         // 2. Delivered orders containing their stock units
         $deliveredOrders = Order::where('status', 'delivered')
-            ->whereHas('stockUnits', function ($query) use ($sellerId) {
+            ->whereHas('stockUnits', function ($query) use ($sellerId, $productId) {
                 $query->where('seller_id', $sellerId);
+                if ($productId) {
+                    $query->where('product_id', $productId);
+                }
             })->count();
 
         // 3. Cancelled and expired orders containing their stock units
         $cancelledOrders = Order::whereIn('status', ['cancelled', 'expired'])
-            ->whereHas('stockUnits', function ($query) use ($sellerId) {
+            ->whereHas('stockUnits', function ($query) use ($sellerId, $productId) {
                 $query->where('seller_id', $sellerId);
+                if ($productId) {
+                    $query->where('product_id', $productId);
+                }
             })->count();
 
         $totalOrders = $deliveredOrders + $cancelledOrders;
@@ -91,8 +112,11 @@ class SellerController extends Controller
         // 5. Latest 5 delivered orders containing their stock units
         $latestOrders = Order::with(['customer', 'stockUnits.product'])
             ->where('status', 'delivered')
-            ->whereHas('stockUnits', function ($query) use ($sellerId) {
+            ->whereHas('stockUnits', function ($query) use ($sellerId, $productId) {
                 $query->where('seller_id', $sellerId);
+                if ($productId) {
+                    $query->where('product_id', $productId);
+                }
             })
             ->orderBy('created_at', 'desc')
             ->take(5)
@@ -116,48 +140,64 @@ class SellerController extends Controller
                 $chartLabels[] = $dateObj->format('d M');
             }
 
-            $chartData[] = (int) DB::table('stock_units')
+            $chartDataQuery = DB::table('stock_units')
                 ->join('products', 'stock_units.product_id', '=', 'products.id')
                 ->join('orders', 'stock_units.sold_order_id', '=', 'orders.id')
                 ->where('stock_units.seller_id', $sellerId)
                 ->where('stock_units.is_sold', true)
                 ->where('orders.status', 'delivered')
-                ->whereDate('orders.delivered_at', $date)
-                ->sum('products.price');
+                ->whereDate('orders.delivered_at', $date);
+
+            if ($productId) {
+                $chartDataQuery->where('stock_units.product_id', $productId);
+            }
+
+            $chartData[] = (int) $chartDataQuery->sum('products.price');
         }
 
         // Advanced Analytics for Seller Dashboard
-        $avgRating = DB::table('reviews')
+        $ratingQuery = DB::table('reviews')
             ->join('products', 'reviews.product_id', '=', 'products.id')
-            ->where('products.creator_id', $sellerId)
-            ->avg('reviews.rating') ?? 0;
-            
-        $totalReviews = DB::table('reviews')
-            ->join('products', 'reviews.product_id', '=', 'products.id')
-            ->where('products.creator_id', $sellerId)
-            ->count();
+            ->where('products.creator_id', $sellerId);
+        if ($productId) {
+            $ratingQuery->where('reviews.product_id', $productId);
+        }
+        $avgRating = $ratingQuery->avg('reviews.rating') ?? 0;
+        $totalReviews = $ratingQuery->count();
 
-        $topProducts = DB::table('stock_units')
+        $topProductsQuery = DB::table('stock_units')
             ->join('products', 'stock_units.product_id', '=', 'products.id')
             ->select('products.name', 'products.price', DB::raw('count(stock_units.id) as units_sold'), DB::raw('sum(products.price) as total_earnings'))
             ->where('stock_units.seller_id', $sellerId)
-            ->where('stock_units.is_sold', true)
-            ->groupBy('products.id', 'products.name', 'products.price')
+            ->where('stock_units.is_sold', true);
+        if ($productId) {
+            $topProductsQuery->where('stock_units.product_id', $productId);
+        }
+        $topProducts = $topProductsQuery->groupBy('products.id', 'products.name', 'products.price')
             ->orderByDesc('units_sold')
             ->take(5)
             ->get();
 
-        $productShare = DB::table('stock_units')
+        $productShareQuery = DB::table('stock_units')
             ->join('products', 'stock_units.product_id', '=', 'products.id')
             ->select('products.name', DB::raw('count(stock_units.id) as units_sold'))
             ->where('stock_units.seller_id', $sellerId)
-            ->where('stock_units.is_sold', true)
-            ->groupBy('products.id', 'products.name')
+            ->where('stock_units.is_sold', true);
+        if ($productId) {
+            $productShareQuery->where('stock_units.product_id', $productId);
+        }
+        $productShare = $productShareQuery->groupBy('products.id', 'products.name')
             ->orderByDesc('units_sold')
             ->get();
 
         $shareLabels = $productShare->pluck('name')->toArray();
         $shareData = $productShare->pluck('units_sold')->toArray();
+
+        // Fetch products available for this seller to filter on the dashboard
+        $products = Product::where('creator_id', $sellerId)
+            ->orWhereHas('workers', function($q) use ($sellerId) {
+                $q->where('user_id', $sellerId);
+            })->orderBy('name')->get();
 
         return view('seller.dashboard', compact(
             'user',
@@ -184,7 +224,9 @@ class SellerController extends Controller
             'totalReviews',
             'topProducts',
             'shareLabels',
-            'shareData'
+            'shareData',
+            'products',
+            'productId'
         ));
     }
 
