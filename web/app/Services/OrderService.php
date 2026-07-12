@@ -55,11 +55,12 @@ class OrderService
                 'created_at' => now(),
             ]);
 
-            // 5. Notify customer via Telegram
+            // 5. Notify customer & admin via Telegram
             try {
                 \App\Services\TelegramService::notifyCustomerOrderCancelled($order, $reason);
+                \App\Services\TelegramService::updateAdminOrderMessage($order);
             } catch (\Exception $e) {
-                \Log::error("Gagal mengirim notifikasi pembatalan ke pelanggan: " . $e->getMessage());
+                \Log::error("Gagal mengirim notifikasi pembatalan ke pelanggan/admin: " . $e->getMessage());
             }
 
             DB::commit();
@@ -192,6 +193,7 @@ class OrderService
             }
 
             \App\Services\TelegramService::notifyCustomerOrderDelivered($order, $reservedStock, $vpnDetails);
+            \App\Services\TelegramService::updateAdminOrderMessage($order);
 
             // 6. Audit Log
             DB::table('audit_logs')->insert([

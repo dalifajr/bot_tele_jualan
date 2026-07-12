@@ -62,15 +62,100 @@ class TelegramService
 
         foreach ($admins as $admin) {
             try {
-                Http::post($apiUrl, [
+                $response = Http::post($apiUrl, [
                     'chat_id' => $admin->telegram_id,
                     'text' => $text,
                     'parse_mode' => 'HTML',
                     'reply_markup' => json_encode($keyboard)
                 ]);
+
+                if ($response->successful() && !$order->admin_notify_message_id) {
+                    $order->admin_notify_chat_id = $admin->telegram_id;
+                    $order->admin_notify_message_id = $response->json('result.message_id');
+                    $order->save();
+                }
             } catch (\Exception $e) {
                 Log::error("Gagal mengirim notifikasi admin ke {$admin->telegram_id}: " . $e->getMessage());
             }
+        }
+    }
+
+    /**
+     * Update pesan notifikasi admin ketika status pesanan berubah.
+     */
+    public static function updateAdminOrderMessage(Order $order)
+    {
+        $botToken = env('TELEGRAM_BOT_TOKEN');
+        if (empty($botToken)) return;
+
+        $chatId = $order->admin_notify_chat_id;
+        $messageId = $order->admin_notify_message_id;
+
+        if (!$chatId || !$messageId) {
+            return;
+        }
+
+        $customerName = $order->customer->full_name ?? $order->customer->username ?? '-';
+        $itemCount = $order->items->count();
+        $firstItem = $order->items->first();
+        $productName = $firstItem ? $firstItem->product->name : 'Produk';
+        
+        if ($itemCount > 1) {
+            $productName .= " (+" . ($itemCount - 1) . " item)";
+        }
+
+        $totalQty = $order->items->sum('quantity');
+
+        // Tentukan label status & emoji
+        $statusText = '';
+        if ($order->status === 'pending_payment') {
+            $statusText = '🟡 Menunggu Pembayaran';
+        } elseif (in_array($order->status, ['completed', 'paid', 'delivered'])) {
+            $statusText = '🟢 Selesai';
+        } elseif ($order->status === 'cancelled') {
+            $statusText = '❌ Dibatalkan';
+        } elseif ($order->status === 'expired') {
+            $statusText = '⏰ Kadaluarsa / Waktu Habis';
+        } else {
+            $statusText = strtoupper($order->status);
+        }
+
+        $text = "🆕 <b>Pesanan Baru (Via Web)</b>\n"
+              . "Order Ref: <code>{$order->order_ref}</code>\n"
+              . "Customer: " . htmlspecialchars($customerName) . " ({$order->customer->telegram_id})\n"
+              . "Item: " . htmlspecialchars($productName) . "\n"
+              . "Qty: {$totalQty}\n"
+              . "Total Bayar: <b>Rp " . number_format($order->total_amount, 0, ',', '.') . "</b>\n\n"
+              . "Status: <b>{$statusText}</b>\n"
+              . "🕒 Dibuat dari Website.";
+
+        // Jika statusnya bukan pending_payment, sembunyikan tombol aksi admin
+        $keyboard = null;
+        if ($order->status === 'pending_payment') {
+            $keyboard = [
+                'inline_keyboard' => [
+                    [
+                        ['text' => '✅ Pembayaran Diterima', 'callback_data' => "adm:ord:paid:{$order->order_ref}"]
+                    ],
+                    [
+                        ['text' => '❌ Batalkan Pesanan', 'callback_data' => "adm:ord:cancel:{$order->order_ref}"]
+                    ]
+                ]
+            ];
+        }
+
+        $apiUrl = "https://api.telegram.org/bot{$botToken}/editMessageText";
+
+        try {
+            Http::post($apiUrl, [
+                'chat_id' => $chatId,
+                'message_id' => $messageId,
+                'text' => $text,
+                'parse_mode' => 'HTML',
+                'reply_markup' => $keyboard ? json_encode($keyboard) : null
+            ]);
+        } catch (\Exception $e) {
+            Log::error("Gagal memperbarui notifikasi admin untuk Order {$order->order_ref}: " . $e->getMessage());
         }
     }
 
