@@ -55,6 +55,13 @@ class OrderService
                 'created_at' => now(),
             ]);
 
+            // 5. Notify customer via Telegram
+            try {
+                \App\Services\TelegramService::notifyCustomerOrderCancelled($order, $reason);
+            } catch (\Exception $e) {
+                \Log::error("Gagal mengirim notifikasi pembatalan ke pelanggan: " . $e->getMessage());
+            }
+
             DB::commit();
             return true;
         } catch (Exception $e) {

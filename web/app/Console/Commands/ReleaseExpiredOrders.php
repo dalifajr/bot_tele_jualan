@@ -50,6 +50,13 @@ class ReleaseExpiredOrders extends Command
                     'cancel_reason' => 'Batas waktu pembayaran telah habis (Sistem)',
                 ]);
 
+                // Notify customer via Telegram
+                try {
+                    \App\Services\TelegramService::notifyCustomerOrderCancelled($order, 'payment_timeout');
+                } catch (\Exception $e) {
+                    Log::error("Gagal kirim notifikasi expired ke customer: " . $e->getMessage());
+                }
+
                 // Release reserved stock units
                 $affectedStockUnits = StockUnit::where('sold_order_id', $order->id)
                     ->where('stock_status', 'reserved_checkout')

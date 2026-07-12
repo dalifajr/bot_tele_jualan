@@ -291,6 +291,9 @@
                 <i class="fas fa-arrow-left me-2"></i>Kembali ke Riwayat
             </a>
             @if($order->status === 'pending_payment')
+            <a href="{{ route('checkout.success', $order->order_ref) }}" class="btn btn-success w-100 rounded-pill mb-2">
+                <i class="fas fa-qrcode me-2"></i>Bayar Sekarang (QRIS)
+            </a>
             <form action="{{ route('orders.cancel', $order->id) }}" method="POST" onsubmit="confirmAction(event, 'Apakah Anda yakin ingin membatalkan pesanan ini?');">
                 @csrf
                 <button type="submit" class="btn btn-outline-danger w-100 rounded-pill">

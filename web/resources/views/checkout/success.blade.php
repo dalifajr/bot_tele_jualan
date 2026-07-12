@@ -40,13 +40,6 @@
                     <div class="text-center mb-4">
                         <h6 class="fw-bold mb-3">Scan QRIS Berikut:</h6>
                         <div class="d-inline-block bg-white p-3 rounded-3 shadow-sm border mb-3" id="qrcode"></div>
-                        <p class="small text-muted mb-0">Atau salin kode di bawah ini jika menggunakan aplikasi m-Banking:</p>
-                        <div class="input-group mt-2">
-                            <input type="text" class="form-control font-monospace small bg-light" value="{{ $dynamicQris }}" id="qrisPayload" readonly>
-                            <button class="btn btn-outline-secondary" type="button" onclick="copyQris()">
-                                <i class="fas fa-copy"></i>
-                            </button>
-                        </div>
                     </div>
                 @else
                     <div class="alert alert-info text-center" role="alert">
@@ -145,20 +138,6 @@
         });
     });
 
-    function copyQris() {
-        var copyText = document.getElementById("qrisPayload");
-        copyText.select();
-        copyText.setSelectionRange(0, 99999); /* For mobile devices */
-        navigator.clipboard.writeText(copyText.value);
-        
-        Swal.fire({
-            icon: 'success',
-            title: 'Disalin!',
-            text: 'Payload QRIS berhasil disalin ke clipboard.',
-            timer: 1500,
-            showConfirmButton: false
-        });
-    }
 </script>
 @endif
 

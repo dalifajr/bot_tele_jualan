@@ -118,12 +118,18 @@ class TelegramService
             $apiUrl = "https://api.telegram.org/bot{$botToken}/sendPhoto";
             
             try {
-                Http::post($apiUrl, [
+                $response = Http::post($apiUrl, [
                     'chat_id' => $customerTelegramId,
                     'photo' => $qrImageUrl,
                     'caption' => $text,
                     'parse_mode' => 'HTML',
                 ]);
+
+                if ($response->successful()) {
+                    $order->checkout_chat_id = $customerTelegramId;
+                    $order->checkout_message_id = $response->json('result.message_id');
+                    $order->save();
+                }
             } catch (\Exception $e) {
                 Log::error("Gagal mengirim QRIS photo ke {$customerTelegramId}: " . $e->getMessage());
             }
@@ -131,17 +137,93 @@ class TelegramService
         } else {
             $text .= "⚠️ Payload QRIS belum diatur oleh admin.\n"
                    . "Silakan hubungi admin untuk melakukan pembayaran manual.";
-                   
+                    
             $apiUrl = "https://api.telegram.org/bot{$botToken}/sendMessage";
             try {
-                Http::post($apiUrl, [
+                $response = Http::post($apiUrl, [
                     'chat_id' => $customerTelegramId,
                     'text' => $text,
                     'parse_mode' => 'HTML',
                 ]);
+
+                if ($response->successful()) {
+                    $order->checkout_chat_id = $customerTelegramId;
+                    $order->checkout_message_id = $response->json('result.message_id');
+                    $order->save();
+                }
             } catch (\Exception $e) {
                 Log::error("Gagal mengirim text invoice ke {$customerTelegramId}: " . $e->getMessage());
             }
+        }
+    }
+
+    /**
+     * Kirim notifikasi pembatalan/expired pesanan ke pelanggan dengan mengubah pesan lamanya.
+     */
+    public static function notifyCustomerOrderCancelled(Order $order, string $reasonText)
+    {
+        $botToken = env('TELEGRAM_BOT_TOKEN');
+        if (empty($botToken)) return;
+
+        $chatId = $order->checkout_chat_id;
+        $messageId = $order->checkout_message_id;
+
+        if (!$chatId || !$messageId) {
+            return;
+        }
+
+        // Terjemahkan/format alasan pembatalan
+        $reason = 'Alasan: ';
+        if ($reasonText === 'cancelled_by_customer') {
+            $reason .= 'Dibatalkan oleh pelanggan.';
+        } elseif ($reasonText === 'cancelled_by_admin') {
+            $reason .= 'Dibatalkan oleh admin.';
+        } elseif ($reasonText === 'payment_timeout' || str_contains($reasonText, 'waktu pembayaran telah habis') || str_contains($reasonText, 'Batas waktu')) {
+            $reason .= 'Waktu pembayaran telah habis.';
+        } else {
+            $reason .= $reasonText;
+        }
+
+        $text = "❌ <b>Pesanan Dibatalkan</b>\n\n"
+              . "Order Ref: <code>{$order->order_ref}</code>\n"
+              . "{$reason}\n\n"
+              . "🔎 Cek status: <code>/order_status {$order->order_ref}</code>\n"
+              . "Jika Anda butuh bantuan, hubungi admin.";
+
+        $keyboard = [
+            'inline_keyboard' => [
+                [
+                    ['text' => '📦 Cek Pesanan', 'callback_data' => 'cus:ord'],
+                    ['text' => '🏠 Menu Utama', 'callback_data' => 'back:main']
+                ]
+            ]
+        ];
+
+        $apiUrlCaption = "https://api.telegram.org/bot{$botToken}/editMessageCaption";
+        $apiUrlText = "https://api.telegram.org/bot{$botToken}/editMessageText";
+
+        try {
+            // Coba editMessageText terlebih dahulu (jika pesan dikirim sebagai text biasa)
+            $response = Http::post($apiUrlText, [
+                'chat_id' => $chatId,
+                'message_id' => $messageId,
+                'text' => $text,
+                'parse_mode' => 'HTML',
+                'reply_markup' => json_encode($keyboard)
+            ]);
+
+            // Jika gagal (karena tipe pesannya photo dengan caption), lakukan editMessageCaption
+            if (!$response->successful()) {
+                Http::post($apiUrlCaption, [
+                    'chat_id' => $chatId,
+                    'message_id' => $messageId,
+                    'caption' => $text,
+                    'parse_mode' => 'HTML',
+                    'reply_markup' => json_encode($keyboard)
+                ]);
+            }
+        } catch (\Exception $e) {
+            Log::error("Gagal memperbarui Telegram checkout message pelanggan: " . $e->getMessage());
         }
     }
 

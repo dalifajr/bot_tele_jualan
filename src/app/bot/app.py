@@ -13,7 +13,7 @@ from app.bot.services.broadcast_service import (
     broadcast_to_customers,
 )
 from app.bot.services.catalog_service import list_products, promote_awaiting_stocks
-from app.bot.handlers.main import register_handlers
+from app.bot.handlers.main import register_handlers, _upsert_customer_checkout_message
 from app.bot.services.github_pack_service import (
     GITHUB_PACK_NOTIFY_BATCH_WINDOW_MINUTES,
     list_saved_github_ready_notification_batch,
@@ -148,44 +148,64 @@ async def _expire_pending_orders_job(context: ContextTypes.DEFAULT_TYPE) -> None
         if not notifications:
             return
 
+        for notification in notifications:
+            # 1. Update customer checkout message if it exists
+            cust_chat_id = notification.checkout_chat_id
+            cust_msg_id = notification.checkout_message_id
+            if cust_chat_id and cust_msg_id:
+                reason_text = "Batas waktu pembayaran telah habis (Sistem)."
+                customer_text = "\n".join([
+                    "❌ <b>Pesanan Dibatalkan</b>",
+                    f"Order Ref: <code>{html.escape(notification.order_ref)}</code>",
+                    f"Alasan: {reason_text}",
+                    "",
+                    f"🔎 Cek status: <code>/order_status {html.escape(notification.order_ref)}</code>",
+                    "Jika Anda butuh bantuan, hubungi admin.",
+                ])
+                customer_keyboard = InlineKeyboardMarkup([
+                    [
+                        InlineKeyboardButton("📦 Cek Pesanan", callback_data="cus:ord"),
+                        InlineKeyboardButton("🏠 Menu Utama", callback_data="back:main")
+                    ]
+                ])
+                await _upsert_customer_checkout_message(
+                    context=context,
+                    chat_id=cust_chat_id,
+                    message_id=cust_msg_id,
+                    text=customer_text,
+                    keyboard=customer_keyboard,
+                )
+
+            # 2. Update admin notification message if admin is set
+            if admin_id is not None:
+                message_text = build_admin_order_message(notification)
+                upsert_result = await upsert_admin_order_message(
+                    bot=context.bot,
+                    admin_chat_id=admin_id,
+                    message_text=message_text,
+                    existing_chat_id=notification.admin_chat_id,
+                    existing_message_id=notification.admin_message_id,
+                )
+                if upsert_result is not None:
+                    set_admin_message_ref(
+                        session=session,
+                        order_ref=notification.order_ref,
+                        chat_id=upsert_result[0],
+                        message_id=upsert_result[1],
+                    )
+                    upsert_success_count += 1
+                else:
+                    upsert_failed_count += 1
+
         if admin_id is None:
             logger.warning("Order expired terdeteksi, tapi admin utama belum diset.")
-            log_telemetry(
-                logger,
-                "job.expire_pending_orders",
-                duration_ms=elapsed_ms(started_ms),
-                expired_count=len(notifications),
-                admin_configured=False,
-            )
-            return
-
-        for notification in notifications:
-            message_text = build_admin_order_message(notification)
-            upsert_result = await upsert_admin_order_message(
-                bot=context.bot,
-                admin_chat_id=admin_id,
-                message_text=message_text,
-                existing_chat_id=notification.admin_chat_id,
-                existing_message_id=notification.admin_message_id,
-            )
-            if upsert_result is None:
-                upsert_failed_count += 1
-                continue
-
-            set_admin_message_ref(
-                session=session,
-                order_ref=notification.order_ref,
-                chat_id=upsert_result[0],
-                message_id=upsert_result[1],
-            )
-            upsert_success_count += 1
 
         log_telemetry(
             logger,
             "job.expire_pending_orders",
             duration_ms=elapsed_ms(started_ms),
             expired_count=len(notifications),
-            admin_configured=True,
+            admin_configured=(admin_id is not None),
             upsert_success_count=upsert_success_count,
             upsert_failed_count=upsert_failed_count,
         )

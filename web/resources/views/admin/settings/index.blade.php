@@ -80,6 +80,16 @@
                                 <div class="form-text">Mengatur zona waktu untuk web admin, seller, dan pesan bot Telegram. Zona aktif saat ini: <strong>{{ config('app.timezone') }}</strong> (Server: {{ now()->format('Y-m-d H:i:s') }}).</div>
                             </div>
 
+                            <div class="mb-4">
+                                <label class="form-label fw-bold small">Batas Waktu Pembayaran (Menit)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-danger-subtle border-0"><i class="fas fa-stopwatch text-danger"></i></span>
+                                    <input type="number" name="settings[checkout_expiry_minutes]" class="form-control" value="{{ $settings['checkout_expiry_minutes'] ?? 15 }}" min="1" max="1440" required>
+                                    <span class="input-group-text bg-light border-0 small text-muted">menit</span>
+                                </div>
+                                <div class="form-text">Berapa lama pelanggan diberi waktu untuk melakukan pembayaran QRIS setelah pesanan dibuat sebelum pesanan kedaluwarsa dan stok dilepas kembali.</div>
+                            </div>
+
                             <div class="row g-3">
                                 <div class="col-md-6">
                                     <label class="form-label fw-bold small">Awaiting Benefits → Ready (Jam)</label>
