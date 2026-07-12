@@ -48,7 +48,9 @@
                         $filterProducts = \App\Models\Product::orderBy('name')->get();
                     @endphp
                     @foreach($filterProducts as $fp)
-                        <option value="{{ $fp->id }}" {{ request('product_id') == $fp->id ? 'selected' : '' }}>{{ $fp->name }}</option>
+                        <option value="{{ $fp->id }}" {{ request('product_id') == $fp->id ? 'selected' : '' }}>
+                            {{ $fp->is_suspended ? '🔴' : '✅' }} {{ $fp->name }}
+                        </option>
                     @endforeach
                 </select>
             </div>

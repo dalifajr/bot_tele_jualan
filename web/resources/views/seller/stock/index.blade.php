@@ -80,7 +80,9 @@
                 <select name="product_id" class="form-select form-select-sm">
                     <option value="">Semua Produk</option>
                     @foreach($products as $fp)
-                    <option value="{{ $fp->id }}" {{ request('product_id') == $fp->id ? 'selected' : '' }}>{{ $fp->name }}</option>
+                    <option value="{{ $fp->id }}" {{ request('product_id') == $fp->id ? 'selected' : '' }}>
+                        {{ $fp->is_suspended ? '🔴' : '✅' }} {{ $fp->name }}
+                    </option>
                     @endforeach
                 </select>
             </div>
