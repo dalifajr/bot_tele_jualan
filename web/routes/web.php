@@ -119,6 +119,7 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         Route::put('/products/{id}', [\App\Http\Controllers\AdminController::class, 'updateProduct'])->name('products.update');
         Route::delete('/products/{id}', [\App\Http\Controllers\AdminController::class, 'destroyProduct'])->name('products.destroy');
         Route::get('/products/{id}/manage', [\App\Http\Controllers\AdminController::class, 'manageProduct'])->name('products.manage');
+        Route::get('/products/{id}/export-unsold', [\App\Http\Controllers\AdminController::class, 'exportUnsoldStock'])->name('products.export-unsold');
         
         Route::get('/stock', [\App\Http\Controllers\AdminController::class, 'stock'])->name('stock.index');
         Route::match(['get', 'post'], '/stock/export', [\App\Http\Controllers\AdminController::class, 'exportStock'])->name('stock.export');
@@ -253,6 +254,7 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         Route::post('/products', [\App\Http\Controllers\SellerController::class, 'storeProduct'])->name('products.store');
         Route::put('/products/{id}', [\App\Http\Controllers\SellerController::class, 'updateProduct'])->name('products.update');
         Route::delete('/products/{id}', [\App\Http\Controllers\SellerController::class, 'destroyProduct'])->name('products.destroy');
+        Route::get('/products/{id}/export-unsold', [\App\Http\Controllers\SellerController::class, 'exportUnsoldStock'])->name('products.export-unsold');
         Route::post('/products/{id}/workers', [\App\Http\Controllers\SellerController::class, 'addWorker'])->name('products.workers.store');
         Route::delete('/products/{id}/workers/{userId}', [\App\Http\Controllers\SellerController::class, 'removeWorker'])->name('products.workers.destroy');
         

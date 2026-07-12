@@ -566,30 +566,144 @@ class SellerController extends Controller
     {
         $product = Product::where('creator_id', Auth::id())->findOrFail($id);
 
-        // Check if there is still remaining stock (unsold stock units)
-        $hasRemainingStock = \App\Models\StockUnit::where('product_id', $product->id)
-            ->where('is_sold', false)
-            ->exists();
-
-        if ($hasRemainingStock) {
-            return redirect()->route('seller.products.index')->with('swal_error', 'Gagal menghapus produk! Masih terdapat sisa stok aktif di dalamnya. Harap kosongkan atau pindahkan stok terlebih dahulu sebelum menghapus produk.');
-        }
-
-        // Check for transaction history
-        $hasTransactionHistory = \Illuminate\Support\Facades\DB::table('order_items')
-            ->where('product_id', $product->id)
-            ->exists();
-
-        if ($hasTransactionHistory) {
-            return redirect()->route('seller.products.index')->with('swal_error', 'Produk tidak dapat dihapus karena sudah memiliki riwayat transaksi/penjualan. Silakan hubungi admin jika ingin menonaktifkan produk ini.');
-        }
-
         try {
-            $product->delete(); // Cascades to stock units automatically
+            $productId = $product->id;
+            
+            // Delete all unsold stock units of this product
+            \App\Models\StockUnit::where('product_id', $productId)->where('is_sold', false)->delete();
+            // Delete from all user carts
+            \Illuminate\Support\Facades\DB::table('cart_items')->where('product_id', $productId)->delete();
+
+            $product->delete();
             return redirect()->route('seller.products.index')->with('success', 'Produk berhasil dihapus.');
         } catch (\Exception $e) {
-            return redirect()->route('seller.products.index')->with('swal_error', 'Produk tidak dapat dihapus karena sudah memiliki riwayat transaksi/penjualan. Silakan hubungi admin jika ingin menonaktifkan produk ini.');
+            return redirect()->route('seller.products.index')->with('swal_error', 'Gagal menghapus produk: ' . $e->getMessage());
         }
+    }
+
+    public function exportUnsoldStock($id)
+    {
+        $product = \App\Models\Product::where('creator_id', Auth::id())->findOrFail($id);
+
+        $stockUnits = \App\Models\StockUnit::with(['uploader', 'seller'])
+            ->where('product_id', $product->id)
+            ->where('is_sold', false)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        if ($stockUnits->isEmpty()) {
+            return redirect()->back()->with('error', 'Tidak ada stok belum terjual yang tersedia untuk diekspor.');
+        }
+
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Sisa Stok');
+        $sheet->setShowGridlines(true);
+
+        $headerStyle = [
+            'font' => [
+                'bold' => true,
+                'color' => ['rgb' => 'FFFFFF'],
+                'size' => 11,
+            ],
+            'fill' => [
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                'startColor' => ['rgb' => '198754'],
+            ],
+            'alignment' => [
+                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+            ],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                    'color' => ['rgb' => 'D3D3D3'],
+                ],
+            ],
+        ];
+
+        $dataBorderStyle = [
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                    'color' => ['rgb' => 'E0E0E0'],
+                ],
+            ],
+        ];
+
+        $headers = ['No', 'Produk', 'Detail Akun (Raw Text)', 'Status', 'Uploader', 'Tanggal Input'];
+        $col = 'A';
+        foreach ($headers as $header) {
+            $sheet->setCellValue($col . '1', $header);
+            $col++;
+        }
+        $sheet->getStyle('A1:F1')->applyFromArray($headerStyle);
+        $sheet->getRowDimension(1)->setRowHeight(25);
+
+        $row = 2;
+        $no = 1;
+        foreach ($stockUnits as $unit) {
+            $sheet->setCellValue('A' . $row, $no++);
+            $sheet->setCellValue('B' . $row, $product->name);
+            $sheet->setCellValue('C' . $row, $unit->raw_text);
+            $sheet->setCellValue('D' . $row, strtoupper($unit->stock_status));
+            
+            $uploaderName = $unit->uploader->full_name ?? $unit->uploader->username ?? ($unit->seller->full_name ?? $unit->seller->username ?? 'Seller');
+            $sheet->setCellValue('E' . $row, $uploaderName);
+            $sheet->setCellValue('F' . $row, $unit->created_at ? $unit->created_at->format('Y-m-d H:i:s') : '-');
+
+            $sheet->getStyle('A' . $row)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('D' . $row)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('F' . $row)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+            $sheet->getStyle('A' . $row . ':F' . $row)->applyFromArray($dataBorderStyle);
+            
+            $statusColor = '000000';
+            $statusBg = 'FFFFFF';
+            if ($unit->stock_status === 'ready') {
+                $statusColor = '198754';
+                $statusBg = 'D1E7DD';
+            } elseif ($unit->stock_status === 'awaiting_benefits') {
+                $statusColor = 'A18000';
+                $statusBg = 'FFF3CD';
+            } elseif ($unit->stock_status === 'saved_for_verification') {
+                $statusColor = '0D6EFD';
+                $statusBg = 'CFF4FC';
+            }
+
+            if ($statusBg !== 'FFFFFF') {
+                $sheet->getStyle('D' . $row)->applyFromArray([
+                    'font' => [
+                        'bold' => true,
+                        'color' => ['rgb' => $statusColor],
+                    ],
+                    'fill' => [
+                        'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                        'startColor' => ['rgb' => $statusBg],
+                    ],
+                ]);
+            }
+
+            $sheet->getRowDimension($row)->setRowHeight(20);
+            $row++;
+        }
+
+        foreach (range('A', 'F') as $colChar) {
+            $sheet->getColumnDimension($colChar)->setAutoSize(true);
+        }
+
+        $filename = 'sisa_stok_' . str_replace(' ', '_', $product->name) . '_' . now()->format('Y-m-d_His') . '.xlsx';
+
+        $responseHeaders = [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+            'Cache-Control' => 'max-age=0',
+        ];
+
+        return response()->stream(function () use ($spreadsheet) {
+            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+            $writer->save('php://output');
+        }, 200, $responseHeaders);
     }
 
     // ==========================================

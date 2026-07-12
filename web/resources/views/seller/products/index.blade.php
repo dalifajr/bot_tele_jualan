@@ -289,12 +289,31 @@
 
 {{-- Delete Product Modal --}}
 <div class="modal fade" id="deleteProductModal{{ $product->id }}" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content text-center" style="border-radius: 16px; border: none;">
             <div class="modal-body p-4">
                 <i class="fas fa-exclamation-triangle text-danger mb-3" style="font-size: 3rem;"></i>
                 <h5 class="fw-bold">Hapus Produk?</h5>
-                <p class="text-muted small">Menghapus produk ini akan menghapus semua stok terkait milik Anda secara permanen. Lanjutkan?</p>
+                <p class="text-muted small mb-3">Menghapus produk ini akan menghapus semua stok terkait milik Anda secara permanen. Lanjutkan?</p>
+
+                @php
+                    $unsoldStockCount = $product->stockUnits()->where('is_sold', false)->count();
+                @endphp
+                @if($unsoldStockCount > 0)
+                <div class="alert alert-warning border-0 rounded-3 text-start small mb-3">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <i class="fas fa-exclamation-circle text-warning fs-5"></i>
+                        <span class="fw-bold">Perhatian: Sisa Stok Aktif</span>
+                    </div>
+                    Terdapat <strong>{{ $unsoldStockCount }}</strong> sisa stok aktif yang belum terjual. Anda disarankan untuk mengunduh sisa stok tersebut sebelum menghapus produk:
+                    <div class="mt-2 text-center">
+                        <a href="{{ route('seller.products.export-unsold', $product->id) }}" class="btn btn-sm btn-success rounded-pill px-3 fw-bold">
+                            <i class="fas fa-file-excel me-1"></i> Unduh Sisa Stok (.xlsx)
+                        </a>
+                    </div>
+                </div>
+                @endif
+
                 <div class="d-flex gap-2 justify-content-center mt-4">
                     <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
                     <form action="{{ route('seller.products.destroy', $product->id) }}" method="POST" class="m-0">

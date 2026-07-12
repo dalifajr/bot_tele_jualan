@@ -84,7 +84,7 @@ class ProductDeletionTest extends TestCase
     }
 
     /** @test */
-    public function test_seller_cannot_delete_product_with_remaining_stock()
+    public function test_seller_can_delete_product_with_remaining_stock()
     {
         // 1. Create Seller
         $seller = User::create([
@@ -119,15 +119,17 @@ class ProductDeletionTest extends TestCase
             ->delete(route('seller.products.destroy', $product->id));
 
         $response->assertRedirect();
-        $response->assertSessionHas('swal_error');
-        $this->assertStringContainsString('sisa stok aktif', session('swal_error'));
+        $response->assertSessionHas('success');
 
-        // Verify product still exists
-        $this->assertDatabaseHas('products', ['id' => $product->id]);
+        // Verify product is soft deleted
+        $this->assertSoftDeleted($product);
+        
+        // Verify unsold stock is deleted from database
+        $this->assertDatabaseMissing('stock_units', ['id' => $stock->id]);
     }
 
     /** @test */
-    public function test_seller_cannot_delete_product_with_transaction_history()
+    public function test_seller_can_delete_product_with_transaction_history()
     {
         // 1. Create Seller & Customer
         $seller = User::create([
@@ -166,7 +168,7 @@ class ProductDeletionTest extends TestCase
             'order_ref' => 'ORD-TEST123',
         ]);
 
-        OrderItem::create([
+        $orderItem = OrderItem::create([
             'order_id' => $order->id,
             'product_id' => $product->id,
             'quantity' => 1,
@@ -178,11 +180,13 @@ class ProductDeletionTest extends TestCase
             ->delete(route('seller.products.destroy', $product->id));
 
         $response->assertRedirect();
-        $response->assertSessionHas('swal_error');
-        $this->assertStringContainsString('riwayat transaksi', session('swal_error'));
+        $response->assertSessionHas('success');
 
-        // Verify product still exists
-        $this->assertDatabaseHas('products', ['id' => $product->id]);
+        // Verify product is soft deleted
+        $this->assertSoftDeleted($product);
+        
+        // Verify order items still exist in database
+        $this->assertDatabaseHas('order_items', ['id' => $orderItem->id]);
     }
 
     /** @test */
