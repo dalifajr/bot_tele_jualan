@@ -319,4 +319,84 @@ class OperationalReportTest extends TestCase
             ->get(route('seller.dashboard', ['days' => 14]));
         $response14->assertStatus(200);
     }
+
+    public function test_dashboard_product_filter(): void
+    {
+        // 1. Create two products
+        $productA = Product::create([
+            'name' => 'Product A',
+            'price' => 10000,
+            'creator_id' => $this->seller->id,
+            'is_suspended' => false,
+        ]);
+        $productB = Product::create([
+            'name' => 'Product B',
+            'price' => 20000,
+            'creator_id' => $this->seller->id,
+            'is_suspended' => false,
+        ]);
+
+        // 2. Create order for Product A
+        $orderA = Order::create([
+            'order_ref' => 'REF-A',
+            'customer_id' => $this->customer->id,
+            'subtotal' => 10000,
+            'unique_code' => 0,
+            'total_amount' => 10000,
+            'status' => 'delivered',
+            'delivered_at' => now(),
+        ]);
+        \App\Models\OrderItem::create([
+            'order_id' => $orderA->id,
+            'product_id' => $productA->id,
+            'quantity' => 1,
+            'unit_price' => 10000,
+        ]);
+        StockUnit::create([
+            'product_id' => $productA->id,
+            'raw_text' => 'credentials A',
+            'is_sold' => true,
+            'sold_order_id' => $orderA->id,
+            'stock_status' => 'ready',
+            'seller_id' => $this->seller->id,
+        ]);
+
+        // 3. Create order for Product B
+        $orderB = Order::create([
+            'order_ref' => 'REF-B',
+            'customer_id' => $this->customer->id,
+            'subtotal' => 20000,
+            'unique_code' => 0,
+            'total_amount' => 20000,
+            'status' => 'delivered',
+            'delivered_at' => now(),
+        ]);
+        \App\Models\OrderItem::create([
+            'order_id' => $orderB->id,
+            'product_id' => $productB->id,
+            'quantity' => 1,
+            'unit_price' => 20000,
+        ]);
+        StockUnit::create([
+            'product_id' => $productB->id,
+            'raw_text' => 'credentials B',
+            'is_sold' => true,
+            'sold_order_id' => $orderB->id,
+            'stock_status' => 'ready',
+            'seller_id' => $this->seller->id,
+        ]);
+
+        // 4. Test admin dashboard filtered by Product A
+        $responseAdminA = $this->actingAs($this->admin)
+            ->get(route('admin.dashboard', ['product_id' => $productA->id]));
+        $responseAdminA->assertStatus(200);
+        $responseAdminA->assertSee('10.000'); // Product A total revenue
+        $responseAdminA->assertDontSee('30.000'); // Not total sum of both
+
+        // 5. Test seller dashboard filtered by Product B
+        $responseSellerB = $this->actingAs($this->seller)
+            ->get(route('seller.dashboard', ['product_id' => $productB->id]));
+        $responseSellerB->assertStatus(200);
+        $responseSellerB->assertSee('20.000'); // Product B total revenue
+    }
 }
