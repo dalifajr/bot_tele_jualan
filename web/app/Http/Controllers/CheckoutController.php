@@ -78,7 +78,7 @@ class CheckoutController extends Controller
             $randomHex = strtoupper(substr(md5(uniqid()), 0, 5));
             $orderRef = 'ORD' . $timestamp . $randomHex;
 
-            $expiryMinutes = BotSetting::where('key', 'checkout_expiry_minutes')->value('value') ?? 15;
+            $expiryMinutes = (int)(BotSetting::where('key', 'checkout_expiry_minutes')->value('value') ?? 15);
             $expiresAt = now()->addMinutes($expiryMinutes);
 
             // 1. Create Order
