@@ -87,7 +87,18 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label text-muted small fw-bold">Kuantitas (QTY)</label>
-                            <input type="number" name="quantity" class="form-control" value="1" min="1" max="{{ $product->stock_count }}" {{ $product->is_vpn ? '' : 'required' }}>
+                            <div class="input-group mb-1">
+                                <button class="btn btn-outline-secondary px-3" type="button" onclick="this.parentNode.querySelector('input[type=number]').stepDown()">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                                <input type="number" name="quantity" class="form-control text-center fw-bold" value="1" min="1" max="{{ $product->stock_count }}" {{ $product->is_vpn ? '' : 'required' }}>
+                                <button class="btn btn-outline-secondary px-3" type="button" onclick="this.parentNode.querySelector('input[type=number]').stepUp()">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                                <button class="btn btn-primary px-3 fw-bold" type="button" onclick="this.parentNode.querySelector('input[type=number]').value = {{ $product->stock_count }}">
+                                    Take All
+                                </button>
+                            </div>
                             <div class="form-text">Maksimal pembelian: {{ $product->stock_count }} unit.</div>
                         </div>
 
