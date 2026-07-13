@@ -122,7 +122,7 @@ class TelegramService
 
         $text = "🆕 <b>Pesanan Baru (Via Web)</b>\n"
               . "Order Ref: <code>{$order->order_ref}</code>\n"
-              . "Customer: " . htmlspecialchars($customerName) . " ({$order->customer->telegram_id})\n"
+              . "Customer: " . htmlspecialchars($customerName) . " (" . ($order->customer->telegram_id ?? '-') . ")\n"
               . "Item: " . htmlspecialchars($productName) . "\n"
               . "Qty: {$totalQty}\n"
               . "Total Bayar: <b>Rp " . number_format($order->total_amount, 0, ',', '.') . "</b>\n\n"
@@ -152,12 +152,13 @@ class TelegramService
                 'message_id' => $messageId,
                 'text' => $text,
                 'parse_mode' => 'HTML',
-                'reply_markup' => $keyboard ? json_encode($keyboard) : null
+                'reply_markup' => $keyboard ? json_encode($keyboard) : json_encode(['inline_keyboard' => []])
             ]);
         } catch (\Exception $e) {
             Log::error("Gagal memperbarui notifikasi admin untuk Order {$order->order_ref}: " . $e->getMessage());
         }
     }
+
 
     /**
      * Kirim pesan tagihan + QRIS ke pelanggan yang melakukan order via Web.

@@ -1357,14 +1357,36 @@ class AdminController extends Controller
     }
 
     // --- CRUD Orders ---
-    public function updateOrder(Request $request, $id)
+    public function updateOrder(Request $request, $id, \App\Services\OrderService $orderService)
     {
         $order = Order::findOrFail($id);
         $request->validate([
             'status' => 'required|in:pending_payment,paid,delivered,cancelled,expired'
         ]);
-        $order->status = $request->status;
-        $order->save();
+
+        $newStatus = $request->status;
+        $oldStatus = $order->status;
+
+        if ($newStatus !== $oldStatus) {
+            try {
+                if ($newStatus === 'cancelled') {
+                    $orderService->cancelOrder($order, 'Dibatalkan oleh Admin (CRUD Website)', \Illuminate\Support\Facades\Auth::id());
+                } elseif ($newStatus === 'expired') {
+                    $orderService->cancelOrder($order, 'Kadaluarsa / Waktu Habis (CRUD Website)', \Illuminate\Support\Facades\Auth::id());
+                    $order->status = 'expired';
+                    $order->save();
+                } elseif ($newStatus === 'delivered') {
+                    $orderService->confirmPayment($order, \Illuminate\Support\Facades\Auth::id());
+                } else {
+                    $order->status = $newStatus;
+                    $order->save();
+                    \App\Services\TelegramService::updateAdminOrderMessage($order);
+                }
+            } catch (\Exception $e) {
+                return redirect()->back()->with('error', 'Gagal memperbarui status pesanan: ' . $e->getMessage());
+            }
+        }
+
         return redirect()->back()->with('success', 'Status pesanan berhasil diperbarui.');
     }
 
@@ -2389,6 +2411,13 @@ class AdminController extends Controller
                 'created_at' => now(),
             ]);
 
+            try {
+                \App\Services\TelegramService::notifyCustomerOrderCancelled($order, 'Refunded & Dibatalkan oleh Admin');
+                \App\Services\TelegramService::updateAdminOrderMessage($order);
+            } catch (\Exception $e) {
+                \Log::error("Gagal kirim notifikasi Telegram untuk refund order {$order->order_ref}: " . $e->getMessage());
+            }
+
             \Illuminate\Support\Facades\DB::commit();
 
             return redirect()->back()->with('success', 'Pesanan berhasil direfund. Semua stok dikembalikan ke karantina dan saldo tertahan seller dibatalkan.');
@@ -2537,6 +2566,13 @@ class AdminController extends Controller
                     if ($payment) {
                         $payment->status = 'cancelled';
                         $payment->save();
+                    }
+
+                    try {
+                        \App\Services\TelegramService::notifyCustomerOrderCancelled($order, 'Refunded & Dibatalkan penuh oleh Admin (Bulk)');
+                        \App\Services\TelegramService::updateAdminOrderMessage($order);
+                    } catch (\Exception $e) {
+                        \Log::error("Gagal kirim notifikasi Telegram untuk bulk refund order {$order->order_ref}: " . $e->getMessage());
                     }
                 }
 
