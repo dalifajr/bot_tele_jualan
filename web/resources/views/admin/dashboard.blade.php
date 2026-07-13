@@ -4,29 +4,46 @@
 @section('page_subtitle', 'Dashboard')
 
 @section('content')
-<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
+<div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h1 class="h4 fw-bold mb-1">Admin Dashboard</h1>
         <p class="text-muted mb-0">Ringkasan aktivitas toko Anda ({{ $periodLabel }})</p>
     </div>
-    <div class="d-flex flex-wrap gap-2 w-100 justify-content-start justify-content-md-end">
-        <select class="form-select form-select-sm rounded-pill px-3 flex-grow-1 flex-md-grow-0" style="width: auto; max-width: 100%;" onchange="let params = new URLSearchParams(window.location.search); if(this.value) { params.set('product_id', this.value); } else { params.delete('product_id'); } window.location.href = '{{ route('admin.dashboard') }}?' + params.toString()">
-            <option value="">Semua Produk</option>
-            @foreach($products as $p)
-                <option value="{{ $p->id }}" {{ $productId == $p->id ? 'selected' : '' }}>
-                    {{ $p->is_suspended ? '🔴' : '✅' }} {{ $p->name }}
-                </option>
-            @endforeach
-        </select>
-        <select class="form-select form-select-sm rounded-pill px-3 flex-grow-1 flex-md-grow-0" style="width: auto; max-width: 100%;" onchange="let params = new URLSearchParams(window.location.search); params.set('period', this.value); window.location.href = '{{ route('admin.dashboard') }}?' + params.toString()">
-            <option value="24_hours" {{ $period == '24_hours' ? 'selected' : '' }}>24 Jam Terakhir</option>
-            <option value="7_days" {{ $period == '7_days' ? 'selected' : '' }}>7 Hari Terakhir</option>
-            <option value="30_days" {{ $period == '30_days' ? 'selected' : '' }}>30 Hari Terakhir</option>
-            <option value="6_months" {{ $period == '6_months' ? 'selected' : '' }}>6 Bulan Terakhir</option>
-        </select>
-        <a href="{{ route('admin.products.index') }}" class="btn btn-primary rounded-pill px-4 flex-grow-1 flex-md-grow-0 text-nowrap">
-            <i class="fas fa-plus me-2"></i>Kelola Produk
-        </a>
+    <a href="{{ route('admin.products.index') }}" class="btn btn-primary rounded-pill px-4 text-nowrap">
+        <i class="fas fa-plus me-2"></i>Kelola Produk
+    </a>
+</div>
+
+<div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
+    <div class="card-body">
+        <form action="{{ route('admin.dashboard') }}" method="GET" class="row g-3 align-items-center">
+            <div class="col-md-4">
+                <select name="product_id" class="form-select rounded-pill px-3">
+                    <option value="">Semua Produk</option>
+                    @foreach($products as $p)
+                        <option value="{{ $p->id }}" {{ $productId == $p->id ? 'selected' : '' }}>
+                            {{ $p->is_suspended ? '🔴' : '✅' }} {{ $p->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-md-4">
+                <select name="period" class="form-select rounded-pill px-3">
+                    <option value="24_hours" {{ $period == '24_hours' ? 'selected' : '' }}>24 Jam Terakhir</option>
+                    <option value="7_days" {{ $period == '7_days' ? 'selected' : '' }}>7 Hari Terakhir</option>
+                    <option value="30_days" {{ $period == '30_days' ? 'selected' : '' }}>30 Hari Terakhir</option>
+                    <option value="6_months" {{ $period == '6_months' ? 'selected' : '' }}>6 Bulan Terakhir</option>
+                </select>
+            </div>
+            <div class="col-md-4 d-flex">
+                <button type="submit" class="btn btn-primary rounded-pill px-4 flex-fill me-2">
+                    <i class="fas fa-search me-1"></i> Cari
+                </button>
+                <a href="{{ route('admin.dashboard') }}" class="btn btn-secondary rounded-pill px-4 flex-fill">
+                    <i class="fas fa-sync me-1"></i> Reset
+                </a>
+            </div>
+        </form>
     </div>
 </div>
 
