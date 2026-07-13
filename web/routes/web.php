@@ -92,6 +92,17 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
     Route::post('/orders/{id}/complaint', [\App\Http\Controllers\OrderController::class, 'submitComplaint'])->name('orders.complaint');
     Route::get('/orders/{id}/status', function ($id) {
         $order = \App\Models\Order::where('customer_id', \Illuminate\Support\Facades\Auth::id())->findOrFail($id);
+        
+        if ($order->status === 'pending_payment' && $order->expires_at && $order->expires_at->isPast()) {
+            try {
+                $orderService = app(\App\Services\OrderService::class);
+                $orderService->cancelOrder($order, 'payment_timeout', \Illuminate\Support\Facades\Auth::id());
+                $order = $order->fresh();
+            } catch (\Exception $e) {
+                \Log::error("Auto-cancel on polling failed: " . $e->getMessage());
+            }
+        }
+        
         return response()->json(['status' => $order->status]);
     })->name('orders.status');
 

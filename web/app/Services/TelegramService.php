@@ -36,13 +36,15 @@ class TelegramService
         }
 
         $totalQty = $order->items->sum('quantity');
+        $expiresAt = $order->expires_at ? $order->expires_at->format('d M Y, H:i') : '-';
 
         $text = "🆕 <b>Pesanan Baru (Via Web)</b>\n"
               . "Order Ref: <code>{$order->order_ref}</code>\n"
               . "Customer: " . htmlspecialchars($customerName) . " ({$order->customer->telegram_id})\n"
               . "Item: " . htmlspecialchars($productName) . "\n"
               . "Qty: {$totalQty}\n"
-              . "Total Bayar: <b>Rp " . number_format($order->total_amount, 0, ',', '.') . "</b>\n\n"
+              . "Total Bayar: <b>Rp " . number_format($order->total_amount, 0, ',', '.') . "</b>\n"
+              . "Batas Bayar: {$expiresAt} WIB\n\n"
               . "Status: <b>🟡 Menunggu Pembayaran</b>\n"
               . "🕒 Dibuat dari Website.";
 
@@ -120,12 +122,15 @@ class TelegramService
             $statusText = strtoupper($order->status);
         }
 
+        $expiresAt = $order->expires_at ? $order->expires_at->format('d M Y, H:i') : '-';
+
         $text = "🆕 <b>Pesanan Baru (Via Web)</b>\n"
               . "Order Ref: <code>{$order->order_ref}</code>\n"
               . "Customer: " . htmlspecialchars($customerName) . " (" . ($order->customer->telegram_id ?? '-') . ")\n"
               . "Item: " . htmlspecialchars($productName) . "\n"
               . "Qty: {$totalQty}\n"
-              . "Total Bayar: <b>Rp " . number_format($order->total_amount, 0, ',', '.') . "</b>\n\n"
+              . "Total Bayar: <b>Rp " . number_format($order->total_amount, 0, ',', '.') . "</b>\n"
+              . "Batas Bayar: {$expiresAt} WIB\n\n"
               . "Status: <b>{$statusText}</b>\n"
               . "🕒 Dibuat dari Website.";
 

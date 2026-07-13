@@ -20,7 +20,7 @@ from app.bot.services.catalog_service import (
     promote_awaiting_stocks,
 )
 from app.common.config import get_settings
-from app.db.models import Order, OrderItem, Payment, Product, StockUnit, User, HeldFund
+from app.db.models import Order, OrderItem, Payment, Product, StockUnit, User, HeldFund, BotSetting
 
 settings = get_settings()
 STOCK_STATUS_RESERVED_CHECKOUT = "reserved_checkout"
@@ -284,6 +284,13 @@ def create_checkout(session: Session, customer: User, product_id: int, quantity:
 
         try:
             with session.begin_nested():
+                # Fetch expiry from DB
+                setting_row = session.scalar(select(BotSetting).where(BotSetting.key == "checkout_expiry_minutes"))
+                if setting_row and setting_row.value.isdigit():
+                    expiry_minutes = int(setting_row.value)
+                else:
+                    expiry_minutes = settings.checkout_expiry_minutes
+                
                 order = Order(
                     order_ref=order_ref,
                     customer_id=customer.id,
@@ -291,7 +298,7 @@ def create_checkout(session: Session, customer: User, product_id: int, quantity:
                     unique_code=unique_code,
                     total_amount=total,
                     status="pending_payment",
-                    expires_at=_utcnow() + timedelta(minutes=max(1, settings.checkout_expiry_minutes)),
+                    expires_at=_utcnow() + timedelta(minutes=max(1, expiry_minutes)),
                 )
                 session.add(order)
                 session.flush()

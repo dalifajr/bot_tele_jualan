@@ -180,6 +180,18 @@ class CheckoutController extends Controller
             abort(403);
         }
 
+        // Auto cancel jika sudah lewat batas waktu
+        if ($order->status === 'pending_payment' && $order->expires_at && $order->expires_at->isPast()) {
+            try {
+                $orderService = app(\App\Services\OrderService::class);
+                $orderService->cancelOrder($order, 'payment_timeout', Auth::id());
+                // Reload order from db to get latest status
+                $order = $order->fresh();
+            } catch (\Exception $e) {
+                \Log::error("Auto-cancel on success page failed: " . $e->getMessage());
+            }
+        }
+
         // Jika pesanan sudah bukan pending payment (misal dibatalkan/expired/paid),
         // redirect ke halaman detail pesanan.
         if ($order->status !== 'pending_payment') {
