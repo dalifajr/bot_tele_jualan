@@ -4,13 +4,13 @@
 @section('page_subtitle', 'Dashboard')
 
 @section('content')
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
     <div>
         <h1 class="h4 fw-bold mb-1">Admin Dashboard</h1>
         <p class="text-muted mb-0">Ringkasan aktivitas toko Anda ({{ $periodLabel }})</p>
     </div>
-    <div class="d-flex gap-2">
-        <select class="form-select form-select-sm rounded-pill px-3" style="width: auto;" onchange="let params = new URLSearchParams(window.location.search); if(this.value) { params.set('product_id', this.value); } else { params.delete('product_id'); } window.location.href = '{{ route('admin.dashboard') }}?' + params.toString()">
+    <div class="d-flex flex-wrap gap-2 w-100 justify-content-start justify-content-md-end">
+        <select class="form-select form-select-sm rounded-pill px-3 flex-grow-1 flex-md-grow-0" style="width: auto; max-width: 100%;" onchange="let params = new URLSearchParams(window.location.search); if(this.value) { params.set('product_id', this.value); } else { params.delete('product_id'); } window.location.href = '{{ route('admin.dashboard') }}?' + params.toString()">
             <option value="">Semua Produk</option>
             @foreach($products as $p)
                 <option value="{{ $p->id }}" {{ $productId == $p->id ? 'selected' : '' }}>
@@ -18,13 +18,13 @@
                 </option>
             @endforeach
         </select>
-        <select class="form-select form-select-sm rounded-pill px-3" style="width: auto;" onchange="let params = new URLSearchParams(window.location.search); params.set('period', this.value); window.location.href = '{{ route('admin.dashboard') }}?' + params.toString()">
+        <select class="form-select form-select-sm rounded-pill px-3 flex-grow-1 flex-md-grow-0" style="width: auto; max-width: 100%;" onchange="let params = new URLSearchParams(window.location.search); params.set('period', this.value); window.location.href = '{{ route('admin.dashboard') }}?' + params.toString()">
             <option value="24_hours" {{ $period == '24_hours' ? 'selected' : '' }}>24 Jam Terakhir</option>
             <option value="7_days" {{ $period == '7_days' ? 'selected' : '' }}>7 Hari Terakhir</option>
             <option value="30_days" {{ $period == '30_days' ? 'selected' : '' }}>30 Hari Terakhir</option>
             <option value="6_months" {{ $period == '6_months' ? 'selected' : '' }}>6 Bulan Terakhir</option>
         </select>
-        <a href="{{ route('admin.products.index') }}" class="btn btn-primary rounded-pill px-4">
+        <a href="{{ route('admin.products.index') }}" class="btn btn-primary rounded-pill px-4 flex-grow-1 flex-md-grow-0 text-nowrap">
             <i class="fas fa-plus me-2"></i>Kelola Produk
         </a>
     </div>
