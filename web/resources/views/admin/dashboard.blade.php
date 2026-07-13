@@ -4,226 +4,194 @@
 @section('page_subtitle', 'Dashboard')
 
 @section('content')
-<style>
-.main-background {
-  position: absolute;
-  top: 0px;
-  left: 0px;
-  right: 0px;
-  height: 240px;
-  z-index: 0;
-  background-image: radial-gradient(at 0% 0%, rgba(13, 110, 253, 0.2) 0px, transparent 50%), radial-gradient(at 100% 100%, rgba(10, 88, 202, 0.2) 0px, transparent 50%);
-}
-.lift-hover { transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease; }
-.lift-hover:hover { transform: translateY(-8px); box-shadow: 0 1rem 3rem rgba(0,0,0,.1) !important; z-index: 10; }
-.transition-hover { transition: all 0.2s ease; }
-.transition-hover:hover { background-color: #f8f9fa; transform: translateX(5px); }
-</style>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h4 fw-bold mb-1">Admin Dashboard</h1>
+        <p class="text-muted mb-0">Ringkasan aktivitas toko Anda ({{ $periodLabel }})</p>
+    </div>
+    <a href="{{ route('admin.products.index') }}" class="btn btn-primary rounded-pill px-4 text-nowrap">
+        <i class="fas fa-plus me-2"></i>Kelola Produk
+    </a>
+</div>
 
-<div class="position-relative">
-    <div class="main-background"></div>
-    <div class="container-fluid position-relative px-0 py-2" style="z-index: 1;">
-        
-        <!-- Hero Section -->
-        <div class="position-relative mb-5">
-            <!-- Background Banner -->
-            <div class="rounded-4 p-4 p-md-5 text-white shadow-sm overflow-hidden position-relative mb-4" style="background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%); min-height: 220px;">
-                <!-- Abstract Pattern -->
-                <div style="position: absolute; top: 0; right: 0; bottom: 0; left: 0; opacity: 0.1; background-image: radial-gradient(#fff 1px, transparent 1px); background-size: 20px 20px;"></div>
-                <div style="position: absolute; top: -50px; right: -50px; width: 300px; height: 300px; background: rgba(255,255,255,0.1); border-radius: 50%;"></div>
-                
-                <div class="position-relative z-1 d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-4">
-                    <div>
-                        <h1 class="fw-bold mb-2 text-white">Selamat Datang, Admin</h1>
-                        <p class="mb-0 fs-5 opacity-75 fw-light text-white">
-                            Ringkasan aktivitas toko Anda
-                            <br />
-                            <span class="fs-6 opacity-75">{{ $periodLabel }}</span>
-                        </p>
-                    </div>
+<div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
+    <div class="card-body">
+        <form action="{{ route('admin.dashboard') }}" method="GET" class="row g-3 align-items-center">
+            <div class="col-md-4">
+                <select name="product_id" class="form-select rounded-pill px-3">
+                    <option value="">Semua Produk</option>
+                    @foreach($products as $p)
+                        <option value="{{ $p->id }}" {{ $productId == $p->id ? 'selected' : '' }}>
+                            {{ $p->is_suspended ? '🔴' : '✅' }} {{ $p->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-md-4">
+                <select name="period" class="form-select rounded-pill px-3">
+                    <option value="24_hours" {{ $period == '24_hours' ? 'selected' : '' }}>24 Jam Terakhir</option>
+                    <option value="7_days" {{ $period == '7_days' ? 'selected' : '' }}>7 Hari Terakhir</option>
+                    <option value="30_days" {{ $period == '30_days' ? 'selected' : '' }}>30 Hari Terakhir</option>
+                    <option value="6_months" {{ $period == '6_months' ? 'selected' : '' }}>6 Bulan Terakhir</option>
+                </select>
+            </div>
+            <div class="col-md-4 d-flex">
+                <button type="submit" class="btn btn-primary rounded-pill px-4 flex-fill me-2">
+                    <i class="fas fa-search me-1"></i> Cari
+                </button>
+                <a href="{{ route('admin.dashboard') }}" class="btn btn-secondary rounded-pill px-4 flex-fill">
+                    <i class="fas fa-sync me-1"></i> Reset
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
 
-                    <!-- Header Button -->
-                    <div class="d-none d-md-block">
-                        <a href="{{ route('admin.products.index') }}" class="btn btn-light rounded-pill px-4 text-primary fw-bold shadow-sm">
-                            <i class="fas fa-plus me-2"></i>Kelola Produk
-                        </a>
+{{-- Stat Cards --}}
+<div class="row g-3 mb-5">
+    <div class="col-md-6 col-lg-4">
+        <div class="card stat-card border-0 shadow-sm h-100" style="border-radius: 16px;">
+            <div class="card-body p-3 d-flex align-items-center">
+                <div class="stat-icon bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 42px; height: 42px; font-size: 1.2rem; flex-shrink: 0; margin-bottom: 0 !important;">
+                    <i class="fas fa-wallet"></i>
+                </div>
+                <div class="text-truncate">
+                    <h6 class="text-muted mb-1 small text-nowrap">Total Pendapatan</h6>
+                    <h5 class="fw-bold mb-0 text-nowrap">Rp {{ number_format($totalRevenue, 0, ',', '.') }}</h5>
+                    <div class="mt-1" style="font-size: 0.75rem;">
+                        <span class="{{ $revenueStats['class'] }} fw-bold">
+                            <i class="fas {{ $revenueStats['icon'] }} me-1"></i>{{ $revenueStats['formatted_percent'] }}
+                        </span>
+                        <span class="text-muted">vs periode lalu</span>
                     </div>
                 </div>
             </div>
-            
-            <!-- Floating Stats Cards & Filter -->
-            <div class="container-fluid px-0" style="margin-top: -60px;">
-                
-                <!-- Filter Card -->
-                <div class="card border-0 shadow-sm mb-4 lift-hover" style="border-radius: 16px;">
-                    <div class="card-body">
-                        <form action="{{ route('admin.dashboard') }}" method="GET" class="row g-3 align-items-center">
-                            <div class="col-md-4">
-                                <select name="product_id" class="form-select rounded-pill px-3">
-                                    <option value="">Semua Produk</option>
-                                    @foreach($products as $p)
-                                        <option value="{{ $p->id }}" {{ $productId == $p->id ? 'selected' : '' }}>
-                                            {{ $p->is_suspended ? '🔴' : '✅' }} {{ $p->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-md-4">
-                                <select name="period" class="form-select rounded-pill px-3">
-                                    <option value="24_hours" {{ $period == '24_hours' ? 'selected' : '' }}>24 Jam Terakhir</option>
-                                    <option value="7_days" {{ $period == '7_days' ? 'selected' : '' }}>7 Hari Terakhir</option>
-                                    <option value="30_days" {{ $period == '30_days' ? 'selected' : '' }}>30 Hari Terakhir</option>
-                                    <option value="6_months" {{ $period == '6_months' ? 'selected' : '' }}>6 Bulan Terakhir</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4 d-flex">
-                                <button type="submit" class="btn btn-primary rounded-pill px-4 flex-fill me-2">
-                                    <i class="fas fa-search me-1"></i> Cari
-                                </button>
-                                <a href="{{ route('admin.dashboard') }}" class="btn btn-secondary rounded-pill px-4 flex-fill">
-                                    <i class="fas fa-sync me-1"></i> Reset
-                                </a>
-                            </div>
-                        </form>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-4">
+        <div class="card stat-card border-0 shadow-sm h-100" style="border-radius: 16px;">
+            <div class="card-body p-3 d-flex align-items-center">
+                <div class="stat-icon rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 42px; height: 42px; font-size: 1.2rem; flex-shrink: 0; background-color: rgba(111, 66, 193, 0.15) !important; color: var(--bs-purple, #6f42c1) !important; margin-bottom: 0 !important;">
+                    <i class="fas fa-coins"></i>
+                </div>
+                <div class="text-truncate">
+                    <h6 class="text-muted mb-1 small text-nowrap">Komisi Platform</h6>
+                    <h5 class="fw-bold mb-0 text-nowrap">Rp {{ number_format($platformCommission, 0, ',', '.') }}</h5>
+                    <div class="mt-1" style="font-size: 0.75rem;">
+                        <span class="{{ $commissionStats['class'] }} fw-bold">
+                            <i class="fas {{ $commissionStats['icon'] }} me-1"></i>{{ $commissionStats['formatted_percent'] }}
+                        </span>
+                        <span class="text-muted">vs periode lalu</span>
                     </div>
                 </div>
-
-                <div class="row g-4 mb-5">
-                    
-                    <!-- Total Pendapatan -->
-                    <div class="col-md-6 col-xl-3">
-                        <div class="card border-0 shadow-sm h-100 lift-hover overflow-hidden" style="border-radius: 16px;">
-                            <div class="card-body p-4 position-relative">
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <div class="bg-primary-subtle rounded-3 p-3 text-primary">
-                                        <i class="fas fa-wallet fa-2x"></i>
-                                    </div>
-                                    <span class="badge {{ str_replace('text-', 'bg-', $revenueStats['class']) }} rounded-pill px-3 py-2">
-                                        <i class="fas {{ $revenueStats['icon'] }} me-1"></i>{{ $revenueStats['formatted_percent'] }}
-                                    </span>
-                                </div>
-                                <h3 class="h5 fw-bold text-body mb-1">Rp {{ number_format($totalRevenue, 0, ',', '.') }}</h3>
-                                <p class="text-muted small mb-0">Total Pendapatan</p>
-                            </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-4">
+        <div class="card stat-card border-0 shadow-sm h-100" style="border-radius: 16px;">
+            <div class="card-body p-3 d-flex align-items-center">
+                <div class="stat-icon bg-danger-subtle text-danger rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 42px; height: 42px; font-size: 1.2rem; flex-shrink: 0; margin-bottom: 0 !important;">
+                    <i class="fas fa-user-shield"></i>
+                </div>
+                <div class="text-truncate">
+                    <h6 class="text-muted mb-1 small text-nowrap">Pendapatan Admin</h6>
+                    <h5 class="fw-bold mb-0 text-nowrap">Rp {{ number_format($adminEarnings, 0, ',', '.') }}</h5>
+                    <div class="mt-1" style="font-size: 0.75rem;">
+                        <span class="{{ $adminEarningsStats['class'] }} fw-bold">
+                            <i class="fas {{ $adminEarningsStats['icon'] }} me-1"></i>{{ $adminEarningsStats['formatted_percent'] }}
+                        </span>
+                        <span class="text-muted">vs periode lalu</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-4">
+        <div class="card stat-card border-0 shadow-sm h-100" style="border-radius: 16px;">
+            <div class="card-body p-3 d-flex align-items-center justify-content-between w-100">
+                <div class="d-flex align-items-center text-truncate">
+                    <div class="stat-icon rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 42px; height: 42px; font-size: 1.2rem; flex-shrink: 0; background-color: rgba(32, 201, 151, 0.15) !important; color: #20c997 !important; margin-bottom: 0 !important;">
+                        <i class="fas fa-store"></i>
+                    </div>
+                    <div class="text-truncate">
+                        <h6 class="text-muted mb-1 small text-nowrap">Pendapatan Seller</h6>
+                        <h5 class="fw-bold mb-0 text-nowrap">Rp {{ number_format($totalSellerEarnings, 0, ',', '.') }}</h5>
+                        <div class="mt-1" style="font-size: 0.75rem;">
+                            <span class="{{ $sellerEarningsStats['class'] }} fw-bold">
+                                <i class="fas {{ $sellerEarningsStats['icon'] }} me-1"></i>{{ $sellerEarningsStats['formatted_percent'] }}
+                            </span>
+                            <span class="text-muted">vs periode lalu</span>
                         </div>
                     </div>
-                    
-                    <!-- Komisi Platform -->
-                    <div class="col-md-6 col-xl-3">
-                        <div class="card border-0 shadow-sm h-100 lift-hover overflow-hidden" style="border-radius: 16px;">
-                            <div class="card-body p-4 position-relative">
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <div class="rounded-3 p-3" style="background-color: rgba(111, 66, 193, 0.15); color: var(--bs-purple, #6f42c1);">
-                                        <i class="fas fa-coins fa-2x"></i>
-                                    </div>
-                                    <span class="badge {{ str_replace('text-', 'bg-', $commissionStats['class']) }} rounded-pill px-3 py-2">
-                                        <i class="fas {{ $commissionStats['icon'] }} me-1"></i>{{ $commissionStats['formatted_percent'] }}
-                                    </span>
-                                </div>
-                                <h3 class="h5 fw-bold text-body mb-1">Rp {{ number_format($platformCommission, 0, ',', '.') }}</h3>
-                                <p class="text-muted small mb-0">Komisi Platform</p>
-                            </div>
-                        </div>
+                </div>
+                <div class="ms-2">
+                    <a href="{{ route('admin.sellers.index') }}" class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1">Detail</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-4">
+        <div class="card stat-card border-0 shadow-sm h-100" style="border-radius: 16px;">
+            <div class="card-body p-3 d-flex align-items-center">
+                <div class="stat-icon bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 42px; height: 42px; font-size: 1.2rem; flex-shrink: 0; margin-bottom: 0 !important;">
+                    <i class="fas fa-shopping-cart"></i>
+                </div>
+                <div class="text-truncate">
+                    <h6 class="text-muted mb-1 small text-nowrap">Total Order</h6>
+                    <h5 class="fw-bold mb-0 text-nowrap">{{ number_format($totalOrders, 0, ',', '.') }}</h5>
+                    <div class="mt-1" style="font-size: 0.75rem;">
+                        <span class="{{ $ordersStats['class'] }} fw-bold">
+                            <i class="fas {{ $ordersStats['icon'] }} me-1"></i>{{ $ordersStats['formatted_percent'] }}
+                        </span>
+                        <span class="text-muted">vs periode lalu</span>
                     </div>
-
-                    <!-- Pendapatan Admin -->
-                    <div class="col-md-6 col-xl-3">
-                        <div class="card border-0 shadow-sm h-100 lift-hover overflow-hidden" style="border-radius: 16px;">
-                            <div class="card-body p-4 position-relative">
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <div class="bg-danger-subtle rounded-3 p-3 text-danger">
-                                        <i class="fas fa-user-shield fa-2x"></i>
-                                    </div>
-                                    <span class="badge {{ str_replace('text-', 'bg-', $adminEarningsStats['class']) }} rounded-pill px-3 py-2">
-                                        <i class="fas {{ $adminEarningsStats['icon'] }} me-1"></i>{{ $adminEarningsStats['formatted_percent'] }}
-                                    </span>
-                                </div>
-                                <h3 class="h5 fw-bold text-body mb-1">Rp {{ number_format($adminEarnings, 0, ',', '.') }}</h3>
-                                <p class="text-muted small mb-0">Pendapatan Admin</p>
-                            </div>
-                        </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-4">
+        <div class="card stat-card border-0 shadow-sm h-100" style="border-radius: 16px;">
+            <div class="card-body p-3 d-flex align-items-center">
+                <div class="stat-icon bg-info-subtle text-info rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 42px; height: 42px; font-size: 1.2rem; flex-shrink: 0; margin-bottom: 0 !important;">
+                    <i class="fas fa-box"></i>
+                </div>
+                <div class="text-truncate">
+                    <h6 class="text-muted mb-1 small text-nowrap">Total Produk</h6>
+                    <h5 class="fw-bold mb-0 text-nowrap">{{ number_format($totalProducts, 0, ',', '.') }}</h5>
+                    <div class="mt-1" style="font-size: 0.75rem;">
+                        <span class="{{ $productsStats['class'] }} fw-bold">
+                            <i class="fas {{ $productsStats['icon'] }} me-1"></i>{{ $productsStats['formatted_percent'] }}
+                        </span>
+                        <span class="text-muted">vs periode lalu</span>
                     </div>
-
-                    <!-- Pendapatan Seller -->
-                    <div class="col-md-6 col-xl-3">
-                        <a href="{{ route('admin.sellers.index') }}" class="card border-0 shadow-sm h-100 lift-hover text-decoration-none overflow-hidden" style="border-radius: 16px;">
-                            <div class="card-body p-4 position-relative">
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <div class="rounded-3 p-3" style="background-color: rgba(32, 201, 151, 0.15); color: #20c997;">
-                                        <i class="fas fa-store fa-2x"></i>
-                                    </div>
-                                    <span class="badge {{ str_replace('text-', 'bg-', $sellerEarningsStats['class']) }} rounded-pill px-3 py-2">
-                                        <i class="fas {{ $sellerEarningsStats['icon'] }} me-1"></i>{{ $sellerEarningsStats['formatted_percent'] }}
-                                    </span>
-                                </div>
-                                <h3 class="h5 fw-bold text-body mb-1">Rp {{ number_format($totalSellerEarnings, 0, ',', '.') }}</h3>
-                                <p class="text-muted small mb-0">Pendapatan Seller</p>
-                            </div>
-                        </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-4">
+        <div class="card stat-card border-0 shadow-sm h-100" style="border-radius: 16px;">
+            <div class="card-body p-3 d-flex align-items-center">
+                <div class="stat-icon bg-warning-subtle text-warning rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 42px; height: 42px; font-size: 1.2rem; flex-shrink: 0; margin-bottom: 0 !important;">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="text-truncate">
+                    <h6 class="text-muted mb-1 small text-nowrap">Total User</h6>
+                    <h5 class="fw-bold mb-0 text-nowrap">{{ number_format($totalUsers, 0, ',', '.') }}</h5>
+                    <div class="d-flex gap-2 mt-1" style="font-size: 0.75rem;">
+                        <span class="badge bg-primary-subtle text-primary rounded-pill"><i class="fas fa-desktop me-1"></i>Web: {{ $webUsersCount }}</span>
+                        <span class="badge bg-success-subtle text-success rounded-pill"><i class="fab fa-telegram-plane me-1"></i>TG: {{ $tgUsersCount }}</span>
                     </div>
-
-                    <!-- Total Order -->
-                    <div class="col-md-6 col-xl-4">
-                        <div class="card border-0 shadow-sm h-100 lift-hover overflow-hidden" style="border-radius: 16px;">
-                            <div class="card-body p-4 position-relative">
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <div class="bg-success-subtle rounded-3 p-3 text-success">
-                                        <i class="fas fa-shopping-cart fa-2x"></i>
-                                    </div>
-                                    <span class="badge {{ str_replace('text-', 'bg-', $ordersStats['class']) }} rounded-pill px-3 py-2">
-                                        <i class="fas {{ $ordersStats['icon'] }} me-1"></i>{{ $ordersStats['formatted_percent'] }}
-                                    </span>
-                                </div>
-                                <h3 class="h5 fw-bold text-body mb-1">{{ number_format($totalOrders, 0, ',', '.') }}</h3>
-                                <p class="text-muted small mb-0">Total Order</p>
-                            </div>
-                        </div>
+                    <div class="mt-1" style="font-size: 0.75rem;">
+                        <span class="{{ $usersStats['class'] }} fw-bold">
+                            <i class="fas {{ $usersStats['icon'] }} me-1"></i>{{ $usersStats['formatted_percent'] }}
+                        </span>
+                        <span class="text-muted">vs periode lalu</span>
                     </div>
-
-                    <!-- Total Produk -->
-                    <div class="col-md-6 col-xl-4">
-                        <div class="card border-0 shadow-sm h-100 lift-hover overflow-hidden" style="border-radius: 16px;">
-                            <div class="card-body p-4 position-relative">
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <div class="bg-info-subtle rounded-3 p-3 text-info">
-                                        <i class="fas fa-box fa-2x"></i>
-                                    </div>
-                                    <span class="badge {{ str_replace('text-', 'bg-', $productsStats['class']) }} rounded-pill px-3 py-2">
-                                        <i class="fas {{ $productsStats['icon'] }} me-1"></i>{{ $productsStats['formatted_percent'] }}
-                                    </span>
-                                </div>
-                                <h3 class="h5 fw-bold text-body mb-1">{{ number_format($totalProducts, 0, ',', '.') }}</h3>
-                                <p class="text-muted small mb-0">Total Produk</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Total User -->
-                    <div class="col-md-6 col-xl-4">
-                        <div class="card border-0 shadow-sm h-100 lift-hover overflow-hidden" style="border-radius: 16px;">
-                            <div class="card-body p-4 position-relative">
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <div class="bg-warning-subtle rounded-3 p-3 text-warning">
-                                        <i class="fas fa-users fa-2x"></i>
-                                    </div>
-                                    <span class="badge {{ str_replace('text-', 'bg-', $usersStats['class']) }} rounded-pill px-3 py-2">
-                                        <i class="fas {{ $usersStats['icon'] }} me-1"></i>{{ $usersStats['formatted_percent'] }}
-                                    </span>
-                                </div>
-                                <h3 class="h5 fw-bold text-body mb-1">{{ number_format($totalUsers, 0, ',', '.') }}</h3>
-                                <div class="d-flex justify-content-between mt-1">
-                                    <small class="text-muted"><i class="fas fa-desktop me-1"></i> Web: {{ $webUsersCount }}</small>
-                                    <small class="text-muted"><i class="fab fa-telegram-plane me-1"></i> TG: {{ $tgUsersCount }}</small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                </div> <!-- End row g-4 -->
-            </div> <!-- End Floating Stats Cards -->
-        </div> <!-- End Hero Section mb-5 -->
-    </div> <!-- End container-fluid -->
-</div> <!-- End position-relative -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 {{-- Charts & Operational Analytics --}}
 <div class="row g-4 mb-5">
