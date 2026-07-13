@@ -447,18 +447,18 @@ server {
     real_ip_header proxy_protocol;
 
     # Redirect HTTP (Port 80/8080/8880/2082) ke HTTPS secara otomatis
-    if (\$proxy_protocol_server_port = 80) {
-        return 301 https://\$host\$request_uri;
-    }
-    if (\$proxy_protocol_server_port = 8080) {
-        return 301 https://\$host\$request_uri;
-    }
-    if (\$proxy_protocol_server_port = 8880) {
-        return 301 https://\$host\$request_uri;
-    }
-    if (\$proxy_protocol_server_port = 2082) {
-        return 301 https://\$host\$request_uri;
-    }
+    # if (\$proxy_protocol_server_port = 80) {
+    #     return 301 https://\$host\$request_uri;
+    # }
+    # if (\$proxy_protocol_server_port = 8080) {
+    #     return 301 https://\$host\$request_uri;
+    # }
+    # if (\$proxy_protocol_server_port = 8880) {
+    #     return 301 https://\$host\$request_uri;
+    # }
+    # if (\$proxy_protocol_server_port = 2082) {
+    #     return 301 https://\$host\$request_uri;
+    # }
 
     # Deteksi skema HTTPS asal
     set \$my_https "off";
@@ -476,6 +476,12 @@ server {
         set \$my_proto "https";
     }
     if (\$proxy_protocol_server_port = 2087) {
+        set \$my_https "on";
+        set \$my_proto "https";
+    }
+
+    # Deteksi status HTTPS dari Cloudflare
+    if (\$http_x_forwarded_proto = "https") {
         set \$my_https "on";
         set \$my_proto "https";
     }
