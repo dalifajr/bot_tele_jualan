@@ -82,53 +82,44 @@
     </div>
 </div>
 
-{{-- Section 2: Pengecekan Akun --}}
+{{-- Section 2: Pengecekan Eksternal & Proses --}}
 <div class="row g-3 mb-3">
-    {{-- Left: Email List --}}
-    <div class="col-lg-8">
+    {{-- Left: Email List & External Link --}}
+    <div class="col-lg-6">
         <div class="card shadow-sm checker-card h-100">
             <div class="card-body p-4 d-flex flex-column">
                 <h6 class="fw-bold mb-3">
                     <i class="fas fa-clipboard-list text-info me-2"></i>1. Daftar Email Stok
                 </h6>
                 <div class="flex-grow-1 mb-3">
-                    <textarea id="clean-emails-textarea" class="form-control" rows="8" 
-                              placeholder="Daftar email bersih akan muncul di sini setelah Anda memuat stok produk... atau Anda bisa menempel manual."></textarea>
+                    <textarea id="clean-emails-textarea" class="form-control" rows="8" readonly 
+                              placeholder="Daftar email bersih akan muncul di sini setelah Anda memuat stok produk..."></textarea>
                 </div>
                 <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-outline-primary rounded-pill px-4" onclick="copyEmails()">
+                    <button type="button" class="btn btn-outline-primary rounded-pill flex-grow-1" onclick="copyEmails()">
                         <i class="fas fa-copy me-1"></i>Salin Email
                     </button>
+                    <a href="https://www.gmailchecklive.com/" target="_blank" class="btn btn-primary rounded-pill px-4">
+                        <i class="fas fa-external-link-alt me-1"></i>Buka Pengecek
+                    </a>
                 </div>
             </div>
         </div>
     </div>
 
-    {{-- Right: Start Check Panel --}}
-    <div class="col-lg-4">
+    {{-- Right: Paste Die Emails --}}
+    <div class="col-lg-6">
         <div class="card shadow-sm checker-card h-100">
             <div class="card-body p-4 d-flex flex-column">
                 <h6 class="fw-bold mb-3">
-                    <i class="fas fa-cogs text-warning me-2"></i>2. Jalankan Pengecekan
+                    <i class="fas fa-paste text-danger me-2"></i>2. Proses Email Mati (Die)
                 </h6>
-                <div class="mb-3">
-                    <label class="form-label text-muted small fw-bold mb-1">Pengaturan Proxy (Opsional)</label>
-                    <input type="text" id="proxy-input" class="form-control form-control-sm" placeholder="ip:port atau ip:port:user:pass">
-                    <small class="text-muted" style="font-size: 11px;">Biarkan kosong jika tidak memakai proxy.</small>
+                <div class="flex-grow-1 mb-3">
+                    <textarea id="die-emails-textarea" class="form-control" rows="8" 
+                              placeholder="Tempelkan daftar akun Gmail yang berstatus DIE / DISABLED dari web pengecek ke sini...&#10;&#10;Contoh format (Bisa paste langsung):&#10;sjurokanda@gmail.com&#10;zafrangnwn@gmail.com"></textarea>
                 </div>
-                
-                <div id="check-progress-container" class="d-none mb-3">
-                    <div class="d-flex justify-content-between small mb-1">
-                        <span class="text-muted fw-bold" id="progress-text">Memeriksa...</span>
-                        <span class="text-primary fw-bold" id="progress-percent">0%</span>
-                    </div>
-                    <div class="progress" style="height: 8px;">
-                        <div id="check-progress-bar" class="progress-bar progress-bar-striped progress-bar-animated bg-primary" role="progressbar" style="width: 0%"></div>
-                    </div>
-                </div>
-
-                <button type="button" id="btn-start-check" class="btn btn-success w-100 rounded-pill py-2 fw-bold mt-auto" onclick="startCheck()">
-                    <i class="fas fa-rocket me-2"></i>Mulai Pengecekan
+                <button type="button" class="btn btn-danger w-100 rounded-pill py-2 fw-bold" onclick="processDieEmails()">
+                    <i class="fas fa-cogs me-2"></i>Cocokkan & Proses Email Mati
                 </button>
             </div>
         </div>
@@ -300,144 +291,45 @@
         }
     }
 
-    // ─── Process Results via Streaming API ───
-    async function startCheck() {
-        const textarea = document.getElementById('clean-emails-textarea');
-        const proxy = document.getElementById('proxy-input').value.trim();
-        const emails = textarea.value.split('\n').map(e => e.trim()).filter(e => e);
-
-        if (emails.length === 0) {
-            Swal.fire({ icon: 'warning', title: 'Input Kosong', text: 'Daftar email masih kosong.' });
+    // ─── Process Die Emails ───
+    function processDieEmails() {
+        const rawDie = document.getElementById('die-emails-textarea').value.trim();
+        if (!rawDie) {
+            Swal.fire({ icon: 'warning', title: 'Input Kosong', text: 'Masukkan hasil email mati (Die) terlebih dahulu.' });
             return;
         }
 
-        const btn = document.getElementById('btn-start-check');
-        const progressContainer = document.getElementById('check-progress-container');
-        const progressBar = document.getElementById('check-progress-bar');
-        const progressText = document.getElementById('progress-text');
-        const progressPercent = document.getElementById('progress-percent');
+        const emails = rawDie.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g) || [];
+        if (emails.length === 0) {
+            Swal.fire({ icon: 'error', title: 'Format Salah', text: 'Tidak ada alamat email yang valid ditemukan pada teks input.' });
+            return;
+        }
 
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Memeriksa...';
-        progressContainer.classList.remove('d-none');
-        progressBar.style.width = '0%';
-        progressPercent.textContent = '0%';
-        
-        // Reset state
         resultsData = [];
-        counts = { total: emails.length, live: 0, disabled: 0 };
+        counts = { total: 0, live: 0, disabled: 0 };
+        const uniqueEmails = [...new Set(emails.map(e => e.toLowerCase()))];
+
+        uniqueEmails.forEach(email => {
+            const stockId = stockMap[email] || null;
+            resultsData.push({
+                email: email,
+                status: 'disabled',
+                stock_id: stockId
+            });
+            counts.disabled++;
+            counts.total++;
+        });
+
         document.getElementById('count-total').textContent = counts.total;
         document.getElementById('count-live').textContent = '0';
-        document.getElementById('count-disabled').textContent = '0';
-        
+        document.getElementById('count-disabled').textContent = counts.disabled;
+
+        renderResultsTable();
         document.getElementById('results-section').classList.remove('d-none');
         document.getElementById('action-selected-count').textContent = '0';
         document.getElementById('select-all-results').checked = false;
-        document.getElementById('result-tbody').innerHTML = ''; 
+
         document.getElementById('results-section').scrollIntoView({ behavior: 'smooth' });
-        
-        emails.forEach(email => {
-            if(stockMap[email] === undefined) {
-               stockMap[email] = null; 
-            }
-        });
-
-        try {
-            const response = await fetch('{{ route("admin.tools.gmail-checker.start-check") }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': CSRF_TOKEN,
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({ emails: emails, proxy: proxy })
-            });
-
-            if (!response.ok) {
-                throw new Error('Gagal menghubungi server.');
-            }
-
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder();
-            let buffer = '';
-
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-
-                buffer += decoder.decode(value, { stream: true });
-                const lines = buffer.split('\n');
-                buffer = lines.pop(); // keep incomplete line in buffer
-
-                for (const line of lines) {
-                    if (!line.trim()) continue;
-                    try {
-                        const data = JSON.parse(line);
-                        
-                        if (data.done) {
-                            progressText.textContent = 'Selesai!';
-                            progressPercent.textContent = '100%';
-                            progressBar.style.width = '100%';
-                            progressBar.classList.remove('progress-bar-animated');
-                            continue;
-                        }
-
-                        if (data.processed !== undefined && data.total) {
-                            const pct = Math.round((data.processed / data.total) * 100);
-                            progressPercent.textContent = pct + '%';
-                            progressBar.style.width = pct + '%';
-                            progressText.textContent = `Memeriksa ${data.processed} / ${data.total}...`;
-                        }
-
-                        if (data.email && data.result) {
-                            const email = data.email;
-                            const status = data.result; 
-                            
-                            if (status.startsWith('error')) {
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: 'Limitasi Google / Error',
-                                    text: 'Proses dihentikan karena IP server terkena limitasi (rate-limit) Google atau gagal menghubungi server SMTP. Silakan gunakan Proxy atau coba lagi nanti.',
-                                    confirmButtonText: 'Mengerti'
-                                });
-                                reader.cancel();
-                                btn.disabled = false;
-                                btn.innerHTML = '<i class="fas fa-rocket me-2"></i>Mulai Pengecekan';
-                                progressBar.classList.remove('progress-bar-animated');
-                                break;
-                            }
-                            
-                            const uiStatus = (status === 'live') ? 'live' : 'disabled';
-                            
-                            resultsData.push({
-                                email: email,
-                                status: uiStatus,
-                                stock_id: stockMap[email] || null
-                            });
-
-                            if (uiStatus === 'live') {
-                                counts.live++;
-                            } else {
-                                counts.disabled++;
-                            }
-                            
-                            document.getElementById('count-live').textContent = counts.live;
-                            document.getElementById('count-disabled').textContent = counts.disabled;
-                            
-                            appendResultRow(resultsData[resultsData.length - 1], resultsData.length);
-                        }
-
-                    } catch (e) {
-                        console.error('JSON parse error:', e, line);
-                    }
-                }
-            }
-        } catch (err) {
-            Swal.fire({ icon: 'error', title: 'Error', text: err.message });
-        } finally {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-rocket me-2"></i>Mulai Pengecekan';
-        }
     }
     
     function appendResultRow(r, index) {
