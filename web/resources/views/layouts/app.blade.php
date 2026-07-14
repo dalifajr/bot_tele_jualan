@@ -155,102 +155,58 @@
         </div>
     </div>
     <div class="ms-auto d-flex align-items-center gap-3">
-        @if(Auth::user()->role === 'admin')
-        {{-- Notification Bell (Admin Only) --}}
+        {{-- Notification Bell (All Authenticated Users) --}}
+        @php
+            $unreadNotifications = Auth::user()->unreadNotifications()->take(5)->get();
+            $totalUnreadCount = Auth::user()->unreadNotifications()->count();
+        @endphp
         <div class="dropdown">
-            <button class="btn btn-link link-body-emphasis p-0 position-relative" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Notifikasi">
-                <i class="fas fa-bell fs-5"></i>
-                @if(isset($totalNotifications) && $totalNotifications > 0)
-                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.65rem;">
-                    {{ $totalNotifications > 99 ? '99+' : $totalNotifications }}
+            <button class="btn btn-link link-body-emphasis p-0 position-relative" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Notifikasi" data-pex="xrpax4o-0">
+                <i class="fas fa-bell fs-5" data-pex="xrpax4o-1"></i>
+                @if($totalUnreadCount > 0)
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.65rem;" data-pex="xrpax4o-2">
+                    {{ $totalUnreadCount > 99 ? '99+' : $totalUnreadCount }}
                 </span>
                 @endif
             </button>
-            <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2" style="width: 320px; border-radius: 12px; z-index: 1050;">
-                <li><h6 class="dropdown-header fw-bold text-primary border-bottom pb-2 mb-2">Notifikasi Sistem</h6></li>
+            <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2 p-0" style="width: 350px; border-radius: 12px; z-index: 1050; overflow: hidden;">
+                <li class="bg-light px-3 py-2 border-bottom d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 fw-bold text-primary" data-pex="9c28hsh-7">Notifikasi</h6>
+                    @if($totalUnreadCount > 0)
+                    <span class="badge bg-primary rounded-pill">{{ $totalUnreadCount }} Baru</span>
+                    @endif
+                </li>
                 
-                @if(isset($pendingOrdersCount) && $pendingOrdersCount > 0)
-                <li>
-                    <a class="dropdown-item py-2 d-flex align-items-start gap-3" href="{{ route('admin.orders.index') }}">
-                        <div class="text-warning mt-1"><i class="fas fa-shopping-cart"></i></div>
-                        <div>
-                            <div class="fw-bold">Pesanan Pending</div>
-                            <small class="text-muted text-wrap">Ada {{ $pendingOrdersCount }} pesanan menunggu diproses.</small>
-                        </div>
-                    </a>
-                </li>
-                @endif
-                
-                @if(isset($pendingLoginsCount) && $pendingLoginsCount > 0)
-                <li>
-                    <a class="dropdown-item py-2 d-flex align-items-start gap-3" href="{{ route('admin.logins.index') }}">
-                        <div class="text-info mt-1"><i class="fas fa-sign-in-alt"></i></div>
-                        <div>
-                            <div class="fw-bold">Percobaan Login</div>
-                            <small class="text-muted text-wrap">Terdapat {{ $pendingLoginsCount }} permintaan login web belum terkonfirmasi.</small>
-                        </div>
-                    </a>
-                </li>
-                @endif
-
-                @if(isset($readyToVerifyCount) && $readyToVerifyCount > 0)
-                <li>
-                    <a class="dropdown-item py-2 d-flex align-items-start gap-3" href="{{ route('admin.stock.index', ['status' => 'saved_for_verification']) }}">
-                        <div class="text-primary mt-1"><i class="fas fa-clipboard-check"></i></div>
-                        <div>
-                            <div class="fw-bold">Siap Diverifikasi</div>
-                            <small class="text-muted text-wrap">Ada {{ $readyToVerifyCount }} akun yang siap untuk diverifikasi.</small>
-                        </div>
-                    </a>
-                </li>
-                @endif
-
-                @if(isset($completedBroadcasts) && $completedBroadcasts->count() > 0)
-                    @foreach($completedBroadcasts as $bJob)
+                <div class="notification-list" style="max-height: 400px; overflow-y: auto;">
+                    @forelse($unreadNotifications as $notification)
                     <li>
-                        <a class="dropdown-item py-2 d-flex align-items-start gap-3" href="{{ route('admin.broadcast.index') }}" onclick="event.preventDefault(); markBroadcastRead({{ $bJob->id }}, this.href);">
-                            <div class="text-success mt-1"><i class="fas fa-bullhorn text-success"></i></div>
-                            <div>
-                                <div class="fw-bold">Broadcast Selesai</div>
-                                <small class="text-muted text-wrap">
-                                    {{ Str::limit(strip_tags($bJob->message), 40) }}<br>
-                                    <span class="text-success">Sukses: {{ $bJob->sent_count }}</span> | <span class="text-danger">Gagal: {{ $bJob->failed_count }}</span>
-                                </small>
+                        <a class="dropdown-item py-3 px-3 d-flex align-items-start gap-3 border-bottom" href="{{ $notification->data['url'] ?? '#' }}" style="white-space: normal;" onclick="markSingleNotificationAsRead('{{ $notification->id }}')">
+                            <div class="mt-1">
+                                <i class="{{ $notification->data['icon'] ?? 'fas fa-bell text-secondary' }} fs-5"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="fw-bold mb-1" style="font-size: 0.9rem; color: var(--bs-heading-color);" data-pex="9c28hsh-21">{{ $notification->data['title'] ?? 'Notifikasi' }}</div>
+                                <div class="text-muted small" style="line-height: 1.4;" data-pex="9c28hsh-22">{{ $notification->data['message'] ?? '' }}</div>
+                                <div class="text-muted mt-1" style="font-size: 0.75rem;" data-pex="9c28hsh-23"><i class="far fa-clock me-1"></i>{{ $notification->created_at->diffForHumans() }}</div>
                             </div>
                         </a>
                     </li>
-                    @endforeach
-                @endif
-
-                @if(isset($readyStockCount))
-                <li>
-                    <a class="dropdown-item py-2 d-flex align-items-start gap-3" href="{{ route('admin.stock.index') }}">
-                        <div class="text-success mt-1"><i class="fas fa-box-open"></i></div>
-                        <div>
-                            <div class="fw-bold">Stok Produk</div>
-                            <small class="text-muted text-wrap">Total stok yang siap dijual: {{ $readyStockCount }} unit.</small>
+                    @empty
+                    <li>
+                        <div class="dropdown-item py-4 text-center text-muted">
+                            <i class="fas fa-check-circle fs-3 mb-2 text-success"></i><br>
+                            <small>Tidak ada notifikasi baru.</small>
                         </div>
-                    </a>
-                </li>
-                @endif
-
-                @if(!isset($totalNotifications) || $totalNotifications == 0)
-                <li>
-                    <div class="dropdown-item py-3 text-center text-muted">
-                        <i class="fas fa-check-circle fs-4 mb-2 text-success"></i><br>
-                        <small>Tidak ada notifikasi baru.</small>
-                    </div>
-                </li>
-                @endif
+                    </li>
+                    @endforelse
+                </div>
                 
-                <li><hr class="dropdown-divider mb-0"></li>
-                <li class="d-flex justify-content-between px-3 py-2 bg-light" style="border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;">
-                    <a href="javascript:void(0)" class="text-decoration-none small text-muted hover-primary" onclick="markNotificationsRead()"><i class="fas fa-check-double me-1"></i>Tandai Dibaca</a>
-                    <a href="{{ route('admin.notifications.index') }}" class="text-decoration-none small fw-bold text-primary"><i class="fas fa-list me-1"></i>Lihat Semua</a>
+                <li class="d-flex justify-content-between px-3 py-2 bg-light border-top">
+                    <a href="javascript:void(0)" class="text-decoration-none small text-muted hover-primary" onclick="markAllNotificationsRead()"><i class="fas fa-check-double me-1"></i>Tandai Dibaca</a>
+                    <a href="{{ route('notifications.index') }}" class="text-decoration-none small fw-bold text-primary"><i class="fas fa-list me-1"></i>Lihat Semua</a>
                 </li>
             </ul>
         </div>
-        @endif
 
         {{-- Shopping Cart Icon --}}
         <a href="{{ route('cart.index') }}" class="btn btn-link link-body-emphasis p-0 position-relative me-2" title="Keranjang Belanja">
@@ -538,8 +494,8 @@
 
 {{-- Modals Container --}}
 <script>
-    function markNotificationsRead() {
-        fetch('{{ route("admin.notifications.markRead") }}', {
+    function markAllNotificationsRead() {
+        fetch('{{ route("notifications.markAllRead") }}', {
             method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': '{{ csrf_token() }}',
@@ -549,8 +505,7 @@
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Hide badge instantly
-                const badge = document.querySelector('.badge.bg-danger.rounded-circle');
+                const badge = document.querySelector('.badge.bg-danger.rounded-pill');
                 if(badge) badge.style.display = 'none';
                 
                 Swal.fire({
@@ -562,8 +517,20 @@
                     showConfirmButton: false,
                     timer: 3000
                 });
+                setTimeout(() => window.location.reload(), 1000);
             }
         });
+    }
+
+    function markSingleNotificationAsRead(id) {
+        fetch('/notifications/mark-read/' + id, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            }
+        });
+        // Let the default navigation happen
     }
 
     function markBroadcastRead(jobId, redirectUrl) {

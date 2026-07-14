@@ -326,8 +326,11 @@ class CartController extends Controller
             // Send notification to Admin
             try {
                 \App\Services\TelegramService::notifyAdminNewOrder($order);
+                \App\Models\User::where('role', 'admin')->get()->each(function ($admin) use ($order) {
+                    $admin->notify(new \App\Notifications\OrderCreatedNotification($order));
+                });
             } catch (\Exception $te) {
-                Log::warning("Telegram admin notification failed: " . $te->getMessage());
+                Log::warning("Telegram/In-app admin notification failed: " . $te->getMessage());
             }
 
             return redirect()->route('checkout.success', ['order_ref' => $orderRef])->with('checkout_new', true);

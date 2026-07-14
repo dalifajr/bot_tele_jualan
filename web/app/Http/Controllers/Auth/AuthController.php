@@ -122,6 +122,12 @@ class AuthController extends Controller
             return redirect()->intended(route('dashboard'));
         }
 
+        $user = User::where($loginType, $request->login)->first();
+        if ($user && in_array($user->role, ['admin', 'seller'])) {
+            // Notifikasi ke user bersangkutan jika admin/seller
+            $user->notify(new \App\Notifications\FailedLoginNotification($request->ip()));
+        }
+
         return back()->withErrors([
             'login' => 'Username/Email atau password salah.',
         ])->onlyInput('login');

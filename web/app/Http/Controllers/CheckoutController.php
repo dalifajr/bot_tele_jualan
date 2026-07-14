@@ -160,6 +160,11 @@ class CheckoutController extends Controller
             // Kirim Notifikasi ke Admin via Telegram
             \App\Services\TelegramService::notifyAdminNewOrder($order);
 
+            // Notifikasi In-App ke Admin
+            \App\Models\User::where('role', 'admin')->get()->each(function ($admin) use ($order) {
+                $admin->notify(new \App\Notifications\OrderCreatedNotification($order));
+            });
+
             return redirect()->route('checkout.success', ['order_ref' => $orderRef])->with('checkout_new', true);
 
         } catch (\Exception $e) {

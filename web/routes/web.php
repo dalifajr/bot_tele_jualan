@@ -116,6 +116,11 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
 
     Route::post('/admin/stop-impersonating', [\App\Http\Controllers\AdminController::class, 'stopImpersonating'])->name('admin.users.stop-impersonating');
 
+    // Notifications (All Authenticated Users)
+    Route::get('/notifications', [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllRead'])->name('notifications.markAllRead');
+    Route::post('/notifications/mark-read/{id}', [\App\Http\Controllers\NotificationController::class, 'markRead'])->name('notifications.markRead');
+
     /*
     |--------------------------------------------------------------------------
     | Admin Routes
