@@ -21,10 +21,15 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->validateCsrfTokens(except: [
             'api/payment/midtrans/callback',
         ]);
-        $middleware->web(append: [
-            \App\Http\Middleware\SetLocale::class,
-            \App\Http\Middleware\BlockBannedIps::class,
-        ]);
+        $middleware->web(
+            append: [
+                \App\Http\Middleware\SetLocale::class,
+                \App\Http\Middleware\BlockBannedIps::class,
+            ],
+            remove: [
+                \Illuminate\Http\Middleware\FrameGuard::class,
+            ]
+        );
         $middleware->alias([
             'admin' => \App\Http\Middleware\EnsureAdmin::class,
             'seller' => \App\Http\Middleware\EnsureSeller::class,
