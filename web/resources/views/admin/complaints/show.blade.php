@@ -54,6 +54,15 @@
                     <div class="bg-body-secondary rounded-3 p-3 text-dark text-wrap small" style="white-space: pre-wrap; font-size: 0.95rem; line-height: 1.5;">{{ $complaint->complaint_text }}</div>
                 </div>
 
+                @if($complaint->attachment_path)
+                <div class="mb-4">
+                    <span class="text-muted small fw-bold d-block mb-1">Lampiran Foto Bukti:</span>
+                    <a href="{{ asset('storage/' . $complaint->attachment_path) }}" target="_blank">
+                        <img src="{{ asset('storage/' . $complaint->attachment_path) }}" alt="Bukti Komplain" class="img-fluid rounded-3 border" style="max-height: 300px; object-fit: contain;">
+                    </a>
+                </div>
+                @endif
+
                 {{-- Associated Order --}}
                 @if($complaint->order)
                 <hr>
@@ -110,8 +119,11 @@
                     <div class="mb-3">
                         <label class="form-label text-muted small fw-bold">Pilih Status Baru</label>
                         <select name="status" id="status-select" class="form-select" required>
+                            <option value="">-- Pilih Keputusan --</option>
                             <option value="review" {{ $complaint->status === 'review' ? 'selected' : '' }}>Ditinjau (In Review)</option>
-                            <option value="done" {{ $complaint->status === 'done' ? 'selected' : '' }}>Selesai / Terima Klaim (Done)</option>
+                            <option value="replacement" {{ $complaint->status === 'replacement' ? 'selected' : '' }}>Kirim Akun Pengganti</option>
+                            <option value="refund" {{ $complaint->status === 'refund' ? 'selected' : '' }}>Refund</option>
+                            <option value="done" {{ $complaint->status === 'done' ? 'selected' : '' }}>Selesai (Tanpa Ganti Rugi Lain)</option>
                             <option value="rejected" {{ $complaint->status === 'rejected' ? 'selected' : '' }}>Tolak Klaim (Rejected)</option>
                         </select>
                     </div>
@@ -125,9 +137,35 @@
 
                     {{-- Done/Refund block --}}
                     <div id="refund-note-block" class="mb-3 d-none">
-                        <label for="refund_note" class="form-label text-muted small fw-bold text-success">Catatan Resolusi / Ganti Rugi</label>
-                        <textarea class="form-control" name="refund_note" id="refund_note" rows="4" placeholder="Tuliskan catatan penyelesaian (misal: dana dikembalikan / akun diganti)...">{{ $complaint->refund_note }}</textarea>
+                        <label for="refund_note" class="form-label text-muted small fw-bold text-success">Catatan Resolusi / Refund</label>
+                        <textarea class="form-control" name="refund_note" id="refund_note" rows="4" placeholder="Tuliskan catatan penyelesaian (misal: dana dikembalikan)...">{{ $complaint->refund_note }}</textarea>
                         <div class="form-text">Catatan penyelesaian garansi akan diinformasikan ke pelanggan.</div>
+                    </div>
+                    
+                    {{-- Replacement block --}}
+                    <div id="replacement-block" class="mb-3 d-none">
+                        @if($availableStockCount > 0)
+                            <div class="alert alert-success small mb-2">
+                                <strong>Stok Tersedia!</strong> Ditemukan {{ $availableStockCount }} stok pengganti untuk produk ini.
+                                <hr>
+                                <strong>Detail Akun (Random):</strong><br>
+                                <code>{{ $randomStock->content }}</code>
+                            </div>
+                            <input type="hidden" name="replacement_stock_id" value="{{ $randomStock->id }}">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="confirm_random" name="confirm_random">
+                                <label class="form-check-label text-muted small" for="confirm_random">
+                                    Saya mengonfirmasi detail akun di atas valid dan setuju mengirimkannya ke pelanggan.
+                                </label>
+                            </div>
+                            <div class="form-text text-danger d-none" id="confirm-error">Harap centang konfirmasi untuk melanjutkan.</div>
+                        @else
+                            <div class="alert alert-warning small mb-2">
+                                <strong>Stok Kosong!</strong> Tidak ada stok <i>Ready</i> di gudang untuk produk ini.
+                            </div>
+                            <label for="replacement_data" class="form-label text-muted small fw-bold">Input Manual Akun Pengganti</label>
+                            <textarea class="form-control" name="replacement_data" id="replacement_data" rows="4" placeholder="Ketik email/password atau link akun pengganti..."></textarea>
+                        @endif
                     </div>
 
                     <button type="submit" class="btn btn-primary w-100 rounded-pill mt-3">
@@ -166,27 +204,53 @@
         const select = document.getElementById('status-select');
         const rejectedBlock = document.getElementById('rejected-reason-block');
         const refundBlock = document.getElementById('refund-note-block');
+        const replacementBlock = document.getElementById('replacement-block');
+        
         const rejectedInput = document.getElementById('rejected_reason');
         const refundInput = document.getElementById('refund_note');
+        const replacementInput = document.getElementById('replacement_data');
+        const confirmRandom = document.getElementById('confirm_random');
+        const form = select.closest('form');
+        const confirmError = document.getElementById('confirm-error');
 
         function toggleBlocks() {
             const val = select.value;
+            
+            // Hide all first
+            rejectedBlock.classList.add('d-none');
+            refundBlock.classList.add('d-none');
+            replacementBlock.classList.add('d-none');
+            
+            rejectedInput.removeAttribute('required');
+            refundInput.removeAttribute('required');
+            if(replacementInput) replacementInput.removeAttribute('required');
+            if(confirmRandom) confirmRandom.removeAttribute('required');
+            if(confirmError) confirmError.classList.add('d-none');
+
             if (val === 'rejected') {
                 rejectedBlock.classList.remove('d-none');
-                refundBlock.classList.add('d-none');
                 rejectedInput.setAttribute('required', 'true');
-                refundInput.removeAttribute('required');
-            } else if (val === 'done') {
+            } else if (val === 'done' || val === 'refund') {
                 refundBlock.classList.remove('d-none');
-                rejectedBlock.classList.add('d-none');
                 refundInput.setAttribute('required', 'true');
-                rejectedInput.removeAttribute('required');
-            } else {
-                rejectedBlock.classList.add('d-none');
-                refundBlock.classList.add('d-none');
-                rejectedInput.removeAttribute('required');
-                refundInput.removeAttribute('required');
+            } else if (val === 'replacement') {
+                replacementBlock.classList.remove('d-none');
+                if(replacementInput) {
+                    replacementInput.setAttribute('required', 'true');
+                }
             }
+        }
+
+        if(form && confirmRandom) {
+            form.addEventListener('submit', function(e) {
+                if (select.value === 'replacement' && !confirmRandom.checked && !replacementInput) {
+                    e.preventDefault();
+                    confirmError.classList.remove('d-none');
+                }
+            });
+            confirmRandom.addEventListener('change', function() {
+                if(this.checked) confirmError.classList.add('d-none');
+            });
         }
 
         select.addEventListener('change', toggleBlocks);

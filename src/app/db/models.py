@@ -269,6 +269,8 @@ class ComplaintCase(Base):
     closed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    reopen_count: Mapped[int] = mapped_column(Integer, default=0)
+    attachment_path: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
 
 class ComplaintAttachment(Base):

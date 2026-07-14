@@ -314,16 +314,20 @@
                 <h5 class="fw-bold" id="complaintModalLabel"><i class="fas fa-toolbox text-warning me-2"></i>Ajukan Klaim Garansi</h5>
                 <button type="button" class="btn-close" data-bs-toggle="modal" aria-label="Close"></button>
             </div>
-            <form action="{{ route('orders.complaint', $order->id) }}" method="POST">
+            <form action="{{ route('orders.complaint', $order->id) }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <div class="modal-body p-4">
                     <div class="alert alert-info py-2 px-3 small border-0 mb-3" style="border-radius: 8px;">
                         <i class="fas fa-info-circle me-1"></i> <b>Kebijakan Garansi:</b> Harap jelaskan kendala yang dialami secara rinci (misal: kredensial salah, pack belum diklaim, dsb).
                     </div>
-                    <div class="mb-0">
+                    <div class="mb-3">
                         <label for="complaint_text" class="form-label text-muted small fw-bold">Deskripsi Masalah / Keluhan</label>
-                        <textarea class="form-control" id="complaint_text" name="complaint_text" rows="5" required minlength="10" maxlength="1000" placeholder="Tuliskan keluhan Anda di sini (minimal 10 karakter)..."></textarea>
-                        <div class="form-text">Jelaskan secara jelas kendala login atau kegagalan akun agar admin/seller dapat segera membantu.</div>
+                        <textarea class="form-control" id="complaint_text" name="complaint_text" rows="4" required minlength="10" maxlength="1000" placeholder="Tuliskan keluhan Anda di sini (minimal 10 karakter)..."></textarea>
+                    </div>
+                    <div class="mb-0">
+                        <label for="attachment" class="form-label text-muted small fw-bold">Unggah Foto Bukti (Opsional)</label>
+                        <input class="form-control" type="file" id="attachment" name="attachment" accept="image/*">
+                        <div class="form-text">Hanya menerima format gambar (jpg, png). Maksimal 10MB.</div>
                     </div>
                 </div>
                 <div class="modal-footer border-0 pt-0">

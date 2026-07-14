@@ -105,6 +105,10 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         
         return response()->json(['status' => $order->status]);
     })->name('orders.status');
+    // Customer Complaints
+    Route::get('/customer/complaints', [\App\Http\Controllers\ComplaintController::class, 'index'])->name('customer.complaints.index');
+    Route::get('/customer/complaints/{id}', [\App\Http\Controllers\ComplaintController::class, 'show'])->name('customer.complaints.show');
+    Route::post('/customer/complaints/{id}/reopen', [\App\Http\Controllers\ComplaintController::class, 'reopen'])->name('customer.complaints.reopen');
 
     // Profile
     Route::get('/profile', [\App\Http\Controllers\ProfileController::class, 'index'])->name('profile');

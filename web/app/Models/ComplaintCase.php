@@ -31,7 +31,9 @@ class ComplaintCase extends Model
         'refund_transferred_at',
         'closed_at',
         'created_at',
-        'updated_at'
+        'updated_at',
+        'reopen_count',
+        'attachment_path'
     ];
 
     protected $casts = [

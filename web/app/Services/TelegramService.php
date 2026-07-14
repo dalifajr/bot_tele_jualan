@@ -453,5 +453,90 @@ class TelegramService
             Log::error("Gagal mengirim notifikasi pelepasan dana seller ke {$seller->telegram_id}: " . $e->getMessage());
         }
     }
+    /**
+     * Kirim notifikasi ke Seller bahwa ada komplain baru.
+     */
+    public static function notifySellerNewComplaint(\App\Models\ComplaintCase $complaint)
+    {
+        $botToken = env('TELEGRAM_BOT_TOKEN');
+        if (empty($botToken)) return;
+
+        $sellerId = $complaint->order->items->first()->product->creator_id ?? null;
+        if (!$sellerId) return;
+
+        $seller = User::find($sellerId);
+        if (!$seller || !$seller->telegram_id) return;
+
+        $customerName = $complaint->customer->full_name ?? $complaint->customer->username ?? '-';
+        $productName = $complaint->order->items->first()->product->name ?? 'Produk';
+        
+        $text = "⚠️ <b>Komplain Baru (Klaim Garansi)</b>\n"
+              . "Ref Komplain: <code>{$complaint->complaint_ref}</code>\n"
+              . "Order Ref: <code>{$complaint->order_ref_snapshot}</code>\n"
+              . "Customer: " . htmlspecialchars($customerName) . " ({$complaint->customer_telegram_id})\n"
+              . "Produk: " . htmlspecialchars($productName) . "\n\n"
+              . "<b>Keluhan:</b>\n"
+              . htmlspecialchars($complaint->complaint_text) . "\n\n"
+              . "Silakan cek halaman admin/seller untuk memproses keluhan ini.";
+
+        try {
+            Http::post("https://api.telegram.org/bot{$botToken}/sendMessage", [
+                'chat_id' => $seller->telegram_id,
+                'text' => $text,
+                'parse_mode' => 'HTML',
+            ]);
+        } catch (\Exception $e) {
+            Log::error("Gagal mengirim notifikasi komplain ke seller {$seller->telegram_id}: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Kirim notifikasi ke Customer (dan opsional Seller) tentang update status komplain.
+     */
+    public static function notifyComplaintStatusUpdate(\App\Models\ComplaintCase $complaint)
+    {
+        $botToken = env('TELEGRAM_BOT_TOKEN');
+        if (empty($botToken)) return;
+
+        $customerTelegramId = $complaint->customer_telegram_id ?: ($complaint->customer->telegram_id ?? null);
+        if (!$customerTelegramId) return;
+
+        $productName = $complaint->order->items->first()->product->name ?? 'Produk';
+        
+        $statusLabel = '';
+        if ($complaint->status === 'done') {
+            $statusLabel = '✅ Disetujui / Selesai';
+        } elseif ($complaint->status === 'rejected') {
+            $statusLabel = '❌ Ditolak';
+        } elseif ($complaint->status === 'refund_requested') {
+            $statusLabel = '💸 Sedang Diproses Refund';
+        } else {
+            $statusLabel = 'Diproses (' . strtoupper($complaint->status) . ')';
+        }
+
+        $text = "📋 <b>Update Status Klaim Garansi</b>\n"
+              . "Ref Komplain: <code>{$complaint->complaint_ref}</code>\n"
+              . "Order Ref: <code>{$complaint->order_ref_snapshot}</code>\n"
+              . "Produk: " . htmlspecialchars($productName) . "\n\n"
+              . "Status Saat Ini: <b>{$statusLabel}</b>\n";
+
+        if ($complaint->status === 'rejected' && $complaint->rejected_reason) {
+            $text .= "\n<b>Alasan Penolakan:</b>\n" . htmlspecialchars($complaint->rejected_reason) . "\n";
+        }
+        
+        if ($complaint->refund_note) {
+            $text .= "\n<b>Catatan:</b>\n" . htmlspecialchars($complaint->refund_note) . "\n";
+        }
+
+        try {
+            Http::post("https://api.telegram.org/bot{$botToken}/sendMessage", [
+                'chat_id' => $customerTelegramId,
+                'text' => $text,
+                'parse_mode' => 'HTML',
+            ]);
+        } catch (\Exception $e) {
+            Log::error("Gagal mengirim notifikasi update komplain ke customer {$customerTelegramId}: " . $e->getMessage());
+        }
+    }
 }
 

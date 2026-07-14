@@ -61,15 +61,24 @@ class OrderController extends Controller
 
         $request->validate([
             'complaint_text' => 'required|string|min:10|max:1000',
+            'attachment' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:10240',
         ], [
             'complaint_text.required' => 'Deskripsi keluhan wajib diisi.',
             'complaint_text.min' => 'Deskripsi keluhan minimal 10 karakter.',
             'complaint_text.max' => 'Deskripsi keluhan maksimal 1000 karakter.',
+            'attachment.image' => 'Lampiran harus berupa gambar.',
+            'attachment.mimes' => 'Lampiran harus berformat jpeg, png, jpg, atau gif.',
+            'attachment.max' => 'Ukuran gambar maksimal 10MB.',
         ]);
+
+        $attachmentPath = null;
+        if ($request->hasFile('attachment')) {
+            $attachmentPath = $request->file('attachment')->store('complaints', 'public');
+        }
 
         $complaintRef = 'CMP-' . date('Ymd') . '-' . strtoupper(\Illuminate\Support\Str::random(4));
 
-        \App\Models\ComplaintCase::create([
+        $complaint = \App\Models\ComplaintCase::create([
             'complaint_ref' => $complaintRef,
             'customer_id' => Auth::id(),
             'customer_telegram_id' => Auth::user()->telegram_id ?: 0,
@@ -78,10 +87,13 @@ class OrderController extends Controller
             'order_ref_snapshot' => $order->order_ref,
             'order_created_at_snapshot' => $order->created_at,
             'complaint_text' => $request->complaint_text,
+            'attachment_path' => $attachmentPath,
             'status' => 'new',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
+
+        \App\Services\TelegramService::notifySellerNewComplaint($complaint);
 
         return redirect()->back()->with('success', 'Komplain / klaim garansi berhasil diajukan. Kami akan segera meninjau keluhan Anda.');
     }

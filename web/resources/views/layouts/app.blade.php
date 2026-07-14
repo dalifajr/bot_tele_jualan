@@ -281,6 +281,10 @@
                     <i class="fas fa-circle" style="font-size: 0.4rem; opacity: 0.6;"></i>
                     {{ __('Riwayat Pesanan') }}
                 </a>
+                <a href="{{ route('customer.complaints.index') }}" class="menu-item {{ request()->routeIs('customer.complaints.*') ? 'active' : '' }}">
+                    <i class="fas fa-circle" style="font-size: 0.4rem; opacity: 0.6;"></i>
+                    {{ __('Kelola Komplain') }}
+                </a>
                 <a href="{{ route('chat.index') }}" class="menu-item {{ request()->routeIs('chat.*') ? 'active' : '' }}">
                     <i class="fas fa-circle" style="font-size: 0.4rem; opacity: 0.6;"></i>
                     {{ __('Pusat Chat') }}

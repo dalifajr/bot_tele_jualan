@@ -1618,7 +1618,23 @@ class AdminController extends Controller
     public function showComplaint($id)
     {
         $complaint = \App\Models\ComplaintCase::with(['customer', 'order.items.product', 'order.stockUnits'])->findOrFail($id);
-        return view('admin.complaints.show', compact('complaint'));
+        
+        $productId = $complaint->order->items->first()->product_id ?? 0;
+        $sellerId = $complaint->order->items->first()->product->creator_id ?? 0; // for admin, fetch from product's creator
+        
+        $availableStocks = \App\Models\StockUnit::where('seller_id', $sellerId)
+            ->where('product_id', $productId)
+            ->where('is_sold', false)
+            ->whereNull('sold_order_id')
+            ->where(function($q) {
+                $q->where('stock_status', 'ready')->orWhereNull('stock_status');
+            })
+            ->get();
+            
+        $availableStockCount = $availableStocks->count();
+        $randomStock = $availableStockCount > 0 ? $availableStocks->random() : null;
+
+        return view('admin.complaints.show', compact('complaint', 'availableStockCount', 'randomStock'));
     }
 
     public function updateComplaintStatus(Request $request, $id)
@@ -1626,12 +1642,14 @@ class AdminController extends Controller
         $complaint = \App\Models\ComplaintCase::findOrFail($id);
         
         $request->validate([
-            'status' => 'required|string|in:review,done,rejected',
+            'status' => 'required|string|in:review,done,rejected,refund,replacement',
             'rejected_reason' => 'required_if:status,rejected|nullable|string|max:500',
-            'refund_note' => 'required_if:status,done|nullable|string|max:500',
+            'refund_note' => 'required_if:status,done,refund|nullable|string|max:500',
+            'replacement_data' => 'required_if:status,replacement|nullable|string',
         ], [
             'rejected_reason.required_if' => 'Alasan penolakan wajib diisi jika status ditolak.',
-            'refund_note.required_if' => 'Catatan penyelesaian wajib diisi jika status selesai.',
+            'refund_note.required_if' => 'Catatan penyelesaian/refund wajib diisi.',
+            'replacement_data.required_if' => 'Data akun pengganti wajib diisi.',
         ]);
 
         $updateData = [
@@ -1645,9 +1663,37 @@ class AdminController extends Controller
         } elseif ($request->status === 'done') {
             $updateData['refund_note'] = $request->refund_note;
             $updateData['closed_at'] = now();
+        } elseif ($request->status === 'refund') {
+            $updateData['status'] = 'refund_requested';
+            $updateData['refund_note'] = "Permintaan refund: " . $request->refund_note;
+        } elseif ($request->status === 'replacement') {
+            $updateData['status'] = 'done';
+            $updateData['refund_note'] = "Mengirimkan akun pengganti.";
+            $updateData['closed_at'] = now();
+            
+            // Proses penggantian akun
+            $newStockId = $request->input('replacement_stock_id');
+            $replacementData = $request->input('replacement_data');
+            
+            if ($newStockId) {
+                $stock = \App\Models\StockUnit::where('id', $newStockId)->where('is_sold', false)->first();
+                if ($stock) {
+                    $stock->update([
+                        'is_sold' => true,
+                        'sold_order_id' => $complaint->order_id,
+                        'sold_at' => now(),
+                        'stock_status' => 'sold'
+                    ]);
+                    $updateData['refund_note'] .= "\nAkun Pengganti: \n" . $stock->content;
+                }
+            } else {
+                $updateData['refund_note'] .= "\nAkun Pengganti (Manual): \n" . $replacementData;
+            }
         }
 
         $complaint->update($updateData);
+        
+        \App\Services\TelegramService::notifyComplaintStatusUpdate($complaint);
 
         // Put an audit log entry
         \Illuminate\Support\Facades\DB::table('audit_logs')->insert([
