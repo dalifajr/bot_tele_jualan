@@ -149,8 +149,8 @@ class AuthController extends Controller
         $this->recordLoginLog($request, false);
 
         $user = User::where($loginType, $request->login)->first();
-        if ($user && in_array($user->role, ['admin', 'seller'])) {
-            // Notifikasi ke user bersangkutan jika admin/seller
+        if ($user) {
+            // Notifikasi ke user bersangkutan
             $user->notify(new \App\Notifications\FailedLoginNotification($request->ip()));
         }
 

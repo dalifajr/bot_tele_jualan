@@ -190,7 +190,7 @@
                                 
                                 @if(($notification->data['type'] ?? '') === 'login_gagal' && isset($notification->data['ip_address']))
                                 <div class="mt-2" onclick="event.stopPropagation(); event.preventDefault();">
-                                    <form action="{{ route('admin.logins.block-ip') }}" method="POST" class="d-inline">
+                                    <form action="{{ route('profile.logins.block-ip') }}" method="POST" class="d-inline">
                                         @csrf
                                         <input type="hidden" name="ip_address" value="{{ $notification->data['ip_address'] }}">
                                         <button type="submit" class="btn btn-sm btn-danger rounded-pill" style="font-size: 0.75rem;">

@@ -110,4 +110,14 @@ class ProfileController extends Controller
         
         return view('profile.logins', compact('loginLogs'));
     }
+
+    public function blockIp(Request $request)
+    {
+        $request->validate(['ip_address' => 'required|ip']);
+        $ip = $request->ip_address;
+        
+        \Illuminate\Support\Facades\Cache::put('blocked_ip:' . $ip, true, now()->addDay());
+        
+        return back()->with('success', "IP Address {$ip} telah diblokir selama 1 hari.");
+    }
 }

@@ -27,6 +27,7 @@
                                 <th class="py-3 border-0">Status</th>
                                 <th class="py-3 border-0">IP & Lokasi</th>
                                 <th class="py-3 border-0">Perangkat</th>
+                                <th class="py-3 border-0 text-end pe-4">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -47,6 +48,15 @@
                                 <td>
                                     <div class="text-dark small">{{ $log->device_type }}</div>
                                     <div class="text-secondary small" title="{{ $log->user_agent }}"><i class="fab fa-chrome text-primary me-1"></i>{{ $log->browser ?? '-' }}</div>
+                                </td>
+                                <td class="text-end pe-4">
+                                    <form action="{{ route('profile.logins.block-ip') }}" method="POST" class="d-inline">
+                                        @csrf
+                                        <input type="hidden" name="ip_address" value="{{ $log->ip_address }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill" onclick="confirmAction(event, 'Blokir IP ini selama 1 hari?')">
+                                            <i class="fas fa-ban me-1"></i>Blokir
+                                        </button>
+                                    </form>
                                 </td>
                             </tr>
                             @endforeach

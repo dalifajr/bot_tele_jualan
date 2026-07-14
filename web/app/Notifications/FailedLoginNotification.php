@@ -13,7 +13,7 @@ class FailedLoginNotification extends Notification {
             'title' => 'Percobaan Login Gagal',
             'message' => 'Ada percobaan login gagal dari IP: ' . $this->ipAddress,
             'ip_address' => $this->ipAddress,
-            'url' => url('/admin/logins'),
+            'url' => url('/profile/logins'),
             'icon' => 'fas fa-shield-alt text-danger'
         ];
     }
