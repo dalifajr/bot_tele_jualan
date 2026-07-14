@@ -1560,8 +1560,20 @@ class AdminController extends Controller
     // ==========================================
     public function logins()
     {
-        $loginTokens = \App\Models\TelegramLoginToken::orderBy('created_at', 'desc')->paginate(15);
-        return view('admin.logins.index', compact('loginTokens'));
+        $loginTokens = \App\Models\TelegramLoginToken::orderBy('created_at', 'desc')->paginate(15, ['*'], 'tg_page');
+        $loginLogs = \App\Models\LoginLog::orderBy('created_at', 'desc')->paginate(15, ['*'], 'log_page');
+        
+        return view('admin.logins.index', compact('loginTokens', 'loginLogs'));
+    }
+
+    public function blockIp(Request $request)
+    {
+        $request->validate(['ip_address' => 'required|ip']);
+        $ip = $request->ip_address;
+        
+        \Illuminate\Support\Facades\Cache::put('blocked_ip:' . $ip, true, now()->addDay());
+        
+        return back()->with('success', "IP Address {$ip} telah diblokir selama 1 hari.");
     }
 
     public function notifications()

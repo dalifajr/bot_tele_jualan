@@ -40,6 +40,19 @@
                                     <p class="mb-1 {{ $notification->read_at ? 'text-muted' : 'text-body' }}" style="font-size: 0.95rem;">
                                         {{ $notification->data['message'] ?? '' }}
                                     </p>
+                                    
+                                    @if(($notification->data['type'] ?? '') === 'login_gagal' && isset($notification->data['ip_address']))
+                                    <div class="mt-2 mb-2" onclick="event.stopPropagation(); event.preventDefault();">
+                                        <form action="{{ route('admin.logins.block-ip') }}" method="POST" class="d-inline">
+                                            @csrf
+                                            <input type="hidden" name="ip_address" value="{{ $notification->data['ip_address'] }}">
+                                            <button type="submit" class="btn btn-sm btn-danger rounded-pill px-3" style="font-size: 0.8rem;">
+                                                <i class="fas fa-ban me-1"></i>Bukan Saya (Blokir IP)
+                                            </button>
+                                        </form>
+                                    </div>
+                                    @endif
+
                                     <small class="text-muted">
                                         <i class="far fa-clock me-1"></i>{{ $notification->created_at->diffForHumans() }}
                                     </small>

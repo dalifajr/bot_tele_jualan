@@ -187,6 +187,19 @@
                             <div class="flex-grow-1">
                                 <div class="fw-bold mb-1" style="font-size: 0.9rem; color: var(--bs-heading-color);" data-pex="9c28hsh-21">{{ $notification->data['title'] ?? 'Notifikasi' }}</div>
                                 <div class="text-muted small" style="line-height: 1.4;" data-pex="9c28hsh-22">{{ $notification->data['message'] ?? '' }}</div>
+                                
+                                @if(($notification->data['type'] ?? '') === 'login_gagal' && isset($notification->data['ip_address']))
+                                <div class="mt-2" onclick="event.stopPropagation(); event.preventDefault();">
+                                    <form action="{{ route('admin.logins.block-ip') }}" method="POST" class="d-inline">
+                                        @csrf
+                                        <input type="hidden" name="ip_address" value="{{ $notification->data['ip_address'] }}">
+                                        <button type="submit" class="btn btn-sm btn-danger rounded-pill" style="font-size: 0.75rem;">
+                                            <i class="fas fa-ban me-1"></i>Bukan Saya (Blokir)
+                                        </button>
+                                    </form>
+                                </div>
+                                @endif
+
                                 <div class="text-muted mt-1" style="font-size: 0.75rem;" data-pex="9c28hsh-23"><i class="far fa-clock me-1"></i>{{ $notification->created_at->diffForHumans() }}</div>
                             </div>
                         </a>
