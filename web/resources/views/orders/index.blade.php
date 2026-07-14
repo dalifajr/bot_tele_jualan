@@ -190,6 +190,9 @@
                     </button>
                 </form>
                 @endif
+                <a href="{{ route('orders.show', $order->id) }}" class="btn btn-outline-primary rounded-pill px-4">
+                    <i class="fas fa-external-link-alt me-1"></i>Lihat Detail
+                </a>
                 <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Tutup</button>
             </div>
         </div>
