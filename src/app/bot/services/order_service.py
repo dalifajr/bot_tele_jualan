@@ -798,6 +798,7 @@ def _recommend_upsell_products(
     products = list(
         session.scalars(
             select(Product)
+            .where(Product.deleted_at.is_(None))
             .where(Product.is_suspended.is_(False))
             .order_by(Product.id.asc())
         ).all()

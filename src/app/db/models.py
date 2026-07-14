@@ -53,6 +53,7 @@ class Product(Base):
     warranty_days: Mapped[int | None] = mapped_column(Integer, nullable=True, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     stocks: Mapped[list["StockUnit"]] = relationship(back_populates="product", cascade="all, delete-orphan")
 

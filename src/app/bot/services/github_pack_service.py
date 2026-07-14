@@ -180,7 +180,9 @@ def _buyer_display(user: User | None) -> tuple[str, int | None]:
 def ensure_github_pack_product(session: Session) -> Product:
     target_name = settings.github_pack_name.strip()
     product = session.scalar(
-        select(Product).where(func.lower(Product.name) == target_name.lower())
+        select(Product)
+        .where(Product.deleted_at.is_(None))
+        .where(func.lower(Product.name) == target_name.lower())
     )
     if product is None:
         product = Product(
@@ -212,7 +214,9 @@ def ensure_github_pack_used_product(session: Session) -> Product:
 
     if product is None:
         product = session.scalar(
-            select(Product).where(func.lower(Product.name) == DEFAULT_GITHUB_USED_PRODUCT_NAME.lower())
+            select(Product)
+            .where(Product.deleted_at.is_(None))
+            .where(func.lower(Product.name) == DEFAULT_GITHUB_USED_PRODUCT_NAME.lower())
         )
 
     if product is None:

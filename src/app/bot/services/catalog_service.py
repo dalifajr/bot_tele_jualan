@@ -98,7 +98,7 @@ def list_products(session: Session, include_suspended: bool = False) -> list[Pro
     promote_awaiting_stocks(session)
     stock_counts = {pid: count for pid, count in session.execute(_build_stock_count_query()).all()}
 
-    stmt = select(Product).order_by(Product.id.asc())
+    stmt = select(Product).where(Product.deleted_at.is_(None)).order_by(Product.id.asc())
     if not include_suspended:
         stmt = stmt.where(Product.is_suspended.is_(False))
 
@@ -112,14 +112,16 @@ def list_products(session: Session, include_suspended: bool = False) -> list[Pro
 
 
 def get_product(session: Session, product_id: int) -> Product | None:
-    return session.get(Product, product_id)
+    product = session.get(Product, product_id)
+    if product and product.deleted_at is not None:
+        return None
+    return product
 
 
 def get_available_stock_count(session: Session, product_id: int) -> int:
     promote_awaiting_stocks(session, product_id=product_id)
     return (
         session.scalar(
-            select(func.count(StockUnit.id)).where(
                 StockUnit.product_id == product_id,
                 StockUnit.is_sold.is_(False),
                 StockUnit.sold_order_id.is_(None),
