@@ -98,4 +98,16 @@ class ProfileController extends Controller
 
         return redirect()->back()->with('success', 'Akun Telegram berhasil dilepas.');
     }
+
+    public function loginHistory()
+    {
+        $user = Auth::user();
+        
+        $loginLogs = \App\Models\LoginLog::where(function($q) use ($user) {
+            $q->where('username_or_email', $user->username)
+              ->orWhere('username_or_email', $user->email);
+        })->orderBy('created_at', 'desc')->paginate(15);
+        
+        return view('profile.logins', compact('loginLogs'));
+    }
 }

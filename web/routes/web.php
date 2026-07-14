@@ -113,6 +113,7 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
     Route::post('/profile/telegram-link', [\App\Http\Controllers\ProfileController::class, 'generateTelegramLink'])->name('profile.telegram.link');
     Route::post('/profile/telegram-unlink', [\App\Http\Controllers\ProfileController::class, 'unlinkTelegram'])->name('profile.telegram.unlink');
     Route::post('/profile/2fa/toggle', [\App\Http\Controllers\Auth\AuthController::class, 'toggleTwoFactor'])->name('profile.2fa.toggle');
+    Route::get('/profile/logins', [\App\Http\Controllers\ProfileController::class, 'loginHistory'])->name('profile.logins');
 
     Route::post('/admin/stop-impersonating', [\App\Http\Controllers\AdminController::class, 'stopImpersonating'])->name('admin.users.stop-impersonating');
 

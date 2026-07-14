@@ -293,6 +293,10 @@
                     <i class="fas fa-circle" style="font-size: 0.4rem; opacity: 0.6;"></i>
                     {{ __('Profil Saya') }}
                 </a>
+                <a href="{{ route('profile.logins') }}" class="menu-item {{ request()->routeIs('profile.logins') ? 'active' : '' }}">
+                    <i class="fas fa-circle" style="font-size: 0.4rem; opacity: 0.6;"></i>
+                    {{ __('Riwayat Login') }}
+                </a>
             </div>
 
             @if(Auth::user()->role === 'admin')
