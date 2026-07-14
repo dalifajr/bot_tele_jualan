@@ -194,12 +194,16 @@ class GmailCheckerController extends Controller
     private function checkGmailStatus($email, $proxy = null)
     {
         $domain = substr(strrchr($email, "@"), 1);
-        getmxrr($domain, $mxhosts);
-        if (empty($mxhosts)) {
-            return 'die';
+        if (strtolower($domain) === 'gmail.com') {
+            $mx = 'gmail-smtp-in.l.google.com';
+        } else {
+            getmxrr($domain, $mxhosts);
+            if (empty($mxhosts)) {
+                return 'error: no mx records';
+            }
+            $mx = $mxhosts[0];
         }
         
-        $mx = $mxhosts[0];
         $timeout = 10;
         $fp = false;
         
@@ -228,14 +232,14 @@ class GmailCheckerController extends Controller
         }
 
         if (!$fp) {
-            return 'error'; // Error connecting
+            return 'error: connection blocked (port 25) - ' . $errstr;
         }
         
         // Wait for greeting
         $res = fgets($fp, 1024);
         if (substr($res, 0, 3) != '220') {
             fclose($fp);
-            return 'error';
+            return 'error: invalid greeting ' . $res;
         }
         
         fputs($fp, "HELO google.com\r\n");

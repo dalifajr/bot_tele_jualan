@@ -264,7 +264,6 @@
                 
                 // Hide results section on reload
                 document.getElementById('results-section').classList.add('d-none');
-                document.getElementById('gmailver-results-textarea').value = '';
 
                 Swal.fire({ icon: 'success', title: 'Berhasil!', text: `${data.count} akun berhasil dimuat dari stok.`, timer: 2000, showConfirmButton: false });
             } else {
@@ -393,6 +392,21 @@
                         if (data.email && data.result) {
                             const email = data.email;
                             const status = data.result; 
+                            
+                            if (status.startsWith('error')) {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Limitasi Google / Error',
+                                    text: 'Proses dihentikan karena IP server terkena limitasi (rate-limit) Google atau gagal menghubungi server SMTP. Silakan gunakan Proxy atau coba lagi nanti.',
+                                    confirmButtonText: 'Mengerti'
+                                });
+                                reader.cancel();
+                                btn.disabled = false;
+                                btn.innerHTML = '<i class="fas fa-rocket me-2"></i>Mulai Pengecekan';
+                                progressBar.classList.remove('progress-bar-animated');
+                                break;
+                            }
+                            
                             const uiStatus = (status === 'live') ? 'live' : 'disabled';
                             
                             resultsData.push({
