@@ -122,6 +122,7 @@ def get_available_stock_count(session: Session, product_id: int) -> int:
     promote_awaiting_stocks(session, product_id=product_id)
     return (
         session.scalar(
+            select(func.count(StockUnit.id)).where(
                 StockUnit.product_id == product_id,
                 StockUnit.is_sold.is_(False),
                 StockUnit.sold_order_id.is_(None),
