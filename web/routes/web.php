@@ -251,6 +251,7 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
             Route::get('/gmail-checker', [\App\Http\Controllers\Admin\GmailCheckerController::class, 'index'])->name('gmail-checker');
             Route::post('/gmail-checker/load-stock', [\App\Http\Controllers\Admin\GmailCheckerController::class, 'loadStock'])->name('gmail-checker.load-stock');
             Route::post('/gmail-checker/bulk-action', [\App\Http\Controllers\Admin\GmailCheckerController::class, 'bulkAction'])->name('gmail-checker.bulk-action');
+            Route::post('/gmail-checker/start-check', [\App\Http\Controllers\Admin\GmailCheckerController::class, 'startCheck'])->name('gmail-checker.start-check');
         });
     });
 

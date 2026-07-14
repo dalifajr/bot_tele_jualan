@@ -82,44 +82,53 @@
     </div>
 </div>
 
-{{-- Section 2: Input & Output (Copy / Paste) --}}
+{{-- Section 2: Pengecekan Akun --}}
 <div class="row g-3 mb-3">
-    {{-- Left: Clean Email List for Export --}}
-    <div class="col-lg-6">
+    {{-- Left: Email List --}}
+    <div class="col-lg-8">
         <div class="card shadow-sm checker-card h-100">
             <div class="card-body p-4 d-flex flex-column">
                 <h6 class="fw-bold mb-3">
                     <i class="fas fa-clipboard-list text-info me-2"></i>1. Daftar Email Stok
                 </h6>
                 <div class="flex-grow-1 mb-3">
-                    <textarea id="clean-emails-textarea" class="form-control" rows="8" readonly 
-                              placeholder="Daftar email bersih akan muncul di sini setelah Anda memuat stok produk..."></textarea>
+                    <textarea id="clean-emails-textarea" class="form-control" rows="8" 
+                              placeholder="Daftar email bersih akan muncul di sini setelah Anda memuat stok produk... atau Anda bisa menempel manual."></textarea>
                 </div>
                 <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-outline-primary rounded-pill flex-grow-1" onclick="copyEmails()">
-                        <i class="fas fa-copy me-1"></i>Salin Daftar Email
+                    <button type="button" class="btn btn-outline-primary rounded-pill px-4" onclick="copyEmails()">
+                        <i class="fas fa-copy me-1"></i>Salin Email
                     </button>
-                    <a href="https://gmailver.com/" target="_blank" class="btn btn-success rounded-pill px-4">
-                        <i class="fas fa-external-link-alt me-1"></i>Buka GmailVer.com
-                    </a>
                 </div>
             </div>
         </div>
     </div>
 
-    {{-- Right: Paste Results from GmailVer.com --}}
-    <div class="col-lg-6">
+    {{-- Right: Start Check Panel --}}
+    <div class="col-lg-4">
         <div class="card shadow-sm checker-card h-100">
             <div class="card-body p-4 d-flex flex-column">
                 <h6 class="fw-bold mb-3">
-                    <i class="fas fa-paste text-warning me-2"></i>2. Tempel Hasil Check dari GmailVer.com
+                    <i class="fas fa-cogs text-warning me-2"></i>2. Jalankan Pengecekan
                 </h6>
-                <div class="flex-grow-1 mb-3">
-                    <textarea id="gmailver-results-textarea" class="form-control" rows="8" 
-                              placeholder="Tempelkan hasil pengecekan di sini...&#10;&#10;Contoh format:&#10;Disabled|sjurokanda@gmail.com&#10;live|zafrangnwn@gmail.com&#10;live|luckypratama7282@gmail.com"></textarea>
+                <div class="mb-3">
+                    <label class="form-label text-muted small fw-bold mb-1">Pengaturan Proxy (Opsional)</label>
+                    <input type="text" id="proxy-input" class="form-control form-control-sm" placeholder="ip:port atau ip:port:user:pass">
+                    <small class="text-muted" style="font-size: 11px;">Biarkan kosong jika tidak memakai proxy.</small>
                 </div>
-                <button type="button" class="btn btn-success w-100 rounded-pill py-2 fw-bold" onclick="processResults()">
-                    <i class="fas fa-tasks me-2"></i>Proses Hasil Check
+                
+                <div id="check-progress-container" class="d-none mb-3">
+                    <div class="d-flex justify-content-between small mb-1">
+                        <span class="text-muted fw-bold" id="progress-text">Memeriksa...</span>
+                        <span class="text-primary fw-bold" id="progress-percent">0%</span>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div id="check-progress-bar" class="progress-bar progress-bar-striped progress-bar-animated bg-primary" role="progressbar" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <button type="button" id="btn-start-check" class="btn btn-success w-100 rounded-pill py-2 fw-bold mt-auto" onclick="startCheck()">
+                    <i class="fas fa-rocket me-2"></i>Mulai Pengecekan
                 </button>
             </div>
         </div>
@@ -292,106 +301,172 @@
         }
     }
 
-    // ─── Process Results ───
-    function processResults() {
-        const rawResults = document.getElementById('gmailver-results-textarea').value.trim();
-        if (!rawResults) {
-            Swal.fire({ icon: 'warning', title: 'Input Kosong', text: 'Masukkan hasil pengecekan dari GmailVer.com terlebih dahulu.' });
+    // ─── Process Results via Streaming API ───
+    async function startCheck() {
+        const textarea = document.getElementById('clean-emails-textarea');
+        const proxy = document.getElementById('proxy-input').value.trim();
+        const emails = textarea.value.split('\n').map(e => e.trim()).filter(e => e);
+
+        if (emails.length === 0) {
+            Swal.fire({ icon: 'warning', title: 'Input Kosong', text: 'Daftar email masih kosong.' });
             return;
         }
 
-        const lines = rawResults.split('\n');
+        const btn = document.getElementById('btn-start-check');
+        const progressContainer = document.getElementById('check-progress-container');
+        const progressBar = document.getElementById('check-progress-bar');
+        const progressText = document.getElementById('progress-text');
+        const progressPercent = document.getElementById('progress-percent');
+
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Memeriksa...';
+        progressContainer.classList.remove('d-none');
+        progressBar.style.width = '0%';
+        progressPercent.textContent = '0%';
+        
+        // Reset state
         resultsData = [];
-        counts = { total: 0, live: 0, disabled: 0 };
-
-        lines.forEach(line => {
-            const trimmed = line.trim();
-            if (!trimmed) return;
-
-            if (trimmed.includes('|')) {
-                const parts = trimmed.split('|');
-                const rawStatus = parts[0].trim().toLowerCase();
-                const email = parts[1].trim().toLowerCase();
-
-                let status = 'disabled';
-                if (rawStatus === 'live') {
-                    status = 'live';
-                }
-
-                const stockId = stockMap[email] || null;
-
-                resultsData.push({
-                    email: email,
-                    status: status,
-                    stock_id: stockId
-                });
-
-                counts.total++;
-                if (status === 'live') {
-                    counts.live++;
-                } else {
-                    counts.disabled++;
-                }
-            }
-        });
-
-        if (resultsData.length === 0) {
-            Swal.fire({ icon: 'error', title: 'Format Salah', text: 'Tidak dapat mengidentifikasi data. Pastikan formatnya adalah: Status|email' });
-            return;
-        }
-
+        counts = { total: emails.length, live: 0, disabled: 0 };
         document.getElementById('count-total').textContent = counts.total;
-        document.getElementById('count-live').textContent = counts.live;
-        document.getElementById('count-disabled').textContent = counts.disabled;
-
-        renderResultsTable();
+        document.getElementById('count-live').textContent = '0';
+        document.getElementById('count-disabled').textContent = '0';
+        
         document.getElementById('results-section').classList.remove('d-none');
         document.getElementById('action-selected-count').textContent = '0';
         document.getElementById('select-all-results').checked = false;
-
-        // Auto-scroll to results
+        document.getElementById('result-tbody').innerHTML = ''; 
         document.getElementById('results-section').scrollIntoView({ behavior: 'smooth' });
+        
+        emails.forEach(email => {
+            if(stockMap[email] === undefined) {
+               stockMap[email] = null; 
+            }
+        });
+
+        try {
+            const response = await fetch('{{ route("admin.tools.gmail-checker.start-check") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': CSRF_TOKEN,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ emails: emails, proxy: proxy })
+            });
+
+            if (!response.ok) {
+                throw new Error('Gagal menghubungi server.');
+            }
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop(); // keep incomplete line in buffer
+
+                for (const line of lines) {
+                    if (!line.trim()) continue;
+                    try {
+                        const data = JSON.parse(line);
+                        
+                        if (data.done) {
+                            progressText.textContent = 'Selesai!';
+                            progressPercent.textContent = '100%';
+                            progressBar.style.width = '100%';
+                            progressBar.classList.remove('progress-bar-animated');
+                            continue;
+                        }
+
+                        if (data.processed !== undefined && data.total) {
+                            const pct = Math.round((data.processed / data.total) * 100);
+                            progressPercent.textContent = pct + '%';
+                            progressBar.style.width = pct + '%';
+                            progressText.textContent = `Memeriksa ${data.processed} / ${data.total}...`;
+                        }
+
+                        if (data.email && data.result) {
+                            const email = data.email;
+                            const status = data.result; 
+                            const uiStatus = (status === 'live') ? 'live' : 'disabled';
+                            
+                            resultsData.push({
+                                email: email,
+                                status: uiStatus,
+                                stock_id: stockMap[email] || null
+                            });
+
+                            if (uiStatus === 'live') {
+                                counts.live++;
+                            } else {
+                                counts.disabled++;
+                            }
+                            
+                            document.getElementById('count-live').textContent = counts.live;
+                            document.getElementById('count-disabled').textContent = counts.disabled;
+                            
+                            appendResultRow(resultsData[resultsData.length - 1], resultsData.length);
+                        }
+
+                    } catch (e) {
+                        console.error('JSON parse error:', e, line);
+                    }
+                }
+            }
+        } catch (err) {
+            Swal.fire({ icon: 'error', title: 'Error', text: err.message });
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-rocket me-2"></i>Mulai Pengecekan';
+        }
+    }
+    
+    function appendResultRow(r, index) {
+        const tbody = document.getElementById('result-tbody');
+        const statusConfig = {
+            'live': { badge: 'bg-success', icon: '✅', label: 'LIVE' },
+            'disabled': { badge: 'bg-danger', icon: '❌', label: 'DISABLED' }
+        };
+        const cfg = statusConfig[r.status] || { badge: 'bg-secondary', icon: '❓', label: 'UNKNOWN' };
+        
+        const row = document.createElement('tr');
+        row.className = 'result-row';
+        row.setAttribute('data-status', r.status);
+        row.setAttribute('data-email', r.email);
+        
+        const detailText = r.stock_id 
+            ? `<span class="text-success fw-bold"><i class="fas fa-check-circle me-1"></i>Terhubung ke Stok (ID: ${r.stock_id})</span>`
+            : `<span class="text-muted"><i class="fas fa-exclamation-circle me-1"></i>Manual (Non-Stok)</span>`;
+
+        row.innerHTML = `
+            <td class="px-4">
+                <input type="checkbox" class="form-check-input result-cb" value="${r.email}" 
+                       data-stock-id="${r.stock_id || ''}" ${r.stock_id ? '' : 'disabled'} onchange="updateActionCount()">
+            </td>
+            <td class="fw-bold text-muted">${index}</td>
+            <td class="fw-medium">${r.email}</td>
+            <td><span class="badge ${cfg.badge} status-badge rounded-pill px-3">${cfg.icon} ${cfg.label}</span></td>
+            <td>${detailText}</td>
+        `;
+        tbody.appendChild(row);
+        
+        const hasDisabledStock = resultsData.some(res => res.status === 'disabled' && res.stock_id);
+        document.getElementById('btn-delete-disabled').style.display = hasDisabledStock ? 'inline-block' : 'none';
+        
+        const container = document.getElementById('log-container');
+        container.scrollTop = container.scrollHeight;
     }
 
     // ─── Render Results Table ───
     function renderResultsTable() {
         const tbody = document.getElementById('result-tbody');
         tbody.innerHTML = '';
-
-        const statusConfig = {
-            'live': { badge: 'bg-success', icon: '✅', label: 'LIVE' },
-            'disabled': { badge: 'bg-danger', icon: '❌', label: 'DISABLED' }
-        };
-
-        resultsData.forEach((r, i) => {
-            const cfg = statusConfig[r.status] || { badge: 'bg-secondary', icon: '❓', label: 'UNKNOWN' };
-            const row = document.createElement('tr');
-            row.className = 'result-row';
-            row.setAttribute('data-status', r.status);
-            row.setAttribute('data-email', r.email);
-            
-            const detailText = r.stock_id 
-                ? `<span class="text-success fw-bold"><i class="fas fa-check-circle me-1"></i>Terhubung ke Stok (ID: ${r.stock_id})</span>`
-                : `<span class="text-muted"><i class="fas fa-exclamation-circle me-1"></i>Tidak ditemukan di stok saat ini</span>`;
-
-            row.innerHTML = `
-                <td class="px-4">
-                    <input type="checkbox" class="form-check-input result-cb" value="${r.email}" 
-                           data-stock-id="${r.stock_id || ''}" ${r.stock_id ? '' : 'disabled'} onchange="updateActionCount()">
-                </td>
-                <td class="fw-bold text-muted">${i + 1}</td>
-                <td class="fw-medium">${r.email}</td>
-                <td><span class="badge ${cfg.badge} status-badge rounded-pill px-3">${cfg.icon} ${cfg.label}</span></td>
-                <td>${detailText}</td>
-            `;
-            tbody.appendChild(row);
-        });
-
-        // Hide delete disabled button if no disabled items with stock_id exist
-        const hasDisabledStock = resultsData.some(r => r.status === 'disabled' && r.stock_id);
-        document.getElementById('btn-delete-disabled').style.display = hasDisabledStock ? 'inline-block' : 'none';
-        
-        // Initial button states
+        resultsData.forEach((r, i) => appendResultRow(r, i + 1));
         updateActionCount();
     }
 

@@ -134,4 +134,95 @@ class GmailCheckerController extends Controller
             'message' => 'Aksi tidak dikenal.',
         ], 422);
     }
+
+    /**
+     * Start the bulk checker using Streaming API (Server-Sent Events style)
+     */
+    public function startCheck(Request $request)
+    {
+        $emails = $request->input('emails', []);
+        $proxy = $request->input('proxy', null); // format: ip:port or ip:port:user:pass
+
+        if (!is_array($emails) || count($emails) === 0) {
+            return response()->json(['error' => 'No emails provided'], 400);
+        }
+
+        $response = new \Symfony\Component\HttpFoundation\StreamedResponse(function () use ($emails, $proxy) {
+            $total = count($emails);
+            $processed = 0;
+            
+            echo json_encode(['total' => $total, 'processed' => 0]) . "\n";
+            ob_flush();
+            flush();
+
+            foreach ($emails as $email) {
+                // To avoid immediate ban, add small delay if no proxy (2 seconds)
+                if (!$proxy) {
+                    usleep(2000000); 
+                }
+
+                $status = $this->checkGmailStatus($email, $proxy);
+                $processed++;
+                
+                echo json_encode([
+                    'processed' => $processed,
+                    'total' => $total,
+                    'email' => $email,
+                    'result' => $status
+                ]) . "\n";
+                
+                ob_flush();
+                flush();
+            }
+            
+            echo json_encode(['done' => true]) . "\n";
+            ob_flush();
+            flush();
+        });
+
+        $response->headers->set('Content-Type', 'text/event-stream');
+        $response->headers->set('Cache-Control', 'no-cache');
+        $response->headers->set('Connection', 'keep-alive');
+        $response->headers->set('X-Accel-Buffering', 'no'); // Nginx bypass
+
+        return $response;
+    }
+
+    /**
+     * Internal method to check Gmail using cURL
+     */
+    private function checkGmailStatus($email, $proxy = null)
+    {
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, 'https://mail.google.com/mail/gxlu?email=' . urlencode($email));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HEADER, true);
+        curl_setopt($ch, CURLOPT_NOBODY, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+        curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+        
+        if ($proxy) {
+            $proxyParts = explode(':', $proxy);
+            if (count($proxyParts) >= 2) {
+                curl_setopt($ch, CURLOPT_PROXY, $proxyParts[0] . ':' . $proxyParts[1]);
+                if (count($proxyParts) == 4) {
+                    curl_setopt($ch, CURLOPT_PROXYUSERPWD, $proxyParts[2] . ':' . $proxyParts[3]);
+                }
+            }
+        }
+
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($httpCode === 429) {
+            return 'error'; // Rate limited
+        }
+
+        if ($response && stripos($response, 'Set-Cookie:') !== false) {
+            return 'live';
+        }
+
+        return 'die';
+    }
 }
