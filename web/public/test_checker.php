@@ -1,0 +1,1 @@
+<?php require __DIR__." /../vendor/autoload.php\; \ = require_once __DIR__.\/../bootstrap/app.php\; \ = \->make(Illuminate\Contracts\Http\Kernel::class); \ = \->handle(\ = Illuminate\Http\Request::create(\/admin/tools/gmail-checker/start-check\, \POST\, [], [], [], [], json_encode([\emails\ => [\test1@gmail.com\, \test2@gmail.com\]]))); \->send();

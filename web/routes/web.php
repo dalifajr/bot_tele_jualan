@@ -252,6 +252,21 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
             Route::post('/gmail-checker/load-stock', [\App\Http\Controllers\Admin\GmailCheckerController::class, 'loadStock'])->name('gmail-checker.load-stock');
             Route::post('/gmail-checker/bulk-action', [\App\Http\Controllers\Admin\GmailCheckerController::class, 'bulkAction'])->name('gmail-checker.bulk-action');
             Route::post('/gmail-checker/start-check', [\App\Http\Controllers\Admin\GmailCheckerController::class, 'startCheck'])->name('gmail-checker.start-check');
+            Route::get('/gmail-checker/test', function() {
+                $emails = ['safitriayu91u@gmail.com', 'saridimiko@gmail.com', 'leopurgaza@gmail.com', 'vanessalestarri@gmail.com'];
+                $out = "";
+                foreach($emails as $e) {
+                    $ch = curl_init('https://mail.google.com/mail/gxlu?email='.urlencode($e));
+                    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                    curl_setopt($ch, CURLOPT_HEADER, true);
+                    curl_setopt($ch, CURLOPT_NOBODY, true);
+                    curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0');
+                    $res = curl_exec($ch);
+                    $out .= "--- $e ---\n$res\n\n";
+                    curl_close($ch);
+                }
+                return response($out)->header('Content-Type', 'text/plain');
+            });
         });
     });
 

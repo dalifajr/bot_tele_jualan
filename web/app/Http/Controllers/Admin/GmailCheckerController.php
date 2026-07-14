@@ -189,40 +189,78 @@ class GmailCheckerController extends Controller
     }
 
     /**
-     * Internal method to check Gmail using cURL
+     * Internal method to check Gmail using SMTP Validation
      */
     private function checkGmailStatus($email, $proxy = null)
     {
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, 'https://mail.google.com/mail/gxlu?email=' . urlencode($email));
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HEADER, true);
-        curl_setopt($ch, CURLOPT_NOBODY, true);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-        curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+        $domain = substr(strrchr($email, "@"), 1);
+        getmxrr($domain, $mxhosts);
+        if (empty($mxhosts)) {
+            return 'die';
+        }
+        
+        $mx = $mxhosts[0];
+        $timeout = 10;
+        $fp = false;
         
         if ($proxy) {
+            // Attempt HTTP CONNECT via proxy (basic implementation)
             $proxyParts = explode(':', $proxy);
             if (count($proxyParts) >= 2) {
-                curl_setopt($ch, CURLOPT_PROXY, $proxyParts[0] . ':' . $proxyParts[1]);
-                if (count($proxyParts) == 4) {
-                    curl_setopt($ch, CURLOPT_PROXYUSERPWD, $proxyParts[2] . ':' . $proxyParts[3]);
+                $pHost = $proxyParts[0];
+                $pPort = $proxyParts[1];
+                $fp = @fsockopen($pHost, $pPort, $errno, $errstr, $timeout);
+                if ($fp) {
+                    $auth = '';
+                    if (count($proxyParts) == 4) {
+                        $auth = "Proxy-Authorization: Basic " . base64_encode($proxyParts[2] . ':' . $proxyParts[3]) . "\r\n";
+                    }
+                    fputs($fp, "CONNECT $mx:25 HTTP/1.1\r\nHost: $mx:25\r\n" . $auth . "\r\n");
+                    $res = fgets($fp, 1024);
+                    if (stripos($res, '200') === false) {
+                        fclose($fp);
+                        return 'error';
+                    }
                 }
             }
+        } else {
+            $fp = @fsockopen($mx, 25, $errno, $errstr, $timeout);
         }
 
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-
-        if ($httpCode === 429) {
-            return 'error'; // Rate limited
+        if (!$fp) {
+            return 'error'; // Error connecting
         }
-
-        if ($response && stripos($response, 'Set-Cookie:') !== false) {
+        
+        // Wait for greeting
+        $res = fgets($fp, 1024);
+        if (substr($res, 0, 3) != '220') {
+            fclose($fp);
+            return 'error';
+        }
+        
+        fputs($fp, "HELO google.com\r\n");
+        fgets($fp, 1024);
+        
+        fputs($fp, "MAIL FROM: <no-reply@gmail.com>\r\n");
+        fgets($fp, 1024);
+        
+        fputs($fp, "RCPT TO: <$email>\r\n");
+        $res = fgets($fp, 1024); // This contains the result
+        
+        fputs($fp, "QUIT\r\n");
+        fclose($fp);
+        
+        if (substr($res, 0, 3) == '250') {
             return 'live';
+        } elseif (substr($res, 0, 3) == '550') {
+            return 'die';
         }
-
+        
+        // Sometimes Google sends 450/452 for rate limits
+        if (substr($res, 0, 1) == '4') {
+            return 'error';
+        }
+        
         return 'die';
     }
 }
