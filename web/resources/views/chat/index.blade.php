@@ -70,7 +70,7 @@
             @if($selectedContact)
                 {{-- Chat Box Header --}}
                 <div class="p-3 bg-white border-bottom d-flex align-items-center gap-3">
-                    <a href="{{ route('chat.index') }}" class="btn btn-light d-md-none rounded-circle d-flex align-items-center justify-content-center p-0" style="width: 40px; height: 40px; min-width: 40px;">
+                    <a href="{{ route('chat.index', ['view' => 'list']) }}" class="btn btn-light d-md-none rounded-circle d-flex align-items-center justify-content-center p-0" style="width: 40px; height: 40px; min-width: 40px;">
                         <i class="fas fa-arrow-left text-dark"></i>
                     </a>
                     <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold small" style="width: 40px; height: 40px; min-width: 40px;">
@@ -98,7 +98,7 @@
                         <div id="uploadProgressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-primary" role="progressbar" style="width: 0%;"></div>
                     </div>
 
-                    <form id="chatForm" class="d-flex gap-2 align-items-center">
+                    <form id="chatForm" class="d-flex gap-2 align-items-center no-loader">
                         @csrf
                         <input type="hidden" name="receiver_id" id="receiver_id" value="{{ $selectedContact->id }}">
                         

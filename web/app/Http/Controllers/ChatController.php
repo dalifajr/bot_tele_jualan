@@ -66,9 +66,10 @@ class ChatController extends Controller
             })
             ->sortByDesc('last_message_time');
 
+        $forceList = $request->query('view') === 'list';
         if ($selectedContactId) {
             $selectedContact = User::find($selectedContactId);
-        } elseif ($contacts->isNotEmpty()) {
+        } elseif ($contacts->isNotEmpty() && !$forceList) {
             $selectedContact = $contacts->first();
         }
 
