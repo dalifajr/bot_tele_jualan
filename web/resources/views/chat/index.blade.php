@@ -454,7 +454,16 @@
             `;
             
             fetch(`/chat/search-users?q=${encodeURIComponent(query)}`)
-                .then(res => res.json())
+                .then(res => {
+                    if (!res.ok) {
+                        return res.json().then(errData => {
+                            throw new Error(errData.message || `HTTP error! status: ${res.status}`);
+                        }).catch(() => {
+                            throw new Error(`HTTP error! status: ${res.status}`);
+                        });
+                    }
+                    return res.json();
+                })
                 .then(data => {
                     if (data.success) {
                         if (data.users.length === 0) {
@@ -479,13 +488,15 @@
                             `;
                         });
                         userSearchResults.innerHTML = html;
+                    } else {
+                        throw new Error(data.message || 'Gagal memuat pengguna.');
                     }
                 })
                 .catch(err => {
                     console.error("Error searching users:", err);
                     userSearchResults.innerHTML = `
-                        <div class="text-center text-danger py-4 small">
-                            Gagal memuat pengguna.
+                        <div class="text-center text-danger py-4 small fw-bold">
+                            Gagal memuat pengguna: ${escapeHtml(err.message)}
                         </div>
                     `;
                 });

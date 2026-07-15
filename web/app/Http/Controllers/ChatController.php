@@ -180,57 +180,62 @@ class ChatController extends Controller
      */
     public function searchUsers(Request $request)
     {
-        $search = $request->query('q', '');
-        $user = Auth::user();
+        try {
+            $search = $request->query('q', '');
+            $user = Auth::user();
 
-        $limit = $search === '' ? 100 : 20;
+            $limit = $search === '' ? 100 : 20;
 
-        if ($user->role === 'admin') {
-            // Admin can search all users except themselves
-            $users = User::where('id', '!=', $user->id)
-                ->where(function ($query) use ($search) {
-                    $query->where('username', 'like', "%{$search}%")
-                        ->orWhere('full_name', 'like', "%{$search}%")
-                        ->orWhere('email', 'like', "%{$search}%");
+            if ($user->role === 'admin') {
+                // Admin can search all users except themselves
+                $users = User::where('id', '!=', $user->id)
+                    ->where(function ($query) use ($search) {
+                        $query->where('username', 'like', "%{$search}%")
+                            ->orWhere('full_name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%");
+                    })
+                    ->limit($limit)
+                    ->get(['id', 'username', 'full_name', 'role']);
+            } elseif ($user->role === 'seller') {
+                // Seller can search admins, and customers who bought their products
+                $adminIds = User::where('role', 'admin')->pluck('id')->toArray();
+                
+                $customerIds = Order::whereHas('items.product', function ($query) use ($user) {
+                    $query->where('creator_id', $user->id);
                 })
-                ->limit($limit)
-                ->get(['id', 'username', 'full_name', 'role']);
-        } elseif ($user->role === 'seller') {
-            // Seller can search admins, and customers who bought their products
-            $adminIds = User::where('role', 'admin')->pluck('id')->toArray();
-            
-            $customerIds = Order::whereHas('items.product', function ($query) use ($user) {
-                $query->where('creator_id', $user->id);
-            })
-            ->pluck('customer_id')
-            ->unique()
-            ->toArray();
-            
-            $eligibleIds = array_unique(array_merge($adminIds, $customerIds));
+                ->pluck('customer_id')
+                ->unique()
+                ->toArray();
+                
+                $eligibleIds = array_unique(array_merge($adminIds, $customerIds));
 
-            $users = User::whereIn('id', $eligibleIds)
-                ->where('id', '!=', $user->id)
-                ->where(function ($query) use ($search) {
-                    $query->where('username', 'like', "%{$search}%")
-                        ->orWhere('full_name', 'like', "%{$search}%")
-                        ->orWhere('email', 'like', "%{$search}%");
+                $users = User::whereIn('id', $eligibleIds)
+                    ->where('id', '!=', $user->id)
+                    ->where(function ($query) use ($search) {
+                        $query->where('username', 'like', "%{$search}%")
+                            ->orWhere('full_name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%");
+                    })
+                    ->limit($limit)
+                    ->get(['id', 'username', 'full_name', 'role']);
+            } else {
+                return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+            }
+
+            return response()->json([
+                'success' => true,
+                'users' => $users->map(function ($u) {
+                    return [
+                        'id' => $u->id,
+                        'name' => $u->full_name ?? $u->username,
+                        'username' => $u->username,
+                        'role' => $u->role
+                    ];
                 })
-                ->limit($limit)
-                ->get(['id', 'username', 'full_name', 'role']);
-        } else {
-            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+            ]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error("searchUsers failed: " . $e->getMessage() . "\n" . $e->getTraceAsString());
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
-
-        return response()->json([
-            'success' => true,
-            'users' => $users->map(function ($u) {
-                return [
-                    'id' => $u->id,
-                    'name' => $u->full_name ?? $u->username,
-                    'username' => $u->username,
-                    'role' => $u->role
-                ];
-            })
-        ]);
     }
 }
