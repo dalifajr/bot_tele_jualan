@@ -603,5 +603,33 @@ class TelegramService
             Log::error("Gagal mengirim notifikasi chat baru ke telegram {$receiver->telegram_id}: " . $e->getMessage());
         }
     }
+
+    /**
+     * Notify Admin when a user requests an IP unblock.
+     */
+    public static function notifyAdminUnblockRequest(User $admin, User $user, string $ip, string $location, string $device, string $browser)
+    {
+        $botToken = config('services.telegram.bot_token');
+        if (empty($botToken)) return;
+        if (!$admin->telegram_id) return;
+
+        $text = "<b>Permintaan Buka Blokir IP</b>\n"
+              . "Pengirim: {$user->username} ({$user->role})\n"
+              . "IP: {$ip}\n"
+              . "Lokasi: {$location}\n"
+              . "Perangkat: {$device}\n"
+              . "Browser: {$browser}\n\n"
+              . "<i>Silakan periksa dan balas pesan di website</i>";
+
+        try {
+            Http::post("https://api.telegram.org/bot{$botToken}/sendMessage", [
+                'chat_id' => $admin->telegram_id,
+                'text' => $text,
+                'parse_mode' => 'HTML',
+            ]);
+        } catch (\Exception $e) {
+            Log::error("Gagal mengirim notifikasi permintaan unblock ke admin {$admin->telegram_id}: " . $e->getMessage());
+        }
+    }
 }
 

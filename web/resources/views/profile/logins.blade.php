@@ -50,13 +50,19 @@
                                     <div class="text-secondary small" title="{{ $log->user_agent }}"><i class="fab fa-chrome text-primary me-1"></i>{{ $log->browser ?? '-' }}</div>
                                 </td>
                                 <td class="text-end pe-4">
-                                    <form action="{{ route('profile.logins.block-ip') }}" method="POST" class="d-inline">
-                                        @csrf
-                                        <input type="hidden" name="ip_address" value="{{ $log->ip_address }}">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill" onclick="confirmAction(event, 'Blokir IP ini selama 1 hari?')">
-                                            <i class="fas fa-ban me-1"></i>Blokir
+                                    @if(\Illuminate\Support\Facades\Cache::has('blocked_ip:' . $log->ip_address))
+                                        <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-3" onclick="requestUnblockIp(event, '{{ $log->ip_address }}', '{{ $log->location ?? 'Unknown' }}', '{{ $log->device_type }}', '{{ $log->browser ?? '-' }}')">
+                                            <i class="fas fa-unlock me-1"></i>Buka Blokir
                                         </button>
-                                    </form>
+                                    @else
+                                        <form action="{{ route('profile.logins.block-ip') }}" method="POST" class="d-inline" onsubmit="confirmBlockIp(event, this)">
+                                            @csrf
+                                            <input type="hidden" name="ip_address" value="{{ $log->ip_address }}">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3">
+                                                <i class="fas fa-ban me-1"></i>Blokir
+                                            </button>
+                                        </form>
+                                    @endif
                                 </td>
                             </tr>
                             @endforeach
@@ -78,3 +84,165 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    const admins = @json($admins);
+
+    function confirmBlockIp(event, form) {
+        event.preventDefault();
+        Swal.fire({
+            title: 'Pilih Durasi Blokir IP',
+            text: `Pilih jangka waktu pemblokiran untuk IP ${form.ip_address.value}`,
+            icon: 'warning',
+            input: 'select',
+            inputOptions: {
+                '1': '1 Hari',
+                '7': '7 Hari',
+                '30': '30 Hari',
+                '365': '1 Tahun'
+            },
+            inputValue: '1',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Blokir IP',
+            cancelButtonText: 'Batal',
+            inputValidator: (value) => {
+                return new Promise((resolve) => {
+                    if (value) {
+                        resolve();
+                    } else {
+                        resolve('Anda harus memilih durasi blokir!');
+                    }
+                });
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                let durationInput = document.createElement('input');
+                durationInput.type = 'hidden';
+                durationInput.name = 'duration';
+                durationInput.value = result.value;
+                form.appendChild(durationInput);
+                
+                let loader = document.getElementById('pageLoader');
+                if (loader) {
+                    loader.classList.remove('fade-out');
+                }
+                form.submit();
+            }
+        });
+    }
+
+    function requestUnblockIp(event, ip, location, device, browser) {
+        event.preventDefault();
+        
+        if (admins.length === 0) {
+            Swal.fire({
+                title: 'Hubungi Admin',
+                text: 'Tidak ada admin aktif saat ini untuk memproses permintaan Anda.',
+                icon: 'error',
+                confirmButtonText: 'Mengerti'
+            });
+            return;
+        }
+        
+        Swal.fire({
+            title: 'Buka Blokir IP',
+            html: `IP Anda <b>${ip}</b> saat ini terblokir.<br>Silakan hubungi administrator untuk membuka blokir ini.`,
+            icon: 'info',
+            showCancelButton: true,
+            confirmButtonColor: '#0d6efd',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Chat Admin',
+            cancelButtonText: 'Mengerti'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                if (admins.length === 1) {
+                    submitUnblockRequest(admins[0].id, ip, location, device, browser);
+                } else {
+                    let adminOptions = {};
+                    admins.forEach(admin => {
+                        adminOptions[admin.id] = admin.full_name || admin.username;
+                    });
+                    
+                    Swal.fire({
+                        title: 'Pilih Administrator',
+                        text: 'Pilih admin yang ingin Anda hubungi:',
+                        input: 'select',
+                        inputOptions: adminOptions,
+                        inputPlaceholder: 'Pilih admin...',
+                        showCancelButton: true,
+                        confirmButtonText: 'Pilih & Hubungi',
+                        cancelButtonText: 'Batal',
+                        inputValidator: (value) => {
+                            return new Promise((resolve) => {
+                                if (value) {
+                                    resolve();
+                                } else {
+                                    resolve('Anda harus memilih administrator!');
+                                }
+                            });
+                        }
+                    }).then((adminResult) => {
+                        if (adminResult.isConfirmed) {
+                            submitUnblockRequest(adminResult.value, ip, location, device, browser);
+                        }
+                    });
+                }
+            }
+        });
+    }
+
+    function submitUnblockRequest(adminId, ip, location, device, browser) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = "{{ route('profile.logins.request-unblock') }}";
+        
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = '_token';
+        csrfInput.value = "{{ csrf_token() }}";
+        form.appendChild(csrfInput);
+        
+        const adminInput = document.createElement('input');
+        adminInput.type = 'hidden';
+        adminInput.name = 'admin_id';
+        adminInput.value = adminId;
+        form.appendChild(adminInput);
+        
+        const ipInput = document.createElement('input');
+        ipInput.type = 'hidden';
+        ipInput.name = 'ip_address';
+        ipInput.value = ip;
+        form.appendChild(ipInput);
+        
+        const locInput = document.createElement('input');
+        locInput.type = 'hidden';
+        locInput.name = 'location';
+        locInput.value = location;
+        form.appendChild(locInput);
+        
+        const devInput = document.createElement('input');
+        devInput.type = 'hidden';
+        devInput.name = 'device';
+        devInput.value = device;
+        form.appendChild(devInput);
+        
+        const browInput = document.createElement('input');
+        browInput.type = 'hidden';
+        browInput.name = 'browser';
+        browInput.value = browser;
+        form.appendChild(browInput);
+        
+        document.body.appendChild(form);
+        
+        let loader = document.getElementById('pageLoader');
+        if (loader) {
+            loader.classList.remove('fade-out');
+        }
+        
+        form.submit();
+    }
+</script>
+@endpush

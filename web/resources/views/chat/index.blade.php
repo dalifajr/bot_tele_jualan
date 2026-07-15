@@ -205,6 +205,16 @@
         
         let lastMessageCount = 0;
 
+        // Prefill message if provided in URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const prefill = urlParams.get('prefill');
+        if (prefill && messageInput) {
+            messageInput.value = prefill;
+            if (sendBtn) {
+                sendBtn.disabled = false;
+            }
+        }
+
         // Make clearAttachment globally available for inline onclick
         window.clearAttachment = function() {
             attachmentInput.value = '';

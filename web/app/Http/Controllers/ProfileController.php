@@ -107,17 +107,84 @@ class ProfileController extends Controller
             $q->where('username_or_email', $user->username)
               ->orWhere('username_or_email', $user->email);
         })->orderBy('created_at', 'desc')->paginate(15);
+
+        $admins = \App\Models\User::where('role', 'admin')->get(['id', 'username', 'full_name']);
         
-        return view('profile.logins', compact('loginLogs'));
+        return view('profile.logins', compact('loginLogs', 'admins'));
     }
 
     public function blockIp(Request $request)
     {
-        $request->validate(['ip_address' => 'required|ip']);
+        $request->validate([
+            'ip_address' => 'required|ip',
+            'duration' => 'required|integer|in:1,7,30,365'
+        ]);
         $ip = $request->ip_address;
+        $duration = (int)$request->duration;
         
-        \Illuminate\Support\Facades\Cache::put('blocked_ip:' . $ip, true, now()->addDay());
+        $durationText = '';
+        if ($duration === 1) {
+            $expire = now()->addDay();
+            $durationText = '1 hari';
+        } elseif ($duration === 7) {
+            $expire = now()->addDays(7);
+            $durationText = '7 hari';
+        } elseif ($duration === 30) {
+            $expire = now()->addDays(30);
+            $durationText = '30 hari';
+        } elseif ($duration === 365) {
+            $expire = now()->addYear();
+            $durationText = '1 tahun';
+        } else {
+            $expire = now()->addDay();
+            $durationText = '1 hari';
+        }
         
-        return back()->with('success', "IP Address {$ip} telah diblokir selama 1 hari.");
+        \Illuminate\Support\Facades\Cache::put('blocked_ip:' . $ip, true, $expire);
+        
+        return back()->with('success', "IP Address {$ip} telah diblokir selama {$durationText}.");
+    }
+
+    public function requestUnblock(Request $request)
+    {
+        $request->validate([
+            'admin_id' => 'required|exists:users,id',
+            'ip_address' => 'required|ip',
+            'location' => 'nullable|string',
+            'device' => 'nullable|string',
+            'browser' => 'nullable|string',
+        ]);
+        
+        $admin = \App\Models\User::find($request->admin_id);
+        $user = Auth::user();
+        
+        $ip = $request->ip_address;
+        $location = $request->location ?? 'Unknown';
+        $device = $request->device ?? 'Unknown';
+        $browser = $request->browser ?? 'Unknown';
+        
+        // Notify selected admin via Telegram
+        \App\Services\TelegramService::notifyAdminUnblockRequest($admin, $user, $ip, $location, $device, $browser);
+        
+        // Notify admin via database notification
+        $admin->notify(new \App\Notifications\NewChatMessageNotification(
+            "Izin minta dibuka blokirnya untuk IP {$ip}",
+            $user->full_name ?? $user->username,
+            $user->id
+        ));
+
+        // Format prefill text
+        $prefill = "Halo Pak,\n"
+                 . "izin minta dibuka blokirnya untuk;\n"
+                 . "IP : {$ip}\n"
+                 . "lokasi : {$location}\n"
+                 . "perangkat: {$device}\n"
+                 . "browser: {$browser}\n"
+                 . "terimakasih banyak pak.";
+                 
+        return redirect()->route('chat.index', [
+            'contact_id' => $admin->id,
+            'prefill' => $prefill
+        ]);
     }
 }
