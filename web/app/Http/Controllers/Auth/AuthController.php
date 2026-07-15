@@ -50,7 +50,11 @@ class AuthController extends Controller
             'password' => 'required|string',
         ];
 
-        if (!app()->environment('testing', 'local')) {
+        $hasTurnstile = config('services.turnstile.site_key') 
+            && config('services.turnstile.secret_key') 
+            && config('services.turnstile.site_key') !== '1x00000000000000000000AA';
+
+        if ($hasTurnstile) {
             $rules['cf-turnstile-response'] = 'required|string';
         }
 
@@ -64,7 +68,7 @@ class AuthController extends Controller
         $request->validate($rules);
 
         // Validate Captcha
-        if (!app()->environment('testing', 'local')) {
+        if ($hasTurnstile) {
             $turnstileSecret = config('services.turnstile.secret_key');
             $captchaResponse = Http::asForm()->post('https://challenges.cloudflare.com/turnstile/v0/siteverify', [
                 'secret' => $turnstileSecret,
@@ -172,14 +176,18 @@ class AuthController extends Controller
             'password' => ['required', 'string', \Illuminate\Validation\Rules\Password::min(8)->letters()->numbers()->symbols(), 'confirmed'],
         ];
 
-        if (!app()->environment('testing', 'local')) {
+        $hasTurnstile = config('services.turnstile.site_key') 
+            && config('services.turnstile.secret_key') 
+            && config('services.turnstile.site_key') !== '1x00000000000000000000AA';
+
+        if ($hasTurnstile) {
             $rules['cf-turnstile-response'] = 'required|string';
         }
 
         $request->validate($rules);
 
         // Validate Captcha
-        if (!app()->environment('testing', 'local')) {
+        if ($hasTurnstile) {
             $turnstileSecret = config('services.turnstile.secret_key');
             $captchaResponse = Http::asForm()->post('https://challenges.cloudflare.com/turnstile/v0/siteverify', [
                 'secret' => $turnstileSecret,
