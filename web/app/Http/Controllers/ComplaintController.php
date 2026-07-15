@@ -55,6 +55,16 @@ class ComplaintController extends Controller
             'created_at' => now(),
         ]);
 
+        // Notify the seller in the web app
+        $sellerId = $complaint->order->items->first()->product->creator_id ?? null;
+        if ($sellerId) {
+            $seller = \App\Models\User::find($sellerId);
+            if ($seller) {
+                $message = "Pelanggan membuka kembali (reopen) komplain {$complaint->complaint_ref}";
+                $seller->notify(new \App\Notifications\ComplaintNotification($complaint, 'new', $message));
+            }
+        }
+
         return redirect()->route('customer.complaints.show', $complaint->id)->with('success', 'Komplain berhasil dibuka kembali dan sedang ditinjau ulang oleh penjual.');
     }
 }

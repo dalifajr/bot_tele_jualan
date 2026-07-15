@@ -1695,6 +1695,12 @@ class AdminController extends Controller
         
         \App\Services\TelegramService::notifyComplaintStatusUpdate($complaint);
 
+        // Notify the customer in the web app
+        $customer = \App\Models\User::find($complaint->customer_id);
+        if ($customer) {
+            $customer->notify(new \App\Notifications\ComplaintNotification($complaint, 'status_update'));
+        }
+
         // Put an audit log entry
         \Illuminate\Support\Facades\DB::table('audit_logs')->insert([
             'action' => 'complaint_update_status',

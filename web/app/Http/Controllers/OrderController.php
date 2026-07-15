@@ -95,6 +95,15 @@ class OrderController extends Controller
 
         \App\Services\TelegramService::notifySellerNewComplaint($complaint);
 
+        // Notify the seller in the web app
+        $sellerId = $order->items->first()->product->creator_id ?? null;
+        if ($sellerId) {
+            $seller = \App\Models\User::find($sellerId);
+            if ($seller) {
+                $seller->notify(new \App\Notifications\ComplaintNotification($complaint, 'new'));
+            }
+        }
+
         return redirect()->back()->with('success', 'Komplain / klaim garansi berhasil diajukan. Kami akan segera meninjau keluhan Anda.');
     }
 }
