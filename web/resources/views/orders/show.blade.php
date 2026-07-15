@@ -242,15 +242,32 @@
                             </div>
                         </div>
                     @else
+                        @if($order->is_warranty_active)
                         <div class="d-flex align-items-center justify-content-between bg-light-subtle border border-dashed border-secondary-subtle rounded-3 p-3 mt-3">
                             <div>
                                 <h6 class="fw-bold mb-1"><i class="fas fa-shield-alt text-primary me-2"></i>Garansi Toko Aktif</h6>
-                                <p class="text-muted small mb-0">Apakah akun digital yang Anda beli bermasalah? Ajukan klaim garansi di sini.</p>
+                                <p class="text-muted small mb-0">Batas akhir: <strong>{{ $order->warranty_expires_at->format('d M Y H:i') }}</strong></p>
+                                <p class="text-muted small mb-0 mt-1">Apakah akun digital yang Anda beli bermasalah? Ajukan klaim garansi di sini.</p>
                             </div>
                             <button type="button" class="btn btn-warning rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#complaintModal">
                                 <i class="fas fa-toolbox me-2"></i>Ajukan Komplain
                             </button>
                         </div>
+                        @else
+                        <div class="d-flex align-items-center justify-content-between bg-body-secondary border border-dashed border-secondary-subtle rounded-3 p-3 mt-3">
+                            <div>
+                                <h6 class="fw-bold mb-1 text-secondary"><i class="fas fa-shield-alt me-2 text-secondary"></i>Garansi Toko Kedaluwarsa</h6>
+                                @if($order->warranty_expires_at)
+                                <p class="text-muted small mb-0">Garansi berakhir pada: <strong>{{ $order->warranty_expires_at->format('d M Y H:i') }}</strong></p>
+                                @else
+                                <p class="text-muted small mb-0">Produk ini tidak memiliki garansi atau pesanan belum selesai.</p>
+                                @endif
+                            </div>
+                            <button type="button" class="btn btn-secondary rounded-pill px-4" disabled>
+                                <i class="fas fa-toolbox me-2"></i>Klaim Berakhir
+                            </button>
+                        </div>
+                        @endif
                     @endif
                 </div>
                 @endif

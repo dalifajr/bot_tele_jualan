@@ -59,6 +59,10 @@ class OrderController extends Controller
             return redirect()->back()->with('error', 'Klaim garansi / komplain sudah pernah diajukan untuk pesanan ini.');
         }
 
+        if (!$order->is_warranty_active) {
+            return redirect()->back()->with('error', 'Garansi toko untuk pesanan ini telah kedaluwarsa atau tidak berlaku.');
+        }
+
         $request->validate([
             'complaint_text' => 'required|string|min:10|max:1000',
             'attachment' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:10240',
@@ -103,6 +107,11 @@ class OrderController extends Controller
                 $seller->notify(new \App\Notifications\ComplaintNotification($complaint, 'new'));
             }
         }
+        
+        // Notify admins
+        \App\Models\User::where('role', 'admin')->get()->each(function ($admin) use ($complaint) {
+            $admin->notify(new \App\Notifications\ComplaintNotification($complaint, 'new'));
+        });
 
         return redirect()->back()->with('success', 'Komplain / klaim garansi berhasil diajukan. Kami akan segera meninjau keluhan Anda.');
     }

@@ -106,14 +106,38 @@ class Order extends Model
      */
     public function getStatusLabelAttribute(): string
     {
-        return match ($this->status) {
+        return match($this->status) {
             'pending_payment' => 'Menunggu Pembayaran',
-            'paid' => 'Sudah Dibayar',
+            'paid' => 'Dibayar',
             'delivered' => 'Selesai',
             'cancelled' => 'Dibatalkan',
             'expired' => 'Kedaluwarsa',
-            default => $this->status,
+            default => 'Unknown'
         };
+    }
+
+    public function getWarrantyExpiresAtAttribute()
+    {
+        if ($this->status !== 'delivered' || !$this->delivered_at) {
+            return null;
+        }
+
+        $warrantyDays = $this->product->warranty_days ?? 0;
+        if ($warrantyDays <= 0) {
+            return null; // No warranty
+        }
+
+        return $this->delivered_at->copy()->addDays($warrantyDays);
+    }
+
+    public function getIsWarrantyActiveAttribute(): bool
+    {
+        $expiresAt = $this->warranty_expires_at;
+        if (!$expiresAt) {
+            return false;
+        }
+
+        return now()->lessThanOrEqualTo($expiresAt);
     }
 
     /**

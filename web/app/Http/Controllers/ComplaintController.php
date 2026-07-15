@@ -39,6 +39,10 @@ class ComplaintController extends Controller
             return redirect()->back()->with('error', 'Batas maksimal pembukaan ulang (3 kali) telah tercapai.');
         }
 
+        if (!$complaint->order || !$complaint->order->is_warranty_active) {
+            return redirect()->back()->with('error', 'Garansi toko untuk pesanan ini telah kedaluwarsa sehingga komplain tidak dapat dibuka kembali.');
+        }
+
         $complaint->update([
             'status' => 'review',
             'reopen_count' => $complaint->reopen_count + 1,
@@ -57,13 +61,18 @@ class ComplaintController extends Controller
 
         // Notify the seller in the web app
         $sellerId = $complaint->order->items->first()->product->creator_id ?? null;
+        $message = "Pelanggan membuka kembali (reopen) komplain {$complaint->complaint_ref}";
         if ($sellerId) {
             $seller = \App\Models\User::find($sellerId);
             if ($seller) {
-                $message = "Pelanggan membuka kembali (reopen) komplain {$complaint->complaint_ref}";
                 $seller->notify(new \App\Notifications\ComplaintNotification($complaint, 'new', $message));
             }
         }
+        
+        // Notify admins
+        \App\Models\User::where('role', 'admin')->get()->each(function ($admin) use ($complaint, $message) {
+            $admin->notify(new \App\Notifications\ComplaintNotification($complaint, 'new', $message));
+        });
 
         return redirect()->route('customer.complaints.show', $complaint->id)->with('success', 'Komplain berhasil dibuka kembali dan sedang ditinjau ulang oleh penjual.');
     }
