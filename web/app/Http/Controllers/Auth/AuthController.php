@@ -73,10 +73,14 @@ class AuthController extends Controller
             $captchaResponse = Http::asForm()->post('https://challenges.cloudflare.com/turnstile/v0/siteverify', [
                 'secret' => $turnstileSecret,
                 'response' => $request->input('cf-turnstile-response'),
-                'remoteip' => $request->ip(),
             ]);
 
             if (!$captchaResponse->json('success')) {
+                \Illuminate\Support\Facades\Log::warning('Turnstile login verification failed', [
+                    'ip' => $request->ip(),
+                    'error_codes' => $captchaResponse->json('error-codes'),
+                    'secret_configured' => substr($turnstileSecret, 0, 6) . '...',
+                ]);
                 return back()->withErrors([
                     'login' => 'Verifikasi captcha (Turnstile) gagal. Silakan coba lagi.',
                 ])->onlyInput('login');
@@ -192,10 +196,14 @@ class AuthController extends Controller
             $captchaResponse = Http::asForm()->post('https://challenges.cloudflare.com/turnstile/v0/siteverify', [
                 'secret' => $turnstileSecret,
                 'response' => $request->input('cf-turnstile-response'),
-                'remoteip' => $request->ip(),
             ]);
 
             if (!$captchaResponse->json('success')) {
+                \Illuminate\Support\Facades\Log::warning('Turnstile registration verification failed', [
+                    'ip' => $request->ip(),
+                    'error_codes' => $captchaResponse->json('error-codes'),
+                    'secret_configured' => substr($turnstileSecret, 0, 6) . '...',
+                ]);
                 return back()->withErrors([
                     'username' => 'Verifikasi captcha (Turnstile) gagal. Silakan coba lagi.',
                 ])->withInput();
