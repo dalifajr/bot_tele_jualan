@@ -17,7 +17,7 @@ class BlockBannedIps
     public function handle(Request $request, Closure $next): Response
     {
         if (Cache::has('blocked_ip:' . $request->ip())) {
-            abort(403, 'Akses ditolak. IP Anda telah diblokir karena aktivitas mencurigakan.');
+            abort(403, 'Akses ditolak. Anda telah diblokir karena aktivitas mencurigakan.');
         }
 
         return $next($request);
