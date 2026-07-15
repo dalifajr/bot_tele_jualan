@@ -1568,12 +1568,44 @@ class AdminController extends Controller
 
     public function blockIp(Request $request)
     {
+        $request->validate([
+            'ip_address' => 'required|ip',
+            'duration' => 'required|integer|in:1,7,30,365'
+        ]);
+        $ip = $request->ip_address;
+        $duration = (int)$request->duration;
+        
+        $durationText = '';
+        if ($duration === 1) {
+            $expire = now()->addDay();
+            $durationText = '1 hari';
+        } elseif ($duration === 7) {
+            $expire = now()->addDays(7);
+            $durationText = '7 hari';
+        } elseif ($duration === 30) {
+            $expire = now()->addDays(30);
+            $durationText = '30 hari';
+        } elseif ($duration === 365) {
+            $expire = now()->addYear();
+            $durationText = '1 tahun';
+        } else {
+            $expire = now()->addDay();
+            $durationText = '1 hari';
+        }
+        
+        \Illuminate\Support\Facades\Cache::put('blocked_ip:' . $ip, true, $expire);
+        
+        return back()->with('success', "IP Address {$ip} telah diblokir selama {$durationText}.");
+    }
+
+    public function unblockIp(Request $request)
+    {
         $request->validate(['ip_address' => 'required|ip']);
         $ip = $request->ip_address;
         
-        \Illuminate\Support\Facades\Cache::put('blocked_ip:' . $ip, true, now()->addDay());
+        \Illuminate\Support\Facades\Cache::forget('blocked_ip:' . $ip);
         
-        return back()->with('success', "IP Address {$ip} telah diblokir selama 1 hari.");
+        return back()->with('success', "Blokir IP Address {$ip} telah dibuka.");
     }
 
     public function notifications()

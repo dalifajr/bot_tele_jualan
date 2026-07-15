@@ -62,13 +62,23 @@
                                     <div class="text-secondary small" title="{{ $log->user_agent }}"><i class="fab fa-chrome text-primary me-1"></i>{{ $log->browser ?? '-' }}</div>
                                 </td>
                                 <td class="text-end pe-4">
-                                    <form action="{{ route('admin.logins.block-ip') }}" method="POST" class="d-inline">
-                                        @csrf
-                                        <input type="hidden" name="ip_address" value="{{ $log->ip_address }}">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill" onclick="confirmAction(event, 'Blokir IP ini selama 1 hari?')">
-                                            <i class="fas fa-ban me-1"></i>Blokir
-                                        </button>
-                                    </form>
+                                    @if(\Illuminate\Support\Facades\Cache::has('blocked_ip:' . $log->ip_address))
+                                        <form action="{{ route('admin.logins.unblock-ip') }}" method="POST" class="d-inline">
+                                            @csrf
+                                            <input type="hidden" name="ip_address" value="{{ $log->ip_address }}">
+                                            <button type="submit" class="btn btn-sm btn-outline-success rounded-pill px-3" onclick="confirmAction(event, 'Buka blokir IP ini?')">
+                                                <i class="fas fa-unlock me-1"></i>Buka Blokir
+                                            </button>
+                                        </form>
+                                    @else
+                                        <form action="{{ route('admin.logins.block-ip') }}" method="POST" class="d-inline" onsubmit="confirmBlockIp(event, this)">
+                                            @csrf
+                                            <input type="hidden" name="ip_address" value="{{ $log->ip_address }}">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3">
+                                                <i class="fas fa-ban me-1"></i>Blokir
+                                            </button>
+                                        </form>
+                                    @endif
                                 </td>
                             </tr>
                             @endforeach
@@ -138,3 +148,52 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    function confirmBlockIp(event, form) {
+        event.preventDefault();
+        Swal.fire({
+            title: 'Pilih Durasi Blokir IP',
+            text: `Pilih jangka waktu pemblokiran untuk IP ${form.ip_address.value}`,
+            icon: 'warning',
+            input: 'select',
+            inputOptions: {
+                '1': '1 Hari',
+                '7': '7 Hari',
+                '30': '30 Hari',
+                '365': '1 Tahun'
+            },
+            inputValue: '1',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Blokir IP',
+            cancelButtonText: 'Batal',
+            inputValidator: (value) => {
+                return new Promise((resolve) => {
+                    if (value) {
+                        resolve();
+                    } else {
+                        resolve('Anda harus memilih durasi blokir!');
+                    }
+                });
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                let durationInput = document.createElement('input');
+                durationInput.type = 'hidden';
+                durationInput.name = 'duration';
+                durationInput.value = result.value;
+                form.appendChild(durationInput);
+                
+                let loader = document.getElementById('pageLoader');
+                if (loader) {
+                    loader.classList.remove('fade-out');
+                }
+                form.submit();
+            }
+        });
+    }
+</script>
+@endpush

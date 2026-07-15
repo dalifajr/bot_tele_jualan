@@ -173,6 +173,7 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         // Logins & Notifications
         Route::get('/logins', [\App\Http\Controllers\AdminController::class, 'logins'])->name('logins.index');
         Route::post('/logins/block-ip', [\App\Http\Controllers\AdminController::class, 'blockIp'])->name('logins.block-ip');
+        Route::post('/logins/unblock-ip', [\App\Http\Controllers\AdminController::class, 'unblockIp'])->name('logins.unblock-ip');
         Route::get('/notifications', [\App\Http\Controllers\AdminController::class, 'notifications'])->name('notifications.index');
         Route::post('/notifications/mark-read', [\App\Http\Controllers\AdminController::class, 'markNotificationsRead'])->name('notifications.markRead');
         
