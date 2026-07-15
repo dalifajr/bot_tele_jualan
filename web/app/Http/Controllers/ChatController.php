@@ -183,6 +183,8 @@ class ChatController extends Controller
         $search = $request->query('q', '');
         $user = Auth::user();
 
+        $limit = $search === '' ? 100 : 20;
+
         if ($user->role === 'admin') {
             // Admin can search all users except themselves
             $users = User::where('id', '!=', $user->id)
@@ -191,7 +193,7 @@ class ChatController extends Controller
                         ->orWhere('full_name', 'like', "%{$search}%")
                         ->orWhere('email', 'like', "%{$search}%");
                 })
-                ->limit(20)
+                ->limit($limit)
                 ->get(['id', 'username', 'full_name', 'role']);
         } elseif ($user->role === 'seller') {
             // Seller can search admins, and customers who bought their products
@@ -213,7 +215,7 @@ class ChatController extends Controller
                         ->orWhere('full_name', 'like', "%{$search}%")
                         ->orWhere('email', 'like', "%{$search}%");
                 })
-                ->limit(20)
+                ->limit($limit)
                 ->get(['id', 'username', 'full_name', 'role']);
         } else {
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);

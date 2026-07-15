@@ -153,9 +153,12 @@
     </div>
 </div>
 
+@endsection
+
+@push('modals')
 @if(in_array(Auth::user()->role, ['admin', 'seller']))
 <!-- Start Chat Modal -->
-<div class="modal fade" id="startChatModal" tabindex="-1" aria-labelledby="startChatModalLabel" aria-hidden="true">
+<div class="modal fade" id="startChatModal" tabindex="-1" aria-labelledby="startChatModalLabel" aria-hidden="true" style="z-index: 1060;">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content border-0 shadow" style="border-radius: 16px;">
             <div class="modal-header border-bottom p-3">
@@ -169,7 +172,7 @@
                 </div>
                 <div id="userSearchResults" class="list-group list-group-flush overflow-y-auto" style="max-height: 300px; min-height: 100px;">
                     <div class="text-center text-muted py-4 small">
-                        Ketik nama pengguna untuk mulai mencari...
+                        Memuat daftar kontak...
                     </div>
                 </div>
             </div>
@@ -177,7 +180,7 @@
     </div>
 </div>
 @endif
-@endsection
+@endpush
 
 @push('scripts')
 @if($selectedContact)
@@ -492,12 +495,12 @@
             const query = this.value.trim();
             clearTimeout(searchTimeout);
 
+            if (query.length === 0) {
+                performSearch('');
+                return;
+            }
+
             if (query.length < 2) {
-                userSearchResults.innerHTML = `
-                    <div class="text-center text-muted py-4 small">
-                        Ketik minimal 2 karakter untuk mencari...
-                    </div>
-                `;
                 return;
             }
 
@@ -510,12 +513,13 @@
         if (startChatModal) {
             startChatModal.addEventListener('shown.bs.modal', function () {
                 userSearchInput.focus();
+                performSearch('');
             });
             startChatModal.addEventListener('hidden.bs.modal', function () {
                 userSearchInput.value = '';
                 userSearchResults.innerHTML = `
                     <div class="text-center text-muted py-4 small">
-                        Ketik nama pengguna untuk mulai mencari...
+                        Memuat daftar kontak...
                     </div>
                 `;
             });
