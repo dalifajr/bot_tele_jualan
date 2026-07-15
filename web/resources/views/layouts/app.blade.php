@@ -265,6 +265,33 @@
         </div>
 
         <div class="py-3">
+            @php
+                $auth = Auth::user();
+                $unreadChatsCount = \App\Models\ChatMessage::where('receiver_id', $auth->id)->where('is_read', false)->count();
+                
+                $adminComplaintsCount = 0;
+                $sellerComplaintsCount = 0;
+                $adminOrdersCount = 0;
+                $sellerOrdersCount = 0;
+                $pendingPayoutsCount = 0;
+                $pendingLoginsCount = 0;
+                
+                if ($auth->role === 'admin') {
+                    $adminComplaintsCount = \App\Models\ComplaintCase::whereIn('status', ['open', 'customer_replied'])->count();
+                    $adminOrdersCount = \App\Models\Order::whereIn('status', ['pending_payment', 'paid'])->count();
+                    $pendingPayoutsCount = \App\Models\WithdrawalRequest::where('status', 'pending')->count();
+                    $pendingLoginsCount = \App\Models\TelegramLoginToken::where('status', 'pending')->count();
+                } elseif ($auth->role === 'seller') {
+                    $sellerComplaintsCount = \App\Models\ComplaintCase::whereIn('status', ['open', 'customer_replied'])
+                        ->whereHas('order.items.product', function($q) use ($auth) {
+                            $q->where('creator_id', $auth->id);
+                        })->count();
+                    $sellerOrdersCount = \App\Models\Order::whereIn('status', ['pending_payment', 'paid'])
+                        ->whereHas('items.product', function($q) use ($auth) {
+                            $q->where('creator_id', $auth->id);
+                        })->count();
+                }
+            @endphp
             <div class="menu-group">
                 <a href="{{ route('dashboard') }}" class="menu-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
                     <i class="fas fa-home"></i> <span>{{ __('Dashboard') }}</span>
@@ -288,6 +315,9 @@
                 <a href="{{ route('chat.index') }}" class="menu-item {{ request()->routeIs('chat.*') ? 'active' : '' }}">
                     <i class="fas fa-circle" style="font-size: 0.4rem; opacity: 0.6;"></i>
                     {{ __('Pusat Chat') }}
+                    @if($unreadChatsCount > 0)
+                        <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.7rem;">{{ $unreadChatsCount }}</span>
+                    @endif
                 </a>
             </div>
 
@@ -318,9 +348,15 @@
                 </a>
                 <a href="{{ route('admin.orders.index') }}" class="menu-item {{ request()->routeIs('admin.orders.*') ? 'active' : '' }}">
                     <i class="fas fa-shopping-cart"></i> {{ __('Kelola Pesanan') }}
+                    @if($adminOrdersCount > 0)
+                        <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.7rem;">{{ $adminOrdersCount }}</span>
+                    @endif
                 </a>
                 <a href="{{ route('admin.complaints.index') }}" class="menu-item {{ request()->routeIs('admin.complaints.*') ? 'active' : '' }}">
                     <i class="fas fa-toolbox"></i> {{ __('Kelola Komplain') }}
+                    @if($adminComplaintsCount > 0)
+                        <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.7rem;">{{ $adminComplaintsCount }}</span>
+                    @endif
                 </a>
                 <a href="{{ route('admin.broadcast.index') }}" class="menu-item {{ request()->routeIs('admin.broadcast.*') ? 'active' : '' }}">
                     <i class="fas fa-bullhorn"></i> {{ __('Broadcast') }}
@@ -333,12 +369,18 @@
                 </a>
                 <a href="{{ route('admin.withdrawals.index') }}" class="menu-item {{ request()->routeIs('admin.withdrawals.*') ? 'active' : '' }}">
                     <i class="fas fa-hand-holding-usd"></i> {{ __('Permintaan Payout') }}
+                    @if($pendingPayoutsCount > 0)
+                        <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.7rem;">{{ $pendingPayoutsCount }}</span>
+                    @endif
                 </a>
                 <a href="{{ route('admin.coupons.index') }}" class="menu-item {{ request()->routeIs('admin.coupons.*') ? 'active' : '' }}">
                     <i class="fas fa-ticket-alt"></i> {{ __('Kelola Kupon') }}
                 </a>
                 <a href="{{ route('admin.logins.index') }}" class="menu-item {{ request()->routeIs('admin.logins.*') ? 'active' : '' }}">
                     <i class="fas fa-sign-in-alt"></i> {{ __('Percobaan Login') }}
+                    @if($pendingLoginsCount > 0)
+                        <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.7rem;">{{ $pendingLoginsCount }}</span>
+                    @endif
                 </a>
             </div>
 
@@ -383,9 +425,15 @@
                 </a>
                 <a href="{{ route('seller.orders.index') }}" class="menu-item {{ request()->routeIs('seller.orders.*') ? 'active' : '' }}">
                     <i class="fas fa-receipt"></i> {{ __('Kelola Pesanan') }}
+                    @if($sellerOrdersCount > 0)
+                        <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.7rem;">{{ $sellerOrdersCount }}</span>
+                    @endif
                 </a>
                 <a href="{{ route('seller.complaints.index') }}" class="menu-item {{ request()->routeIs('seller.complaints.*') ? 'active' : '' }}">
                     <i class="fas fa-toolbox"></i> {{ __('Kelola Komplain') }}
+                    @if($sellerComplaintsCount > 0)
+                        <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.7rem;">{{ $sellerComplaintsCount }}</span>
+                    @endif
                 </a>
                 <a href="{{ route('seller.finance.index') }}" class="menu-item {{ request()->routeIs('seller.finance.*') ? 'active' : '' }}">
                     <i class="fas fa-wallet"></i> {{ __('Dompet & Keuangan') }}
