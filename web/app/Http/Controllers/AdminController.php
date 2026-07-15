@@ -1645,12 +1645,18 @@ class AdminController extends Controller
             'status' => 'required|string|in:review,done,rejected,refund,replacement',
             'rejected_reason' => 'required_if:status,rejected|nullable|string|max:500',
             'refund_note' => 'required_if:status,done,refund|nullable|string|max:500',
-            'replacement_data' => 'required_without:replacement_stock_id|nullable|string',
+            'replacement_data' => 'nullable|string',
+            'replacement_stock_id' => 'nullable|integer',
         ], [
             'rejected_reason.required_if' => 'Alasan penolakan wajib diisi jika status ditolak.',
             'refund_note.required_if' => 'Catatan penyelesaian/refund wajib diisi.',
-            'replacement_data.required_without' => 'Data akun pengganti wajib diisi jika tidak ada stok otomatis.',
         ]);
+
+        if ($request->status === 'replacement') {
+            if (!$request->filled('replacement_stock_id') && !$request->filled('replacement_data')) {
+                return back()->withErrors(['replacement_data' => 'Data akun pengganti wajib diisi jika tidak ada stok otomatis.']);
+            }
+        }
 
         $updateData = [
             'status' => $request->status,
