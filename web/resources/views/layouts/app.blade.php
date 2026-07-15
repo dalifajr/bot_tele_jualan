@@ -271,10 +271,12 @@
                 
                 $adminComplaintsCount = 0;
                 $sellerComplaintsCount = 0;
+                $customerComplaintsCount = 0;
                 $adminOrdersCount = 0;
                 $sellerOrdersCount = 0;
                 $pendingPayoutsCount = 0;
                 $pendingLoginsCount = 0;
+                $customerLoginBadgeCount = 0;
                 
                 if ($auth->role === 'admin') {
                     $adminComplaintsCount = \App\Models\ComplaintCase::whereIn('status', ['open', 'customer_replied'])->count();
@@ -290,6 +292,31 @@
                         ->whereHas('items.product', function($q) use ($auth) {
                             $q->where('creator_id', $auth->id);
                         })->count();
+                } else {
+                    $customerComplaintsCount = \App\Models\ComplaintCase::where('customer_id', $auth->id)
+                        ->whereIn('status', ['seller_replied'])
+                        ->count();
+                        
+                    $customerPendingLogins = 0;
+                    if ($auth->telegram_id) {
+                        $customerPendingLogins = \App\Models\TelegramLoginToken::where('telegram_id', $auth->telegram_id)
+                            ->where('status', 'pending')
+                            ->count();
+                    }
+                    
+                    $userIps = \App\Models\LoginLog::where(function($q) use ($auth) {
+                        $q->where('username_or_email', $auth->username)
+                          ->orWhere('username_or_email', $auth->email);
+                    })->pluck('ip_address')->unique();
+                    
+                    $blockedUserIpsCount = 0;
+                    foreach ($userIps as $ip) {
+                        if (\Illuminate\Support\Facades\Cache::has('blocked_ip:' . $ip)) {
+                            $blockedUserIpsCount++;
+                        }
+                    }
+                    
+                    $customerLoginBadgeCount = $customerPendingLogins + $blockedUserIpsCount;
                 }
             @endphp
             <div class="menu-group">
@@ -311,6 +338,9 @@
                 <a href="{{ route('customer.complaints.index') }}" class="menu-item {{ request()->routeIs('customer.complaints.*') ? 'active' : '' }}">
                     <i class="fas fa-circle" style="font-size: 0.4rem; opacity: 0.6;"></i>
                     {{ __('Kelola Komplain') }}
+                    @if($customerComplaintsCount > 0)
+                        <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.7rem;">{{ $customerComplaintsCount }}</span>
+                    @endif
                 </a>
                 <a href="{{ route('chat.index') }}" class="menu-item {{ request()->routeIs('chat.*') ? 'active' : '' }}">
                     <i class="fas fa-circle" style="font-size: 0.4rem; opacity: 0.6;"></i>
@@ -330,6 +360,9 @@
                 <a href="{{ route('profile.logins') }}" class="menu-item {{ request()->routeIs('profile.logins') ? 'active' : '' }}">
                     <i class="fas fa-circle" style="font-size: 0.4rem; opacity: 0.6;"></i>
                     {{ __('Riwayat Login') }}
+                    @if($customerLoginBadgeCount > 0)
+                        <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.7rem;">{{ $customerLoginBadgeCount }}</span>
+                    @endif
                 </a>
             </div>
 

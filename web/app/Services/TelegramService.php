@@ -458,14 +458,8 @@ class TelegramService
      */
     public static function notifySellerNewComplaint(\App\Models\ComplaintCase $complaint)
     {
-        $botToken = config('services.telegram.bot_token');
-        if (empty($botToken)) return;
-
         $sellerId = $complaint->order->items->first()->product->creator_id ?? null;
-        if (!$sellerId) return;
-
-        $seller = User::find($sellerId);
-        if (!$seller || !$seller->telegram_id) return;
+        $seller = $sellerId ? User::find($sellerId) : null;
 
         $customerName = $complaint->customer->full_name ?? $complaint->customer->username ?? '-';
         $productName = $complaint->order->items->first()->product->name ?? 'Produk';
@@ -479,14 +473,17 @@ class TelegramService
               . htmlspecialchars($complaint->complaint_text) . "\n\n"
               . "<i>Silakan periksa dan tindak lanjuti komplain di website</i>";
 
-        try {
-            Http::post("https://api.telegram.org/bot{$botToken}/sendMessage", [
-                'chat_id' => $seller->telegram_id,
-                'text' => $text,
-                'parse_mode' => 'HTML',
-            ]);
-        } catch (\Exception $e) {
-            Log::error("Gagal mengirim notifikasi komplain ke seller {$seller->telegram_id}: " . $e->getMessage());
+        // Notify seller
+        if ($seller && $seller->telegram_id) {
+            self::sendTelegramMessage($seller->telegram_id, $text);
+        }
+
+        // Notify all admins (if they are not already the seller)
+        $admins = User::where('role', 'admin')->whereNotNull('telegram_id')->get();
+        foreach ($admins as $admin) {
+            if (!$seller || $admin->id !== $seller->id) {
+                self::sendTelegramMessage($admin->telegram_id, $text);
+            }
         }
     }
 
@@ -495,9 +492,6 @@ class TelegramService
      */
     public static function notifyComplaintStatusUpdate(\App\Models\ComplaintCase $complaint)
     {
-        $botToken = config('services.telegram.bot_token');
-        if (empty($botToken)) return;
-
         $customerTelegramId = $complaint->customer_telegram_id ?: ($complaint->customer->telegram_id ?? null);
         if (!$customerTelegramId) return;
 
@@ -530,15 +524,7 @@ class TelegramService
 
         $text .= "\n<i>Silakan periksa perkembangan komplain di website</i>";
 
-        try {
-            Http::post("https://api.telegram.org/bot{$botToken}/sendMessage", [
-                'chat_id' => $customerTelegramId,
-                'text' => $text,
-                'parse_mode' => 'HTML',
-            ]);
-        } catch (\Exception $e) {
-            Log::error("Gagal mengirim notifikasi update komplain ke customer {$customerTelegramId}: " . $e->getMessage());
-        }
+        self::sendTelegramMessage($customerTelegramId, $text);
     }
 
     /**
@@ -546,10 +532,6 @@ class TelegramService
      */
     public static function notifySellerComplaintReopened(\App\Models\ComplaintCase $complaint, User $seller)
     {
-        $botToken = config('services.telegram.bot_token');
-        if (empty($botToken)) return;
-        if (!$seller->telegram_id) return;
-
         $customerName = $complaint->customer->full_name ?? $complaint->customer->username ?? '-';
         $productName = $complaint->order->items->first()->product->name ?? 'Produk';
         
@@ -560,14 +542,17 @@ class TelegramService
               . "Produk: " . htmlspecialchars($productName) . "\n\n"
               . "<i>Silakan periksa dan tindak lanjuti komplain di website</i>";
 
-        try {
-            Http::post("https://api.telegram.org/bot{$botToken}/sendMessage", [
-                'chat_id' => $seller->telegram_id,
-                'text' => $text,
-                'parse_mode' => 'HTML',
-            ]);
-        } catch (\Exception $e) {
-            Log::error("Gagal mengirim notifikasi reopen komplain ke seller {$seller->telegram_id}: " . $e->getMessage());
+        // Notify seller
+        if ($seller->telegram_id) {
+            self::sendTelegramMessage($seller->telegram_id, $text);
+        }
+
+        // Notify all admins (if they are not already the seller)
+        $admins = User::where('role', 'admin')->whereNotNull('telegram_id')->get();
+        foreach ($admins as $admin) {
+            if ($admin->id !== $seller->id) {
+                self::sendTelegramMessage($admin->telegram_id, $text);
+            }
         }
     }
 
@@ -576,15 +561,14 @@ class TelegramService
      */
     public static function notifyUserNewChatMessage(User $receiver, User $sender, \App\Models\ChatMessage $msg)
     {
-        $botToken = config('services.telegram.bot_token');
-        if (empty($botToken)) return;
         if (!$receiver->telegram_id) return;
 
-        $senderName = $sender->full_name ?? $sender->username ?? 'User';
+        $senderName = htmlspecialchars($sender->full_name ?? $sender->username ?? 'User');
+        $messageText = htmlspecialchars($msg->message ?: '-');
         
         $text = "<b>Notifikasi Chat Baru</b>\n"
               . "Pengirim: {$senderName}\n"
-              . "Pesan: " . ($msg->message ?: '-') . "\n";
+              . "Pesan: {$messageText}\n";
               
         if ($msg->attachment_path) {
             $val = $msg->attachment_type === 'video' ? '1 Video' : '1 Foto';
@@ -593,15 +577,7 @@ class TelegramService
         
         $text .= "\n<i>Silakan periksa dan balas pesan di website</i>";
 
-        try {
-            Http::post("https://api.telegram.org/bot{$botToken}/sendMessage", [
-                'chat_id' => $receiver->telegram_id,
-                'text' => $text,
-                'parse_mode' => 'HTML',
-            ]);
-        } catch (\Exception $e) {
-            Log::error("Gagal mengirim notifikasi chat baru ke telegram {$receiver->telegram_id}: " . $e->getMessage());
-        }
+        self::sendTelegramMessage($receiver->telegram_id, $text);
     }
 
     /**
@@ -609,26 +585,39 @@ class TelegramService
      */
     public static function notifyAdminUnblockRequest(User $admin, User $user, string $ip, string $location, string $device, string $browser)
     {
-        $botToken = config('services.telegram.bot_token');
-        if (empty($botToken)) return;
         if (!$admin->telegram_id) return;
 
         $text = "<b>Permintaan Buka Blokir IP</b>\n"
-              . "Pengirim: {$user->username} ({$user->role})\n"
-              . "IP: {$ip}\n"
-              . "Lokasi: {$location}\n"
-              . "Perangkat: {$device}\n"
-              . "Browser: {$browser}\n\n"
+              . "Pengirim: " . htmlspecialchars($user->username) . " ({$user->role})\n"
+              . "IP: " . htmlspecialchars($ip) . "\n"
+              . "Lokasi: " . htmlspecialchars($location) . "\n"
+              . "Perangkat: " . htmlspecialchars($device) . "\n"
+              . "Browser: " . htmlspecialchars($browser) . "\n\n"
               . "<i>Silakan periksa dan balas pesan di website</i>";
 
+        self::sendTelegramMessage($admin->telegram_id, $text);
+    }
+
+    /**
+     * Helper to send Telegram message.
+     */
+    public static function sendTelegramMessage(string $chatId, string $text)
+    {
+        $botToken = config('services.telegram.bot_token');
+        if (empty($botToken)) return;
+
         try {
-            Http::post("https://api.telegram.org/bot{$botToken}/sendMessage", [
-                'chat_id' => $admin->telegram_id,
+            $response = Http::post("https://api.telegram.org/bot{$botToken}/sendMessage", [
+                'chat_id' => $chatId,
                 'text' => $text,
                 'parse_mode' => 'HTML',
             ]);
+            
+            if (!$response->successful()) {
+                Log::warning("Telegram API failed for chat {$chatId}: " . $response->body());
+            }
         } catch (\Exception $e) {
-            Log::error("Gagal mengirim notifikasi permintaan unblock ke admin {$admin->telegram_id}: " . $e->getMessage());
+            Log::error("Gagal mengirim pesan Telegram ke {$chatId}: " . $e->getMessage());
         }
     }
 }
