@@ -149,7 +149,7 @@
                                 <strong>Stok Tersedia!</strong> Ditemukan {{ $availableStockCount }} stok pengganti untuk produk ini.
                                 <hr>
                                 <strong>Detail Akun (Random):</strong><br>
-                                <code>{{ $randomStock->content }}</code>
+                                <code>{{ $randomStock->raw_text }}</code>
                             </div>
                             <input type="hidden" name="replacement_stock_id" value="{{ $randomStock->id }}">
                             <div class="form-check mb-2">

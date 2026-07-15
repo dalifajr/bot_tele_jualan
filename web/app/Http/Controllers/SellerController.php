@@ -1005,7 +1005,7 @@ class SellerController extends Controller
                         'sold_at' => now(),
                         'stock_status' => 'sold'
                     ]);
-                    $updateData['refund_note'] .= "\nAkun Pengganti: \n" . $stock->content;
+                    $updateData['refund_note'] .= "\nAkun Pengganti: \n" . $stock->raw_text;
                 }
             } else {
                 $updateData['refund_note'] .= "\nAkun Pengganti (Manual): \n" . $replacementData;
