@@ -22,9 +22,15 @@ echo "   - site_key: " . ($siteKeyEnv ?: 'EMPTY') . "\n";
 echo "   - secret_key: " . ($secretKeyEnv ? substr($secretKeyEnv, 0, 8) . '...' : 'EMPTY') . "\n\n";
 
 if ($siteKeyConfig === $siteKeyEnv && $secretKeyConfig === $secretKeyEnv) {
-    echo "=> Config and Env are in sync (OK).\n\n";
+    echo "=> Config and Env are in sync (OK).\n";
 } else {
-    echo "=> WARNING: Config and Env are NOT in sync! Did you cache config? Run: php artisan config:clear\n\n";
+    echo "=> WARNING: Config and Env are NOT in sync! Did you cache config? Run: php artisan config:clear\n";
+}
+
+if ($siteKeyConfig === $secretKeyConfig && $siteKeyConfig !== '1x00000000000000000000AA') {
+    echo "=> CRITICAL ERROR: site_key and secret_key are IDENTICAL! You probably copied the site_key into the secret_key field by mistake!\n\n";
+} else {
+    echo "=> site_key and secret_key are different (OK).\n\n";
 }
 
 echo "3. CONNECTIVITY TEST TO CLOUDFLARE:\n";
