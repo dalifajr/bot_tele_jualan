@@ -180,7 +180,7 @@
                     <div class="mb-3" id="warrantyDaysAddContainer" style="display: none;">
                         <label class="form-label text-muted small fw-bold">Masa Garansi (Hari)</label>
                         <div class="input-group">
-                            <input type="number" name="warranty_days" id="warrantyDaysAdd" class="form-control" placeholder="Contoh: 3" min="1">
+                            <input type="number" name="warranty_days" id="warrantyDaysAdd" class="form-control" placeholder="Contoh: 3" min="1" disabled>
                             <span class="input-group-text bg-light text-muted">hari</span>
                         </div>
                         <div class="form-text small">Menahan saldo komisi Anda hingga masa garansi berakhir.</div>
@@ -272,7 +272,7 @@
                     <div class="mb-3" id="warrantyDaysEditContainer{{ $product->id }}" style="display: {{ $product->warranty_days > 0 ? 'block' : 'none' }};">
                         <label class="form-label text-muted small fw-bold">Masa Garansi (Hari)</label>
                         <div class="input-group">
-                            <input type="number" name="warranty_days" id="warrantyDaysEditInput{{ $product->id }}" class="form-control" value="{{ $product->warranty_days }}" min="1">
+                            <input type="number" name="warranty_days" id="warrantyDaysEditInput{{ $product->id }}" class="form-control" value="{{ $product->warranty_days > 0 ? $product->warranty_days : '' }}" min="1" {{ $product->warranty_days > 0 ? '' : 'disabled' }}>
                             <span class="input-group-text bg-light text-muted">hari</span>
                         </div>
                         <div class="form-text small">Menahan saldo komisi Anda hingga masa garansi berakhir.</div>
@@ -330,9 +330,17 @@
 
 <script>
     document.getElementById('enableWarrantyAdd').addEventListener('change', function() {
-        document.getElementById('warrantyDaysAddContainer').style.display = this.checked ? 'block' : 'none';
-        if (!this.checked) {
-            document.getElementById('warrantyDaysAdd').value = '';
+        var container = document.getElementById('warrantyDaysAddContainer');
+        container.style.display = this.checked ? 'block' : 'none';
+        var input = document.getElementById('warrantyDaysAdd');
+        if (this.checked) {
+            input.removeAttribute('disabled');
+            if (input.value === '') {
+                input.value = '3';
+            }
+        } else {
+            input.setAttribute('disabled', 'disabled');
+            input.value = '';
         }
     });
 
@@ -341,8 +349,15 @@
             var targetId = this.getAttribute('data-target');
             var container = document.getElementById(targetId);
             container.style.display = this.checked ? 'block' : 'none';
-            if (!this.checked) {
-                container.querySelector('input[type="number"]').value = '';
+            var input = container.querySelector('input[type="number"]');
+            if (this.checked) {
+                input.removeAttribute('disabled');
+                if (input.value === '0' || input.value === '') {
+                    input.value = '3';
+                }
+            } else {
+                input.setAttribute('disabled', 'disabled');
+                input.value = '';
             }
         });
     });
