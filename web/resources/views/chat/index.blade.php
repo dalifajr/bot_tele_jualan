@@ -8,8 +8,13 @@
     <div class="row g-0 h-100">
         {{-- Left Contacts List --}}
         <div class="col-md-4 border-end d-flex flex-column h-100 {{ $selectedContact ? 'd-none d-md-flex' : '' }}" style="background-color: var(--bs-body-bg);">
-            <div class="p-3 border-bottom">
+            <div class="p-3 border-bottom d-flex align-items-center justify-content-between">
                 <h5 class="fw-bold mb-0"><i class="fas fa-comments text-primary me-2"></i>Obrolan Saya</h5>
+                @if(in_array(Auth::user()->role, ['admin', 'seller']))
+                    <button class="btn btn-sm btn-primary rounded-pill px-3" style="font-size: 0.8rem;" data-bs-toggle="modal" data-bs-target="#startChatModal">
+                        <i class="fas fa-plus me-1"></i>Mulai Chat
+                    </button>
+                @endif
             </div>
             
             <div class="list-group list-group-flush overflow-y-auto flex-grow-1" style="overscroll-behavior: contain;">
@@ -147,6 +152,31 @@
         </div>
     </div>
 </div>
+
+@if(in_array(Auth::user()->role, ['admin', 'seller']))
+<!-- Start Chat Modal -->
+<div class="modal fade" id="startChatModal" tabindex="-1" aria-labelledby="startChatModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow" style="border-radius: 16px;">
+            <div class="modal-header border-bottom p-3">
+                <h6 class="modal-title fw-bold text-dark" id="startChatModalLabel">Mulai Obrolan Baru</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-3">
+                <div class="input-group mb-3 border rounded-pill overflow-hidden bg-light" style="height: 40px;">
+                    <span class="input-group-text border-0 bg-transparent text-muted"><i class="fas fa-search"></i></span>
+                    <input type="text" id="userSearchInput" class="form-control border-0 bg-transparent" placeholder="Cari nama atau username..." style="font-size: 0.9rem;">
+                </div>
+                <div id="userSearchResults" class="list-group list-group-flush overflow-y-auto" style="max-height: 300px; min-height: 100px;">
+                    <div class="text-center text-muted py-4 small">
+                        Ketik nama pengguna untuk mulai mencari...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
 @endsection
 
 @push('scripts')
@@ -392,6 +422,103 @@
                 .replace(/>/g, "&gt;")
                 .replace(/"/g, "&quot;")
                 .replace(/'/g, "&#039;");
+        }
+    });
+</script>
+@endif
+
+@if(in_array(Auth::user()->role, ['admin', 'seller']))
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const userSearchInput = document.getElementById('userSearchInput');
+        const userSearchResults = document.getElementById('userSearchResults');
+        let searchTimeout = null;
+
+        function escapeHtml(text) {
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        const performSearch = (query) => {
+            userSearchResults.innerHTML = `
+                <div class="text-center py-4">
+                    <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                </div>
+            `;
+            
+            fetch(`/chat/search-users?q=${encodeURIComponent(query)}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        if (data.users.length === 0) {
+                            userSearchResults.innerHTML = `
+                                <div class="text-center text-muted py-4 small">
+                                    Tidak ada pengguna ditemukan.
+                                </div>
+                            `;
+                            return;
+                        }
+
+                        let html = '';
+                        data.users.forEach(u => {
+                            html += `
+                                <a href="/chat?contact_id=${u.id}" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between py-2 border-0 rounded-3 mb-1">
+                                    <div>
+                                        <div class="fw-bold small text-dark">${escapeHtml(u.name)}</div>
+                                        <div class="text-muted small">@${escapeHtml(u.username)}</div>
+                                    </div>
+                                    <span class="badge bg-secondary-subtle text-secondary small text-capitalize" style="font-size: 0.7rem;">${u.role}</span>
+                                </a>
+                            `;
+                        });
+                        userSearchResults.innerHTML = html;
+                    }
+                })
+                .catch(err => {
+                    console.error("Error searching users:", err);
+                    userSearchResults.innerHTML = `
+                        <div class="text-center text-danger py-4 small">
+                            Gagal memuat pengguna.
+                        </div>
+                    `;
+                });
+        };
+
+        userSearchInput.addEventListener('input', function() {
+            const query = this.value.trim();
+            clearTimeout(searchTimeout);
+
+            if (query.length < 2) {
+                userSearchResults.innerHTML = `
+                    <div class="text-center text-muted py-4 small">
+                        Ketik minimal 2 karakter untuk mencari...
+                    </div>
+                `;
+                return;
+            }
+
+            searchTimeout = setTimeout(() => {
+                performSearch(query);
+            }, 300);
+        });
+
+        const startChatModal = document.getElementById('startChatModal');
+        if (startChatModal) {
+            startChatModal.addEventListener('shown.bs.modal', function () {
+                userSearchInput.focus();
+            });
+            startChatModal.addEventListener('hidden.bs.modal', function () {
+                userSearchInput.value = '';
+                userSearchResults.innerHTML = `
+                    <div class="text-center text-muted py-4 small">
+                        Ketik nama pengguna untuk mulai mencari...
+                    </div>
+                `;
+            });
         }
     });
 </script>

@@ -84,6 +84,7 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
 
     // Chat System
     Route::get('/chat', [\App\Http\Controllers\ChatController::class, 'index'])->name('chat.index');
+    Route::get('/chat/search-users', [\App\Http\Controllers\ChatController::class, 'searchUsers'])->name('chat.searchUsers');
     Route::get('/chat/messages/{contactId}', [\App\Http\Controllers\ChatController::class, 'fetchMessages'])->name('chat.fetch');
     Route::post('/chat/send', [\App\Http\Controllers\ChatController::class, 'sendMessage'])->name('chat.send');
     
