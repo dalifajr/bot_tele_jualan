@@ -28,10 +28,28 @@ if ($siteKeyConfig === $siteKeyEnv && $secretKeyConfig === $secretKeyEnv) {
 }
 
 if ($siteKeyConfig === $secretKeyConfig && $siteKeyConfig !== '1x00000000000000000000AA') {
-    echo "=> CRITICAL ERROR: site_key and secret_key are IDENTICAL! You probably copied the site_key into the secret_key field by mistake!\n\n";
+    echo "=> CRITICAL ERROR: site_key and secret_key are IDENTICAL! You probably copied the site_key into the secret_key field by mistake!\n";
 } else {
-    echo "=> site_key and secret_key are different (OK).\n\n";
+    echo "=> site_key and secret_key are different (OK).\n";
 }
+
+// Check for whitespaces/malformed keys
+$siteKeyHasWhitespace = (strlen($siteKeyConfig) !== strlen(trim($siteKeyConfig)));
+$secretKeyHasWhitespace = (strlen($secretKeyConfig) !== strlen(trim($secretKeyConfig)));
+
+echo "\n4. KEY VALIDATION CHECKS:\n";
+echo "   - site_key length: " . strlen($siteKeyConfig) . " chars\n";
+echo "   - secret_key length: " . strlen($secretKeyConfig) . " chars\n";
+echo "   - site_key has whitespace: " . ($siteKeyHasWhitespace ? 'YES (WARNING: Remove spaces in .env)' : 'NO (OK)') . "\n";
+echo "   - secret_key has whitespace: " . ($secretKeyHasWhitespace ? 'YES (WARNING: Remove spaces in .env)' : 'NO (OK)') . "\n";
+
+// A typical secret key is 40 characters long
+if (strlen($secretKeyConfig) !== 40 && $secretKeyConfig !== '1x00000000000000000000000000000000') {
+    echo "   - WARNING: Secret key length is " . strlen($secretKeyConfig) . " chars, but typical Cloudflare Turnstile secret keys are exactly 40 chars long!\n";
+} else {
+    echo "   - Secret key length matches standard (40 chars) (OK).\n";
+}
+echo "\n";
 
 echo "3. CONNECTIVITY TEST TO CLOUDFLARE:\n";
 $start = microtime(true);
