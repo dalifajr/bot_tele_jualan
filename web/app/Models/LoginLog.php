@@ -2,10 +2,11 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use App\Traits\HasSystemTimezone;
 
 class LoginLog extends Model
 {
+    use HasSystemTimezone;
     protected $table = 'login_logs';
     protected $fillable = [
         'ip_address',

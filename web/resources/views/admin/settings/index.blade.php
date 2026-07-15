@@ -77,7 +77,7 @@
                                         <option value="UTC" {{ ($settings['system_timezone'] ?? '') === 'UTC' ? 'selected' : '' }}>UTC / GMT</option>
                                     </select>
                                 </div>
-                                <div class="form-text">Mengatur zona waktu untuk web admin, seller, dan pesan bot Telegram. Zona aktif saat ini: <strong>{{ config('app.timezone') }}</strong> (Server: {{ now()->format('Y-m-d H:i:s') }}).</div>
+                                <div class="form-text">Mengatur zona waktu untuk web admin, seller, dan pesan bot Telegram. Zona aktif saat ini: <strong>{{ $settings['system_timezone'] ?? 'UTC' }}</strong> (Server: {{ now()->timezone($settings['system_timezone'] ?? 'Asia/Jakarta')->format('Y-m-d H:i:s') }}).</div>
                             </div>
 
                             <div class="mb-4">

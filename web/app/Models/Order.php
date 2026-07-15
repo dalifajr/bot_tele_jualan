@@ -2,12 +2,11 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Traits\HasSystemTimezone;
 
 class Order extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, HasSystemTimezone;
     protected $table = 'orders';
 
     const UPDATED_AT = null;

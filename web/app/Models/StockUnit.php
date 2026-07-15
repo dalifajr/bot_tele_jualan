@@ -2,10 +2,11 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use App\Traits\HasSystemTimezone;
 
 class StockUnit extends Model
 {
+    use HasSystemTimezone;
     protected $table = 'stock_units';
     
     const UPDATED_AT = null;

@@ -2,10 +2,11 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use App\Traits\HasSystemTimezone;
 
 class AuditLog extends Model
 {
+    use HasSystemTimezone;
     public $timestamps = false;
 
     protected $fillable = [

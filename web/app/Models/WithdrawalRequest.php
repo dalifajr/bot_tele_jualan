@@ -2,10 +2,11 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use App\Traits\HasSystemTimezone;
 
 class WithdrawalRequest extends Model
 {
+    use HasSystemTimezone;
     protected $table = 'withdrawal_requests';
 
     const UPDATED_AT = null;

@@ -2,12 +2,11 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+use App\Traits\HasSystemTimezone;
 
 class ComplaintCase extends Model
 {
-    use HasFactory;
+    use HasFactory, HasSystemTimezone;
 
     protected $table = 'complaint_cases';
     public $timestamps = false; // Using custom datetime logic from sqlalchemy if needed, but Laravel will handle updated_at if true. We'll set false to be safe.

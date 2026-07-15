@@ -2,12 +2,11 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+use App\Traits\HasSystemTimezone;
 
 class ChatMessage extends Model
 {
-    use HasFactory;
+    use HasFactory, HasSystemTimezone;
 
     protected $fillable = [
         'sender_id',
