@@ -965,11 +965,11 @@ class SellerController extends Controller
             'status' => 'required|string|in:review,done,rejected,refund,replacement',
             'rejected_reason' => 'required_if:status,rejected|nullable|string|max:500',
             'refund_note' => 'required_if:status,done,refund|nullable|string|max:500',
-            'replacement_data' => 'required_if:status,replacement|nullable|string',
+            'replacement_data' => 'required_without:replacement_stock_id|nullable|string',
         ], [
             'rejected_reason.required_if' => 'Alasan penolakan wajib diisi jika status ditolak.',
             'refund_note.required_if' => 'Catatan penyelesaian/refund wajib diisi.',
-            'replacement_data.required_if' => 'Data akun pengganti wajib diisi.',
+            'replacement_data.required_without' => 'Data akun pengganti wajib diisi jika tidak ada stok otomatis.',
         ]);
 
         $updateData = [

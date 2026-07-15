@@ -238,16 +238,13 @@
                 if(replacementInput) {
                     replacementInput.setAttribute('required', 'true');
                 }
+                if(confirmRandom) {
+                    confirmRandom.setAttribute('required', 'true');
+                }
             }
         }
 
-        if(form && confirmRandom) {
-            form.addEventListener('submit', function(e) {
-                if (select.value === 'replacement' && !confirmRandom.checked && !replacementInput) {
-                    e.preventDefault();
-                    confirmError.classList.remove('d-none');
-                }
-            });
+        if(confirmRandom) {
             confirmRandom.addEventListener('change', function() {
                 if(this.checked) confirmError.classList.add('d-none');
             });
