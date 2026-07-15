@@ -14,7 +14,7 @@ class TelegramService
      */
     public static function notifyAdminNewOrder(Order $order)
     {
-        $botToken = env('TELEGRAM_BOT_TOKEN');
+        $botToken = config('services.telegram.bot_token');
         
         if (empty($botToken)) {
             Log::warning("TELEGRAM_BOT_TOKEN kosong, notifikasi ke admin dilewati.");
@@ -87,7 +87,7 @@ class TelegramService
      */
     public static function updateAdminOrderMessage(Order $order)
     {
-        $botToken = env('TELEGRAM_BOT_TOKEN');
+        $botToken = config('services.telegram.bot_token');
         if (empty($botToken)) return;
 
         $chatId = $order->admin_notify_chat_id;
@@ -170,7 +170,7 @@ class TelegramService
      */
     public static function notifyCustomerNewOrder(Order $order, ?string $dynamicQris)
     {
-        $botToken = env('TELEGRAM_BOT_TOKEN');
+        $botToken = config('services.telegram.bot_token');
         
         if (empty($botToken)) {
             Log::warning("TELEGRAM_BOT_TOKEN kosong, notifikasi ke customer dilewati.");
@@ -253,7 +253,7 @@ class TelegramService
      */
     public static function notifyCustomerOrderCancelled(Order $order, string $reasonText)
     {
-        $botToken = env('TELEGRAM_BOT_TOKEN');
+        $botToken = config('services.telegram.bot_token');
         if (empty($botToken)) return;
 
         $chatId = $order->checkout_chat_id;
@@ -323,7 +323,7 @@ class TelegramService
      */
     public static function notifyCustomerOrderDelivered(Order $order, $reservedStock, $vpnConfigs = [])
     {
-        $botToken = env('TELEGRAM_BOT_TOKEN');
+        $botToken = config('services.telegram.bot_token');
         if (empty($botToken)) return;
 
         $customerTelegramId = $order->customer->telegram_id ?? null;
@@ -380,7 +380,7 @@ class TelegramService
      */
     public static function sendBackupFile(string $filePath, string $caption = '')
     {
-        $botToken = env('TELEGRAM_BOT_TOKEN');
+        $botToken = config('services.telegram.bot_token');
         if (empty($botToken)) {
             Log::warning("TELEGRAM_BOT_TOKEN kosong, kirim backup dilewati.");
             return false;
@@ -425,7 +425,7 @@ class TelegramService
      */
     public static function notifySellerFundsReleased(User $seller, int $amount, string $orderRef, string $productName)
     {
-        $botToken = env('TELEGRAM_BOT_TOKEN');
+        $botToken = config('services.telegram.bot_token');
         
         if (empty($botToken)) {
             Log::warning("TELEGRAM_BOT_TOKEN kosong, notifikasi pelepasan dana seller dilewati.");
@@ -458,7 +458,7 @@ class TelegramService
      */
     public static function notifySellerNewComplaint(\App\Models\ComplaintCase $complaint)
     {
-        $botToken = env('TELEGRAM_BOT_TOKEN');
+        $botToken = config('services.telegram.bot_token');
         if (empty($botToken)) return;
 
         $sellerId = $complaint->order->items->first()->product->creator_id ?? null;
@@ -495,7 +495,7 @@ class TelegramService
      */
     public static function notifyComplaintStatusUpdate(\App\Models\ComplaintCase $complaint)
     {
-        $botToken = env('TELEGRAM_BOT_TOKEN');
+        $botToken = config('services.telegram.bot_token');
         if (empty($botToken)) return;
 
         $customerTelegramId = $complaint->customer_telegram_id ?: ($complaint->customer->telegram_id ?? null);
@@ -546,7 +546,7 @@ class TelegramService
      */
     public static function notifySellerComplaintReopened(\App\Models\ComplaintCase $complaint, User $seller)
     {
-        $botToken = env('TELEGRAM_BOT_TOKEN');
+        $botToken = config('services.telegram.bot_token');
         if (empty($botToken)) return;
         if (!$seller->telegram_id) return;
 
@@ -576,7 +576,7 @@ class TelegramService
      */
     public static function notifyUserNewChatMessage(User $receiver, User $sender, \App\Models\ChatMessage $msg)
     {
-        $botToken = env('TELEGRAM_BOT_TOKEN');
+        $botToken = config('services.telegram.bot_token');
         if (empty($botToken)) return;
         if (!$receiver->telegram_id) return;
 

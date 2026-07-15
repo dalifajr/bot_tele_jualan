@@ -424,7 +424,10 @@
         }
 
         function escapeHtml(text) {
-            return text
+            if (text === null || text === undefined) {
+                return '';
+            }
+            return String(text)
                 .replace(/&/g, "&amp;")
                 .replace(/</g, "&lt;")
                 .replace(/>/g, "&gt;")
@@ -443,7 +446,10 @@
         let searchTimeout = null;
 
         function escapeHtml(text) {
-            return text
+            if (text === null || text === undefined) {
+                return '';
+            }
+            return String(text)
                 .replace(/&/g, "&amp;")
                 .replace(/</g, "&lt;")
                 .replace(/>/g, "&gt;")

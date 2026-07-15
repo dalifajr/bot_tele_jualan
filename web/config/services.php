@@ -40,4 +40,9 @@ return [
         'secret_key' => env('CLOUDFLARE_TURNSTILE_SECRET_KEY', '1x00000000000000000000000000000000'),
     ],
 
+    'telegram' => [
+        'bot_token' => env('TELEGRAM_BOT_TOKEN'),
+        'bot_username' => env('TELEGRAM_BOT_USERNAME'),
+    ],
+
 ];
