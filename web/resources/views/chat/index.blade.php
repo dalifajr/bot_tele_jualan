@@ -95,7 +95,12 @@
                         <span id="headerOnlineDot" class="position-absolute bottom-0 end-0 bg-success border border-white border-2 rounded-circle {{ $selectedContact->isOnline() ? '' : 'd-none' }}" style="width: 11px; height: 11px;"></span>
                     </div>
                     <div>
-                        <h6 class="fw-bold mb-0 text-dark">{{ $selectedContact->full_name ?? $selectedContact->username }}</h6>
+                        <h6 class="fw-bold mb-0 text-dark">
+                            {{ $selectedContact->full_name ?? $selectedContact->username }}
+                            <span class="text-muted fw-normal ms-1" style="font-size: 0.85rem;">
+                                {{ $selectedContact->role === 'admin' ? 'Administrator' : ($selectedContact->role === 'seller' ? 'Seller' : 'Customer') }}
+                            </span>
+                        </h6>
                         <small id="headerStatusText" class="text-muted small {{ $selectedContact->isOnline() ? 'text-success fw-bold' : '' }}">
                             {{ $selectedContact->isOnline() ? 'Online' : $selectedContact->last_active_label }}
                         </small>
