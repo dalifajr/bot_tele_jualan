@@ -4666,6 +4666,16 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
             if reconcile_result.status == "paid":
                 if reconcile_result.customer_chat_id and reconcile_result.delivery_message:
+                    # Delete old checkout message if it exists
+                    if reconcile_result.checkout_chat_id and reconcile_result.checkout_message_id:
+                        try:
+                            await context.bot.delete_message(
+                                chat_id=reconcile_result.checkout_chat_id,
+                                message_id=reconcile_result.checkout_message_id,
+                            )
+                        except Exception as exc:
+                            logging.warning(f"Gagal hapus pesan checkout lama: {exc}")
+
                     keyboard_rows: list[list[InlineKeyboardButton]] = [
                         [InlineKeyboardButton("🏠 /start Menu Utama", callback_data="back:main")]
                     ]
