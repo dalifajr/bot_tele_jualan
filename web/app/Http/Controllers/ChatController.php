@@ -103,6 +103,9 @@ class ChatController extends Controller
                 return [
                     'id' => $msg->id,
                     'message' => e($msg->message),
+                    'attachment_path' => $msg->attachment_path ? asset('storage/' . $msg->attachment_path) : null,
+                    'attachment_type' => $msg->attachment_type,
+                    'is_read' => $msg->is_read,
                     'is_mine' => $msg->sender_id === $user->id,
                     'time' => $msg->created_at->format('H:i'),
                 ];
@@ -117,21 +120,48 @@ class ChatController extends Controller
     {
         $request->validate([
             'receiver_id' => 'required|integer|exists:users,id',
-            'message' => 'required|string|max:5000',
+            'message' => 'required_without:attachment|nullable|string|max:5000',
+            'attachment' => 'nullable|file|mimes:jpeg,png,jpg,gif,mp4,mov,avi,webm|max:102400',
+        ], [
+            'message.required_without' => 'Pesan atau lampiran harus diisi.',
+            'attachment.max' => 'Ukuran maksimal lampiran adalah 100MB.',
+            'attachment.mimes' => 'Format lampiran yang didukung: foto atau video.',
         ]);
+
+        $attachmentPath = null;
+        $attachmentType = null;
+
+        if ($request->hasFile('attachment')) {
+            $file = $request->file('attachment');
+            $attachmentPath = $file->store('chat_attachments', 'public');
+            $mime = $file->getMimeType();
+            $attachmentType = str_starts_with($mime, 'video/') ? 'video' : 'image';
+        }
 
         $msg = ChatMessage::create([
             'sender_id' => Auth::id(),
             'receiver_id' => $request->input('receiver_id'),
             'message' => $request->input('message'),
+            'attachment_path' => $attachmentPath,
+            'attachment_type' => $attachmentType,
             'is_read' => false,
         ]);
+
+        // Notify receiver
+        $receiver = User::find($request->input('receiver_id'));
+        if ($receiver) {
+            $senderName = Auth::user()->full_name ?? Auth::user()->username;
+            $receiver->notify(new \App\Notifications\NewChatMessageNotification($msg->message, $senderName, Auth::id()));
+        }
 
         return response()->json([
             'success' => true,
             'message' => [
                 'id' => $msg->id,
                 'message' => e($msg->message),
+                'attachment_path' => $msg->attachment_path ? asset('storage/' . $msg->attachment_path) : null,
+                'attachment_type' => $msg->attachment_type,
+                'is_read' => $msg->is_read,
                 'is_mine' => true,
                 'time' => $msg->created_at->format('H:i'),
             ]

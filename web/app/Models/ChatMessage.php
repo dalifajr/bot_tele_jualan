@@ -13,6 +13,8 @@ class ChatMessage extends Model
         'sender_id',
         'receiver_id',
         'message',
+        'attachment_path',
+        'attachment_type',
         'is_read',
     ];
 
