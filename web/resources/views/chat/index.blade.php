@@ -19,8 +19,13 @@
                         <a href="{{ route('chat.index', ['contact_id' => $contact->id]) }}" 
                            class="list-group-item list-group-item-action border-bottom py-3 px-4 d-flex align-items-center gap-3 bg-primary-subtle"
                            style="border-left: 0px solid transparent;">
-                            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold small" style="width: 42px; height: 42px; min-width: 42px;">
-                                {{ strtoupper(substr($contact->full_name ?? $contact->username, 0, 1)) }}
+                            <div class="position-relative">
+                                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold small" style="width: 42px; height: 42px; min-width: 42px;">
+                                    {{ strtoupper(substr($contact->full_name ?? $contact->username, 0, 1)) }}
+                                </div>
+                                @if($contact->isOnline())
+                                    <span class="position-absolute bottom-0 end-0 bg-success border border-white border-2 rounded-circle" style="width: 12px; height: 12px;" title="Online"></span>
+                                @endif
                             </div>
                             <div class="flex-grow-1 overflow-hidden">
                                 <div class="d-flex justify-content-between align-items-center mb-1">
@@ -40,8 +45,13 @@
                         <a href="{{ route('chat.index', ['contact_id' => $contact->id]) }}" 
                            class="list-group-item list-group-item-action border-bottom py-3 px-4 d-flex align-items-center gap-3 {{ ($selectedContact && $selectedContact->id === $contact->id) ? 'active bg-light border-start border-primary border-4 text-dark' : '' }}"
                            style="{{ ($selectedContact && $selectedContact->id === $contact->id) ? 'border-left: 4px solid var(--bs-primary) !important;' : '' }}">
-                            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold small" style="width: 42px; height: 42px; min-width: 42px;">
-                                {{ strtoupper(substr($contact->full_name ?? $contact->username, 0, 1)) }}
+                            <div class="position-relative">
+                                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold small" style="width: 42px; height: 42px; min-width: 42px;">
+                                    {{ strtoupper(substr($contact->full_name ?? $contact->username, 0, 1)) }}
+                                </div>
+                                @if($contact->isOnline())
+                                    <span class="position-absolute bottom-0 end-0 bg-success border border-white border-2 rounded-circle" style="width: 12px; height: 12px;" title="Online"></span>
+                                @endif
                             </div>
                             <div class="flex-grow-1 overflow-hidden">
                                 <div class="d-flex justify-content-between align-items-center mb-1">
@@ -73,12 +83,17 @@
                     <a href="{{ route('chat.index', ['view' => 'list']) }}" class="btn btn-light d-md-none rounded-circle d-flex align-items-center justify-content-center p-0" style="width: 40px; height: 40px; min-width: 40px;">
                         <i class="fas fa-arrow-left text-dark"></i>
                     </a>
-                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold small" style="width: 40px; height: 40px; min-width: 40px;">
-                        {{ strtoupper(substr($selectedContact->full_name ?? $selectedContact->username, 0, 1)) }}
+                    <div class="position-relative">
+                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold small" style="width: 40px; height: 40px; min-width: 40px;">
+                            {{ strtoupper(substr($selectedContact->full_name ?? $selectedContact->username, 0, 1)) }}
+                        </div>
+                        <span id="headerOnlineDot" class="position-absolute bottom-0 end-0 bg-success border border-white border-2 rounded-circle {{ $selectedContact->isOnline() ? '' : 'd-none' }}" style="width: 11px; height: 11px;"></span>
                     </div>
                     <div>
                         <h6 class="fw-bold mb-0 text-dark">{{ $selectedContact->full_name ?? $selectedContact->username }}</h6>
-                        <small class="text-muted small text-capitalize">{{ $selectedContact->role }}</small>
+                        <small id="headerStatusText" class="text-muted small {{ $selectedContact->isOnline() ? 'text-success fw-bold' : '' }}">
+                            {{ $selectedContact->isOnline() ? 'Online' : $selectedContact->last_active_label }}
+                        </small>
                     </div>
                 </div>
 
@@ -235,6 +250,23 @@
                         const count = data.messages.length;
                         renderMessages(data.messages);
                         
+                        // Update online status in header dynamically
+                        const headerOnlineDot = document.getElementById('headerOnlineDot');
+                        const headerStatusText = document.getElementById('headerStatusText');
+                        if (headerOnlineDot && headerStatusText) {
+                            if (data.contact_online) {
+                                headerOnlineDot.classList.remove('d-none');
+                                headerStatusText.textContent = 'Online';
+                                headerStatusText.classList.add('text-success', 'fw-bold');
+                                headerStatusText.classList.remove('text-muted');
+                            } else {
+                                headerOnlineDot.classList.add('d-none');
+                                headerStatusText.textContent = data.contact_last_active;
+                                headerStatusText.classList.remove('text-success', 'fw-bold');
+                                headerStatusText.classList.add('text-muted');
+                            }
+                        }
+
                         // If new messages arrived, scroll down
                         if (count > lastMessageCount) {
                             scrollToBottom();

@@ -66,11 +66,8 @@ class ChatController extends Controller
             })
             ->sortByDesc('last_message_time');
 
-        $forceList = $request->query('view') === 'list';
         if ($selectedContactId) {
             $selectedContact = User::find($selectedContactId);
-        } elseif ($contacts->isNotEmpty() && !$forceList) {
-            $selectedContact = $contacts->first();
         }
 
         return view('chat.index', compact('contacts', 'selectedContact'));
@@ -98,8 +95,12 @@ class ChatController extends Controller
             ->orderBy('created_at', 'asc')
             ->get();
 
+        $contact = User::find($contactId);
+
         return response()->json([
             'success' => true,
+            'contact_online' => $contact ? $contact->isOnline() : false,
+            'contact_last_active' => $contact ? $contact->last_active_label : 'Offline',
             'messages' => $messages->map(function ($msg) use ($user) {
                 return [
                     'id' => $msg->id,
@@ -153,6 +154,11 @@ class ChatController extends Controller
         if ($receiver) {
             $senderName = Auth::user()->full_name ?? Auth::user()->username;
             $receiver->notify(new \App\Notifications\NewChatMessageNotification($msg->message, $senderName, Auth::id()));
+            
+            // Send telegram notification if connected
+            if ($receiver->telegram_id) {
+                \App\Services\TelegramService::notifyUserNewChatMessage($receiver, Auth::user(), $msg);
+            }
         }
 
         return response()->json([

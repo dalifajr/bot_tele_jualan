@@ -25,6 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
             append: [
                 \App\Http\Middleware\SetLocale::class,
                 \App\Http\Middleware\BlockBannedIps::class,
+                \App\Http\Middleware\UpdateUserLastSeen::class,
             ],
             remove: [
                 \Illuminate\Http\Middleware\FrameGuard::class,

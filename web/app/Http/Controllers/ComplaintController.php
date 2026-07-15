@@ -66,6 +66,11 @@ class ComplaintController extends Controller
             $seller = \App\Models\User::find($sellerId);
             if ($seller) {
                 $seller->notify(new \App\Notifications\ComplaintNotification($complaint, 'new', $message));
+                
+                // Notify seller via Telegram
+                if ($seller->telegram_id) {
+                    \App\Services\TelegramService::notifySellerComplaintReopened($complaint, $seller);
+                }
             }
         }
         

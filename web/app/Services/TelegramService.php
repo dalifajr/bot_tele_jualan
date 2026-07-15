@@ -477,7 +477,7 @@ class TelegramService
               . "Produk: " . htmlspecialchars($productName) . "\n\n"
               . "<b>Keluhan:</b>\n"
               . htmlspecialchars($complaint->complaint_text) . "\n\n"
-              . "Silakan cek halaman admin/seller untuk memproses keluhan ini.";
+              . "<i>Silakan periksa dan tindak lanjuti komplain di website</i>";
 
         try {
             Http::post("https://api.telegram.org/bot{$botToken}/sendMessage", [
@@ -528,6 +528,8 @@ class TelegramService
             $text .= "\n<b>Catatan:</b>\n" . htmlspecialchars($complaint->refund_note) . "\n";
         }
 
+        $text .= "\n<i>Silakan periksa perkembangan komplain di website</i>";
+
         try {
             Http::post("https://api.telegram.org/bot{$botToken}/sendMessage", [
                 'chat_id' => $customerTelegramId,
@@ -536,6 +538,69 @@ class TelegramService
             ]);
         } catch (\Exception $e) {
             Log::error("Gagal mengirim notifikasi update komplain ke customer {$customerTelegramId}: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Kirim notifikasi ke Seller bahwa komplain dibuka kembali (reopened)
+     */
+    public static function notifySellerComplaintReopened(\App\Models\ComplaintCase $complaint, User $seller)
+    {
+        $botToken = env('TELEGRAM_BOT_TOKEN');
+        if (empty($botToken)) return;
+        if (!$seller->telegram_id) return;
+
+        $customerName = $complaint->customer->full_name ?? $complaint->customer->username ?? '-';
+        $productName = $complaint->order->items->first()->product->name ?? 'Produk';
+        
+        $text = "⚠️ <b>Komplain Dibuka Kembali (Reopened)</b>\n"
+              . "Ref Komplain: <code>{$complaint->complaint_ref}</code>\n"
+              . "Order Ref: <code>{$complaint->order_ref_snapshot}</code>\n"
+              . "Customer: " . htmlspecialchars($customerName) . "\n"
+              . "Produk: " . htmlspecialchars($productName) . "\n\n"
+              . "<i>Silakan periksa dan tindak lanjuti komplain di website</i>";
+
+        try {
+            Http::post("https://api.telegram.org/bot{$botToken}/sendMessage", [
+                'chat_id' => $seller->telegram_id,
+                'text' => $text,
+                'parse_mode' => 'HTML',
+            ]);
+        } catch (\Exception $e) {
+            Log::error("Gagal mengirim notifikasi reopen komplain ke seller {$seller->telegram_id}: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Kirim notifikasi chat baru ke user tujuan via Telegram
+     */
+    public static function notifyUserNewChatMessage(User $receiver, User $sender, \App\Models\ChatMessage $msg)
+    {
+        $botToken = env('TELEGRAM_BOT_TOKEN');
+        if (empty($botToken)) return;
+        if (!$receiver->telegram_id) return;
+
+        $senderName = $sender->full_name ?? $sender->username ?? 'User';
+        
+        $text = "<b>Notifikasi Chat Baru</b>\n"
+              . "Pengirim: {$senderName}\n"
+              . "Pesan: " . ($msg->message ?: '-') . "\n";
+              
+        if ($msg->attachment_path) {
+            $val = $msg->attachment_type === 'video' ? '1 Video' : '1 Foto';
+            $text .= "Attachment: {$val}\n";
+        }
+        
+        $text .= "\n<i>Silakan periksa dan balas pesan di website</i>";
+
+        try {
+            Http::post("https://api.telegram.org/bot{$botToken}/sendMessage", [
+                'chat_id' => $receiver->telegram_id,
+                'text' => $text,
+                'parse_mode' => 'HTML',
+            ]);
+        } catch (\Exception $e) {
+            Log::error("Gagal mengirim notifikasi chat baru ke telegram {$receiver->telegram_id}: " . $e->getMessage());
         }
     }
 }

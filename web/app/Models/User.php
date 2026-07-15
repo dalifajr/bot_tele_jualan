@@ -42,7 +42,41 @@ class User extends Authenticatable
         'allowed_tools' => 'array',
         'two_factor_enabled' => 'boolean',
         'two_factor_expires_at' => 'datetime',
+        'last_seen_at' => 'datetime',
     ];
+
+    public function isOnline()
+    {
+        if (!$this->last_seen_at) {
+            return false;
+        }
+        // Online if active in the last 5 minutes
+        return $this->last_seen_at->diffInMinutes(now()) < 5;
+    }
+
+    public function getLastActiveLabelAttribute()
+    {
+        if ($this->isOnline()) {
+            return 'Online';
+        }
+
+        if (!$this->last_seen_at) {
+            return 'Offline';
+        }
+
+        $lastSeen = $this->last_seen_at;
+
+        if ($lastSeen->isToday()) {
+            return 'Aktif hari ini pukul ' . $lastSeen->format('H:i');
+        }
+
+        if ($lastSeen->isYesterday()) {
+            return 'Aktif kemarin pukul ' . $lastSeen->format('H:i');
+        }
+
+        // Return day name and date
+        return 'Aktif ' . $lastSeen->translatedFormat('l, d M Y H:i');
+    }
 
     /**
      * The primary key is 'id' (auto-increment, set by Python bot).
