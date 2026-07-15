@@ -200,8 +200,7 @@ class TelegramService
               . "Batas Pembayaran: {$expiresAt} WIB\n\n";
 
         if ($dynamicQris) {
-            $text .= "👇 <b>Silakan Scan QRIS berikut atau Salin Kode Payload:</b>\n"
-                   . "<code>{$dynamicQris}</code>\n\n"
+            $text .= "👇 <b>Silakan Scan QRIS berikut:</b>\n\n"
                    . "<i>Pesanan akan otomatis diproses segera setelah pembayaran diterima.</i>";
             
             // Kita bisa menggunakan sendPhoto dengan URL image QR Code dinamis dari API public.
