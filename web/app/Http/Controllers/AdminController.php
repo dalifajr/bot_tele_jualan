@@ -1757,7 +1757,8 @@ class AdminController extends Controller
     // ==========================================
     public function broadcast()
     {
-        return view('admin.broadcast.index');
+        $broadcastHistory = \App\Models\BroadcastJob::orderBy('created_at', 'desc')->paginate(10);
+        return view('admin.broadcast.index', compact('broadcastHistory'));
     }
 
     public function startBroadcast(Request $request)
@@ -1767,7 +1768,7 @@ class AdminController extends Controller
             'media_file' => 'nullable|file|max:51200' // max 50MB
         ]);
 
-        if (empty($request->message) && !$request->hasFile('media_file')) {
+        if (empty($request->message) && !$request->hasFile('media_file') && empty($request->existing_media_path)) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Harap isi pesan teks atau pilih file untuk broadcast.'
@@ -1800,6 +1801,9 @@ class AdminController extends Controller
              }
              $filename = 'broadcast_' . time() . '.' . $ext;
              $mediaPath = $file->storeAs('broadcasts', $filename, 'public');
+        } elseif ($request->filled('existing_media_path')) {
+            $mediaPath = $request->existing_media_path;
+            $mediaType = $request->existing_media_type;
         }
 
         // Create the background job record
@@ -1856,6 +1860,19 @@ class AdminController extends Controller
             'job_id' => $job->id,
             'total' => $job->total_targets
         ]);
+    }
+
+    public function resendBroadcast(Request $request, $jobId)
+    {
+        $oldJob = \App\Models\BroadcastJob::findOrFail($jobId);
+
+        $request->merge([
+            'message' => $oldJob->message,
+            'existing_media_path' => $oldJob->media_path,
+            'existing_media_type' => $oldJob->media_type,
+        ]);
+
+        return $this->startBroadcast($request);
     }
 
     public function runBroadcastBackground(Request $request, $jobId)
