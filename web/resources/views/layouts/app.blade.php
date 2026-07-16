@@ -120,12 +120,12 @@
 <div class="bg-warning text-warning-emphasis py-2 px-4 d-flex justify-content-between align-items-center position-fixed w-100 shadow-sm" style="z-index: 1060; top: 0; left: 0; font-size: 0.9rem; height: 40px;">
     <div class="d-flex align-items-center gap-2">
         <i class="fas fa-user-secret"></i> 
-        <span>Anda sedang login sebagai <strong>{{ Auth::user()->full_name ?? Auth::user()->username }}</strong> (Sesi Admin)</span>
+        <span>{{ __('Anda sedang login sebagai') }} <strong>{{ Auth::user()->full_name ?? Auth::user()->username }}</strong> ({{ __('Sesi Admin') }})</span>
     </div>
     <form action="{{ route('admin.users.stop-impersonating') }}" method="POST" class="m-0">
         @csrf
         <button type="submit" class="btn btn-xs btn-outline-dark rounded-pill px-3 py-0 font-weight-bold" style="font-size: 0.8rem; border-width: 2px; line-height: 1.5;">
-            <i class="fas fa-sign-out-alt me-1"></i> Kembali ke Admin
+            <i class="fas fa-sign-out-alt me-1"></i> {{ __('Kembali ke Admin') }}
         </button>
     </form>
 </div>
@@ -146,7 +146,7 @@
 {{-- Top Navbar --}}
 <nav class="navbar navbar-expand fixed-top shadow-sm px-4 bg-body border-bottom" style="z-index: 1030; top: 0;">
     <div class="d-flex align-items-center gap-3">
-        <button class="btn btn-link link-body-emphasis text-decoration-none p-0 d-md-none" id="sidebarToggle" aria-label="Buka/Tutup Menu Navigasi">
+        <button class="btn btn-link link-body-emphasis text-decoration-none p-0 d-md-none" id="sidebarToggle" aria-label="{{ __('Buka/Tutup Menu Navigasi') }}">
             <i class="fas fa-bars fs-4"></i>
         </button>
         <div class="navbar-brand d-flex align-items-center gap-2 text-primary fw-bold m-0" style="font-size: 1.05rem;">
@@ -161,7 +161,7 @@
             $totalUnreadCount = Auth::user()->unreadNotifications()->count();
         @endphp
         <div class="dropdown">
-            <button class="btn btn-link link-body-emphasis p-0 position-relative" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Notifikasi" data-pex="xrpax4o-0">
+            <button class="btn btn-link link-body-emphasis p-0 position-relative" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="{{ __('Notifikasi') }}" data-pex="xrpax4o-0">
                 <i class="fas fa-bell fs-5" data-pex="xrpax4o-1"></i>
                 @if($totalUnreadCount > 0)
                 <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.65rem;" data-pex="xrpax4o-2">
@@ -171,9 +171,9 @@
             </button>
             <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2 p-0" style="width: 350px; border-radius: 12px; z-index: 1050; overflow: hidden;">
                 <li class="bg-light px-3 py-2 border-bottom d-flex justify-content-between align-items-center">
-                    <h6 class="m-0 fw-bold text-primary" data-pex="9c28hsh-7">Notifikasi</h6>
+                    <h6 class="m-0 fw-bold text-primary" data-pex="9c28hsh-7">{{ __('Notifikasi') }}</h6>
                     @if($totalUnreadCount > 0)
-                    <span class="badge bg-primary rounded-pill">{{ $totalUnreadCount }} Baru</span>
+                    <span class="badge bg-primary rounded-pill">{{ $totalUnreadCount }} {{ __('Baru') }}</span>
                     @endif
                 </li>
                 
@@ -185,7 +185,7 @@
                                 <i class="{{ $notification->data['icon'] ?? 'fas fa-bell text-secondary' }} fs-5"></i>
                             </div>
                             <div class="flex-grow-1">
-                                <div class="fw-bold mb-1" style="font-size: 0.9rem; color: var(--bs-heading-color);" data-pex="9c28hsh-21">{{ $notification->data['title'] ?? 'Notifikasi' }}</div>
+                                <div class="fw-bold mb-1" style="font-size: 0.9rem; color: var(--bs-heading-color);" data-pex="9c28hsh-21">{{ $notification->data['title'] ?? __('Notifikasi') }}</div>
                                 <div class="text-muted small" style="line-height: 1.4;" data-pex="9c28hsh-22">{{ $notification->data['message'] ?? '' }}</div>
                                 
                                 @if(($notification->data['type'] ?? '') === 'login_gagal' && isset($notification->data['ip_address']))
@@ -194,7 +194,7 @@
                                         @csrf
                                         <input type="hidden" name="ip_address" value="{{ $notification->data['ip_address'] }}">
                                         <button type="submit" class="btn btn-sm btn-danger rounded-pill" style="font-size: 0.75rem;">
-                                            <i class="fas fa-ban me-1"></i>Bukan Saya (Blokir)
+                                            <i class="fas fa-ban me-1"></i>{{ __('Bukan Saya (Blokir)') }}
                                         </button>
                                     </form>
                                 </div>
@@ -208,21 +208,21 @@
                     <li>
                         <div class="dropdown-item py-4 text-center text-muted">
                             <i class="fas fa-check-circle fs-3 mb-2 text-success"></i><br>
-                            <small>Tidak ada notifikasi baru.</small>
+                            <small>{{ __('Tidak ada notifikasi baru.') }}</small>
                         </div>
                     </li>
                     @endforelse
                 </div>
                 
                 <li class="d-flex justify-content-between px-3 py-2 bg-light border-top">
-                    <a href="javascript:void(0)" class="text-decoration-none small text-muted hover-primary" onclick="markAllNotificationsRead()"><i class="fas fa-check-double me-1"></i>Tandai Dibaca</a>
-                    <a href="{{ route('notifications.index') }}" class="text-decoration-none small fw-bold text-primary"><i class="fas fa-list me-1"></i>Lihat Semua</a>
+                    <a href="javascript:void(0)" class="text-decoration-none small text-muted hover-primary" onclick="markAllNotificationsRead()"><i class="fas fa-check-double me-1"></i>{{ __('Tandai Dibaca') }}</a>
+                    <a href="{{ route('notifications.index') }}" class="text-decoration-none small fw-bold text-primary"><i class="fas fa-list me-1"></i>{{ __('Lihat Semua') }}</a>
                 </li>
             </ul>
         </div>
 
         {{-- Shopping Cart Icon --}}
-        <a href="{{ route('cart.index') }}" class="btn btn-link link-body-emphasis p-0 position-relative me-2" title="Keranjang Belanja">
+        <a href="{{ route('cart.index') }}" class="btn btn-link link-body-emphasis p-0 position-relative me-2" title="{{ __('Keranjang Belanja') }}">
             <i class="fas fa-shopping-cart fs-5"></i>
             @php
                 $cartCount = \App\Models\CartItem::where('user_id', Auth::id())->sum('quantity');
@@ -244,8 +244,8 @@
         {{-- Logout --}}
         <form action="{{ route('logout') }}" method="POST" class="m-0">
             @csrf
-            <button type="submit" class="btn btn-sm btn-outline-danger d-flex align-items-center gap-2" aria-label="Logout">
-                <i class="fas fa-sign-out-alt"></i> <span class="d-none d-sm-inline">Logout</span>
+            <button type="submit" class="btn btn-sm btn-outline-danger d-flex align-items-center gap-2" aria-label="{{ __('Logout') }}">
+                <i class="fas fa-sign-out-alt"></i> <span class="d-none d-sm-inline">{{ __('Logout') }}</span>
             </button>
         </form>
     </div>
@@ -477,15 +477,15 @@
             </div>
             @if(is_array(Auth::user()->allowed_tools) && count(Auth::user()->allowed_tools) > 0)
             <div class="menu-group">
-                <div class="menu-header text-success"><i class="fas fa-tools me-1"></i> Tool</div>
+                <div class="menu-header text-success"><i class="fas fa-tools me-1"></i> {{ __('Tool') }}</div>
                 @if(in_array('github_checker', Auth::user()->allowed_tools))
                 <a href="{{ route('admin.tools.github-checker') }}" class="menu-item {{ request()->routeIs('admin.tools.github-checker*') ? 'active' : '' }}">
-                    <i class="fab fa-github"></i> GitHub Live Checker
+                    <i class="fab fa-github"></i> {{ __('GitHub Live Checker') }}
                 </a>
                 @endif
                 @if(in_array('gmail_checker', Auth::user()->allowed_tools))
                 <a href="{{ route('admin.tools.gmail-checker') }}" class="menu-item {{ request()->routeIs('admin.tools.gmail-checker*') ? 'active' : '' }}">
-                    <i class="fas fa-envelope"></i> Gmail Live Checker
+                    <i class="fas fa-envelope"></i> {{ __('Gmail Live Checker') }}
                 </a>
                 @endif
             </div>
@@ -502,9 +502,9 @@
                     <a href="{{ route('lang.switch', $currentLocale === 'id' ? 'en' : 'id') }}" 
                        class="btn btn-xs btn-outline-secondary d-flex align-items-center gap-1 py-1 px-2 text-decoration-none"
                        style="font-size: 0.78rem;"
-                       title="{{ $currentLocale === 'id' ? 'Switch to English' : 'Ubah ke Bahasa Indonesia' }}">
+                       title="{{ $currentLocale === 'id' ? __('Switch to English') : __('Ubah ke Bahasa Indonesia') }}">
                         <i class="fas fa-globe text-secondary"></i>
-                        <span>{{ $currentLocale === 'id' ? 'English' : 'Indonesia' }}</span>
+                        <span>{{ $currentLocale === 'id' ? __('English') : __('Indonesia') }}</span>
                     </a>
                 </div>
             </div>
@@ -566,9 +566,9 @@
         @if(session('swal_error'))
             Swal.fire({
                 icon: 'error',
-                title: 'Gagal',
+                title: '{{ __('Gagal') }}',
                 text: "{{ session('swal_error') }}",
-                confirmButtonText: 'Tutup',
+                confirmButtonText: '{{ __('Tutup') }}',
                 confirmButtonColor: '#dc3545',
                 customClass: {
                     popup: 'rounded-4 border-0 shadow-lg',
@@ -580,7 +580,7 @@
         @if(session('swal_success'))
             Swal.fire({
                 icon: 'success',
-                title: 'Berhasil',
+                title: '{{ __('Berhasil') }}',
                 text: "{{ session('swal_success') }}",
                 confirmButtonText: 'OK',
                 confirmButtonColor: '#198754',
@@ -612,8 +612,8 @@
                 
                 Swal.fire({
                     icon: 'success',
-                    title: 'Berhasil',
-                    text: 'Semua notifikasi telah ditandai dibaca.',
+                    title: '{{ __('Berhasil') }}',
+                    text: '{{ __('Semua notifikasi telah ditandai dibaca.') }}',
                     toast: true,
                     position: 'top-end',
                     showConfirmButton: false,

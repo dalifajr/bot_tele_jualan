@@ -6,11 +6,11 @@
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h1 class="h4 fw-bold mb-1">Admin Dashboard</h1>
-        <p class="text-muted mb-0">Ringkasan aktivitas toko Anda ({{ $periodLabel }})</p>
+        <h1 class="h4 fw-bold mb-1">{{ __('Admin Dashboard') }}</h1>
+        <p class="text-muted mb-0">{{ __('Ringkasan aktivitas toko Anda (:period)', ['period' => $periodLabel]) }}</p>
     </div>
     <a href="{{ route('admin.products.index') }}" class="btn btn-primary rounded-pill px-4 text-nowrap">
-        <i class="fas fa-plus me-2"></i>Kelola Produk
+        <i class="fas fa-plus me-2"></i>{{ __('Kelola Produk') }}
     </a>
 </div>
 
@@ -19,7 +19,7 @@
         <form action="{{ route('admin.dashboard') }}" method="GET" class="row g-3 align-items-center">
             <div class="col-md-4">
                 <select name="product_id" class="form-select rounded-pill px-3">
-                    <option value="">Semua Produk</option>
+                    <option value="">{{ __('Semua Produk') }}</option>
                     @foreach($products as $p)
                         <option value="{{ $p->id }}" {{ $productId == $p->id ? 'selected' : '' }}>
                             {{ $p->is_suspended ? '🔴' : '✅' }} {{ $p->name }}
@@ -29,18 +29,18 @@
             </div>
             <div class="col-md-4">
                 <select name="period" class="form-select rounded-pill px-3">
-                    <option value="24_hours" {{ $period == '24_hours' ? 'selected' : '' }}>24 Jam Terakhir</option>
-                    <option value="7_days" {{ $period == '7_days' ? 'selected' : '' }}>7 Hari Terakhir</option>
-                    <option value="30_days" {{ $period == '30_days' ? 'selected' : '' }}>30 Hari Terakhir</option>
-                    <option value="6_months" {{ $period == '6_months' ? 'selected' : '' }}>6 Bulan Terakhir</option>
+                    <option value="24_hours" {{ $period == '24_hours' ? 'selected' : '' }}>{{ __('24 Jam Terakhir') }}</option>
+                    <option value="7_days" {{ $period == '7_days' ? 'selected' : '' }}>{{ __('7 Hari Terakhir') }}</option>
+                    <option value="30_days" {{ $period == '30_days' ? 'selected' : '' }}>{{ __('30 Hari Terakhir') }}</option>
+                    <option value="6_months" {{ $period == '6_months' ? 'selected' : '' }}>{{ __('6 Bulan Terakhir') }}</option>
                 </select>
             </div>
             <div class="col-md-4 d-flex">
                 <button type="submit" class="btn btn-primary rounded-pill px-4 flex-fill me-2">
-                    <i class="fas fa-search me-1"></i> Cari
+                    <i class="fas fa-search me-1"></i> {{ __('Cari') }}
                 </button>
                 <a href="{{ route('admin.dashboard') }}" class="btn btn-secondary rounded-pill px-4 flex-fill">
-                    <i class="fas fa-sync me-1"></i> Reset
+                    <i class="fas fa-sync me-1"></i> {{ __('Reset') }}
                 </a>
             </div>
         </form>
@@ -56,13 +56,13 @@
                     <i class="fas fa-wallet"></i>
                 </div>
                 <div class="text-truncate">
-                    <h6 class="text-muted mb-1 small text-nowrap">Total Pendapatan</h6>
+                    <h6 class="text-muted mb-1 small text-nowrap">{{ __('Total Pendapatan') }}</h6>
                     <h5 class="fw-bold mb-0 text-nowrap">Rp {{ number_format($totalRevenue, 0, ',', '.') }}</h5>
                     <div class="mt-1" style="font-size: 0.75rem;">
                         <span class="{{ $revenueStats['class'] }} fw-bold">
                             <i class="fas {{ $revenueStats['icon'] }} me-1"></i>{{ $revenueStats['formatted_percent'] }}
                         </span>
-                        <span class="text-muted">vs periode lalu</span>
+                        <span class="text-muted">{{ __('vs periode lalu') }}</span>
                     </div>
                 </div>
             </div>
@@ -75,13 +75,13 @@
                     <i class="fas fa-coins"></i>
                 </div>
                 <div class="text-truncate">
-                    <h6 class="text-muted mb-1 small text-nowrap">Komisi Platform</h6>
+                    <h6 class="text-muted mb-1 small text-nowrap">{{ __('Komisi Platform') }}</h6>
                     <h5 class="fw-bold mb-0 text-nowrap">Rp {{ number_format($platformCommission, 0, ',', '.') }}</h5>
                     <div class="mt-1" style="font-size: 0.75rem;">
                         <span class="{{ $commissionStats['class'] }} fw-bold">
                             <i class="fas {{ $commissionStats['icon'] }} me-1"></i>{{ $commissionStats['formatted_percent'] }}
                         </span>
-                        <span class="text-muted">vs periode lalu</span>
+                        <span class="text-muted">{{ __('vs periode lalu') }}</span>
                     </div>
                 </div>
             </div>
@@ -94,13 +94,13 @@
                     <i class="fas fa-user-shield"></i>
                 </div>
                 <div class="text-truncate">
-                    <h6 class="text-muted mb-1 small text-nowrap">Pendapatan Admin</h6>
+                    <h6 class="text-muted mb-1 small text-nowrap">{{ __('Pendapatan Admin') }}</h6>
                     <h5 class="fw-bold mb-0 text-nowrap">Rp {{ number_format($adminEarnings, 0, ',', '.') }}</h5>
                     <div class="mt-1" style="font-size: 0.75rem;">
                         <span class="{{ $adminEarningsStats['class'] }} fw-bold">
                             <i class="fas {{ $adminEarningsStats['icon'] }} me-1"></i>{{ $adminEarningsStats['formatted_percent'] }}
                         </span>
-                        <span class="text-muted">vs periode lalu</span>
+                        <span class="text-muted">{{ __('vs periode lalu') }}</span>
                     </div>
                 </div>
             </div>
@@ -114,18 +114,18 @@
                         <i class="fas fa-store"></i>
                     </div>
                     <div class="text-truncate">
-                        <h6 class="text-muted mb-1 small text-nowrap">Pendapatan Seller</h6>
+                        <h6 class="text-muted mb-1 small text-nowrap">{{ __('Pendapatan Seller') }}</h6>
                         <h5 class="fw-bold mb-0 text-nowrap">Rp {{ number_format($totalSellerEarnings, 0, ',', '.') }}</h5>
                         <div class="mt-1" style="font-size: 0.75rem;">
                             <span class="{{ $sellerEarningsStats['class'] }} fw-bold">
                                 <i class="fas {{ $sellerEarningsStats['icon'] }} me-1"></i>{{ $sellerEarningsStats['formatted_percent'] }}
                             </span>
-                            <span class="text-muted">vs periode lalu</span>
+                            <span class="text-muted">{{ __('vs periode lalu') }}</span>
                         </div>
                     </div>
                 </div>
                 <div class="ms-2">
-                    <a href="{{ route('admin.sellers.index') }}" class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1">Detail</a>
+                    <a href="{{ route('admin.sellers.index') }}" class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1">{{ __('Detail') }}</a>
                 </div>
             </div>
         </div>
@@ -137,13 +137,13 @@
                     <i class="fas fa-shopping-cart"></i>
                 </div>
                 <div class="text-truncate">
-                    <h6 class="text-muted mb-1 small text-nowrap">Total Order</h6>
+                    <h6 class="text-muted mb-1 small text-nowrap">{{ __('Total Order') }}</h6>
                     <h5 class="fw-bold mb-0 text-nowrap">{{ number_format($totalOrders, 0, ',', '.') }}</h5>
                     <div class="mt-1" style="font-size: 0.75rem;">
                         <span class="{{ $ordersStats['class'] }} fw-bold">
                             <i class="fas {{ $ordersStats['icon'] }} me-1"></i>{{ $ordersStats['formatted_percent'] }}
                         </span>
-                        <span class="text-muted">vs periode lalu</span>
+                        <span class="text-muted">{{ __('vs periode lalu') }}</span>
                     </div>
                 </div>
             </div>
@@ -156,13 +156,13 @@
                     <i class="fas fa-box"></i>
                 </div>
                 <div class="text-truncate">
-                    <h6 class="text-muted mb-1 small text-nowrap">Total Produk</h6>
+                    <h6 class="text-muted mb-1 small text-nowrap">{{ __('Total Produk') }}</h6>
                     <h5 class="fw-bold mb-0 text-nowrap">{{ number_format($totalProducts, 0, ',', '.') }}</h5>
                     <div class="mt-1" style="font-size: 0.75rem;">
                         <span class="{{ $productsStats['class'] }} fw-bold">
                             <i class="fas {{ $productsStats['icon'] }} me-1"></i>{{ $productsStats['formatted_percent'] }}
                         </span>
-                        <span class="text-muted">vs periode lalu</span>
+                        <span class="text-muted">{{ __('vs periode lalu') }}</span>
                     </div>
                 </div>
             </div>
@@ -175,7 +175,7 @@
                     <i class="fas fa-users"></i>
                 </div>
                 <div class="text-truncate">
-                    <h6 class="text-muted mb-1 small text-nowrap">Total User</h6>
+                    <h6 class="text-muted mb-1 small text-nowrap">{{ __('Total User') }}</h6>
                     <h5 class="fw-bold mb-0 text-nowrap">{{ number_format($totalUsers, 0, ',', '.') }}</h5>
                     <div class="d-flex gap-2 mt-1" style="font-size: 0.75rem;">
                         <span class="badge bg-primary-subtle text-primary rounded-pill"><i class="fas fa-desktop me-1"></i>Web: {{ $webUsersCount }}</span>
@@ -185,7 +185,7 @@
                         <span class="{{ $usersStats['class'] }} fw-bold">
                             <i class="fas {{ $usersStats['icon'] }} me-1"></i>{{ $usersStats['formatted_percent'] }}
                         </span>
-                        <span class="text-muted">vs periode lalu</span>
+                        <span class="text-muted">{{ __('vs periode lalu') }}</span>
                     </div>
                 </div>
             </div>
@@ -200,8 +200,8 @@
         <div class="card border-0 shadow-sm h-100" style="border-radius: 16px;">
             <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <div>
-                    <h5 class="fw-bold mb-1 text-body"><i class="fas fa-chart-line text-primary me-2"></i>Tren Pendapatan Harian</h5>
-                    <p class="text-muted small mb-0">Statistik omzet penjualan dalam {{ $periodLabel }}</p>
+                    <h5 class="fw-bold mb-1 text-body"><i class="fas fa-chart-line text-primary me-2"></i>{{ __('Tren Pendapatan Harian') }}</h5>
+                    <p class="text-muted small mb-0">{{ __('Statistik omzet penjualan dalam :period', ['period' => $periodLabel]) }}</p>
                 </div>
             </div>
             <div class="card-body px-4 pb-4">
@@ -216,8 +216,8 @@
     <div class="col-lg-4">
         <div class="card border-0 shadow-sm h-100" style="border-radius: 16px;">
             <div class="card-header bg-transparent border-0 pt-4 px-4">
-                <h5 class="fw-bold mb-1 text-body"><i class="fas fa-chart-pie text-success me-2"></i>Rasio Status Order</h5>
-                <p class="text-muted small mb-0">Persentase sukses vs batal/expired</p>
+                <h5 class="fw-bold mb-1 text-body"><i class="fas fa-chart-pie text-success me-2"></i>{{ __('Rasio Status Order') }}</h5>
+                <p class="text-muted small mb-0">{{ __('Persentase sukses vs batal/expired') }}</p>
             </div>
             <div class="card-body d-flex flex-column justify-content-center align-items-center px-4 pb-4">
                 <div id="completionChart" style="min-height: 250px; display: flex; align-items: center; justify-content: center; width: 100%;">
@@ -228,11 +228,11 @@
                 </div>
                 <div class="d-flex justify-content-around w-100 mt-3 border-top pt-3">
                     <div class="text-center">
-                        <span class="d-block text-muted small">Sukses</span>
+                        <span class="d-block text-muted small">{{ __('Sukses') }}</span>
                         <strong class="text-success">{{ $totalOrders > 0 ? round(($deliveredOrders / $totalOrders) * 100) : 0 }}%</strong>
                     </div>
                     <div class="text-center">
-                        <span class="d-block text-muted small">Batal</span>
+                        <span class="d-block text-muted small">{{ __('Batal') }}</span>
                         <strong class="text-danger">{{ $totalOrders > 0 ? round(($cancelledOrders / $totalOrders) * 100) : 0 }}%</strong>
                     </div>
                 </div>
@@ -244,8 +244,8 @@
 {{-- Recent Orders --}}
 <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 16px;">
     <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
-        <h2 class="h5 fw-bold mb-0">Pesanan Terbaru</h2>
-        <a href="{{ route('admin.orders.index') }}" class="btn btn-sm btn-outline-primary rounded-pill px-3">Lihat Semua</a>
+        <h2 class="h5 fw-bold mb-0">{{ __('Pesanan Terbaru') }}</h2>
+        <a href="{{ route('admin.orders.index') }}" class="btn btn-sm btn-outline-primary rounded-pill px-3">{{ __('Lihat Semua') }}</a>
     </div>
     <div class="card-body p-0">
         @if($recentOrders->count() > 0)
@@ -253,12 +253,12 @@
             <table class="table table-hover align-middle mb-0">
                 <thead>
                     <tr class="text-secondary small border-bottom">
-                        <th class="px-4 py-3 border-0">No. Order</th>
-                        <th class="py-3 border-0">Pelanggan</th>
-                        <th class="py-3 border-0">Produk</th>
-                        <th class="py-3 border-0">Total</th>
-                        <th class="py-3 border-0">Status</th>
-                        <th class="py-3 border-0">Tanggal</th>
+                        <th class="px-4 py-3 border-0">{{ __('No. Order') }}</th>
+                        <th class="py-3 border-0">{{ __('Pelanggan') }}</th>
+                        <th class="py-3 border-0">{{ __('Produk') }}</th>
+                        <th class="py-3 border-0">{{ __('Total') }}</th>
+                        <th class="py-3 border-0">{{ __('Status') }}</th>
+                        <th class="py-3 border-0">{{ __('Tanggal') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -287,7 +287,7 @@
         @else
         <div class="text-center py-5">
             <i class="fas fa-receipt text-muted mb-3" style="font-size: 3rem;"></i>
-            <p class="text-muted mb-0">Belum ada pesanan.</p>
+            <p class="text-muted mb-0">{{ __('Belum ada pesanan.') }}</p>
         </div>
         @endif
 </div>
