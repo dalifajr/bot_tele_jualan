@@ -432,7 +432,7 @@ function resendWithEdit(jobId, b64Message, mediaPath, mediaType) {
     Swal.fire({
         icon: 'info',
         title: '{{ __("Siap Diedit") }}',
-        text: '{{ __("Pesan telah dimuat ke dalam form. Anda bisa mengubah pesan lalu klik {{ __('Mulai Kirim Broadcast') }}.") }}',
+        text: '{{ __("Pesan telah dimuat ke dalam form. Anda bisa mengubah pesan lalu klik Mulai Kirim Broadcast.") }}',
         timer: 3000,
         showConfirmButton: false,
         toast: true,
