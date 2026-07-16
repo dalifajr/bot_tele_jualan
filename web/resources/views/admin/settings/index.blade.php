@@ -80,7 +80,7 @@
                                 <div class="form-text">Mengatur zona waktu untuk web admin, seller, dan pesan bot Telegram. Zona aktif saat ini: <strong>{{ $settings['system_timezone'] ?? 'UTC' }}</strong> (Server: {{ now()->timezone($settings['system_timezone'] ?? 'Asia/Jakarta')->format('Y-m-d H:i:s') }}).</div>
                             </div>
 
-                            <div class="mb-4">
+                             <div class="mb-4">
                                 <label class="form-label fw-bold small">Batas Waktu Pembayaran (Menit)</label>
                                 <div class="input-group">
                                     <span class="input-group-text bg-danger-subtle border-0"><i class="fas fa-stopwatch text-danger"></i></span>
@@ -88,6 +88,34 @@
                                     <span class="input-group-text bg-light border-0 small text-muted">menit</span>
                                 </div>
                                 <div class="form-text">Berapa lama pelanggan diberi waktu untuk melakukan pembayaran QRIS setelah pesanan dibuat sebelum pesanan kedaluwarsa dan stok dilepas kembali.</div>
+                            </div>
+
+                            <div class="mb-4 border-top pt-4">
+                                <h6 class="fw-bold mb-3"><i class="fas fa-cookie-bite me-1 text-secondary"></i> Masa Aktif Sesi Cookie (Menit)</h6>
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label class="form-label small fw-semibold">Admin</label>
+                                        <div class="input-group">
+                                            <input type="number" name="settings[session_lifetime_admin]" class="form-control" value="{{ $settings['session_lifetime_admin'] ?? 120 }}" min="1" max="525600" required>
+                                            <span class="input-group-text small text-muted">menit</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label small fw-semibold">Seller</label>
+                                        <div class="input-group">
+                                            <input type="number" name="settings[session_lifetime_seller]" class="form-control" value="{{ $settings['session_lifetime_seller'] ?? 1440 }}" min="1" max="525600" required>
+                                            <span class="input-group-text small text-muted">menit</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label small fw-semibold">Customer</label>
+                                        <div class="input-group">
+                                            <input type="number" name="settings[session_lifetime_customer]" class="form-control" value="{{ $settings['session_lifetime_customer'] ?? 43200 }}" min="1" max="525600" required>
+                                            <span class="input-group-text small text-muted">menit</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-text mt-2">Atur berapa lama sesi cookie tetap aktif untuk masing-masing role sebelum pengguna harus login kembali (120 = 2 jam, 1440 = 1 hari, 43200 = 30 hari).</div>
                             </div>
 
                             <div class="row g-3">
