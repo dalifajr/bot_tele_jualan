@@ -8,11 +8,16 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use App\Models\LoginLog;
+use App\Traits\LogsLogin;
+
 class AuthController extends Controller
 {
+    use LogsLogin;
+
     /**
      * Tampilkan halaman login gabungan (Password & Telegram).
      */
@@ -89,11 +94,6 @@ class AuthController extends Controller
 
         $loginType = filter_var($request->login, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
 
-        $credentials = [
-            $loginType => $request->login,
-            'password' => $request->password,
-        ];
-
         $remember = $request->has('remember');
 
         // Rate Limiter key: using IP + login identifier
@@ -101,16 +101,17 @@ class AuthController extends Controller
 
         if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
             $seconds = RateLimiter::availableIn($throttleKey);
+            $this->recordLoginLog($request, $request->login, false);
             return back()->withErrors([
                 'login' => 'Terlalu banyak percobaan login. Akun Anda diblokir sementara selama ' . ceil($seconds / 60) . ' menit.',
             ])->onlyInput('login');
         }
 
-        if (Auth::attempt($credentials, $remember)) {
+        if (Auth::attempt([$loginType => $request->login, 'password' => $request->password], $remember)) {
             RateLimiter::clear($throttleKey);
             $user = Auth::user();
 
-            $this->recordLoginLog($request, true);
+            $this->recordLoginLog($request, $request->login, true);
 
             // Check if 2FA is enabled
             if ($user->two_factor_enabled && $user->telegram_id) {
@@ -154,7 +155,7 @@ class AuthController extends Controller
 
         RateLimiter::hit($throttleKey, 300); // 300 seconds = 5 minutes
         
-        $this->recordLoginLog($request, false);
+        $this->recordLoginLog($request, $request->login, false);
 
         $user = User::where($loginType, $request->login)->first();
         if ($user) {
@@ -373,48 +374,6 @@ class AuthController extends Controller
         
         $user->update([
             'last_login_country' => $country
-        ]);
-    }
-
-    /**
-     * Record login attempt log.
-     */
-    private function recordLoginLog(Request $request, $isSuccessful)
-    {
-        $ip = $request->ip();
-        $userAgent = $request->header('User-Agent');
-        
-        $deviceType = 'Desktop';
-        if (preg_match('/(Mobile|Android|iPhone|iPad)/i', $userAgent)) {
-            $deviceType = 'Smartphone/Tablet';
-        }
-
-        $browser = 'Unknown';
-        if (preg_match('/Chrome/i', $userAgent)) $browser = 'Chrome';
-        elseif (preg_match('/Firefox/i', $userAgent)) $browser = 'Firefox';
-        elseif (preg_match('/Safari/i', $userAgent)) $browser = 'Safari';
-        elseif (preg_match('/Edge/i', $userAgent)) $browser = 'Edge';
-
-        $location = 'Local / Unknown';
-        if ($ip && $ip !== '127.0.0.1' && $ip !== '::1' && !str_starts_with($ip, '192.168.') && !str_starts_with($ip, '10.')) {
-            try {
-                $response = Http::timeout(2)->get("http://ip-api.com/json/{$ip}");
-                if ($response->successful() && $response->json('status') === 'success') {
-                    $location = ($response->json('city') ?? '') . ', ' . ($response->json('country') ?? 'Unknown');
-                }
-            } catch (\Exception $e) {
-                // ignore
-            }
-        }
-
-        LoginLog::create([
-            'ip_address' => $ip,
-            'username_or_email' => $request->input('login'),
-            'is_successful' => $isSuccessful,
-            'user_agent' => $userAgent,
-            'device_type' => $deviceType,
-            'browser' => $browser,
-            'location' => trim($location, ', '),
         ]);
     }
 }
