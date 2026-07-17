@@ -21,7 +21,7 @@
                 
                 <div class="position-relative z-1" data-pex="v791liz-7">
                     <h1 class="fw-bold mb-2 text-white" data-pex="v791liz-8">Selamat Datang, {{ Auth::user()->full_name ?? Auth::user()->username }}</h1>
-                    <p class="mb-0 fs-5 opacity-75 fw-light text-white" data-pex="v791liz-9">Role: {{ ucfirst(Auth::user()->role) }} | Email: {{ Auth::user()->email ?? '-' }}</p>
+                    <p class="mb-0 fs-5 opacity-75 fw-light text-white" data-pex="v791liz-9">Role: {{ ucfirst(Auth::user()->role) }} | Email/ID Telegram: {{ Auth::user()->email ?? Auth::user()->telegram_id ?? '-' }}</p>
                 </div>
             </div>
 
@@ -38,7 +38,7 @@
                                         <div class="text-muted small text-uppercase fw-bold" data-pex="v791liz-18">Total Pesanan</div>
                                     </div>
                                     <div class="bg-primary-subtle rounded-3 p-3 text-primary" data-pex="v791liz-19">
-                                        <i class="fas fa-chart-line fa-2x" data-pex="v791liz-20"></i>
+                                        <i class="fas fa-shopping-cart fa-2x" data-pex="v791liz-20"></i>
                                     </div>
                                 </div>
                             </div>
@@ -55,7 +55,7 @@
                                         <div class="text-muted small text-uppercase fw-bold" data-pex="v791liz-27">Pesanan Selesai</div>
                                     </div>
                                     <div class="bg-warning-subtle rounded-3 p-3 text-warning-emphasis" data-pex="v791liz-28">
-                                        <i class="fas fa-graduation-cap fa-2x" data-pex="v791liz-29"></i>
+                                        <i class="fas fa-check-circle fa-2x" data-pex="v791liz-29"></i>
                                     </div>
                                 </div>
                             </div>
@@ -67,12 +67,12 @@
                         <div class="card border-0 shadow-sm h-100 overflow-hidden lift-hover" data-pex="v791liz-31">
                             <div class="card-body p-4 position-relative" data-pex="v791liz-32">
                                 <div class="d-flex justify-content-between align-items-start mb-2" data-pex="v791liz-33">
-                                    <div data-pex="v791liz-34">
-                                        <h2 class="display-5 fw-bold text-dark mb-0" data-pex="v791liz-35" style="font-size: 2rem;">Rp {{ number_format($totalSpent ?? 0, 0, ',', '.') }}</h2>
+                                    <div data-pex="v791liz-34" class="overflow-hidden pe-2" style="max-width: calc(100% - 60px);">
+                                        <h2 class="fw-bold text-dark mb-0 text-truncate" data-pex="v791liz-35" style="font-size: 1.5rem;" title="Rp {{ number_format($totalSpent ?? 0, 0, ',', '.') }}">Rp {{ number_format($totalSpent ?? 0, 0, ',', '.') }}</h2>
                                         <div class="text-muted small text-uppercase fw-bold" data-pex="v791liz-36">Total Belanja</div>
                                     </div>
-                                    <div class="bg-success-subtle rounded-3 p-3 text-success" data-pex="v791liz-37">
-                                        <i class="fas fa-book fa-2x" data-pex="v791liz-38"></i>
+                                    <div class="bg-success-subtle rounded-3 p-3 text-success flex-shrink-0" data-pex="v791liz-37">
+                                        <i class="fas fa-wallet fa-2x" data-pex="v791liz-38"></i>
                                     </div>
                                 </div>
                             </div>
@@ -135,19 +135,7 @@
             </div>
         </div>
 
-        <!-- Academic Chart Row -> Shopping Chart Row -->
-        <div class="row mb-5" data-pex="v791liz-72">
-            <div class="col-12" data-pex="v791liz-73">
-                <div class="card border-0 shadow-sm" data-pex="v791liz-74">
-                    <div class="card-header bg-white py-3 border-0" data-pex="v791liz-75">
-                        <h5 class="card-title mb-0 fw-bold" data-pex="v791liz-76"><i class="fas fa-chart-line text-primary me-2" data-pex="v791liz-77"></i>Grafik Aktivitas Belanja</h5>
-                    </div>
-                    <div class="card-body p-4" data-pex="v791liz-78">
-                        <canvas id="academicChart" style="height: 350px; width: 1080.8px; display: block; box-sizing: border-box;" width="1351" height="437" data-pex="v791liz-79"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
+
 
         <!-- Jadwal Kuliah Hari Ini -> Pesanan Terbaru -->
         <div class="row mb-5">
@@ -208,6 +196,3 @@
 </div>
 @endsection
 
-@push('scripts')
-    <script src="{{ asset('js/dashboard-academic.js') }}"></script>
-@endpush
