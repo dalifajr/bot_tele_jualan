@@ -593,12 +593,14 @@ class SellerController extends Controller
             'name' => 'required|string|max:255',
             'price' => 'required|integer|min:0',
             'description' => 'nullable|string',
+            'warranty_days' => 'required_if:enable_warranty,1|nullable|integer|min:1',
         ]);
 
         $product->update([
             'name' => $request->name,
             'price' => $request->price,
             'description' => $request->description ?? '',
+            'warranty_days' => $request->has('enable_warranty') ? $request->warranty_days : 0,
         ]);
 
         return redirect()->route('seller.products.index')->with('success', 'Informasi produk berhasil diperbarui.');
