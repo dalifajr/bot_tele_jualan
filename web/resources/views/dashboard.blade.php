@@ -8,7 +8,7 @@
 @endpush
 
 @section('content')
-<div class="main-content position-relative" data-pex="v791liz-0">
+<div class="main-content position-relative container-fluid" data-pex="v791liz-0">
     <div class="main-background" data-pex="v791liz-1"></div>
     <div class="container-fluid position-relative px-4 py-4" style="z-index: 1;" data-pex="v791liz-2">
         <!-- Hero Section -->
@@ -33,12 +33,12 @@
                         <div class="card border-0 shadow-sm h-100 overflow-hidden lift-hover" data-pex="v791liz-13">
                             <div class="card-body p-4 position-relative" data-pex="v791liz-14">
                                 <div class="d-flex justify-content-between align-items-start mb-2" data-pex="v791liz-15">
-                                    <div data-pex="v791liz-16">
-                                        <h2 class="display-5 fw-bold text-dark mb-0" data-pex="v791liz-17">{{ $totalOrders ?? 0 }}</h2>
-                                        <div class="text-muted small text-uppercase fw-bold" data-pex="v791liz-18">Total Pesanan</div>
+                                    <div>
+                                        <h2 class="display-5 fw-bold text-dark mb-0">{{ $totalOrders ?? 0 }}</h2>
+                                        <div class="text-muted small text-uppercase fw-bold">Total Pesanan</div>
                                     </div>
                                     <div class="bg-primary-subtle rounded-3 p-3 text-primary" data-pex="v791liz-19">
-                                        <i class="fas fa-shopping-cart fa-2x" data-pex="v791liz-20"></i>
+                                        <i class="fas fa-shopping-cart fa-2x"></i>
                                     </div>
                                 </div>
                             </div>
@@ -50,12 +50,12 @@
                         <div class="card border-0 shadow-sm h-100 overflow-hidden lift-hover" data-pex="v791liz-22">
                             <div class="card-body p-4 position-relative" data-pex="v791liz-23">
                                 <div class="d-flex justify-content-between align-items-start mb-2" data-pex="v791liz-24">
-                                    <div data-pex="v791liz-25">
-                                        <h2 class="display-5 fw-bold text-dark mb-0" data-pex="v791liz-26">{{ $completedOrders ?? 0 }}</h2>
-                                        <div class="text-muted small text-uppercase fw-bold" data-pex="v791liz-27">Pesanan Selesai</div>
+                                    <div>
+                                        <h2 class="display-5 fw-bold text-dark mb-0">{{ $completedOrders ?? 0 }}</h2>
+                                        <div class="text-muted small text-uppercase fw-bold">Pesanan Selesai</div>
                                     </div>
                                     <div class="bg-warning-subtle rounded-3 p-3 text-warning-emphasis" data-pex="v791liz-28">
-                                        <i class="fas fa-check-circle fa-2x" data-pex="v791liz-29"></i>
+                                        <i class="fas fa-check-circle fa-2x"></i>
                                     </div>
                                 </div>
                             </div>
@@ -67,12 +67,12 @@
                         <div class="card border-0 shadow-sm h-100 overflow-hidden lift-hover" data-pex="v791liz-31">
                             <div class="card-body p-4 position-relative" data-pex="v791liz-32">
                                 <div class="d-flex justify-content-between align-items-start mb-2" data-pex="v791liz-33">
-                                    <div data-pex="v791liz-34" class="overflow-hidden pe-2" style="max-width: calc(100% - 60px);">
-                                        <h2 class="fw-bold text-dark mb-0 text-truncate" data-pex="v791liz-35" style="font-size: 1.5rem;" title="Rp {{ number_format($totalSpent ?? 0, 0, ',', '.') }}">Rp {{ number_format($totalSpent ?? 0, 0, ',', '.') }}</h2>
-                                        <div class="text-muted small text-uppercase fw-bold" data-pex="v791liz-36">Total Belanja</div>
+                                    <div class="overflow-hidden pe-2" style="max-width: calc(100% - 60px);">
+                                        <h2 class="fw-bold text-dark mb-0 text-truncate" style="font-size: 1.5rem;" title="Rp {{ number_format($totalSpent ?? 0, 0, ',', '.') }}">Rp&nbsp;{{ number_format($totalSpent ?? 0, 0, ',', '.') }}</h2>
+                                        <div class="text-muted small text-uppercase fw-bold">Total Belanja</div>
                                     </div>
                                     <div class="bg-success-subtle rounded-3 p-3 text-success flex-shrink-0" data-pex="v791liz-37">
-                                        <i class="fas fa-wallet fa-2x" data-pex="v791liz-38"></i>
+                                        <i class="fas fa-wallet fa-2x"></i>
                                     </div>
                                 </div>
                             </div>
@@ -91,7 +91,7 @@
                         <a href="{{ route('catalog.index') }}" class="card border-0 shadow-sm text-center text-decoration-none h-100 lift-hover text-dark bg-white" data-pex="v791liz-45">
                             <div class="card-body py-4" data-pex="v791liz-46">
                                 <div class="bg-primary-subtle rounded-circle d-inline-flex p-3 mb-3 text-primary" data-pex="v791liz-47">
-                                    <i class="fas fa-store fa-2x" data-pex="v791liz-48"></i>
+                                    <i class="fas fa-store fa-2x"></i>
                                 </div>
                                 <div class="fw-bold" data-pex="v791liz-49">Katalog Produk</div>
                                 <div class="small text-muted" data-pex="v791liz-50">Jelajahi Produk</div>
@@ -102,7 +102,7 @@
                         <a href="{{ route('orders.index') }}" class="card border-0 shadow-sm text-center text-decoration-none h-100 lift-hover text-dark bg-white" data-pex="v791liz-52">
                             <div class="card-body py-4" data-pex="v791liz-53">
                                 <div class="bg-warning-subtle rounded-circle d-inline-flex p-3 mb-3 text-warning-emphasis" data-pex="v791liz-54">
-                                    <i class="fas fa-receipt fa-2x" data-pex="v791liz-55"></i>
+                                    <i class="fas fa-receipt fa-2x"></i>
                                 </div>
                                 <div class="fw-bold" data-pex="v791liz-56">Riwayat Pesanan</div>
                                 <div class="small text-muted" data-pex="v791liz-57">Status Pesanan</div>
@@ -113,7 +113,7 @@
                         <a href="{{ route('customer.complaints.index') }}" class="card border-0 shadow-sm text-center text-decoration-none h-100 lift-hover text-dark bg-white" data-pex="v791liz-59">
                             <div class="card-body py-4" data-pex="v791liz-60">
                                 <div class="bg-success-subtle rounded-circle d-inline-flex p-3 mb-3 text-success" data-pex="v791liz-61">
-                                    <i class="fas fa-exclamation-triangle fa-2x" data-pex="v791liz-62"></i>
+                                    <i class="fas fa-exclamation-triangle fa-2x"></i>
                                 </div>
                                 <div class="fw-bold" data-pex="v791liz-63">Komplain</div>
                                 <div class="small text-muted" data-pex="v791liz-64">Pusat Bantuan</div>
@@ -124,7 +124,7 @@
                         <a href="{{ config('telegram.bot_username') ? 'https://t.me/' . config('telegram.bot_username') : '#' }}" target="_blank" class="card border-0 shadow-sm text-center text-decoration-none h-100 lift-hover text-dark bg-white" data-pex="v791liz-66">
                             <div class="card-body py-4" data-pex="v791liz-67">
                                 <div class="bg-info-subtle rounded-circle d-inline-flex p-3 mb-3 text-info-emphasis" data-pex="v791liz-68">
-                                    <i class="fab fa-telegram fa-2x" data-pex="v791liz-69"></i>
+                                    <i class="fab fa-telegram fa-2x"></i>
                                 </div>
                                 <div class="fw-bold" data-pex="v791liz-70">Chat Bot</div>
                                 <div class="small text-muted" data-pex="v791liz-71">Telegram Akses</div>
