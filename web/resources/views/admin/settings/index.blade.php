@@ -77,56 +77,56 @@
                                         <option value="UTC" {{ ($settings['system_timezone'] ?? '') === 'UTC' ? 'selected' : '' }}>{{ __('UTC / GMT') }}</option>
                                     </select>
                                 </div>
-                                <div class="form-text">{!! 'Mengatur zona waktu untuk web admin, seller, dan pesan bot Telegram. Zona aktif saat ini: <strong>{{ __(\':timezone\') }}</strong> (Server: :time).\', [\'timezone\' => $settings[\'system_timezone\'] ?? \'UTC\', \'time\' => now()->timezone($settings[\'system_timezone\'] ?? \'Asia/Jakarta\')->format(\'Y-m-d H:i:s\')]) !!}</div>
+                                <div class="form-text">{!! 'Mengatur zona waktu untuk web admin, seller, dan pesan bot Telegram. Zona aktif saat ini: <strong>{{ __(':timezone') }}</strong> (Server: :time).', ['timezone' => $settings['system_timezone'] ?? 'UTC', 'time' => now()->timezone($settings['system_timezone'] ?? 'Asia/Jakarta')->format('Y-m-d H:i:s')]) !!}</div>
                             </div>
 
-                             <div class=\"mb-4\">
-                                <label class=\"form-label fw-bold small\">{{ __(\'Batas Waktu Pembayaran (Menit)\') }}</label>
-                                <div class=\"input-group\">
-                                    <span class=\"input-group-text bg-danger-subtle border-0\"><i class=\"fas fa-stopwatch text-danger\"></i></span>
-                                    <input type=\"number\" name=\"settings[checkout_expiry_minutes]\" class=\"form-control\" value=\"{{ $settings[\'checkout_expiry_minutes\'] ?? 15 }}\" min=\"1\" max=\"1440\" required>
-                                    <span class=\"input-group-text bg-light border-0 small text-muted\">{{ __(\'menit\') }}</span>
+                             <div class="mb-4">
+                                <label class="form-label fw-bold small">{{ __('Batas Waktu Pembayaran (Menit)') }}</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-danger-subtle border-0"><i class="fas fa-stopwatch text-danger"></i></span>
+                                    <input type="number" name="settings[checkout_expiry_minutes]" class="form-control" value="{{ $settings['checkout_expiry_minutes'] ?? 15 }}" min="1" max="1440" required>
+                                    <span class="input-group-text bg-light border-0 small text-muted">{{ __('menit') }}</span>
                                 </div>
-                                <div class=\"form-text\">{{ __(\'Berapa lama pelanggan diberi waktu untuk melakukan pembayaran QRIS setelah pesanan dibuat sebelum pesanan kedaluwarsa dan stok dilepas kembali.\') }}</div>
+                                <div class="form-text">{{ __('Berapa lama pelanggan diberi waktu untuk melakukan pembayaran QRIS setelah pesanan dibuat sebelum pesanan kedaluwarsa dan stok dilepas kembali.') }}</div>
                             </div>
 
-                            <div class=\"mb-4 border-top pt-4\">
-                                <h6 class=\"fw-bold mb-3\"><i class=\"fas fa-cookie-bite me-1 text-secondary\"></i> {{ __(\'Masa Aktif Sesi Cookie (Menit)\') }}</h6>
-                                <div class=\"row g-3\">
-                                    <div class=\"col-md-4\">
-                                        <label class=\"form-label small fw-semibold\">{{ __(\'Admin\') }}</label>
-                                        <div class=\"input-group\">
-                                            <input type=\"number\" name=\"settings[session_lifetime_admin]\" class=\"form-control\" value=\"{{ $settings[\'session_lifetime_admin\'] ?? 120 }}\" min=\"1\" max=\"525600\" required>
-                                            <span class=\"input-group-text small text-muted\">{{ __(\'menit\') }}</span>
+                            <div class="mb-4 border-top pt-4">
+                                <h6 class="fw-bold mb-3"><i class="fas fa-cookie-bite me-1 text-secondary"></i> {{ __('Masa Aktif Sesi Cookie (Menit)') }}</h6>
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label class="form-label small fw-semibold">{{ __('Admin') }}</label>
+                                        <div class="input-group">
+                                            <input type="number" name="settings[session_lifetime_admin]" class="form-control" value="{{ $settings['session_lifetime_admin'] ?? 120 }}" min="1" max="525600" required>
+                                            <span class="input-group-text small text-muted">{{ __('menit') }}</span>
                                         </div>
                                     </div>
-                                    <div class=\"col-md-4\">
-                                        <label class=\"form-label small fw-semibold\">{{ __(\'Seller\') }}</label>
-                                        <div class=\"input-group\">
-                                            <input type=\"number\" name=\"settings[session_lifetime_seller]\" class=\"form-control\" value=\"{{ $settings[\'session_lifetime_seller\'] ?? 1440 }}\" min=\"1\" max=\"525600\" required>
-                                            <span class=\"input-group-text small text-muted\">{{ __(\'menit\') }}</span>
+                                    <div class="col-md-4">
+                                        <label class="form-label small fw-semibold">{{ __('Seller') }}</label>
+                                        <div class="input-group">
+                                            <input type="number" name="settings[session_lifetime_seller]" class="form-control" value="{{ $settings['session_lifetime_seller'] ?? 1440 }}" min="1" max="525600" required>
+                                            <span class="input-group-text small text-muted">{{ __('menit') }}</span>
                                         </div>
                                     </div>
-                                    <div class=\"col-md-4\">
-                                        <label class=\"form-label small fw-semibold\">{{ __(\'Customer\') }}</label>
-                                        <div class=\"input-group\">
-                                            <input type=\"number\" name=\"settings[session_lifetime_customer]\" class=\"form-control\" value=\"{{ $settings[\'session_lifetime_customer\'] ?? 43200 }}\" min=\"1\" max=\"525600\" required>
-                                            <span class=\"input-group-text small text-muted\">{{ __(\'menit\') }}</span>
+                                    <div class="col-md-4">
+                                        <label class="form-label small fw-semibold">{{ __('Customer') }}</label>
+                                        <div class="input-group">
+                                            <input type="number" name="settings[session_lifetime_customer]" class="form-control" value="{{ $settings['session_lifetime_customer'] ?? 43200 }}" min="1" max="525600" required>
+                                            <span class="input-group-text small text-muted">{{ __('menit') }}</span>
                                         </div>
                                     </div>
                                 </div>
-                                <div class=\"form-text mt-2\">{{ __(\'Atur berapa lama sesi cookie tetap aktif untuk masing-masing role sebelum pengguna harus login kembali (120 = 2 jam, 1440 = 1 hari, 43200 = 30 hari).\') }}</div>
+                                <div class="form-text mt-2">{{ __('Atur berapa lama sesi cookie tetap aktif untuk masing-masing role sebelum pengguna harus login kembali (120 = 2 jam, 1440 = 1 hari, 43200 = 30 hari).') }}</div>
                             </div>
 
-                            <div class=\"row g-3\">
-                                <div class=\"col-md-6\">
-                                    <label class=\"form-label fw-bold small\">{{ __(\'Awaiting Benefits → Ready (Jam)\') }}</label>
-                                    <div class=\"input-group\">
-                                        <span class=\"input-group-text bg-warning-subtle border-0\"><i class=\"fas fa-hourglass-half text-warning\"></i></span>
-                                        <input type=\"number\" name=\"settings[github_pack.awaiting_hours]\" class=\"form-control\" value=\"{{ $settings[\'github_pack.awaiting_hours\'] ?? 78 }}\" min=\"1\" max=\"720\" required>
-                                        <span class=\"input-group-text bg-light border-0 small text-muted\">{{ __(\'jam\') }}</span>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small">{{ __('Awaiting Benefits → Ready (Jam)') }}</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-warning-subtle border-0"><i class="fas fa-hourglass-half text-warning"></i></span>
+                                        <input type="number" name="settings[github_pack.awaiting_hours]" class="form-control" value="{{ $settings['github_pack.awaiting_hours'] ?? 78 }}" min="1" max="720" required>
+                                        <span class="input-group-text bg-light border-0 small text-muted">{{ __('jam') }}</span>
                                     </div>
-                                    <div class=\"form-text\">{!! __(\'Default: 78 jam. Berapa lama akun di <em>{{ __(\'awaiting benefits\') }}</em> {{ __(\'sebelum otomatis menjadi\') }} <em>{{ __(\'ready\') }}</em>.' !!}</div>
+                                    <div class="form-text">{!! __('Default: 78 jam. Berapa lama akun di <em>{{ __('awaiting benefits') }}</em> {{ __('sebelum otomatis menjadi') }} <em>{{ __('ready') }}</em>.' !!}</div>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-bold small">Simpan Akun → Siap Diajukan (Jam)</label>
@@ -135,7 +135,7 @@
                                         <input type="number" name="settings[github_pack.save_hours]" class="form-control" value="{{ $settings['github_pack.save_hours'] ?? 80 }}" min="1" max="720" required>
                                         <span class="input-group-text bg-light border-0 small text-muted">{{ __('jam') }}</span>
                                     </div>
-                                    <div class="form-text">{!! 'Default: 80 jam. Berapa lama akun <em>{{ __(\'simpan akun\') }}</em> ditahan sebelum bisa diajukan verifikasi.' !!}</div>
+                                    <div class="form-text">{!! 'Default: 80 jam. Berapa lama akun <em>{{ __('simpan akun') }}</em> ditahan sebelum bisa diajukan verifikasi.' !!}</div>
                                 </div>
                             </div>
 
@@ -178,7 +178,7 @@
                             <div class="mb-3">
                                 <label class="form-label fw-bold small">Kunci SSH (Private Key)</label>
                                 <textarea name="settings[vpn_server_ssh_key_raw]" class="form-control text-muted" rows="6" placeholder="{{ __('-----BEGIN OPENSSH PRIVATE KEY-----&#10;...&#10;-----END OPENSSH PRIVATE KEY-----') }}" style="font-family: monospace; font-size: 0.85rem;">{{ $settings['vpn_server_ssh_key_raw'] ?? '' }}</textarea>
-                                <div class="form-text">{!! 'Paste isi dari file <em>{{ __(\'Private Key\') }}</em> Anda (.pem / id_rsa) di sini. Kunci ini digunakan untuk autentikasi SSH ke VPS secara otomatis tanpa menggunakan password. Sistem akan menyimpan dan memanfaatkannya dengan aman.' !!}</div>
+                                <div class="form-text">{!! 'Paste isi dari file <em>{{ __('Private Key') }}</em> Anda (.pem / id_rsa) di sini. Kunci ini digunakan untuk autentikasi SSH ke VPS secara otomatis tanpa menggunakan password. Sistem akan menyimpan dan memanfaatkannya dengan aman.' !!}</div>
                             </div>
 
                             <div class="d-grid mt-4">
