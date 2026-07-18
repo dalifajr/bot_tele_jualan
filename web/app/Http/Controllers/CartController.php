@@ -44,7 +44,7 @@ class CartController extends Controller
         $quantity = $request->input('quantity', 1);
 
         if ($product->is_suspended) {
-            return back()->with('error', 'Produk ini sedang tidak aktif.');
+            return back()->with('error', __('Produk ini sedang tidak aktif.'));
         }
 
         // Get available stock
@@ -65,7 +65,7 @@ class CartController extends Controller
         $totalRequestedQty = $currentCartQty + $quantity;
 
         if ($availableStock < $totalRequestedQty) {
-            return back()->with('error', "Stok tidak mencukupi. Tersedia {$availableStock} unit, dan Anda sudah memiliki {$currentCartQty} unit di keranjang.");
+            return back()->with('error', __("Stok tidak mencukupi. Tersedia :availableStock unit, dan Anda sudah memiliki :currentCartQty unit di keranjang.", ["availableStock" => $availableStock, "currentCartQty" => $currentCartQty]));
         }
 
         if ($existingCartItem) {
@@ -78,7 +78,7 @@ class CartController extends Controller
             ]);
         }
 
-        return redirect()->route('cart.index')->with('success', 'Produk berhasil ditambahkan ke keranjang belanja.');
+        return redirect()->route('cart.index')->with('success', __('Produk berhasil ditambahkan ke keranjang belanja.'));
     }
 
     /**
@@ -103,12 +103,12 @@ class CartController extends Controller
             })->count();
 
         if ($availableStock < $newQuantity) {
-            return back()->with('error', "Stok tidak mencukupi. Tersedia {$availableStock} unit.");
+            return back()->with('error', __("Stok tidak mencukupi. Tersedia :availableStock unit.", ["availableStock" => $availableStock]));
         }
 
         $cartItem->update(['quantity' => $newQuantity]);
 
-        return redirect()->route('cart.index')->with('success', 'Jumlah keranjang berhasil diperbarui.');
+        return redirect()->route('cart.index')->with('success', __('Jumlah keranjang berhasil diperbarui.'));
     }
 
     /**
@@ -119,7 +119,7 @@ class CartController extends Controller
         $cartItem = CartItem::where('user_id', Auth::id())->findOrFail($id);
         $cartItem->delete();
 
-        return redirect()->route('cart.index')->with('success', 'Produk dihapus dari keranjang.');
+        return redirect()->route('cart.index')->with('success', __('Produk dihapus dari keranjang.'));
     }
 
     /**
@@ -132,7 +132,7 @@ class CartController extends Controller
             ->get();
 
         if ($cartItems->isEmpty()) {
-            return redirect()->route('cart.index')->with('error', 'Keranjang belanja Anda kosong.');
+            return redirect()->route('cart.index')->with('error', __('Keranjang belanja Anda kosong.'));
         }
 
         $subtotal = 0;
@@ -180,7 +180,7 @@ class CartController extends Controller
             ->count();
 
         if ($pendingCount >= 2) {
-            return redirect()->route('cart.index')->with('error', 'Anda memiliki terlalu banyak pesanan pending. Selesaikan pembayaran dahulu.');
+            return redirect()->route('cart.index')->with('error', __('Anda memiliki terlalu banyak pesanan pending. Selesaikan pembayaran dahulu.'));
         }
 
         $cartItems = CartItem::with('product')
@@ -188,7 +188,7 @@ class CartController extends Controller
             ->get();
 
         if ($cartItems->isEmpty()) {
-            return redirect()->route('cart.index')->with('error', 'Keranjang belanja kosong.');
+            return redirect()->route('cart.index')->with('error', __('Keranjang belanja kosong.'));
         }
 
         try {

@@ -34,7 +34,7 @@ class CatalogController extends Controller
         $product = Product::with('creator')->findOrFail($id);
 
         if ($product->is_suspended) {
-            return redirect()->route('catalog.index')->with('error', 'Produk tidak tersedia.');
+            return redirect()->route('catalog.index')->with('error', __('Produk tidak tersedia.'));
         }
 
         if ($product->is_vpn) {

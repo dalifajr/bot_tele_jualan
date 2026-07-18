@@ -35,7 +35,7 @@ class TelegramAuthController extends Controller
         $botUsername = config('telegram.bot_username');
 
         if (empty($botUsername)) {
-            return back()->with('error', 'Bot Telegram belum dikonfigurasi.');
+            return back()->with('error', __('Bot Telegram belum dikonfigurasi.'));
         }
 
         // Create pending login token (must be < 64 chars total with prefix for Telegram start param)
@@ -66,7 +66,7 @@ class TelegramAuthController extends Controller
         $linkToken = $request->query('token');
 
         if (empty($linkToken)) {
-            return redirect()->route('login')->with('error', 'Token login tidak valid.');
+            return redirect()->route('login')->with('error', __('Token login tidak valid.'));
         }
 
         $nowUtc = Carbon::now('UTC');
@@ -99,7 +99,7 @@ class TelegramAuthController extends Controller
             }
 
             $this->recordLoginLog($request, 'TG_Link:' . substr($linkToken, 0, 8), false);
-            return redirect()->route('login')->with('error', 'Link login sudah kedaluwarsa atau sudah digunakan. Silakan coba lagi.');
+            return redirect()->route('login')->with('error', __('Link login sudah kedaluwarsa atau sudah digunakan. Silakan coba lagi.'));
         }
 
         // Mark token as used
@@ -113,7 +113,7 @@ class TelegramAuthController extends Controller
 
         if (!$user) {
             $this->recordLoginLog($request, 'TG_ID:' . $record->telegram_id, false);
-            return redirect()->route('login')->with('error', 'Akun Telegram tidak ditemukan. Pastikan Anda sudah pernah berinteraksi dengan bot.');
+            return redirect()->route('login')->with('error', __('Akun Telegram tidak ditemukan. Pastikan Anda sudah pernah berinteraksi dengan bot.'));
         }
 
         // Login with remember_me (30 days)
@@ -139,7 +139,7 @@ class TelegramAuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('login')->with('success', 'Anda berhasil logout.');
+        return redirect()->route('login')->with('success', __('Anda berhasil logout.'));
     }
 
     /**

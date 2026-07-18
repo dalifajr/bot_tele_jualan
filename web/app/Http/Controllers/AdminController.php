@@ -380,7 +380,7 @@ class AdminController extends Controller
         if ($request->isMethod('post') || $request->has('password')) {
             $request->validate(['password' => 'required|string']);
             if (!\Illuminate\Support\Facades\Hash::check($request->password, \Illuminate\Support\Facades\Auth::user()->password)) {
-                return redirect()->back()->with('error', 'Password salah. Ekspor data dibatalkan.');
+                return redirect()->back()->with('error', __('Password salah. Ekspor data dibatalkan.'));
             }
         }
 
@@ -831,7 +831,7 @@ class AdminController extends Controller
         
         // Prevent deleting users with existing orders
         if (\App\Models\Order::where('customer_id', $user->id)->exists()) {
-            return redirect()->back()->with('error', 'Tidak dapat menghapus pengguna karena memiliki riwayat pesanan. Silakan gunakan fitur Suspend sebagai gantinya.');
+            return redirect()->back()->with('error', __('Tidak dapat menghapus pengguna karena memiliki riwayat pesanan. Silakan gunakan fitur Suspend sebagai gantinya.'));
         }
 
         // Audit log
@@ -845,7 +845,7 @@ class AdminController extends Controller
         ]);
 
         $user->delete();
-        return redirect()->back()->with('success', 'Pengguna berhasil dihapus.');
+        return redirect()->back()->with('success', __('Pengguna berhasil dihapus.'));
     }
 
     public function suspendUser(Request $request, $id)
@@ -865,7 +865,7 @@ class AdminController extends Controller
             'created_at' => now(),
         ]);
 
-        return redirect()->back()->with('success', 'Akun pengguna berhasil ditangguhkan (suspended). Akses bot telah dicabut.');
+        return redirect()->back()->with('success', __('Akun pengguna berhasil ditangguhkan (suspended). Akses bot telah dicabut.'));
     }
 
     public function unsuspendUser($id)
@@ -885,7 +885,7 @@ class AdminController extends Controller
             'created_at' => now(),
         ]);
 
-        return redirect()->back()->with('success', 'Penangguhan akun telah dicabut. Pengguna dapat menggunakan bot kembali.');
+        return redirect()->back()->with('success', __('Penangguhan akun telah dicabut. Pengguna dapat menggunakan bot kembali.'));
     }
 
     public function impersonate(Request $request, $id)
@@ -893,7 +893,7 @@ class AdminController extends Controller
         $targetUser = User::findOrFail($id);
         
         if ($targetUser->id === \Illuminate\Support\Facades\Auth::id()) {
-            return redirect()->back()->with('error', 'Tidak dapat login sebagai diri sendiri.');
+            return redirect()->back()->with('error', __('Tidak dapat login sebagai diri sendiri.'));
         }
 
         // Store original admin ID in session
@@ -914,13 +914,13 @@ class AdminController extends Controller
         \Illuminate\Support\Facades\Auth::loginUsingId($targetUser->id);
 
         $name = $targetUser->full_name ?? $targetUser->username;
-        return redirect()->route('dashboard')->with('success', "Berhasil masuk sebagai " . $name . ".");
+        return redirect()->route('dashboard')->with('success', __("Berhasil masuk sebagai :name.", ['name' => $name]));
     }
 
     public function stopImpersonating(Request $request)
     {
         if (!session()->has('admin_impersonator_id')) {
-            return redirect()->route('dashboard')->with('error', 'Sesi impersonasi tidak ditemukan.');
+            return redirect()->route('dashboard')->with('error', __('Sesi impersonasi tidak ditemukan.'));
         }
 
         $adminId = session()->pull('admin_impersonator_id');
@@ -939,7 +939,7 @@ class AdminController extends Controller
         // Login back as admin
         \Illuminate\Support\Facades\Auth::loginUsingId($adminId);
 
-        return redirect()->route('admin.users.index')->with('success', 'Kembali ke sesi Admin.');
+        return redirect()->route('admin.users.index')->with('success', __('Kembali ke sesi Admin.'));
     }
 
     // --- CRUD Products ---
@@ -959,7 +959,7 @@ class AdminController extends Controller
         $data['is_vpn'] = $request->has('is_vpn');
         $data['warranty_days'] = $request->has('enable_warranty') ? $request->warranty_days : 0;
         Product::create($data);
-        return redirect()->route('admin.products.index')->with('success', 'Produk berhasil ditambahkan.');
+        return redirect()->route('admin.products.index')->with('success', __('Produk berhasil ditambahkan.'));
     }
 
     public function updateProduct(Request $request, $id)
@@ -979,7 +979,7 @@ class AdminController extends Controller
         $data['is_vpn'] = $request->has('is_vpn');
         $data['warranty_days'] = $request->has('enable_warranty') ? $request->warranty_days : 0;
         $product->update($data);
-        return redirect()->route('admin.products.index')->with('success', 'Produk berhasil diperbarui.');
+        return redirect()->route('admin.products.index')->with('success', __('Produk berhasil diperbarui.'));
     }
 
     public function destroyProduct($id)
@@ -1026,7 +1026,7 @@ class AdminController extends Controller
 
                 \Illuminate\Support\Facades\DB::commit();
                 
-                return redirect()->back()->with('success', 'Produk buatan seller dan sisa stoknya berhasil diambil alih oleh Admin Utama.');
+                return redirect()->back()->with('success', __('Produk buatan seller dan sisa stoknya berhasil diambil alih oleh Admin Utama.'));
             } catch (\Exception $e) {
                 \Illuminate\Support\Facades\DB::rollBack();
                 return redirect()->back()->with('error', 'Gagal mengambil alih produk seller: ' . $e->getMessage());
@@ -1054,7 +1054,7 @@ class AdminController extends Controller
                 'created_at' => now(),
             ]);
 
-            return redirect()->back()->with('success', 'Produk berhasil dihapus.');
+            return redirect()->back()->with('success', __('Produk berhasil dihapus.'));
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Gagal menghapus produk: ' . $e->getMessage());
         }
@@ -1071,7 +1071,7 @@ class AdminController extends Controller
             ->get();
 
         if ($stockUnits->isEmpty()) {
-            return redirect()->back()->with('error', 'Tidak ada stok belum terjual yang tersedia untuk diekspor.');
+            return redirect()->back()->with('error', __('Tidak ada stok belum terjual yang tersedia untuk diekspor.'));
         }
 
         $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
@@ -1231,7 +1231,7 @@ class AdminController extends Controller
                 $count++;
             }
         }
-        return redirect()->route('admin.stock.index')->with('success', "$count stok berhasil ditambahkan.");
+        return redirect()->route('admin.stock.index')->with('success', __(":count stok berhasil ditambahkan.", ["count" => $count]));
     }
 
     public function moveStock(Request $request, $id)
@@ -1265,7 +1265,7 @@ class AdminController extends Controller
         
         $stock->save();
 
-        return back()->with('success', 'Status/Produk stok berhasil dipindahkan.');
+        return back()->with('success', __('Status/Produk stok berhasil dipindahkan.'));
     }
 
     public function destroyStock($id)
@@ -1283,7 +1283,7 @@ class AdminController extends Controller
         ]);
 
         $stock->delete();
-        return redirect()->route('admin.stock.index')->with('success', 'Stok berhasil dihapus.');
+        return redirect()->route('admin.stock.index')->with('success', __('Stok berhasil dihapus.'));
     }
 
     public function bulkMoveStock(Request $request)
@@ -1296,12 +1296,12 @@ class AdminController extends Controller
 
         $ids = json_decode($request->ids, true);
         if (!is_array($ids) || empty($ids)) {
-            return back()->with('error', 'Tidak ada stok terpilih.');
+            return back()->with('error', __('Tidak ada stok terpilih.'));
         }
 
         $stockUnits = StockUnit::whereIn('id', $ids)->where('is_sold', false)->get();
         if ($stockUnits->isEmpty()) {
-            return back()->with('error', 'Stok terpilih tidak ditemukan atau sudah terjual.');
+            return back()->with('error', __('Stok terpilih tidak ditemukan atau sudah terjual.'));
         }
 
         $awaitingHours = (int)(\App\Models\BotSetting::where('key', 'github_pack.awaiting_hours')->value('value') ?? 78);
@@ -1327,7 +1327,7 @@ class AdminController extends Controller
             $count++;
         }
 
-        return back()->with('success', "$count status/produk stok berhasil dipindahkan secara masal.");
+        return back()->with('success', __(":count status/produk stok berhasil dipindahkan secara masal.", ["count" => $count]));
     }
 
     public function bulkDestroyStock(Request $request)
@@ -1338,7 +1338,7 @@ class AdminController extends Controller
 
         $ids = json_decode($request->ids, true);
         if (!is_array($ids) || empty($ids)) {
-            return back()->with('error', 'Tidak ada stok terpilih.');
+            return back()->with('error', __('Tidak ada stok terpilih.'));
         }
 
         $count = StockUnit::whereIn('id', $ids)->where('is_sold', false)->delete();
@@ -1353,7 +1353,7 @@ class AdminController extends Controller
             'created_at' => now(),
         ]);
 
-        return back()->with('success', "$count stok berhasil dihapus secara masal.");
+        return back()->with('success', __(":count stok berhasil dihapus secara masal.", ["count" => $count]));
     }
 
     // --- CRUD Orders ---
@@ -1387,7 +1387,7 @@ class AdminController extends Controller
             }
         }
 
-        return redirect()->back()->with('success', 'Status pesanan berhasil diperbarui.');
+        return redirect()->back()->with('success', __('Status pesanan berhasil diperbarui.'));
     }
 
     // --- CRUD Users ---
@@ -1422,7 +1422,7 @@ class AdminController extends Controller
         ]);
 
         return redirect()->route('admin.users.index')
-            ->with('success', 'Informasi pengguna berhasil diperbarui.');
+            ->with('success', __('Informasi pengguna berhasil diperbarui.'));
     }
 
     public function exportUsers(Request $request)
@@ -1431,7 +1431,7 @@ class AdminController extends Controller
         if ($request->isMethod('post') || $request->has('password')) {
             $request->validate(['password' => 'required|string']);
             if (!\Illuminate\Support\Facades\Hash::check($request->password, \Illuminate\Support\Facades\Auth::user()->password)) {
-                return redirect()->back()->with('error', 'Password salah. Ekspor data dibatalkan.');
+                return redirect()->back()->with('error', __('Password salah. Ekspor data dibatalkan.'));
             }
         }
 
@@ -1595,7 +1595,7 @@ class AdminController extends Controller
         
         \Illuminate\Support\Facades\Cache::put('blocked_ip:' . $ip, true, $expire);
         
-        return back()->with('success', "IP Address {$ip} telah diblokir selama {$durationText}.");
+        return back()->with('success', __("IP Address :ip telah diblokir selama :durationText.", ["ip" => $ip, "durationText" => $durationText]));
     }
 
     public function unblockIp(Request $request)
@@ -1605,7 +1605,7 @@ class AdminController extends Controller
         
         \Illuminate\Support\Facades\Cache::forget('blocked_ip:' . $ip);
         
-        return back()->with('success', "Blokir IP Address {$ip} telah dibuka.");
+        return back()->with('success', __("Blokir IP Address :ip telah dibuka.", ["ip" => $ip]));
     }
 
     public function notifications()
@@ -1749,7 +1749,7 @@ class AdminController extends Controller
             'created_at' => now(),
         ]);
 
-        return redirect()->route('admin.complaints.index')->with('success', 'Status komplain berhasil diperbarui.');
+        return redirect()->route('admin.complaints.index')->with('success', __('Status komplain berhasil diperbarui.'));
     }
 
     // ==========================================
@@ -2118,7 +2118,7 @@ class AdminController extends Controller
             }
         }
 
-        return back()->with('success', 'Konfigurasi berhasil disimpan dan jadwal stok telah diperbarui!');
+        return back()->with('success', __('Konfigurasi berhasil disimpan dan jadwal stok telah diperbarui!'));
     }
 
     public function uploadQris(Request $request)
@@ -2147,7 +2147,7 @@ class AdminController extends Controller
             $payload = trim($matches[1]);
             
             if (empty($payload)) {
-                return back()->with('error', 'Payload QRIS kosong atau tidak terbaca dari gambar.');
+                return back()->with('error', __('Payload QRIS kosong atau tidak terbaca dari gambar.'));
             }
 
             // Simpan ke Laravel storage (untuk admin panel)
@@ -2175,7 +2175,7 @@ class AdminController extends Controller
                 ['value' => $path, 'updated_at' => now()]
             );
 
-            return back()->with('success', 'Gambar QRIS berhasil diunggah dan payload terekstraksi. Bot Telegram & Web sudah terintegrasi.');
+            return back()->with('success', __('Gambar QRIS berhasil diunggah dan payload terekstraksi. Bot Telegram & Web sudah terintegrasi.'));
         } else {
             return back()->with('error', 'Gagal mengekstraksi kode QRIS. Pastikan gambar mengandung QR Code yang valid. Output: ' . substr($output ?? '', 0, 150));
         }
@@ -2197,7 +2197,7 @@ class AdminController extends Controller
 
         \App\Models\BotSetting::whereIn('key', ['qris_static_payload', 'qris_image_path'])->delete();
 
-        return back()->with('success', 'QRIS dan payload berhasil dihapus dari Web & Bot Telegram.');
+        return back()->with('success', __('QRIS dan payload berhasil dihapus dari Web & Bot Telegram.'));
     }
 
     public function showQrisImage()
@@ -2287,7 +2287,7 @@ class AdminController extends Controller
 
         try {
             $orderService->confirmPayment($order, \Illuminate\Support\Facades\Auth::id());
-            return redirect()->back()->with('success', 'Pembayaran pesanan berhasil dikonfirmasi.');
+            return redirect()->back()->with('success', __('Pembayaran pesanan berhasil dikonfirmasi.'));
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Gagal konfirmasi pesanan: ' . $e->getMessage());
         }
@@ -2299,7 +2299,7 @@ class AdminController extends Controller
 
         try {
             $orderService->cancelOrder($order, 'cancelled_by_admin', \Illuminate\Support\Facades\Auth::id());
-            return redirect()->back()->with('success', 'Pesanan berhasil ditolak (dibatalkan).');
+            return redirect()->back()->with('success', __('Pesanan berhasil ditolak (dibatalkan).'));
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Gagal membatalkan pesanan: ' . $e->getMessage());
         }
@@ -2323,12 +2323,12 @@ class AdminController extends Controller
         ]);
 
         if ($withdrawal->status !== 'pending') {
-            return redirect()->back()->with('error', 'Permintaan penarikan ini sudah diproses sebelumnya.');
+            return redirect()->back()->with('error', __('Permintaan penarikan ini sudah diproses sebelumnya.'));
         }
 
         $seller = $withdrawal->seller;
         if ($seller->wallet_balance < $withdrawal->amount) {
-            return redirect()->back()->with('error', 'Saldo wallet seller tidak mencukupi untuk penarikan ini.');
+            return redirect()->back()->with('error', __('Saldo wallet seller tidak mencukupi untuk penarikan ini.'));
         }
 
         // Upload proof image
@@ -2348,7 +2348,7 @@ class AdminController extends Controller
         $withdrawal->processed_at = now();
         $withdrawal->save();
 
-        return redirect()->back()->with('success', 'Permintaan penarikan berhasil disetujui.');
+        return redirect()->back()->with('success', __('Permintaan penarikan berhasil disetujui.'));
     }
 
     public function rejectWithdrawal(Request $request, $id)
@@ -2360,7 +2360,7 @@ class AdminController extends Controller
         ]);
 
         if ($withdrawal->status !== 'pending') {
-            return redirect()->back()->with('error', 'Permintaan penarikan ini sudah diproses sebelumnya.');
+            return redirect()->back()->with('error', __('Permintaan penarikan ini sudah diproses sebelumnya.'));
         }
 
         $withdrawal->status = 'rejected';
@@ -2368,7 +2368,7 @@ class AdminController extends Controller
         $withdrawal->processed_at = now();
         $withdrawal->save();
 
-        return redirect()->back()->with('success', 'Permintaan penarikan berhasil ditolak.');
+        return redirect()->back()->with('success', __('Permintaan penarikan berhasil ditolak.'));
     }
 
     // ==========================================
@@ -2384,7 +2384,7 @@ class AdminController extends Controller
 
         $user = \App\Models\User::findOrFail($request->user_id);
         if ($user->role !== 'seller') {
-            return redirect()->back()->with('error', 'Hanya pengguna dengan role seller yang dapat ditambahkan sebagai worker.');
+            return redirect()->back()->with('error', __('Hanya pengguna dengan role seller yang dapat ditambahkan sebagai worker.'));
         }
 
         // Attach worker if not already attached
@@ -2392,7 +2392,7 @@ class AdminController extends Controller
             $product->workers()->attach($user->id);
         }
 
-        return redirect()->back()->with('success', 'Worker berhasil ditambahkan ke produk.');
+        return redirect()->back()->with('success', __('Worker berhasil ditambahkan ke produk.'));
     }
 
     public function removeWorker($id, $userId)
@@ -2418,7 +2418,7 @@ class AdminController extends Controller
             $stock->save();
         }
 
-        return redirect()->back()->with('success', 'Worker berhasil dihapus dari produk, dan stok miliknya telah dialihkan ke pemilik produk.');
+        return redirect()->back()->with('success', __('Worker berhasil dihapus dari produk, dan stok miliknya telah dialihkan ke pemilik produk.'));
     }
 
     public function replaceStock($orderId, $stockUnitId)
@@ -2438,7 +2438,7 @@ class AdminController extends Controller
             ->first();
 
         if (!$newUnit) {
-            return redirect()->back()->with('error', 'Stok pengganti dari seller ini tidak tersedia. Silakan gunakan opsi refund.');
+            return redirect()->back()->with('error', __('Stok pengganti dari seller ini tidak tersedia. Silakan gunakan opsi refund.'));
         }
 
         try {
@@ -2472,7 +2472,7 @@ class AdminController extends Controller
 
             \Illuminate\Support\Facades\DB::commit();
 
-            return redirect()->back()->with('success', 'Akun berhasil diganti dengan stok baru dari seller.');
+            return redirect()->back()->with('success', __('Akun berhasil diganti dengan stok baru dari seller.'));
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\DB::rollBack();
             return redirect()->back()->with('error', 'Gagal mengganti akun: ' . $e->getMessage());
@@ -2539,7 +2539,7 @@ class AdminController extends Controller
 
             \Illuminate\Support\Facades\DB::commit();
 
-            return redirect()->back()->with('success', 'Pesanan berhasil direfund. Semua stok dikembalikan ke karantina dan saldo tertahan seller dibatalkan.');
+            return redirect()->back()->with('success', __('Pesanan berhasil direfund. Semua stok dikembalikan ke karantina dan saldo tertahan seller dibatalkan.'));
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\DB::rollBack();
             return redirect()->back()->with('error', 'Gagal memproses refund: ' . $e->getMessage());
@@ -2552,7 +2552,7 @@ class AdminController extends Controller
         $stockUnitIds = json_decode($request->input('stock_unit_ids', '[]'), true);
 
         if (!is_array($stockUnitIds) || empty($stockUnitIds)) {
-            return redirect()->back()->with('error', 'Tidak ada akun terpilih.');
+            return redirect()->back()->with('error', __('Tidak ada akun terpilih.'));
         }
 
         try {
@@ -2580,7 +2580,7 @@ class AdminController extends Controller
 
                 if (!$newUnit) {
                     \Illuminate\Support\Facades\DB::rollBack();
-                    return redirect()->back()->with('error', 'Stok pengganti tidak mencukupi untuk semua akun terpilih.');
+                    return redirect()->back()->with('error', __('Stok pengganti tidak mencukupi untuk semua akun terpilih.'));
                 }
 
                 $assignedReplacementIds[] = $newUnit->id;
@@ -2616,7 +2616,7 @@ class AdminController extends Controller
 
             \Illuminate\Support\Facades\DB::commit();
 
-            return redirect()->back()->with('success', "Berhasil mengganti {$replacedCount} akun terpilih.");
+            return redirect()->back()->with('success', __("Berhasil mengganti :replacedCount akun terpilih.", ["replacedCount" => $replacedCount]));
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\DB::rollBack();
             return redirect()->back()->with('error', 'Gagal mengganti akun: ' . $e->getMessage());
@@ -2629,7 +2629,7 @@ class AdminController extends Controller
         $stockUnitIds = json_decode($request->input('stock_unit_ids', '[]'), true);
 
         if (!is_array($stockUnitIds) || empty($stockUnitIds)) {
-            return redirect()->back()->with('error', 'Tidak ada akun terpilih.');
+            return redirect()->back()->with('error', __('Tidak ada akun terpilih.'));
         }
 
         try {
@@ -2708,7 +2708,7 @@ class AdminController extends Controller
 
             \Illuminate\Support\Facades\DB::commit();
 
-            return redirect()->back()->with('success', "Berhasil me-refund {$refundedCount} akun terpilih.");
+            return redirect()->back()->with('success', __("Berhasil me-refund :refundedCount akun terpilih.", ["refundedCount" => $refundedCount]));
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\DB::rollBack();
             return redirect()->back()->with('error', 'Gagal memproses refund sebagian: ' . $e->getMessage());

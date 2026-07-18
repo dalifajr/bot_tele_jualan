@@ -31,7 +31,7 @@ class ReviewController extends Controller
             ->first();
 
         if (!$order) {
-            return back()->with('error', 'Anda hanya dapat memberikan ulasan pada pesanan yang sudah selesai.');
+            return back()->with('error', __('Anda hanya dapat memberikan ulasan pada pesanan yang sudah selesai.'));
         }
 
         // 2. Verify that the product is part of the order
@@ -40,7 +40,7 @@ class ReviewController extends Controller
             ->exists();
 
         if (!$orderItemExists) {
-            return back()->with('error', 'Produk tidak ditemukan dalam riwayat pesanan ini.');
+            return back()->with('error', __('Produk tidak ditemukan dalam riwayat pesanan ini.'));
         }
 
         // 3. Verify if user already reviewed this product for this order
@@ -49,7 +49,7 @@ class ReviewController extends Controller
             ->exists();
 
         if ($alreadyReviewed) {
-            return back()->with('error', 'Anda sudah memberikan ulasan untuk produk ini pada pesanan ini.');
+            return back()->with('error', __('Anda sudah memberikan ulasan untuk produk ini pada pesanan ini.'));
         }
 
         // 4. Create review
@@ -61,6 +61,6 @@ class ReviewController extends Controller
             'comment' => $validated['comment'],
         ]);
 
-        return back()->with('success', 'Terima kasih! Ulasan Anda berhasil dikirim.');
+        return back()->with('success', __('Terima kasih! Ulasan Anda berhasil dikirim.'));
     }
 }

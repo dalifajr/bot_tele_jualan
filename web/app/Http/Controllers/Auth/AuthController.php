@@ -243,12 +243,12 @@ class AuthController extends Controller
         ]);
 
         if ($shouldSuspend) {
-            return redirect()->route('login')->with('error', 'Registrasi ditolak. Aktivitas mencurigakan (spam) terdeteksi. Semua akun dari IP Anda telah ditangguhkan.');
+            return redirect()->route('login')->with('error', __('Registrasi ditolak. Aktivitas mencurigakan (spam) terdeteksi. Semua akun dari IP Anda telah ditangguhkan.'));
         }
 
         Auth::login($user);
 
-        return redirect()->route('dashboard')->with('success', 'Pendaftaran berhasil. Selamat datang!');
+        return redirect()->route('dashboard')->with('success', __('Pendaftaran berhasil. Selamat datang!'));
     }
 
     /**
@@ -264,7 +264,7 @@ class AuthController extends Controller
         $user->password = Hash::make($request->password);
         $user->save();
 
-        return redirect()->back()->with('success', 'Password berhasil diatur! Anda kini bisa login menggunakan Username/Email dan Password ini.');
+        return redirect()->back()->with('success', __('Password berhasil diatur! Anda kini bisa login menggunakan Username/Email dan Password ini.'));
     }
 
     /**
@@ -290,13 +290,13 @@ class AuthController extends Controller
 
         $userId = $request->session()->get('2fa_user_id');
         if (!$userId) {
-            return redirect()->route('login')->with('error', 'Sesi verifikasi 2FA sudah berakhir.');
+            return redirect()->route('login')->with('error', __('Sesi verifikasi 2FA sudah berakhir.'));
         }
 
         $user = User::find($userId);
         if (!$user) {
             $request->session()->forget(['2fa_user_id', '2fa_remember']);
-            return redirect()->route('login')->with('error', 'Pengguna tidak ditemukan.');
+            return redirect()->route('login')->with('error', __('Pengguna tidak ditemukan.'));
         }
 
         if ($user->two_factor_code !== $request->code) {
@@ -305,7 +305,7 @@ class AuthController extends Controller
 
         if ($user->two_factor_expires_at && $user->two_factor_expires_at->isPast()) {
             $request->session()->forget(['2fa_user_id', '2fa_remember']);
-            return redirect()->route('login')->with('error', 'Kode verifikasi sudah kedaluwarsa. Silakan login ulang.');
+            return redirect()->route('login')->with('error', __('Kode verifikasi sudah kedaluwarsa. Silakan login ulang.'));
         }
 
         // Clear 2FA code
@@ -336,11 +336,11 @@ class AuthController extends Controller
 
         // User harus punya telegram_id dan password untuk mengaktifkan 2FA
         if (!$user->telegram_id) {
-            return redirect()->back()->with('error', 'Anda harus menautkan akun Telegram terlebih dahulu untuk mengaktifkan 2FA.');
+            return redirect()->back()->with('error', __('Anda harus menautkan akun Telegram terlebih dahulu untuk mengaktifkan 2FA.'));
         }
 
         if (!$user->password) {
-            return redirect()->back()->with('error', 'Anda harus mengatur password terlebih dahulu untuk mengaktifkan 2FA.');
+            return redirect()->back()->with('error', __('Anda harus mengatur password terlebih dahulu untuk mengaktifkan 2FA.'));
         }
 
         $user->update([
@@ -350,7 +350,7 @@ class AuthController extends Controller
         ]);
 
         $status = $user->two_factor_enabled ? 'diaktifkan' : 'dinonaktifkan';
-        return redirect()->back()->with('success', "Verifikasi dua langkah (2FA) berhasil {$status}.");
+        return redirect()->back()->with('success', __("Verifikasi dua langkah (2FA) berhasil :status.", ["status" => $status]));
     }
 
     /**

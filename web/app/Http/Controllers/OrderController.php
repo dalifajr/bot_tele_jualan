@@ -39,7 +39,7 @@ class OrderController extends Controller
 
         try {
             $orderService->cancelOrder($order, 'cancelled_by_customer', Auth::id());
-            return redirect()->back()->with('success', 'Pesanan berhasil dibatalkan.');
+            return redirect()->back()->with('success', __('Pesanan berhasil dibatalkan.'));
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Gagal membatalkan pesanan: ' . $e->getMessage());
         }
@@ -52,15 +52,15 @@ class OrderController extends Controller
             ->findOrFail($id);
 
         if ($order->status !== 'delivered') {
-            return redirect()->back()->with('error', 'Komplain hanya dapat diajukan untuk pesanan yang sudah selesai (delivered).');
+            return redirect()->back()->with('error', __('Komplain hanya dapat diajukan untuk pesanan yang sudah selesai (delivered).'));
         }
 
         if ($order->complaintCase) {
-            return redirect()->back()->with('error', 'Klaim garansi / komplain sudah pernah diajukan untuk pesanan ini.');
+            return redirect()->back()->with('error', __('Klaim garansi / komplain sudah pernah diajukan untuk pesanan ini.'));
         }
 
         if (!$order->is_warranty_active) {
-            return redirect()->back()->with('error', 'Garansi toko untuk pesanan ini telah kedaluwarsa atau tidak berlaku.');
+            return redirect()->back()->with('error', __('Garansi toko untuk pesanan ini telah kedaluwarsa atau tidak berlaku.'));
         }
 
         $request->validate([
@@ -113,6 +113,6 @@ class OrderController extends Controller
             $admin->notify(new \App\Notifications\ComplaintNotification($complaint, 'new'));
         });
 
-        return redirect()->back()->with('success', 'Komplain / klaim garansi berhasil diajukan. Kami akan segera meninjau keluhan Anda.');
+        return redirect()->back()->with('success', __('Komplain / klaim garansi berhasil diajukan. Kami akan segera meninjau keluhan Anda.'));
     }
 }

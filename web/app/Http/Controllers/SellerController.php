@@ -332,7 +332,7 @@ class SellerController extends Controller
             })->exists();
 
         if (!$allowed) {
-            return redirect()->back()->with('error', 'Anda tidak memiliki hak untuk mengunggah stok pada produk ini.');
+            return redirect()->back()->with('error', __('Anda tidak memiliki hak untuk mengunggah stok pada produk ini.'));
         }
 
         $stockStatus = $request->stock_status;
@@ -361,7 +361,7 @@ class SellerController extends Controller
             }
         }
 
-        return redirect()->route('seller.stock.index')->with('success', "$count stok berhasil diunggah.");
+        return redirect()->route('seller.stock.index')->with('success', __(":count stok berhasil diunggah.", ["count" => $count]));
     }
 
     public function moveStock(Request $request, $id)
@@ -386,7 +386,7 @@ class SellerController extends Controller
             })->exists();
 
         if (!$allowed) {
-            return redirect()->back()->with('error', 'Anda tidak memiliki hak untuk memindahkan stok ke produk ini.');
+            return redirect()->back()->with('error', __('Anda tidak memiliki hak untuk memindahkan stok ke produk ini.'));
         }
 
         $stock->product_id = $request->product_id;
@@ -408,7 +408,7 @@ class SellerController extends Controller
 
         $stock->save();
 
-        return back()->with('success', 'Status/Produk stok berhasil dipindahkan.');
+        return back()->with('success', __('Status/Produk stok berhasil dipindahkan.'));
     }
 
     public function bulkMoveStock(Request $request)
@@ -424,7 +424,7 @@ class SellerController extends Controller
 
         $ids = json_decode($request->ids, true);
         if (!is_array($ids) || empty($ids)) {
-            return back()->with('error', 'Tidak ada stok terpilih.');
+            return back()->with('error', __('Tidak ada stok terpilih.'));
         }
 
         // Verify product if filled
@@ -438,13 +438,13 @@ class SellerController extends Controller
                 })->exists();
 
             if (!$allowed) {
-                return redirect()->back()->with('error', 'Anda tidak memiliki hak untuk memindahkan stok ke produk ini.');
+                return redirect()->back()->with('error', __('Anda tidak memiliki hak untuk memindahkan stok ke produk ini.'));
             }
         }
 
         $stockUnits = StockUnit::whereIn('id', $ids)->where('seller_id', $sellerId)->where('is_sold', false)->get();
         if ($stockUnits->isEmpty()) {
-            return back()->with('error', 'Stok terpilih tidak ditemukan atau sudah terjual.');
+            return back()->with('error', __('Stok terpilih tidak ditemukan atau sudah terjual.'));
         }
 
         $saveHours = (int)($user->seller_save_hours ?? 80);
@@ -468,17 +468,17 @@ class SellerController extends Controller
             $count++;
         }
 
-        return back()->with('success', "$count status/produk stok berhasil dipindahkan secara masal.");
+        return back()->with('success', __(":count status/produk stok berhasil dipindahkan secara masal.", ["count" => $count]));
     }
 
     public function destroyStock($id)
     {
         $stock = StockUnit::where('seller_id', Auth::id())->findOrFail($id);
         if ($stock->is_sold) {
-            return redirect()->back()->with('error', 'Stok yang sudah terjual tidak dapat dihapus.');
+            return redirect()->back()->with('error', __('Stok yang sudah terjual tidak dapat dihapus.'));
         }
         $stock->delete();
-        return redirect()->back()->with('success', 'Stok berhasil dihapus.');
+        return redirect()->back()->with('success', __('Stok berhasil dihapus.'));
     }
 
     public function bulkDestroyStock(Request $request)
@@ -491,12 +491,12 @@ class SellerController extends Controller
 
         $ids = json_decode($request->ids, true);
         if (!is_array($ids) || empty($ids)) {
-            return back()->with('error', 'Tidak ada stok terpilih.');
+            return back()->with('error', __('Tidak ada stok terpilih.'));
         }
 
         $count = StockUnit::whereIn('id', $ids)->where('seller_id', $sellerId)->where('is_sold', false)->delete();
 
-        return back()->with('success', "$count stok berhasil dihapus secara masal.");
+        return back()->with('success', __(":count stok berhasil dihapus secara masal.", ["count" => $count]));
     }
 
     // ==========================================
@@ -539,7 +539,7 @@ class SellerController extends Controller
             'warranty_days' => $request->has('enable_warranty') ? $request->warranty_days : 0,
         ]);
 
-        return redirect()->route('seller.products.index')->with('success', 'Produk baru berhasil dibuat.');
+        return redirect()->route('seller.products.index')->with('success', __('Produk baru berhasil dibuat.'));
     }
 
     public function addWorker(Request $request, $id)
@@ -552,7 +552,7 @@ class SellerController extends Controller
 
         $user = User::findOrFail($request->user_id);
         if ($user->role !== 'seller') {
-            return redirect()->back()->with('error', 'Hanya pengguna dengan role seller yang dapat ditambahkan sebagai worker.');
+            return redirect()->back()->with('error', __('Hanya pengguna dengan role seller yang dapat ditambahkan sebagai worker.'));
         }
 
         // Attach worker
@@ -560,7 +560,7 @@ class SellerController extends Controller
             $product->workers()->attach($user->id);
         }
 
-        return redirect()->back()->with('success', 'Worker berhasil ditambahkan ke produk Anda.');
+        return redirect()->back()->with('success', __('Worker berhasil ditambahkan ke produk Anda.'));
     }
 
     public function removeWorker($id, $userId)
@@ -582,7 +582,7 @@ class SellerController extends Controller
             $stock->save();
         }
 
-        return redirect()->back()->with('success', 'Worker berhasil dihapus dari produk Anda, dan kepemilikan stok miliknya telah dialihkan kepada Anda.');
+        return redirect()->back()->with('success', __('Worker berhasil dihapus dari produk Anda, dan kepemilikan stok miliknya telah dialihkan kepada Anda.'));
     }
 
     public function updateProduct(Request $request, $id)
@@ -603,7 +603,7 @@ class SellerController extends Controller
             'warranty_days' => $request->has('enable_warranty') ? $request->warranty_days : 0,
         ]);
 
-        return redirect()->route('seller.products.index')->with('success', 'Informasi produk berhasil diperbarui.');
+        return redirect()->route('seller.products.index')->with('success', __('Informasi produk berhasil diperbarui.'));
     }
 
     public function destroyProduct($id)
@@ -619,7 +619,7 @@ class SellerController extends Controller
             \Illuminate\Support\Facades\DB::table('cart_items')->where('product_id', $productId)->delete();
 
             $product->delete();
-            return redirect()->route('seller.products.index')->with('success', 'Produk berhasil dihapus.');
+            return redirect()->route('seller.products.index')->with('success', __('Produk berhasil dihapus.'));
         } catch (\Exception $e) {
             return redirect()->route('seller.products.index')->with('swal_error', 'Gagal menghapus produk: ' . $e->getMessage());
         }
@@ -636,7 +636,7 @@ class SellerController extends Controller
             ->get();
 
         if ($stockUnits->isEmpty()) {
-            return redirect()->back()->with('error', 'Tidak ada stok belum terjual yang tersedia untuk diekspor.');
+            return redirect()->back()->with('error', __('Tidak ada stok belum terjual yang tersedia untuk diekspor.'));
         }
 
         $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
@@ -790,7 +790,7 @@ class SellerController extends Controller
         ]);
 
         if ($user->wallet_balance < $request->amount) {
-            return redirect()->back()->with('error', 'Saldo wallet Anda tidak mencukupi untuk melakukan penarikan.');
+            return redirect()->back()->with('error', __('Saldo wallet Anda tidak mencukupi untuk melakukan penarikan.'));
         }
 
         // Get bank account and verify it belongs to this seller
@@ -805,7 +805,7 @@ class SellerController extends Controller
             'status' => 'pending',
         ]);
 
-        return redirect()->route('seller.finance.index')->with('success', 'Pengajuan penarikan dana berhasil dikirim dan sedang menunggu verifikasi admin.');
+        return redirect()->route('seller.finance.index')->with('success', __('Pengajuan penarikan dana berhasil dikirim dan sedang menunggu verifikasi admin.'));
     }
 
     // ==========================================
@@ -838,7 +838,7 @@ class SellerController extends Controller
             'account_holder' => $request->account_holder,
         ]);
 
-        return redirect()->route('seller.bank-accounts.index')->with('success', 'Rekening bank berhasil disimpan.');
+        return redirect()->route('seller.bank-accounts.index')->with('success', __('Rekening bank berhasil disimpan.'));
     }
 
     public function destroyBankAccount($id)
@@ -846,7 +846,7 @@ class SellerController extends Controller
         $bankAccount = \App\Models\SellerBankAccount::where('user_id', Auth::id())->findOrFail($id);
         $bankAccount->delete();
 
-        return redirect()->route('seller.bank-accounts.index')->with('success', 'Rekening bank berhasil dihapus.');
+        return redirect()->route('seller.bank-accounts.index')->with('success', __('Rekening bank berhasil dihapus.'));
     }
 
     // ==========================================
@@ -879,7 +879,7 @@ class SellerController extends Controller
 
         try {
             $orderService->cancelOrder($order, 'cancelled_by_seller', Auth::id());
-            return redirect()->back()->with('success', 'Pesanan berhasil dibatalkan.');
+            return redirect()->back()->with('success', __('Pesanan berhasil dibatalkan.'));
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Gagal membatalkan pesanan: ' . $e->getMessage());
         }
@@ -904,7 +904,7 @@ class SellerController extends Controller
         $user->seller_save_hours = $request->seller_save_hours;
         $user->save();
 
-        return redirect()->route('seller.settings.index')->with('success', 'Pengaturan jam karantina berhasil disimpan.');
+        return redirect()->route('seller.settings.index')->with('success', __('Pengaturan jam karantina berhasil disimpan.'));
     }
 
     // ==========================================
@@ -1040,6 +1040,6 @@ class SellerController extends Controller
             'created_at' => now(),
         ]);
 
-        return redirect()->route('seller.complaints.index')->with('success', 'Status komplain berhasil diperbarui.');
+        return redirect()->route('seller.complaints.index')->with('success', __('Status komplain berhasil diperbarui.'));
     }
 }

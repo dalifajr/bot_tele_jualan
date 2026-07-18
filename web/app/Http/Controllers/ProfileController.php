@@ -35,7 +35,7 @@ class ProfileController extends Controller
             'telegram_id' => $request->telegram_id,
         ]);
 
-        return redirect()->back()->with('success', 'Profil berhasil diperbarui!');
+        return redirect()->back()->with('success', __('Profil berhasil diperbarui!'));
     }
 
     public function checkTelegramId(Request $request)
@@ -96,7 +96,7 @@ class ProfileController extends Controller
         $user = Auth::user();
         $user->update(['telegram_id' => null]);
 
-        return redirect()->back()->with('success', 'Akun Telegram berhasil dilepas.');
+        return redirect()->back()->with('success', __('Akun Telegram berhasil dilepas.'));
     }
 
     public function loginHistory()
@@ -142,7 +142,7 @@ class ProfileController extends Controller
         
         \Illuminate\Support\Facades\Cache::put('blocked_ip:' . $ip, true, $expire);
         
-        return back()->with('success', "IP Address {$ip} telah diblokir selama {$durationText}.");
+        return back()->with('success', __("IP Address :ip telah diblokir selama :durationText.", ["ip" => $ip, "durationText" => $durationText]));
     }
 
     public function requestUnblock(Request $request)

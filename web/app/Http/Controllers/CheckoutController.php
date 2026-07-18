@@ -34,11 +34,11 @@ class CheckoutController extends Controller
             ->count();
 
         if ($pendingOrdersCount >= 2) {
-            return back()->with('error', 'Anda memiliki terlalu banyak pesanan yang menunggu pembayaran. Silakan selesaikan atau batalkan pesanan Anda sebelumnya.');
+            return back()->with('error', __('Anda memiliki terlalu banyak pesanan yang menunggu pembayaran. Silakan selesaikan atau batalkan pesanan Anda sebelumnya.'));
         }
 
         if ($product->is_suspended) {
-            return back()->with('error', 'Maaf, produk ini sedang tidak aktif.');
+            return back()->with('error', __('Maaf, produk ini sedang tidak aktif.'));
         }
 
         if ($product->is_vpn) {
@@ -65,7 +65,7 @@ class CheckoutController extends Controller
 
                 if ($availableStockCount < $quantity) {
                     DB::rollBack();
-                    return back()->with('error', "Stok tidak cukup. Hanya tersisa {$availableStockCount} unit.");
+                    return back()->with('error', __("Stok tidak cukup. Hanya tersisa :availableStockCount unit.", ["availableStockCount" => $availableStockCount]));
                 }
             }
 
@@ -133,7 +133,7 @@ class CheckoutController extends Controller
 
                 if ($stockUnitsToReserve->count() < $quantity) {
                     DB::rollBack();
-                    return back()->with('error', "Stok baru saja dibeli oleh orang lain. Silakan coba kembali.");
+                    return back()->with('error', __("Stok baru saja dibeli oleh orang lain. Silakan coba kembali."));
                 }
 
                 foreach ($stockUnitsToReserve as $unit) {

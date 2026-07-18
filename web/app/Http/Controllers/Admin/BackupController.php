@@ -177,7 +177,7 @@ class BackupController extends Controller
                     return response()->download($filePath);
                 }
             }
-            return back()->with('error', 'File backup tidak ditemukan atau tidak valid.');
+            return back()->with('error', __('File backup tidak ditemukan atau tidak valid.'));
         }
     }
 
@@ -373,11 +373,11 @@ class BackupController extends Controller
                     'user_agent' => request()->userAgent(),
                 ]);
 
-                return back()->with('success', 'File backup berhasil dihapus.');
+                return back()->with('success', __('File backup berhasil dihapus.'));
             }
         }
 
-        return back()->with('error', 'Gagal menghapus file backup.');
+        return back()->with('error', __('Gagal menghapus file backup.'));
     }
 
     /**
@@ -414,7 +414,7 @@ class BackupController extends Controller
             'user_agent' => $request->userAgent(),
         ]);
 
-        return back()->with('success', 'Pengaturan auto-backup berhasil diperbarui.');
+        return back()->with('success', __('Pengaturan auto-backup berhasil diperbarui.'));
     }
 
     /**

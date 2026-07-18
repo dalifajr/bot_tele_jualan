@@ -32,15 +32,15 @@ class ComplaintController extends Controller
         $complaint = ComplaintCase::where('customer_id', Auth::id())->findOrFail($id);
         
         if (!in_array($complaint->status, ['done', 'rejected', 'refund_requested'])) {
-            return redirect()->back()->with('error', 'Komplain belum ditutup atau diselesaikan.');
+            return redirect()->back()->with('error', __('Komplain belum ditutup atau diselesaikan.'));
         }
 
         if ($complaint->reopen_count >= 3) {
-            return redirect()->back()->with('error', 'Batas maksimal pembukaan ulang (3 kali) telah tercapai.');
+            return redirect()->back()->with('error', __('Batas maksimal pembukaan ulang (3 kali) telah tercapai.'));
         }
 
         if (!$complaint->order || !$complaint->order->is_warranty_active) {
-            return redirect()->back()->with('error', 'Garansi toko untuk pesanan ini telah kedaluwarsa sehingga komplain tidak dapat dibuka kembali.');
+            return redirect()->back()->with('error', __('Garansi toko untuk pesanan ini telah kedaluwarsa sehingga komplain tidak dapat dibuka kembali.'));
         }
 
         $complaint->update([
@@ -79,6 +79,6 @@ class ComplaintController extends Controller
             $admin->notify(new \App\Notifications\ComplaintNotification($complaint, 'new', $message));
         });
 
-        return redirect()->route('customer.complaints.show', $complaint->id)->with('success', 'Komplain berhasil dibuka kembali dan sedang ditinjau ulang oleh penjual.');
+        return redirect()->route('customer.complaints.show', $complaint->id)->with('success', __('Komplain berhasil dibuka kembali dan sedang ditinjau ulang oleh penjual.'));
     }
 }

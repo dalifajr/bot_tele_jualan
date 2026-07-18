@@ -54,7 +54,7 @@ class CouponController extends Controller
             ]);
         }
 
-        return redirect()->route('admin.coupons.index')->with('success', 'Kupon berhasil dibuat.');
+        return redirect()->route('admin.coupons.index')->with('success', __('Kupon berhasil dibuat.'));
     }
 
     /**
@@ -93,7 +93,7 @@ class CouponController extends Controller
             ]);
         }
 
-        return redirect()->route('admin.coupons.index')->with('success', 'Kupon berhasil diperbarui.');
+        return redirect()->route('admin.coupons.index')->with('success', __('Kupon berhasil diperbarui.'));
     }
 
     /**
@@ -118,6 +118,6 @@ class CouponController extends Controller
             ]);
         }
 
-        return redirect()->route('admin.coupons.index')->with('success', 'Kupon berhasil dihapus.');
+        return redirect()->route('admin.coupons.index')->with('success', __('Kupon berhasil dihapus.'));
     }
 }
