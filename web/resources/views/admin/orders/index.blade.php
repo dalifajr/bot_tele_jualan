@@ -280,10 +280,10 @@
                         <label class="form-label text-muted small fw-bold">{{ __('Status Baru') }}</label>
                         <select name="status" class="form-select" required>
                             <option value="pending_payment" {{ $order->status == 'pending_payment' ? 'selected' : '' }}>{{ __('Pending Payment') }}</option>
-                            <option value="paid" {{ $order->status == 'paid' ? 'selected' : '' }}>{{ __('Paid (Lunas)') }}</option>
-                            <option value="delivered" {{ $order->status == 'delivered' ? 'selected' : '' }}>{{ __('Delivered (Selesai)') }}</option>
-                            <option value="cancelled" {{ $order->status == 'cancelled' ? 'selected' : '' }}>{{ __('Cancelled (Dibatalkan)') }}</option>
-                            <option value="expired" {{ $order->status == 'expired' ? 'selected' : '' }}>{{ __('Expired (Kedaluwarsa)') }}</option>
+                            <option value="paid" {{ $order->status == 'paid' ? 'selected' : '' }}>Paid (Lunas)</option>
+                            <option value="delivered" {{ $order->status == 'delivered' ? 'selected' : '' }}>Delivered (Selesai)</option>
+                            <option value="cancelled" {{ $order->status == 'cancelled' ? 'selected' : '' }}>Cancelled (Dibatalkan)</option>
+                            <option value="expired" {{ $order->status == 'expired' ? 'selected' : '' }}>Expired (Kedaluwarsa)</option>
                         </select>
                     </div>
                 </div>

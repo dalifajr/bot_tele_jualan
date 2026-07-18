@@ -120,7 +120,7 @@
                         <h6 class="fw-bold text-muted border-bottom pb-2 mb-3">{{ __('Informasi Pesanan') }}</h6>
                         <table class="table table-sm table-borderless">
                             <tr><td class="text-muted" style="width: 120px;">{{ __('Produk') }}</td><td class="fw-bold">{{ $order->product->name ?? '-' }}</td></tr>
-                            <tr><td class="text-muted">{{ __('Kuantitas (QTY)') }}</td><td>{{ $order->quantity }} unit</td></tr>
+                            <tr><td class="text-muted">Kuantitas (QTY)</td><td>{{ $order->quantity }} unit</td></tr>
                             <tr><td class="text-muted">{{ __('Status') }}</td>
                                 <td>
                                     <span class="badge bg-{{ $order->status_color }}-subtle text-{{ $order->status_color }} rounded-pill px-3">
@@ -181,7 +181,7 @@
             <div class="modal-footer border-0">
                 @if($order->status === 'pending_payment')
                 <a href="{{ route('checkout.success', ['order_ref' => $order->order_ref]) }}" class="btn btn-success rounded-pill px-4">
-                    <i class="fas fa-qrcode me-1"></i>{{ __('Bayar Sekarang (QRIS)') }}
+                    <i class="fas fa-qrcode me-1"></i>Bayar Sekarang (QRIS)
                 </a>
                 <form action="{{ route('orders.cancel', $order->id) }}" method="POST" onsubmit="confirmAction(event, 'Apakah Anda yakin ingin membatalkan pesanan ini?');" class="m-0">
                     @csrf

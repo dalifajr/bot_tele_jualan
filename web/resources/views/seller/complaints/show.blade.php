@@ -111,7 +111,7 @@
     <div class="col-lg-4">
         <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
             <div class="card-body p-4">
-                <h6 class="fw-bold mb-3"><i class="fas fa-gavel text-primary me-2"></i>{{ __('Resolusi Tiket (Seller)') }}</h6>
+                <h6 class="fw-bold mb-3"><i class="fas fa-gavel text-primary me-2"></i>Resolusi Tiket (Seller)</h6>
                 
                 <form action="{{ route('seller.complaints.updateStatus', $complaint->id) }}" method="POST">
                     @csrf
@@ -120,11 +120,11 @@
                         <label class="form-label text-muted small fw-bold">{{ __('Pilih Status Baru') }}</label>
                         <select name="status" id="status-select" class="form-select" required>
                             <option value="">{{ __('-- Pilih Keputusan --') }}</option>
-                            <option value="review" {{ $complaint->status === 'review' ? 'selected' : '' }}>{{ __('Ditinjau (In Review)') }}</option>
+                            <option value="review" {{ $complaint->status === 'review' ? 'selected' : '' }}>Ditinjau (In Review)</option>
                             <option value="replacement" {{ $complaint->status === 'replacement' ? 'selected' : '' }}>{{ __('Kirim Akun Pengganti') }}</option>
                             <option value="refund" {{ $complaint->status === 'refund' ? 'selected' : '' }}>{{ __('Refund') }}</option>
-                            <option value="done" {{ $complaint->status === 'done' ? 'selected' : '' }}>{{ __('Selesai (Tanpa Ganti Rugi Lain)') }}</option>
-                            <option value="rejected" {{ $complaint->status === 'rejected' ? 'selected' : '' }}>{{ __('Tolak Klaim (Rejected)') }}</option>
+                            <option value="done" {{ $complaint->status === 'done' ? 'selected' : '' }}>Selesai (Tanpa Ganti Rugi Lain)</option>
+                            <option value="rejected" {{ $complaint->status === 'rejected' ? 'selected' : '' }}>Tolak Klaim (Rejected)</option>
                         </select>
                     </div>
 

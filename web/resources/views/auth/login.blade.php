@@ -1136,7 +1136,7 @@
                   </div>
 
                   <div class="form-group relative">
-                      <input type="number" name="telegram_id" id="telegram_id_reg" class="form-control" placeholder="{{ __('ID Telegram (Opsional)') }}" value="{{ old('telegram_id') }}" />
+                      <input type="number" name="telegram_id" id="telegram_id_reg" class="form-control" placeholder="ID Telegram (Opsional)" value="{{ old('telegram_id') }}" />
                       <i class="fab fa-telegram-plane form-icon"></i>
                       <!-- Shrunk helper text positioned cleanly inside the form-group relative container -->
                       <div id="telegram_id_feedback" class="text-slate-400 font-medium ms-2 mt-1" style="font-size: 0.65rem;">{{ __('Agar bisa otomatis login dengan Telegram nantinya.') }}</div>

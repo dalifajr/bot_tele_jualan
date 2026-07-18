@@ -37,7 +37,7 @@
                 <div class="mb-4">
                     <span class="text-muted small d-block mb-2">{{ __('Item Pesanan:') }}</span>
                     <div class="list-group list-group-flush border rounded-3 overflow-hidden mb-3">
-                        @foreach($order->items as $item
+                        @foreach($order->items as $item)
                         <div class="list-group-item p-3">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
@@ -62,7 +62,7 @@
                                                 <i class="fa{{ $i <= $hasReview->rating ? 's' : 'r' }} fa-star"></i>
                                             @endfor
                                         </span>
-                                        @if($hasReview->comment
+                                        @if($hasReview->comment)
                                             <p class="mb-0 mt-1 text-secondary italic">"{{ $hasReview->comment }}"</p>
                                         @endif
                                     </div>
@@ -171,7 +171,7 @@
                     @if($order->vpnAccounts && $order->vpnAccounts->count() > 0)
                     <hr>
                     <h6 class="fw-bold mb-3"><i class="fas fa-network-wired text-primary me-2"></i>{{ __('Konfigurasi Akun VPN') }}</h6>
-                    @foreach($order->vpnAccounts as $vpn
+                    @foreach($order->vpnAccounts as $vpn)
                         <div class="card mb-3 border-primary-subtle shadow-sm" style="border-radius: 12px;">
                             <div class="card-header bg-primary-subtle border-0">
                                 <h6 class="mb-0 fw-bold text-primary">Protokol: {{ strtoupper($vpn->protocol) }} ({{ $vpn->username }})</h6>
@@ -198,7 +198,7 @@
                 @if($order->status === 'delivered')
                 <hr>
                 <div class="mt-4">
-                    @if($order->complaintCase
+                    @if($order->complaintCase)
                         <div class="card bg-body-tertiary border-0 shadow-sm" style="border-radius: 12px;">
                             <div class="card-body p-3">
                                 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -227,13 +227,13 @@
                                     <span class="text-muted small d-block">{{ __('Detail Masalah:') }}</span>
                                     <p class="mb-0 text-dark small bg-body p-2.5 rounded border border-light-subtle">{{ $order->complaintCase->complaint_text }}</p>
                                 </div>
-                                @if($order->complaintCase->status === 'rejected' && $order->complaintCase->rejected_reason
+                                @if($order->complaintCase->status === 'rejected' && $order->complaintCase->rejected_reason)
                                 <div class="alert alert-danger mb-0 py-2.5 px-3 rounded-3 mt-2">
                                     <h6 class="fw-bold mb-1 small"><i class="fas fa-times-circle me-1"></i>{{ __('Alasan Penolakan Admin:') }}</h6>
                                     <p class="mb-0 small">{{ $order->complaintCase->rejected_reason }}</p>
                                 </div>
                                 @endif
-                                @if($order->complaintCase->status === 'done' && $order->complaintCase->refund_note
+                                @if($order->complaintCase->status === 'done' && $order->complaintCase->refund_note)
                                 <div class="alert alert-success mb-0 py-2.5 px-3 rounded-3 mt-2">
                                     <h6 class="fw-bold mb-1 small"><i class="fas fa-check-circle me-1"></i>{{ __('Catatan Resolusi Admin:') }}</h6>
                                     <p class="mb-0 small">{{ $order->complaintCase->refund_note }}</p>
@@ -242,7 +242,7 @@
                             </div>
                         </div>
                     @else
-                        @if($order->is_warranty_active
+                        @if($order->is_warranty_active)
                         <div class="d-flex align-items-center justify-content-between bg-light-subtle border border-dashed border-secondary-subtle rounded-3 p-3 mt-3">
                             <div>
                                 <h6 class="fw-bold mb-1"><i class="fas fa-shield-alt text-primary me-2"></i>{{ __('Garansi Toko Aktif') }}</h6>
@@ -257,7 +257,7 @@
                         <div class="d-flex align-items-center justify-content-between bg-body-secondary border border-dashed border-secondary-subtle rounded-3 p-3 mt-3">
                             <div>
                                 <h6 class="fw-bold mb-1 text-secondary"><i class="fas fa-shield-alt me-2 text-secondary"></i>{{ __('Garansi Toko Kedaluwarsa') }}</h6>
-                                @if($order->warranty_expires_at
+                                @if($order->warranty_expires_at)
                                 <p class="text-muted small mb-0">{{ __('Garansi berakhir pada:') }} <strong>{{ $order->warranty_expires_at->format('d M Y H:i') }}</strong></p>
                                 @else
                                 <p class="text-muted small mb-0">{{ __('Produk ini tidak memiliki garansi atau pesanan belum selesai.') }}</p>

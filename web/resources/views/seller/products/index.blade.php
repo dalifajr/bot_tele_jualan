@@ -25,7 +25,7 @@
 
 {{-- Section 1: My Owned Products --}}
 <div class="mb-5">
-    <h5 class="fw-bold mb-3 text-primary"><i class="fas fa-box-open me-2"></i>{{ __('Produk Buatan Saya (Milik Sendiri)') }}</h5>
+    <h5 class="fw-bold mb-3 text-primary"><i class="fas fa-box-open me-2"></i>Produk Buatan Saya (Milik Sendiri)</h5>
     
     @if($myProducts->count() > 0)
     <div class="row g-4">
@@ -106,7 +106,7 @@
 
 {{-- Section 2: Products Worked By Me --}}
 <div class="mb-4">
-    <h5 class="fw-bold mb-3 text-info"><i class="fas fa-briefcase me-2"></i>{{ __('Katalog Kerja Saya (Sebagai Worker)') }}</h5>
+    <h5 class="fw-bold mb-3 text-info"><i class="fas fa-briefcase me-2"></i>Katalog Kerja Saya (Sebagai Worker)</h5>
     
     @if($workedProducts->count() > 0)
     <div class="row g-4">
@@ -163,14 +163,14 @@
                         <input type="text" name="name" class="form-control" placeholder="{{ __('Contoh: GitHub Students Pack Premium') }}" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">{{ __('Harga Produk (Rupiah)') }}</label>
+                        <label class="form-label text-muted small fw-bold">Harga Produk (Rupiah)</label>
                         <div class="input-group">
                             <span class="input-group-text bg-light text-muted">Rp</span>
                             <input type="number" name="price" class="form-control" placeholder="70000" min="0" required>
                         </div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">{{ __('Deskripsi Produk (Opsional)') }}</label>
+                        <label class="form-label text-muted small fw-bold">Deskripsi Produk (Opsional)</label>
                         <textarea name="description" class="form-control" rows="3" placeholder="{{ __('Masukkan deskripsi detail mengenai produk digital ini...') }}"></textarea>
                     </div>
                     <div class="form-check form-switch mb-3">
@@ -178,7 +178,7 @@
                         <label class="form-check-label text-muted small fw-bold" for="enableWarrantyAdd">{{ __('Aktifkan garansi?') }}</label>
                     </div>
                     <div class="mb-3" id="warrantyDaysAddContainer" style="display: none;">
-                        <label class="form-label text-muted small fw-bold">{{ __('Masa Garansi (Hari)') }}</label>
+                        <label class="form-label text-muted small fw-bold">Masa Garansi (Hari)</label>
                         <div class="input-group">
                             <input type="number" name="warranty_days" id="warrantyDaysAdd" class="form-control" placeholder="{{ __('Contoh: 3') }}" min="1" disabled>
                             <span class="input-group-text bg-light text-muted">{{ __('hari') }}</span>
@@ -212,7 +212,7 @@
                         <h6 class="fw-bold text-primary m-0">{{ $product->name }}</h6>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">{{ __('Pilih Seller Mitra (Worker)') }}</label>
+                        <label class="form-label text-muted small fw-bold">Pilih Seller Mitra (Worker)</label>
                         <select name="user_id" class="form-select" required>
                             <option value="" disabled selected>{{ __('-- Pilih Seller Mitra --') }}</option>
                             @foreach($allSellers as $seller)
@@ -255,14 +255,14 @@
                         <input type="text" name="name" class="form-control" value="{{ $product->name }}" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">{{ __('Harga Produk (Rupiah)') }}</label>
+                        <label class="form-label text-muted small fw-bold">Harga Produk (Rupiah)</label>
                         <div class="input-group">
                             <span class="input-group-text bg-light text-muted">Rp</span>
                             <input type="number" name="price" class="form-control" value="{{ $product->price }}" min="0" required>
                         </div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">{{ __('Deskripsi Produk (Opsional)') }}</label>
+                        <label class="form-label text-muted small fw-bold">Deskripsi Produk (Opsional)</label>
                         <textarea name="description" class="form-control" rows="3">{{ $product->description }}</textarea>
                     </div>
                     <div class="form-check form-switch mb-3">
@@ -270,7 +270,7 @@
                         <label class="form-check-label text-muted small fw-bold" for="enableWarrantyEdit{{ $product->id }}">{{ __('Aktifkan garansi?') }}</label>
                     </div>
                     <div class="mb-3" id="warrantyDaysEditContainer{{ $product->id }}" style="display: {{ $product->warranty_days > 0 ? 'block' : 'none' }};">
-                        <label class="form-label text-muted small fw-bold">{{ __('Masa Garansi (Hari)') }}</label>
+                        <label class="form-label text-muted small fw-bold">Masa Garansi (Hari)</label>
                         <div class="input-group">
                             <input type="number" name="warranty_days" id="warrantyDaysEditInput{{ $product->id }}" class="form-control" value="{{ $product->warranty_days > 0 ? $product->warranty_days : '' }}" min="1" {{ $product->warranty_days > 0 ? '' : 'disabled' }}>
                             <span class="input-group-text bg-light text-muted">{{ __('hari') }}</span>
@@ -308,7 +308,7 @@
                     {{ __('Terdapat') }} <strong>{{ $unsoldStockCount }}</strong> {{ __('sisa stok aktif yang belum terjual. Anda disarankan untuk mengunduh sisa stok tersebut sebelum menghapus produk:') }}
                     <div class="mt-2 text-center">
                         <a href="{{ route('seller.products.export-unsold', $product->id) }}" class="btn btn-sm btn-success rounded-pill px-3 fw-bold">
-                            <i class="fas fa-file-excel me-1"></i> {{ __('Unduh Sisa Stok (.xlsx)') }}
+                            <i class="fas fa-file-excel me-1"></i> Unduh Sisa Stok (.xlsx)
                         </a>
                     </div>
                 </div>

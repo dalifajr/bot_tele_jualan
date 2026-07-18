@@ -98,7 +98,7 @@ class TelegramAuthController extends Controller
                 ]);
             }
 
-            $this->recordLoginLog($request, 'TG_Link:' . substr($linkToken, 0, 8), false);
+            $this->recordLoginLog($request, 'TG_Link:' . substr($linkToken, 0, 8), false, 'Telegram Browser');
             return redirect()->route('login')->with('error', __('Link login sudah kedaluwarsa atau sudah digunakan. Silakan coba lagi.'));
         }
 
@@ -112,7 +112,7 @@ class TelegramAuthController extends Controller
         $user = User::where('telegram_id', $record->telegram_id)->first();
 
         if (!$user) {
-            $this->recordLoginLog($request, 'TG_ID:' . $record->telegram_id, false);
+            $this->recordLoginLog($request, 'TG_ID:' . $record->telegram_id, false, 'Telegram Browser');
             return redirect()->route('login')->with('error', __('Akun Telegram tidak ditemukan. Pastikan Anda sudah pernah berinteraksi dengan bot.'));
         }
 
@@ -120,7 +120,7 @@ class TelegramAuthController extends Controller
         $rememberDays = (int) config('telegram.remember_me_days', 30);
         Auth::login($user, true);
         
-        $this->recordLoginLog($request, $user->username, true);
+        $this->recordLoginLog($request, $user->username, true, 'Telegram Browser');
 
         // Set custom cookie lifetime
         config(['session.lifetime' => $rememberDays * 24 * 60]);
@@ -231,14 +231,14 @@ class TelegramAuthController extends Controller
         }
 
         if ($user->is_suspended) {
-            $this->recordLoginLog($request, $user->username, false);
+            $this->recordLoginLog($request, $user->username, false, 'Telegram WebApp');
             return response()->json(['success' => false, 'message' => 'Akun Anda ditangguhkan oleh Admin.'], 403);
         }
 
         // Login session
         Auth::login($user, true);
         
-        $this->recordLoginLog($request, $user->username, true);
+        $this->recordLoginLog($request, $user->username, true, 'Telegram Browser');
         
         $rememberDays = (int) config('telegram.remember_me_days', 30);
         config(['session.lifetime' => $rememberDays * 24 * 60]);

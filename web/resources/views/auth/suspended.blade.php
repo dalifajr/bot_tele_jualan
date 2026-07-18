@@ -17,7 +17,7 @@
                     {{ __('Mohon maaf, akses akun Anda ke platform ini telah ditangguhkan sementara waktu oleh administrator kami.') }}
                 </p>
 
-                @if(Auth::check() && Auth::user()->{{ __('suspension_reason)') }}
+                @if(Auth::check() && Auth::user()->suspension_reason)
                 <div class="alert alert-danger-subtle text-danger border border-danger-subtle rounded-4 p-3 mb-4 text-start">
                     <div class="fw-bold mb-1"><i class="fas fa-exclamation-triangle me-2"></i>{{ __('Alasan Penangguhan:') }}</div>
                     <div class="small">{{ Auth::user()->suspension_reason }}</div>

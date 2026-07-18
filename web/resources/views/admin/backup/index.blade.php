@@ -40,7 +40,7 @@
     </li>
     <li class="nav-item">
         <a class="nav-link text-secondary" href="{{ route('admin.backup.restore.show') }}">
-            <i class="fas fa-undo me-1"></i> {{ __('Pemulihan Data (Restore)') }}
+            <i class="fas fa-undo me-1"></i> Pemulihan Data (Restore)
         </a>
     </li>
     <li class="nav-item">
@@ -101,7 +101,7 @@
 
 <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
     <div class="card-body p-4">
-        <h5 class="fw-bold mb-2"><i class="fas fa-download text-primary me-2"></i>{{ __('Pencadangan Manual (Export)') }}</h5>
+        <h5 class="fw-bold mb-2"><i class="fas fa-download text-primary me-2"></i>Pencadangan Manual (Export)</h5>
         <p class="text-muted small mb-4">{{ __('Unduh salinan data sistem Anda saat ini. Kami menyarankan untuk mengunduh Snapshot secara berkala sebelum melakukan perubahan besar.') }}</p>
         
         <div class="row g-3">
@@ -117,7 +117,7 @@
             <div class="col-md-6">
                 <a href="{{ route('admin.backup.download', 'json') }}" class="btn btn-outline-primary rounded-pill py-3 fw-bold text-start px-4 d-flex align-items-center justify-content-between h-100">
                     <div>
-                        <i class="fas fa-file-code me-2 fs-5"></i> {{ __('Download JSON (Bot Compatible)') }}
+                        <i class="fas fa-file-code me-2 fs-5"></i> Download JSON (Bot Compatible)
                         <small class="d-block fw-light text-muted mt-1" style="font-size: 0.75rem;">{{ __('Database tables dalam JSON ZIP. Kompatibel dengan fitur restore Bot Telegram') }}</small>
                     </div>
                     <i class="fas fa-chevron-right fs-5"></i>
@@ -130,12 +130,12 @@
 {{-- Audit Logs --}}
 <div class="card border-0 shadow-sm" style="border-radius: 16px;">
     <div class="card-body p-4">
-        <h5 class="fw-bold mb-3"><i class="fas fa-user-shield text-secondary me-2"></i>{{ __('Riwayat Aktivitas Backup & Restore (Log Audit)') }}</h5>
+        <h5 class="fw-bold mb-3"><i class="fas fa-user-shield text-secondary me-2"></i>Riwayat Aktivitas Backup & Restore (Log Audit)</h5>
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0" style="font-size: 0.85rem;">
                 <thead>
                     <tr class="table-light">
-                        <th>{{ __('Waktu (WIB)') }}</th>
+                        <th>Waktu (WIB)</th>
                         <th>{{ __('User Admin') }}</th>
                         <th>{{ __('Aksi Aktivitas') }}</th>
                         <th>{{ __('Detail Log') }}</th>
@@ -153,11 +153,11 @@
                             @endif
                         </td>
                         <td>
-                            @if($log->{{ __('action === \'backup_restore\')') }}
+                            @if($log->action === 'backup_restore')
                             <span class="badge bg-danger text-uppercase px-2">{{ __('Restore') }}</span>
-                            @elseif($log->{{ __('action === \'backup_create\')') }}
+                            @elseif($log->action === 'backup_create')
                             <span class="badge bg-primary text-uppercase px-2">{{ __('Export') }}</span>
-                            @elseif($log->{{ __('action === \'system_auto_backup\')') }}
+                            @elseif($log->action === 'system_auto_backup')
                             <span class="badge bg-warning text-uppercase px-2 text-dark">{{ __('Auto Backup') }}</span>
                             @else
                             <span class="badge bg-secondary text-uppercase px-2">{{ __('Delete') }}</span>

@@ -50,7 +50,7 @@
                     <i class="fas fa-lock"></i>
                 </div>
                 <div class="position-relative" style="z-index: 1;">
-                    <p class="small text-white-50 fw-bold mb-2">{{ __('SALDO TERTAHAN (GARANSI)') }}</p>
+                    <p class="small text-white-50 fw-bold mb-2">SALDO TERTAHAN (GARANSI)</p>
                     <h2 class="fw-bold mb-3">Rp {{ number_format($heldBalance, 0, ',', '.') }}</h2>
                     <div class="d-flex align-items-center justify-content-between pt-2 border-top border-white-10">
                         <span class="small text-white-50">{{ __('Menunggu Garansi') }}</span>
@@ -318,7 +318,7 @@
 {{-- Recent Orders --}}
 <div class="card border-0 shadow-sm overflow-hidden mb-4 mt-4" style="border-radius: 20px;">
     <div class="card-header bg-transparent border-0 pt-4 px-4">
-        <h5 class="fw-bold mb-0 text-body"><i class="fas fa-history text-secondary me-2"></i>{{ __('5 Pesanan Sukses Terakhir (Stok Anda)') }}</h5>
+        <h5 class="fw-bold mb-0 text-body"><i class="fas fa-history text-secondary me-2"></i>5 Pesanan Sukses Terakhir (Stok Anda)</h5>
     </div>
     <div class="card-body p-0">
         @if($latestOrders->count() > 0)

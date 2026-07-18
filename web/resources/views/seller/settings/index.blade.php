@@ -19,12 +19,12 @@
 <div class="row g-4">
     <div class="col-12 col-md-8 col-lg-6">
         <div class="card border-0 shadow-sm p-4" style="border-radius: 20px;">
-            <h5 class="fw-bold mb-3"><i class="fas fa-history text-primary me-2"></i>{{ __('Durasi Karantina (*Simpan Akun*)') }}</h5>
+            <h5 class="fw-bold mb-3"><i class="fas fa-history text-primary me-2"></i>Durasi Karantina (*Simpan Akun*)</h5>
             
             <form action="{{ route('seller.settings.update') }}" method="POST">
                 @csrf
                 <div class="mb-4">
-                    <label class="form-label text-muted small fw-bold">{{ __('Durasi Jam Tunggu Karantina (Jam)') }}</label>
+                    <label class="form-label text-muted small fw-bold">Durasi Jam Tunggu Karantina (Jam)</label>
                     <div class="input-group">
                         <input type="number" name="seller_save_hours" class="form-control" value="{{ $user->seller_save_hours ?? 80 }}" min="0" max="1000" required>
                         <span class="input-group-text bg-light text-muted">{{ __('jam') }}</span>

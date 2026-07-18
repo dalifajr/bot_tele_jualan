@@ -25,7 +25,7 @@
                 </div>
                 @endif
 
-                @if($cartItems->isEmpty()
+                @if($cartItems->isEmpty())
                 <div class="text-center py-5 text-muted">
                     <div class="mb-3">
                         <i class="fas fa-shopping-basket fs-1 text-secondary opacity-50"></i>
@@ -48,7 +48,7 @@
                         </thead>
                         <tbody>
                             @foreach($cartItems as $item)
-                            @if($item->{{ __('product)') }}
+                            @if($item->product)
                             <tr class="align-middle">
                                 <td class="border-secondary-subtle py-3">
                                     <div class="d-flex align-items-center gap-3">
@@ -67,7 +67,7 @@
                                             @csrf
                                             @method('PUT')
                                             <input type="hidden" name="quantity" value="{{ $item->quantity - 1 }}">
-                                            <button type="submit" class="btn btn-sm btn-link text-decoration-none px-2 py-0 text-muted" {{ $item->{{ __('quantity') }} <= 1 ? 'disabled' : '' }}>
+                                            <button type="submit" class="btn btn-sm btn-link text-decoration-none px-2 py-0 text-muted" {{ $item->quantity <= 1 ? 'disabled' : '' }}>
                                                 <i class="fas fa-minus fs-6"></i>
                                             </button>
                                         </form>

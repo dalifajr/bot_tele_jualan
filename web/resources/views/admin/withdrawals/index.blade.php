@@ -6,7 +6,7 @@
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h4 class="fw-bold mb-1">{{ __('Manajemen Penarikan Dana (Payouts)') }}</h4>
+        <h4 class="fw-bold mb-1">Manajemen Penarikan Dana (Payouts)</h4>
         <p class="text-muted mb-0">{{ __('Verifikasi dan proses penarikan dana dari dompet saldo para seller mitra') }}</p>
     </div>
 </div>
@@ -120,7 +120,7 @@
                         <h5 class="fw-bold text-success m-0">Rp {{ number_format($withdrawal->amount, 0, ',', '.') }}</h5>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">{{ __('Pilih File Bukti Transfer (Gambar)') }}</label>
+                        <label class="form-label text-muted small fw-bold">Pilih File Bukti Transfer (Gambar)</label>
                         <input type="file" name="proof_image" class="form-control" accept="image/*" required>
                         <div class="form-text">{{ __('Maksimal ukuran file 2MB dengan tipe JPEG, PNG, JPG.') }}</div>
                     </div>
@@ -174,7 +174,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-4 text-center">
-                @if($withdrawal->proof_image_path
+                @if($withdrawal->proof_image_path)
                     <img src="{{ asset($withdrawal->proof_image_path) }}" alt="Bukti Transfer Payout" class="img-fluid rounded-4 shadow-sm mb-3" style="max-height: 400px; object-fit: contain;">
                 @else
                     <p class="text-muted">{{ __('Bukti transfer tidak tersedia.') }}</p>

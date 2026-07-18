@@ -66,14 +66,14 @@
                             <p class="text-muted small mb-3">{{ __('Atur wilayah waktu dan durasi waktu tunggu untuk status stok. Perubahan akan langsung berlaku untuk sistem website dan bot Telegram.') }}</p>
                             
                             <div class="mb-4">
-                                <label class="form-label fw-bold small">{{ __('Region Zona Waktu (Timezone)') }}</label>
+                                <label class="form-label fw-bold small">Region Zona Waktu (Timezone)</label>
                                 <div class="input-group">
                                     <span class="input-group-text bg-primary-subtle border-0"><i class="fas fa-globe text-primary"></i></span>
                                     <select name="settings[system_timezone]" class="form-select" required>
-                                        <option value="Asia/Jakarta" {{ ($settings['system_timezone'] ?? '') === 'Asia/Jakarta' ? 'selected' : '' }}>{{ __('WIB - Asia/Jakarta (GMT+7)') }}</option>
-                                        <option value="Asia/Makassar" {{ ($settings['system_timezone'] ?? '') === 'Asia/Makassar' ? 'selected' : '' }}>{{ __('WITA - Asia/Makassar (GMT+8)') }}</option>
-                                        <option value="Asia/Jayapura" {{ ($settings['system_timezone'] ?? '') === 'Asia/Jayapura' ? 'selected' : '' }}>{{ __('WIT - Asia/Jayapura (GMT+9)') }}</option>
-                                        <option value="Asia/Singapore" {{ ($settings['system_timezone'] ?? '') === 'Asia/Singapore' ? 'selected' : '' }}>{{ __('SGT - Asia/Singapore (GMT+8)') }}</option>
+                                        <option value="Asia/Jakarta" {{ ($settings['system_timezone'] ?? '') === 'Asia/Jakarta' ? 'selected' : '' }}>WIB - Asia/Jakarta (GMT+7)</option>
+                                        <option value="Asia/Makassar" {{ ($settings['system_timezone'] ?? '') === 'Asia/Makassar' ? 'selected' : '' }}>WITA - Asia/Makassar (GMT+8)</option>
+                                        <option value="Asia/Jayapura" {{ ($settings['system_timezone'] ?? '') === 'Asia/Jayapura' ? 'selected' : '' }}>WIT - Asia/Jayapura (GMT+9)</option>
+                                        <option value="Asia/Singapore" {{ ($settings['system_timezone'] ?? '') === 'Asia/Singapore' ? 'selected' : '' }}>SGT - Asia/Singapore (GMT+8)</option>
                                         <option value="UTC" {{ ($settings['system_timezone'] ?? '') === 'UTC' ? 'selected' : '' }}>{{ __('UTC / GMT') }}</option>
                                     </select>
                                 </div>
@@ -129,7 +129,7 @@
                                     <div class=\"form-text\">{!! __(\'Default: 78 jam. Berapa lama akun di <em>{{ __(\'awaiting benefits\') }}</em> {{ __(\'sebelum otomatis menjadi\') }} <em>{{ __(\'ready\') }}</em>.' !!}</div>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-bold small">{{ __('Simpan Akun → Siap Diajukan (Jam)') }}</label>
+                                    <label class="form-label fw-bold small">Simpan Akun → Siap Diajukan (Jam)</label>
                                     <div class="input-group">
                                         <span class="input-group-text bg-info-subtle border-0"><i class="fas fa-save text-info"></i></span>
                                         <input type="number" name="settings[github_pack.save_hours]" class="form-control" value="{{ $settings['github_pack.save_hours'] ?? 80 }}" min="1" max="720" required>
@@ -155,7 +155,7 @@
                     <div class="card-body p-4">
                         <form action="{{ route('admin.settings.update') }}" method="POST">
                             @csrf
-                            <h5 class="fw-bold mb-1 text-primary"><i class="fas fa-server me-2"></i>{{ __('Konfigurasi Server VPN (Xray)') }}</h5>
+                            <h5 class="fw-bold mb-1 text-primary"><i class="fas fa-server me-2"></i>Konfigurasi Server VPN (Xray)</h5>
                             <p class="text-muted small mb-4">{{ __('Atur koneksi SSH menuju server VPS VPN Anda. Web Jualan ini akan membuat akun VPN secara otomatis di server tersebut.') }}</p>
 
                             <div class="row g-3 mb-3">
@@ -176,7 +176,7 @@
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label fw-bold small">{{ __('Kunci SSH (Private Key)') }}</label>
+                                <label class="form-label fw-bold small">Kunci SSH (Private Key)</label>
                                 <textarea name="settings[vpn_server_ssh_key_raw]" class="form-control text-muted" rows="6" placeholder="{{ __('-----BEGIN OPENSSH PRIVATE KEY-----&#10;...&#10;-----END OPENSSH PRIVATE KEY-----') }}" style="font-family: monospace; font-size: 0.85rem;">{{ $settings['vpn_server_ssh_key_raw'] ?? '' }}</textarea>
                                 <div class="form-text">{!! 'Paste isi dari file <em>{{ __(\'Private Key\') }}</em> Anda (.pem / id_rsa) di sini. Kunci ini digunakan untuk autentikasi SSH ke VPS secara otomatis tanpa menggunakan password. Sistem akan menyimpan dan memanfaatkannya dengan aman.' !!}</div>
                             </div>
@@ -225,7 +225,7 @@
                                         @endif
                                     </div>
                                     <div class="col-sm-8">
-                                        <label class="form-label fw-bold small text-muted">{{ __('PAYLOAD EKSTRAK (RAW)') }}</label>
+                                        <label class="form-label fw-bold small text-muted">PAYLOAD EKSTRAK (RAW)</label>
                                         <textarea class="form-control form-control-sm text-muted mb-3" rows="3" readonly>{{ $qrisPayload }}</textarea>
                                         
                                         <div class="d-flex gap-2">
@@ -325,7 +325,7 @@
                             <form action="{{ route('admin.settings.run-held-funds') }}" method="POST" class="m-0" onsubmit="confirmAction(event, '{{ __('Jalankan pencarian dan pelepasan saldo garansi yang telah habis masa berlakunya sekarang?') }}');">
                                 @csrf
                                 <button type="submit" class="btn btn-warning rounded-pill w-100 fw-bold py-2 text-start px-3 d-flex justify-content-between align-items-center">
-                                    <span><i class="fas fa-hand-holding-usd me-2"></i>{{ __('Jalankan Pencairan Saldo Garansi (funds:release-held)') }}</span>
+                                    <span><i class="fas fa-hand-holding-usd me-2"></i>Jalankan Pencairan Saldo Garansi (funds:release-held)</span>
                                     <i class="fas fa-chevron-right"></i>
                                 </button>
                             </form>
@@ -333,7 +333,7 @@
                             <form action="{{ route('admin.settings.run-release-expired') }}" method="POST" class="m-0" onsubmit="confirmAction(event, '{{ __('Jalankan pelepasan stok dari pesanan yang kedaluwarsa sekarang?') }}');">
                                 @csrf
                                 <button type="submit" class="btn btn-outline-secondary rounded-pill w-100 fw-bold py-2 text-start px-3 d-flex justify-content-between align-items-center">
-                                    <span><i class="fas fa-hourglass-end me-2"></i>{{ __('Batalkan Pesanan Expired & Lepas Stok (orders:release-expired)') }}</span>
+                                    <span><i class="fas fa-hourglass-end me-2"></i>Batalkan Pesanan Expired & Lepas Stok (orders:release-expired)</span>
                                     <i class="fas fa-chevron-right"></i>
                                 </button>
                             </form>

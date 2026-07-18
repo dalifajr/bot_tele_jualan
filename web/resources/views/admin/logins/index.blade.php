@@ -46,7 +46,7 @@
                             <tr>
                                 <td class="px-4 text-secondary small">{{ $log->created_at->format('d M Y H:i') }}</td>
                                 <td>
-                                    @if($log->{{ __('is_successful)') }}
+                                    @if($log->is_successful)
                                         <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill"><i class="fas fa-check-circle me-1"></i>{{ __('Berhasil') }}</span>
                                     @else
                                         <span class="badge bg-danger bg-opacity-10 text-danger px-3 py-2 rounded-pill"><i class="fas fa-times-circle me-1"></i>{{ __('Gagal') }}</span>
@@ -118,7 +118,7 @@
                             <tr>
                                 <td class="px-4 fw-bold text-muted">{{ $login->token }}</td>
                                 <td>
-                                    @if($login->{{ __('status === \'used\')') }}
+                                    @if($login->status === 'used')
                                         <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill">{{ __('Digunakan') }}</span>
                                     @elseif($login->status === 'pending')
                                         <span class="badge bg-warning bg-opacity-10 text-warning px-3 py-2 rounded-pill">{{ __('Menunggu Verifikasi') }}</span>

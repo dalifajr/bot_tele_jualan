@@ -53,7 +53,7 @@
                         <span class="text-muted small d-block mb-2">{{ __('— ATAU —') }}</span>
                         <div class="d-grid gap-2">
                             <button id="pay-button" class="btn btn-success rounded-pill py-2 fw-bold">
-                                <i class="fas fa-credit-card me-1"></i> {{ __('Bayar Otomatis (Midtrans)') }}
+                                <i class="fas fa-credit-card me-1"></i> Bayar Otomatis (Midtrans)
                             </button>
                         </div>
                     </div>

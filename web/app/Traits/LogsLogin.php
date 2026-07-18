@@ -8,7 +8,7 @@ use App\Models\LoginLog;
 
 trait LogsLogin
 {
-    protected function recordLoginLog(Request $request, $loginValue, $isSuccessful)
+    protected function recordLoginLog(Request $request, $loginValue, $isSuccessful, $forcedBrowser = null)
     {
         $ip = $request->ip();
         $userAgent = $request->header('User-Agent');
@@ -19,11 +19,19 @@ trait LogsLogin
         }
 
         $browser = 'Unknown';
-        if (preg_match('/Telegram/i', $userAgent)) $browser = 'Telegram Browser';
-        elseif (preg_match('/Edge/i', $userAgent)) $browser = 'Edge';
-        elseif (preg_match('/Chrome/i', $userAgent)) $browser = 'Chrome';
-        elseif (preg_match('/Firefox/i', $userAgent)) $browser = 'Firefox';
-        elseif (preg_match('/Safari/i', $userAgent)) $browser = 'Safari';
+        if ($forcedBrowser) {
+            $browser = $forcedBrowser;
+        } elseif (preg_match('/Telegram/i', $userAgent)) {
+            $browser = 'Telegram Browser';
+        } elseif (preg_match('/Edge/i', $userAgent)) {
+            $browser = 'Edge';
+        } elseif (preg_match('/Chrome/i', $userAgent)) {
+            $browser = 'Chrome';
+        } elseif (preg_match('/Firefox/i', $userAgent)) {
+            $browser = 'Firefox';
+        } elseif (preg_match('/Safari/i', $userAgent)) {
+            $browser = 'Safari';
+        }
 
         $location = 'Local / Unknown';
         if ($ip && $ip !== '127.0.0.1' && $ip !== '::1' && !str_starts_with($ip, '192.168.') && !str_starts_with($ip, '10.')) {

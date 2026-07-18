@@ -113,13 +113,13 @@
             <div class="card-body p-4">
                 <h6 class="fw-bold mb-3"><i class="fas fa-gavel text-primary me-2"></i>{{ __('Resolusi Tiket') }}</h6>
                 
-                @if($complaint->status === 'new' || $complaint->{{ __('status === \'review\')') }}
+                @if($complaint->status === 'new' || $complaint->status === 'review')
                     <div class="alert alert-warning small">
                         {{ __('Komplain Anda sedang ditinjau oleh penjual. Harap menunggu tanggapan.') }}
                     </div>
                 @endif
 
-                @if($complaint->status === 'rejected' && $complaint->rejected_reason
+                @if($complaint->status === 'rejected' && $complaint->rejected_reason)
                     <div class="alert alert-danger small mb-3">
                         <strong>{{ __('Klaim Ditolak:') }}</strong><br>
                         {{ $complaint->rejected_reason }}
@@ -133,9 +133,9 @@
                     </div>
                 @endif
 
-                @if(in_array($complaint->{{ __('status, [\'done\', \'rejected\', \'refund_requested\']))') }}
+                @if(in_array($complaint->status, ['done', 'rejected', 'refund_requested']))
                     <hr>
-                    @if($complaint->{{ __('reopen_count') }} < 3)
+                    @if($complaint->reopen_count < 3)
                         <div class="text-center mt-3">
                             <p class="small text-muted mb-2">Masih memiliki kendala dengan pesanan ini? (Sisa kesempatan: {{ 3 - $complaint->reopen_count }})</p>
                             <form action="{{ route('customer.complaints.reopen', $complaint->id) }}" method="POST">
@@ -165,7 +165,7 @@
                     <span class="text-muted">{{ __('Pembaruan Terakhir') }}</span>
                     <span class="text-dark">{{ $complaint->updated_at ? $complaint->updated_at->format('d M Y H:i') : '-' }}</span>
                 </div>
-                @if($complaint->closed_at
+                @if($complaint->closed_at)
                 <div class="d-flex justify-content-between">
                     <span class="text-muted">{{ __('Ditutup Pada') }}</span>
                     <span class="text-dark">{{ $complaint->closed_at->format('d M Y H:i') }}</span>

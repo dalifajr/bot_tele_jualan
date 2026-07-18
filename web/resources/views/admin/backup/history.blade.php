@@ -40,7 +40,7 @@
     </li>
     <li class="nav-item">
         <a class="nav-link text-secondary" href="{{ route('admin.backup.restore.show') }}">
-            <i class="fas fa-undo me-1"></i> {{ __('Pemulihan Data (Restore)') }}
+            <i class="fas fa-undo me-1"></i> Pemulihan Data (Restore)
         </a>
     </li>
     <li class="nav-item">

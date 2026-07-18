@@ -10,7 +10,7 @@
         <div class="col-md-4 border-end d-flex flex-column h-100 {{ $selectedContact ? 'd-none d-md-flex' : '' }}" style="background-color: var(--bs-body-bg);">
             <div class="p-3 border-bottom d-flex align-items-center justify-content-between">
                 <h5 class="fw-bold mb-0"><i class="fas fa-comments text-primary me-2"></i>{{ __('Obrolan Saya') }}</h5>
-                @if(in_array(Auth::user()->{{ __('role, [\'admin\', \'seller\']))') }}
+                @if(in_array(Auth::user()->role, ['admin', 'seller']))
                     <button class="btn btn-sm btn-primary rounded-pill px-3" style="font-size: 0.8rem;" data-bs-toggle="modal" data-bs-target="#startChatModal">
                         <i class="fas fa-plus me-1"></i>{{ __('Mulai Chat') }}
                     </button>
@@ -28,7 +28,7 @@
                                 <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold small" style="width: 42px; height: 42px; min-width: 42px;">
                                     {{ strtoupper(substr($contact->full_name ?? $contact->username, 0, 1)) }}
                                 </div>
-                                @if($contact->{{ __('isOnline())') }}
+                                @if($contact->isOnline())
                                     <span class="position-absolute bottom-0 end-0 bg-success border border-white border-2 rounded-circle" style="width: 12px; height: 12px;" title="{{ __('Online') }}"></span>
                                 @endif
                             </div>
@@ -39,7 +39,7 @@
                                 </div>
                                 <div class="d-flex justify-content-between align-items-center">
                                     <small class="text-dark fw-bold text-truncate d-inline-block w-75">{{ $contact->last_message ?: 'Kirim pesan pertama Anda...' }}</small>
-                                    @if($contact->{{ __('last_message_time)') }}
+                                    @if($contact->last_message_time)
                                         <span class="text-muted" style="font-size: 0.7rem;">{{ $contact->last_message_time->format('H:i') }}</span>
                                     @endif
                                 </div>
@@ -54,14 +54,14 @@
                                 <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold small" style="width: 42px; height: 42px; min-width: 42px;">
                                     {{ strtoupper(substr($contact->full_name ?? $contact->username, 0, 1)) }}
                                 </div>
-                                @if($contact->{{ __('isOnline())') }}
+                                @if($contact->isOnline())
                                     <span class="position-absolute bottom-0 end-0 bg-success border border-white border-2 rounded-circle" style="width: 12px; height: 12px;" title="{{ __('Online') }}"></span>
                                 @endif
                             </div>
                             <div class="flex-grow-1 overflow-hidden">
                                 <div class="d-flex justify-content-between align-items-center mb-1">
                                     <span class="fw-bold small text-dark">{{ Str::limit($contact->full_name ?? $contact->username, 16) }}</span>
-                                    @if($contact->{{ __('last_message_time)') }}
+                                    @if($contact->last_message_time)
                                         <span class="text-muted" style="font-size: 0.7rem;">{{ $contact->last_message_time->format('H:i') }}</span>
                                     @endif
                                 </div>
@@ -161,7 +161,7 @@
 @endsection
 
 @push('modals')
-@if(in_array(Auth::user()->{{ __('role, [\'admin\', \'seller\']))') }}
+@if(in_array(Auth::user()->role, ['admin', 'seller']))
 <!-- Start Chat Modal -->
 <div class="modal fade" id="startChatModal" tabindex="-1" aria-labelledby="startChatModalLabel" aria-hidden="true" style="z-index: 1060;">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
@@ -448,7 +448,7 @@
 </script>
 @endif
 
-@if(in_array(Auth::user()->{{ __('role, [\'admin\', \'seller\']))') }}
+@if(in_array(Auth::user()->role, ['admin', 'seller']))
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const userSearchInput = document.getElementById('userSearchInput');

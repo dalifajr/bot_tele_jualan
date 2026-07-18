@@ -112,7 +112,7 @@
         <div class="card shadow-sm checker-card h-100">
             <div class="card-body p-4 d-flex flex-column">
                 <h6 class="fw-bold mb-3">
-                    <i class="fas fa-paste text-danger me-2"></i>{{ __('2. Proses Email Mati (Die)') }}
+                    <i class="fas fa-paste text-danger me-2"></i>2. Proses Email Mati (Die)
                 </h6>
                 <div class="flex-grow-1 mb-3">
                     <textarea id="die-emails-textarea" class="form-control" rows="8" 
@@ -347,7 +347,7 @@
         
         const detailText = r.stock_id 
             ? `<span class="text-success fw-bold"><i class="fas fa-check-circle me-1"></i>Terhubung ke Stok (ID: ${r.stock_id})</span>`
-            : `<span class="text-muted"><i class="fas fa-exclamation-circle me-1"></i>{{ __('Manual (Non-Stok)') }}</span>`;
+            : `<span class="text-muted"><i class="fas fa-exclamation-circle me-1"></i>Manual (Non-Stok)</span>`;
 
         row.innerHTML = `
             <td class="px-4">
@@ -431,7 +431,7 @@
                 <p class="small text-muted mb-3">${stockIds.length} akun stok akan diupdate</p>
                 <select id="swal-stock-status" class="form-select">
                     <option value="ready">{{ __('Ready') }}</option>
-                    @if(Auth::user()->{{ __('role === \'admin\')') }}
+                    @if(Auth::user()->role === 'admin')
                     <option value="awaiting_benefits">{{ __('Awaiting Benefits') }}</option>
                     @endif
                     <option value="saved_for_verification">{{ __('Simpan Akun') }}</option>

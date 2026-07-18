@@ -114,7 +114,7 @@
                             </div>
                         </td>
                         <td>
-                            @if($seller->{{ __('is_suspended)') }}
+                            @if($seller->is_suspended)
                                 <span class="badge bg-danger-subtle text-danger rounded-pill px-2"><i class="fas fa-ban me-1"></i>{{ __('Ditangguhkan') }}</span>
                             @else
                                 <span class="badge bg-success-subtle text-success rounded-pill px-2"><i class="fas fa-check me-1"></i>{{ __('Aktif') }}</span>
@@ -146,11 +146,11 @@
                                           stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
                                 </svg>
                                 <div style="flex-shrink: 0;">
-                                    @if($seller->{{ __('trend_direction === \'up\')') }}
+                                    @if($seller->trend_direction === 'up')
                                         <span class="badge bg-success-subtle text-success rounded-pill" style="font-size: 0.7rem; white-space: nowrap;">
                                             <i class="fas fa-arrow-up me-1"></i>+{{ $seller->percentage_change }}%
                                         </span>
-                                    @elseif($seller->{{ __('trend_direction === \'down\')') }}
+                                    @elseif($seller->trend_direction === 'down')
                                         <span class="badge bg-danger-subtle text-danger rounded-pill" style="font-size: 0.7rem; white-space: nowrap;">
                                             <i class="fas fa-arrow-down me-1"></i>{{ $seller->percentage_change }}%
                                         </span>
@@ -184,7 +184,7 @@
                                     </li>
                                     <li><hr class="dropdown-divider"></li>
                                     
-                                    @if($seller->{{ __('is_suspended)') }}
+                                    @if($seller->is_suspended)
                                         <li>
                                             <form action="{{ route('admin.users.unsuspend', $seller->id) }}" method="POST">
                                                 @csrf
@@ -261,22 +261,22 @@
                     <div class="mb-3">
                         <label class="form-label text-muted small fw-bold">{{ __('Role Akses') }}</label>
                         <select name="role" id="role_select_{{ $user->id }}" class="form-select" onchange="toggleSellerFields({{ $user->id }})" required>
-                            <option value="customer" {{ $user->role === 'customer' ? 'selected' : '' }}>{{ __('Customer (Biasa)') }}</option>
-                            <option value="seller" {{ $user->role === 'seller' ? 'selected' : '' }}>{{ __('Seller (Penjual Mitra)') }}</option>
-                            <option value="admin" {{ $user->role === 'admin' ? 'selected' : '' }}>{{ __('Admin (Penuh)') }}</option>
+                            <option value="customer" {{ $user->role === 'customer' ? 'selected' : '' }}>Customer (Biasa)</option>
+                            <option value="seller" {{ $user->role === 'seller' ? 'selected' : '' }}>Seller (Penjual Mitra)</option>
+                            <option value="admin" {{ $user->role === 'admin' ? 'selected' : '' }}>Admin (Penuh)</option>
                         </select>
                     </div>
 
                     <div id="seller_fields_{{ $user->id }}" class="{{ $user->role === 'seller' ? '' : 'd-none' }}">
                         <div class="mb-3">
-                            <label class="form-label text-muted small fw-bold">{{ __('Saldo Dompet (Wallet Balance)') }}</label>
+                            <label class="form-label text-muted small fw-bold">Saldo Dompet (Wallet Balance)</label>
                             <div class="input-group">
                                 <span class="input-group-text bg-light text-muted">Rp</span>
                                 <input type="number" name="wallet_balance" class="form-control" value="{{ $user->wallet_balance ?? 0 }}" min="0">
                             </div>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label text-muted small fw-bold">{{ __('Persentase Potongan Platform (Fee %)') }}</label>
+                            <label class="form-label text-muted small fw-bold">Persentase Potongan Platform (Fee %)</label>
                             <div class="input-group">
                                 <input type="number" name="platform_fee_percent" class="form-control" value="{{ $user->platform_fee_percent ?? 10 }}" min="0" max="100">
                                 <span class="input-group-text bg-light text-muted">%</span>
@@ -284,7 +284,7 @@
                             <div class="form-text small text-muted">{{ __('Komisi bagi hasil yang dipotong oleh platform saat transaksi lunas.') }}</div>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label text-muted small fw-bold">{{ __('Jam Karantina Default (Save Hours)') }}</label>
+                            <label class="form-label text-muted small fw-bold">Jam Karantina Default (Save Hours)</label>
                             <div class="input-group">
                                 <input type="number" name="seller_save_hours" class="form-control" value="{{ $user->seller_save_hours ?? 80 }}" min="0">
                                 <span class="input-group-text bg-light text-muted">{{ __('jam') }}</span>

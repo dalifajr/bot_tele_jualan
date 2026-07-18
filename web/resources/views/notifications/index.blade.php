@@ -41,13 +41,13 @@
                                         {{ $notification->data['message'] ?? '' }}
                                     </p>
                                     
-                                    @if(($notification->data['type'] ?? '') === 'login_gagal' && isset($notification->{{ __('data[\'ip_address\']))') }}
+                                    @if(($notification->data['type'] ?? '') === 'login_gagal' && isset($notification->data['ip_address']))
                                     <div class="mt-2 mb-2" onclick="event.stopPropagation(); event.preventDefault();">
                                         <form action="{{ route('profile.logins.block-ip') }}" method="POST" class="d-inline">
                                             @csrf
                                             <input type="hidden" name="ip_address" value="{{ $notification->data['ip_address'] }}">
                                             <button type="submit" class="btn btn-sm btn-danger rounded-pill px-3" style="font-size: 0.8rem;">
-                                                <i class="fas fa-ban me-1"></i>{{ __('Bukan Saya (Blokir IP)') }}
+                                                <i class="fas fa-ban me-1"></i>Bukan Saya (Blokir IP)
                                             </button>
                                         </form>
                                     </div>
@@ -59,7 +59,7 @@
                                 </div>
                             </div>
                             
-                            @if(!$notification->{{ __('read_at)') }}
+                            @if(!$notification->read_at)
                                 <span class="badge bg-primary rounded-pill">{{ __('Baru') }}</span>
                             @endif
                         </div>
@@ -74,7 +74,7 @@
             </div>
         </div>
         
-        @if($notifications->{{ __('hasPages())') }}
+        @if($notifications->hasPages())
         <div class="card-footer bg-white border-top p-3 d-flex justify-content-center">
             {{ $notifications->links('pagination::bootstrap-5') }}
         </div>

@@ -13,7 +13,7 @@
             </div>
             <h4 class="fw-bold mb-1">{{ Auth::user()->full_name ?? Auth::user()->username ?? 'User' }}</h4>
             <p class="opacity-75 mb-0">
-                @if(Auth::user()->username
+                @if(Auth::user()->username)
                     <span>@{{ Auth::user()->username }}</span>
                 @endif
             </p>
@@ -72,7 +72,7 @@
         {{-- Set / Update Password --}}
         <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
             <div class="card-header bg-transparent border-0 pt-4 px-4">
-                <h5 class="fw-bold mb-0"><i class="fas fa-lock text-primary me-2"></i>{{ __('Atur Sandi (Password)') }}</h5>
+                <h5 class="fw-bold mb-0"><i class="fas fa-lock text-primary me-2"></i>Atur Sandi (Password)</h5>
             </div>
             <div class="card-body px-4 pb-4">
                 <p class="small text-muted mb-3">
@@ -161,7 +161,7 @@
                                 <i class="fas fa-shield-alt {{ Auth::user()->two_factor_enabled ? 'text-success' : 'text-secondary' }}"></i>
                             </div>
                             <div>
-                                <div class="fw-bold {{ Auth::user()->two_factor_enabled ? 'text-success' : 'text-secondary' }}">{{ __('Verifikasi Dua Langkah (2FA)') }}</div>
+                                <div class="fw-bold {{ Auth::user()->two_factor_enabled ? 'text-success' : 'text-secondary' }}">Verifikasi Dua Langkah (2FA)</div>
                                 <small class="text-muted">{{ __('Kirim OTP via Telegram saat login (Status:') }} <strong>{{ Auth::user()->two_factor_enabled ? 'Aktif' : 'Nonaktif' }}</strong>)</small>
                             </div>
                             <span class="badge {{ Auth::user()->two_factor_enabled ? 'bg-success' : 'bg-secondary' }} rounded-pill ms-auto">

@@ -104,7 +104,7 @@
         </div>
         <div class="row g-2 align-items-end">
             <div class="col">
-                <label class="form-label text-muted small fw-bold mb-1">{{ __('Cookie Value') }} <code class="text-muted">{{ __('(user_session / _gh_sess)') }}</code></label>
+                <label class="form-label text-muted small fw-bold mb-1">{{ __('Cookie Value') }} <code class="text-muted">(user_session / _gh_sess)</code></label>
                 <input type="text" id="github-cookie-input" class="form-control"
                        placeholder="{{ __('Paste cookie value dari browser...') }}" value="{{ $cookieValid ? '••••••••••••••••••••••••••' : '' }}" {{ $cookieValid ? 'disabled' : '' }}>
             </div>
@@ -230,8 +230,8 @@
                     <input type="range" class="form-range" id="delay-slider" min="1" max="10" value="2" step="1"
                            oninput="document.getElementById('delay-value').textContent = this.value">
                     <div class="d-flex justify-content-between">
-                        <small class="text-muted">{{ __('1s (cepat)') }}</small>
-                        <small class="text-muted">{{ __('10s (aman)') }}</small>
+                        <small class="text-muted">1s (cepat)</small>
+                        <small class="text-muted">10s (aman)</small>
                     </div>
                 </div>
 
@@ -340,7 +340,7 @@
 
             if (data.valid) {
                 indicator.className = 'cookie-status-indicator valid';
-                statusText.innerHTML = '<span class="text-success">{{ __('Login sebagai:') }} <strong>{{ __('\' + data.logged_in_as + \'') }}</strong></span>';
+                statusText.innerHTML = '<span class="text-success">{{ __('Login sebagai:') }} <strong>' + data.logged_in_as + '</strong></span>';
                 cookieInput.value = '••••••••••••••••••••••••••';
                 cookieInput.disabled = true;
 
@@ -354,7 +354,7 @@
                 Swal.fire({ icon: 'success', title: 'Cookie Valid!', text: data.message, timer: 2000, showConfirmButton: false });
             } else {
                 indicator.className = 'cookie-status-indicator invalid';
-                statusText.innerHTML = '<span class="text-danger">{{ __('\' + data.message + \'') }}</span>';
+                statusText.innerHTML = '<span class="text-danger">' + data.message + '</span>';
                 Swal.fire({ icon: 'error', title: 'Cookie Invalid', text: data.message, confirmButtonColor: '#dc3545' });
             }
         })

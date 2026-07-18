@@ -32,7 +32,7 @@
             <div class="col-lg-1 col-md-12">
                 <div class="d-flex gap-2">
                     <button type="submit" class="btn btn-primary w-100 rounded-pill" title="{{ __('Terapkan Filter') }}"><i class="fas fa-filter"></i></button>
-                    @if(request()->filled('search') || request()->filled('start_date') || request()->{{ __('filled(\'end_date\'))') }}
+                    @if(request()->filled('search') || request()->filled('start_date') || request()->filled('end_date'))
                         <a href="{{ route('admin.audit-logs.index') }}" class="btn btn-outline-secondary rounded-pill" title="{{ __('Reset Filter') }}"><i class="fas fa-undo"></i></a>
                     @endif
                 </div>
@@ -49,7 +49,7 @@
                 <thead>
                     <tr class="text-secondary small border-bottom">
                         <th class="px-4 py-3 border-0" style="width: 180px;">{{ __('Waktu') }}</th>
-                        <th class="py-3 border-0" style="width: 180px;">{{ __('Pelaku (Actor)') }}</th>
+                        <th class="py-3 border-0" style="width: 180px;">Pelaku (Actor)</th>
                         <th class="py-3 border-0" style="width: 180px;">{{ __('Aksi') }}</th>
                         <th class="py-3 border-0">{{ __('Detail Perubahan') }}</th>
                     </tr>
@@ -59,7 +59,7 @@
                     <tr>
                         <td class="px-4 text-secondary small">{{ \Carbon\Carbon::parse($log->created_at)->format('d M Y H:i:s') }}</td>
                         <td>
-                            @if($log->{{ __('actor)') }}
+                            @if($log->actor)
                             <div class="d-flex align-items-center gap-2">
                                 <div class="avatar bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px; font-size: 0.8rem;">
                                     {{ strtoupper(substr($log->actor->username ?? 'U', 0, 1)) }}
@@ -99,7 +99,7 @@
         @endif
     </div>
     
-    @if($logs->{{ __('hasPages())') }}
+    @if($logs->hasPages())
     <div class="card-footer bg-transparent border-0 px-4 py-3">
         {{ $logs->links() }}
     </div>

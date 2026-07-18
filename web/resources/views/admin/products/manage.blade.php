@@ -37,7 +37,7 @@
 
 <div class="card border-0 shadow-sm overflow-hidden mb-4" style="border-radius: 16px;">
     <div class="card-body p-4">
-        <h5 class="fw-bold mb-4 border-bottom pb-3"><i class="fas fa-cogs text-secondary me-2"></i>{{ __('Aksi Katalog (Mirip Bot)') }}</h5>
+        <h5 class="fw-bold mb-4 border-bottom pb-3"><i class="fas fa-cogs text-secondary me-2"></i>Aksi Katalog (Mirip Bot)</h5>
         
         <div class="row g-3">
             <div class="col-md-4 col-sm-6">

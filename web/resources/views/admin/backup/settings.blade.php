@@ -40,7 +40,7 @@
     </li>
     <li class="nav-item">
         <a class="nav-link text-secondary" href="{{ route('admin.backup.restore.show') }}">
-            <i class="fas fa-undo me-1"></i> {{ __('Pemulihan Data (Restore)') }}
+            <i class="fas fa-undo me-1"></i> Pemulihan Data (Restore)
         </a>
     </li>
     <li class="nav-item">
@@ -70,9 +70,9 @@
                     <div class="mb-4">
                         <label class="form-label fw-bold small text-muted">{{ __('INTERVAL JADWAL BACKUP') }}</label>
                         <select name="auto_backup_schedule" class="form-select">
-                            <option value="daily" {{ $autoBackupSchedule === 'daily' ? 'selected' : '' }}>{{ __('Setiap Hari (Jam 00:00 WIB)') }}</option>
-                            <option value="weekly" {{ $autoBackupSchedule === 'weekly' ? 'selected' : '' }}>{{ __('Setiap Minggu (Hari Minggu)') }}</option>
-                            <option value="monthly" {{ $autoBackupSchedule === 'monthly' ? 'selected' : '' }}>{{ __('Setiap Bulan (Tanggal 1)') }}</option>
+                            <option value="daily" {{ $autoBackupSchedule === 'daily' ? 'selected' : '' }}>Setiap Hari (Jam 00:00 WIB)</option>
+                            <option value="weekly" {{ $autoBackupSchedule === 'weekly' ? 'selected' : '' }}>Setiap Minggu (Hari Minggu)</option>
+                            <option value="monthly" {{ $autoBackupSchedule === 'monthly' ? 'selected' : '' }}>Setiap Bulan (Tanggal 1)</option>
                         </select>
                     </div>
 
@@ -129,7 +129,7 @@
             <div class="card-body p-4">
                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
                     <div>
-                        <h5 class="fw-bold mb-2 text-danger"><i class="fas fa-trash-alt me-2"></i>{{ __('Kosongkan Seluruh Data (Wipe Database)') }}</h5>
+                        <h5 class="fw-bold mb-2 text-danger"><i class="fas fa-trash-alt me-2"></i>Kosongkan Seluruh Data (Wipe Database)</h5>
                         <p class="text-muted small mb-0">{{ __('Tindakan ini akan mengosongkan seluruh tabel database (produk, stok, pesanan, riwayat, log, dll) secara permanen. Pengaturan sistem dan akun administrator Anda akan tetap dipertahankan agar Anda tidak terputus dari panel admin ini.') }}</p>
                     </div>
                     <div>

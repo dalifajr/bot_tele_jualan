@@ -16,7 +16,7 @@
                         <h3 class="fw-bold mb-1">{{ $product->name }}</h3>
                         <span class="text-muted">ID: #{{ $product->id }}</span>
                     </div>
-                    @if($product->{{ __('is_vpn)') }}
+                    @if($product->is_vpn)
                         <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-2">
                             <i class="fas fa-network-wired me-1"></i>VPN Produk ({{ strtoupper($product->vpn_protocol) }})
                         </span>
@@ -35,7 +35,7 @@
 
                 <div class="mb-4">
                     <span class="text-muted small d-block mb-1">{{ __('Seller') }}</span>
-                    @if($product->{{ __('creator)') }}
+                    @if($product->creator)
                         <h6 class="fw-bold"><i class="fas fa-store text-info me-1"></i>{{ $product->creator->full_name ?? $product->creator->username }}</h6>
                     @else
                         <h6 class="fw-bold"><i class="fas fa-store text-primary me-1"></i>{{ __('Admin Utama') }}</h6>
@@ -79,7 +79,7 @@
                             </div>
                             <span class="text-muted small" style="font-size: 0.75rem;">{{ $rev->created_at->format('d M Y') }}</span>
                         </div>
-                        @if($rev->comment
+                        @if($rev->comment)
                             <p class="mb-0 text-secondary small italic">"{{ $rev->comment }}"</p>
                         @endif
                     </div>
@@ -113,7 +113,7 @@
                     <form action="{{ route('checkout.store', $product->id) }}" method="POST">
                         @csrf
                         
-                        @if($product->{{ __('is_vpn)') }}
+                        @if($product->is_vpn)
                             <div class="bg-primary-subtle p-3 rounded-3 mb-3">
                                 <h6 class="fw-bold text-primary mb-2"><i class="fas fa-user-shield me-2"></i>{{ __('Konfigurasi Akun VPN') }}</h6>
                                 <p class="text-muted small mb-3">{{ __('Sistem akan otomatis membuatkan akun VPN Anda.') }}</p>
@@ -123,7 +123,7 @@
                                     <input type="text" name="vpn_username" class="form-control form-control-sm" required placeholder="{{ __('Contoh: user123') }}" pattern="[a-zA-Z0-9_-]+" title="{{ __('Hanya huruf, angka, dash, dan underscore') }}">
                                 </div>
                                 
-                                @if($product->{{ __('vpn_protocol === \'ssh\')') }}
+                                @if($product->vpn_protocol === 'ssh')
                                 <div class="mb-2">
                                     <label class="form-label text-dark small fw-bold">{{ __('Password SSH') }} <span class="text-danger">*</span></label>
                                     <input type="password" name="vpn_password" class="form-control form-control-sm" required placeholder="{{ __('Masukkan password') }}">
@@ -141,7 +141,7 @@
                             <i class="fas fa-shopping-bag me-2"></i>{{ __('Beli Sekarang (via Website)') }}
                         </button>
                         
-                        @if(!$product->{{ __('is_vpn)') }}
+                        @if(!$product->is_vpn)
                         <button type="submit" formaction="{{ route('cart.add', $product->id) }}" class="btn btn-outline-primary w-100 rounded-pill py-3 fw-bold">
                             <i class="fas fa-cart-plus me-2"></i>{{ __('Tambah ke Keranjang') }}
                         </button>

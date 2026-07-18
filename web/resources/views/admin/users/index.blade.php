@@ -16,7 +16,7 @@
     <div class="col-xl col-md-3 col-6">
         <div class="card border-0 shadow-sm h-100" style="border-radius: 16px;">
             <div class="card-body p-3 text-center">
-                <div class="text-secondary small fw-bold mb-1">{{ __('Customer (Pelanggan)') }}</div>
+                <div class="text-secondary small fw-bold mb-1">Customer (Pelanggan)</div>
                 <h3 class="fw-bold mb-0 text-primary">{{ $customerCount }}</h3>
             </div>
         </div>
@@ -24,7 +24,7 @@
     <div class="col-xl col-md-3 col-6">
         <div class="card border-0 shadow-sm h-100" style="border-radius: 16px;">
             <div class="card-body p-3 text-center">
-                <div class="text-secondary small fw-bold mb-1">{{ __('Seller (Penjual Mitra)') }}</div>
+                <div class="text-secondary small fw-bold mb-1">Seller (Penjual Mitra)</div>
                 <h3 class="fw-bold mb-0 text-info">{{ $sellerCount }}</h3>
             </div>
         </div>
@@ -59,9 +59,9 @@
             <div class="col-md-3 col-6">
                 <select name="role" class="form-select border-0 bg-light">
                     <option value="">{{ __('Semua Role / Status') }}</option>
-                    <option value="customer" {{ request('role') === 'customer' ? 'selected' : '' }}>{{ __('Customer (Biasa)') }}</option>
-                    <option value="seller" {{ request('role') === 'seller' ? 'selected' : '' }}>{{ __('Seller (Penjual Mitra)') }}</option>
-                    <option value="admin" {{ request('role') === 'admin' ? 'selected' : '' }}>{{ __('Admin (Penuh)') }}</option>
+                    <option value="customer" {{ request('role') === 'customer' ? 'selected' : '' }}>Customer (Biasa)</option>
+                    <option value="seller" {{ request('role') === 'seller' ? 'selected' : '' }}>Seller (Penjual Mitra)</option>
+                    <option value="admin" {{ request('role') === 'admin' ? 'selected' : '' }}>Admin (Penuh)</option>
                     <option value="suspended" {{ request('role') === 'suspended' ? 'selected' : '' }}>{{ __('Suspended') }}</option>
                 </select>
             </div>
@@ -111,7 +111,7 @@
                         <td class="text-muted small">{{ $user->email ?? '-' }}</td>
                         <td>
                             <div class="mb-1">
-                                @if($user->{{ __('is_suspended)') }}
+                                @if($user->is_suspended)
                                     <span class="badge bg-danger-subtle text-danger rounded-pill px-2"><i class="fas fa-ban me-1"></i>{{ __('Ditangguhkan') }}</span>
                                 @else
                                     <span class="badge bg-success-subtle text-success rounded-pill px-2"><i class="fas fa-check me-1"></i>{{ __('Aktif') }}</span>
@@ -144,7 +144,7 @@
                                     </li>
                                     <li><hr class="dropdown-divider"></li>
                                     
-                                    @if($user->{{ __('is_suspended)') }}
+                                    @if($user->is_suspended)
                                         <li>
                                             <form action="{{ route('admin.users.unsuspend', $user->id) }}" method="POST">
                                                 @csrf
@@ -220,22 +220,22 @@
                     <div class="mb-3">
                         <label class="form-label text-muted small fw-bold">{{ __('Role Akses') }}</label>
                         <select name="role" id="role_select_{{ $user->id }}" class="form-select" onchange="toggleSellerFields({{ $user->id }})" required>
-                            <option value="customer" {{ $user->role === 'customer' ? 'selected' : '' }}>{{ __('Customer (Biasa)') }}</option>
-                            <option value="seller" {{ $user->role === 'seller' ? 'selected' : '' }}>{{ __('Seller (Penjual Mitra)') }}</option>
-                            <option value="admin" {{ $user->role === 'admin' ? 'selected' : '' }}>{{ __('Admin (Penuh)') }}</option>
+                            <option value="customer" {{ $user->role === 'customer' ? 'selected' : '' }}>Customer (Biasa)</option>
+                            <option value="seller" {{ $user->role === 'seller' ? 'selected' : '' }}>Seller (Penjual Mitra)</option>
+                            <option value="admin" {{ $user->role === 'admin' ? 'selected' : '' }}>Admin (Penuh)</option>
                         </select>
                     </div>
 
                     <div id="seller_fields_{{ $user->id }}" class="{{ $user->role === 'seller' ? '' : 'd-none' }}">
                         <div class="mb-3">
-                            <label class="form-label text-muted small fw-bold">{{ __('Saldo Dompet (Wallet Balance)') }}</label>
+                            <label class="form-label text-muted small fw-bold">Saldo Dompet (Wallet Balance)</label>
                             <div class="input-group">
                                 <span class="input-group-text bg-light text-muted">Rp</span>
                                 <input type="number" name="wallet_balance" class="form-control" value="{{ $user->wallet_balance ?? 0 }}" min="0">
                             </div>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label text-muted small fw-bold">{{ __('Persentase Potongan Platform (Fee %)') }}</label>
+                            <label class="form-label text-muted small fw-bold">Persentase Potongan Platform (Fee %)</label>
                             <div class="input-group">
                                 <input type="number" name="platform_fee_percent" class="form-control" value="{{ $user->platform_fee_percent ?? 10 }}" min="0" max="100">
                                 <span class="input-group-text bg-light text-muted">%</span>
@@ -243,7 +243,7 @@
                             <div class="form-text small text-muted">{{ __('Komisi bagi hasil yang dipotong oleh platform saat transaksi lunas.') }}</div>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label text-muted small fw-bold">{{ __('Jam Karantina Default (Save Hours)') }}</label>
+                            <label class="form-label text-muted small fw-bold">Jam Karantina Default (Save Hours)</label>
                             <div class="input-group">
                                 <input type="number" name="seller_save_hours" class="form-control" value="{{ $user->seller_save_hours ?? 80 }}" min="0">
                                 <span class="input-group-text bg-light text-muted">{{ __('jam') }}</span>

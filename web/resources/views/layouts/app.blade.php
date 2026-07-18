@@ -116,7 +116,7 @@
     <div class="spinner"></div>
 </div>
 
-@if(session()->{{ __('has(\'admin_impersonator_id\'))') }}
+@if(session()->has('admin_impersonator_id'))
 <div class="bg-warning text-warning-emphasis py-2 px-4 d-flex justify-content-between align-items-center position-fixed w-100 shadow-sm" style="z-index: 1060; top: 0; left: 0; font-size: 0.9rem; height: 40px;">
     <div class="d-flex align-items-center gap-2">
         <i class="fas fa-user-secret"></i> 
@@ -188,13 +188,13 @@
                                 <div class="fw-bold mb-1" style="font-size: 0.9rem; color: var(--bs-heading-color);" data-pex="9c28hsh-21">{{ $notification->data['title'] ?? __('Notifikasi') }}</div>
                                 <div class="text-muted small" style="line-height: 1.4;" data-pex="9c28hsh-22">{{ $notification->data['message'] ?? '' }}</div>
                                 
-                                @if(($notification->data['type'] ?? '') === 'login_gagal' && isset($notification->{{ __('data[\'ip_address\']))') }}
+                                @if(($notification->data['type'] ?? '') === 'login_gagal' && isset($notification->data['ip_address']))
                                 <div class="mt-2" onclick="event.stopPropagation(); event.preventDefault();">
                                     <form action="{{ route('profile.logins.block-ip') }}" method="POST" class="d-inline">
                                         @csrf
                                         <input type="hidden" name="ip_address" value="{{ $notification->data['ip_address'] }}">
                                         <button type="submit" class="btn btn-sm btn-danger rounded-pill" style="font-size: 0.75rem;">
-                                            <i class="fas fa-ban me-1"></i>{{ __('Bukan Saya (Blokir)') }}
+                                            <i class="fas fa-ban me-1"></i>Bukan Saya (Blokir)
                                         </button>
                                     </form>
                                 </div>
@@ -366,7 +366,7 @@
                 </a>
             </div>
 
-            @if(Auth::user()->{{ __('role === \'admin\')') }}
+            @if(Auth::user()->role === 'admin')
             <div class="menu-group">
                 <div class="menu-header text-primary"><i class="fas fa-shield-alt me-1"></i> {{ __('Admin Panel') }}</div>
                 <a href="{{ route('admin.dashboard') }}" class="menu-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
@@ -444,7 +444,7 @@
             </div>
             @endif
 
-            @if(Auth::user()->{{ __('role === \'seller\')') }}
+            @if(Auth::user()->role === 'seller')
             <div class="menu-group">
                 <div class="menu-header text-info"><i class="fas fa-store me-1"></i> {{ __('Seller Portal') }}</div>
                 <a href="{{ route('seller.dashboard') }}" class="menu-item {{ request()->routeIs('seller.dashboard') ? 'active' : '' }}">
@@ -478,12 +478,12 @@
             @if(is_array(Auth::user()->allowed_tools) && count(Auth::user()->allowed_tools) > 0)
             <div class="menu-group">
                 <div class="menu-header text-success"><i class="fas fa-tools me-1"></i> {{ __('Tool') }}</div>
-                @if(in_array('github_checker', Auth::user()->{{ __('allowed_tools))') }}
+                @if(in_array('github_checker', Auth::user()->allowed_tools))
                 <a href="{{ route('admin.tools.github-checker') }}" class="menu-item {{ request()->routeIs('admin.tools.github-checker*') ? 'active' : '' }}">
                     <i class="fab fa-github"></i> {{ __('GitHub Live Checker') }}
                 </a>
                 @endif
-                @if(in_array('gmail_checker', Auth::user()->{{ __('allowed_tools))') }}
+                @if(in_array('gmail_checker', Auth::user()->allowed_tools))
                 <a href="{{ route('admin.tools.gmail-checker') }}" class="menu-item {{ request()->routeIs('admin.tools.gmail-checker*') ? 'active' : '' }}">
                     <i class="fas fa-envelope"></i> {{ __('Gmail Live Checker') }}
                 </a>

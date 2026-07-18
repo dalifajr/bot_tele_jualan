@@ -78,7 +78,7 @@
                     <div class="form-text small">{{ __('Minimal penarikan Rp 10.000. Maksimal sesuai saldo Anda.') }}</div>
                 </div>
 
-                @if($bankAccounts->isEmpty()
+                @if($bankAccounts->isEmpty())
                 <div class="alert alert-warning small rounded-4 p-3 mb-3">
                     <i class="fas fa-exclamation-triangle me-2"></i>
                     {{ __('Anda belum menyimpan rekening bank. Silakan simpan rekening bank terlebih dahulu di menu') }} <strong><a href="{{ route('seller.bank-accounts.index') }}">{{ __('Konfigurasi Rekening') }}</a></strong>.
@@ -95,12 +95,12 @@
                 </div>
                 @endif
 
-                <button type="submit" class="btn btn-primary rounded-pill w-100 py-2.5 fw-bold" {{ $user->{{ __('wallet_balance') }} < 10000 || $bankAccounts->isEmpty() ? 'disabled' : '' }}>
+                <button type="submit" class="btn btn-primary rounded-pill w-100 py-2.5 fw-bold" {{ $user->wallet_balance < 10000 || $bankAccounts->isEmpty() ? 'disabled' : '' }}>
                     <i class="fas fa-paper-plane me-1"></i> {{ __('Ajukan Penarikan Dana') }}
                 </button>
-                @if($user->{{ __('wallet_balance') }} < 10000)
+                @if($user->wallet_balance < 10000)
                     <div class="text-danger small mt-2 text-center"><i class="fas fa-exclamation-circle me-1"></i> {{ __('Saldo Anda belum mencukupi untuk melakukan penarikan.') }}</div>
-                @elseif($bankAccounts->isEmpty()
+                @elseif($bankAccounts->isEmpty())
                     <div class="text-danger small mt-2 text-center"><i class="fas fa-exclamation-circle me-1"></i> {{ __('Hubungkan rekening bank payout terlebih dahulu.') }}</div>
                 @endif
             </form>
@@ -245,7 +245,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-4 text-center">
-                @if($withdrawal->proof_image_path
+                @if($withdrawal->proof_image_path)
                     <img src="{{ asset($withdrawal->proof_image_path) }}" alt="Bukti Transfer Payout" class="img-fluid rounded-4 shadow-sm mb-3" style="max-height: 400px; object-fit: contain;">
                 @else
                     <p class="text-muted">{{ __('Bukti transfer belum diunggah oleh admin.') }}</p>

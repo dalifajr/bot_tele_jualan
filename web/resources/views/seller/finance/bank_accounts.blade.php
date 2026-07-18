@@ -51,7 +51,7 @@
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label text-muted small fw-bold">{{ __('Nama Pemilik Rekening (Sesuai Bank)') }}</label>
+                    <label class="form-label text-muted small fw-bold">Nama Pemilik Rekening (Sesuai Bank)</label>
                     <input type="text" name="account_holder" class="form-control" placeholder="{{ __('Contoh: Dzulfikri Alifajri') }}" required>
                 </div>
 

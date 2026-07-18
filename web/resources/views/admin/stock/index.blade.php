@@ -200,9 +200,9 @@
                         @endif
                         <td>{{ Str::limit($unit->product->name ?? 'Unknown', 25) }}</td>
                         <td>
-                            @if($unit->{{ __('uploader)') }}
+                            @if($unit->uploader)
                                 <span class="fw-bold text-dark">{{ $unit->uploader->full_name ?? $unit->uploader->username }}</span>
-                                @if($unit->uploader->{{ __('role)') }}
+                                @if($unit->uploader->role)
                                     <br><span class="badge bg-secondary-subtle text-secondary px-2 py-0.5 rounded-pill" style="font-size: 0.7rem; font-weight: normal;">{{ ucfirst($unit->uploader->role) }}</span>
                                 @endif
                             @else
@@ -211,7 +211,7 @@
                         </td>
                         <td class="fw-medium text-dark">{{ Str::limit($extractedUsername, 20) }}</td>
                         <td>
-                            @if($unit->github_joined_at
+                            @if($unit->github_joined_at)
                                 <span class="text-dark fw-semibold" title="{{ __('Berdasarkan check GitHub') }}">{{ $unit->umur_akun }}</span>
                             @else
                                 <span class="text-muted small" title="{{ __('Tanggal input stok') }}">{{ $unit->umur_akun }}</span>
@@ -222,7 +222,7 @@
                         <td>
                             @if($unit->order && $unit->order->customer)
                                 {{ $unit->order->customer->full_name ?? $unit->order->customer->username ?? 'Unknown User' }}
-                                @if($unit->order->customer->username
+                                @if($unit->order->customer->username)
                                     <br><small class="text-muted">{{ '@'.$unit->order->customer->username }}</small>
                                 @endif
                             @else
@@ -230,7 +230,7 @@
                             @endif
                         </td>
                         <td>
-                            @if($unit->order && $unit->order->customer
+                            @if($unit->order && $unit->order->customer)
                                 <code>{{ $unit->order->customer->telegram_id }}</code>
                             @else
                                 <span class="text-muted">-</span>
@@ -242,7 +242,7 @@
                         @else
                         <td><code class="text-dark bg-light px-2 py-1 rounded">{{ Str::limit($unit->content ?? $unit->raw_text, 20) }}</code></td>
                         <td>
-                            @if($unit->is_sold
+                            @if($unit->is_sold)
                                 <span class="badge bg-danger-subtle text-danger rounded-pill px-3">{{ __('Terjual') }}</span>
                             @else
                                 @php
@@ -275,7 +275,7 @@
                                     $verifyAt = $unit->created_at->addHours((int)$saveHours);
                                 }
                             @endphp
-                            @if($unit->stock_status === 'saved_ready_notified' || $verifyAt->isPast()
+                            @if($unit->stock_status === 'saved_ready_notified' || $verifyAt->isPast())
                                 <span class="text-success"><i class="fas fa-check-circle me-1"></i>{{ __('Siap Diajukan') }}</span>
                             @else
                                 <span class="verification-countdown" data-timestamp="{{ $verifyAt->timestamp }}" data-id="{{ $unit->id }}">
@@ -295,7 +295,7 @@
                                 <button class="btn btn-sm btn-light text-primary rounded-circle" data-bs-toggle="modal" data-bs-target="#moveStockModal{{ $unit->id }}" title="{{ __('Pindahkan / Ubah Status') }}">
                                     <i class="fas fa-exchange-alt"></i>
                                 </button>
-                                @if(!$unit->is_sold
+                                @if(!$unit->is_sold)
                                 <button class="btn btn-sm btn-light text-danger rounded-circle" data-bs-toggle="modal" data-bs-target="#deleteStockModal{{ $unit->id }}" title="{{ __('Hapus') }}">
                                     <i class="fas fa-trash-alt"></i>
                                 </button>

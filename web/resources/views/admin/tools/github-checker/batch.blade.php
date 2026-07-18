@@ -174,7 +174,7 @@
                         <i class="fas fa-download me-1"></i>{{ __('Export') }}
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item" href="#" onclick="exportResults('all')"><i class="fas fa-file-excel me-2 text-success"></i>{{ __('Semua Hasil (.xlsx)') }}</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="exportResults('all')"><i class="fas fa-file-excel me-2 text-success"></i>Semua Hasil (.xlsx)</a></li>
                         <li><a class="dropdown-item" href="#" onclick="exportResults('approved')"><i class="fas fa-check-circle me-2 text-success"></i>{{ __('Hanya Approved') }}</a></li>
                         <li><a class="dropdown-item" href="#" onclick="exportResults('not_approved')"><i class="fas fa-exclamation-circle me-2 text-warning"></i>{{ __('Hanya Revoked') }}</a></li>
                         <li><a class="dropdown-item" href="#" onclick="exportResults('suspended')"><i class="fas fa-times-circle me-2 text-danger"></i>{{ __('Hanya Suspended') }}</a></li>
@@ -648,7 +648,7 @@
                 <p class="small text-muted mb-3">${stockItems.length} akun stok akan diupdate</p>
                 <select id="swal-stock-status" class="form-select">
                     <option value="ready">{{ __('Ready') }}</option>
-                    @if(Auth::user()->{{ __('role === \'admin\')') }}
+                    @if(Auth::user()->role === 'admin')
                     <option value="awaiting_benefits">{{ __('Awaiting Benefits') }}</option>
                     @endif
                     <option value="saved_for_verification">{{ __('Simpan Akun') }}</option>

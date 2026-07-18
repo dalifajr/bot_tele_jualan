@@ -25,7 +25,7 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-bold text-muted small">{{ __('PENGUMUMAN WEBSITE (HTML DIIZINKAN)') }}</label>
+                        <label class="form-label fw-bold text-muted small">PENGUMUMAN WEBSITE (HTML DIIZINKAN)</label>
                         <textarea name="settings[web_announcement]" class="form-control" rows="4">{{ $announcement }}</textarea>
                         <small class="text-muted">{{ __('Teks pengumuman yang muncul pada halaman login dan popup smartphone.') }}</small>
                     </div>

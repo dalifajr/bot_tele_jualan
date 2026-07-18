@@ -20,7 +20,7 @@
 <div class="alert alert-danger shadow-sm rounded-4 mb-4">
     <div class="fw-bold mb-1"><i class="fas fa-exclamation-circle me-2"></i>{{ __('Terdapat kesalahan pada input Anda:') }}</div>
     <ul class="mb-0 small">
-        @foreach ($errors->{{ __('all() as $error)') }}
+        @foreach ($errors->all() as $error)
             <li>{{ $error }}</li>
         @endforeach
     </ul>
@@ -49,7 +49,7 @@
                         <td class="fw-bold text-primary">{{ $product->name }}</td>
                         <td>{{ $product->formatted_price }}</td>
                         <td>
-                            @if($product->{{ __('is_suspended)') }}
+                            @if($product->is_suspended)
                             <span class="badge bg-danger-subtle text-danger rounded-pill px-3">{{ __('Suspended') }}</span>
                             @else
                             <span class="badge bg-success-subtle text-success rounded-pill px-3">{{ __('Active') }}</span>
@@ -105,7 +105,7 @@
                         <input type="text" name="name" class="form-control" required placeholder="{{ __('Contoh: Netflix Premium 1 Bulan') }}">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">{{ __('Harga (Rp)') }}</label>
+                        <label class="form-label text-muted small fw-bold">Harga (Rp)</label>
                         <input type="number" name="price" class="form-control" required placeholder="{{ __('Contoh: 35000') }}">
                     </div>
                     <div class="mb-3">
@@ -117,7 +117,7 @@
                         <label class="form-check-label text-muted small fw-bold" for="enableWarrantyAdd">{{ __('Aktifkan garansi?') }}</label>
                     </div>
                     <div class="mb-3" id="warrantyDaysAddContainer" style="display: none;">
-                        <label class="form-label text-muted small fw-bold">{{ __('Masa Garansi (Hari)') }}</label>
+                        <label class="form-label text-muted small fw-bold">Masa Garansi (Hari)</label>
                         <div class="input-group">
                             <input type="number" name="warranty_days" id="warrantyDaysAdd" class="form-control" placeholder="{{ __('Contoh: 3') }}" min="1">
                             <span class="input-group-text bg-light text-muted">{{ __('hari') }}</span>
@@ -179,7 +179,7 @@
                         <input type="text" name="name" class="form-control" value="{{ $product->name }}" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">{{ __('Harga (Rp)') }}</label>
+                        <label class="form-label text-muted small fw-bold">Harga (Rp)</label>
                         <input type="number" name="price" class="form-control" value="{{ $product->price }}" required>
                     </div>
                     <div class="mb-3">
@@ -191,7 +191,7 @@
                         <label class="form-check-label text-muted small fw-bold" for="enableWarrantyEdit{{ $product->id }}">{{ __('Aktifkan garansi?') }}</label>
                     </div>
                     <div class="mb-3" id="warrantyDaysEditContainer{{ $product->id }}" style="display: {{ $product->warranty_days > 0 ? 'block' : 'none' }};">
-                        <label class="form-label text-muted small fw-bold">{{ __('Masa Garansi (Hari)') }}</label>
+                        <label class="form-label text-muted small fw-bold">Masa Garansi (Hari)</label>
                         <div class="input-group">
                             <input type="number" name="warranty_days" id="warrantyDaysEdit{{ $product->id }}" class="form-control" value="{{ $product->warranty_days > 0 ? $product->warranty_days : '' }}" min="1">
                             <span class="input-group-text bg-light text-muted">{{ __('hari') }}</span>
@@ -226,7 +226,7 @@
                     </div>
                     <div class="form-check form-switch mb-3">
                         <input class="form-check-input" type="checkbox" role="switch" name="is_suspended" value="1" id="suspend{{ $product->id }}" {{ $product->is_suspended ? 'checked' : '' }}>
-                        <label class="form-check-label" for="suspend{{ $product->id }}">{{ __('Suspend (Sembunyikan dari katalog)') }}</label>
+                        <label class="form-check-label" for="suspend{{ $product->id }}">Suspend (Sembunyikan dari katalog)</label>
                     </div>
                 </div>
                 <div class="modal-footer border-0 pt-0">
@@ -259,7 +259,7 @@
                     {{ __('Terdapat') }} <strong>{{ $unsoldStockCount }}</strong> {{ __('sisa stok aktif yang belum terjual. Anda disarankan untuk mengunduh sisa stok tersebut sebelum menghapus produk:') }}
                     <div class="mt-2 text-center">
                         <a href="{{ route('admin.products.export-unsold', $product->id) }}" class="btn btn-sm btn-success rounded-pill px-3 fw-bold">
-                            <i class="fas fa-file-excel me-1"></i> {{ __('Unduh Sisa Stok (.xlsx)') }}
+                            <i class="fas fa-file-excel me-1"></i> Unduh Sisa Stok (.xlsx)
                         </a>
                     </div>
                 </div>

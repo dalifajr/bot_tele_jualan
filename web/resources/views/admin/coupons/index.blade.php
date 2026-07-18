@@ -29,7 +29,7 @@
         <strong class="small">{{ __('Periksa input Anda kembali:') }}</strong>
     </div>
     <ul class="mb-0 small ps-4">
-        @foreach($errors->{{ __('all() as $error)') }}
+        @foreach($errors->all() as $error)
             <li>{{ $error }}</li>
         @endforeach
     </ul>
@@ -104,7 +104,7 @@
                             </span>
                         </td>
                         <td>
-                            @if($coupon->{{ __('type === \'percent\')') }}
+                            @if($coupon->type === 'percent')
                                 <span class="fw-bold">{{ $coupon->value }}%</span> 
                                 <span class="text-muted small">(Maks Rp{{ number_format($coupon->max_discount, 0, ',', '.') }})</span>
                             @else
@@ -124,7 +124,7 @@
                             <span class="small text-muted">{{ $coupon->used_qty }} / {{ $coupon->qty > 0 ? $coupon->qty : '∞' }}</span>
                         </td>
                         <td>
-                            @if($coupon->{{ __('expires_at)') }}
+                            @if($coupon->expires_at)
                                 <span class="{{ $coupon->expires_at->isPast() ? 'text-danger fw-bold' : '' }}">
                                     {{ $coupon->expires_at->format('d M Y, H:i') }}
                                 </span>
@@ -133,7 +133,7 @@
                             @endif
                         </td>
                         <td>
-                            @if($coupon->is_active && (!$coupon->expires_at || !$coupon->expires_at->isPast()) && ($coupon->qty == 0 || $coupon->{{ __('used_qty') }} < $coupon->{{ __('qty))') }}
+                            @if($coupon->is_active && (!$coupon->expires_at || !$coupon->expires_at->isPast()) && ($coupon->qty == 0 || $coupon->used_qty < $coupon->qty))
                                 <span class="badge bg-success-subtle text-success rounded-pill px-3 py-1">{{ __('Aktif') }}</span>
                             @else
                                 <span class="badge bg-danger-subtle text-danger rounded-pill px-3 py-1">{{ __('Tidak Aktif') }}</span>
@@ -168,15 +168,15 @@
                                     @method('PUT')
                                     <div class="modal-body p-4">
                                         <div class="mb-3">
-                                            <label class="form-label small fw-bold">{{ __('KODE KUPON (UPPERCASE)') }}</label>
+                                            <label class="form-label small fw-bold">KODE KUPON (UPPERCASE)</label>
                                             <input type="text" name="code" class="form-control" value="{{ $coupon->code }}" required style="border-radius: 10px;">
                                         </div>
                                         <div class="row g-3 mb-3">
                                             <div class="col-6">
                                                 <label class="form-label small fw-bold">{{ __('TIPE DISKON') }}</label>
                                                 <select name="type" class="form-select" required style="border-radius: 10px;">
-                                                    <option value="fixed" {{ $coupon->type === 'fixed' ? 'selected' : '' }}>{{ __('Nominal Tetap (Rp)') }}</option>
-                                                    <option value="percent" {{ $coupon->type === 'percent' ? 'selected' : '' }}>{{ __('Persentase (%)') }}</option>
+                                                    <option value="fixed" {{ $coupon->type === 'fixed' ? 'selected' : '' }}>Nominal Tetap (Rp)</option>
+                                                    <option value="percent" {{ $coupon->type === 'percent' ? 'selected' : '' }}>Persentase (%)</option>
                                                 </select>
                                             </div>
                                             <div class="col-6">
@@ -186,11 +186,11 @@
                                         </div>
                                         <div class="row g-3 mb-3">
                                             <div class="col-6">
-                                                <label class="form-label small fw-bold">{{ __('MIN. BELANJA (Rp)') }}</label>
+                                                <label class="form-label small fw-bold">MIN. BELANJA (Rp)</label>
                                                 <input type="number" name="min_spend" class="form-control" value="{{ $coupon->min_spend }}" required min="0" style="border-radius: 10px;">
                                             </div>
                                             <div class="col-6">
-                                                <label class="form-label small fw-bold">{{ __('MAKS. DISKON (Rp, Opsional)') }}</label>
+                                                <label class="form-label small fw-bold">MAKS. DISKON (Rp, Opsional)</label>
                                                 <input type="number" name="max_discount" class="form-control" value="{{ $coupon->max_discount }}" min="1" style="border-radius: 10px;">
                                             </div>
                                         </div>
@@ -249,15 +249,15 @@
                 @csrf
                 <div class="modal-body p-4">
                     <div class="mb-3">
-                        <label class="form-label small fw-bold">{{ __('KODE KUPON (UPPERCASE)') }}</label>
+                        <label class="form-label small fw-bold">KODE KUPON (UPPERCASE)</label>
                         <input type="text" name="code" class="form-control" placeholder="{{ __('MISAL: PROMOHEBAT') }}" required style="border-radius: 10px;">
                     </div>
                     <div class="row g-3 mb-3">
                         <div class="col-6">
                             <label class="form-label small fw-bold">{{ __('TIPE DISKON') }}</label>
                             <select name="type" class="form-select" required style="border-radius: 10px;">
-                                <option value="fixed" selected>{{ __('Nominal Tetap (Rp)') }}</option>
-                                <option value="percent">{{ __('Persentase (%)') }}</option>
+                                <option value="fixed" selected>Nominal Tetap (Rp)</option>
+                                <option value="percent">Persentase (%)</option>
                             </select>
                         </div>
                         <div class="col-6">
@@ -267,11 +267,11 @@
                     </div>
                     <div class="row g-3 mb-3">
                         <div class="col-6">
-                            <label class="form-label small fw-bold">{{ __('MIN. BELANJA (Rp)') }}</label>
+                            <label class="form-label small fw-bold">MIN. BELANJA (Rp)</label>
                             <input type="number" name="min_spend" class="form-control" value="0" required min="0" style="border-radius: 10px;">
                         </div>
                         <div class="col-6">
-                            <label class="form-label small fw-bold">{{ __('MAKS. DISKON (Rp, Opsional)') }}</label>
+                            <label class="form-label small fw-bold">MAKS. DISKON (Rp, Opsional)</label>
                             <input type="number" name="max_discount" class="form-control" placeholder="{{ __('Hanya untuk Persentase') }}" min="1" style="border-radius: 10px;">
                         </div>
                     </div>

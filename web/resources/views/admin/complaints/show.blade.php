@@ -120,11 +120,11 @@
                         <label class="form-label text-muted small fw-bold">{{ __('Pilih Status Baru') }}</label>
                         <select name="status" id="status-select" class="form-select" required>
                             <option value="">{{ __('-- Pilih Keputusan --') }}</option>
-                            <option value="review" {{ $complaint->status === 'review' ? 'selected' : '' }}>{{ __('Ditinjau (In Review)') }}</option>
+                            <option value="review" {{ $complaint->status === 'review' ? 'selected' : '' }}>Ditinjau (In Review)</option>
                             <option value="replacement" {{ $complaint->status === 'replacement' ? 'selected' : '' }}>{{ __('Kirim Akun Pengganti') }}</option>
                             <option value="refund" {{ $complaint->status === 'refund' ? 'selected' : '' }}>{{ __('Refund') }}</option>
-                            <option value="done" {{ $complaint->status === 'done' ? 'selected' : '' }}>{{ __('Selesai (Tanpa Ganti Rugi Lain)') }}</option>
-                            <option value="rejected" {{ $complaint->status === 'rejected' ? 'selected' : '' }}>{{ __('Tolak Klaim (Rejected)') }}</option>
+                            <option value="done" {{ $complaint->status === 'done' ? 'selected' : '' }}>Selesai (Tanpa Ganti Rugi Lain)</option>
+                            <option value="rejected" {{ $complaint->status === 'rejected' ? 'selected' : '' }}>Tolak Klaim (Rejected)</option>
                         </select>
                     </div>
 

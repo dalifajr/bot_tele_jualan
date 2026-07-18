@@ -21,12 +21,12 @@
                 <form id="broadcastForm" class="no-loader" onsubmit="event.preventDefault(); startBroadcast();">
                     @csrf
                     <div class="mb-4">
-                        <label class="form-label fw-bold text-muted small">{{ __('Pesan Broadcast (Mendukung Format HTML)') }}</label>
+                        <label class="form-label fw-bold text-muted small">Pesan Broadcast (Mendukung Format HTML)</label>
                         <textarea id="broadcastMessage" name="message" class="form-control" rows="8" placeholder="<b>{{ __('Halo Pelanggan Setia!') }}</b><br>Dapatkan promo menarik hari ini..."></textarea>
                     </div>
 
                     <div class="mb-4">
-                        <label class="form-label fw-bold text-muted small">{{ __('Attachment Media (Opsional)') }}</label>
+                        <label class="form-label fw-bold text-muted small">Attachment Media (Opsional)</label>
                         <input type="file" id="mediaFile" name="media_file" class="form-control" accept="image/*,video/mp4,.pdf,.doc,.docx,.zip">
                         <div class="form-text">{{ __('Maksimal 50MB. Format didukung: Foto (JPG/PNG), Video (MP4), Dokumen (PDF/DOC/ZIP).') }}</div>
                     </div>
@@ -99,11 +99,11 @@
                                 </td>
                                 <td>
                                     <div class="text-truncate" style="max-width: 250px;" title="{{ strip_tags($history->message) }}">
-                                        {!! Str::limit(strip_tags($history->{{ __('message), 50) ?: \'') }}<em class="text-muted">{{ __('\' . __(\'Tidak ada teks\') . \'') }}</em>' !!}
+                                        {!! Str::limit(strip_tags($history->message), 50) ?: '<em class="text-muted">' . __('Tidak ada teks') . '</em>' !!}
                                     </div>
                                 </td>
                                 <td>
-                                    @if($history->media_type && $history->{{ __('media_path)') }}
+                                    @if($history->media_type && $history->media_path)
                                         <a href="{{ Storage::url($history->media_path) }}" target="_blank" class="badge bg-info text-decoration-none">
                                             <i class="fas fa-file-alt me-1"></i>{{ ucfirst($history->media_type) }}
                                         </a>
@@ -112,11 +112,11 @@
                                     @endif
                                 </td>
                                 <td>
-                                    @if($history->{{ __('status == \'completed\')') }}
+                                    @if($history->status == 'completed')
                                         <span class="badge bg-success-subtle text-success border border-success-subtle">{{ __('Selesai') }}</span>
-                                    @elseif($history->{{ __('status == \'failed\')') }}
+                                    @elseif($history->status == 'failed')
                                         <span class="badge bg-danger-subtle text-danger border border-danger-subtle">{{ __('Gagal') }}</span>
-                                    @elseif($history->{{ __('status == \'cancelled\')') }}
+                                    @elseif($history->status == 'cancelled')
                                         <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">{{ __('Dibatalkan') }}</span>
                                     @else
                                         <span class="badge bg-warning-subtle text-warning border border-warning-subtle">{{ ucfirst($history->status) }}</span>

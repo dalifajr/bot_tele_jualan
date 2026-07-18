@@ -22,7 +22,7 @@
                         </thead>
                         <tbody>
                             @foreach($cartItems as $item)
-                            @if($item->{{ __('product)') }}
+                            @if($item->product)
                             <tr>
                                 <td class="border-secondary-subtle py-3">
                                     <div class="d-flex align-items-center gap-3">
