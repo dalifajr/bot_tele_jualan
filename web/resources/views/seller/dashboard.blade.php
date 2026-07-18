@@ -261,28 +261,28 @@
                     <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px; flex-shrink: 0;">1</div>
                     <div>
                         <h6 class="fw-bold mb-1">{{ __('Miliki atau Ikut Serta dalam Katalog Produk') }}</h6>
-                        <p class="text-muted small mb-0">{!! __('Anda dapat membuat produk baru secara mandiri di halaman <strong>{{ __('Produk Saya') }}</strong>{{ __(', atau ditambahkan sebagai') }} <strong>{{ __('Worker') }}</strong> oleh Admin pada produk global.') !!}</p>
+                        <p class="text-muted small mb-0">{!! 'Anda dapat membuat produk baru secara mandiri di halaman <strong>{{ __(\'Produk Saya\') }}</strong>{{ __(\', atau ditambahkan sebagai\') }} <strong>{{ __(\'Worker\') }}</strong> oleh Admin pada produk global.' !!}</p>
                     </div>
                 </div>
                 <div class="d-flex gap-3 align-items-start">
                     <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px; flex-shrink: 0;">2</div>
                     <div>
                         <h6 class="fw-bold mb-1">{{ __('Unggah Stok Akun Digital Anda') }}</h6>
-                        <p class="text-muted small mb-0">{!! __('Unggah akun/stok Anda secara massal di menu <strong>{{ __('Stok Akun') }}</strong>{{ __('. Akun yang baru diunggah akan masuk ke status') }} <strong>{{ __('Karantina (*Simpan Akun*)') }}</strong>.') !!}</p>
+                        <p class="text-muted small mb-0">{!! 'Unggah akun/stok Anda secara massal di menu <strong>{{ __(\'Stok Akun\') }}</strong>{{ __(\'. Akun yang baru diunggah akan masuk ke status\') }} <strong>{{ __(\'Karantina (*Simpan Akun*)\') }}</strong>.' !!}</p>
                     </div>
                 </div>
                 <div class="d-flex gap-3 align-items-start">
                     <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px; flex-shrink: 0;">3</div>
                     <div>
                         <h6 class="fw-bold mb-1">{{ __('Pindah Otomatis ke Status Ready') }}</h6>
-                        <p class="text-muted small mb-0">{!! __('Stok Anda akan otomatis berpindah ke status <strong>{{ __('Ready') }}</strong> {{ __('setelah jam cooldown karantina habis. Anda dapat mengatur jam karantina tersendiri di menu') }} <strong>{{ __('Pengaturan') }}</strong>.') !!}</p>
+                        <p class="text-muted small mb-0">{!! 'Stok Anda akan otomatis berpindah ke status <strong>{{ __(\'Ready\') }}</strong> {{ __(\'setelah jam cooldown karantina habis. Anda dapat mengatur jam karantina tersendiri di menu\') }} <strong>{{ __(\'Pengaturan\') }}</strong>.' !!}</p>
                     </div>
                 </div>
                 <div class="d-flex gap-3 align-items-start">
                     <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px; flex-shrink: 0;">4</div>
                     <div>
                         <h6 class="fw-bold mb-1">{{ __('Terima Komisi & Tarik Saldo Ke Rekening') }}</h6>
-                        <p class="text-muted small mb-0">{!! __('Setiap pembeli membeli stok Anda, Anda menerima notifikasi Telegram dan dana masuk ke saldo Dompet setelah dipotong platform fee. Anda dapat mengajukan pencairan dana di menu <strong>{{ __('Dompet & Keuangan') }}</strong>.') !!}</p>
+                        <p class="text-muted small mb-0">{!! 'Setiap pembeli membeli stok Anda, Anda menerima notifikasi Telegram dan dana masuk ke saldo Dompet setelah dipotong platform fee. Anda dapat mengajukan pencairan dana di menu <strong>{{ __(\'Dompet & Keuangan\') }}</strong>.' !!}</p>
                     </div>
                 </div>
             </div>

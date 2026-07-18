@@ -56,7 +56,7 @@
                     <div class="bg-body-secondary rounded-3 p-3 text-dark text-wrap small" style="white-space: pre-wrap; font-size: 0.95rem; line-height: 1.5;">{{ $complaint->complaint_text }}</div>
                 </div>
 
-                @if($complaint->{{ __('attachment_path)') }}
+                @if($complaint->attachment_path)
                 <div class="mb-4">
                     <span class="text-muted small fw-bold d-block mb-1">{{ __('Lampiran Foto Bukti:') }}</span>
                     <a href="{{ asset('storage/' . $complaint->attachment_path) }}" target="_blank">
@@ -65,7 +65,7 @@
                 </div>
                 @endif
 
-                @if($complaint->{{ __('order)') }}
+                @if($complaint->order)
                 <hr>
                 <div class="mb-4">
                     <h6 class="fw-bold mb-3"><i class="fas fa-shopping-bag text-primary me-2"></i>Pesanan Terkait: {{ $complaint->order->order_ref }}</h6>
@@ -92,7 +92,7 @@
                 <div class="mb-0">
                     <h6 class="fw-bold mb-3 text-success"><i class="fas fa-key me-2"></i>{{ __('Kredensial Akun (Unit Stok):') }}</h6>
                     <div class="bg-light text-dark rounded-3 p-3 text-break" style="max-height: 300px; overflow-y: auto; font-family: monospace; white-space: pre-wrap; font-size: 0.85rem; border: 1px solid rgba(0,0,0,0.05);">
-@foreach($complaint->order->{{ __('stockUnits as $unit)') }}
+@foreach($complaint->order->stockUnits as $unit)
 <b>Unit #{{ $unit->id }} (Status: {{ $unit->stock_status }}):</b>
 {{ $unit->raw_text }}
 @if(!$loop->last)
@@ -119,14 +119,14 @@
                     </div>
                 @endif
 
-                @if($complaint->status === 'rejected' && $complaint->{{ __('rejected_reason)') }}
+                @if($complaint->status === 'rejected' && $complaint->rejected_reason
                     <div class="alert alert-danger small mb-3">
                         <strong>{{ __('Klaim Ditolak:') }}</strong><br>
                         {{ $complaint->rejected_reason }}
                     </div>
                 @endif
 
-                @if(($complaint->status === 'done' || $complaint->status === 'refund_requested') && $complaint->{{ __('refund_note)') }}
+                @if(($complaint->status === 'done' || $complaint->status === 'refund_requested') && $complaint->refund_note
                     <div class="alert alert-success small mb-3">
                         <strong>{{ __('Penyelesaian:') }}</strong><br>
                         {{ $complaint->refund_note }}
@@ -165,7 +165,7 @@
                     <span class="text-muted">{{ __('Pembaruan Terakhir') }}</span>
                     <span class="text-dark">{{ $complaint->updated_at ? $complaint->updated_at->format('d M Y H:i') : '-' }}</span>
                 </div>
-                @if($complaint->{{ __('closed_at)') }}
+                @if($complaint->closed_at
                 <div class="d-flex justify-content-between">
                     <span class="text-muted">{{ __('Ditutup Pada') }}</span>
                     <span class="text-dark">{{ $complaint->closed_at->format('d M Y H:i') }}</span>

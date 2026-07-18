@@ -35,11 +35,11 @@
                         <td>{{ $complaint->order_ref_snapshot }}</td>
                         <td>{{ Str::limit($complaint->complaint_text, 30) }}</td>
                         <td>
-                            @if($complaint->{{ __('status == \'new\')') }}
+                            @if($complaint->status == 'new')
                                 <span class="badge bg-danger-subtle text-danger rounded-pill px-3">{{ __('Baru') }}</span>
-                            @elseif($complaint->{{ __('status == \'review\')') }}
+                            @elseif($complaint->status == 'review')
                                 <span class="badge bg-warning-subtle text-warning rounded-pill px-3">{{ __('Ditinjau') }}</span>
-                            @elseif($complaint->{{ __('status == \'done\')') }}
+                            @elseif($complaint->status == 'done')
                                 <span class="badge bg-success-subtle text-success rounded-pill px-3">{{ __('Selesai') }}</span>
                             @else
                                 <span class="badge bg-secondary-subtle text-secondary rounded-pill px-3">{{ ucfirst($complaint->status) }}</span>

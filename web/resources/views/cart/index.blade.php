@@ -25,7 +25,7 @@
                 </div>
                 @endif
 
-                @if($cartItems->{{ __('isEmpty())') }}
+                @if($cartItems->isEmpty()
                 <div class="text-center py-5 text-muted">
                     <div class="mb-3">
                         <i class="fas fa-shopping-basket fs-1 text-secondary opacity-50"></i>
@@ -105,7 +105,7 @@
         </div>
     </div>
 
-    @if(!$cartItems->{{ __('isEmpty())') }}
+    @if(!$cartItems->isEmpty()
     <div class="col-lg-4">
         <div class="card border-0 shadow-sm" style="border-radius: 16px;">
             <div class="card-body p-4">

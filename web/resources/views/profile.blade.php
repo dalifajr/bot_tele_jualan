@@ -13,7 +13,7 @@
             </div>
             <h4 class="fw-bold mb-1">{{ Auth::user()->full_name ?? Auth::user()->username ?? 'User' }}</h4>
             <p class="opacity-75 mb-0">
-                @if(Auth::user()->{{ __('username)') }}
+                @if(Auth::user()->username
                     <span>@{{ Auth::user()->username }}</span>
                 @endif
             </p>
@@ -23,10 +23,10 @@
         @if(session('success'))
             <div class="alert alert-success small py-2 mb-4"><i class="fas fa-check-circle me-1"></i>{{ session('success') }}</div>
         @endif
-        @if($errors->{{ __('any())') }}
+        @if($errors->any())
             <div class="alert alert-danger small py-2 mb-4">
                 <ul class="mb-0 ps-3">
-                    @foreach($errors->{{ __('all() as $err)') }}
+                    @foreach($errors->all() as $err)
                         <li>{{ $err }}</li>
                     @endforeach
                 </ul>
@@ -124,7 +124,7 @@
                 <div class="d-flex flex-column gap-3">
                     
                     {{-- Tombol Tautkan / Lepas Telegram --}}
-                    @if(Auth::user()->{{ __('telegram_id)') }}
+                    @if(Auth::user()->telegram_id)
                         <form action="{{ route('profile.telegram.unlink') }}" method="POST">
                             @csrf
                             <button type="button" class="quick-action-btn w-100 border-warning text-start" onclick="confirmAction(event, 'Apakah Anda yakin ingin melepas kaitan akun Telegram Anda?')">

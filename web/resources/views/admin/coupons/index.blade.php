@@ -22,7 +22,7 @@
 </div>
 @endif
 
-@if($errors->{{ __('any())') }}
+@if($errors->any())
 <div class="alert alert-danger border-0 shadow-sm mb-4" style="border-radius: 12px;">
     <div class="d-flex align-items-center gap-2 mb-2">
         <i class="fas fa-exclamation-circle fs-5"></i>

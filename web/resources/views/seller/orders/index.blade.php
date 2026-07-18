@@ -24,7 +24,7 @@
        class="btn btn-sm rounded-pill px-3 {{ is_null($status) ? 'btn-primary' : 'btn-outline-secondary' }}">
         {{ __('Semua') }}
     </a>
-    @foreach(['pending_payment' => 'Pending', 'paid' => 'Paid', 'delivered' => 'Delivered', 'cancelled' => 'Cancelled', 'expired' => 'Expired'] as $key => {{ __('$label)') }}
+    @foreach(['pending_payment' => 'Pending', 'paid' => 'Paid', 'delivered' => 'Delivered', 'cancelled' => 'Cancelled', 'expired' => 'Expired'] as $key => $label
     <a href="{{ route('seller.orders.index', ['status' => $key]) }}"
        class="btn btn-sm rounded-pill px-3 {{ $status === $key ? 'btn-primary' : 'btn-outline-secondary' }}">
         {{ $label }}
@@ -67,7 +67,7 @@
                         <td class="text-secondary small">{{ $order->created_at->format('d M Y H:i') }}</td>
                         <td class="text-end px-4">
                             <div class="d-flex gap-2 justify-content-end text-end">
-                                @if($order->{{ __('status === \'pending_payment\')') }}
+                                @if($order->status === 'pending_payment')
                                 <form action="{{ route('seller.orders.cancel', $order->id) }}" method="POST" class="m-0" onsubmit="confirmAction(event, 'Batalkan pesanan ini?');">
                                     @csrf
                                     <button type="submit" class="btn btn-sm btn-light text-danger rounded-circle border-danger" title="{{ __('Batalkan Pesanan') }}">
@@ -154,17 +154,17 @@
                         <h6 class="fw-bold text-muted border-bottom pb-2 mb-3">{{ __('Log Sistem') }}</h6>
                         <div class="d-flex flex-wrap gap-3 small">
                             <div><span class="text-muted">{{ __('Dibuat:') }}</span> <br><b>{{ $order->created_at->format('d M Y H:i:s') }}</b></div>
-                            @if($order->{{ __('paid_at)') }}
+                            @if($order->paid_at
                             <div><span class="text-muted">{{ __('Dibayar:') }}</span> <br><b class="text-success">{{ \Carbon\Carbon::parse($order->paid_at)->format('d M Y H:i:s') }}</b></div>
                             @endif
-                            @if($order->{{ __('delivered_at)') }}
+                            @if($order->delivered_at
                             <div><span class="text-muted">{{ __('Dikirim:') }}</span> <br><b class="text-primary">{{ \Carbon\Carbon::parse($order->delivered_at)->format('d M Y H:i:s') }}</b></div>
                             @endif
-                            @if($order->{{ __('cancelled_at)') }}
+                            @if($order->cancelled_at
                             <div><span class="text-muted">{{ __('Dibatalkan:') }}</span> <br><b class="text-danger">{{ \Carbon\Carbon::parse($order->cancelled_at)->format('d M Y H:i:s') }}</b></div>
                             @endif
                         </div>
-                        @if($order->{{ __('cancel_reason)') }}
+                        @if($order->cancel_reason
                         <div class="alert alert-danger mt-3 small mb-0">
                             <b>{{ __('Alasan Batal:') }}</b> {{ $order->cancel_reason }}
                         </div>

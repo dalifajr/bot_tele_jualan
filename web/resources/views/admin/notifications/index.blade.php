@@ -84,7 +84,7 @@
     </div>
     @endif
 
-    @if($readyToVerify->isEmpty() && $pendingOrders->isEmpty() && $pendingLogins->{{ __('isEmpty())') }}
+    @if($readyToVerify->isEmpty() && $pendingOrders->isEmpty() && $pendingLogins->isEmpty()
     <div class="col-12 text-center py-5">
         <i class="fas fa-check-circle text-success mb-3" style="font-size: 4rem;"></i>
         <h4 class="fw-bold">{{ __('Semua Bersih!') }}</h4>

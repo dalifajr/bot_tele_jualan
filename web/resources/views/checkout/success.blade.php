@@ -66,7 +66,7 @@
                     <a href="{{ route('catalog.index') }}" class="btn btn-light text-primary rounded-pill py-2">
                         {{ __('Kembali ke Katalog') }}
                     </a>
-                    @if($order->{{ __('status === \'pending_payment\')') }}
+                    @if($order->status === 'pending_payment')
                     <form action="{{ route('orders.cancel', $order->id) }}" method="POST" class="d-grid mt-2" onsubmit="confirmAction(event, 'Yakin ingin membatalkan pesanan ini?');">
                         @csrf
                         <button type="submit" class="btn btn-outline-danger rounded-pill py-2">

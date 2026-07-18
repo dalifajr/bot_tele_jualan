@@ -78,7 +78,7 @@
                     <div class="form-text small">{{ __('Minimal penarikan Rp 10.000. Maksimal sesuai saldo Anda.') }}</div>
                 </div>
 
-                @if($bankAccounts->{{ __('isEmpty())') }}
+                @if($bankAccounts->isEmpty()
                 <div class="alert alert-warning small rounded-4 p-3 mb-3">
                     <i class="fas fa-exclamation-triangle me-2"></i>
                     {{ __('Anda belum menyimpan rekening bank. Silakan simpan rekening bank terlebih dahulu di menu') }} <strong><a href="{{ route('seller.bank-accounts.index') }}">{{ __('Konfigurasi Rekening') }}</a></strong>.
@@ -100,7 +100,7 @@
                 </button>
                 @if($user->{{ __('wallet_balance') }} < 10000)
                     <div class="text-danger small mt-2 text-center"><i class="fas fa-exclamation-circle me-1"></i> {{ __('Saldo Anda belum mencukupi untuk melakukan penarikan.') }}</div>
-                @elseif($bankAccounts->{{ __('isEmpty())') }}
+                @elseif($bankAccounts->isEmpty()
                     <div class="text-danger small mt-2 text-center"><i class="fas fa-exclamation-circle me-1"></i> {{ __('Hubungkan rekening bank payout terlebih dahulu.') }}</div>
                 @endif
             </form>
@@ -138,20 +138,20 @@
                                     Rp {{ number_format($withdrawal->amount, 0, ',', '.') }}
                                 </td>
                                 <td>
-                                    @if($withdrawal->{{ __('status === \'pending\')') }}
+                                    @if($withdrawal->status === 'pending')
                                         <span class="badge bg-warning-subtle text-warning rounded-pill px-2.5 py-1 small">{{ __('Menunggu') }}</span>
-                                    @elseif($withdrawal->{{ __('status === \'approved\')') }}
+                                    @elseif($withdrawal->status === 'approved')
                                         <span class="badge bg-success-subtle text-success rounded-pill px-2.5 py-1 small">{{ __('Selesai') }}</span>
                                     @else
                                         <span class="badge bg-danger-subtle text-danger rounded-pill px-2.5 py-1 small">{{ __('Ditolak') }}</span>
                                     @endif
                                 </td>
                                 <td class="text-end px-4">
-                                    @if($withdrawal->{{ __('status === \'approved\')') }}
+                                    @if($withdrawal->status === 'approved')
                                         <button class="btn btn-sm btn-light rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#viewProofModal{{ $withdrawal->id }}">
                                             {{ __('Struk') }}
                                         </button>
-                                    @elseif($withdrawal->{{ __('status === \'rejected\')') }}
+                                    @elseif($withdrawal->status === 'rejected')
                                         <button class="btn btn-sm btn-light rounded-pill px-3 text-danger" data-bs-toggle="modal" data-bs-target="#viewRejectionModal{{ $withdrawal->id }}">
                                             {{ __('Alasan') }}
                                         </button>
@@ -206,9 +206,9 @@
                                     {{ $fund->release_at ? $fund->release_at->format('d M Y H:i') : '-' }}
                                 </td>
                                 <td class="text-end px-4">
-                                    @if($fund->{{ __('status === \'held\')') }}
+                                    @if($fund->status === 'held')
                                         <span class="badge bg-warning-subtle text-warning rounded-pill px-2.5 py-1 small">{{ __('Tertahan') }}</span>
-                                    @elseif($fund->{{ __('status === \'released\')') }}
+                                    @elseif($fund->status === 'released')
                                         <span class="badge bg-success-subtle text-success rounded-pill px-2.5 py-1 small">{{ __('Dicairkan') }}</span>
                                     @else
                                         <span class="badge bg-danger-subtle text-danger rounded-pill px-2.5 py-1 small">{{ __('Batal') }}</span>
@@ -245,7 +245,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-4 text-center">
-                @if($withdrawal->{{ __('proof_image_path)') }}
+                @if($withdrawal->proof_image_path
                     <img src="{{ asset($withdrawal->proof_image_path) }}" alt="Bukti Transfer Payout" class="img-fluid rounded-4 shadow-sm mb-3" style="max-height: 400px; object-fit: contain;">
                 @else
                     <p class="text-muted">{{ __('Bukti transfer belum diunggah oleh admin.') }}</p>

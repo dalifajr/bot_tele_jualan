@@ -123,7 +123,7 @@
                         </td>
                         <td class="text-secondary small">{{ $user->created_at->format('d M Y') }}</td>
                         <td class="text-end px-4">
-                            @if($user->{{ __('id !== Auth::id())') }}
+                            @if($user->id !== Auth::id())
                             <div class="dropdown">
                                 <button class="btn btn-sm btn-light rounded-circle" type="button" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy": "fixed"}' aria-expanded="false">
                                     <i class="fas fa-ellipsis-v"></i>

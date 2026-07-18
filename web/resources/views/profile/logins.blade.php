@@ -50,7 +50,7 @@
                                     <div class="text-secondary small" title="{{ $log->user_agent }}"><i class="fab fa-chrome text-primary me-1"></i>{{ $log->browser ?? '-' }}</div>
                                 </td>
                                 <td class="text-end pe-4">
-                                    @if(\Illuminate\Support\Facades\Cache::has('blocked_ip:' . $log->{{ __('ip_address))') }}
+                                    @if(\Illuminate\Support\Facades\Cache::has('blocked_ip:' . $log->ip_address))
                                         <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-3" onclick="requestUnblockIp(event, '{{ $log->ip_address }}', '{{ $log->location ?? 'Unknown' }}', '{{ $log->device_type }}', '{{ $log->browser ?? '-' }}')">
                                             <i class="fas fa-unlock me-1"></i>{{ __('Buka Blokir') }}
                                         </button>

@@ -49,16 +49,16 @@
                             Rp {{ number_format($withdrawal->amount, 0, ',', '.') }}
                         </td>
                         <td>
-                            @if($withdrawal->{{ __('status === \'pending\')') }}
+                            @if($withdrawal->status === 'pending')
                                 <span class="badge bg-warning-subtle text-warning rounded-pill px-3 py-1"><i class="fas fa-spinner fa-spin me-1"></i>{{ __('Menunggu') }}</span>
-                            @elseif($withdrawal->{{ __('status === \'approved\')') }}
+                            @elseif($withdrawal->status === 'approved')
                                 <span class="badge bg-success-subtle text-success rounded-pill px-3 py-1"><i class="fas fa-check-circle me-1"></i>{{ __('Selesai') }}</span>
                             @else
                                 <span class="badge bg-danger-subtle text-danger rounded-pill px-3 py-1"><i class="fas fa-times-circle me-1"></i>{{ __('Ditolak') }}</span>
                             @endif
                         </td>
                         <td class="text-end px-4">
-                            @if($withdrawal->{{ __('status === \'pending\')') }}
+                            @if($withdrawal->status === 'pending')
                                 <button class="btn btn-sm btn-primary rounded-pill px-3 me-1" data-bs-toggle="modal" data-bs-target="#approveModal{{ $withdrawal->id }}">
                                     <i class="fas fa-check me-1"></i> {{ __('Setujui') }}
                                 </button>
@@ -66,7 +66,7 @@
                                     <i class="fas fa-ban me-1"></i> {{ __('Tolak') }}
                                 </button>
                             @else
-                                @if($withdrawal->{{ __('status === \'approved\')') }}
+                                @if($withdrawal->status === 'approved')
                                     <button class="btn btn-sm btn-light rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#viewProofModal{{ $withdrawal->id }}">
                                         <i class="fas fa-receipt me-1"></i> {{ __('Bukti Transfer') }}
                                     </button>
@@ -174,7 +174,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-4 text-center">
-                @if($withdrawal->{{ __('proof_image_path)') }}
+                @if($withdrawal->proof_image_path
                     <img src="{{ asset($withdrawal->proof_image_path) }}" alt="Bukti Transfer Payout" class="img-fluid rounded-4 shadow-sm mb-3" style="max-height: 400px; object-fit: contain;">
                 @else
                     <p class="text-muted">{{ __('Bukti transfer tidak tersedia.') }}</p>

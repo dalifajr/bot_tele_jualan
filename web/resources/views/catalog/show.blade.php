@@ -79,7 +79,7 @@
                             </div>
                             <span class="text-muted small" style="font-size: 0.75rem;">{{ $rev->created_at->format('d M Y') }}</span>
                         </div>
-                        @if($rev->{{ __('comment)') }}
+                        @if($rev->comment
                             <p class="mb-0 text-secondary small italic">"{{ $rev->comment }}"</p>
                         @endif
                     </div>

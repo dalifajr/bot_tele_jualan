@@ -37,7 +37,7 @@
                 <div class="mb-4">
                     <span class="text-muted small d-block mb-2">{{ __('Item Pesanan:') }}</span>
                     <div class="list-group list-group-flush border rounded-3 overflow-hidden mb-3">
-                        @foreach($order->{{ __('items as $item)') }}
+                        @foreach($order->items as $item
                         <div class="list-group-item p-3">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
@@ -62,7 +62,7 @@
                                                 <i class="fa{{ $i <= $hasReview->rating ? 's' : 'r' }} fa-star"></i>
                                             @endfor
                                         </span>
-                                        @if($hasReview->{{ __('comment)') }}
+                                        @if($hasReview->comment
                                             <p class="mb-0 mt-1 text-secondary italic">"{{ $hasReview->comment }}"</p>
                                         @endif
                                     </div>
@@ -108,7 +108,7 @@
                         <div class="text-muted small">{{ $order->created_at->format('d M Y H:i:s') }}</div>
                     </div>
 
-                    @if($order->{{ __('status === \'delivered\')') }}
+                    @if($order->status === 'delivered')
                     <div class="timeline-step completed">
                         <div class="fw-bold small">{{ __('Pembayaran Diterima') }}</div>
                         <div class="text-muted small">{{ __('Pembayaran telah diverifikasi') }}</div>
@@ -119,7 +119,7 @@
                             {{ $order->delivered_at ? $order->delivered_at->format('d M Y H:i:s') : '-' }}
                         </div>
                     </div>
-                    @elseif($order->{{ __('status === \'paid\')') }}
+                    @elseif($order->status === 'paid')
                     <div class="timeline-step completed">
                         <div class="fw-bold small">{{ __('Pembayaran Diterima') }}</div>
                         <div class="text-muted small">{{ __('Menunggu pengiriman produk') }}</div>
@@ -128,7 +128,7 @@
                         <div class="fw-bold small">{{ __('Menunggu Pengiriman') }}</div>
                         <div class="text-muted small">{{ __('Produk sedang diproses') }}</div>
                     </div>
-                    @elseif($order->{{ __('status === \'pending_payment\')') }}
+                    @elseif($order->status === 'pending_payment')
                     <div class="timeline-step active">
                         <div class="fw-bold small">{{ __('Menunggu Pembayaran') }}</div>
                         <div class="text-muted small">
@@ -139,7 +139,7 @@
                             @endif
                         </div>
                     </div>
-                    @elseif(in_array($order->{{ __('status, [\'cancelled\', \'expired\']))') }}
+                    @elseif(in_array($order->status, ['cancelled', 'expired']))
                     <div class="timeline-step">
                         <div class="fw-bold small text-danger">
                             {{ $order->status === 'cancelled' ? 'Dibatalkan' : 'Kedaluwarsa' }}
@@ -171,7 +171,7 @@
                     @if($order->vpnAccounts && $order->vpnAccounts->count() > 0)
                     <hr>
                     <h6 class="fw-bold mb-3"><i class="fas fa-network-wired text-primary me-2"></i>{{ __('Konfigurasi Akun VPN') }}</h6>
-                    @foreach($order->{{ __('vpnAccounts as $vpn)') }}
+                    @foreach($order->vpnAccounts as $vpn
                         <div class="card mb-3 border-primary-subtle shadow-sm" style="border-radius: 12px;">
                             <div class="card-header bg-primary-subtle border-0">
                                 <h6 class="mb-0 fw-bold text-primary">Protokol: {{ strtoupper($vpn->protocol) }} ({{ $vpn->username }})</h6>
@@ -195,10 +195,10 @@
                 @endif
 
                 {{-- Modul Komplain / Garansi --}}
-                @if($order->{{ __('status === \'delivered\')') }}
+                @if($order->status === 'delivered')
                 <hr>
                 <div class="mt-4">
-                    @if($order->{{ __('complaintCase)') }}
+                    @if($order->complaintCase
                         <div class="card bg-body-tertiary border-0 shadow-sm" style="border-radius: 12px;">
                             <div class="card-body p-3">
                                 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -227,13 +227,13 @@
                                     <span class="text-muted small d-block">{{ __('Detail Masalah:') }}</span>
                                     <p class="mb-0 text-dark small bg-body p-2.5 rounded border border-light-subtle">{{ $order->complaintCase->complaint_text }}</p>
                                 </div>
-                                @if($order->complaintCase->status === 'rejected' && $order->complaintCase->{{ __('rejected_reason)') }}
+                                @if($order->complaintCase->status === 'rejected' && $order->complaintCase->rejected_reason
                                 <div class="alert alert-danger mb-0 py-2.5 px-3 rounded-3 mt-2">
                                     <h6 class="fw-bold mb-1 small"><i class="fas fa-times-circle me-1"></i>{{ __('Alasan Penolakan Admin:') }}</h6>
                                     <p class="mb-0 small">{{ $order->complaintCase->rejected_reason }}</p>
                                 </div>
                                 @endif
-                                @if($order->complaintCase->status === 'done' && $order->complaintCase->{{ __('refund_note)') }}
+                                @if($order->complaintCase->status === 'done' && $order->complaintCase->refund_note
                                 <div class="alert alert-success mb-0 py-2.5 px-3 rounded-3 mt-2">
                                     <h6 class="fw-bold mb-1 small"><i class="fas fa-check-circle me-1"></i>{{ __('Catatan Resolusi Admin:') }}</h6>
                                     <p class="mb-0 small">{{ $order->complaintCase->refund_note }}</p>
@@ -242,7 +242,7 @@
                             </div>
                         </div>
                     @else
-                        @if($order->{{ __('is_warranty_active)') }}
+                        @if($order->is_warranty_active
                         <div class="d-flex align-items-center justify-content-between bg-light-subtle border border-dashed border-secondary-subtle rounded-3 p-3 mt-3">
                             <div>
                                 <h6 class="fw-bold mb-1"><i class="fas fa-shield-alt text-primary me-2"></i>{{ __('Garansi Toko Aktif') }}</h6>
@@ -257,7 +257,7 @@
                         <div class="d-flex align-items-center justify-content-between bg-body-secondary border border-dashed border-secondary-subtle rounded-3 p-3 mt-3">
                             <div>
                                 <h6 class="fw-bold mb-1 text-secondary"><i class="fas fa-shield-alt me-2 text-secondary"></i>{{ __('Garansi Toko Kedaluwarsa') }}</h6>
-                                @if($order->{{ __('warranty_expires_at)') }}
+                                @if($order->warranty_expires_at
                                 <p class="text-muted small mb-0">{{ __('Garansi berakhir pada:') }} <strong>{{ $order->warranty_expires_at->format('d M Y H:i') }}</strong></p>
                                 @else
                                 <p class="text-muted small mb-0">{{ __('Produk ini tidak memiliki garansi atau pesanan belum selesai.') }}</p>
@@ -299,7 +299,7 @@
             @php
                 $seller = $order->product->creator ?? null;
             @endphp
-            @if($seller && $seller->{{ __('id !== Auth::id())') }}
+            @if($seller && $seller->id !== Auth::id())
                 <a href="{{ route('chat.index', ['contact_id' => $seller->id]) }}" class="btn btn-outline-primary w-100 rounded-pill mb-2">
                     <i class="fas fa-comments me-2"></i>{{ __('Chat dengan Penjual') }}
                 </a>
@@ -307,7 +307,7 @@
             <a href="{{ route('orders.index') }}" class="btn btn-outline-secondary w-100 rounded-pill mb-2">
                 <i class="fas fa-arrow-left me-2"></i>{{ __('Kembali ke Riwayat') }}
             </a>
-            @if($order->{{ __('status === \'pending_payment\')') }}
+            @if($order->status === 'pending_payment')
             <a href="{{ route('checkout.success', $order->order_ref) }}" class="btn btn-success w-100 rounded-pill mb-2">
                 <i class="fas fa-qrcode me-2"></i>{{ __('Bayar Sekarang (QRIS)') }}
             </a>

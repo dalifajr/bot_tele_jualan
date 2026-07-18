@@ -106,7 +106,7 @@
                             <div class="fw-bold text-primary">{{ $seller->full_name ?? 'Unknown' }}</div>
                             <div class="small text-muted d-flex align-items-center gap-1">
                                 <span>{{ $seller->username ? '@'.$seller->username : '-' }}</span>
-                                @if($seller->{{ __('telegram_id)') }}
+                                @if($seller->telegram_id)
                                     <span class="badge bg-light text-secondary small py-0 px-1 border" style="font-size: 0.7rem;">
                                         <i class="fab fa-telegram-plane text-info me-1"></i>{{ $seller->telegram_id }}
                                     </span>
@@ -163,7 +163,7 @@
                             </div>
                         </td>
                         <td class="text-end px-4">
-                            @if($seller->{{ __('id !== Auth::id())') }}
+                            @if($seller->id !== Auth::id())
                             <div class="dropdown">
                                 <button class="btn btn-sm btn-light rounded-circle" type="button" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy": "fixed"}' aria-expanded="false">
                                     <i class="fas fa-ellipsis-v"></i>

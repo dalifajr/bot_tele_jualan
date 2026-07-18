@@ -16,7 +16,7 @@
     </div>
 </div>
 
-@if ($errors->{{ __('any())') }}
+@if ($errors->any())
 <div class="alert alert-danger shadow-sm rounded-4 mb-4">
     <div class="fw-bold mb-1"><i class="fas fa-exclamation-circle me-2"></i>{{ __('Terdapat kesalahan pada input Anda:') }}</div>
     <ul class="mb-0 small">

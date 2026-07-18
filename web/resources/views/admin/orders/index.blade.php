@@ -17,7 +17,7 @@
        class="btn btn-sm rounded-pill px-3 {{ is_null($status) ? 'btn-primary' : 'btn-outline-secondary' }}">
         {{ __('Semua') }}
     </a>
-    @foreach(['pending_payment' => 'Pending', 'paid' => 'Paid', 'delivered' => 'Delivered', 'cancelled' => 'Cancelled', 'expired' => 'Expired'] as $key => {{ __('$label)') }}
+    @foreach(['pending_payment' => 'Pending', 'paid' => 'Paid', 'delivered' => 'Delivered', 'cancelled' => 'Cancelled', 'expired' => 'Expired'] as $key => $label
     <a href="{{ request()->fullUrlWithQuery(['status' => $key]) }}"
        class="btn btn-sm rounded-pill px-3 {{ $status === $key ? 'btn-primary' : 'btn-outline-secondary' }}">
         {{ $label }}
@@ -101,7 +101,7 @@
                         <td class="text-secondary small">{{ $order->created_at->format('d M Y H:i') }}</td>
                         <td class="text-end px-4">
                             <div class="d-flex gap-2 justify-content-end">
-                                @if($order->{{ __('status === \'pending_payment\')') }}
+                                @if($order->status === 'pending_payment')
                                 <form action="{{ route('admin.orders.accept', $order->id) }}" method="POST" class="m-0" onsubmit="confirmAction(event, 'Konfirmasi terima pembayaran untuk pesanan ini?');">
                                     @csrf
                                     <button type="submit" class="btn btn-sm btn-light text-success rounded-circle border-success" title="{{ __('Terima Pembayaran') }}">
@@ -184,10 +184,10 @@
                         <h6 class="fw-bold text-muted border-bottom pb-2 mb-3">Data Akun yang Dikirim ({{ $order->stockUnits->count() }} unit)</h6>
                         @php $isMultiUnit = $order->stockUnits->count() > 1; @endphp
                         <div class="d-flex flex-column gap-3" style="max-height: 300px; overflow-y: auto;">
-                            @foreach($order->{{ __('stockUnits as $unit)') }}
+                            @foreach($order->stockUnits as $unit)
                             <div class="p-3 bg-light rounded-3 border d-flex justify-content-between align-items-center gap-3">
                                 <div class="text-break flex-grow-1" style="font-family: monospace; white-space: pre-wrap; font-size: 0.85rem;">{{ $unit->raw_text }}</div>
-                                @if($order->{{ __('status === \'delivered\')') }}
+                                @if($order->status === 'delivered')
                                 <div class="flex-shrink-0">
                                     @if($isMultiUnit)
                                         <input type="checkbox" class="form-check-input stock-checkbox" data-order-id="{{ $order->id }}" value="{{ $unit->id }}" onchange="updateStockCheckboxes('{{ $order->id }}')" style="width: 1.5rem; height: 1.5rem; border-radius: 4px; cursor: pointer; border: 2px solid #ccc;">
@@ -205,7 +205,7 @@
                             @endforeach
                         </div>
                         
-                        @if($isMultiUnit && $order->{{ __('status === \'delivered\')') }}
+                        @if($isMultiUnit && $order->status === 'delivered')
                         <div class="selected-actions-container mt-3 d-none" id="actions-{{ $order->id }}">
                             <div class="d-flex justify-content-between align-items-center bg-warning-subtle p-3 rounded-3 border border-warning">
                                 <span class="small text-warning-emphasis fw-bold"><span class="checked-count" id="count-{{ $order->id }}">0</span> {{ __('akun terpilih:') }}</span>
@@ -227,17 +227,17 @@
                         <h6 class="fw-bold text-muted border-bottom pb-2 mb-3">{{ __('Log Sistem') }}</h6>
                         <div class="d-flex flex-wrap gap-3 small">
                             <div><span class="text-muted">{{ __('Dibuat:') }}</span> <br><b>{{ $order->created_at->format('d M Y H:i:s') }}</b></div>
-                            @if($order->{{ __('paid_at)') }}
+                            @if($order->paid_at
                             <div><span class="text-muted">{{ __('Dibayar:') }}</span> <br><b class="text-success">{{ \Carbon\Carbon::parse($order->paid_at)->format('d M Y H:i:s') }}</b></div>
                             @endif
-                            @if($order->{{ __('delivered_at)') }}
+                            @if($order->delivered_at
                             <div><span class="text-muted">{{ __('Dikirim:') }}</span> <br><b class="text-primary">{{ \Carbon\Carbon::parse($order->delivered_at)->format('d M Y H:i:s') }}</b></div>
                             @endif
-                            @if($order->{{ __('cancelled_at)') }}
+                            @if($order->cancelled_at
                             <div><span class="text-muted">{{ __('Dibatalkan:') }}</span> <br><b class="text-danger">{{ \Carbon\Carbon::parse($order->cancelled_at)->format('d M Y H:i:s') }}</b></div>
                             @endif
                         </div>
-                        @if($order->{{ __('cancel_reason)') }}
+                        @if($order->cancel_reason
                         <div class="alert alert-danger mt-3 small mb-0">
                             <b>{{ __('Alasan Batal:') }}</b> {{ $order->cancel_reason }}
                         </div>
@@ -246,7 +246,7 @@
                 </div>
             </div>
             <div class="modal-footer border-0">
-                @if($order->{{ __('status === \'delivered\')') }}
+                @if($order->status === 'delivered')
                 <form action="{{ route('admin.orders.refund', $order->id) }}" method="POST" class="m-0 d-inline" onsubmit="confirmAction(event, 'Apakah Anda yakin ingin membatalkan pesanan ini, merefund penuh (stok ditarik ke karantina), dan membatalkan/menghapus saldo tertahan seller?');">
                     @csrf
                     <button type="submit" class="btn btn-danger rounded-pill px-4">

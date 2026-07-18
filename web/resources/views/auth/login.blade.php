@@ -1045,10 +1045,10 @@
       @if(session('success'))
           <div class="alert alert-success py-2 small border-0 bg-success bg-opacity-10 text-success rounded-3 mb-3"><i class="fas fa-check-circle me-1"></i>{{ session('success') }}</div>
       @endif
-      @if($errors->{{ __('any())') }}
+      @if($errors->any())
           <div class="alert alert-danger py-2 small border-0 bg-danger bg-opacity-10 text-danger rounded-3 mb-3">
               <ul class="mb-0 ps-3">
-                  @foreach($errors->{{ __('all() as $err)') }}
+                  @foreach($errors->all() as $err)
                       <li>{{ $err }}</li>
                   @endforeach
               </ul>

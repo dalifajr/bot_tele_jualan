@@ -62,7 +62,7 @@
                                     <div class="text-secondary small" title="{{ $log->user_agent }}"><i class="fab fa-chrome text-primary me-1"></i>{{ $log->browser ?? '-' }}</div>
                                 </td>
                                 <td class="text-end pe-4">
-                                    @if(\Illuminate\Support\Facades\Cache::has('blocked_ip:' . $log->{{ __('ip_address))') }}
+                                    @if(\Illuminate\Support\Facades\Cache::has('blocked_ip:' . $log->ip_address))
                                         <form action="{{ route('admin.logins.unblock-ip') }}" method="POST" class="d-inline">
                                             @csrf
                                             <input type="hidden" name="ip_address" value="{{ $log->ip_address }}">
@@ -120,7 +120,7 @@
                                 <td>
                                     @if($login->{{ __('status === \'used\')') }}
                                         <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill">{{ __('Digunakan') }}</span>
-                                    @elseif($login->{{ __('status === \'pending\')') }}
+                                    @elseif($login->status === 'pending')
                                         <span class="badge bg-warning bg-opacity-10 text-warning px-3 py-2 rounded-pill">{{ __('Menunggu Verifikasi') }}</span>
                                     @else
                                         <span class="badge bg-secondary bg-opacity-10 text-secondary px-3 py-2 rounded-pill">{{ ucfirst($login->status) }}</span>
