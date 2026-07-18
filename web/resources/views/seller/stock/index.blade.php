@@ -673,7 +673,7 @@
                         if (minutes > 0 || hours > 0) timeString += minutes + 'm ';
                         timeString += seconds + 'd';
                         
-                        el.innerHTML = '<span class="text-info"><i class="fas fa-clock me-1"></i>{{ __('\' + timeString + \'') }}</span>';
+                        el.innerHTML = '<span class="text-info"><i class="fas fa-clock me-1"></i>' + timeString + '</span>';
                     }
                 });
                 
