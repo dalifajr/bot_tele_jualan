@@ -40,12 +40,17 @@ class BackupController extends Controller
         $dbSizeFormatted = $this->formatBytes($dbSize);
 
         $totalRecords = 0;
-        $tables = ['users', 'products', 'stock_units', 'orders', 'order_items', 'payments', 'complaint_cases', 'bot_settings', 'audit_logs'];
-
-        foreach ($tables as $table) {
-            if (Schema::hasTable($table)) {
-                $totalRecords += DB::table($table)->count();
+        try {
+            if (method_exists(\Illuminate\Support\Facades\Schema::class, 'getTables')) {
+                foreach (\Illuminate\Support\Facades\Schema::getTables() as $tableInfo) {
+                    $tableName = is_array($tableInfo) ? ($tableInfo['name'] ?? null) : ($tableInfo->name ?? null);
+                    if ($tableName && !str_starts_with($tableName, 'sqlite_')) {
+                        $totalRecords += \Illuminate\Support\Facades\DB::table($tableName)->count();
+                    }
+                }
             }
+        } catch (\Exception $e) {
+            // fallback
         }
 
         // 2. Settings Status
