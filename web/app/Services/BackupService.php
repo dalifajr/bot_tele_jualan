@@ -33,6 +33,10 @@ class BackupService
         'complaint_attachments' => 'complaint_attachments',
         'bot_settings' => BotSetting::class,
         'audit_logs' => AuditLog::class,
+        'reviews' => \App\Models\Review::class,
+        'seller_bank_accounts' => \App\Models\SellerBankAccount::class,
+        'vpn_accounts' => \App\Models\VpnAccount::class,
+        'product_workers' => 'product_workers',
     ];
 
     /**
@@ -596,7 +600,11 @@ class BackupService
             $extraTables = [
                 'sessions', 'cache', 'cache_locks', 'visitors', 
                 'coupons', 'withdrawal_requests', 'chat_messages', 
-                'cart_items', 'broadcast_jobs'
+                'cart_items', 'broadcast_jobs', 'coupon_user',
+                'broadcast_logs', 'github_check_batches', 'github_check_results',
+                'listener_events', 'notification_retry_jobs', 'notifications',
+                'telegram_link_tokens', 'telegram_login_tokens', 'login_logs',
+                'telemetry_events', 'update_history'
             ];
             foreach ($extraTables as $table) {
                 if (self::sqlContainsTable($sql, $table)) {
