@@ -227,17 +227,17 @@
                         <h6 class="fw-bold text-muted border-bottom pb-2 mb-3">{{ __('Log Sistem') }}</h6>
                         <div class="d-flex flex-wrap gap-3 small">
                             <div><span class="text-muted">{{ __('Dibuat:') }}</span> <br><b>{{ $order->created_at->format('d M Y H:i:s') }}</b></div>
-                            @if($order->paid_at
+                            @if($order->paid_at)
                             <div><span class="text-muted">{{ __('Dibayar:') }}</span> <br><b class="text-success">{{ \Carbon\Carbon::parse($order->paid_at)->format('d M Y H:i:s') }}</b></div>
                             @endif
-                            @if($order->delivered_at
+                            @if($order->delivered_at)
                             <div><span class="text-muted">{{ __('Dikirim:') }}</span> <br><b class="text-primary">{{ \Carbon\Carbon::parse($order->delivered_at)->format('d M Y H:i:s') }}</b></div>
                             @endif
-                            @if($order->cancelled_at
+                            @if($order->cancelled_at)
                             <div><span class="text-muted">{{ __('Dibatalkan:') }}</span> <br><b class="text-danger">{{ \Carbon\Carbon::parse($order->cancelled_at)->format('d M Y H:i:s') }}</b></div>
                             @endif
                         </div>
-                        @if($order->cancel_reason
+                        @if($order->cancel_reason)
                         <div class="alert alert-danger mt-3 small mb-0">
                             <b>{{ __('Alasan Batal:') }}</b> {{ $order->cancel_reason }}
                         </div>
