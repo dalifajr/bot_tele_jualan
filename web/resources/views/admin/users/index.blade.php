@@ -6,8 +6,8 @@
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h4 class="fw-bold mb-1">Manajemen Pelanggan</h4>
-        <p class="text-muted mb-0">Daftar semua pengguna yang pernah berinteraksi</p>
+        <h4 class="fw-bold mb-1">{{ __('Manajemen Pelanggan') }}</h4>
+        <p class="text-muted mb-0">{{ __('Daftar semua pengguna yang pernah berinteraksi') }}</p>
     </div>
 </div>
 
@@ -16,7 +16,7 @@
     <div class="col-xl col-md-3 col-6">
         <div class="card border-0 shadow-sm h-100" style="border-radius: 16px;">
             <div class="card-body p-3 text-center">
-                <div class="text-secondary small fw-bold mb-1">Customer (Pelanggan)</div>
+                <div class="text-secondary small fw-bold mb-1">{{ __('Customer (Pelanggan)') }}</div>
                 <h3 class="fw-bold mb-0 text-primary">{{ $customerCount }}</h3>
             </div>
         </div>
@@ -24,7 +24,7 @@
     <div class="col-xl col-md-3 col-6">
         <div class="card border-0 shadow-sm h-100" style="border-radius: 16px;">
             <div class="card-body p-3 text-center">
-                <div class="text-secondary small fw-bold mb-1">Seller (Penjual Mitra)</div>
+                <div class="text-secondary small fw-bold mb-1">{{ __('Seller (Penjual Mitra)') }}</div>
                 <h3 class="fw-bold mb-0 text-info">{{ $sellerCount }}</h3>
             </div>
         </div>
@@ -32,7 +32,7 @@
     <div class="col-xl col-md-3 col-6">
         <div class="card border-0 shadow-sm h-100" style="border-radius: 16px;">
             <div class="card-body p-3 text-center">
-                <div class="text-secondary small fw-bold mb-1">Admin</div>
+                <div class="text-secondary small fw-bold mb-1">{{ __('Admin') }}</div>
                 <h3 class="fw-bold mb-0 text-dark">{{ $adminCount }}</h3>
             </div>
         </div>
@@ -40,7 +40,7 @@
     <div class="col-xl col-md-3 col-6">
         <div class="card border-0 shadow-sm h-100" style="border-radius: 16px;">
             <div class="card-body p-3 text-center">
-                <div class="text-secondary small fw-bold mb-1">Suspended</div>
+                <div class="text-secondary small fw-bold mb-1">{{ __('Suspended') }}</div>
                 <h3 class="fw-bold mb-0 text-danger">{{ $suspendedCount }}</h3>
             </div>
         </div>
@@ -53,25 +53,25 @@
             <div class="col-md-5">
                 <div class="input-group">
                     <span class="input-group-text bg-light border-0"><i class="fas fa-search text-muted"></i></span>
-                    <input type="text" name="search" class="form-control border-0 bg-light" placeholder="Cari username, nama, email, atau ID Telegram..." value="{{ request('search') }}">
+                    <input type="text" name="search" class="form-control border-0 bg-light" placeholder="{{ __('Cari username, nama, email, atau ID Telegram...') }}" value="{{ request('search') }}">
                 </div>
             </div>
             <div class="col-md-3 col-6">
                 <select name="role" class="form-select border-0 bg-light">
-                    <option value="">Semua Role / Status</option>
-                    <option value="customer" {{ request('role') === 'customer' ? 'selected' : '' }}>Customer (Biasa)</option>
-                    <option value="seller" {{ request('role') === 'seller' ? 'selected' : '' }}>Seller (Penjual Mitra)</option>
-                    <option value="admin" {{ request('role') === 'admin' ? 'selected' : '' }}>Admin (Penuh)</option>
-                    <option value="suspended" {{ request('role') === 'suspended' ? 'selected' : '' }}>Suspended</option>
+                    <option value="">{{ __('Semua Role / Status') }}</option>
+                    <option value="customer" {{ request('role') === 'customer' ? 'selected' : '' }}>{{ __('Customer (Biasa)') }}</option>
+                    <option value="seller" {{ request('role') === 'seller' ? 'selected' : '' }}>{{ __('Seller (Penjual Mitra)') }}</option>
+                    <option value="admin" {{ request('role') === 'admin' ? 'selected' : '' }}>{{ __('Admin (Penuh)') }}</option>
+                    <option value="suspended" {{ request('role') === 'suspended' ? 'selected' : '' }}>{{ __('Suspended') }}</option>
                 </select>
             </div>
             <div class="col-md-4 col-6 d-flex gap-2 justify-content-end">
-                <button type="submit" class="btn btn-primary px-3 rounded-pill flex-fill">Cari & Filter</button>
+                <button type="submit" class="btn btn-primary px-3 rounded-pill flex-fill">{{ __('Cari & Filter') }}</button>
                 @if(request('search') || request('role'))
-                    <a href="{{ route('admin.users.index') }}" class="btn btn-light px-3 rounded-pill">Reset</a>
+                    <a href="{{ route('admin.users.index') }}" class="btn btn-light px-3 rounded-pill">{{ __('Reset') }}</a>
                 @endif
-                <button type="button" class="btn btn-success px-3 rounded-pill" title="Ekspor ke Excel" onclick="confirmExport()">
-                    <i class="fas fa-file-excel me-1"></i>Ekspor
+                <button type="button" class="btn btn-success px-3 rounded-pill" title="{{ __('Ekspor ke Excel') }}" onclick="confirmExport()">
+                    <i class="fas fa-file-excel me-1"></i>{{ __('Ekspor') }}
                 </button>
             </div>
         </form>
@@ -92,12 +92,12 @@
             <table class="table table-hover align-middle mb-0">
                 <thead>
                     <tr class="text-secondary small border-bottom">
-                        <th class="px-4 py-3 border-0">Telegram ID</th>
-                        <th class="py-3 border-0">Nama & Username</th>
-                        <th class="py-3 border-0">Email</th>
-                        <th class="py-3 border-0">Status & Role</th>
-                        <th class="py-3 border-0">Bergabung</th>
-                        <th class="py-3 border-0 text-end px-4">Aksi</th>
+                        <th class="px-4 py-3 border-0">{{ __('Telegram ID') }}</th>
+                        <th class="py-3 border-0">{{ __('Nama & Username') }}</th>
+                        <th class="py-3 border-0">{{ __('Email') }}</th>
+                        <th class="py-3 border-0">{{ __('Status & Role') }}</th>
+                        <th class="py-3 border-0">{{ __('Bergabung') }}</th>
+                        <th class="py-3 border-0 text-end px-4">{{ __('Aksi') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -111,10 +111,10 @@
                         <td class="text-muted small">{{ $user->email ?? '-' }}</td>
                         <td>
                             <div class="mb-1">
-                                @if($user->is_suspended)
-                                    <span class="badge bg-danger-subtle text-danger rounded-pill px-2"><i class="fas fa-ban me-1"></i>Ditangguhkan</span>
+                                @if($user->{{ __('is_suspended)') }}
+                                    <span class="badge bg-danger-subtle text-danger rounded-pill px-2"><i class="fas fa-ban me-1"></i>{{ __('Ditangguhkan') }}</span>
                                 @else
-                                    <span class="badge bg-success-subtle text-success rounded-pill px-2"><i class="fas fa-check me-1"></i>Aktif</span>
+                                    <span class="badge bg-success-subtle text-success rounded-pill px-2"><i class="fas fa-check me-1"></i>{{ __('Aktif') }}</span>
                                 @endif
                             </div>
                             <span class="badge bg-{{ $user->role === 'admin' ? 'primary' : ($user->role === 'seller' ? 'info' : 'secondary') }}-subtle text-{{ $user->role === 'admin' ? 'primary' : ($user->role === 'seller' ? 'info' : 'secondary') }} rounded-pill px-2">
@@ -123,7 +123,7 @@
                         </td>
                         <td class="text-secondary small">{{ $user->created_at->format('d M Y') }}</td>
                         <td class="text-end px-4">
-                            @if($user->id !== Auth::id())
+                            @if($user->{{ __('id !== Auth::id())') }}
                             <div class="dropdown">
                                 <button class="btn btn-sm btn-light rounded-circle" type="button" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy": "fixed"}' aria-expanded="false">
                                     <i class="fas fa-ellipsis-v"></i>
@@ -131,25 +131,25 @@
                                 <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" style="border-radius: 12px; min-width: 200px;">
                                     <li>
                                         <button class="dropdown-item py-2" data-bs-toggle="modal" data-bs-target="#editUserModal{{ $user->id }}">
-                                            <i class="fas fa-user-shield me-2 text-primary"></i> Ubah Detail Akses
+                                            <i class="fas fa-user-shield me-2 text-primary"></i> {{ __('Ubah Detail Akses') }}
                                         </button>
                                     </li>
                                     <li>
                                         <form action="{{ route('admin.users.impersonate', $user->id) }}" method="POST" class="m-0">
                                             @csrf
                                             <button type="submit" class="dropdown-item py-2 text-info">
-                                                <i class="fas fa-user-secret me-2"></i> Login Sebagai
+                                                <i class="fas fa-user-secret me-2"></i> {{ __('Login Sebagai') }}
                                             </button>
                                         </form>
                                     </li>
                                     <li><hr class="dropdown-divider"></li>
                                     
-                                    @if($user->is_suspended)
+                                    @if($user->{{ __('is_suspended)') }}
                                         <li>
                                             <form action="{{ route('admin.users.unsuspend', $user->id) }}" method="POST">
                                                 @csrf
                                                 <button type="submit" class="dropdown-item py-2 text-success">
-                                                    <i class="fas fa-unlock me-2"></i> Cabut Penangguhan
+                                                    <i class="fas fa-unlock me-2"></i> {{ __('Cabut Penangguhan') }}
                                                 </button>
                                             </form>
                                         </li>
@@ -158,7 +158,7 @@
                                             <form action="{{ route('admin.users.suspend', $user->id) }}" method="POST">
                                                 @csrf
                                                  <button type="button" class="dropdown-item py-2 text-warning" onclick="confirmSuspend(event)">
-                                                     <i class="fas fa-ban me-2"></i> Suspend Pengguna
+                                                     <i class="fas fa-ban me-2"></i> {{ __('Suspend Pengguna') }}
                                                  </button>
                                             </form>
                                         </li>
@@ -170,14 +170,14 @@
                                             @csrf
                                             @method('DELETE')
                                             <button type="button" class="dropdown-item py-2 text-danger" onclick="confirmAction(event, 'Yakin ingin menghapus permanen pengguna ini? Proses ini tidak dapat dibatalkan.')">
-                                                <i class="fas fa-trash me-2"></i> Hapus Pengguna
+                                                <i class="fas fa-trash me-2"></i> {{ __('Hapus Pengguna') }}
                                             </button>
                                         </form>
                                     </li>
                                 </ul>
                             </div>
                             @else
-                            <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" disabled>Ini Anda</button>
+                            <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" disabled>{{ __('Ini Anda') }}</button>
                             @endif
                         </td>
                     </tr>
@@ -191,7 +191,7 @@
         @else
         <div class="text-center py-5">
             <i class="fas fa-users text-muted mb-3" style="font-size: 3rem;"></i>
-            <p class="text-muted mb-0">Tidak ada pengguna yang ditemukan.</p>
+            <p class="text-muted mb-0">{{ __('Tidak ada pengguna yang ditemukan.') }}</p>
         </div>
         @endif
     </div>
@@ -205,7 +205,7 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content" style="border-radius: 16px; border: none;">
             <div class="modal-header border-0 pb-0">
-                <h5 class="fw-bold">Ubah Hak Akses & Detail Pengguna</h5>
+                <h5 class="fw-bold">{{ __('Ubah Hak Akses & Detail Pengguna') }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form action="{{ route('admin.users.update', $user->id) }}" method="POST">
@@ -213,52 +213,52 @@
                 @method('PUT')
                 <div class="modal-body p-4">
                     <div class="mb-3">
-                        <p class="mb-1 text-muted small">Nama Pengguna</p>
+                        <p class="mb-1 text-muted small">{{ __('Nama Pengguna') }}</p>
                         <h6 class="fw-bold text-primary">{{ $user->full_name ?? $user->username ?? 'Unknown' }}</h6>
                     </div>
                     
                     <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">Role Akses</label>
+                        <label class="form-label text-muted small fw-bold">{{ __('Role Akses') }}</label>
                         <select name="role" id="role_select_{{ $user->id }}" class="form-select" onchange="toggleSellerFields({{ $user->id }})" required>
-                            <option value="customer" {{ $user->role === 'customer' ? 'selected' : '' }}>Customer (Biasa)</option>
-                            <option value="seller" {{ $user->role === 'seller' ? 'selected' : '' }}>Seller (Penjual Mitra)</option>
-                            <option value="admin" {{ $user->role === 'admin' ? 'selected' : '' }}>Admin (Penuh)</option>
+                            <option value="customer" {{ $user->role === 'customer' ? 'selected' : '' }}>{{ __('Customer (Biasa)') }}</option>
+                            <option value="seller" {{ $user->role === 'seller' ? 'selected' : '' }}>{{ __('Seller (Penjual Mitra)') }}</option>
+                            <option value="admin" {{ $user->role === 'admin' ? 'selected' : '' }}>{{ __('Admin (Penuh)') }}</option>
                         </select>
                     </div>
 
                     <div id="seller_fields_{{ $user->id }}" class="{{ $user->role === 'seller' ? '' : 'd-none' }}">
                         <div class="mb-3">
-                            <label class="form-label text-muted small fw-bold">Saldo Dompet (Wallet Balance)</label>
+                            <label class="form-label text-muted small fw-bold">{{ __('Saldo Dompet (Wallet Balance)') }}</label>
                             <div class="input-group">
                                 <span class="input-group-text bg-light text-muted">Rp</span>
                                 <input type="number" name="wallet_balance" class="form-control" value="{{ $user->wallet_balance ?? 0 }}" min="0">
                             </div>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label text-muted small fw-bold">Persentase Potongan Platform (Fee %)</label>
+                            <label class="form-label text-muted small fw-bold">{{ __('Persentase Potongan Platform (Fee %)') }}</label>
                             <div class="input-group">
                                 <input type="number" name="platform_fee_percent" class="form-control" value="{{ $user->platform_fee_percent ?? 10 }}" min="0" max="100">
                                 <span class="input-group-text bg-light text-muted">%</span>
                             </div>
-                            <div class="form-text small text-muted">Komisi bagi hasil yang dipotong oleh platform saat transaksi lunas.</div>
+                            <div class="form-text small text-muted">{{ __('Komisi bagi hasil yang dipotong oleh platform saat transaksi lunas.') }}</div>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label text-muted small fw-bold">Jam Karantina Default (Save Hours)</label>
+                            <label class="form-label text-muted small fw-bold">{{ __('Jam Karantina Default (Save Hours)') }}</label>
                             <div class="input-group">
                                 <input type="number" name="seller_save_hours" class="form-control" value="{{ $user->seller_save_hours ?? 80 }}" min="0">
-                                <span class="input-group-text bg-light text-muted">jam</span>
+                                <span class="input-group-text bg-light text-muted">{{ __('jam') }}</span>
                             </div>
-                            <div class="form-text small text-muted">Durasi karantina stok sebelum pindah otomatis dari *Simpan Akun* ke *Ready*.</div>
+                            <div class="form-text small text-muted">{{ __('Durasi karantina stok sebelum pindah otomatis dari *Simpan Akun* ke *Ready*.') }}</div>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label text-muted small fw-bold d-block">Akses Fitur Tool</label>
+                            <label class="form-label text-muted small fw-bold d-block">{{ __('Akses Fitur Tool') }}</label>
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input" type="checkbox" name="allowed_tools[]" value="github_checker" id="tool_github_{{ $user->id }}" {{ is_array($user->allowed_tools) && in_array('github_checker', $user->allowed_tools) ? 'checked' : '' }}>
-                                <label class="form-check-label small" for="tool_github_{{ $user->id }}">GitHub Live Checker</label>
+                                <label class="form-check-label small" for="tool_github_{{ $user->id }}">{{ __('GitHub Live Checker') }}</label>
                             </div>
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input" type="checkbox" name="allowed_tools[]" value="gmail_checker" id="tool_gmail_{{ $user->id }}" {{ is_array($user->allowed_tools) && in_array('gmail_checker', $user->allowed_tools) ? 'checked' : '' }}>
-                                <label class="form-check-label small" for="tool_gmail_{{ $user->id }}">Gmail Live Checker</label>
+                                <label class="form-check-label small" for="tool_gmail_{{ $user->id }}">{{ __('Gmail Live Checker') }}</label>
                             </div>
                         </div>
                     </div>
@@ -271,8 +271,8 @@
                     </div>
                 </div>
                 <div class="modal-footer border-0 pt-0">
-                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary rounded-pill px-4">Simpan Perubahan</button>
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">{{ __('Batal') }}</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">{{ __('Simpan Perubahan') }}</button>
                 </div>
             </form>
         </div>
@@ -404,7 +404,7 @@ function confirmSuspend(event) {
 function confirmExport() {
     Swal.fire({
         title: 'Konfirmasi Ekspor Data',
-        html: '<p class="text-muted small mb-3">Untuk keamanan, masukkan password admin Anda sebelum mengekspor data pengguna.</p>',
+        html: '<p class="text-muted small mb-3">{{ __('Untuk keamanan, masukkan password admin Anda sebelum mengekspor data pengguna.') }}</p>',
         input: 'password',
         inputPlaceholder: 'Masukkan password Anda...',
         inputAttributes: { autocomplete: 'current-password' },

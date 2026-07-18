@@ -1017,25 +1017,25 @@
               <i class="fas fa-shopping-bag"></i>
             </div>
             <div class="rounded-full flex items-center justify-center text-white" style="width: 44px; height: 44px; background: linear-gradient(135deg, #00d2ff 0%, #00a8cc 100%); margin-left: -12px; border: 3px solid rgba(255,255,255,0.85); z-index: 1;">
-              <span class="font-bold" style="font-size: 0.65rem;">Mitra</span>
+              <span class="font-bold" style="font-size: 0.65rem;">{{ __('Mitra') }}</span>
             </div>
           </div>
           <div>
-            <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 font-outfit" style="line-height: 1; margin: 0;">Jualan</h1>
+            <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 font-outfit" style="line-height: 1; margin: 0;">{{ __('Jualan') }}</h1>
             <div class="text-[0.8rem] font-bold text-slate-400 uppercase tracking-widest mt-1">{{ config('app.name', 'Dzulfikrialifajri Store') }}</div>
           </div>
         </div>
       </div>
 
       <div class="mb-4">
-        <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight mb-1" id="auth-title">Selamat Datang</h2>
-        <p class="text-sm text-slate-500 font-medium" id="auth-subtitle">Silakan masuk untuk mengakses portal Anda.</p>
+        <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight mb-1" id="auth-title">{{ __('Selamat Datang') }}</h2>
+        <p class="text-sm text-slate-500 font-medium" id="auth-subtitle">{{ __('Silakan masuk untuk mengakses portal Anda.') }}</p>
       </div>
 
       <!-- Auth Tabs Navigation (Pill Selector) -->
       <div class="auth-tabs-container mb-4">
-          <button type="button" class="auth-tab-btn active" id="tab-btn-login" onclick="switchAuthTab('login')">Masuk</button>
-          <button type="button" class="auth-tab-btn" id="tab-btn-register" onclick="switchAuthTab('register')">Daftar</button>
+          <button type="button" class="auth-tab-btn active" id="tab-btn-login" onclick="switchAuthTab('login')">{{ __('Masuk') }}</button>
+          <button type="button" class="auth-tab-btn" id="tab-btn-register" onclick="switchAuthTab('register')">{{ __('Daftar') }}</button>
       </div>
 
       <!-- Alerts Block -->
@@ -1045,10 +1045,10 @@
       @if(session('success'))
           <div class="alert alert-success py-2 small border-0 bg-success bg-opacity-10 text-success rounded-3 mb-3"><i class="fas fa-check-circle me-1"></i>{{ session('success') }}</div>
       @endif
-      @if($errors->any())
+      @if($errors->{{ __('any())') }}
           <div class="alert alert-danger py-2 small border-0 bg-danger bg-opacity-10 text-danger rounded-3 mb-3">
               <ul class="mb-0 ps-3">
-                  @foreach($errors->all() as $err)
+                  @foreach($errors->{{ __('all() as $err)') }}
                       <li>{{ $err }}</li>
                   @endforeach
               </ul>
@@ -1058,10 +1058,10 @@
       <!-- Hidden Tab Pillars -->
       <ul class="nav nav-pills d-none" id="authTabs" role="tablist">
           <li class="nav-item">
-              <button class="nav-link active" id="login-tab" data-bs-toggle="tab" data-bs-target="#login-pane" type="button" role="tab">Masuk</button>
+              <button class="nav-link active" id="login-tab" data-bs-toggle="tab" data-bs-target="#login-pane" type="button" role="tab">{{ __('Masuk') }}</button>
           </li>
           <li class="nav-item">
-              <button class="nav-link" id="register-tab" data-bs-toggle="tab" data-bs-target="#register-pane" type="button" role="tab">Daftar</button>
+              <button class="nav-link" id="register-tab" data-bs-toggle="tab" data-bs-target="#register-pane" type="button" role="tab">{{ __('Daftar') }}</button>
           </li>
       </ul>
 
@@ -1072,18 +1072,18 @@
               <form action="{{ route('login.post') }}" method="POST" class="space-y-4">
                   @csrf
                   <div class="form-group relative">
-                      <input type="text" name="login" class="form-control" placeholder="Username atau Email" value="{{ old('login') }}" required autofocus />
+                      <input type="text" name="login" class="form-control" placeholder="{{ __('Username atau Email') }}" value="{{ old('login') }}" required autofocus />
                       <i class="fas fa-user form-icon"></i>
                   </div>
                   <div class="form-group relative">
-                      <input type="password" name="password" class="form-control" placeholder="Password" required />
+                      <input type="password" name="password" class="form-control" placeholder="{{ __('Password') }}" required />
                       <i class="fas fa-lock form-icon"></i>
                   </div>
 
                   <div class="flex justify-between items-center">
                       <div class="form-check ms-1">
                           <input type="checkbox" name="remember" class="form-check-input" id="rememberCheck">
-                          <label class="form-check-label small text-muted" for="rememberCheck">Ingat Saya</label>
+                          <label class="form-check-label small text-muted" for="rememberCheck">{{ __('Ingat Saya') }}</label>
                       </div>
                   </div>
 
@@ -1093,20 +1093,20 @@
                   </div>
 
                   <button type="submit" class="btn-primary mt-2">
-                      <span>Masuk Sistem</span>
+                      <span>{{ __('Masuk Sistem') }}</span>
                       <i class="fas fa-arrow-right text-xs transition-transform"></i>
                   </button>
               </form>
 
               <div class="position-relative my-4 text-center">
                   <hr class="text-secondary opacity-25">
-                  <span class="position-absolute top-50 start-50 translate-middle bg-white px-3 small text-muted font-bold" style="font-size: 0.75rem;">ATAU</span>
+                  <span class="position-absolute top-50 start-50 translate-middle bg-white px-3 small text-muted font-bold" style="font-size: 0.75rem;">{{ __('ATAU') }}</span>
               </div>
 
               <form action="{{ route('auth.telegram.request') }}" method="POST" class="d-grid">
                   @csrf
                   <button type="submit" class="btn-outline w-100">
-                      <i class="fab fa-telegram text-info fs-5"></i> Login dengan Telegram
+                      <i class="fab fa-telegram text-info fs-5"></i> {{ __('Login dengan Telegram') }}
                   </button>
               </form>
           </div>
@@ -1116,42 +1116,42 @@
               <form action="{{ route('register.post') }}" method="POST" class="space-y-4">
                   @csrf
                   <div class="form-group relative">
-                      <input type="text" name="full_name" class="form-control" placeholder="Nama Lengkap" value="{{ old('full_name') }}" required />
+                      <input type="text" name="full_name" class="form-control" placeholder="{{ __('Nama Lengkap') }}" value="{{ old('full_name') }}" required />
                       <i class="fas fa-id-card form-icon"></i>
                   </div>
 
                   <div class="row g-2">
                       <div class="col-6">
                           <div class="form-group relative">
-                              <input type="text" name="username" class="form-control" placeholder="Username" value="{{ old('username') }}" required />
+                              <input type="text" name="username" class="form-control" placeholder="{{ __('Username') }}" value="{{ old('username') }}" required />
                               <i class="fas fa-user-circle form-icon"></i>
                           </div>
                       </div>
                       <div class="col-6">
                           <div class="form-group relative">
-                              <input type="email" name="email" class="form-control" placeholder="Email" value="{{ old('email') }}" />
+                              <input type="email" name="email" class="form-control" placeholder="{{ __('Email') }}" value="{{ old('email') }}" />
                               <i class="fas fa-envelope form-icon"></i>
                           </div>
                       </div>
                   </div>
 
                   <div class="form-group relative">
-                      <input type="number" name="telegram_id" id="telegram_id_reg" class="form-control" placeholder="ID Telegram (Opsional)" value="{{ old('telegram_id') }}" />
+                      <input type="number" name="telegram_id" id="telegram_id_reg" class="form-control" placeholder="{{ __('ID Telegram (Opsional)') }}" value="{{ old('telegram_id') }}" />
                       <i class="fab fa-telegram-plane form-icon"></i>
                       <!-- Shrunk helper text positioned cleanly inside the form-group relative container -->
-                      <div id="telegram_id_feedback" class="text-slate-400 font-medium ms-2 mt-1" style="font-size: 0.65rem;">Agar bisa otomatis login dengan Telegram nantinya.</div>
+                      <div id="telegram_id_feedback" class="text-slate-400 font-medium ms-2 mt-1" style="font-size: 0.65rem;">{{ __('Agar bisa otomatis login dengan Telegram nantinya.') }}</div>
                   </div>
 
                   <div class="row g-2">
                       <div class="col-6">
                           <div class="form-group relative">
-                              <input type="password" name="password" class="form-control" placeholder="Kata Sandi" required />
+                              <input type="password" name="password" class="form-control" placeholder="{{ __('Kata Sandi') }}" required />
                               <i class="fas fa-key form-icon"></i>
                           </div>
                       </div>
                       <div class="col-6">
                           <div class="form-group relative">
-                              <input type="password" name="password_confirmation" class="form-control" placeholder="Ulangi Sandi" required />
+                              <input type="password" name="password_confirmation" class="form-control" placeholder="{{ __('Ulangi Sandi') }}" required />
                               <i class="fas fa-lock form-icon"></i>
                           </div>
                       </div>
@@ -1163,7 +1163,7 @@
                   </div>
 
                   <button type="submit" id="btn-register" class="btn-primary mt-2">
-                      <span>Daftar Sekarang</span>
+                      <span>{{ __('Daftar Sekarang') }}</span>
                       <i class="fas fa-user-plus text-xs"></i>
                   </button>
               </form>
@@ -1175,7 +1175,7 @@
         <div class="flex items-center justify-between gap-4 flex-wrap">
           <div class="text-left">
             <div class="text-[0.75rem] text-slate-400 font-medium">© 2026</div>
-            <div class="text-[0.65rem] font-bold text-slate-500">dzulfikrialifajri_store</div>
+            <div class="text-[0.65rem] font-bold text-slate-500">{{ __('dzulfikrialifajri_store') }}</div>
           </div>
         </div>
       </div>
@@ -1187,7 +1187,7 @@
       <div class="glass-card w-full">
         <div class="glass-header text-amber-400">
           <i class="fas fa-bullhorn text-lg"></i>
-          <span>Informasi Store</span>
+          <span>{{ __('Informasi Store') }}</span>
         </div>
         
         <p class="text-sm font-medium text-slate-200/90 leading-relaxed mb-4">
@@ -1196,7 +1196,7 @@
 
         <!-- Kontak Admin Box (Translucent Glass Overlay) -->
         <div class="small mb-4 p-3 rounded-4 border" style="background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.1) !important; color: #fff;">
-            <strong class="d-block mb-2 text-white">Kontak Admin:</strong>
+            <strong class="d-block mb-2 text-white">{{ __('Kontak Admin:') }}</strong>
             <a href="https://wa.me/6282269245660" target="_blank" class="text-white text-decoration-none mt-1 d-block"><i class="fab fa-whatsapp text-success me-1"></i> 082269245660 - WA</a>
             <a href="https://t.me/dzulfikrialifajri" target="_blank" class="text-white text-decoration-none mt-1 d-block"><i class="fab fa-telegram text-info me-1"></i> @dzulfikrialifajri - Telegram</a>
         </div>
@@ -1207,7 +1207,7 @@
             </span>
         </div>
       </div>
-      <div class="absolute bottom-4 right-6 text-[0.7rem] font-bold tracking-widest text-white/20 uppercase">Jualan v2.0</div>
+      <div class="absolute bottom-4 right-6 text-[0.7rem] font-bold tracking-widest text-white/20 uppercase">{{ __('Jualan v2.0') }}</div>
     </div>
   </div>
 
@@ -1265,7 +1265,7 @@
                   return;
               }
 
-              feedbackElem.innerHTML = '<span class="text-muted"><i class="fas fa-spinner fa-spin me-1"></i>Mengecek...</span>';
+              feedbackElem.innerHTML = '<span class="text-muted"><i class="fas fa-spinner fa-spin me-1"></i>{{ __('Mengecek...') }}</span>';
               saveBtn.disabled = true;
 
               checkTimeout = setTimeout(() => {
@@ -1290,7 +1290,7 @@
                   })
                   .catch(err => {
                       console.error(err);
-                      feedbackElem.innerHTML = '<span class="text-danger">Gagal mengecek ID Telegram.</span>';
+                      feedbackElem.innerHTML = '<span class="text-danger">{{ __('Gagal mengecek ID Telegram.') }}</span>';
                       saveBtn.disabled = false; 
                   });
               }, 500);

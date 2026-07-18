@@ -6,8 +6,8 @@
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h4 class="fw-bold mb-1">Pusat Notifikasi</h4>
-        <p class="text-muted mb-0">Daftar semua notifikasi sistem yang memerlukan tindakan Anda.</p>
+        <h4 class="fw-bold mb-1">{{ __('Pusat Notifikasi') }}</h4>
+        <p class="text-muted mb-0">{{ __('Daftar semua notifikasi sistem yang memerlukan tindakan Anda.') }}</p>
     </div>
 </div>
 
@@ -27,7 +27,7 @@
                             <h6 class="mb-1 fw-bold">Stock ID #{{ $stock->id }} - {{ $stock->product->name ?? 'Unknown' }}</h6>
                             <small class="text-muted">Siap sejak {{ \Carbon\Carbon::parse($stock->available_at ?? $stock->created_at->addHours(\App\Models\BotSetting::where('key', 'github_pack.save_hours')->value('value') ?? 80))->diffForHumans() }}</small>
                         </div>
-                        <span class="btn btn-sm btn-primary rounded-pill px-3">Verifikasi</span>
+                        <span class="btn btn-sm btn-primary rounded-pill px-3">{{ __('Verifikasi') }}</span>
                     </a>
                     @endforeach
                 </div>
@@ -51,7 +51,7 @@
                             <h6 class="mb-1 fw-bold">{{ $order->order_ref }} - Rp {{ number_format($order->total_price, 0, ',', '.') }}</h6>
                             <small class="text-muted">Dari {{ $order->customer->full_name ?? $order->customer->username ?? 'Unknown' }} &bull; {{ $order->created_at->diffForHumans() }}</small>
                         </div>
-                        <span class="btn btn-sm btn-warning rounded-pill px-3 text-dark">Proses</span>
+                        <span class="btn btn-sm btn-warning rounded-pill px-3 text-dark">{{ __('Proses') }}</span>
                     </a>
                     @endforeach
                 </div>
@@ -75,7 +75,7 @@
                             <h6 class="mb-1 fw-bold">Pengguna ID: {{ $login->telegram_id }}</h6>
                             <small class="text-muted">IP: {{ $login->ip_address }} &bull; {{ $login->created_at->diffForHumans() }}</small>
                         </div>
-                        <span class="btn btn-sm btn-info rounded-pill px-3 text-white">Konfirmasi</span>
+                        <span class="btn btn-sm btn-info rounded-pill px-3 text-white">{{ __('Konfirmasi') }}</span>
                     </a>
                     @endforeach
                 </div>
@@ -84,11 +84,11 @@
     </div>
     @endif
 
-    @if($readyToVerify->isEmpty() && $pendingOrders->isEmpty() && $pendingLogins->isEmpty())
+    @if($readyToVerify->isEmpty() && $pendingOrders->isEmpty() && $pendingLogins->{{ __('isEmpty())') }}
     <div class="col-12 text-center py-5">
         <i class="fas fa-check-circle text-success mb-3" style="font-size: 4rem;"></i>
-        <h4 class="fw-bold">Semua Bersih!</h4>
-        <p class="text-muted">Tidak ada notifikasi sistem baru yang memerlukan tindakan saat ini.</p>
+        <h4 class="fw-bold">{{ __('Semua Bersih!') }}</h4>
+        <p class="text-muted">{{ __('Tidak ada notifikasi sistem baru yang memerlukan tindakan saat ini.') }}</p>
     </div>
     @endif
 </div>

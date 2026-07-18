@@ -6,13 +6,13 @@
 <div class="container py-4">
     <div class="row mb-4 align-items-center">
         <div class="col-md-6">
-            <h4 class="mb-0 fw-bold text-primary"><i class="fas fa-bell me-2"></i>Pusat Notifikasi</h4>
-            <p class="text-muted mb-0">Semua pemberitahuan akun Anda</p>
+            <h4 class="mb-0 fw-bold text-primary"><i class="fas fa-bell me-2"></i>{{ __('Pusat Notifikasi') }}</h4>
+            <p class="text-muted mb-0">{{ __('Semua pemberitahuan akun Anda') }}</p>
         </div>
         <div class="col-md-6 text-md-end mt-3 mt-md-0">
             @if(Auth::user()->unreadNotifications->count() > 0)
             <button onclick="markAllNotificationsRead()" class="btn btn-outline-primary rounded-pill px-4">
-                <i class="fas fa-check-double me-2"></i>Tandai Semua Dibaca
+                <i class="fas fa-check-double me-2"></i>{{ __('Tandai Semua Dibaca') }}
             </button>
             @endif
         </div>
@@ -41,13 +41,13 @@
                                         {{ $notification->data['message'] ?? '' }}
                                     </p>
                                     
-                                    @if(($notification->data['type'] ?? '') === 'login_gagal' && isset($notification->data['ip_address']))
+                                    @if(($notification->data['type'] ?? '') === 'login_gagal' && isset($notification->{{ __('data[\'ip_address\']))') }}
                                     <div class="mt-2 mb-2" onclick="event.stopPropagation(); event.preventDefault();">
                                         <form action="{{ route('profile.logins.block-ip') }}" method="POST" class="d-inline">
                                             @csrf
                                             <input type="hidden" name="ip_address" value="{{ $notification->data['ip_address'] }}">
                                             <button type="submit" class="btn btn-sm btn-danger rounded-pill px-3" style="font-size: 0.8rem;">
-                                                <i class="fas fa-ban me-1"></i>Bukan Saya (Blokir IP)
+                                                <i class="fas fa-ban me-1"></i>{{ __('Bukan Saya (Blokir IP)') }}
                                             </button>
                                         </form>
                                     </div>
@@ -59,22 +59,22 @@
                                 </div>
                             </div>
                             
-                            @if(!$notification->read_at)
-                                <span class="badge bg-primary rounded-pill">Baru</span>
+                            @if(!$notification->{{ __('read_at)') }}
+                                <span class="badge bg-primary rounded-pill">{{ __('Baru') }}</span>
                             @endif
                         </div>
                     </a>
                 @empty
                     <div class="p-5 text-center text-muted">
                         <i class="fas fa-bell-slash fs-1 mb-3 text-secondary" style="opacity: 0.5;"></i>
-                        <h5>Belum ada notifikasi</h5>
-                        <p>Anda belum menerima pemberitahuan apa pun.</p>
+                        <h5>{{ __('Belum ada notifikasi') }}</h5>
+                        <p>{{ __('Anda belum menerima pemberitahuan apa pun.') }}</p>
                     </div>
                 @endforelse
             </div>
         </div>
         
-        @if($notifications->hasPages())
+        @if($notifications->{{ __('hasPages())') }}
         <div class="card-footer bg-white border-top p-3 d-flex justify-content-center">
             {{ $notifications->links('pagination::bootstrap-5') }}
         </div>

@@ -52,8 +52,8 @@
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h4 class="fw-bold mb-1"><i class="fas fa-envelope me-2"></i>Gmail Live Checker</h4>
-        <p class="text-muted mb-0">Cek status akun Gmail secara massal (Live / Disabled) menggunakan alat eksternal GmailVer.com</p>
+        <h4 class="fw-bold mb-1"><i class="fas fa-envelope me-2"></i>{{ __('Gmail Live Checker') }}</h4>
+        <p class="text-muted mb-0">{{ __('Cek status akun Gmail secara massal (Live / Disabled) menggunakan alat eksternal GmailVer.com') }}</p>
     </div>
 </div>
 
@@ -61,13 +61,13 @@
 <div class="card shadow-sm checker-card mb-3">
     <div class="card-body p-4">
         <h6 class="fw-bold mb-3">
-            <i class="fas fa-database text-primary me-2"></i>Muat Akun dari Stok Produk
+            <i class="fas fa-database text-primary me-2"></i>{{ __('Muat Akun dari Stok Produk') }}
         </h6>
         <div class="row g-2 align-items-end">
             <div class="col">
-                <label class="form-label text-muted small fw-bold mb-1">Pilih Produk</label>
+                <label class="form-label text-muted small fw-bold mb-1">{{ __('Pilih Produk') }}</label>
                 <select id="stock-product-select" class="form-select">
-                    <option value="">-- Pilih Produk Gmail --</option>
+                    <option value="">{{ __('-- Pilih Produk Gmail --') }}</option>
                     @foreach($products as $product)
                         <option value="{{ $product->id }}">{{ $product->name }} ({{ $product->stock_units_count }} stok)</option>
                     @endforeach
@@ -75,7 +75,7 @@
             </div>
             <div class="col-auto">
                 <button type="button" class="btn btn-primary rounded-pill px-4" id="btn-load-stock" onclick="loadStock()">
-                    <i class="fas fa-sync-alt me-1"></i>Muat Stok Akun
+                    <i class="fas fa-sync-alt me-1"></i>{{ __('Muat Stok Akun') }}
                 </button>
             </div>
         </div>
@@ -89,18 +89,18 @@
         <div class="card shadow-sm checker-card h-100">
             <div class="card-body p-4 d-flex flex-column">
                 <h6 class="fw-bold mb-3">
-                    <i class="fas fa-clipboard-list text-info me-2"></i>1. Daftar Email Stok
+                    <i class="fas fa-clipboard-list text-info me-2"></i>{{ __('1. Daftar Email Stok') }}
                 </h6>
                 <div class="flex-grow-1 mb-3">
                     <textarea id="clean-emails-textarea" class="form-control" rows="8" readonly 
-                              placeholder="Daftar email bersih akan muncul di sini setelah Anda memuat stok produk..."></textarea>
+                              placeholder="{{ __('Daftar email bersih akan muncul di sini setelah Anda memuat stok produk...') }}"></textarea>
                 </div>
                 <div class="d-flex gap-2">
                     <button type="button" class="btn btn-outline-primary rounded-pill flex-grow-1" onclick="copyEmails()">
-                        <i class="fas fa-copy me-1"></i>Salin Email
+                        <i class="fas fa-copy me-1"></i>{{ __('Salin Email') }}
                     </button>
                     <a href="https://www.gmailchecklive.com/" target="_blank" class="btn btn-primary rounded-pill px-4">
-                        <i class="fas fa-external-link-alt me-1"></i>Buka Pengecek
+                        <i class="fas fa-external-link-alt me-1"></i>{{ __('Buka Pengecek') }}
                     </a>
                 </div>
             </div>
@@ -112,14 +112,14 @@
         <div class="card shadow-sm checker-card h-100">
             <div class="card-body p-4 d-flex flex-column">
                 <h6 class="fw-bold mb-3">
-                    <i class="fas fa-paste text-danger me-2"></i>2. Proses Email Mati (Die)
+                    <i class="fas fa-paste text-danger me-2"></i>{{ __('2. Proses Email Mati (Die)') }}
                 </h6>
                 <div class="flex-grow-1 mb-3">
                     <textarea id="die-emails-textarea" class="form-control" rows="8" 
-                              placeholder="Tempelkan daftar akun Gmail yang berstatus DIE / DISABLED dari web pengecek ke sini...&#10;&#10;Contoh format (Bisa paste langsung):&#10;sjurokanda@gmail.com&#10;zafrangnwn@gmail.com"></textarea>
+                              placeholder="{{ __('Tempelkan daftar akun Gmail yang berstatus DIE / DISABLED dari web pengecek ke sini...&#10;&#10;Contoh format (Bisa paste langsung):&#10;sjurokanda@gmail.com&#10;zafrangnwn@gmail.com') }}"></textarea>
                 </div>
                 <button type="button" class="btn btn-danger w-100 rounded-pill py-2 fw-bold" onclick="processDieEmails()">
-                    <i class="fas fa-cogs me-2"></i>Cocokkan & Proses Email Mati
+                    <i class="fas fa-cogs me-2"></i>{{ __('Cocokkan & Proses Email Mati') }}
                 </button>
             </div>
         </div>
@@ -134,7 +134,7 @@
             <div class="card counter-card shadow-sm" style="border-color: rgba(13,110,253,0.2); background: rgba(13,110,253,0.03);">
                 <div class="card-body text-center py-3">
                     <div class="counter-value text-primary" id="count-total">0</div>
-                    <small class="text-primary fw-bold">TOTAL AKUN</small>
+                    <small class="text-primary fw-bold">{{ __('TOTAL AKUN') }}</small>
                 </div>
             </div>
         </div>
@@ -142,7 +142,7 @@
             <div class="card counter-card shadow-sm" style="border-color: rgba(25,135,84,0.2); background: rgba(25,135,84,0.03);">
                 <div class="card-body text-center py-3">
                     <div class="counter-value text-success" id="count-live">0</div>
-                    <small class="text-success fw-bold">✅ LIVE</small>
+                    <small class="text-success fw-bold">{{ __('✅ LIVE') }}</small>
                 </div>
             </div>
         </div>
@@ -150,7 +150,7 @@
             <div class="card counter-card shadow-sm" style="border-color: rgba(220,53,69,0.2); background: rgba(220,53,69,0.03);">
                 <div class="card-body text-center py-3">
                     <div class="counter-value text-danger" id="count-disabled">0</div>
-                    <small class="text-danger fw-bold">❌ DISABLED</small>
+                    <small class="text-danger fw-bold">{{ __('❌ DISABLED') }}</small>
                 </div>
             </div>
         </div>
@@ -161,31 +161,31 @@
         <div class="card-body p-3">
             <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
                 <div class="d-flex align-items-center gap-2">
-                    <span class="fw-bold text-dark"><span id="action-selected-count">0</span> akun dipilih</span>
+                    <span class="fw-bold text-dark"><span id="action-selected-count">0</span> {{ __('akun dipilih') }}</span>
                     <span class="text-muted">|</span>
                     <div class="dropdown">
                         <button class="btn btn-sm btn-outline-secondary rounded-pill dropdown-toggle" data-bs-toggle="dropdown">
-                            <i class="fas fa-filter me-1"></i>Filter Status
+                            <i class="fas fa-filter me-1"></i>{{ __('Filter Status') }}
                         </button>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#" onclick="filterResults('all')">Semua</a></li>
-                            <li><a class="dropdown-item text-success" href="#" onclick="filterResults('live')">✅ Live</a></li>
-                            <li><a class="dropdown-item text-danger" href="#" onclick="filterResults('disabled')">❌ Disabled</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="filterResults('all')">{{ __('Semua') }}</a></li>
+                            <li><a class="dropdown-item text-success" href="#" onclick="filterResults('live')">{{ __('✅ Live') }}</a></li>
+                            <li><a class="dropdown-item text-danger" href="#" onclick="filterResults('disabled')">{{ __('❌ Disabled') }}</a></li>
                         </ul>
                     </div>
                 </div>
                 <div class="d-flex gap-2 flex-wrap">
                     {{-- Bulk Stock Update --}}
                     <button class="btn btn-sm btn-outline-info rounded-pill" onclick="showBulkStockModal()" id="btn-bulk-stock">
-                        <i class="fas fa-exchange-alt me-1"></i>Update Stok Masal
+                        <i class="fas fa-exchange-alt me-1"></i>{{ __('Update Stok Masal') }}
                     </button>
                     {{-- Delete Selected --}}
                     <button class="btn btn-sm btn-outline-danger rounded-pill" onclick="showDeleteSelectedModal()" id="btn-delete-selected">
-                        <i class="fas fa-trash-alt me-1"></i>Hapus Stok Terpilih
+                        <i class="fas fa-trash-alt me-1"></i>{{ __('Hapus Stok Terpilih') }}
                     </button>
                     {{-- Delete Disabled --}}
                     <button class="btn btn-sm btn-danger rounded-pill" onclick="showDeleteDisabledModal()" id="btn-delete-disabled">
-                        <i class="fas fa-trash me-1"></i>Hapus Semua Akun Disabled
+                        <i class="fas fa-trash me-1"></i>{{ __('Hapus Semua Akun Disabled') }}
                     </button>
                 </div>
             </div>
@@ -203,9 +203,9 @@
                                 <input type="checkbox" class="form-check-input" id="select-all-results" onchange="toggleAllResults()">
                             </th>
                             <th class="py-3 border-0" style="width: 50px;">#</th>
-                            <th class="py-3 border-0">Email</th>
-                            <th class="py-3 border-0" style="width: 150px;">Status</th>
-                            <th class="py-3 border-0">Keterangan</th>
+                            <th class="py-3 border-0">{{ __('Email') }}</th>
+                            <th class="py-3 border-0" style="width: 150px;">{{ __('Status') }}</th>
+                            <th class="py-3 border-0">{{ __('Keterangan') }}</th>
                         </tr>
                     </thead>
                     <tbody id="result-tbody">
@@ -347,7 +347,7 @@
         
         const detailText = r.stock_id 
             ? `<span class="text-success fw-bold"><i class="fas fa-check-circle me-1"></i>Terhubung ke Stok (ID: ${r.stock_id})</span>`
-            : `<span class="text-muted"><i class="fas fa-exclamation-circle me-1"></i>Manual (Non-Stok)</span>`;
+            : `<span class="text-muted"><i class="fas fa-exclamation-circle me-1"></i>{{ __('Manual (Non-Stok)') }}</span>`;
 
         row.innerHTML = `
             <td class="px-4">
@@ -430,11 +430,11 @@
             html: `
                 <p class="small text-muted mb-3">${stockIds.length} akun stok akan diupdate</p>
                 <select id="swal-stock-status" class="form-select">
-                    <option value="ready">Ready</option>
-                    @if(Auth::user()->role === 'admin')
-                    <option value="awaiting_benefits">Awaiting Benefits</option>
+                    <option value="ready">{{ __('Ready') }}</option>
+                    @if(Auth::user()->{{ __('role === \'admin\')') }}
+                    <option value="awaiting_benefits">{{ __('Awaiting Benefits') }}</option>
                     @endif
-                    <option value="saved_for_verification">Simpan Akun</option>
+                    <option value="saved_for_verification">{{ __('Simpan Akun') }}</option>
                 </select>
             `,
             showCancelButton: true,
@@ -461,7 +461,7 @@
         Swal.fire({
             icon: 'warning',
             title: 'Hapus Stok Terpilih?',
-            html: `<p>Anda akan menghapus <strong>${stockIds.length}</strong> stok akun terpilih.</p><p class="text-danger small">Tindakan ini tidak dapat dibatalkan!</p>`,
+            html: `<p>{{ __('Anda akan menghapus') }} <strong>${stockIds.length}</strong> {{ __('stok akun terpilih.') }}</p><p class="text-danger small">{{ __('Tindakan ini tidak dapat dibatalkan!') }}</p>`,
             showCancelButton: true,
             confirmButtonColor: '#dc3545',
             cancelButtonText: 'Batal',
@@ -486,7 +486,7 @@
         Swal.fire({
             icon: 'warning',
             title: 'Hapus Semua Stok Akun Disabled?',
-            html: `<p>Anda akan menghapus <strong>${disabledStockIds.length}</strong> stok akun yang berstatus DISABLED secara otomatis.</p><p class="text-danger small">Tindakan ini tidak dapat dibatalkan!</p>`,
+            html: `<p>{{ __('Anda akan menghapus') }} <strong>${disabledStockIds.length}</strong> {{ __('stok akun yang berstatus DISABLED secara otomatis.') }}</p><p class="text-danger small">{{ __('Tindakan ini tidak dapat dibatalkan!') }}</p>`,
             showCancelButton: true,
             confirmButtonColor: '#dc3545',
             cancelButtonText: 'Batal',

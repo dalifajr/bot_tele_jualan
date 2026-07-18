@@ -36,14 +36,14 @@
 
             <div class="card-body d-flex flex-column">
                 <h6 class="fw-bold mb-1">{{ Str::limit($product->name, 30) }}</h6>
-                @if($product->description)
+                @if($product->{{ __('description)') }}
                     <p class="text-muted small mb-3 flex-grow-1">{{ Str::limit($product->description, 60) }}</p>
                 @else
                     <p class="text-muted small mb-3 flex-grow-1">{{ __('Produk digital') }}</p>
                 @endif
 
                 <div class="mb-3 small">
-                    @if($product->creator)
+                    @if($product->{{ __('creator)') }}
                         <span class="text-muted"><i class="fas fa-store me-1 text-info"></i>{{ __('Seller:') }} <strong>{{ $product->creator->full_name ?? $product->creator->username }}</strong></span>
                     @else
                         <span class="text-muted"><i class="fas fa-store me-1 text-primary"></i>{{ __('Seller:') }} <strong>{{ __('Admin Utama') }}</strong></span>
@@ -96,13 +96,13 @@
                                     <i class="fas fa-plus"></i>
                                 </button>
                                 <button class="btn btn-primary px-3 fw-bold" type="button" onclick="this.parentNode.querySelector('input[type=number]').value = {{ $product->stock_count }}">
-                                    Take All
+                                    {{ __('Take All') }}
                                 </button>
                             </div>
                             <div class="form-text">{{ __('Maksimal pembelian: :count unit.', ['count' => $product->stock_count]) }}</div>
                         </div>
 
-                        @if($product->is_vpn)
+                        @if($product->{{ __('is_vpn)') }}
                             <div class="bg-primary-subtle p-3 rounded-3 mb-3">
                                 <h6 class="fw-bold text-primary mb-2"><i class="fas fa-user-shield me-2"></i>{{ __('Konfigurasi Akun VPN') }}</h6>
                                 <p class="text-muted small mb-3">{{ __('Sistem akan otomatis membuatkan akun VPN Anda.') }}</p>
@@ -113,7 +113,7 @@
                                     <div class="form-text" style="font-size: 0.7rem;">{{ __('(Sistem akan menambahkan 4 huruf acak di akhir untuk mencegah duplikasi)') }}</div>
                                 </div>
                                 
-                                @if($product->vpn_protocol === 'ssh')
+                                @if($product->{{ __('vpn_protocol === \'ssh\')') }}
                                 <div class="mb-2">
                                     <label class="form-label text-dark small fw-bold">{{ __('Password SSH') }} <span class="text-danger">*</span></label>
                                     <input type="password" name="vpn_password" class="form-control form-control-sm" required placeholder="{{ __('Masukkan password') }}">

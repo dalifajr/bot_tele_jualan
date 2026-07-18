@@ -13,47 +13,47 @@
                         <i class="fas fa-clock fs-1"></i>
                     </div>
                 </div>
-                <h4 class="fw-bold">Menunggu Pembayaran</h4>
-                <p class="text-muted mb-0">Selesaikan pembayaran sebelum batas waktu berakhir.</p>
+                <h4 class="fw-bold">{{ __('Menunggu Pembayaran') }}</h4>
+                <p class="text-muted mb-0">{{ __('Selesaikan pembayaran sebelum batas waktu berakhir.') }}</p>
             </div>
             
             <div class="card-body p-4">
                 <div class="bg-light rounded-3 p-3 mb-4">
                     <div class="d-flex justify-content-between mb-2">
-                        <span class="text-muted">Order Ref</span>
+                        <span class="text-muted">{{ __('Order Ref') }}</span>
                         <span class="fw-bold font-monospace">{{ $order->order_ref }}</span>
                     </div>
                     <div class="d-flex justify-content-between mb-2">
-                        <span class="text-muted">Batas Bayar</span>
+                        <span class="text-muted">{{ __('Batas Bayar') }}</span>
                         <span class="fw-bold text-danger" id="countdownTimer" data-expires="{{ $order->expires_at->toIso8601String() }}">
                             {{ $order->expires_at->format('d M Y, H:i') }} WIB
                         </span>
                     </div>
                     <hr class="border-secondary-subtle opacity-50">
                     <div class="d-flex justify-content-between align-items-center">
-                        <span class="text-muted">Total Tagihan</span>
+                        <span class="text-muted">{{ __('Total Tagihan') }}</span>
                         <span class="fs-4 fw-bold text-primary">{{ $order->formatted_total }}</span>
                     </div>
                 </div>
 
                 @if($dynamicQris)
                     <div class="text-center mb-4">
-                        <h6 class="fw-bold mb-3">Scan QRIS Berikut:</h6>
+                        <h6 class="fw-bold mb-3">{{ __('Scan QRIS Berikut:') }}</h6>
                         <div class="d-inline-block bg-white p-3 rounded-3 shadow-sm border mb-3" id="qrcode"></div>
                     </div>
                 @else
                     <div class="alert alert-info text-center" role="alert">
                         <i class="fas fa-info-circle mb-2 fs-4"></i><br>
-                        Silakan cek <strong>Bot Telegram</strong> Anda untuk instruksi pembayaran lengkap dan kode QRIS.
+                        {{ __('Silakan cek') }} <strong>{{ __('Bot Telegram') }}</strong> {{ __('Anda untuk instruksi pembayaran lengkap dan kode QRIS.') }}
                     </div>
                 @endif
 
                 @if($snapToken)
                     <div class="text-center mb-3">
-                        <span class="text-muted small d-block mb-2">— ATAU —</span>
+                        <span class="text-muted small d-block mb-2">{{ __('— ATAU —') }}</span>
                         <div class="d-grid gap-2">
                             <button id="pay-button" class="btn btn-success rounded-pill py-2 fw-bold">
-                                <i class="fas fa-credit-card me-1"></i> Bayar Otomatis (Midtrans)
+                                <i class="fas fa-credit-card me-1"></i> {{ __('Bayar Otomatis (Midtrans)') }}
                             </button>
                         </div>
                     </div>
@@ -61,16 +61,16 @@
 
                 <div class="d-grid gap-2 mt-4">
                     <a href="{{ route('orders.show', $order->id) }}" class="btn btn-primary rounded-pill py-2">
-                        <i class="fas fa-search me-1"></i> Cek Status Pembayaran
+                        <i class="fas fa-search me-1"></i> {{ __('Cek Status Pembayaran') }}
                     </a>
                     <a href="{{ route('catalog.index') }}" class="btn btn-light text-primary rounded-pill py-2">
-                        Kembali ke Katalog
+                        {{ __('Kembali ke Katalog') }}
                     </a>
-                    @if($order->status === 'pending_payment')
+                    @if($order->{{ __('status === \'pending_payment\')') }}
                     <form action="{{ route('orders.cancel', $order->id) }}" method="POST" class="d-grid mt-2" onsubmit="confirmAction(event, 'Yakin ingin membatalkan pesanan ini?');">
                         @csrf
                         <button type="submit" class="btn btn-outline-danger rounded-pill py-2">
-                            <i class="fas fa-times-circle me-1"></i> Batalkan Pesanan
+                            <i class="fas fa-times-circle me-1"></i> {{ __('Batalkan Pesanan') }}
                         </button>
                     </form>
                     @endif

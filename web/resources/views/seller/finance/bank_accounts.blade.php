@@ -6,8 +6,8 @@
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h4 class="fw-bold mb-1">Konfigurasi Rekening Payout</h4>
-        <p class="text-muted mb-0">Simpan informasi rekening bank atau e-wallet Anda untuk mempermudah proses pencairan dana (payout).</p>
+        <h4 class="fw-bold mb-1">{{ __('Konfigurasi Rekening Payout') }}</h4>
+        <p class="text-muted mb-0">{{ __('Simpan informasi rekening bank atau e-wallet Anda untuk mempermudah proses pencairan dana (payout).') }}</p>
     </div>
 </div>
 
@@ -22,12 +22,12 @@
 <ul class="nav nav-pills mb-4 gap-2">
     <li class="nav-item">
         <a class="nav-link text-secondary rounded-pill px-4 bg-light" href="{{ route('seller.finance.index') }}">
-            <i class="fas fa-wallet me-2"></i>Dompet & Penarikan
+            <i class="fas fa-wallet me-2"></i>{{ __('Dompet & Penarikan') }}
         </a>
     </li>
     <li class="nav-item">
         <a class="nav-link active rounded-pill px-4" href="{{ route('seller.bank-accounts.index') }}">
-            <i class="fas fa-university me-2"></i>Konfigurasi Rekening
+            <i class="fas fa-university me-2"></i>{{ __('Konfigurasi Rekening') }}
         </a>
     </li>
 </ul>
@@ -36,27 +36,27 @@
     {{-- Form Simpan Rekening Baru --}}
     <div class="col-12 col-md-5">
         <div class="card border-0 shadow-sm p-4" style="border-radius: 20px;">
-            <h5 class="fw-bold mb-3"><i class="fas fa-plus-circle text-primary me-2"></i>Tambah Rekening Payout</h5>
+            <h5 class="fw-bold mb-3"><i class="fas fa-plus-circle text-primary me-2"></i>{{ __('Tambah Rekening Payout') }}</h5>
             
             <form action="{{ route('seller.bank-accounts.store') }}" method="POST">
                 @csrf
                 <div class="mb-3">
-                    <label class="form-label text-muted small fw-bold">Nama Bank / E-Wallet Tujuan</label>
-                    <input type="text" name="bank_name" class="form-control" placeholder="Contoh: BCA, Mandiri, DANA, GoPay" required>
+                    <label class="form-label text-muted small fw-bold">{{ __('Nama Bank / E-Wallet Tujuan') }}</label>
+                    <input type="text" name="bank_name" class="form-control" placeholder="{{ __('Contoh: BCA, Mandiri, DANA, GoPay') }}" required>
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label text-muted small fw-bold">Nomor Rekening / Akun E-Wallet</label>
-                    <input type="text" name="account_number" class="form-control" placeholder="Contoh: 8012345678" required>
+                    <label class="form-label text-muted small fw-bold">{{ __('Nomor Rekening / Akun E-Wallet') }}</label>
+                    <input type="text" name="account_number" class="form-control" placeholder="{{ __('Contoh: 8012345678') }}" required>
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label text-muted small fw-bold">Nama Pemilik Rekening (Sesuai Bank)</label>
-                    <input type="text" name="account_holder" class="form-control" placeholder="Contoh: Dzulfikri Alifajri" required>
+                    <label class="form-label text-muted small fw-bold">{{ __('Nama Pemilik Rekening (Sesuai Bank)') }}</label>
+                    <input type="text" name="account_holder" class="form-control" placeholder="{{ __('Contoh: Dzulfikri Alifajri') }}" required>
                 </div>
 
                 <button type="submit" class="btn btn-primary rounded-pill w-100 py-2.5 fw-bold">
-                    <i class="fas fa-save me-1"></i> Simpan Rekening
+                    <i class="fas fa-save me-1"></i> {{ __('Simpan Rekening') }}
                 </button>
             </form>
         </div>
@@ -66,7 +66,7 @@
     <div class="col-12 col-md-7">
         <div class="card border-0 shadow-sm overflow-hidden mb-4" style="border-radius: 20px;">
             <div class="card-header border-0 bg-white px-4 py-3 border-bottom d-flex justify-content-between align-items-center">
-                <h5 class="fw-bold m-0"><i class="fas fa-university text-primary me-2"></i>Daftar Rekening Tersimpan</h5>
+                <h5 class="fw-bold m-0"><i class="fas fa-university text-primary me-2"></i>{{ __('Daftar Rekening Tersimpan') }}</h5>
             </div>
             <div class="card-body p-0">
                 @if($bankAccounts->count() > 0)
@@ -74,10 +74,10 @@
                     <table class="table table-hover align-middle mb-0">
                         <thead>
                             <tr class="text-secondary small border-bottom">
-                                <th class="px-4 py-3 border-0">Nama Bank</th>
-                                <th class="py-3 border-0">Nomor Rekening</th>
-                                <th class="py-3 border-0">Atas Nama</th>
-                                <th class="py-3 border-0 text-end px-4">Aksi</th>
+                                <th class="px-4 py-3 border-0">{{ __('Nama Bank') }}</th>
+                                <th class="py-3 border-0">{{ __('Nomor Rekening') }}</th>
+                                <th class="py-3 border-0">{{ __('Atas Nama') }}</th>
+                                <th class="py-3 border-0 text-end px-4">{{ __('Aksi') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -90,7 +90,7 @@
                                     <form action="{{ route('seller.bank-accounts.destroy', $acc->id) }}" method="POST" class="d-inline">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="button" class="btn btn-sm btn-outline-danger rounded-circle p-2" title="Hapus Rekening" onclick="confirmAction(event, 'Yakin ingin menghapus rekening bank payout ini?')">
+                                        <button type="button" class="btn btn-sm btn-outline-danger rounded-circle p-2" title="{{ __('Hapus Rekening') }}" onclick="confirmAction(event, 'Yakin ingin menghapus rekening bank payout ini?')">
                                             <i class="fas fa-trash fa-fw"></i>
                                         </button>
                                     </form>
@@ -103,7 +103,7 @@
                 @else
                 <div class="text-center py-5">
                     <i class="fas fa-university text-muted mb-3" style="font-size: 3rem;"></i>
-                    <p class="text-muted mb-0">Belum ada rekening payout yang disimpan.</p>
+                    <p class="text-muted mb-0">{{ __('Belum ada rekening payout yang disimpan.') }}</p>
                 </div>
                 @endif
             </div>

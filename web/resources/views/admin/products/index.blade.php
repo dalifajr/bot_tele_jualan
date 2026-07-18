@@ -6,21 +6,21 @@
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h4 class="fw-bold mb-1">Manajemen Produk</h4>
-        <p class="text-muted mb-0">Kelola katalog produk digital</p>
+        <h4 class="fw-bold mb-1">{{ __('Manajemen Produk') }}</h4>
+        <p class="text-muted mb-0">{{ __('Kelola katalog produk digital') }}</p>
     </div>
     <div>
         <button class="btn btn-primary rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#addProductModal">
-            <i class="fas fa-plus me-2"></i>Tambah Produk
+            <i class="fas fa-plus me-2"></i>{{ __('Tambah Produk') }}
         </button>
     </div>
 </div>
 
-@if ($errors->any())
+@if ($errors->{{ __('any())') }}
 <div class="alert alert-danger shadow-sm rounded-4 mb-4">
-    <div class="fw-bold mb-1"><i class="fas fa-exclamation-circle me-2"></i>Terdapat kesalahan pada input Anda:</div>
+    <div class="fw-bold mb-1"><i class="fas fa-exclamation-circle me-2"></i>{{ __('Terdapat kesalahan pada input Anda:') }}</div>
     <ul class="mb-0 small">
-        @foreach ($errors->all() as $error)
+        @foreach ($errors->{{ __('all() as $error)') }}
             <li>{{ $error }}</li>
         @endforeach
     </ul>
@@ -35,11 +35,11 @@
                 <thead>
                     <tr class="text-secondary small border-bottom">
                         <th class="px-4 py-3 border-0">ID</th>
-                        <th class="py-3 border-0">Nama Produk</th>
-                        <th class="py-3 border-0">Harga</th>
-                        <th class="py-3 border-0">Status</th>
-                        <th class="py-3 border-0">Dibuat</th>
-                        <th class="py-3 border-0 text-end px-4">Aksi</th>
+                        <th class="py-3 border-0">{{ __('Nama Produk') }}</th>
+                        <th class="py-3 border-0">{{ __('Harga') }}</th>
+                        <th class="py-3 border-0">{{ __('Status') }}</th>
+                        <th class="py-3 border-0">{{ __('Dibuat') }}</th>
+                        <th class="py-3 border-0 text-end px-4">{{ __('Aksi') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -49,22 +49,22 @@
                         <td class="fw-bold text-primary">{{ $product->name }}</td>
                         <td>{{ $product->formatted_price }}</td>
                         <td>
-                            @if($product->is_suspended)
-                            <span class="badge bg-danger-subtle text-danger rounded-pill px-3">Suspended</span>
+                            @if($product->{{ __('is_suspended)') }}
+                            <span class="badge bg-danger-subtle text-danger rounded-pill px-3">{{ __('Suspended') }}</span>
                             @else
-                            <span class="badge bg-success-subtle text-success rounded-pill px-3">Active</span>
+                            <span class="badge bg-success-subtle text-success rounded-pill px-3">{{ __('Active') }}</span>
                             @endif
                         </td>
                         <td class="text-secondary small">{{ $product->created_at->format('d M Y') }}</td>
                         <td class="px-4">
                             <div class="d-flex gap-2 justify-content-end">
-                                <a href="{{ route('admin.products.manage', $product->id) }}" class="btn btn-sm btn-light text-primary rounded-pill px-3" title="Detail & Aksi">
-                                    <i class="fas fa-cog"></i> Aksi
+                                <a href="{{ route('admin.products.manage', $product->id) }}" class="btn btn-sm btn-light text-primary rounded-pill px-3" title="{{ __('Detail & Aksi') }}">
+                                    <i class="fas fa-cog"></i> {{ __('Aksi') }}
                                 </a>
-                                <button class="btn btn-sm btn-light text-primary rounded-circle" data-bs-toggle="modal" data-bs-target="#editProductModal{{ $product->id }}" title="Edit">
+                                <button class="btn btn-sm btn-light text-primary rounded-circle" data-bs-toggle="modal" data-bs-target="#editProductModal{{ $product->id }}" title="{{ __('Edit') }}">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button class="btn btn-sm btn-light text-danger rounded-circle" data-bs-toggle="modal" data-bs-target="#deleteProductModal{{ $product->id }}" title="Hapus">
+                                <button class="btn btn-sm btn-light text-danger rounded-circle" data-bs-toggle="modal" data-bs-target="#deleteProductModal{{ $product->id }}" title="{{ __('Hapus') }}">
                                     <i class="fas fa-trash-alt"></i>
                                 </button>
                             </div>
@@ -82,7 +82,7 @@
         @else
         <div class="text-center py-5">
             <i class="fas fa-box text-muted mb-3" style="font-size: 3rem;"></i>
-            <p class="text-muted mb-0">Belum ada produk.</p>
+            <p class="text-muted mb-0">{{ __('Belum ada produk.') }}</p>
         </div>
         @endif
     </div>
@@ -94,67 +94,67 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content" style="border-radius: 16px; border: none;">
             <div class="modal-header border-0 pb-0">
-                <h5 class="fw-bold">Tambah Produk Baru</h5>
+                <h5 class="fw-bold">{{ __('Tambah Produk Baru') }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form action="{{ route('admin.products.store') }}" method="POST">
                 @csrf
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">Nama Produk</label>
-                        <input type="text" name="name" class="form-control" required placeholder="Contoh: Netflix Premium 1 Bulan">
+                        <label class="form-label text-muted small fw-bold">{{ __('Nama Produk') }}</label>
+                        <input type="text" name="name" class="form-control" required placeholder="{{ __('Contoh: Netflix Premium 1 Bulan') }}">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">Harga (Rp)</label>
-                        <input type="number" name="price" class="form-control" required placeholder="Contoh: 35000">
+                        <label class="form-label text-muted small fw-bold">{{ __('Harga (Rp)') }}</label>
+                        <input type="number" name="price" class="form-control" required placeholder="{{ __('Contoh: 35000') }}">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">Deskripsi</label>
-                        <textarea name="description" class="form-control" rows="3" placeholder="Informasi produk..."></textarea>
+                        <label class="form-label text-muted small fw-bold">{{ __('Deskripsi') }}</label>
+                        <textarea name="description" class="form-control" rows="3" placeholder="{{ __('Informasi produk...') }}"></textarea>
                     </div>
                     <div class="form-check form-switch mb-3">
                         <input class="form-check-input" type="checkbox" role="switch" id="enableWarrantyAdd" name="enable_warranty" value="1">
-                        <label class="form-check-label text-muted small fw-bold" for="enableWarrantyAdd">Aktifkan garansi?</label>
+                        <label class="form-check-label text-muted small fw-bold" for="enableWarrantyAdd">{{ __('Aktifkan garansi?') }}</label>
                     </div>
                     <div class="mb-3" id="warrantyDaysAddContainer" style="display: none;">
-                        <label class="form-label text-muted small fw-bold">Masa Garansi (Hari)</label>
+                        <label class="form-label text-muted small fw-bold">{{ __('Masa Garansi (Hari)') }}</label>
                         <div class="input-group">
-                            <input type="number" name="warranty_days" id="warrantyDaysAdd" class="form-control" placeholder="Contoh: 3" min="1">
-                            <span class="input-group-text bg-light text-muted">hari</span>
+                            <input type="number" name="warranty_days" id="warrantyDaysAdd" class="form-control" placeholder="{{ __('Contoh: 3') }}" min="1">
+                            <span class="input-group-text bg-light text-muted">{{ __('hari') }}</span>
                         </div>
-                        <div class="form-text small">Menahan saldo seller hingga masa garansi berakhir.</div>
+                        <div class="form-text small">{{ __('Menahan saldo seller hingga masa garansi berakhir.') }}</div>
                     </div>
                     
                     <div class="form-check form-switch mb-3 border-top pt-3">
                         <input class="form-check-input" type="checkbox" role="switch" id="isVpnAdd" name="is_vpn" value="1">
-                        <label class="form-check-label text-primary small fw-bold" for="isVpnAdd"><i class="fas fa-network-wired me-1"></i> Jadikan Produk VPN?</label>
+                        <label class="form-check-label text-primary small fw-bold" for="isVpnAdd"><i class="fas fa-network-wired me-1"></i> {{ __('Jadikan Produk VPN?') }}</label>
                     </div>
                     
                     <div id="vpnOptionsAddContainer" style="display: none;" class="bg-light p-3 rounded mb-3">
                         <div class="mb-2">
-                            <label class="form-label text-muted small fw-bold">Protokol VPN</label>
+                            <label class="form-label text-muted small fw-bold">{{ __('Protokol VPN') }}</label>
                             <select name="vpn_protocol" id="vpnProtocolAdd" class="form-select">
-                                <option value="">Pilih Protokol</option>
-                                <option value="vmess">VMESS</option>
-                                <option value="vless">VLESS</option>
-                                <option value="trojan">TROJAN</option>
-                                <option value="shadowsocks">SHADOWSOCKS</option>
-                                <option value="ssh">SSH</option>
+                                <option value="">{{ __('Pilih Protokol') }}</option>
+                                <option value="vmess">{{ __('VMESS') }}</option>
+                                <option value="vless">{{ __('VLESS') }}</option>
+                                <option value="trojan">{{ __('TROJAN') }}</option>
+                                <option value="shadowsocks">{{ __('SHADOWSOCKS') }}</option>
+                                <option value="ssh">{{ __('SSH') }}</option>
                             </select>
                         </div>
                         <div class="mb-2">
-                            <label class="form-label text-muted small fw-bold">Durasi / Masa Aktif</label>
+                            <label class="form-label text-muted small fw-bold">{{ __('Durasi / Masa Aktif') }}</label>
                             <div class="input-group">
                                 <input type="number" name="vpn_duration_days" id="vpnDurationAdd" class="form-control" placeholder="30" min="1">
-                                <span class="input-group-text bg-white text-muted">hari</span>
+                                <span class="input-group-text bg-white text-muted">{{ __('hari') }}</span>
                             </div>
                         </div>
-                        <div class="form-text text-muted small"><i class="fas fa-info-circle"></i> Stok untuk produk VPN tidak perlu ditambahkan secara manual. Saat pembeli melakukan checkout, sistem akan meng-generate akun secara otomatis di VPS sesuai durasi ini.</div>
+                        <div class="form-text text-muted small"><i class="fas fa-info-circle"></i> {{ __('Stok untuk produk VPN tidak perlu ditambahkan secara manual. Saat pembeli melakukan checkout, sistem akan meng-generate akun secara otomatis di VPS sesuai durasi ini.') }}</div>
                     </div>
                 </div>
                 <div class="modal-footer border-0 pt-0">
-                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary rounded-pill px-4">Tambahkan</button>
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">{{ __('Batal') }}</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">{{ __('Tambahkan') }}</button>
                 </div>
             </form>
         </div>
@@ -167,7 +167,7 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content" style="border-radius: 16px; border: none;">
             <div class="modal-header border-0 pb-0">
-                <h5 class="fw-bold">Edit Produk</h5>
+                <h5 class="fw-bold">{{ __('Edit Produk') }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form action="{{ route('admin.products.update', $product->id) }}" method="POST">
@@ -175,63 +175,63 @@
                 @method('PUT')
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">Nama Produk</label>
+                        <label class="form-label text-muted small fw-bold">{{ __('Nama Produk') }}</label>
                         <input type="text" name="name" class="form-control" value="{{ $product->name }}" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">Harga (Rp)</label>
+                        <label class="form-label text-muted small fw-bold">{{ __('Harga (Rp)') }}</label>
                         <input type="number" name="price" class="form-control" value="{{ $product->price }}" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">Deskripsi</label>
+                        <label class="form-label text-muted small fw-bold">{{ __('Deskripsi') }}</label>
                         <textarea name="description" class="form-control" rows="3">{{ $product->description }}</textarea>
                     </div>
                     <div class="form-check form-switch mb-3">
                         <input class="form-check-input toggle-warranty-edit" type="checkbox" role="switch" name="enable_warranty" value="1" id="enableWarrantyEdit{{ $product->id }}" data-target="warrantyDaysEditContainer{{ $product->id }}" {{ $product->warranty_days > 0 ? 'checked' : '' }}>
-                        <label class="form-check-label text-muted small fw-bold" for="enableWarrantyEdit{{ $product->id }}">Aktifkan garansi?</label>
+                        <label class="form-check-label text-muted small fw-bold" for="enableWarrantyEdit{{ $product->id }}">{{ __('Aktifkan garansi?') }}</label>
                     </div>
                     <div class="mb-3" id="warrantyDaysEditContainer{{ $product->id }}" style="display: {{ $product->warranty_days > 0 ? 'block' : 'none' }};">
-                        <label class="form-label text-muted small fw-bold">Masa Garansi (Hari)</label>
+                        <label class="form-label text-muted small fw-bold">{{ __('Masa Garansi (Hari)') }}</label>
                         <div class="input-group">
                             <input type="number" name="warranty_days" id="warrantyDaysEdit{{ $product->id }}" class="form-control" value="{{ $product->warranty_days > 0 ? $product->warranty_days : '' }}" min="1">
-                            <span class="input-group-text bg-light text-muted">hari</span>
+                            <span class="input-group-text bg-light text-muted">{{ __('hari') }}</span>
                         </div>
-                        <div class="form-text small">Menahan saldo seller hingga masa garansi berakhir.</div>
+                        <div class="form-text small">{{ __('Menahan saldo seller hingga masa garansi berakhir.') }}</div>
                     </div>
 
                     <div class="form-check form-switch mb-3 border-top pt-3">
                         <input class="form-check-input toggle-vpn-edit" type="checkbox" role="switch" name="is_vpn" value="1" id="isVpnEdit{{ $product->id }}" data-target="vpnOptionsEditContainer{{ $product->id }}" {{ $product->is_vpn ? 'checked' : '' }}>
-                        <label class="form-check-label text-primary small fw-bold" for="isVpnEdit{{ $product->id }}"><i class="fas fa-network-wired me-1"></i> Jadikan Produk VPN?</label>
+                        <label class="form-check-label text-primary small fw-bold" for="isVpnEdit{{ $product->id }}"><i class="fas fa-network-wired me-1"></i> {{ __('Jadikan Produk VPN?') }}</label>
                     </div>
 
                     <div id="vpnOptionsEditContainer{{ $product->id }}" style="display: {{ $product->is_vpn ? 'block' : 'none' }};" class="bg-light p-3 rounded mb-3">
                         <div class="mb-2">
-                            <label class="form-label text-muted small fw-bold">Protokol VPN</label>
+                            <label class="form-label text-muted small fw-bold">{{ __('Protokol VPN') }}</label>
                             <select name="vpn_protocol" class="form-select">
-                                <option value="">Pilih Protokol</option>
-                                <option value="vmess" {{ $product->vpn_protocol == 'vmess' ? 'selected' : '' }}>VMESS</option>
-                                <option value="vless" {{ $product->vpn_protocol == 'vless' ? 'selected' : '' }}>VLESS</option>
-                                <option value="trojan" {{ $product->vpn_protocol == 'trojan' ? 'selected' : '' }}>TROJAN</option>
-                                <option value="shadowsocks" {{ $product->vpn_protocol == 'shadowsocks' ? 'selected' : '' }}>SHADOWSOCKS</option>
-                                <option value="ssh" {{ $product->vpn_protocol == 'ssh' ? 'selected' : '' }}>SSH</option>
+                                <option value="">{{ __('Pilih Protokol') }}</option>
+                                <option value="vmess" {{ $product->vpn_protocol == 'vmess' ? 'selected' : '' }}>{{ __('VMESS') }}</option>
+                                <option value="vless" {{ $product->vpn_protocol == 'vless' ? 'selected' : '' }}>{{ __('VLESS') }}</option>
+                                <option value="trojan" {{ $product->vpn_protocol == 'trojan' ? 'selected' : '' }}>{{ __('TROJAN') }}</option>
+                                <option value="shadowsocks" {{ $product->vpn_protocol == 'shadowsocks' ? 'selected' : '' }}>{{ __('SHADOWSOCKS') }}</option>
+                                <option value="ssh" {{ $product->vpn_protocol == 'ssh' ? 'selected' : '' }}>{{ __('SSH') }}</option>
                             </select>
                         </div>
                         <div class="mb-2">
-                            <label class="form-label text-muted small fw-bold">Durasi / Masa Aktif</label>
+                            <label class="form-label text-muted small fw-bold">{{ __('Durasi / Masa Aktif') }}</label>
                             <div class="input-group">
                                 <input type="number" name="vpn_duration_days" class="form-control" value="{{ $product->vpn_duration_days > 0 ? $product->vpn_duration_days : '' }}" min="1">
-                                <span class="input-group-text bg-white text-muted">hari</span>
+                                <span class="input-group-text bg-white text-muted">{{ __('hari') }}</span>
                             </div>
                         </div>
                     </div>
                     <div class="form-check form-switch mb-3">
                         <input class="form-check-input" type="checkbox" role="switch" name="is_suspended" value="1" id="suspend{{ $product->id }}" {{ $product->is_suspended ? 'checked' : '' }}>
-                        <label class="form-check-label" for="suspend{{ $product->id }}">Suspend (Sembunyikan dari katalog)</label>
+                        <label class="form-check-label" for="suspend{{ $product->id }}">{{ __('Suspend (Sembunyikan dari katalog)') }}</label>
                     </div>
                 </div>
                 <div class="modal-footer border-0 pt-0">
-                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary rounded-pill px-4">Simpan</button>
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">{{ __('Batal') }}</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">{{ __('Simpan') }}</button>
                 </div>
             </form>
         </div>
@@ -244,8 +244,8 @@
         <div class="modal-content text-center" style="border-radius: 16px; border: none;">
             <div class="modal-body p-4">
                 <i class="fas fa-exclamation-triangle text-danger mb-3" style="font-size: 3rem;"></i>
-                <h5 class="fw-bold">Hapus Produk?</h5>
-                <p class="text-muted small mb-3">Menghapus produk akan turut menghapus semua stok yang terkait dengannya. Lanjutkan?</p>
+                <h5 class="fw-bold">{{ __('Hapus Produk?') }}</h5>
+                <p class="text-muted small mb-3">{{ __('Menghapus produk akan turut menghapus semua stok yang terkait dengannya. Lanjutkan?') }}</p>
                 
                 @php
                     $unsoldStockCount = $product->stockUnits()->where('is_sold', false)->count();
@@ -254,23 +254,23 @@
                 <div class="alert alert-warning border-0 rounded-3 text-start small mb-3">
                     <div class="d-flex align-items-center gap-2 mb-2">
                         <i class="fas fa-exclamation-circle text-warning fs-5"></i>
-                        <span class="fw-bold">Perhatian: Sisa Stok Aktif</span>
+                        <span class="fw-bold">{{ __('Perhatian: Sisa Stok Aktif') }}</span>
                     </div>
-                    Terdapat <strong>{{ $unsoldStockCount }}</strong> sisa stok aktif yang belum terjual. Anda disarankan untuk mengunduh sisa stok tersebut sebelum menghapus produk:
+                    {{ __('Terdapat') }} <strong>{{ $unsoldStockCount }}</strong> {{ __('sisa stok aktif yang belum terjual. Anda disarankan untuk mengunduh sisa stok tersebut sebelum menghapus produk:') }}
                     <div class="mt-2 text-center">
                         <a href="{{ route('admin.products.export-unsold', $product->id) }}" class="btn btn-sm btn-success rounded-pill px-3 fw-bold">
-                            <i class="fas fa-file-excel me-1"></i> Unduh Sisa Stok (.xlsx)
+                            <i class="fas fa-file-excel me-1"></i> {{ __('Unduh Sisa Stok (.xlsx)') }}
                         </a>
                     </div>
                 </div>
                 @endif
 
                 <div class="d-flex gap-2 justify-content-center mt-4">
-                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">{{ __('Batal') }}</button>
                     <form action="{{ route('admin.products.destroy', $product->id) }}" method="POST">
                         @csrf
                         @method('DELETE')
-                        <button type="submit" class="btn btn-danger rounded-pill px-4">Ya, Hapus</button>
+                        <button type="submit" class="btn btn-danger rounded-pill px-4">{{ __('Ya, Hapus') }}</button>
                     </form>
                 </div>
             </div>

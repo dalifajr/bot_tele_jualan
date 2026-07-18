@@ -106,7 +106,7 @@
                             <div class="fw-bold text-primary">{{ $seller->full_name ?? 'Unknown' }}</div>
                             <div class="small text-muted d-flex align-items-center gap-1">
                                 <span>{{ $seller->username ? '@'.$seller->username : '-' }}</span>
-                                @if($seller->telegram_id)
+                                @if($seller->{{ __('telegram_id)') }}
                                     <span class="badge bg-light text-secondary small py-0 px-1 border" style="font-size: 0.7rem;">
                                         <i class="fab fa-telegram-plane text-info me-1"></i>{{ $seller->telegram_id }}
                                     </span>
@@ -114,7 +114,7 @@
                             </div>
                         </td>
                         <td>
-                            @if($seller->is_suspended)
+                            @if($seller->{{ __('is_suspended)') }}
                                 <span class="badge bg-danger-subtle text-danger rounded-pill px-2"><i class="fas fa-ban me-1"></i>{{ __('Ditangguhkan') }}</span>
                             @else
                                 <span class="badge bg-success-subtle text-success rounded-pill px-2"><i class="fas fa-check me-1"></i>{{ __('Aktif') }}</span>
@@ -146,11 +146,11 @@
                                           stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
                                 </svg>
                                 <div style="flex-shrink: 0;">
-                                    @if($seller->trend_direction === 'up')
+                                    @if($seller->{{ __('trend_direction === \'up\')') }}
                                         <span class="badge bg-success-subtle text-success rounded-pill" style="font-size: 0.7rem; white-space: nowrap;">
                                             <i class="fas fa-arrow-up me-1"></i>+{{ $seller->percentage_change }}%
                                         </span>
-                                    @elseif($seller->trend_direction === 'down')
+                                    @elseif($seller->{{ __('trend_direction === \'down\')') }}
                                         <span class="badge bg-danger-subtle text-danger rounded-pill" style="font-size: 0.7rem; white-space: nowrap;">
                                             <i class="fas fa-arrow-down me-1"></i>{{ $seller->percentage_change }}%
                                         </span>
@@ -163,7 +163,7 @@
                             </div>
                         </td>
                         <td class="text-end px-4">
-                            @if($seller->id !== Auth::id())
+                            @if($seller->{{ __('id !== Auth::id())') }}
                             <div class="dropdown">
                                 <button class="btn btn-sm btn-light rounded-circle" type="button" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy": "fixed"}' aria-expanded="false">
                                     <i class="fas fa-ellipsis-v"></i>
@@ -184,7 +184,7 @@
                                     </li>
                                     <li><hr class="dropdown-divider"></li>
                                     
-                                    @if($seller->is_suspended)
+                                    @if($seller->{{ __('is_suspended)') }}
                                         <li>
                                             <form action="{{ route('admin.users.unsuspend', $seller->id) }}" method="POST">
                                                 @csrf
@@ -246,7 +246,7 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content" style="border-radius: 16px; border: none;">
             <div class="modal-header border-0 pb-0">
-                <h5 class="fw-bold">Ubah Hak Akses & Detail Seller</h5>
+                <h5 class="fw-bold">{{ __('Ubah Hak Akses & Detail Seller') }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form action="{{ route('admin.users.update', $user->id) }}" method="POST">
@@ -254,52 +254,52 @@
                 @method('PUT')
                 <div class="modal-body p-4">
                     <div class="mb-3">
-                        <p class="mb-1 text-muted small">Nama Pengguna</p>
+                        <p class="mb-1 text-muted small">{{ __('Nama Pengguna') }}</p>
                         <h6 class="fw-bold text-primary">{{ $user->full_name ?? $user->username ?? 'Unknown' }}</h6>
                     </div>
                     
                     <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">Role Akses</label>
+                        <label class="form-label text-muted small fw-bold">{{ __('Role Akses') }}</label>
                         <select name="role" id="role_select_{{ $user->id }}" class="form-select" onchange="toggleSellerFields({{ $user->id }})" required>
-                            <option value="customer" {{ $user->role === 'customer' ? 'selected' : '' }}>Customer (Biasa)</option>
-                            <option value="seller" {{ $user->role === 'seller' ? 'selected' : '' }}>Seller (Penjual Mitra)</option>
-                            <option value="admin" {{ $user->role === 'admin' ? 'selected' : '' }}>Admin (Penuh)</option>
+                            <option value="customer" {{ $user->role === 'customer' ? 'selected' : '' }}>{{ __('Customer (Biasa)') }}</option>
+                            <option value="seller" {{ $user->role === 'seller' ? 'selected' : '' }}>{{ __('Seller (Penjual Mitra)') }}</option>
+                            <option value="admin" {{ $user->role === 'admin' ? 'selected' : '' }}>{{ __('Admin (Penuh)') }}</option>
                         </select>
                     </div>
 
                     <div id="seller_fields_{{ $user->id }}" class="{{ $user->role === 'seller' ? '' : 'd-none' }}">
                         <div class="mb-3">
-                            <label class="form-label text-muted small fw-bold">Saldo Dompet (Wallet Balance)</label>
+                            <label class="form-label text-muted small fw-bold">{{ __('Saldo Dompet (Wallet Balance)') }}</label>
                             <div class="input-group">
                                 <span class="input-group-text bg-light text-muted">Rp</span>
                                 <input type="number" name="wallet_balance" class="form-control" value="{{ $user->wallet_balance ?? 0 }}" min="0">
                             </div>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label text-muted small fw-bold">Persentase Potongan Platform (Fee %)</label>
+                            <label class="form-label text-muted small fw-bold">{{ __('Persentase Potongan Platform (Fee %)') }}</label>
                             <div class="input-group">
                                 <input type="number" name="platform_fee_percent" class="form-control" value="{{ $user->platform_fee_percent ?? 10 }}" min="0" max="100">
                                 <span class="input-group-text bg-light text-muted">%</span>
                             </div>
-                            <div class="form-text small text-muted">Komisi bagi hasil yang dipotong oleh platform saat transaksi lunas.</div>
+                            <div class="form-text small text-muted">{{ __('Komisi bagi hasil yang dipotong oleh platform saat transaksi lunas.') }}</div>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label text-muted small fw-bold">Jam Karantina Default (Save Hours)</label>
+                            <label class="form-label text-muted small fw-bold">{{ __('Jam Karantina Default (Save Hours)') }}</label>
                             <div class="input-group">
                                 <input type="number" name="seller_save_hours" class="form-control" value="{{ $user->seller_save_hours ?? 80 }}" min="0">
-                                <span class="input-group-text bg-light text-muted">jam</span>
+                                <span class="input-group-text bg-light text-muted">{{ __('jam') }}</span>
                             </div>
-                            <div class="form-text small text-muted">Durasi karantina stok sebelum pindah otomatis dari *Simpan Akun* ke *Ready*.</div>
+                            <div class="form-text small text-muted">{{ __('Durasi karantina stok sebelum pindah otomatis dari *Simpan Akun* ke *Ready*.') }}</div>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label text-muted small fw-bold d-block">Akses Fitur Tool</label>
+                            <label class="form-label text-muted small fw-bold d-block">{{ __('Akses Fitur Tool') }}</label>
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input" type="checkbox" name="allowed_tools[]" value="github_checker" id="tool_github_{{ $user->id }}" {{ is_array($user->allowed_tools) && in_array('github_checker', $user->allowed_tools) ? 'checked' : '' }}>
-                                <label class="form-check-label small" for="tool_github_{{ $user->id }}">GitHub Live Checker</label>
+                                <label class="form-check-label small" for="tool_github_{{ $user->id }}">{{ __('GitHub Live Checker') }}</label>
                             </div>
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input" type="checkbox" name="allowed_tools[]" value="gmail_checker" id="tool_gmail_{{ $user->id }}" {{ is_array($user->allowed_tools) && in_array('gmail_checker', $user->allowed_tools) ? 'checked' : '' }}>
-                                <label class="form-check-label small" for="tool_gmail_{{ $user->id }}">Gmail Live Checker</label>
+                                <label class="form-check-label small" for="tool_gmail_{{ $user->id }}">{{ __('Gmail Live Checker') }}</label>
                             </div>
                         </div>
                     </div>
@@ -312,8 +312,8 @@
                     </div>
                 </div>
                 <div class="modal-footer border-0 pt-0">
-                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary rounded-pill px-4">Simpan Perubahan</button>
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">{{ __('Batal') }}</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">{{ __('Simpan Perubahan') }}</button>
                 </div>
             </form>
         </div>

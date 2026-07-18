@@ -9,10 +9,10 @@
         {{-- Left Contacts List --}}
         <div class="col-md-4 border-end d-flex flex-column h-100 {{ $selectedContact ? 'd-none d-md-flex' : '' }}" style="background-color: var(--bs-body-bg);">
             <div class="p-3 border-bottom d-flex align-items-center justify-content-between">
-                <h5 class="fw-bold mb-0"><i class="fas fa-comments text-primary me-2"></i>Obrolan Saya</h5>
-                @if(in_array(Auth::user()->role, ['admin', 'seller']))
+                <h5 class="fw-bold mb-0"><i class="fas fa-comments text-primary me-2"></i>{{ __('Obrolan Saya') }}</h5>
+                @if(in_array(Auth::user()->{{ __('role, [\'admin\', \'seller\']))') }}
                     <button class="btn btn-sm btn-primary rounded-pill px-3" style="font-size: 0.8rem;" data-bs-toggle="modal" data-bs-target="#startChatModal">
-                        <i class="fas fa-plus me-1"></i>Mulai Chat
+                        <i class="fas fa-plus me-1"></i>{{ __('Mulai Chat') }}
                     </button>
                 @endif
             </div>
@@ -28,18 +28,18 @@
                                 <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold small" style="width: 42px; height: 42px; min-width: 42px;">
                                     {{ strtoupper(substr($contact->full_name ?? $contact->username, 0, 1)) }}
                                 </div>
-                                @if($contact->isOnline())
-                                    <span class="position-absolute bottom-0 end-0 bg-success border border-white border-2 rounded-circle" style="width: 12px; height: 12px;" title="Online"></span>
+                                @if($contact->{{ __('isOnline())') }}
+                                    <span class="position-absolute bottom-0 end-0 bg-success border border-white border-2 rounded-circle" style="width: 12px; height: 12px;" title="{{ __('Online') }}"></span>
                                 @endif
                             </div>
                             <div class="flex-grow-1 overflow-hidden">
                                 <div class="d-flex justify-content-between align-items-center mb-1">
                                     <span class="fw-bold small text-primary">{{ Str::limit($contact->full_name ?? $contact->username, 16) }}</span>
-                                    <span class="badge bg-danger ms-2" style="font-size: 0.65rem;">BARU</span>
+                                    <span class="badge bg-danger ms-2" style="font-size: 0.65rem;">{{ __('BARU') }}</span>
                                 </div>
                                 <div class="d-flex justify-content-between align-items-center">
                                     <small class="text-dark fw-bold text-truncate d-inline-block w-75">{{ $contact->last_message ?: 'Kirim pesan pertama Anda...' }}</small>
-                                    @if($contact->last_message_time)
+                                    @if($contact->{{ __('last_message_time)') }}
                                         <span class="text-muted" style="font-size: 0.7rem;">{{ $contact->last_message_time->format('H:i') }}</span>
                                     @endif
                                 </div>
@@ -54,14 +54,14 @@
                                 <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold small" style="width: 42px; height: 42px; min-width: 42px;">
                                     {{ strtoupper(substr($contact->full_name ?? $contact->username, 0, 1)) }}
                                 </div>
-                                @if($contact->isOnline())
-                                    <span class="position-absolute bottom-0 end-0 bg-success border border-white border-2 rounded-circle" style="width: 12px; height: 12px;" title="Online"></span>
+                                @if($contact->{{ __('isOnline())') }}
+                                    <span class="position-absolute bottom-0 end-0 bg-success border border-white border-2 rounded-circle" style="width: 12px; height: 12px;" title="{{ __('Online') }}"></span>
                                 @endif
                             </div>
                             <div class="flex-grow-1 overflow-hidden">
                                 <div class="d-flex justify-content-between align-items-center mb-1">
                                     <span class="fw-bold small text-dark">{{ Str::limit($contact->full_name ?? $contact->username, 16) }}</span>
-                                    @if($contact->last_message_time)
+                                    @if($contact->{{ __('last_message_time)') }}
                                         <span class="text-muted" style="font-size: 0.7rem;">{{ $contact->last_message_time->format('H:i') }}</span>
                                     @endif
                                 </div>
@@ -74,7 +74,7 @@
                 @empty
                     <div class="text-center py-5 text-muted">
                         <i class="fas fa-comment-slash fs-2 mb-2"></i>
-                        <p class="small mb-0">Belum ada riwayat pesan.</p>
+                        <p class="small mb-0">{{ __('Belum ada riwayat pesan.') }}</p>
                     </div>
                 @endforelse
             </div>
@@ -110,7 +110,7 @@
                 {{-- Message History Display Area --}}
                 <div class="flex-grow-1 p-4 overflow-y-auto" id="chatHistory" style="height: 0; overscroll-behavior: contain;">
                     <div class="text-center text-muted small my-3">
-                        <i class="fas fa-lock me-1"></i> Pesan terenkripsi secara aman
+                        <i class="fas fa-lock me-1"></i> {{ __('Pesan terenkripsi secara aman') }}
                     </div>
                     <div id="messageBubbleContainer">
                         {{-- Filled dynamically via Javascript --}}
@@ -132,7 +132,7 @@
                             <i class="fas fa-paperclip"></i>
                         </button>
 
-                        <input type="text" name="message" id="messageInput" class="form-control rounded-pill px-4 border" placeholder="Tulis pesan Anda disini..." autocomplete="off" style="height: 46px;">
+                        <input type="text" name="message" id="messageInput" class="form-control rounded-pill px-4 border" placeholder="{{ __('Tulis pesan Anda disini...') }}" autocomplete="off" style="height: 46px;">
                         
                         <button type="submit" id="sendBtn" class="btn btn-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 46px; height: 46px; min-width: 46px;">
                             <i class="fas fa-paper-plane"></i>
@@ -150,8 +150,8 @@
             @else
                 <div class="flex-grow-1 d-flex flex-column align-items-center justify-content-center text-muted">
                     <i class="far fa-comments fs-1 mb-3 opacity-50"></i>
-                    <h6 class="fw-bold">Pilih Obrolan</h6>
-                    <p class="small text-muted mb-0">Pilih salah satu kontak di sebelah kiri untuk mulai mengobrol.</p>
+                    <h6 class="fw-bold">{{ __('Pilih Obrolan') }}</h6>
+                    <p class="small text-muted mb-0">{{ __('Pilih salah satu kontak di sebelah kiri untuk mulai mengobrol.') }}</p>
                 </div>
             @endif
         </div>
@@ -161,23 +161,23 @@
 @endsection
 
 @push('modals')
-@if(in_array(Auth::user()->role, ['admin', 'seller']))
+@if(in_array(Auth::user()->{{ __('role, [\'admin\', \'seller\']))') }}
 <!-- Start Chat Modal -->
 <div class="modal fade" id="startChatModal" tabindex="-1" aria-labelledby="startChatModalLabel" aria-hidden="true" style="z-index: 1060;">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content border-0 shadow" style="border-radius: 16px;">
             <div class="modal-header border-bottom p-3">
-                <h6 class="modal-title fw-bold text-dark" id="startChatModalLabel">Mulai Obrolan Baru</h6>
+                <h6 class="modal-title fw-bold text-dark" id="startChatModalLabel">{{ __('Mulai Obrolan Baru') }}</h6>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-3">
                 <div class="input-group mb-3 border rounded-pill overflow-hidden bg-light" style="height: 40px;">
                     <span class="input-group-text border-0 bg-transparent text-muted"><i class="fas fa-search"></i></span>
-                    <input type="text" id="userSearchInput" class="form-control border-0 bg-transparent" placeholder="Cari nama atau username..." style="font-size: 0.9rem;">
+                    <input type="text" id="userSearchInput" class="form-control border-0 bg-transparent" placeholder="{{ __('Cari nama atau username...') }}" style="font-size: 0.9rem;">
                 </div>
                 <div id="userSearchResults" class="list-group list-group-flush overflow-y-auto" style="max-height: 300px; min-height: 100px;">
                     <div class="text-center text-muted py-4 small">
-                        Memuat daftar kontak...
+                        {{ __('Memuat daftar kontak...') }}
                     </div>
                 </div>
             </div>
@@ -400,7 +400,7 @@
                     uploadProgressBar.style.width = '0%';
                 }
                 
-                if (xhr.status >= 200 && xhr.status < 300) {
+                if (xhr.status >{{ __('= 200 && xhr.status') }} < 300) {
                     const data = JSON.parse(xhr.responseText);
                     if (data.success) {
                         loadMessages();
@@ -448,7 +448,7 @@
 </script>
 @endif
 
-@if(in_array(Auth::user()->role, ['admin', 'seller']))
+@if(in_array(Auth::user()->{{ __('role, [\'admin\', \'seller\']))') }}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const userSearchInput = document.getElementById('userSearchInput');
@@ -490,7 +490,7 @@
                         if (data.users.length === 0) {
                             userSearchResults.innerHTML = `
                                 <div class="text-center text-muted py-4 small">
-                                    Tidak ada pengguna ditemukan.
+                                    {{ __('Tidak ada pengguna ditemukan.') }}
                                 </div>
                             `;
                             return;
@@ -551,7 +551,7 @@
                 userSearchInput.value = '';
                 userSearchResults.innerHTML = `
                     <div class="text-center text-muted py-4 small">
-                        Memuat daftar kontak...
+                        {{ __('Memuat daftar kontak...') }}
                     </div>
                 `;
             });

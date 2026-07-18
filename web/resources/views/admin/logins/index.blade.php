@@ -6,20 +6,20 @@
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h4 class="fw-bold mb-1">Daftar Percobaan Login</h4>
-        <p class="text-muted mb-0">Riwayat autentikasi masuk ke web admin.</p>
+        <h4 class="fw-bold mb-1">{{ __('Daftar Percobaan Login') }}</h4>
+        <p class="text-muted mb-0">{{ __('Riwayat autentikasi masuk ke web admin.') }}</p>
     </div>
 </div>
 
 <ul class="nav nav-pills mb-4 gap-2" id="loginTabs" role="tablist">
     <li class="nav-item" role="presentation">
         <button class="nav-link active rounded-pill px-4 fw-medium" id="logs-tab" data-bs-toggle="tab" data-bs-target="#logs-pane" type="button" role="tab" aria-selected="true">
-            <i class="fas fa-shield-alt me-2"></i>Semua Percobaan Web
+            <i class="fas fa-shield-alt me-2"></i>{{ __('Semua Percobaan Web') }}
         </button>
     </li>
     <li class="nav-item" role="presentation">
         <button class="nav-link rounded-pill px-4 fw-medium" id="tg-tab" data-bs-toggle="tab" data-bs-target="#tg-pane" type="button" role="tab" aria-selected="false">
-            <i class="fab fa-telegram me-2"></i>Login Telegram
+            <i class="fab fa-telegram me-2"></i>{{ __('Login Telegram') }}
         </button>
     </li>
 </ul>
@@ -33,12 +33,12 @@
                     <table class="table table-hover align-middle mb-0">
                         <thead>
                             <tr class="text-secondary small border-bottom bg-light">
-                                <th class="px-4 py-3 border-0">Waktu</th>
-                                <th class="py-3 border-0">Status</th>
-                                <th class="py-3 border-0">User/Email</th>
-                                <th class="py-3 border-0">IP & Lokasi</th>
-                                <th class="py-3 border-0">Perangkat</th>
-                                <th class="py-3 border-0 text-end pe-4">Aksi</th>
+                                <th class="px-4 py-3 border-0">{{ __('Waktu') }}</th>
+                                <th class="py-3 border-0">{{ __('Status') }}</th>
+                                <th class="py-3 border-0">{{ __('User/Email') }}</th>
+                                <th class="py-3 border-0">{{ __('IP & Lokasi') }}</th>
+                                <th class="py-3 border-0">{{ __('Perangkat') }}</th>
+                                <th class="py-3 border-0 text-end pe-4">{{ __('Aksi') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -46,10 +46,10 @@
                             <tr>
                                 <td class="px-4 text-secondary small">{{ $log->created_at->format('d M Y H:i') }}</td>
                                 <td>
-                                    @if($log->is_successful)
-                                        <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill"><i class="fas fa-check-circle me-1"></i>Berhasil</span>
+                                    @if($log->{{ __('is_successful)') }}
+                                        <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill"><i class="fas fa-check-circle me-1"></i>{{ __('Berhasil') }}</span>
                                     @else
-                                        <span class="badge bg-danger bg-opacity-10 text-danger px-3 py-2 rounded-pill"><i class="fas fa-times-circle me-1"></i>Gagal</span>
+                                        <span class="badge bg-danger bg-opacity-10 text-danger px-3 py-2 rounded-pill"><i class="fas fa-times-circle me-1"></i>{{ __('Gagal') }}</span>
                                     @endif
                                 </td>
                                 <td class="fw-bold text-muted">{{ $log->username_or_email ?? '-' }}</td>
@@ -62,12 +62,12 @@
                                     <div class="text-secondary small" title="{{ $log->user_agent }}"><i class="fab fa-chrome text-primary me-1"></i>{{ $log->browser ?? '-' }}</div>
                                 </td>
                                 <td class="text-end pe-4">
-                                    @if(\Illuminate\Support\Facades\Cache::has('blocked_ip:' . $log->ip_address))
+                                    @if(\Illuminate\Support\Facades\Cache::has('blocked_ip:' . $log->{{ __('ip_address))') }}
                                         <form action="{{ route('admin.logins.unblock-ip') }}" method="POST" class="d-inline">
                                             @csrf
                                             <input type="hidden" name="ip_address" value="{{ $log->ip_address }}">
                                             <button type="submit" class="btn btn-sm btn-outline-success rounded-pill px-3" onclick="confirmAction(event, 'Buka blokir IP ini?')">
-                                                <i class="fas fa-unlock me-1"></i>Buka Blokir
+                                                <i class="fas fa-unlock me-1"></i>{{ __('Buka Blokir') }}
                                             </button>
                                         </form>
                                     @else
@@ -75,7 +75,7 @@
                                             @csrf
                                             <input type="hidden" name="ip_address" value="{{ $log->ip_address }}">
                                             <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3">
-                                                <i class="fas fa-ban me-1"></i>Blokir
+                                                <i class="fas fa-ban me-1"></i>{{ __('Blokir') }}
                                             </button>
                                         </form>
                                     @endif
@@ -91,7 +91,7 @@
                 @else
                 <div class="text-center py-5">
                     <i class="fas fa-shield-alt text-muted mb-3" style="font-size: 3rem;"></i>
-                    <p class="text-muted mb-0">Belum ada riwayat percobaan login.</p>
+                    <p class="text-muted mb-0">{{ __('Belum ada riwayat percobaan login.') }}</p>
                 </div>
                 @endif
             </div>
@@ -106,11 +106,11 @@
                     <table class="table table-hover align-middle mb-0">
                         <thead>
                             <tr class="text-secondary small border-bottom bg-light">
-                                <th class="px-4 py-3 border-0">Kode / Token</th>
-                                <th class="py-3 border-0">Status</th>
-                                <th class="py-3 border-0">IP Address</th>
-                                <th class="py-3 border-0">Browser</th>
-                                <th class="py-3 border-0">Waktu Expired</th>
+                                <th class="px-4 py-3 border-0">{{ __('Kode / Token') }}</th>
+                                <th class="py-3 border-0">{{ __('Status') }}</th>
+                                <th class="py-3 border-0">{{ __('IP Address') }}</th>
+                                <th class="py-3 border-0">{{ __('Browser') }}</th>
+                                <th class="py-3 border-0">{{ __('Waktu Expired') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -118,10 +118,10 @@
                             <tr>
                                 <td class="px-4 fw-bold text-muted">{{ $login->token }}</td>
                                 <td>
-                                    @if($login->status === 'used')
-                                        <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill">Digunakan</span>
-                                    @elseif($login->status === 'pending')
-                                        <span class="badge bg-warning bg-opacity-10 text-warning px-3 py-2 rounded-pill">Menunggu Verifikasi</span>
+                                    @if($login->{{ __('status === \'used\')') }}
+                                        <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill">{{ __('Digunakan') }}</span>
+                                    @elseif($login->{{ __('status === \'pending\')') }}
+                                        <span class="badge bg-warning bg-opacity-10 text-warning px-3 py-2 rounded-pill">{{ __('Menunggu Verifikasi') }}</span>
                                     @else
                                         <span class="badge bg-secondary bg-opacity-10 text-secondary px-3 py-2 rounded-pill">{{ ucfirst($login->status) }}</span>
                                     @endif
@@ -140,7 +140,7 @@
                 @else
                 <div class="text-center py-5">
                     <i class="fab fa-telegram text-muted mb-3" style="font-size: 3rem;"></i>
-                    <p class="text-muted mb-0">Belum ada riwayat percobaan login telegram.</p>
+                    <p class="text-muted mb-0">{{ __('Belum ada riwayat percobaan login telegram.') }}</p>
                 </div>
                 @endif
             </div>

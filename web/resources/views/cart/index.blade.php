@@ -8,7 +8,7 @@
     <div class="col-lg-8">
         <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
             <div class="card-body p-4">
-                <h5 class="fw-bold mb-4"><i class="fas fa-shopping-cart text-primary me-2"></i>Keranjang Belanja Anda</h5>
+                <h5 class="fw-bold mb-4"><i class="fas fa-shopping-cart text-primary me-2"></i>{{ __('Keranjang Belanja Anda') }}</h5>
 
                 {{-- Flash Messages --}}
                 @if(session('success'))
@@ -25,15 +25,15 @@
                 </div>
                 @endif
 
-                @if($cartItems->isEmpty())
+                @if($cartItems->{{ __('isEmpty())') }}
                 <div class="text-center py-5 text-muted">
                     <div class="mb-3">
                         <i class="fas fa-shopping-basket fs-1 text-secondary opacity-50"></i>
                     </div>
-                    <h6 class="fw-bold">Keranjang Anda Masih Kosong</h6>
-                    <p class="small text-muted mb-4">Temukan produk digital berkualitas di katalog kami.</p>
+                    <h6 class="fw-bold">{{ __('Keranjang Anda Masih Kosong') }}</h6>
+                    <p class="small text-muted mb-4">{{ __('Temukan produk digital berkualitas di katalog kami.') }}</p>
                     <a href="{{ route('catalog.index') }}" class="btn btn-primary rounded-pill px-4">
-                        <i class="fas fa-search me-1"></i> Telusuri Produk
+                        <i class="fas fa-search me-1"></i> {{ __('Telusuri Produk') }}
                     </a>
                 </div>
                 @else
@@ -41,14 +41,14 @@
                     <table class="table align-middle border-0 mb-0">
                         <thead>
                             <tr class="text-muted small">
-                                <th scope="col" class="border-0 pb-3" style="width: 50%;">PRODUK</th>
-                                <th scope="col" class="border-0 pb-3 text-center" style="width: 25%;">JUMLAH</th>
-                                <th scope="col" class="border-0 pb-3 text-end" style="width: 25%;">SUBTOTAL</th>
+                                <th scope="col" class="border-0 pb-3" style="width: 50%;">{{ __('PRODUK') }}</th>
+                                <th scope="col" class="border-0 pb-3 text-center" style="width: 25%;">{{ __('JUMLAH') }}</th>
+                                <th scope="col" class="border-0 pb-3 text-end" style="width: 25%;">{{ __('SUBTOTAL') }}</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach($cartItems as $item)
-                            @if($item->product)
+                            @if($item->{{ __('product)') }}
                             <tr class="align-middle">
                                 <td class="border-secondary-subtle py-3">
                                     <div class="d-flex align-items-center gap-3">
@@ -67,7 +67,7 @@
                                             @csrf
                                             @method('PUT')
                                             <input type="hidden" name="quantity" value="{{ $item->quantity - 1 }}">
-                                            <button type="submit" class="btn btn-sm btn-link text-decoration-none px-2 py-0 text-muted" {{ $item->quantity <= 1 ? 'disabled' : '' }}>
+                                            <button type="submit" class="btn btn-sm btn-link text-decoration-none px-2 py-0 text-muted" {{ $item->{{ __('quantity') }} <= 1 ? 'disabled' : '' }}>
                                                 <i class="fas fa-minus fs-6"></i>
                                             </button>
                                         </form>
@@ -86,7 +86,7 @@
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="btn btn-link text-danger text-decoration-none p-0 small" style="font-size: 0.8rem;">
-                                                <i class="fas fa-trash-alt me-1"></i> Hapus
+                                                <i class="fas fa-trash-alt me-1"></i> {{ __('Hapus') }}
                                             </button>
                                         </form>
                                     </div>
@@ -105,11 +105,11 @@
         </div>
     </div>
 
-    @if(!$cartItems->isEmpty())
+    @if(!$cartItems->{{ __('isEmpty())') }}
     <div class="col-lg-4">
         <div class="card border-0 shadow-sm" style="border-radius: 16px;">
             <div class="card-body p-4">
-                <h5 class="fw-bold mb-4">Ringkasan Belanja</h5>
+                <h5 class="fw-bold mb-4">{{ __('Ringkasan Belanja') }}</h5>
                 
                 <div class="d-flex justify-content-between mb-3 text-muted">
                     <span>Total Barang ({{ $cartItems->sum('quantity') }} unit)</span>
@@ -119,16 +119,16 @@
                 <hr class="my-3">
 
                 <div class="d-flex justify-content-between align-items-center mb-4">
-                    <span class="fw-bold">Estimasi Total</span>
+                    <span class="fw-bold">{{ __('Estimasi Total') }}</span>
                     <span class="fs-4 fw-bold text-primary">Rp{{ number_format($subtotal, 0, ',', '.') }}</span>
                 </div>
 
                 <div class="d-grid gap-2">
                     <a href="{{ route('cart.checkout') }}" class="btn btn-success rounded-pill py-3 fw-bold">
-                        <i class="fas fa-shopping-bag me-2"></i>Lanjut ke Checkout
+                        <i class="fas fa-shopping-bag me-2"></i>{{ __('Lanjut ke Checkout') }}
                     </a>
                     <a href="{{ route('catalog.index') }}" class="btn btn-outline-secondary rounded-pill py-2">
-                        Kembali Belanja
+                        {{ __('Kembali Belanja') }}
                     </a>
                 </div>
             </div>

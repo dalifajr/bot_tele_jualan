@@ -16,7 +16,7 @@
                         <h3 class="fw-bold mb-1">{{ $product->name }}</h3>
                         <span class="text-muted">ID: #{{ $product->id }}</span>
                     </div>
-                    @if($product->is_vpn)
+                    @if($product->{{ __('is_vpn)') }}
                         <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-2">
                             <i class="fas fa-network-wired me-1"></i>VPN Produk ({{ strtoupper($product->vpn_protocol) }})
                         </span>
@@ -26,7 +26,7 @@
                         </span>
                     @else
                         <span class="badge bg-danger-subtle text-danger rounded-pill px-3 py-2">
-                            <i class="fas fa-times-circle me-1"></i>Stok habis
+                            <i class="fas fa-times-circle me-1"></i>{{ __('Stok habis') }}
                         </span>
                     @endif
                 </div>
@@ -34,20 +34,20 @@
                 <hr>
 
                 <div class="mb-4">
-                    <span class="text-muted small d-block mb-1">Seller</span>
-                    @if($product->creator)
+                    <span class="text-muted small d-block mb-1">{{ __('Seller') }}</span>
+                    @if($product->{{ __('creator)') }}
                         <h6 class="fw-bold"><i class="fas fa-store text-info me-1"></i>{{ $product->creator->full_name ?? $product->creator->username }}</h6>
                     @else
-                        <h6 class="fw-bold"><i class="fas fa-store text-primary me-1"></i>Admin Utama</h6>
+                        <h6 class="fw-bold"><i class="fas fa-store text-primary me-1"></i>{{ __('Admin Utama') }}</h6>
                     @endif
                 </div>
 
-                <h5 class="fw-bold mb-2">Deskripsi</h5>
+                <h5 class="fw-bold mb-2">{{ __('Deskripsi') }}</h5>
                 <p class="text-muted">{{ $product->description ?: 'Tidak ada deskripsi tersedia.' }}</p>
 
                 <hr class="my-4">
 
-                <h5 class="fw-bold mb-3"><i class="fas fa-star text-warning me-2"></i>Ulasan & Rating</h5>
+                <h5 class="fw-bold mb-3"><i class="fas fa-star text-warning me-2"></i>{{ __('Ulasan & Rating') }}</h5>
                 @php
                     $reviews = \App\Models\Review::with('user')->where('product_id', $product->id)->orderBy('created_at', 'desc')->get();
                     $avgRating = $reviews->avg('rating');
@@ -79,12 +79,12 @@
                             </div>
                             <span class="text-muted small" style="font-size: 0.75rem;">{{ $rev->created_at->format('d M Y') }}</span>
                         </div>
-                        @if($rev->comment)
+                        @if($rev->{{ __('comment)') }}
                             <p class="mb-0 text-secondary small italic">"{{ $rev->comment }}"</p>
                         @endif
                     </div>
                     @empty
-                    <p class="text-muted small mb-0">Belum ada ulasan untuk produk ini.</p>
+                    <p class="text-muted small mb-0">{{ __('Belum ada ulasan untuk produk ini.') }}</p>
                     @endforelse
                 </div>
             </div>
@@ -95,67 +95,67 @@
         <div class="card border-0 shadow-sm" style="border-radius: 16px;">
             <div class="card-body p-4">
                 <div class="mb-4">
-                    <span class="text-muted small">Harga</span>
+                    <span class="text-muted small">{{ __('Harga') }}</span>
                     <div class="product-price" style="font-size: 2rem;">{{ $product->formatted_price }}</div>
                 </div>
 
                 @if($stockCount > 0)
                     <div class="alert alert-info border-0 rounded-3 mb-3">
                         <i class="fas fa-info-circle me-2"></i>
-                        Anda dapat membeli produk ini langsung di website atau melalui bot Telegram kami.
+                        {{ __('Anda dapat membeli produk ini langsung di website atau melalui bot Telegram kami.') }}
                     </div>
                     @if(config('telegram.bot_username'))
                         <a href="https://t.me/{{ config('telegram.bot_username') }}" target="_blank"
                            class="btn btn-primary w-100 rounded-pill py-3 fw-bold mb-3">
-                            <i class="fab fa-telegram me-2"></i>Beli via Telegram
+                            <i class="fab fa-telegram me-2"></i>{{ __('Beli via Telegram') }}
                         </a>
                     @endif
                     <form action="{{ route('checkout.store', $product->id) }}" method="POST">
                         @csrf
                         
-                        @if($product->is_vpn)
+                        @if($product->{{ __('is_vpn)') }}
                             <div class="bg-primary-subtle p-3 rounded-3 mb-3">
-                                <h6 class="fw-bold text-primary mb-2"><i class="fas fa-user-shield me-2"></i>Konfigurasi Akun VPN</h6>
-                                <p class="text-muted small mb-3">Sistem akan otomatis membuatkan akun VPN Anda.</p>
+                                <h6 class="fw-bold text-primary mb-2"><i class="fas fa-user-shield me-2"></i>{{ __('Konfigurasi Akun VPN') }}</h6>
+                                <p class="text-muted small mb-3">{{ __('Sistem akan otomatis membuatkan akun VPN Anda.') }}</p>
                                 
                                 <div class="mb-2">
-                                    <label class="form-label text-dark small fw-bold">Username VPN <span class="text-danger">*</span></label>
-                                    <input type="text" name="vpn_username" class="form-control form-control-sm" required placeholder="Contoh: user123" pattern="[a-zA-Z0-9_-]+" title="Hanya huruf, angka, dash, dan underscore">
+                                    <label class="form-label text-dark small fw-bold">{{ __('Username VPN') }} <span class="text-danger">*</span></label>
+                                    <input type="text" name="vpn_username" class="form-control form-control-sm" required placeholder="{{ __('Contoh: user123') }}" pattern="[a-zA-Z0-9_-]+" title="{{ __('Hanya huruf, angka, dash, dan underscore') }}">
                                 </div>
                                 
-                                @if($product->vpn_protocol === 'ssh')
+                                @if($product->{{ __('vpn_protocol === \'ssh\')') }}
                                 <div class="mb-2">
-                                    <label class="form-label text-dark small fw-bold">Password SSH <span class="text-danger">*</span></label>
-                                    <input type="password" name="vpn_password" class="form-control form-control-sm" required placeholder="Masukkan password">
+                                    <label class="form-label text-dark small fw-bold">{{ __('Password SSH') }} <span class="text-danger">*</span></label>
+                                    <input type="password" name="vpn_password" class="form-control form-control-sm" required placeholder="{{ __('Masukkan password') }}">
                                 </div>
                                 @endif
-                                <div class="form-text text-muted" style="font-size: 0.7rem;">Masa Aktif: <strong>{{ $product->vpn_duration_days }} Hari</strong></div>
+                                <div class="form-text text-muted" style="font-size: 0.7rem;">{{ __('Masa Aktif:') }} <strong>{{ $product->vpn_duration_days }} Hari</strong></div>
                             </div>
                         @endif
 
                         <div class="mb-3 d-flex align-items-center justify-content-between bg-light p-2 rounded-pill px-3">
-                            <label for="quantity" class="text-muted small fw-bold mb-0">Jumlah Beli:</label>
+                            <label for="quantity" class="text-muted small fw-bold mb-0">{{ __('Jumlah Beli:') }}</label>
                             <input type="number" id="quantity" name="quantity" class="form-control form-control-sm border-0 bg-transparent text-end fw-bold px-0" value="1" min="1" {{ !$product->is_vpn ? 'max=' . $stockCount : '' }} required style="width: 70px; outline: none; box-shadow: none;">
                         </div>
                         <button type="submit" class="btn btn-success w-100 rounded-pill py-3 fw-bold mb-2">
-                            <i class="fas fa-shopping-bag me-2"></i>Beli Sekarang (via Website)
+                            <i class="fas fa-shopping-bag me-2"></i>{{ __('Beli Sekarang (via Website)') }}
                         </button>
                         
-                        @if(!$product->is_vpn)
+                        @if(!$product->{{ __('is_vpn)') }}
                         <button type="submit" formaction="{{ route('cart.add', $product->id) }}" class="btn btn-outline-primary w-100 rounded-pill py-3 fw-bold">
-                            <i class="fas fa-cart-plus me-2"></i>Tambah ke Keranjang
+                            <i class="fas fa-cart-plus me-2"></i>{{ __('Tambah ke Keranjang') }}
                         </button>
                         @endif
                     </form>
                 @else
                     <div class="alert alert-warning border-0 rounded-3 mb-4">
                         <i class="fas fa-exclamation-triangle me-2"></i>
-                        Stok sedang habis. Silakan cek kembali nanti.
+                        {{ __('Stok sedang habis. Silakan cek kembali nanti.') }}
                     </div>
                 @endif
 
                 <a href="{{ route('catalog.index') }}" class="btn btn-outline-secondary w-100 rounded-pill py-2 mt-3">
-                    <i class="fas fa-arrow-left me-2"></i>Kembali ke Katalog
+                    <i class="fas fa-arrow-left me-2"></i>{{ __('Kembali ke Katalog') }}
                 </a>
             </div>
         </div>

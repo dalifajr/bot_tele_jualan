@@ -6,8 +6,8 @@
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h4 class="fw-bold mb-1">Kelola Komplain</h4>
-        <p class="text-muted mb-0">Daftar keluhan dan klaim garansi Anda</p>
+        <h4 class="fw-bold mb-1">{{ __('Kelola Komplain') }}</h4>
+        <p class="text-muted mb-0">{{ __('Daftar keluhan dan klaim garansi Anda') }}</p>
     </div>
 </div>
 
@@ -25,12 +25,12 @@
             <table class="table table-hover align-middle mb-0">
                 <thead>
                     <tr class="text-secondary small border-bottom">
-                        <th class="px-4 py-3 border-0">No. Komplain</th>
-                        <th class="py-3 border-0">No. Pesanan</th>
-                        <th class="py-3 border-0">Produk</th>
-                        <th class="py-3 border-0">Status</th>
-                        <th class="py-3 border-0">Tanggal</th>
-                        <th class="py-3 border-0 text-end px-4">Aksi</th>
+                        <th class="px-4 py-3 border-0">{{ __('No. Komplain') }}</th>
+                        <th class="py-3 border-0">{{ __('No. Pesanan') }}</th>
+                        <th class="py-3 border-0">{{ __('Produk') }}</th>
+                        <th class="py-3 border-0">{{ __('Status') }}</th>
+                        <th class="py-3 border-0">{{ __('Tanggal') }}</th>
+                        <th class="py-3 border-0 text-end px-4">{{ __('Aksi') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -56,8 +56,8 @@
                         </td>
                         <td class="text-secondary small">{{ $complaint->created_at->format('d M Y H:i') }}</td>
                         <td class="text-end px-4">
-                            <a href="{{ route('customer.complaints.show', $complaint->id) }}" class="btn btn-sm btn-light text-info rounded-pill px-3" title="Lihat Detail">
-                                Detail <i class="fas fa-arrow-right ms-1"></i>
+                            <a href="{{ route('customer.complaints.show', $complaint->id) }}" class="btn btn-sm btn-light text-info rounded-pill px-3" title="{{ __('Lihat Detail') }}">
+                                {{ __('Detail') }} <i class="fas fa-arrow-right ms-1"></i>
                             </a>
                         </td>
                     </tr>
@@ -72,7 +72,7 @@
         @else
         <div class="text-center py-5">
             <i class="fas fa-toolbox text-muted mb-3" style="font-size: 3rem;"></i>
-            <p class="text-muted mb-0">Anda belum pernah mengajukan komplain atau klaim garansi.</p>
+            <p class="text-muted mb-0">{{ __('Anda belum pernah mengajukan komplain atau klaim garansi.') }}</p>
         </div>
         @endif
     </div>

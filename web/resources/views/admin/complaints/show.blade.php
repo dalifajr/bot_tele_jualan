@@ -6,7 +6,7 @@
 @section('content')
 <div class="mb-4">
     <a href="{{ route('admin.complaints.index') }}" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
-        <i class="fas fa-arrow-left me-1"></i> Kembali ke List Komplain
+        <i class="fas fa-arrow-left me-1"></i> {{ __('Kembali ke List Komplain') }}
     </a>
 </div>
 
@@ -37,12 +37,12 @@
             <div class="card-body px-4 pb-4">
                 <div class="row g-3 mb-4">
                     <div class="col-sm-6">
-                        <span class="text-muted small">Pelanggan</span>
+                        <span class="text-muted small">{{ __('Pelanggan') }}</span>
                         <div class="fw-bold text-primary">{{ $complaint->customer->full_name ?? 'Unknown User' }}</div>
                         <small class="text-muted">Username: {{ '@' . ($complaint->customer->username ?? $complaint->customer_username_snapshot) }}</small>
                     </div>
                     <div class="col-sm-6">
-                        <span class="text-muted small">Tanggal Keluhan</span>
+                        <span class="text-muted small">{{ __('Tanggal Keluhan') }}</span>
                         <div class="fw-bold">{{ $complaint->created_at ? $complaint->created_at->format('d M Y H:i:s') : '-' }}</div>
                     </div>
                 </div>
@@ -50,13 +50,13 @@
                 <hr>
 
                 <div class="mb-4">
-                    <span class="text-muted small fw-bold d-block mb-1">Rincian Keluhan Pelanggan:</span>
+                    <span class="text-muted small fw-bold d-block mb-1">{{ __('Rincian Keluhan Pelanggan:') }}</span>
                     <div class="bg-body-secondary rounded-3 p-3 text-dark text-wrap small" style="white-space: pre-wrap; font-size: 0.95rem; line-height: 1.5;">{{ $complaint->complaint_text }}</div>
                 </div>
 
-                @if($complaint->attachment_path)
+                @if($complaint->{{ __('attachment_path)') }}
                 <div class="mb-4">
-                    <span class="text-muted small fw-bold d-block mb-1">Lampiran Foto Bukti:</span>
+                    <span class="text-muted small fw-bold d-block mb-1">{{ __('Lampiran Foto Bukti:') }}</span>
                     <a href="{{ asset('storage/' . $complaint->attachment_path) }}" target="_blank">
                         <img src="{{ asset('storage/' . $complaint->attachment_path) }}" alt="Bukti Komplain" class="img-fluid rounded-3 border" style="max-height: 300px; object-fit: contain;">
                     </a>
@@ -64,21 +64,21 @@
                 @endif
 
                 {{-- Associated Order --}}
-                @if($complaint->order)
+                @if($complaint->{{ __('order)') }}
                 <hr>
                 <div class="mb-4">
                     <h6 class="fw-bold mb-3"><i class="fas fa-shopping-bag text-primary me-2"></i>Pesanan Terkait: {{ $complaint->order->order_ref }}</h6>
                     <div class="row g-3">
                         <div class="col-md-4">
-                            <span class="text-muted small">Produk</span>
+                            <span class="text-muted small">{{ __('Produk') }}</span>
                             <div class="fw-semibold">{{ $complaint->order->product->name ?? '-' }}</div>
                         </div>
                         <div class="col-md-4">
-                            <span class="text-muted small">Kuantitas</span>
+                            <span class="text-muted small">{{ __('Kuantitas') }}</span>
                             <div class="fw-semibold">{{ $complaint->order->quantity }} Pcs</div>
                         </div>
                         <div class="col-md-4">
-                            <span class="text-muted small">Total Pembayaran</span>
+                            <span class="text-muted small">{{ __('Total Pembayaran') }}</span>
                             <div class="fw-semibold text-success">{{ $complaint->order->formatted_total }}</div>
                         </div>
                     </div>
@@ -88,9 +88,9 @@
                 @if($complaint->order->stockUnits && $complaint->order->stockUnits->count() > 0)
                 <hr>
                 <div class="mb-0">
-                    <h6 class="fw-bold mb-3 text-success"><i class="fas fa-key me-2"></i>Kredensial Akun Dikirim ke Pelanggan:</h6>
+                    <h6 class="fw-bold mb-3 text-success"><i class="fas fa-key me-2"></i>{{ __('Kredensial Akun Dikirim ke Pelanggan:') }}</h6>
                     <div class="bg-light text-dark rounded-3 p-3 text-break" style="max-height: 300px; overflow-y: auto; font-family: monospace; white-space: pre-wrap; font-size: 0.85rem; border: 1px solid rgba(0,0,0,0.05);">
-@foreach($complaint->order->stockUnits as $unit)
+@foreach($complaint->order->{{ __('stockUnits as $unit)') }}
 <b>Unit #{{ $unit->id }} (Status: {{ $unit->stock_status }} | Seller: {{ $unit->seller->full_name ?? 'Admin' }}):</b>
 {{ $unit->raw_text }}
 @if(!$loop->last)
@@ -111,65 +111,65 @@
     <div class="col-lg-4">
         <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
             <div class="card-body p-4">
-                <h6 class="fw-bold mb-3"><i class="fas fa-gavel text-primary me-2"></i>Resolusi Tiket</h6>
+                <h6 class="fw-bold mb-3"><i class="fas fa-gavel text-primary me-2"></i>{{ __('Resolusi Tiket') }}</h6>
                 
                 <form action="{{ route('admin.complaints.updateStatus', $complaint->id) }}" method="POST">
                     @csrf
                     
                     <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">Pilih Status Baru</label>
+                        <label class="form-label text-muted small fw-bold">{{ __('Pilih Status Baru') }}</label>
                         <select name="status" id="status-select" class="form-select" required>
-                            <option value="">-- Pilih Keputusan --</option>
-                            <option value="review" {{ $complaint->status === 'review' ? 'selected' : '' }}>Ditinjau (In Review)</option>
-                            <option value="replacement" {{ $complaint->status === 'replacement' ? 'selected' : '' }}>Kirim Akun Pengganti</option>
-                            <option value="refund" {{ $complaint->status === 'refund' ? 'selected' : '' }}>Refund</option>
-                            <option value="done" {{ $complaint->status === 'done' ? 'selected' : '' }}>Selesai (Tanpa Ganti Rugi Lain)</option>
-                            <option value="rejected" {{ $complaint->status === 'rejected' ? 'selected' : '' }}>Tolak Klaim (Rejected)</option>
+                            <option value="">{{ __('-- Pilih Keputusan --') }}</option>
+                            <option value="review" {{ $complaint->status === 'review' ? 'selected' : '' }}>{{ __('Ditinjau (In Review)') }}</option>
+                            <option value="replacement" {{ $complaint->status === 'replacement' ? 'selected' : '' }}>{{ __('Kirim Akun Pengganti') }}</option>
+                            <option value="refund" {{ $complaint->status === 'refund' ? 'selected' : '' }}>{{ __('Refund') }}</option>
+                            <option value="done" {{ $complaint->status === 'done' ? 'selected' : '' }}>{{ __('Selesai (Tanpa Ganti Rugi Lain)') }}</option>
+                            <option value="rejected" {{ $complaint->status === 'rejected' ? 'selected' : '' }}>{{ __('Tolak Klaim (Rejected)') }}</option>
                         </select>
                     </div>
 
                     {{-- Rejected Reason block --}}
                     <div id="rejected-reason-block" class="mb-3 d-none">
-                        <label for="rejected_reason" class="form-label text-muted small fw-bold text-danger">Alasan Penolakan</label>
-                        <textarea class="form-control" name="rejected_reason" id="rejected_reason" rows="4" placeholder="Jelaskan alasan penolakan klaim garansi...">{{ $complaint->rejected_reason }}</textarea>
-                        <div class="form-text">Alasan ini akan tampil di web panel pelanggan.</div>
+                        <label for="rejected_reason" class="form-label text-muted small fw-bold text-danger">{{ __('Alasan Penolakan') }}</label>
+                        <textarea class="form-control" name="rejected_reason" id="rejected_reason" rows="4" placeholder="{{ __('Jelaskan alasan penolakan klaim garansi...') }}">{{ $complaint->rejected_reason }}</textarea>
+                        <div class="form-text">{{ __('Alasan ini akan tampil di web panel pelanggan.') }}</div>
                     </div>
 
                     {{-- Done/Refund block --}}
                     <div id="refund-note-block" class="mb-3 d-none">
-                        <label for="refund_note" class="form-label text-muted small fw-bold text-success">Catatan Resolusi / Refund</label>
-                        <textarea class="form-control" name="refund_note" id="refund_note" rows="4" placeholder="Tuliskan catatan penyelesaian (misal: dana dikembalikan)...">{{ $complaint->refund_note }}</textarea>
-                        <div class="form-text">Catatan penyelesaian garansi akan diinformasikan ke pelanggan.</div>
+                        <label for="refund_note" class="form-label text-muted small fw-bold text-success">{{ __('Catatan Resolusi / Refund') }}</label>
+                        <textarea class="form-control" name="refund_note" id="refund_note" rows="4" placeholder="{{ __('Tuliskan catatan penyelesaian (misal: dana dikembalikan)...') }}">{{ $complaint->refund_note }}</textarea>
+                        <div class="form-text">{{ __('Catatan penyelesaian garansi akan diinformasikan ke pelanggan.') }}</div>
                     </div>
                     
                     {{-- Replacement block --}}
                     <div id="replacement-block" class="mb-3 d-none">
                         @if($availableStockCount > 0)
                             <div class="alert alert-success small mb-2">
-                                <strong>Stok Tersedia!</strong> Ditemukan {{ $availableStockCount }} stok pengganti untuk produk ini.
+                                <strong>{{ __('Stok Tersedia!') }}</strong> Ditemukan {{ $availableStockCount }} stok pengganti untuk produk ini.
                                 <hr>
-                                <strong>Detail Akun (Random):</strong><br>
+                                <strong>{{ __('Detail Akun (Random):') }}</strong><br>
                                 <code>{{ $randomStock->raw_text }}</code>
                             </div>
                             <input type="hidden" name="replacement_stock_id" value="{{ $randomStock->id }}">
                             <div class="form-check mb-2">
                                 <input class="form-check-input" type="checkbox" id="confirm_random" name="confirm_random">
                                 <label class="form-check-label text-muted small" for="confirm_random">
-                                    Saya mengonfirmasi detail akun di atas valid dan setuju mengirimkannya ke pelanggan.
+                                    {{ __('Saya mengonfirmasi detail akun di atas valid dan setuju mengirimkannya ke pelanggan.') }}
                                 </label>
                             </div>
-                            <div class="form-text text-danger d-none" id="confirm-error">Harap centang konfirmasi untuk melanjutkan.</div>
+                            <div class="form-text text-danger d-none" id="confirm-error">{{ __('Harap centang konfirmasi untuk melanjutkan.') }}</div>
                         @else
                             <div class="alert alert-warning small mb-2">
-                                <strong>Stok Kosong!</strong> Tidak ada stok <i>Ready</i> di gudang untuk produk ini.
+                                <strong>{{ __('Stok Kosong!') }}</strong> {{ __('Tidak ada stok') }} <i>{{ __('Ready') }}</i> {{ __('di gudang untuk produk ini.') }}
                             </div>
-                            <label for="replacement_data" class="form-label text-muted small fw-bold">Input Manual Akun Pengganti</label>
-                            <textarea class="form-control" name="replacement_data" id="replacement_data" rows="4" placeholder="Ketik email/password atau link akun pengganti..."></textarea>
+                            <label for="replacement_data" class="form-label text-muted small fw-bold">{{ __('Input Manual Akun Pengganti') }}</label>
+                            <textarea class="form-control" name="replacement_data" id="replacement_data" rows="4" placeholder="{{ __('Ketik email/password atau link akun pengganti...') }}"></textarea>
                         @endif
                     </div>
 
                     <button type="submit" class="btn btn-primary w-100 rounded-pill mt-3">
-                        <i class="fas fa-save me-2"></i>Simpan Resolusi
+                        <i class="fas fa-save me-2"></i>{{ __('Simpan Resolusi') }}
                     </button>
                 </form>
             </div>
@@ -178,18 +178,18 @@
         {{-- Audit & Date Info --}}
         <div class="card border-0 shadow-sm" style="border-radius: 16px;">
             <div class="card-body p-4 small">
-                <h6 class="fw-bold mb-3">Informasi Lain</h6>
+                <h6 class="fw-bold mb-3">{{ __('Informasi Lain') }}</h6>
                 <div class="d-flex justify-content-between mb-2">
-                    <span class="text-muted">Tanggal Dibuat</span>
+                    <span class="text-muted">{{ __('Tanggal Dibuat') }}</span>
                     <span class="text-dark">{{ $complaint->created_at ? $complaint->created_at->format('d M Y H:i') : '-' }}</span>
                 </div>
                 <div class="d-flex justify-content-between mb-2">
-                    <span class="text-muted">Pembaruan Terakhir</span>
+                    <span class="text-muted">{{ __('Pembaruan Terakhir') }}</span>
                     <span class="text-dark">{{ $complaint->updated_at ? $complaint->updated_at->format('d M Y H:i') : '-' }}</span>
                 </div>
-                @if($complaint->closed_at)
+                @if($complaint->{{ __('closed_at)') }}
                 <div class="d-flex justify-content-between">
-                    <span class="text-muted">Ditutup Pada</span>
+                    <span class="text-muted">{{ __('Ditutup Pada') }}</span>
                     <span class="text-dark">{{ $complaint->closed_at->format('d M Y H:i') }}</span>
                 </div>
                 @endif

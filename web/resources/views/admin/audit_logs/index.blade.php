@@ -6,8 +6,8 @@
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h1 class="h4 fw-bold mb-1 text-body">Log Audit Sistem</h1>
-        <p class="text-muted mb-0">Pelacakan riwayat aktivitas administratif dan perubahan sistem</p>
+        <h1 class="h4 fw-bold mb-1 text-body">{{ __('Log Audit Sistem') }}</h1>
+        <p class="text-muted mb-0">{{ __('Pelacakan riwayat aktivitas administratif dan perubahan sistem') }}</p>
     </div>
 </div>
 
@@ -15,25 +15,25 @@
     <div class="card-body p-3">
         <form action="{{ route('admin.audit-logs.index') }}" method="GET" class="row g-3 align-items-end">
             <div class="col-lg-5 col-md-12">
-                <label class="form-label text-secondary small fw-bold mb-1">Cari Kata Kunci</label>
+                <label class="form-label text-secondary small fw-bold mb-1">{{ __('Cari Kata Kunci') }}</label>
                 <div class="input-group">
                     <span class="input-group-text bg-transparent border-end-0"><i class="fas fa-search text-muted"></i></span>
-                    <input type="text" name="search" class="form-control border-start-0" placeholder="Cari berdasarkan aksi, detail, atau nama pelaku..." value="{{ request('search') }}">
+                    <input type="text" name="search" class="form-control border-start-0" placeholder="{{ __('Cari berdasarkan aksi, detail, atau nama pelaku...') }}" value="{{ request('search') }}">
                 </div>
             </div>
             <div class="col-lg-3 col-md-6 col-sm-6">
-                <label class="form-label text-secondary small fw-bold mb-1">Tanggal Mulai</label>
+                <label class="form-label text-secondary small fw-bold mb-1">{{ __('Tanggal Mulai') }}</label>
                 <input type="date" name="start_date" class="form-control" value="{{ request('start_date') }}">
             </div>
             <div class="col-lg-3 col-md-6 col-sm-6">
-                <label class="form-label text-secondary small fw-bold mb-1">Tanggal Selesai</label>
+                <label class="form-label text-secondary small fw-bold mb-1">{{ __('Tanggal Selesai') }}</label>
                 <input type="date" name="end_date" class="form-control" value="{{ request('end_date') }}">
             </div>
             <div class="col-lg-1 col-md-12">
                 <div class="d-flex gap-2">
-                    <button type="submit" class="btn btn-primary w-100 rounded-pill" title="Terapkan Filter"><i class="fas fa-filter"></i></button>
-                    @if(request()->filled('search') || request()->filled('start_date') || request()->filled('end_date'))
-                        <a href="{{ route('admin.audit-logs.index') }}" class="btn btn-outline-secondary rounded-pill" title="Reset Filter"><i class="fas fa-undo"></i></a>
+                    <button type="submit" class="btn btn-primary w-100 rounded-pill" title="{{ __('Terapkan Filter') }}"><i class="fas fa-filter"></i></button>
+                    @if(request()->filled('search') || request()->filled('start_date') || request()->{{ __('filled(\'end_date\'))') }}
+                        <a href="{{ route('admin.audit-logs.index') }}" class="btn btn-outline-secondary rounded-pill" title="{{ __('Reset Filter') }}"><i class="fas fa-undo"></i></a>
                     @endif
                 </div>
             </div>
@@ -48,10 +48,10 @@
             <table class="table table-hover align-middle mb-0">
                 <thead>
                     <tr class="text-secondary small border-bottom">
-                        <th class="px-4 py-3 border-0" style="width: 180px;">Waktu</th>
-                        <th class="py-3 border-0" style="width: 180px;">Pelaku (Actor)</th>
-                        <th class="py-3 border-0" style="width: 180px;">Aksi</th>
-                        <th class="py-3 border-0">Detail Perubahan</th>
+                        <th class="px-4 py-3 border-0" style="width: 180px;">{{ __('Waktu') }}</th>
+                        <th class="py-3 border-0" style="width: 180px;">{{ __('Pelaku (Actor)') }}</th>
+                        <th class="py-3 border-0" style="width: 180px;">{{ __('Aksi') }}</th>
+                        <th class="py-3 border-0">{{ __('Detail Perubahan') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -59,7 +59,7 @@
                     <tr>
                         <td class="px-4 text-secondary small">{{ \Carbon\Carbon::parse($log->created_at)->format('d M Y H:i:s') }}</td>
                         <td>
-                            @if($log->actor)
+                            @if($log->{{ __('actor)') }}
                             <div class="d-flex align-items-center gap-2">
                                 <div class="avatar bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px; font-size: 0.8rem;">
                                     {{ strtoupper(substr($log->actor->username ?? 'U', 0, 1)) }}
@@ -74,7 +74,7 @@
                                 <div class="avatar bg-secondary-subtle text-secondary rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px; font-size: 0.8rem;">
                                     S
                                 </div>
-                                <span class="small fw-semibold">SYSTEM / BOT</span>
+                                <span class="small fw-semibold">{{ __('SYSTEM / BOT') }}</span>
                             </div>
                             @endif
                         </td>
@@ -94,12 +94,12 @@
         @else
         <div class="text-center py-5">
             <i class="fas fa-history text-muted mb-3" style="font-size: 3rem;"></i>
-            <p class="text-muted mb-0">Belum ada data log audit.</p>
+            <p class="text-muted mb-0">{{ __('Belum ada data log audit.') }}</p>
         </div>
         @endif
     </div>
     
-    @if($logs->hasPages())
+    @if($logs->{{ __('hasPages())') }}
     <div class="card-footer bg-transparent border-0 px-4 py-3">
         {{ $logs->links() }}
     </div>

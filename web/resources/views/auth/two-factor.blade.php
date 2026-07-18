@@ -254,7 +254,7 @@
             <i class="fas fa-key"></i>
           </div>
           <div class="text-start">
-            <h1 class="fs-4 fw-extrabold text-slate-900 font-outfit m-0">Verifikasi 2FA</h1>
+            <h1 class="fs-4 fw-extrabold text-slate-900 font-outfit m-0">{{ __('Verifikasi 2FA') }}</h1>
             <div class="text-slate-400 font-bold uppercase tracking-wider" style="font-size: 0.65rem;">{{ config('app.name', 'Dzulfikrialifajri Store') }}</div>
           </div>
         </div>
@@ -262,7 +262,7 @@
 
       <div class="text-center mb-4">
         <p class="text-sm text-slate-500 font-medium">
-          Kami telah mengirimkan kode verifikasi 6 digit ke akun Telegram Anda yang tertaut. Silakan masukkan kode di bawah ini.
+          {{ __('Kami telah mengirimkan kode verifikasi 6 digit ke akun Telegram Anda yang tertaut. Silakan masukkan kode di bawah ini.') }}
         </p>
       </div>
 
@@ -270,10 +270,10 @@
       @if(session('error'))
           <div class="alert alert-danger py-2 small border-0 bg-danger bg-opacity-10 text-danger rounded-3 mb-3"><i class="fas fa-exclamation-circle me-1"></i>{{ session('error') }}</div>
       @endif
-      @if($errors->any())
+      @if($errors->{{ __('any())') }}
           <div class="alert alert-danger py-2 small border-0 bg-danger bg-opacity-10 text-danger rounded-3 mb-3">
               <ul class="mb-0 ps-3">
-                  @foreach($errors->all() as $err)
+                  @foreach($errors->{{ __('all() as $err)') }}
                       <li>{{ $err }}</li>
                   @endforeach
               </ul>
@@ -288,12 +288,12 @@
           </div>
 
           <button type="submit" class="btn-primary w-100 mb-3">
-              <span>Verifikasi & Masuk</span>
+              <span>{{ __('Verifikasi & Masuk') }}</span>
               <i class="fas fa-sign-in-alt text-xs"></i>
           </button>
           
           <a href="{{ route('login') }}" class="btn-outline w-100">
-              <i class="fas fa-arrow-left"></i> Kembali ke Login
+              <i class="fas fa-arrow-left"></i> {{ __('Kembali ke Login') }}
           </a>
       </form>
     </div>

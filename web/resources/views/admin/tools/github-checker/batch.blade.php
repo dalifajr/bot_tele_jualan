@@ -70,14 +70,14 @@
             </a>
             Pengecekan Batch #{{ $batch->id }}
         </h4>
-        <p class="text-muted mb-0">Status dan hasil riwayat live checker GitHub</p>
+        <p class="text-muted mb-0">{{ __('Status dan hasil riwayat live checker GitHub') }}</p>
     </div>
     <div>
         <button type="button" class="btn btn-danger rounded-pill px-4" id="btn-stop-check" onclick="stopChecking()" style="display: {{ $batch->status === 'running' ? 'inline-block' : 'none' }}">
-            <i class="fas fa-stop me-1"></i>Hentikan Pengecekan
+            <i class="fas fa-stop me-1"></i>{{ __('Hentikan Pengecekan') }}
         </button>
         <a href="{{ route('admin.tools.github-checker') }}" class="btn btn-outline-secondary rounded-pill px-4">
-            <i class="fas fa-home me-1"></i>Kembali
+            <i class="fas fa-home me-1"></i>{{ __('Kembali') }}
         </a>
     </div>
 </div>
@@ -117,7 +117,7 @@
         <div class="card counter-card shadow-sm" style="border-color: rgba(25,135,84,0.2); background: rgba(25,135,84,0.03);">
             <div class="card-body text-center py-3">
                 <div class="counter-value text-success" id="count-approved">0</div>
-                <small class="text-success fw-bold">✅ APPROVED</small>
+                <small class="text-success fw-bold">{{ __('✅ APPROVED') }}</small>
             </div>
         </div>
     </div>
@@ -125,7 +125,7 @@
         <div class="card counter-card shadow-sm" style="border-color: rgba(255,193,7,0.3); background: rgba(255,193,7,0.03);">
             <div class="card-body text-center py-3">
                 <div class="counter-value text-warning" id="count-not-approved">0</div>
-                <small class="text-warning fw-bold">⚠️ REVOKED</small>
+                <small class="text-warning fw-bold">{{ __('⚠️ REVOKED') }}</small>
             </div>
         </div>
     </div>
@@ -133,7 +133,7 @@
         <div class="card counter-card shadow-sm" style="border-color: rgba(220,53,69,0.2); background: rgba(220,53,69,0.03);">
             <div class="card-body text-center py-3">
                 <div class="counter-value text-danger" id="count-suspended">0</div>
-                <small class="text-danger fw-bold">❌ SUSPENDED</small>
+                <small class="text-danger fw-bold">{{ __('❌ SUSPENDED') }}</small>
             </div>
         </div>
     </div>
@@ -141,7 +141,7 @@
         <div class="card counter-card shadow-sm" style="border-color: rgba(108,117,125,0.2); background: rgba(108,117,125,0.03);">
             <div class="card-body text-center py-3">
                 <div class="counter-value text-secondary" id="count-error">0</div>
-                <small class="text-secondary fw-bold">🔄 ERROR</small>
+                <small class="text-secondary fw-bold">{{ __('🔄 ERROR') }}</small>
             </div>
         </div>
     </div>
@@ -152,18 +152,18 @@
     <div class="card-body p-3">
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
             <div class="d-flex align-items-center gap-2">
-                <span class="fw-bold text-dark"><span id="action-selected-count">0</span> akun dipilih</span>
+                <span class="fw-bold text-dark"><span id="action-selected-count">0</span> {{ __('akun dipilih') }}</span>
                 <span class="text-muted">|</span>
                 <div class="dropdown">
                     <button class="btn btn-sm btn-outline-secondary rounded-pill dropdown-toggle" data-bs-toggle="dropdown">
-                        <i class="fas fa-filter me-1"></i>Filter Status
+                        <i class="fas fa-filter me-1"></i>{{ __('Filter Status') }}
                     </button>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#" onclick="filterResults('all')">Semua</a></li>
-                        <li><a class="dropdown-item text-success" href="#" onclick="filterResults('approved')">✅ Approved</a></li>
-                        <li><a class="dropdown-item text-warning" href="#" onclick="filterResults('not_approved')">⚠️ Revoked</a></li>
-                        <li><a class="dropdown-item text-danger" href="#" onclick="filterResults('suspended')">❌ Suspended</a></li>
-                        <li><a class="dropdown-item text-secondary" href="#" onclick="filterResults('error')">🔄 Error</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="filterResults('all')">{{ __('Semua') }}</a></li>
+                        <li><a class="dropdown-item text-success" href="#" onclick="filterResults('approved')">{{ __('✅ Approved') }}</a></li>
+                        <li><a class="dropdown-item text-warning" href="#" onclick="filterResults('not_approved')">{{ __('⚠️ Revoked') }}</a></li>
+                        <li><a class="dropdown-item text-danger" href="#" onclick="filterResults('suspended')">{{ __('❌ Suspended') }}</a></li>
+                        <li><a class="dropdown-item text-secondary" href="#" onclick="filterResults('error')">{{ __('🔄 Error') }}</a></li>
                     </ul>
                 </div>
             </div>
@@ -171,26 +171,26 @@
                 {{-- Export --}}
                 <div class="dropdown">
                     <button class="btn btn-sm btn-primary rounded-pill dropdown-toggle" data-bs-toggle="dropdown" id="btn-export">
-                        <i class="fas fa-download me-1"></i>Export
+                        <i class="fas fa-download me-1"></i>{{ __('Export') }}
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item" href="#" onclick="exportResults('all')"><i class="fas fa-file-excel me-2 text-success"></i>Semua Hasil (.xlsx)</a></li>
-                        <li><a class="dropdown-item" href="#" onclick="exportResults('approved')"><i class="fas fa-check-circle me-2 text-success"></i>Hanya Approved</a></li>
-                        <li><a class="dropdown-item" href="#" onclick="exportResults('not_approved')"><i class="fas fa-exclamation-circle me-2 text-warning"></i>Hanya Revoked</a></li>
-                        <li><a class="dropdown-item" href="#" onclick="exportResults('suspended')"><i class="fas fa-times-circle me-2 text-danger"></i>Hanya Suspended</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="exportResults('all')"><i class="fas fa-file-excel me-2 text-success"></i>{{ __('Semua Hasil (.xlsx)') }}</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="exportResults('approved')"><i class="fas fa-check-circle me-2 text-success"></i>{{ __('Hanya Approved') }}</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="exportResults('not_approved')"><i class="fas fa-exclamation-circle me-2 text-warning"></i>{{ __('Hanya Revoked') }}</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="exportResults('suspended')"><i class="fas fa-times-circle me-2 text-danger"></i>{{ __('Hanya Suspended') }}</a></li>
                     </ul>
                 </div>
                 {{-- Bulk Stock Update --}}
                 <button class="btn btn-sm btn-outline-info rounded-pill" onclick="showBulkStockModal()" id="btn-bulk-stock" style="display:none;">
-                    <i class="fas fa-exchange-alt me-1"></i>Update Stok Masal
+                    <i class="fas fa-exchange-alt me-1"></i>{{ __('Update Stok Masal') }}
                 </button>
                 {{-- Delete Selected Stock --}}
                 <button class="btn btn-sm btn-outline-danger rounded-pill" onclick="showDeleteSelectedStockModal()" id="btn-delete-selected-stock" style="display:none;">
-                    <i class="fas fa-trash-alt me-1"></i>Hapus Stok Terpilih
+                    <i class="fas fa-trash-alt me-1"></i>{{ __('Hapus Stok Terpilih') }}
                 </button>
                 {{-- Delete Suspended --}}
                 <button class="btn btn-sm btn-outline-danger rounded-pill" onclick="showDeleteSuspendedModal()" id="btn-delete-suspended" style="display:none;">
-                    <i class="fas fa-trash-alt me-1"></i>Hapus Stok Suspended
+                    <i class="fas fa-trash-alt me-1"></i>{{ __('Hapus Stok Suspended') }}
                 </button>
             </div>
         </div>
@@ -208,11 +208,11 @@
                             <input type="checkbox" class="form-check-input" id="select-all-results" onchange="toggleAllResults()">
                         </th>
                         <th class="py-3 border-0">#</th>
-                        <th class="py-3 border-0">Username</th>
-                        <th class="py-3 border-0">Status</th>
-                        <th class="py-3 border-0">Umur Akun</th>
-                        <th class="py-3 border-0">Detail</th>
-                        <th class="py-3 border-0">Waktu</th>
+                        <th class="py-3 border-0">{{ __('Username') }}</th>
+                        <th class="py-3 border-0">{{ __('Status') }}</th>
+                        <th class="py-3 border-0">{{ __('Umur Akun') }}</th>
+                        <th class="py-3 border-0">{{ __('Detail') }}</th>
+                        <th class="py-3 border-0">{{ __('Waktu') }}</th>
                     </tr>
                 </thead>
                 <tbody id="result-tbody">
@@ -379,9 +379,9 @@
             <td class="px-4"><input type="checkbox" class="form-check-input" disabled></td>
             <td class="fw-bold text-muted">${currentIndex + 1}</td>
             <td class="fw-medium">${username}</td>
-            <td><span class="spinner-border spinner-border-sm text-primary me-1"></span><span class="text-primary small">Checking...</span></td>
+            <td><span class="spinner-border spinner-border-sm text-primary me-1"></span><span class="text-primary small">{{ __('Checking...') }}</span></td>
             <td class="text-muted small">-</td>
-            <td class="text-muted small">Sedang memeriksa...</td>
+            <td class="text-muted small">{{ __('Sedang memeriksa...') }}</td>
             <td class="text-muted small">-</td>
         `;
         tbody.appendChild(row);
@@ -461,10 +461,10 @@
                 icon: 'success',
                 title: 'Pengecekan Selesai!',
                 html: `<div class="text-start">
-                    <p class="mb-1">✅ Approved: <strong>${counts.approved}</strong></p>
-                    <p class="mb-1">⚠️ Revoked: <strong>${counts.not_approved}</strong></p>
-                    <p class="mb-1">❌ Suspended: <strong>${counts.suspended}</strong></p>
-                    <p class="mb-0">🔄 Error: <strong>${counts.error}</strong></p>
+                    <p class="mb-1">{{ __('✅ Approved:') }} <strong>${counts.approved}</strong></p>
+                    <p class="mb-1">{{ __('⚠️ Revoked:') }} <strong>${counts.not_approved}</strong></p>
+                    <p class="mb-1">{{ __('❌ Suspended:') }} <strong>${counts.suspended}</strong></p>
+                    <p class="mb-0">{{ __('🔄 Error:') }} <strong>${counts.error}</strong></p>
                 </div>`,
                 confirmButtonColor: '#198754',
             });
@@ -561,7 +561,7 @@
         Swal.fire({
             icon: 'warning',
             title: 'Hapus Stok Akun Suspended?',
-            html: `<p>Anda akan menghapus <strong>${suspendedItems.length}</strong> stok akun yang berstatus SUSPENDED.</p><p class="text-danger small">Tindakan ini tidak dapat dibatalkan!</p>`,
+            html: `<p>{{ __('Anda akan menghapus') }} <strong>${suspendedItems.length}</strong> {{ __('stok akun yang berstatus SUSPENDED.') }}</p><p class="text-danger small">{{ __('Tindakan ini tidak dapat dibatalkan!') }}</p>`,
             showCancelButton: true,
             confirmButtonColor: '#dc3545',
             cancelButtonText: 'Batal',
@@ -603,7 +603,7 @@
         Swal.fire({
             icon: 'warning',
             title: 'Hapus Stok Terpilih?',
-            html: `<p>Anda akan menghapus <strong>${stockItems.length}</strong> stok akun terpilih.</p><p class="text-danger small">Tindakan ini tidak dapat dibatalkan!</p>`,
+            html: `<p>{{ __('Anda akan menghapus') }} <strong>${stockItems.length}</strong> {{ __('stok akun terpilih.') }}</p><p class="text-danger small">{{ __('Tindakan ini tidak dapat dibatalkan!') }}</p>`,
             showCancelButton: true,
             confirmButtonColor: '#dc3545',
             cancelButtonText: 'Batal',
@@ -647,11 +647,11 @@
             html: `
                 <p class="small text-muted mb-3">${stockItems.length} akun stok akan diupdate</p>
                 <select id="swal-stock-status" class="form-select">
-                    <option value="ready">Ready</option>
-                    @if(Auth::user()->role === 'admin')
-                    <option value="awaiting_benefits">Awaiting Benefits</option>
+                    <option value="ready">{{ __('Ready') }}</option>
+                    @if(Auth::user()->{{ __('role === \'admin\')') }}
+                    <option value="awaiting_benefits">{{ __('Awaiting Benefits') }}</option>
                     @endif
-                    <option value="saved_for_verification">Simpan Akun</option>
+                    <option value="saved_for_verification">{{ __('Simpan Akun') }}</option>
                 </select>
             `,
             showCancelButton: true,

@@ -79,8 +79,8 @@
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h4 class="fw-bold mb-1"><i class="fab fa-github me-2"></i>GitHub Live Checker</h4>
-        <p class="text-muted mb-0">Cek status akun GitHub secara massal — Approved (PRO), Revoked, atau Suspended</p>
+        <h4 class="fw-bold mb-1"><i class="fab fa-github me-2"></i>{{ __('GitHub Live Checker') }}</h4>
+        <p class="text-muted mb-0">{{ __('Cek status akun GitHub secara massal — Approved (PRO), Revoked, atau Suspended') }}</p>
     </div>
 </div>
 
@@ -89,41 +89,41 @@
     <div class="card-body p-4">
         <div class="d-flex align-items-center justify-content-between mb-3">
             <h6 class="fw-bold mb-0">
-                <i class="fas fa-key text-warning me-2"></i>Cookie Session GitHub
+                <i class="fas fa-key text-warning me-2"></i>{{ __('Cookie Session GitHub') }}
             </h6>
             <div class="d-flex align-items-center gap-2" id="cookie-status-area">
                 <span class="cookie-status-indicator {{ $cookieValid ? 'valid' : 'pending' }}"></span>
                 <span class="small fw-medium" id="cookie-status-text">
                     @if($cookieValid)
-                        <span class="text-success">Login sebagai: <strong>{{ $cookieUser }}</strong></span>
+                        <span class="text-success">{{ __('Login sebagai:') }} <strong>{{ $cookieUser }}</strong></span>
                     @else
-                        <span class="text-muted">Belum divalidasi</span>
+                        <span class="text-muted">{{ __('Belum divalidasi') }}</span>
                     @endif
                 </span>
             </div>
         </div>
         <div class="row g-2 align-items-end">
             <div class="col">
-                <label class="form-label text-muted small fw-bold mb-1">Cookie Value <code class="text-muted">(user_session / _gh_sess)</code></label>
+                <label class="form-label text-muted small fw-bold mb-1">{{ __('Cookie Value') }} <code class="text-muted">{{ __('(user_session / _gh_sess)') }}</code></label>
                 <input type="text" id="github-cookie-input" class="form-control"
-                       placeholder="Paste cookie value dari browser..." value="{{ $cookieValid ? '••••••••••••••••••••••••••' : '' }}" {{ $cookieValid ? 'disabled' : '' }}>
+                       placeholder="{{ __('Paste cookie value dari browser...') }}" value="{{ $cookieValid ? '••••••••••••••••••••••••••' : '' }}" {{ $cookieValid ? 'disabled' : '' }}>
             </div>
             <div class="col-auto" id="cookie-action-container">
                 @if($cookieValid)
                     <button type="button" class="btn btn-danger rounded-pill px-4" id="btn-clear-cookie" onclick="clearCookie()">
-                        <i class="fas fa-trash me-1"></i>Hapus Cookie
+                        <i class="fas fa-trash me-1"></i>{{ __('Hapus Cookie') }}
                     </button>
                 @else
                     <button type="button" class="btn btn-primary rounded-pill px-4" id="btn-validate-cookie" onclick="validateCookie()">
-                        <i class="fas fa-check-circle me-1"></i>Validasi
+                        <i class="fas fa-check-circle me-1"></i>{{ __('Validasi') }}
                     </button>
                 @endif
             </div>
         </div>
         <div class="form-text mt-2">
             <i class="fas fa-info-circle me-1"></i>
-            Buka <strong>github.com</strong> → Login → DevTools (F12) → Application → Cookies → Salin value <code>user_session</code>. 
-            Gabungkan menjadi format: <code>user_session=NILAI_COOKIE</code>
+            {{ __('Buka') }} <strong>{{ __('github.com') }}</strong> {{ __('→ Login → DevTools (F12) → Application → Cookies → Salin value') }} <code>{{ __('user_session') }}</code>. 
+            Gabungkan menjadi format: <code>{{ __('user_session=NILAI_COOKIE') }}</code>
         </div>
     </div>
 </div>
@@ -135,24 +135,24 @@
         <div class="card shadow-sm checker-card h-100">
             <div class="card-body p-4">
                 <h6 class="fw-bold mb-3">
-                    <i class="fas fa-users text-primary me-2"></i>Daftar Akun untuk Dicek
+                    <i class="fas fa-users text-primary me-2"></i>{{ __('Daftar Akun untuk Dicek') }}
                 </h6>
 
                 {{-- Tabs --}}
                 <ul class="nav nav-tabs mb-3" id="inputTabs" role="tablist">
                     <li class="nav-item">
                         <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-manual" type="button">
-                            <i class="fas fa-keyboard me-1"></i>Manual Input
+                            <i class="fas fa-keyboard me-1"></i>{{ __('Manual Input') }}
                         </button>
                     </li>
                     <li class="nav-item">
                         <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-stock" type="button">
-                            <i class="fas fa-database me-1"></i>Dari Stok Akun
+                            <i class="fas fa-database me-1"></i>{{ __('Dari Stok Akun') }}
                         </button>
                     </li>
                     <li class="nav-item">
                         <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-file" type="button">
-                            <i class="fas fa-file-upload me-1"></i>Upload File
+                            <i class="fas fa-file-upload me-1"></i>{{ __('Upload File') }}
                         </button>
                     </li>
                 </ul>
@@ -161,19 +161,19 @@
                     {{-- Tab 1: Manual Input --}}
                     <div class="tab-pane fade show active" id="tab-manual">
                         <textarea id="manual-usernames" class="form-control" rows="8"
-                            placeholder="Masukkan daftar username (satu per baris)&#10;&#10;Format yang didukung:&#10;username1&#10;username2&#10;&#10;Atau format lengkap:&#10;Username: username1&#10;Password: pass&#10;F2A: token&#10;&#10;Atau format singkat:&#10;user:pass:2fa"></textarea>
+                            placeholder="{{ __('Masukkan daftar username (satu per baris)&#10;&#10;Format yang didukung:&#10;username1&#10;username2&#10;&#10;Atau format lengkap:&#10;Username: username1&#10;Password: pass&#10;F2A: token&#10;&#10;Atau format singkat:&#10;user:pass:2fa') }}"></textarea>
                         <div class="d-flex justify-content-between align-items-center mt-2">
-                            <small class="text-muted">Username akan di-parse otomatis dari berbagai format</small>
-                            <small class="text-primary fw-bold" id="parsed-count-manual">0 username</small>
+                            <small class="text-muted">{{ __('Username akan di-parse otomatis dari berbagai format') }}</small>
+                            <small class="text-primary fw-bold" id="parsed-count-manual">{{ __('0 username') }}</small>
                         </div>
                     </div>
 
                     {{-- Tab 2: From Stock --}}
                     <div class="tab-pane fade" id="tab-stock">
                         <div class="mb-3">
-                            <label class="form-label text-muted small fw-bold">Pilih Produk</label>
+                            <label class="form-label text-muted small fw-bold">{{ __('Pilih Produk') }}</label>
                             <select id="stock-product-select" class="form-select" onchange="loadStockUsernames()">
-                                <option value="">-- Pilih Produk --</option>
+                                <option value="">{{ __('-- Pilih Produk --') }}</option>
                                 @foreach($products as $product)
                                     <option value="{{ $product->id }}">{{ $product->name }} ({{ $product->stock_units_count }} stok)</option>
                                 @endforeach
@@ -183,9 +183,9 @@
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <div class="d-flex gap-2 align-items-center">
                                     <input type="checkbox" id="select-all-stock" class="form-check-input" onchange="toggleAllStock()">
-                                    <label for="select-all-stock" class="form-check-label small fw-bold">Pilih Semua</label>
+                                    <label for="select-all-stock" class="form-check-label small fw-bold">{{ __('Pilih Semua') }}</label>
                                 </div>
-                                <small class="text-primary fw-bold"><span id="stock-selected-count">0</span> / <span id="stock-total-count">0</span> dipilih</small>
+                                <small class="text-primary fw-bold"><span id="stock-selected-count">0</span> / <span id="stock-total-count">0</span> {{ __('dipilih') }}</small>
                             </div>
                             <div id="stock-list" style="max-height: 250px; overflow-y: auto;" class="border rounded-3 p-2">
                                 {{-- Populated via JS --}}
@@ -193,7 +193,7 @@
                         </div>
                         <div id="stock-loading" class="text-center py-4 d-none">
                             <div class="spinner-border spinner-border-sm text-primary me-2"></div>
-                            <span class="text-muted">Memuat stok akun...</span>
+                            <span class="text-muted">{{ __('Memuat stok akun...') }}</span>
                         </div>
                     </div>
 
@@ -201,13 +201,13 @@
                     <div class="tab-pane fade" id="tab-file">
                         <div class="border rounded-3 p-4 text-center bg-light">
                             <i class="fas fa-cloud-upload-alt text-primary mb-2" style="font-size: 2rem;"></i>
-                            <p class="text-muted small mb-2">Upload file <code>.txt</code> berisi daftar username</p>
+                            <p class="text-muted small mb-2">{{ __('Upload file') }} <code>{{ __('.txt') }}</code> {{ __('berisi daftar username') }}</p>
                             <input type="file" id="file-upload" accept=".txt" class="form-control form-control-sm mx-auto" style="max-width: 300px;" onchange="handleFileUpload(this)">
                         </div>
                         <div id="file-preview" class="mt-2 d-none">
-                            <small class="text-muted">Preview:</small>
+                            <small class="text-muted">{{ __('Preview:') }}</small>
                             <textarea id="file-content" class="form-control mt-1" rows="5" readonly></textarea>
-                            <small class="text-primary fw-bold mt-1 d-block" id="parsed-count-file">0 username</small>
+                            <small class="text-primary fw-bold mt-1 d-block" id="parsed-count-file">{{ __('0 username') }}</small>
                         </div>
                     </div>
                 </div>
@@ -220,36 +220,36 @@
         <div class="card shadow-sm checker-card h-100">
             <div class="card-body p-4 d-flex flex-column">
                 <h6 class="fw-bold mb-3">
-                    <i class="fas fa-cog text-secondary me-2"></i>Konfigurasi
+                    <i class="fas fa-cog text-secondary me-2"></i>{{ __('Konfigurasi') }}
                 </h6>
 
                 <div class="mb-3">
                     <label class="form-label text-muted small fw-bold">
-                        Delay Antar Request: <span class="delay-slider-label text-primary" id="delay-value">2</span> detik
+                        {{ __('Delay Antar Request:') }} <span class="delay-slider-label text-primary" id="delay-value">2</span> {{ __('detik') }}
                     </label>
                     <input type="range" class="form-range" id="delay-slider" min="1" max="10" value="2" step="1"
                            oninput="document.getElementById('delay-value').textContent = this.value">
                     <div class="d-flex justify-content-between">
-                        <small class="text-muted">1s (cepat)</small>
-                        <small class="text-muted">10s (aman)</small>
+                        <small class="text-muted">{{ __('1s (cepat)') }}</small>
+                        <small class="text-muted">{{ __('10s (aman)') }}</small>
                     </div>
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label text-muted small fw-bold">Mode Pengecekan</label>
+                    <label class="form-label text-muted small fw-bold">{{ __('Mode Pengecekan') }}</label>
                     <div class="bg-light rounded-3 p-3">
                         <div class="d-flex align-items-start gap-2 mb-2">
                             <i class="fas fa-search text-info mt-1"></i>
                         <div class="d-flex align-items-start gap-2">
                             <i class="fas fa-id-badge text-success mt-1"></i>
-                            <small>Step 2: Buka profil & cek badge PRO</small>
+                            <small>{{ __('Step 2: Buka profil & cek badge PRO') }}</small>
                         </div>
                     </div>
                 </div>
 
                 <div class="mt-auto pt-3">
                     <button type="button" class="btn btn-success w-100 rounded-pill py-2 fw-bold" id="btn-start-check" onclick="startChecking()">
-                        <i class="fas fa-play me-2"></i>Mulai Pengecekan
+                        <i class="fas fa-play me-2"></i>{{ __('Mulai Pengecekan') }}
                     </button>
                 </div>
             </div>
@@ -261,16 +261,16 @@
 @if($batches->count() > 0)
 <div class="card shadow-sm checker-card mt-3">
     <div class="card-body p-4">
-        <h6 class="fw-bold mb-3"><i class="fas fa-history text-muted me-2"></i>Riwayat Pengecekan Terakhir</h6>
+        <h6 class="fw-bold mb-3"><i class="fas fa-history text-muted me-2"></i>{{ __('Riwayat Pengecekan Terakhir') }}</h6>
         <div class="table-responsive">
             <table class="table table-sm table-hover align-middle mb-0">
                 <thead>
                     <tr class="text-secondary small">
-                        <th class="border-0">Batch</th>
-                        <th class="border-0">Tanggal</th>
-                        <th class="border-0">Total</th>
-                        <th class="border-0">Status</th>
-                        <th class="border-0 text-end">Aksi</th>
+                        <th class="border-0">{{ __('Batch') }}</th>
+                        <th class="border-0">{{ __('Tanggal') }}</th>
+                        <th class="border-0">{{ __('Total') }}</th>
+                        <th class="border-0">{{ __('Status') }}</th>
+                        <th class="border-0 text-end">{{ __('Aksi') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -292,10 +292,10 @@
                         </td>
                         <td class="text-end">
                             <a href="{{ route('admin.tools.github-checker.batch', $batch->id) }}" class="btn btn-sm btn-light rounded-pill px-3">
-                                <i class="fas fa-eye me-1"></i>Lihat
+                                <i class="fas fa-eye me-1"></i>{{ __('Lihat') }}
                             </a>
                             <a href="{{ route('admin.tools.github-checker.export', $batch->id) }}?status=all" class="btn btn-sm btn-outline-primary rounded-pill px-3">
-                                <i class="fas fa-download me-1"></i>Excel
+                                <i class="fas fa-download me-1"></i>{{ __('Excel') }}
                             </a>
                         </td>
                     </tr>
@@ -340,21 +340,21 @@
 
             if (data.valid) {
                 indicator.className = 'cookie-status-indicator valid';
-                statusText.innerHTML = '<span class="text-success">Login sebagai: <strong>' + data.logged_in_as + '</strong></span>';
+                statusText.innerHTML = '<span class="text-success">{{ __('Login sebagai:') }} <strong>{{ __('\' + data.logged_in_as + \'') }}</strong></span>';
                 cookieInput.value = '••••••••••••••••••••••••••';
                 cookieInput.disabled = true;
 
                 // Replace action button with Clear button
                 document.getElementById('cookie-action-container').innerHTML = `
                     <button type="button" class="btn btn-danger rounded-pill px-4" id="btn-clear-cookie" onclick="clearCookie()">
-                        <i class="fas fa-trash me-1"></i>Hapus Cookie
+                        <i class="fas fa-trash me-1"></i>{{ __('Hapus Cookie') }}
                     </button>
                 `;
 
                 Swal.fire({ icon: 'success', title: 'Cookie Valid!', text: data.message, timer: 2000, showConfirmButton: false });
             } else {
                 indicator.className = 'cookie-status-indicator invalid';
-                statusText.innerHTML = '<span class="text-danger">' + data.message + '</span>';
+                statusText.innerHTML = '<span class="text-danger">{{ __('\' + data.message + \'') }}</span>';
                 Swal.fire({ icon: 'error', title: 'Cookie Invalid', text: data.message, confirmButtonColor: '#dc3545' });
             }
         })
@@ -388,7 +388,7 @@
                 const statusText = document.getElementById('cookie-status-text');
 
                 indicator.className = 'cookie-status-indicator pending';
-                statusText.innerHTML = '<span class="text-muted">Belum divalidasi</span>';
+                statusText.innerHTML = '<span class="text-muted">{{ __('Belum divalidasi') }}</span>';
 
                 const cookieInput = document.getElementById('github-cookie-input');
                 cookieInput.value = '';
@@ -396,7 +396,7 @@
 
                 document.getElementById('cookie-action-container').innerHTML = `
                     <button type="button" class="btn btn-primary rounded-pill px-4" id="btn-validate-cookie" onclick="validateCookie()">
-                        <i class="fas fa-check-circle me-1"></i>Validasi
+                        <i class="fas fa-check-circle me-1"></i>{{ __('Validasi') }}
                     </button>
                 `;
 
@@ -452,7 +452,7 @@
                 document.getElementById('select-all-stock').checked = true;
                 area.classList.remove('d-none');
             } else {
-                list.innerHTML = '<div class="text-center text-muted small py-3">Tidak ada stok akun yang bisa di-parse username-nya.</div>';
+                list.innerHTML = '<div class="text-center text-muted small py-3">{{ __('Tidak ada stok akun yang bisa di-parse username-nya.') }}</div>';
                 area.classList.remove('d-none');
             }
         })

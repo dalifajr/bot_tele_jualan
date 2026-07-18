@@ -8,11 +8,11 @@
     <div class="col-lg-10 mx-auto">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <h4 class="fw-bold mb-1"><i class="fas fa-shield-alt text-primary me-2"></i>Riwayat Percobaan Login</h4>
-                <p class="text-muted mb-0">Catatan masuk ke akun Anda berdasarkan alamat IP dan perangkat.</p>
+                <h4 class="fw-bold mb-1"><i class="fas fa-shield-alt text-primary me-2"></i>{{ __('Riwayat Percobaan Login') }}</h4>
+                <p class="text-muted mb-0">{{ __('Catatan masuk ke akun Anda berdasarkan alamat IP dan perangkat.') }}</p>
             </div>
             <a href="{{ route('profile') }}" class="btn btn-outline-secondary rounded-pill btn-sm px-3">
-                <i class="fas fa-arrow-left me-1"></i>Kembali ke Profil
+                <i class="fas fa-arrow-left me-1"></i>{{ __('Kembali ke Profil') }}
             </a>
         </div>
 
@@ -23,11 +23,11 @@
                     <table class="table table-hover align-middle mb-0">
                         <thead>
                             <tr class="text-secondary small border-bottom bg-light">
-                                <th class="px-4 py-3 border-0">Waktu</th>
-                                <th class="py-3 border-0">Status</th>
-                                <th class="py-3 border-0">IP & Lokasi</th>
-                                <th class="py-3 border-0">Perangkat</th>
-                                <th class="py-3 border-0 text-end pe-4">Aksi</th>
+                                <th class="px-4 py-3 border-0">{{ __('Waktu') }}</th>
+                                <th class="py-3 border-0">{{ __('Status') }}</th>
+                                <th class="py-3 border-0">{{ __('IP & Lokasi') }}</th>
+                                <th class="py-3 border-0">{{ __('Perangkat') }}</th>
+                                <th class="py-3 border-0 text-end pe-4">{{ __('Aksi') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -35,10 +35,10 @@
                             <tr>
                                 <td class="px-4 text-secondary small">{{ $log->created_at->format('d M Y H:i') }}</td>
                                 <td>
-                                    @if($log->is_successful)
-                                        <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill"><i class="fas fa-check-circle me-1"></i>Berhasil</span>
+                                    @if($log->{{ __('is_successful)') }}
+                                        <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill"><i class="fas fa-check-circle me-1"></i>{{ __('Berhasil') }}</span>
                                     @else
-                                        <span class="badge bg-danger bg-opacity-10 text-danger px-3 py-2 rounded-pill"><i class="fas fa-times-circle me-1"></i>Gagal</span>
+                                        <span class="badge bg-danger bg-opacity-10 text-danger px-3 py-2 rounded-pill"><i class="fas fa-times-circle me-1"></i>{{ __('Gagal') }}</span>
                                     @endif
                                 </td>
                                 <td>
@@ -50,16 +50,16 @@
                                     <div class="text-secondary small" title="{{ $log->user_agent }}"><i class="fab fa-chrome text-primary me-1"></i>{{ $log->browser ?? '-' }}</div>
                                 </td>
                                 <td class="text-end pe-4">
-                                    @if(\Illuminate\Support\Facades\Cache::has('blocked_ip:' . $log->ip_address))
+                                    @if(\Illuminate\Support\Facades\Cache::has('blocked_ip:' . $log->{{ __('ip_address))') }}
                                         <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-3" onclick="requestUnblockIp(event, '{{ $log->ip_address }}', '{{ $log->location ?? 'Unknown' }}', '{{ $log->device_type }}', '{{ $log->browser ?? '-' }}')">
-                                            <i class="fas fa-unlock me-1"></i>Buka Blokir
+                                            <i class="fas fa-unlock me-1"></i>{{ __('Buka Blokir') }}
                                         </button>
                                     @else
                                         <form action="{{ route('profile.logins.block-ip') }}" method="POST" class="d-inline" onsubmit="confirmBlockIp(event, this)">
                                             @csrf
                                             <input type="hidden" name="ip_address" value="{{ $log->ip_address }}">
                                             <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3">
-                                                <i class="fas fa-ban me-1"></i>Blokir
+                                                <i class="fas fa-ban me-1"></i>{{ __('Blokir') }}
                                             </button>
                                         </form>
                                     @endif
@@ -75,7 +75,7 @@
                 @else
                 <div class="text-center py-5">
                     <i class="fas fa-shield-alt text-muted mb-3" style="font-size: 3rem; opacity: 0.5;"></i>
-                    <p class="text-muted mb-0">Belum ada riwayat percobaan login.</p>
+                    <p class="text-muted mb-0">{{ __('Belum ada riwayat percobaan login.') }}</p>
                 </div>
                 @endif
             </div>
@@ -149,7 +149,7 @@
         
         Swal.fire({
             title: 'Buka Blokir IP',
-            html: `IP Anda <b>${ip}</b> saat ini terblokir.<br>Silakan hubungi administrator untuk membuka blokir ini.`,
+            html: `IP Anda <b>${ip}</b> {{ __('saat ini terblokir.') }}<br>Silakan hubungi administrator untuk membuka blokir ini.`,
             icon: 'info',
             showCancelButton: true,
             confirmButtonColor: '#0d6efd',

@@ -6,8 +6,8 @@
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h4 class="fw-bold mb-1">Backup & Restore</h4>
-        <p class="text-muted mb-0">Kelola cadangan data system, unduh snapshot, dan atur otomatisasi jadwal backup</p>
+        <h4 class="fw-bold mb-1">{{ __('Backup & Restore') }}</h4>
+        <p class="text-muted mb-0">{{ __('Kelola cadangan data system, unduh snapshot, dan atur otomatisasi jadwal backup') }}</p>
     </div>
 </div>
 
@@ -30,22 +30,22 @@
 <ul class="nav nav-tabs nav-tabs-bordered mb-4" id="backupTabs" style="border-bottom: 2px solid var(--bs-border-color);">
     <li class="nav-item">
         <a class="nav-link text-secondary" href="{{ route('admin.backup.index') }}">
-            <i class="fas fa-chart-line me-1"></i> Dashboard
+            <i class="fas fa-chart-line me-1"></i> {{ __('Dashboard') }}
         </a>
     </li>
     <li class="nav-item">
         <a class="nav-link text-secondary" href="{{ route('admin.backup.history') }}">
-            <i class="fas fa-history me-1"></i> Riwayat Backup
+            <i class="fas fa-history me-1"></i> {{ __('Riwayat Backup') }}
         </a>
     </li>
     <li class="nav-item">
         <a class="nav-link text-secondary" href="{{ route('admin.backup.restore.show') }}">
-            <i class="fas fa-undo me-1"></i> Pemulihan Data (Restore)
+            <i class="fas fa-undo me-1"></i> {{ __('Pemulihan Data (Restore)') }}
         </a>
     </li>
     <li class="nav-item">
         <a class="nav-link active fw-bold text-primary" href="{{ route('admin.backup.settings.show') }}" style="border-bottom: 3px solid var(--bs-primary); margin-bottom: -2px;">
-            <i class="fas fa-cog me-1"></i> Pengaturan & Jadwal
+            <i class="fas fa-cog me-1"></i> {{ __('Pengaturan & Jadwal') }}
         </a>
     </li>
 </ul>
@@ -55,37 +55,37 @@
     <div class="col-lg-6">
         <div class="card border-0 shadow-sm" style="border-radius: 16px;">
             <div class="card-body p-4">
-                <h5 class="fw-bold mb-2"><i class="fas fa-cog text-warning me-2"></i>Pengaturan Auto-Backup Terjadwal</h5>
-                <p class="text-muted small mb-4">Buat jadwal pencadangan otomatis. Sistem akan mem-backup database ke folder lokal dan mengirimkannya ke Bot Telegram Admin.</p>
+                <h5 class="fw-bold mb-2"><i class="fas fa-cog text-warning me-2"></i>{{ __('Pengaturan Auto-Backup Terjadwal') }}</h5>
+                <p class="text-muted small mb-4">{{ __('Buat jadwal pencadangan otomatis. Sistem akan mem-backup database ke folder lokal dan mengirimkannya ke Bot Telegram Admin.') }}</p>
 
                 <form action="{{ route('admin.backup.settings.update') }}" method="POST">
                     @csrf
                     <div class="mb-4">
                         <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" name="auto_backup_enabled" id="autoBackupSwitch" value="1" {{ $autoBackupEnabled === '1' ? 'checked' : '' }}>
-                            <label class="form-check-label fw-bold small" for="autoBackupSwitch">Aktifkan Auto-Backup Terjadwal</label>
+                            <label class="form-check-label fw-bold small" for="autoBackupSwitch">{{ __('Aktifkan Auto-Backup Terjadwal') }}</label>
                         </div>
                     </div>
 
                     <div class="mb-4">
-                        <label class="form-label fw-bold small text-muted">INTERVAL JADWAL BACKUP</label>
+                        <label class="form-label fw-bold small text-muted">{{ __('INTERVAL JADWAL BACKUP') }}</label>
                         <select name="auto_backup_schedule" class="form-select">
-                            <option value="daily" {{ $autoBackupSchedule === 'daily' ? 'selected' : '' }}>Setiap Hari (Jam 00:00 WIB)</option>
-                            <option value="weekly" {{ $autoBackupSchedule === 'weekly' ? 'selected' : '' }}>Setiap Minggu (Hari Minggu)</option>
-                            <option value="monthly" {{ $autoBackupSchedule === 'monthly' ? 'selected' : '' }}>Setiap Bulan (Tanggal 1)</option>
+                            <option value="daily" {{ $autoBackupSchedule === 'daily' ? 'selected' : '' }}>{{ __('Setiap Hari (Jam 00:00 WIB)') }}</option>
+                            <option value="weekly" {{ $autoBackupSchedule === 'weekly' ? 'selected' : '' }}>{{ __('Setiap Minggu (Hari Minggu)') }}</option>
+                            <option value="monthly" {{ $autoBackupSchedule === 'monthly' ? 'selected' : '' }}>{{ __('Setiap Bulan (Tanggal 1)') }}</option>
                         </select>
                     </div>
 
                     <div class="alert alert-info border-0 p-3 mb-4 d-flex align-items-center gap-2" style="border-radius: 10px; font-size: 0.8rem;">
                         <i class="fas fa-info-circle text-info"></i>
                         <div>
-                            Last run: <strong>{{ $autoBackupLastRun }}</strong>
+                            {{ __('Last run:') }} <strong>{{ $autoBackupLastRun }}</strong>
                         </div>
                     </div>
 
                     <div class="d-grid">
                         <button type="submit" class="btn btn-warning rounded-pill py-2 fw-bold">
-                            <i class="fas fa-save me-2"></i>Simpan Konfigurasi Auto-Backup
+                            <i class="fas fa-save me-2"></i>{{ __('Simpan Konfigurasi Auto-Backup') }}
                         </button>
                     </div>
                 </form>
@@ -97,14 +97,14 @@
     <div class="col-lg-6">
         <div class="card border-0 shadow-sm" style="border-radius: 16px;">
             <div class="card-body p-4">
-                <h5 class="fw-bold mb-3"><i class="fas fa-chart-bar text-info me-2"></i>Informasi Record Tabel Database</h5>
+                <h5 class="fw-bold mb-3"><i class="fas fa-chart-bar text-info me-2"></i>{{ __('Informasi Record Tabel Database') }}</h5>
                 <div class="table-responsive" style="max-height: 480px; overflow-y: auto;">
                     <table class="table table-sm table-hover align-middle mb-0" style="font-size: 0.85rem;">
                         <thead>
                             <tr class="table-light">
-                                <th>Nama Tabel</th>
-                                <th>Deskripsi Data</th>
-                                <th class="text-end">Jumlah Record</th>
+                                <th>{{ __('Nama Tabel') }}</th>
+                                <th>{{ __('Deskripsi Data') }}</th>
+                                <th class="text-end">{{ __('Jumlah Record') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -129,12 +129,12 @@
             <div class="card-body p-4">
                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
                     <div>
-                        <h5 class="fw-bold mb-2 text-danger"><i class="fas fa-trash-alt me-2"></i>Kosongkan Seluruh Data (Wipe Database)</h5>
-                        <p class="text-muted small mb-0">Tindakan ini akan mengosongkan seluruh tabel database (produk, stok, pesanan, riwayat, log, dll) secara permanen. Pengaturan sistem dan akun administrator Anda akan tetap dipertahankan agar Anda tidak terputus dari panel admin ini.</p>
+                        <h5 class="fw-bold mb-2 text-danger"><i class="fas fa-trash-alt me-2"></i>{{ __('Kosongkan Seluruh Data (Wipe Database)') }}</h5>
+                        <p class="text-muted small mb-0">{{ __('Tindakan ini akan mengosongkan seluruh tabel database (produk, stok, pesanan, riwayat, log, dll) secara permanen. Pengaturan sistem dan akun administrator Anda akan tetap dipertahankan agar Anda tidak terputus dari panel admin ini.') }}</p>
                     </div>
                     <div>
                         <button type="button" id="btnWipeData" class="btn btn-danger rounded-pill px-4 py-2 fw-bold">
-                            <i class="fas fa-exclamation-triangle me-2"></i>Hapus Semua Data
+                            <i class="fas fa-exclamation-triangle me-2"></i>{{ __('Hapus Semua Data') }}
                         </button>
                     </div>
                 </div>

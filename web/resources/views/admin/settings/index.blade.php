@@ -77,7 +77,7 @@
                                         <option value="UTC" {{ ($settings['system_timezone'] ?? '') === 'UTC' ? 'selected' : '' }}>{{ __('UTC / GMT') }}</option>
                                     </select>
                                 </div>
-                                <div class="form-text">{!! __('Mengatur zona waktu untuk web admin, seller, dan pesan bot Telegram. Zona aktif saat ini: <strong>:timezone</strong> (Server: :time).', ['timezone' => $settings['system_timezone'] ?? 'UTC', 'time' => now()->timezone($settings['system_timezone'] ?? 'Asia/Jakarta')->format('Y-m-d H:i:s')]) !!}</div>
+                                <div class="form-text">{!! __('Mengatur zona waktu untuk web admin, seller, dan pesan bot Telegram. Zona aktif saat ini: <strong>{{ __(':timezone') }}</strong> (Server: :time).', ['timezone' => $settings['system_timezone'] ?? 'UTC', 'time' => now()->timezone($settings['system_timezone'] ?? 'Asia/Jakarta')->format('Y-m-d H:i:s')]) !!}</div>
                             </div>
 
                              <div class="mb-4">
@@ -126,7 +126,7 @@
                                         <input type="number" name="settings[github_pack.awaiting_hours]" class="form-control" value="{{ $settings['github_pack.awaiting_hours'] ?? 78 }}" min="1" max="720" required>
                                         <span class="input-group-text bg-light border-0 small text-muted">{{ __('jam') }}</span>
                                     </div>
-                                    <div class="form-text">{!! __('Default: 78 jam. Berapa lama akun di <em>awaiting benefits</em> sebelum otomatis menjadi <em>ready</em>.') !!}</div>
+                                    <div class="form-text">{!! __('Default: 78 jam. Berapa lama akun di <em>{{ __('awaiting benefits') }}</em> {{ __('sebelum otomatis menjadi') }} <em>{{ __('ready') }}</em>.') !!}</div>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-bold small">{{ __('Simpan Akun → Siap Diajukan (Jam)') }}</label>
@@ -135,7 +135,7 @@
                                         <input type="number" name="settings[github_pack.save_hours]" class="form-control" value="{{ $settings['github_pack.save_hours'] ?? 80 }}" min="1" max="720" required>
                                         <span class="input-group-text bg-light border-0 small text-muted">{{ __('jam') }}</span>
                                     </div>
-                                    <div class="form-text">{!! __('Default: 80 jam. Berapa lama akun <em>simpan akun</em> ditahan sebelum bisa diajukan verifikasi.') !!}</div>
+                                    <div class="form-text">{!! __('Default: 80 jam. Berapa lama akun <em>{{ __('simpan akun') }}</em> ditahan sebelum bisa diajukan verifikasi.') !!}</div>
                                 </div>
                             </div>
 
@@ -177,8 +177,8 @@
 
                             <div class="mb-3">
                                 <label class="form-label fw-bold small">{{ __('Kunci SSH (Private Key)') }}</label>
-                                <textarea name="settings[vpn_server_ssh_key_raw]" class="form-control text-muted" rows="6" placeholder="-----BEGIN OPENSSH PRIVATE KEY-----&#10;...&#10;-----END OPENSSH PRIVATE KEY-----" style="font-family: monospace; font-size: 0.85rem;">{{ $settings['vpn_server_ssh_key_raw'] ?? '' }}</textarea>
-                                <div class="form-text">{!! __('Paste isi dari file <em>Private Key</em> Anda (.pem / id_rsa) di sini. Kunci ini digunakan untuk autentikasi SSH ke VPS secara otomatis tanpa menggunakan password. Sistem akan menyimpan dan memanfaatkannya dengan aman.') !!}</div>
+                                <textarea name="settings[vpn_server_ssh_key_raw]" class="form-control text-muted" rows="6" placeholder="{{ __('-----BEGIN OPENSSH PRIVATE KEY-----&#10;...&#10;-----END OPENSSH PRIVATE KEY-----') }}" style="font-family: monospace; font-size: 0.85rem;">{{ $settings['vpn_server_ssh_key_raw'] ?? '' }}</textarea>
+                                <div class="form-text">{!! __('Paste isi dari file <em>{{ __('Private Key') }}</em> Anda (.pem / id_rsa) di sini. Kunci ini digunakan untuk autentikasi SSH ke VPS secara otomatis tanpa menggunakan password. Sistem akan menyimpan dan memanfaatkannya dengan aman.') !!}</div>
                             </div>
 
                             <div class="d-grid mt-4">

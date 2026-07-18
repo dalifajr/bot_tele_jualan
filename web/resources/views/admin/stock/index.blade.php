@@ -6,15 +6,15 @@
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h4 class="fw-bold mb-1">Manajemen Stok</h4>
-        <p class="text-muted mb-0">Kelola stok unit produk digital</p>
+        <h4 class="fw-bold mb-1">{{ __('Manajemen Stok') }}</h4>
+        <p class="text-muted mb-0">{{ __('Kelola stok unit produk digital') }}</p>
     </div>
     <div class="d-flex gap-2 align-items-center">
         <button type="button" class="btn btn-success rounded-pill px-3" onclick="confirmExportStock()">
-            <i class="fas fa-file-excel me-2"></i>Ekspor Excel
+            <i class="fas fa-file-excel me-2"></i>{{ __('Ekspor Excel') }}
         </button>
         <button class="btn btn-primary rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#addStockModal">
-            <i class="fas fa-plus me-2"></i>Tambah Stok
+            <i class="fas fa-plus me-2"></i>{{ __('Tambah Stok') }}
         </button>
     </div>
 </div>
@@ -24,7 +24,7 @@
     <div class="col-xl col-md-4 col-6">
         <div class="card border-0 shadow-sm h-100" style="border-radius: 12px;">
             <div class="card-body p-3 text-center">
-                <div class="text-secondary small fw-bold mb-1">Total Stok</div>
+                <div class="text-secondary small fw-bold mb-1">{{ __('Total Stok') }}</div>
                 <h3 class="fw-bold mb-0 text-primary">{{ $totalStock }}</h3>
             </div>
         </div>
@@ -32,7 +32,7 @@
     <div class="col-xl col-md-4 col-6">
         <div class="card border-0 shadow-sm h-100" style="border-radius: 12px;">
             <div class="card-body p-3 text-center">
-                <div class="text-secondary small fw-bold mb-1">Ready</div>
+                <div class="text-secondary small fw-bold mb-1">{{ __('Ready') }}</div>
                 <h3 class="fw-bold mb-0 text-success">{{ $readyStock }}</h3>
             </div>
         </div>
@@ -40,7 +40,7 @@
     <div class="col-xl col-md-4 col-6">
         <div class="card border-0 shadow-sm h-100" style="border-radius: 12px;">
             <div class="card-body p-3 text-center">
-                <div class="text-secondary small fw-bold mb-1">Awaiting</div>
+                <div class="text-secondary small fw-bold mb-1">{{ __('Awaiting') }}</div>
                 <h3 class="fw-bold mb-0 text-warning">{{ $awaitingStock }}</h3>
             </div>
         </div>
@@ -48,7 +48,7 @@
     <div class="col-xl col-md-4 col-6">
         <div class="card border-0 shadow-sm h-100" style="border-radius: 12px;">
             <div class="card-body p-3 text-center">
-                <div class="text-secondary small fw-bold mb-1">Simpan Akun</div>
+                <div class="text-secondary small fw-bold mb-1">{{ __('Simpan Akun') }}</div>
                 <h3 class="fw-bold mb-0 text-info">{{ $savedStock }}</h3>
             </div>
         </div>
@@ -56,7 +56,7 @@
     <div class="col-xl col-md-4 col-6">
         <div class="card border-0 shadow-sm h-100" style="border-radius: 12px;">
             <div class="card-body p-3 text-center">
-                <div class="text-secondary small fw-bold mb-1">Terjual</div>
+                <div class="text-secondary small fw-bold mb-1">{{ __('Terjual') }}</div>
                 <h3 class="fw-bold mb-0 text-secondary">{{ $soldStock }}</h3>
             </div>
         </div>
@@ -69,20 +69,20 @@
         <form action="{{ route('admin.stock.index') }}" method="GET" class="row g-2 align-items-end">
             {{-- Status Filter --}}
             <div class="col-md-3 col-6">
-                <label class="form-label text-muted small fw-bold mb-1">Status</label>
+                <label class="form-label text-muted small fw-bold mb-1">{{ __('Status') }}</label>
                 <select name="status" class="form-select form-select-sm">
-                    <option value="">Semua Status</option>
-                    <option value="ready" {{ request('status') === 'ready' ? 'selected' : '' }}>Ready</option>
-                    <option value="awaiting_benefits" {{ request('status') === 'awaiting_benefits' ? 'selected' : '' }}>Awaiting Benefits</option>
-                    <option value="saved_for_verification" {{ request('status') === 'saved_for_verification' ? 'selected' : '' }}>Simpan Akun</option>
-                    <option value="terjual" {{ request('status') === 'terjual' ? 'selected' : '' }}>Terjual</option>
+                    <option value="">{{ __('Semua Status') }}</option>
+                    <option value="ready" {{ request('status') === 'ready' ? 'selected' : '' }}>{{ __('Ready') }}</option>
+                    <option value="awaiting_benefits" {{ request('status') === 'awaiting_benefits' ? 'selected' : '' }}>{{ __('Awaiting Benefits') }}</option>
+                    <option value="saved_for_verification" {{ request('status') === 'saved_for_verification' ? 'selected' : '' }}>{{ __('Simpan Akun') }}</option>
+                    <option value="terjual" {{ request('status') === 'terjual' ? 'selected' : '' }}>{{ __('Terjual') }}</option>
                 </select>
             </div>
             {{-- Product Filter --}}
             <div class="col-md-3 col-6">
-                <label class="form-label text-muted small fw-bold mb-1">Produk</label>
+                <label class="form-label text-muted small fw-bold mb-1">{{ __('Produk') }}</label>
                 <select name="product_id" class="form-select form-select-sm">
-                    <option value="">Semua Produk</option>
+                    <option value="">{{ __('Semua Produk') }}</option>
                     @php
                         $filterProducts = \App\Models\Product::orderBy('name')->get();
                     @endphp
@@ -95,14 +95,14 @@
             </div>
             {{-- Search --}}
             <div class="col-md-4 col-8">
-                <label class="form-label text-muted small fw-bold mb-1">Pencarian</label>
-                <input type="text" name="search" class="form-control form-control-sm" placeholder="Username, konten, kata kunci..." value="{{ request('search') }}">
+                <label class="form-label text-muted small fw-bold mb-1">{{ __('Pencarian') }}</label>
+                <input type="text" name="search" class="form-control form-control-sm" placeholder="{{ __('Username, konten, kata kunci...') }}" value="{{ request('search') }}">
             </div>
             {{-- Submit --}}
             <div class="col-md-2 col-4">
                 <div class="d-flex gap-1">
-                    <button type="submit" class="btn btn-sm btn-primary rounded-pill flex-fill"><i class="fas fa-search me-1"></i>Filter</button>
-                    <a href="{{ route('admin.stock.index') }}" class="btn btn-sm btn-outline-secondary rounded-pill" title="Reset"><i class="fas fa-times"></i></a>
+                    <button type="submit" class="btn btn-sm btn-primary rounded-pill flex-fill"><i class="fas fa-search me-1"></i>{{ __('Filter') }}</button>
+                    <a href="{{ route('admin.stock.index') }}" class="btn btn-sm btn-outline-secondary rounded-pill" title="{{ __('Reset') }}"><i class="fas fa-times"></i></a>
                 </div>
             </div>
         </form>
@@ -113,19 +113,19 @@
     <div class="card-header bg-white border-bottom-0 pt-4 pb-0 px-4">
         <ul class="nav nav-tabs border-bottom-0" style="margin-bottom: -1px;">
             <li class="nav-item">
-                <a class="nav-link {{ request('status') === null && !request('product_id') && !request('search') ? 'active border-primary border-bottom-0 text-primary fw-bold' : 'text-muted' }}" href="{{ request()->fullUrlWithQuery(['status' => null]) }}">Semua</a>
+                <a class="nav-link {{ request('status') === null && !request('product_id') && !request('search') ? 'active border-primary border-bottom-0 text-primary fw-bold' : 'text-muted' }}" href="{{ request()->fullUrlWithQuery(['status' => null]) }}">{{ __('Semua') }}</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link {{ request('status') === 'ready' ? 'active border-primary border-bottom-0 text-primary fw-bold' : 'text-muted' }}" href="{{ request()->fullUrlWithQuery(['status' => 'ready']) }}">Ready</a>
+                <a class="nav-link {{ request('status') === 'ready' ? 'active border-primary border-bottom-0 text-primary fw-bold' : 'text-muted' }}" href="{{ request()->fullUrlWithQuery(['status' => 'ready']) }}">{{ __('Ready') }}</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link {{ request('status') === 'awaiting_benefits' ? 'active border-primary border-bottom-0 text-primary fw-bold' : 'text-muted' }}" href="{{ request()->fullUrlWithQuery(['status' => 'awaiting_benefits']) }}">Awaiting Benefits</a>
+                <a class="nav-link {{ request('status') === 'awaiting_benefits' ? 'active border-primary border-bottom-0 text-primary fw-bold' : 'text-muted' }}" href="{{ request()->fullUrlWithQuery(['status' => 'awaiting_benefits']) }}">{{ __('Awaiting Benefits') }}</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link {{ request('status') === 'saved_for_verification' ? 'active border-primary border-bottom-0 text-primary fw-bold' : 'text-muted' }}" href="{{ request()->fullUrlWithQuery(['status' => 'saved_for_verification']) }}">Simpan Akun</a>
+                <a class="nav-link {{ request('status') === 'saved_for_verification' ? 'active border-primary border-bottom-0 text-primary fw-bold' : 'text-muted' }}" href="{{ request()->fullUrlWithQuery(['status' => 'saved_for_verification']) }}">{{ __('Simpan Akun') }}</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link {{ request('status') === 'terjual' ? 'active border-primary border-bottom-0 text-primary fw-bold' : 'text-muted' }}" href="{{ request()->fullUrlWithQuery(['status' => 'terjual']) }}">Terjual</a>
+                <a class="nav-link {{ request('status') === 'terjual' ? 'active border-primary border-bottom-0 text-primary fw-bold' : 'text-muted' }}" href="{{ request()->fullUrlWithQuery(['status' => 'terjual']) }}">{{ __('Terjual') }}</a>
             </li>
         </ul>
     </div>
@@ -135,14 +135,14 @@
         {{-- Bulk Action Bar --}}
         <div id="bulk-actions-bar" class="bg-light border-bottom p-3 d-none align-items-center justify-content-between">
             <div class="d-flex align-items-center gap-2">
-                <span class="fw-bold text-dark"><span id="selected-count">0</span> akun terpilih</span>
+                <span class="fw-bold text-dark"><span id="selected-count">0</span> {{ __('akun terpilih') }}</span>
             </div>
             <div class="d-flex gap-2">
                 <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#bulkMoveModal">
-                    <i class="fas fa-exchange-alt me-1"></i>Ubah Status Masal
+                    <i class="fas fa-exchange-alt me-1"></i>{{ __('Ubah Status Masal') }}
                 </button>
                 <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#bulkDeleteModal">
-                    <i class="fas fa-trash-alt me-1"></i>Hapus Masal
+                    <i class="fas fa-trash-alt me-1"></i>{{ __('Hapus Masal') }}
                 </button>
             </div>
         </div>
@@ -159,26 +159,26 @@
                         @else
                         <th class="px-4 py-3 border-0">ID</th>
                         @endif
-                        <th class="py-3 border-0">Produk</th>
-                        <th class="py-3 border-0">Uploader</th>
-                        <th class="py-3 border-0">Username</th>
-                        <th class="py-3 border-0">Umur Akun</th>
+                        <th class="py-3 border-0">{{ __('Produk') }}</th>
+                        <th class="py-3 border-0">{{ __('Uploader') }}</th>
+                        <th class="py-3 border-0">{{ __('Username') }}</th>
+                        <th class="py-3 border-0">{{ __('Umur Akun') }}</th>
                         @if(request('status') === 'terjual')
-                        <th class="py-3 border-0">Pembeli</th>
-                        <th class="py-3 border-0">ID Telegram</th>
-                        <th class="py-3 border-0">Waktu Transaksi</th>
+                        <th class="py-3 border-0">{{ __('Pembeli') }}</th>
+                        <th class="py-3 border-0">{{ __('ID Telegram') }}</th>
+                        <th class="py-3 border-0">{{ __('Waktu Transaksi') }}</th>
                         @else
-                        <th class="py-3 border-0">Konten (Sebagian)</th>
-                        <th class="py-3 border-0">Status</th>
+                        <th class="py-3 border-0">{{ __('Konten (Sebagian)') }}</th>
+                        <th class="py-3 border-0">{{ __('Status') }}</th>
                         @if(request('status') === 'awaiting_benefits')
-                        <th class="py-3 border-0">Tersedia Pada</th>
+                        <th class="py-3 border-0">{{ __('Tersedia Pada') }}</th>
                         @elseif(request('status') === 'saved_for_verification')
-                        <th class="py-3 border-0">Dapat Diverifikasi Pada</th>
+                        <th class="py-3 border-0">{{ __('Dapat Diverifikasi Pada') }}</th>
                         @else
-                        <th class="py-3 border-0">Ditambahkan</th>
+                        <th class="py-3 border-0">{{ __('Ditambahkan') }}</th>
                         @endif
                         @endif
-                        <th class="py-3 border-0 text-end px-4">Aksi</th>
+                        <th class="py-3 border-0 text-end px-4">{{ __('Aksi') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -200,21 +200,21 @@
                         @endif
                         <td>{{ Str::limit($unit->product->name ?? 'Unknown', 25) }}</td>
                         <td>
-                            @if($unit->uploader)
+                            @if($unit->{{ __('uploader)') }}
                                 <span class="fw-bold text-dark">{{ $unit->uploader->full_name ?? $unit->uploader->username }}</span>
-                                @if($unit->uploader->role)
+                                @if($unit->uploader->{{ __('role)') }}
                                     <br><span class="badge bg-secondary-subtle text-secondary px-2 py-0.5 rounded-pill" style="font-size: 0.7rem; font-weight: normal;">{{ ucfirst($unit->uploader->role) }}</span>
                                 @endif
                             @else
-                                <span class="text-muted small">Admin Utama</span>
+                                <span class="text-muted small">{{ __('Admin Utama') }}</span>
                             @endif
                         </td>
                         <td class="fw-medium text-dark">{{ Str::limit($extractedUsername, 20) }}</td>
                         <td>
-                            @if($unit->github_joined_at)
-                                <span class="text-dark fw-semibold" title="Berdasarkan check GitHub">{{ $unit->umur_akun }}</span>
+                            @if($unit->{{ __('github_joined_at)') }}
+                                <span class="text-dark fw-semibold" title="{{ __('Berdasarkan check GitHub') }}">{{ $unit->umur_akun }}</span>
                             @else
-                                <span class="text-muted small" title="Tanggal input stok">{{ $unit->umur_akun }}</span>
+                                <span class="text-muted small" title="{{ __('Tanggal input stok') }}">{{ $unit->umur_akun }}</span>
                             @endif
                         </td>
                         
@@ -222,7 +222,7 @@
                         <td>
                             @if($unit->order && $unit->order->customer)
                                 {{ $unit->order->customer->full_name ?? $unit->order->customer->username ?? 'Unknown User' }}
-                                @if($unit->order->customer->username)
+                                @if($unit->order->customer->{{ __('username)') }}
                                     <br><small class="text-muted">{{ '@'.$unit->order->customer->username }}</small>
                                 @endif
                             @else
@@ -230,7 +230,7 @@
                             @endif
                         </td>
                         <td>
-                            @if($unit->order && $unit->order->customer)
+                            @if($unit->order && $unit->order->{{ __('customer)') }}
                                 <code>{{ $unit->order->customer->telegram_id }}</code>
                             @else
                                 <span class="text-muted">-</span>
@@ -242,8 +242,8 @@
                         @else
                         <td><code class="text-dark bg-light px-2 py-1 rounded">{{ Str::limit($unit->content ?? $unit->raw_text, 20) }}</code></td>
                         <td>
-                            @if($unit->is_sold)
-                                <span class="badge bg-danger-subtle text-danger rounded-pill px-3">Terjual</span>
+                            @if($unit->{{ __('is_sold)') }}
+                                <span class="badge bg-danger-subtle text-danger rounded-pill px-3">{{ __('Terjual') }}</span>
                             @else
                                 @php
                                     $statusBadge = match($unit->stock_status) {
@@ -275,8 +275,8 @@
                                     $verifyAt = $unit->created_at->addHours((int)$saveHours);
                                 }
                             @endphp
-                            @if($unit->stock_status === 'saved_ready_notified' || $verifyAt->isPast())
-                                <span class="text-success"><i class="fas fa-check-circle me-1"></i>Siap Diajukan</span>
+                            @if($unit->stock_status === 'saved_ready_notified' || $verifyAt->{{ __('isPast())') }}
+                                <span class="text-success"><i class="fas fa-check-circle me-1"></i>{{ __('Siap Diajukan') }}</span>
                             @else
                                 <span class="verification-countdown" data-timestamp="{{ $verifyAt->timestamp }}" data-id="{{ $unit->id }}">
                                     {{ $verifyAt->format('d M Y H:i') }}
@@ -289,18 +289,18 @@
                         @endif
                         <td class="text-end px-4">
                             <div class="d-flex gap-2 justify-content-end">
-                                <button class="btn btn-sm btn-light text-info rounded-circle" data-bs-toggle="modal" data-bs-target="#detailStockModal{{ $unit->id }}" title="Lihat Detail">
+                                <button class="btn btn-sm btn-light text-info rounded-circle" data-bs-toggle="modal" data-bs-target="#detailStockModal{{ $unit->id }}" title="{{ __('Lihat Detail') }}">
                                     <i class="fas fa-eye"></i>
                                 </button>
-                                <button class="btn btn-sm btn-light text-primary rounded-circle" data-bs-toggle="modal" data-bs-target="#moveStockModal{{ $unit->id }}" title="Pindahkan / Ubah Status">
+                                <button class="btn btn-sm btn-light text-primary rounded-circle" data-bs-toggle="modal" data-bs-target="#moveStockModal{{ $unit->id }}" title="{{ __('Pindahkan / Ubah Status') }}">
                                     <i class="fas fa-exchange-alt"></i>
                                 </button>
-                                @if(!$unit->is_sold)
-                                <button class="btn btn-sm btn-light text-danger rounded-circle" data-bs-toggle="modal" data-bs-target="#deleteStockModal{{ $unit->id }}" title="Hapus">
+                                @if(!$unit->{{ __('is_sold)') }}
+                                <button class="btn btn-sm btn-light text-danger rounded-circle" data-bs-toggle="modal" data-bs-target="#deleteStockModal{{ $unit->id }}" title="{{ __('Hapus') }}">
                                     <i class="fas fa-trash-alt"></i>
                                 </button>
                                 @else
-                                <button class="btn btn-sm btn-light text-secondary rounded-circle" disabled title="Tidak bisa dihapus"><i class="fas fa-trash-alt"></i></button>
+                                <button class="btn btn-sm btn-light text-secondary rounded-circle" disabled title="{{ __('Tidak bisa dihapus') }}"><i class="fas fa-trash-alt"></i></button>
                                 @endif
                             </div>
                         </td>
@@ -317,7 +317,7 @@
         @else
         <div class="text-center py-5">
             <i class="fas fa-cubes text-muted mb-3" style="font-size: 3rem;"></i>
-            <p class="text-muted mb-0">Belum ada stok unit.</p>
+            <p class="text-muted mb-0">{{ __('Belum ada stok unit.') }}</p>
         </div>
         @endif
     </div>
@@ -329,16 +329,16 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content" style="border-radius: 16px; border: none;">
             <div class="modal-header border-0 pb-0">
-                <h5 class="fw-bold">Tambah Stok Produk</h5>
+                <h5 class="fw-bold">{{ __('Tambah Stok Produk') }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form action="{{ route('admin.stock.store') }}" method="POST">
                 @csrf
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">Pilih Produk</label>
+                        <label class="form-label text-muted small fw-bold">{{ __('Pilih Produk') }}</label>
                         <select name="product_id" class="form-select" required>
-                            <option value="">-- Pilih Produk --</option>
+                            <option value="">{{ __('-- Pilih Produk --') }}</option>
                             @php
                                 $allProducts = \App\Models\Product::where('is_suspended', false)->get();
                             @endphp
@@ -348,28 +348,28 @@
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">Status Awal Stok</label>
+                        <label class="form-label text-muted small fw-bold">{{ __('Status Awal Stok') }}</label>
                         <select name="stock_status" class="form-select" required>
-                            <option value="ready">Ready</option>
-                            <option value="awaiting_benefits">Awaiting Benefits</option>
-                            <option value="saved_for_verification">Simpan Akun</option>
+                            <option value="ready">{{ __('Ready') }}</option>
+                            <option value="awaiting_benefits">{{ __('Awaiting Benefits') }}</option>
+                            <option value="saved_for_verification">{{ __('Simpan Akun') }}</option>
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">Data Akun (Mendukung Multi-baris)</label>
-                        <textarea name="raw_text" class="form-control" rows="5" required placeholder="Username: x&#10;Password: y&#10;2FA: z&#10;&#10;Username: a&#10;Password: b..."></textarea>
-                        <div class="form-text mb-2">Pisahkan antar akun dengan <b>baris kosong (Enter 2x)</b> jika ingin menginput banyak akun sekaligus.</div>
+                        <label class="form-label text-muted small fw-bold">{{ __('Data Akun (Mendukung Multi-baris)') }}</label>
+                        <textarea name="raw_text" class="form-control" rows="5" required placeholder="{{ __('Username: x&#10;Password: y&#10;2FA: z&#10;&#10;Username: a&#10;Password: b...') }}"></textarea>
+                        <div class="form-text mb-2">{{ __('Pisahkan antar akun dengan') }} <b>{{ __('baris kosong (Enter 2x)') }}</b> {{ __('jika ingin menginput banyak akun sekaligus.') }}</div>
 
                         {{-- Live Preview Parser --}}
                         <div id="stock-preview-container" class="mt-3 d-none">
-                            <h6 class="fw-bold mb-2 text-primary small"><i class="fas fa-eye me-1"></i>Pratinjau Hasil Pemecahan Akun (<span id="preview-count">0</span>)</h6>
+                            <h6 class="fw-bold mb-2 text-primary small"><i class="fas fa-eye me-1"></i>{{ __('Pratinjau Hasil Pemecahan Akun (') }}<span id="preview-count">0</span>)</h6>
                             <div class="table-responsive border rounded-3 bg-body-tertiary" style="max-height: 200px; overflow-y: auto;">
                                 <table class="table table-sm table-hover align-middle mb-0" style="font-size: 0.8rem;">
                                     <thead>
                                         <tr class="table-light">
                                             <th class="px-2 py-1" style="width: 40px;">#</th>
-                                            <th class="py-1">Username</th>
-                                            <th class="py-1">Detail Kredensial</th>
+                                            <th class="py-1">{{ __('Username') }}</th>
+                                            <th class="py-1">{{ __('Detail Kredensial') }}</th>
                                         </tr>
                                     </thead>
                                     <tbody id="stock-preview-body"></tbody>
@@ -379,8 +379,8 @@
                     </div>
                 </div>
                 <div class="modal-footer border-0 pt-0">
-                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary rounded-pill px-4">Simpan Stok</button>
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">{{ __('Batal') }}</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">{{ __('Simpan Stok') }}</button>
                 </div>
             </form>
         </div>
@@ -393,21 +393,21 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content" style="border-radius: 16px; border: none;">
             <div class="modal-header border-0 pb-0">
-                <h5 class="fw-bold">Detail Data Akun</h5>
+                <h5 class="fw-bold">{{ __('Detail Data Akun') }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-4">
                 <div class="mb-3">
-                    <label class="form-label fw-bold text-muted small">Produk</label>
+                    <label class="form-label fw-bold text-muted small">{{ __('Produk') }}</label>
                     <p class="mb-0">{{ $unit->product->name ?? '-' }}</p>
                 </div>
                 <div class="mb-0">
-                    <label class="form-label fw-bold text-muted small">Isi Data</label>
+                    <label class="form-label fw-bold text-muted small">{{ __('Isi Data') }}</label>
                     <div class="bg-light rounded-3 p-3 text-break" style="max-height: 300px; overflow-y: auto; font-family: monospace; white-space: pre-wrap; font-size: 0.85rem;">{{ $unit->raw_text }}</div>
                 </div>
             </div>
             <div class="modal-footer border-0">
-                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Tutup</button>
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">{{ __('Tutup') }}</button>
             </div>
         </div>
     </div>
@@ -418,7 +418,7 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content" style="border-radius: 16px; border: none;">
             <div class="modal-header border-0 pb-0">
-                <h5 class="fw-bold">Ubah Status / Pindah Produk</h5>
+                <h5 class="fw-bold">{{ __('Ubah Status / Pindah Produk') }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form action="{{ route('admin.stock.move', $unit->id) }}" method="POST">
@@ -426,7 +426,7 @@
                 @method('PUT')
                 <div class="modal-body p-4">
                     <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">Pindah ke Produk</label>
+                        <label class="form-label text-muted small fw-bold">{{ __('Pindah ke Produk') }}</label>
                         <select name="product_id" class="form-select">
                             @php
                                 $allMoveProducts = \App\Models\Product::orderBy('name')->get();
@@ -437,19 +437,19 @@
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">Ubah Status</label>
+                        <label class="form-label text-muted small fw-bold">{{ __('Ubah Status') }}</label>
                         <select name="stock_status" class="form-select">
-                            <option value="ready" {{ $unit->stock_status === 'ready' && !$unit->is_sold ? 'selected' : '' }}>Ready</option>
-                            <option value="awaiting_benefits" {{ $unit->stock_status === 'awaiting_benefits' && !$unit->is_sold ? 'selected' : '' }}>Awaiting Benefits</option>
-                            <option value="saved_for_verification" {{ $unit->stock_status === 'saved_for_verification' && !$unit->is_sold ? 'selected' : '' }}>Simpan Akun</option>
-                            <option value="terjual" {{ $unit->is_sold ? 'selected' : '' }}>Terjual</option>
+                            <option value="ready" {{ $unit->stock_status === 'ready' && !$unit->is_sold ? 'selected' : '' }}>{{ __('Ready') }}</option>
+                            <option value="awaiting_benefits" {{ $unit->stock_status === 'awaiting_benefits' && !$unit->is_sold ? 'selected' : '' }}>{{ __('Awaiting Benefits') }}</option>
+                            <option value="saved_for_verification" {{ $unit->stock_status === 'saved_for_verification' && !$unit->is_sold ? 'selected' : '' }}>{{ __('Simpan Akun') }}</option>
+                            <option value="terjual" {{ $unit->is_sold ? 'selected' : '' }}>{{ __('Terjual') }}</option>
                         </select>
-                        <div class="form-text">Mengubah ke status "Awaiting Benefits" atau "Simpan Akun" akan menjadwal ulang akun ini sesuai dengan konfigurasi jam bot.</div>
+                        <div class="form-text">{{ __('Mengubah ke status \"Awaiting Benefits\" atau \"Simpan Akun\" akan menjadwal ulang akun ini sesuai dengan konfigurasi jam bot.') }}</div>
                     </div>
                 </div>
                 <div class="modal-footer border-0">
-                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary rounded-pill px-4">Simpan Perubahan</button>
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">{{ __('Batal') }}</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">{{ __('Simpan Perubahan') }}</button>
                 </div>
             </form>
         </div>
@@ -463,14 +463,14 @@
         <div class="modal-content text-center" style="border-radius: 16px; border: none;">
             <div class="modal-body p-4">
                 <i class="fas fa-trash-alt text-danger mb-3" style="font-size: 3rem;"></i>
-                <h5 class="fw-bold">Hapus Stok?</h5>
-                <p class="text-muted small">Stok ini belum terjual. Yakin ingin menghapusnya?</p>
+                <h5 class="fw-bold">{{ __('Hapus Stok?') }}</h5>
+                <p class="text-muted small">{{ __('Stok ini belum terjual. Yakin ingin menghapusnya?') }}</p>
                 <div class="d-flex gap-2 justify-content-center mt-4">
-                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">{{ __('Batal') }}</button>
                     <form action="{{ route('admin.stock.destroy', $unit->id) }}" method="POST">
                         @csrf
                         @method('DELETE')
-                        <button type="submit" class="btn btn-danger rounded-pill px-4">Ya, Hapus</button>
+                        <button type="submit" class="btn btn-danger rounded-pill px-4">{{ __('Ya, Hapus') }}</button>
                     </form>
                 </div>
             </div>
@@ -486,7 +486,7 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content" style="border-radius: 16px; border: none;">
             <div class="modal-header border-0 pb-0">
-                <h5 class="fw-bold">Ubah Status Masal (<span class="bulk-selected-count">0</span> Akun)</h5>
+                <h5 class="fw-bold">{{ __('Ubah Status Masal (') }}<span class="bulk-selected-count">0</span> {{ __('Akun)') }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form action="{{ route('admin.stock.bulkMove') }}" method="POST" id="bulk-move-form">
@@ -494,9 +494,9 @@
                 <input type="hidden" name="ids" id="bulk-move-ids">
                 <div class="modal-body p-4">
                     <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">Pindahkan ke Produk (Opsional)</label>
+                        <label class="form-label text-muted small fw-bold">{{ __('Pindahkan ke Produk (Opsional)') }}</label>
                         <select name="product_id" class="form-select">
-                            <option value="">-- Pertahankan Produk Asli --</option>
+                            <option value="">{{ __('-- Pertahankan Produk Asli --') }}</option>
                             @php
                                 $allProducts = \App\Models\Product::where('is_suspended', false)->get();
                             @endphp
@@ -506,18 +506,18 @@
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">Ubah Status Ke</label>
+                        <label class="form-label text-muted small fw-bold">{{ __('Ubah Status Ke') }}</label>
                         <select name="stock_status" class="form-select" required>
-                            <option value="ready">Ready</option>
-                            <option value="awaiting_benefits">Awaiting Benefits</option>
-                            <option value="saved_for_verification">Simpan Akun</option>
+                            <option value="ready">{{ __('Ready') }}</option>
+                            <option value="awaiting_benefits">{{ __('Awaiting Benefits') }}</option>
+                            <option value="saved_for_verification">{{ __('Simpan Akun') }}</option>
                         </select>
-                        <div class="form-text">Mengubah status massal akan menjadwal ulang masa karantina akun-akun tersebut sesuai pengaturan jam masing-masing status.</div>
+                        <div class="form-text">{{ __('Mengubah status massal akan menjadwal ulang masa karantina akun-akun tersebut sesuai pengaturan jam masing-masing status.') }}</div>
                     </div>
                 </div>
                 <div class="modal-footer border-0">
-                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary rounded-pill px-4">Terapkan Masal</button>
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">{{ __('Batal') }}</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">{{ __('Terapkan Masal') }}</button>
                 </div>
             </form>
         </div>
@@ -530,14 +530,14 @@
         <div class="modal-content text-center" style="border-radius: 16px; border: none;">
             <div class="modal-body p-4">
                 <i class="fas fa-trash-alt text-danger mb-3" style="font-size: 3rem;"></i>
-                <h5 class="fw-bold">Hapus Masal?</h5>
-                <p class="text-muted small">Anda akan menghapus <span class="bulk-selected-count">0</span> akun yang dipilih secara permanen.</p>
+                <h5 class="fw-bold">{{ __('Hapus Masal?') }}</h5>
+                <p class="text-muted small">{{ __('Anda akan menghapus') }} <span class="bulk-selected-count">0</span> {{ __('akun yang dipilih secara permanen.') }}</p>
                 <div class="d-flex gap-2 justify-content-center mt-4">
-                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">{{ __('Batal') }}</button>
                     <form action="{{ route('admin.stock.bulkDestroy') }}" method="POST" id="bulk-delete-form">
                         @csrf
                         <input type="hidden" name="ids" id="bulk-delete-ids">
-                        <button type="submit" class="btn btn-danger rounded-pill px-4">Ya, Hapus Masal</button>
+                        <button type="submit" class="btn btn-danger rounded-pill px-4">{{ __('Ya, Hapus Masal') }}</button>
                     </form>
                 </div>
             </div>
@@ -712,7 +712,7 @@
                     
                     if (diff <= 0) {
                         el.dataset.ready = 'true';
-                        el.innerHTML = '<span class="text-success"><i class="fas fa-check-circle me-1"></i>Siap Diverifikasi</span>';
+                        el.innerHTML = '<span class="text-success"><i class="fas fa-check-circle me-1"></i>{{ __('Siap Diverifikasi') }}</span>';
                         newReadyCount++;
                     } else {
                         const hours = Math.floor(diff / 3600);
@@ -724,7 +724,7 @@
                         if (minutes > 0 || hours > 0) timeString += minutes + 'm ';
                         timeString += seconds + 'd';
                         
-                        el.innerHTML = '<span class="text-info"><i class="fas fa-clock me-1"></i>' + timeString + '</span>';
+                        el.innerHTML = '<span class="text-info"><i class="fas fa-clock me-1"></i>{{ __('\' + timeString + \'') }}</span>';
                     }
                 });
                 
@@ -752,7 +752,7 @@
 function confirmExportStock() {
     Swal.fire({
         title: 'Konfirmasi Ekspor Data',
-        html: '<p class="text-muted small mb-3">Untuk keamanan, masukkan password admin Anda sebelum mengekspor data stok.</p>',
+        html: '<p class="text-muted small mb-3">{{ __('Untuk keamanan, masukkan password admin Anda sebelum mengekspor data stok.') }}</p>',
         input: 'password',
         inputPlaceholder: 'Masukkan password Anda...',
         inputAttributes: { autocomplete: 'current-password' },

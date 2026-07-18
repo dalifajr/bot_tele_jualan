@@ -6,8 +6,8 @@
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h4 class="fw-bold mb-1 text-danger">Pembersihan Database</h4>
-        <p class="text-muted mb-0">Proses pembersihan data sistem secara real-time</p>
+        <h4 class="fw-bold mb-1 text-danger">{{ __('Pembersihan Database') }}</h4>
+        <p class="text-muted mb-0">{{ __('Proses pembersihan data sistem secara real-time') }}</p>
     </div>
 </div>
 
@@ -17,10 +17,10 @@
             <div>
                 <h5 class="fw-bold mb-1">
                     <i class="fas fa-trash-alt fa-spin text-danger me-2" id="wipeIcon"></i>
-                    Status: <span id="statusText" class="text-danger">Sedang memproses pembersihan data...</span>
+                    {{ __('Status:') }} <span id="statusText" class="text-danger">{{ __('Sedang memproses pembersihan data...') }}</span>
                 </h5>
                 <p class="text-muted small mb-0">
-                    Tindakan: <strong class="text-danger">Wipe Database (Mengosongkan Tabel)</strong>
+                    {{ __('Tindakan:') }} <strong class="text-danger">{{ __('Wipe Database (Mengosongkan Tabel)') }}</strong>
                 </p>
             </div>
             <div class="fs-4 fw-bold text-danger" id="wipePercent">5%</div>
@@ -30,14 +30,14 @@
             <div id="wipeProgressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-danger" role="progressbar" style="width: 5%;" aria-valuenow="5" aria-valuemin="0" aria-valuemax="100"></div>
         </div>
 
-        <h6 class="fw-bold small text-muted mb-2">LIVE EXECUTION LOGS</h6>
+        <h6 class="fw-bold small text-muted mb-2">{{ __('LIVE EXECUTION LOGS') }}</h6>
         <div id="logConsole" class="bg-dark text-light p-3 font-monospace mb-4" style="height: 350px; overflow-y: auto; border-radius: 12px; font-size: 0.85rem; line-height: 1.5; border: 1px solid #343a40;">
-            <div class="text-secondary">[System] Memulai pembersihan data...</div>
+            <div class="text-secondary">{{ __('[System] Memulai pembersihan data...') }}</div>
         </div>
 
         <div class="d-flex justify-content-end gap-2">
             <a href="{{ route('admin.backup.settings.show') }}" id="btnDone" class="btn btn-secondary rounded-pill px-4 py-2 fw-bold d-none">
-                <i class="fas fa-arrow-left me-2"></i>Kembali ke Pengaturan
+                <i class="fas fa-arrow-left me-2"></i>{{ __('Kembali ke Pengaturan') }}
             </a>
         </div>
     </div>
