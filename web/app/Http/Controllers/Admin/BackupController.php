@@ -89,7 +89,7 @@ class BackupController extends Controller
         $autoBackupLastRun = BotSetting::where('key', 'auto_backup_last_run')->value('value') ?: '-';
 
         $tablesStats = [];
-        $tables = [
+        $knownLabels = [
             'users' => 'Pengguna/Pelanggan',
             'products' => 'Produk',
             'stock_units' => 'Stok Akun',
@@ -99,17 +99,30 @@ class BackupController extends Controller
             'complaint_cases' => 'Kasus Komplain',
             'bot_settings' => 'Pengaturan Bot',
             'audit_logs' => 'Log Audit System',
+            'reviews' => 'Ulasan',
+            'seller_bank_accounts' => 'Rekening Seller',
+            'vpn_accounts' => 'Akun VPN',
+            'held_funds' => 'Dana Tertahan',
+            'restock_subscriptions' => 'Langganan Restock',
+            'complaint_attachments' => 'Lampiran Komplain',
         ];
 
-        foreach ($tables as $table => $label) {
-            if (Schema::hasTable($table)) {
-                $count = DB::table($table)->count();
-                $tablesStats[] = [
-                    'table' => $table,
-                    'label' => $label,
-                    'count' => $count
-                ];
+        try {
+            if (method_exists(\Illuminate\Support\Facades\Schema::class, 'getTables')) {
+                foreach (\Illuminate\Support\Facades\Schema::getTables() as $tableInfo) {
+                    $tableName = is_array($tableInfo) ? ($tableInfo['name'] ?? null) : ($tableInfo->name ?? null);
+                    if ($tableName && !str_starts_with($tableName, 'sqlite_')) {
+                        $label = $knownLabels[$tableName] ?? ucwords(str_replace('_', ' ', $tableName));
+                        $tablesStats[] = [
+                            'table' => $tableName,
+                            'label' => $label,
+                            'count' => \Illuminate\Support\Facades\DB::table($tableName)->count(),
+                        ];
+                    }
+                }
             }
+        } catch (\Exception $e) {
+            // Fallback
         }
 
         return view('admin.backup.settings', compact(
