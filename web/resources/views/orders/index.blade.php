@@ -24,7 +24,7 @@
        class="btn btn-sm rounded-pill px-3 {{ is_null($status) ? 'btn-primary' : 'btn-outline-secondary' }}">
         {{ __('Semua') }}
     </a>
-    @foreach(['pending_payment' => __('Menunggu'), 'paid' => __('Dibayar'), 'delivered' => __('Selesai'), 'cancelled' => __('Dibatalkan'), 'expired' => __('Kedaluwarsa')] as $key => $label
+    @foreach(['pending_payment' => __('Menunggu'), 'paid' => __('Dibayar'), 'delivered' => __('Selesai'), 'cancelled' => __('Dibatalkan'), 'expired' => __('Kedaluwarsa')] as $key => $label)
     <a href="{{ route('orders.index', ['status' => $key]) }}"
        class="btn btn-sm rounded-pill px-3 {{ $status === $key ? 'btn-primary' : 'btn-outline-secondary' }}">
         {{ $label }}

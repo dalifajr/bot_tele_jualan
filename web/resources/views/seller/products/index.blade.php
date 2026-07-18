@@ -67,7 +67,7 @@
                         
                         @if($product->workers->count() > 0)
                             <div class="d-flex flex-column gap-2 max-height-150 overflow-y-auto pr-1">
-                                @foreach($product->workers as $worker
+                                @foreach($product->workers as $worker)
                                 <div class="d-flex justify-content-between align-items-center bg-light p-2 rounded-3 small">
                                     <div class="d-flex align-items-center gap-2 text-truncate" style="max-width: 70%;">
                                         <div class="rounded-circle bg-info text-white d-flex align-items-center justify-content-center fw-bold" style="width: 24px; height: 24px; font-size: 0.7rem; flex-shrink: 0;">
