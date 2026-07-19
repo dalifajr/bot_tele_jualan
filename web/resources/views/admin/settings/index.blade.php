@@ -178,7 +178,7 @@
                             <div class="mb-3">
                                 <label class="form-label fw-bold small">Kunci SSH (Private Key)</label>
                                 <textarea name="settings[vpn_server_ssh_key_raw]" class="form-control text-muted" rows="6" placeholder="{{ __('-----BEGIN OPENSSH PRIVATE KEY-----&#10;...&#10;-----END OPENSSH PRIVATE KEY-----') }}" style="font-family: monospace; font-size: 0.85rem;">{{ $settings['vpn_server_ssh_key_raw'] ?? '' }}</textarea>
-                                <div class="form-text">{!! 'Paste isi dari file <em>{{ __('Private Key') }}</em> Anda (.pem / id_rsa) di sini. Kunci ini digunakan untuk autentikasi SSH ke VPS secara otomatis tanpa menggunakan password. Sistem akan menyimpan dan memanfaatkannya dengan aman.' !!}</div>
+                                <div class="form-text">{!! __('Paste isi dari file <em>Private Key</em> Anda (.pem / id_rsa) di sini. Kunci ini digunakan untuk autentikasi SSH ke VPS secara otomatis tanpa menggunakan password. Sistem akan menyimpan dan memanfaatkannya dengan aman.') !!}</div>
                             </div>
 
                             <div class="d-grid mt-4">
