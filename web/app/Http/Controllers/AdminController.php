@@ -975,6 +975,7 @@ class AdminController extends Controller
             'vpn_duration_days' => $request->has('is_vpn') ? 'required|integer|min:1' : 'nullable',
         ]);
         $data = $request->only(['name', 'description', 'price', 'vpn_protocol', 'vpn_duration_days']);
+        $data['description'] = $data['description'] ?? '';
         $data['is_suspended'] = $request->has('is_suspended');
         $data['is_vpn'] = $request->has('is_vpn');
         $data['warranty_days'] = $request->has('enable_warranty') ? $request->warranty_days : 0;
