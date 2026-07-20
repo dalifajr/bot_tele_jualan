@@ -14,7 +14,7 @@ class StockMetricsTest extends TestCase
 
     public function test_admin_stock_page_metrics_are_responsive_to_filters()
     {
-        $admin = User::create([
+        $admin = User::forceCreate([
             'username' => 'admin_test',
             'full_name' => 'Admin Test',
             'email' => 'admin@test.com',
@@ -73,7 +73,7 @@ class StockMetricsTest extends TestCase
 
     public function test_seller_stock_page_metrics_are_displayed_and_responsive_to_filters()
     {
-        $seller = User::create([
+        $seller = User::forceCreate([
             'username' => 'seller_test',
             'full_name' => 'Seller Test',
             'email' => 'seller@test.com',
@@ -82,7 +82,7 @@ class StockMetricsTest extends TestCase
         ]);
 
         // Another seller's stock to verify scoping
-        $otherSeller = User::create([
+        $otherSeller = User::forceCreate([
             'username' => 'other_seller',
             'full_name' => 'Other Seller',
             'email' => 'other@test.com',

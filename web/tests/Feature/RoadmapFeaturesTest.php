@@ -21,7 +21,7 @@ class RoadmapFeaturesTest extends TestCase
      */
     public function test_checkout_rate_limiting()
     {
-        $customer = User::create([
+        $customer = User::forceCreate([
             'username' => 'customer_test',
             'full_name' => 'Customer Test',
             'email' => 'customer@test.com',
@@ -70,7 +70,7 @@ class RoadmapFeaturesTest extends TestCase
      */
     public function test_cron_auto_release_stock()
     {
-        $customer = User::create([
+        $customer = User::forceCreate([
             'username' => 'customer_test',
             'full_name' => 'Customer Test',
             'email' => 'customer@test.com',
@@ -163,7 +163,7 @@ class RoadmapFeaturesTest extends TestCase
      */
     public function test_replace_stock_by_admin()
     {
-        $admin = User::create([
+        $admin = User::forceCreate([
             'username' => 'admin_test',
             'full_name' => 'Admin Test',
             'email' => 'admin@test.com',
@@ -171,7 +171,7 @@ class RoadmapFeaturesTest extends TestCase
             'password' => bcrypt('password'),
         ]);
 
-        $seller = User::create([
+        $seller = User::forceCreate([
             'username' => 'seller_test',
             'full_name' => 'Seller Test',
             'email' => 'seller@test.com',
@@ -235,7 +235,7 @@ class RoadmapFeaturesTest extends TestCase
      */
     public function test_refund_order_by_admin()
     {
-        $admin = User::create([
+        $admin = User::forceCreate([
             'username' => 'admin_test2',
             'full_name' => 'Admin Test 2',
             'email' => 'admin2@test.com',
@@ -243,7 +243,7 @@ class RoadmapFeaturesTest extends TestCase
             'password' => bcrypt('password'),
         ]);
 
-        $seller = User::create([
+        $seller = User::forceCreate([
             'username' => 'seller_test2',
             'full_name' => 'Seller Test 2',
             'email' => 'seller2@test.com',
@@ -310,7 +310,7 @@ class RoadmapFeaturesTest extends TestCase
      */
     public function test_release_held_funds_command()
     {
-        $seller = User::create([
+        $seller = User::forceCreate([
             'username' => 'seller_test3',
             'full_name' => 'Seller Test 3',
             'email' => 'seller3@test.com',
@@ -376,7 +376,7 @@ class RoadmapFeaturesTest extends TestCase
      */
     public function test_replace_stock_bulk_by_admin()
     {
-        $admin = User::create([
+        $admin = User::forceCreate([
             'username' => 'admin_bulk_rep',
             'full_name' => 'Admin Bulk Replace',
             'email' => 'admin_bulk_rep@test.com',
@@ -384,7 +384,7 @@ class RoadmapFeaturesTest extends TestCase
             'password' => bcrypt('password'),
         ]);
 
-        $seller = User::create([
+        $seller = User::forceCreate([
             'username' => 'seller_bulk_rep',
             'full_name' => 'Seller Bulk Replace',
             'email' => 'seller_bulk_rep@test.com',
@@ -471,7 +471,7 @@ class RoadmapFeaturesTest extends TestCase
      */
     public function test_refund_stock_bulk_by_admin()
     {
-        $admin = User::create([
+        $admin = User::forceCreate([
             'username' => 'admin_bulk_ref',
             'full_name' => 'Admin Bulk Refund',
             'email' => 'admin_bulk_ref@test.com',
@@ -479,7 +479,7 @@ class RoadmapFeaturesTest extends TestCase
             'password' => bcrypt('password'),
         ]);
 
-        $seller = User::create([
+        $seller = User::forceCreate([
             'username' => 'seller_bulk_ref',
             'full_name' => 'Seller Bulk Refund',
             'email' => 'seller_bulk_ref@test.com',
@@ -595,7 +595,7 @@ class RoadmapFeaturesTest extends TestCase
      */
     public function test_admin_can_impersonate_user()
     {
-        $admin = User::create([
+        $admin = User::forceCreate([
             'username' => 'admin_imp',
             'full_name' => 'Admin Impersonator',
             'email' => 'admin_imp@test.com',
@@ -603,7 +603,7 @@ class RoadmapFeaturesTest extends TestCase
             'password' => bcrypt('password'),
         ]);
 
-        $customer = User::create([
+        $customer = User::forceCreate([
             'username' => 'customer_imp',
             'full_name' => 'Customer Impersonated',
             'email' => 'customer_imp@test.com',
@@ -635,7 +635,7 @@ class RoadmapFeaturesTest extends TestCase
      */
     public function test_impersonated_user_can_stop_impersonating()
     {
-        $admin = User::create([
+        $admin = User::forceCreate([
             'username' => 'admin_imp2',
             'full_name' => 'Admin Impersonator 2',
             'email' => 'admin_imp2@test.com',
@@ -643,7 +643,7 @@ class RoadmapFeaturesTest extends TestCase
             'password' => bcrypt('password'),
         ]);
 
-        $customer = User::create([
+        $customer = User::forceCreate([
             'username' => 'customer_imp2',
             'full_name' => 'Customer Impersonated 2',
             'email' => 'customer_imp2@test.com',
@@ -676,7 +676,7 @@ class RoadmapFeaturesTest extends TestCase
      */
     public function test_admin_can_run_maintenance_commands_via_web()
     {
-        $admin = User::create([
+        $admin = User::forceCreate([
             'username' => 'admin_maint',
             'full_name' => 'Admin Maintenance',
             'email' => 'admin_maint@test.com',
@@ -704,7 +704,7 @@ class RoadmapFeaturesTest extends TestCase
      */
     public function test_admin_orders_filtering_and_search()
     {
-        $admin = User::create([
+        $admin = User::forceCreate([
             'username' => 'admin_orders_test',
             'full_name' => 'Admin Orders Test',
             'email' => 'admin_orders@test.com',
@@ -715,7 +715,7 @@ class RoadmapFeaturesTest extends TestCase
         $productNetflix = Product::create(['name' => 'Netflix Premium', 'price' => 5000]);
         $productYoutube = Product::create(['name' => 'Youtube Premium', 'price' => 10000]);
 
-        $customerAlice = User::create([
+        $customerAlice = User::forceCreate([
             'username' => 'alice_buyer',
             'full_name' => 'Alice Smith',
             'email' => 'alice@test.com',
@@ -724,7 +724,7 @@ class RoadmapFeaturesTest extends TestCase
             'password' => bcrypt('password'),
         ]);
 
-        $customerBob = User::create([
+        $customerBob = User::forceCreate([
             'username' => 'bob_buyer',
             'full_name' => 'Bob Jones',
             'email' => 'bob@test.com',

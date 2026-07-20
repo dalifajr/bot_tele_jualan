@@ -22,7 +22,7 @@ class OperationalReportTest extends TestCase
     {
         parent::setUp();
  
-        $this->admin = User::create([
+        $this->admin = User::forceCreate([
             'username' => 'admin_test',
             'full_name' => 'Admin Test',
             'email' => 'admin@test.com',
@@ -30,7 +30,7 @@ class OperationalReportTest extends TestCase
             'password' => bcrypt('password'),
         ]);
  
-        $this->customer = User::create([
+        $this->customer = User::forceCreate([
             'username' => 'customer_test',
             'full_name' => 'Customer Test',
             'email' => 'customer@test.com',
@@ -38,7 +38,7 @@ class OperationalReportTest extends TestCase
             'password' => bcrypt('password'),
         ]);
  
-        $this->seller = User::create([
+        $this->seller = User::forceCreate([
             'username' => 'seller_test',
             'full_name' => 'Seller Test',
             'email' => 'seller@test.com',
@@ -46,7 +46,7 @@ class OperationalReportTest extends TestCase
             'password' => bcrypt('password'),
         ]);
  
-        $this->otherSeller = User::create([
+        $this->otherSeller = User::forceCreate([
             'username' => 'other_seller',
             'full_name' => 'Other Seller',
             'email' => 'other@seller.com',
@@ -103,7 +103,7 @@ class OperationalReportTest extends TestCase
     public function test_admin_dashboard_displays_platform_commission_accurately(): void
     {
         // 1. Create a seller with a 15% platform fee percent
-        $seller = User::create([
+        $seller = User::forceCreate([
             'username' => 'commission_seller',
             'full_name' => 'Commission Seller',
             'email' => 'commseller@test.com',

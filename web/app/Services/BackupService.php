@@ -791,6 +791,9 @@ class BackupService
      */
     protected static function restoreMediaFromZip(ZipArchive $zip)
     {
+        $basePublicPath = storage_path('app/public');
+        $baseBotPath = base_path('../src/data');
+
         for ($i = 0; $i < $zip->numFiles; $i++) {
             $filename = $zip->getNameIndex($i);
             if (strpos($filename, 'media/') === 0) {
@@ -800,13 +803,25 @@ class BackupService
                 $fileData = $zip->getFromIndex($i);
                 $destPath = storage_path("app/public/{$relativePath}");
                 
+                // Prevent Zip Slip vulnerability
                 File::ensureDirectoryExists(dirname($destPath));
-                File::put($destPath, $fileData);
+                $realDestPath = realpath(dirname($destPath));
+                $realBasePath = realpath($basePublicPath);
+                
+                if ($realDestPath && $realBasePath && strpos($realDestPath, $realBasePath) === 0) {
+                    File::put($destPath, $fileData);
+                }
 
                 if ($relativePath === 'bot_qris.png' || $relativePath === 'qris/qris_latest.png') {
                     $botQris = base_path('../src/data/qris.png');
+                    
                     File::ensureDirectoryExists(dirname($botQris));
-                    File::put($botQris, $fileData);
+                    $realQrisPath = realpath(dirname($botQris));
+                    $realBotPath = realpath($baseBotPath);
+
+                    if ($realQrisPath && $realBotPath && strpos($realQrisPath, $realBotPath) === 0) {
+                        File::put($botQris, $fileData);
+                    }
                 }
             }
         }

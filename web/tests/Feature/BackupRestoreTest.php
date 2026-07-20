@@ -40,7 +40,7 @@ class BackupRestoreTest extends TestCase
 
         $this->artisan('migrate');
 
-        $this->admin = User::create([
+        $this->admin = User::forceCreate([
             'username' => 'admin_test',
             'full_name' => 'Admin Test',
             'email' => 'admin@test.com',
@@ -48,7 +48,7 @@ class BackupRestoreTest extends TestCase
             'password' => bcrypt('password'),
         ]);
 
-        $this->seller = User::create([
+        $this->seller = User::forceCreate([
             'username' => 'seller_test',
             'full_name' => 'Seller Test',
             'email' => 'seller@test.com',
@@ -56,7 +56,7 @@ class BackupRestoreTest extends TestCase
             'password' => bcrypt('password'),
         ]);
 
-        $this->customer = User::create([
+        $this->customer = User::forceCreate([
             'username' => 'customer_test',
             'full_name' => 'Customer Test',
             'email' => 'customer@test.com',

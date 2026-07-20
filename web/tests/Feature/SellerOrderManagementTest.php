@@ -18,7 +18,7 @@ class SellerOrderManagementTest extends TestCase
     public function test_seller_can_only_see_orders_associated_with_their_products()
     {
         // 1. Create two sellers & one customer
-        $seller1 = User::create([
+        $seller1 = User::forceCreate([
             'username' => 'seller1',
             'full_name' => 'Seller One',
             'email' => 'seller1@example.com',
@@ -26,7 +26,7 @@ class SellerOrderManagementTest extends TestCase
             'role' => 'seller',
         ]);
 
-        $seller2 = User::create([
+        $seller2 = User::forceCreate([
             'username' => 'seller2',
             'full_name' => 'Seller Two',
             'email' => 'seller2@example.com',
@@ -34,7 +34,7 @@ class SellerOrderManagementTest extends TestCase
             'role' => 'seller',
         ]);
 
-        $customer = User::create([
+        $customer = User::forceCreate([
             'username' => 'customer_test',
             'full_name' => 'Customer',
             'email' => 'customer_test@example.com',
@@ -105,7 +105,7 @@ class SellerOrderManagementTest extends TestCase
     public function test_seller_can_cancel_their_own_pending_order()
     {
         // 1. Create seller, customer, product & pending order
-        $seller = User::create([
+        $seller = User::forceCreate([
             'username' => 'seller_test',
             'full_name' => 'Seller Test',
             'email' => 'seller_test@example.com',
@@ -113,7 +113,7 @@ class SellerOrderManagementTest extends TestCase
             'role' => 'seller',
         ]);
 
-        $customer = User::create([
+        $customer = User::forceCreate([
             'username' => 'customer_test',
             'full_name' => 'Customer',
             'email' => 'customer_test@example.com',

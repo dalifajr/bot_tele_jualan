@@ -20,7 +20,7 @@ class GmailCheckerTest extends TestCase
     {
         parent::setUp();
 
-        $this->admin = User::create([
+        $this->admin = User::forceCreate([
             'username' => 'admin_test',
             'full_name' => 'Admin Test',
             'email' => 'admin@test.com',
@@ -28,7 +28,7 @@ class GmailCheckerTest extends TestCase
             'password' => bcrypt('password'),
         ]);
 
-        $this->customer = User::create([
+        $this->customer = User::forceCreate([
             'username' => 'customer_test',
             'full_name' => 'Customer Test',
             'email' => 'customer@test.com',
@@ -160,7 +160,7 @@ class GmailCheckerTest extends TestCase
      */
     public function test_non_admin_cannot_update_status_to_awaiting_benefits_gmail(): void
     {
-        $seller = User::create([
+        $seller = User::forceCreate([
             'username' => 'seller_test_bulk',
             'full_name' => 'Seller Test',
             'email' => 'seller_bulk@test.com',

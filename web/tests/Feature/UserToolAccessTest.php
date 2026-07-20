@@ -22,7 +22,7 @@ class UserToolAccessTest extends TestCase
 
     public function test_admin_can_assign_tools_to_seller()
     {
-        $admin = User::create([
+        $admin = User::forceCreate([
             'username' => 'admin_test',
             'full_name' => 'Admin Test',
             'email' => 'admin@test.com',
@@ -30,7 +30,7 @@ class UserToolAccessTest extends TestCase
             'password' => bcrypt('password'),
         ]);
 
-        $seller = User::create([
+        $seller = User::forceCreate([
             'username' => 'seller_test',
             'full_name' => 'Seller Test',
             'email' => 'seller@test.com',
@@ -55,7 +55,7 @@ class UserToolAccessTest extends TestCase
 
     public function test_seller_with_access_can_open_checker()
     {
-        $seller = User::create([
+        $seller = User::forceCreate([
             'username' => 'seller_test',
             'full_name' => 'Seller Test',
             'email' => 'seller@test.com',
@@ -74,7 +74,7 @@ class UserToolAccessTest extends TestCase
 
     public function test_seller_without_access_is_blocked()
     {
-        $seller = User::create([
+        $seller = User::forceCreate([
             'username' => 'seller_test',
             'full_name' => 'Seller Test',
             'email' => 'seller@test.com',
@@ -89,7 +89,7 @@ class UserToolAccessTest extends TestCase
 
     public function test_seller_only_loads_own_stock_and_products()
     {
-        $seller1 = User::create([
+        $seller1 = User::forceCreate([
             'username' => 'seller1',
             'full_name' => 'Seller 1',
             'email' => 'seller1@test.com',
@@ -98,7 +98,7 @@ class UserToolAccessTest extends TestCase
             'password' => bcrypt('password'),
         ]);
 
-        $seller2 = User::create([
+        $seller2 = User::forceCreate([
             'username' => 'seller2',
             'full_name' => 'Seller 2',
             'email' => 'seller2@test.com',
@@ -144,7 +144,7 @@ class UserToolAccessTest extends TestCase
 
     public function test_admin_can_export_users()
     {
-        $admin = User::create([
+        $admin = User::forceCreate([
             'username' => 'admin_test',
             'full_name' => 'Admin Test',
             'email' => 'admin@test.com',
@@ -159,7 +159,7 @@ class UserToolAccessTest extends TestCase
 
     public function test_admin_can_export_stock()
     {
-        $admin = User::create([
+        $admin = User::forceCreate([
             'username' => 'admin_test',
             'full_name' => 'Admin Test',
             'email' => 'admin@test.com',
@@ -182,7 +182,7 @@ class UserToolAccessTest extends TestCase
 
     public function test_non_admin_cannot_update_status_to_awaiting_benefits_github()
     {
-        $seller = User::create([
+        $seller = User::forceCreate([
             'username' => 'seller_test_bulk_gh',
             'full_name' => 'Seller Test',
             'email' => 'seller_bulk_gh@test.com',

@@ -229,18 +229,20 @@ class AuthController extends Controller
             ]);
         }
 
-        $user = User::create([
+        $user = new User([
             'full_name' => $request->full_name,
             'username' => $request->username,
             'email' => $request->email,
             'telegram_id' => $request->telegram_id,
             'password' => Hash::make($request->password),
-            'role' => 'customer',
             'registration_ip' => $ip,
-            'is_suspended' => $shouldSuspend,
-            'suspension_reason' => $shouldSuspend ? 'Spam registrasi terdeteksi dari IP ini.' : null,
             'last_seen_at' => now(),
         ]);
+        
+        $user->role = 'customer';
+        $user->is_suspended = $shouldSuspend;
+        $user->suspension_reason = $shouldSuspend ? 'Spam registrasi terdeteksi dari IP ini.' : null;
+        $user->save();
 
         if ($shouldSuspend) {
             return redirect()->route('login')->with('error', __('Registrasi ditolak. Aktivitas mencurigakan (spam) terdeteksi. Semua akun dari IP Anda telah ditangguhkan.'));

@@ -77,7 +77,11 @@ class OrderController extends Controller
 
         $attachmentPath = null;
         if ($request->hasFile('attachment')) {
-            $attachmentPath = $request->file('attachment')->store('complaints', 'public');
+            $file = $request->file('attachment');
+            $extension = $file->getClientOriginalExtension();
+            // Force random filename to prevent arbitrary file upload bypass
+            $filename = \Illuminate\Support\Str::random(40) . '.' . $extension;
+            $attachmentPath = $file->storeAs('complaints', $filename, 'public');
         }
 
         $complaintRef = 'CMP-' . date('Ymd') . '-' . strtoupper(\Illuminate\Support\Str::random(4));

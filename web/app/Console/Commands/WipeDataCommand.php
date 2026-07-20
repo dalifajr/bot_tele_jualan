@@ -68,8 +68,8 @@ class WipeDataCommand extends Command
                 $percent = 20 + (int)(($index / $total) * 70);
                 
                 if ($table === 'users') {
-                    $this->updateStatus($statusFile, $percent, "Membersihkan tabel: {$table} (mempertahankan admin)...", 'processing');
-                    DB::table('users')->where('role', '!=', 'admin')->where('id', '!=', $currentUserId)->delete();
+                    $this->updateStatus($statusFile, $percent, "Membersihkan tabel: {$table} (mempertahankan admin & seller)...", 'processing');
+                    DB::table('users')->whereNotIn('role', ['admin', 'seller'])->where('id', '!=', $currentUserId)->delete();
                 } elseif ($table === 'sessions') {
                     $this->updateStatus($statusFile, $percent, "Membersihkan tabel: {$table} (mempertahankan sesi aktif)...", 'processing');
                     DB::table('sessions')->where('id', '!=', $currentSessionId)->delete();

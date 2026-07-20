@@ -429,7 +429,7 @@
                     <div class="mb-3">
                         <label class="form-label text-muted small fw-bold">{{ __('Pilih Produk') }}</label>
                         <select name="product_id" class="form-select">
-                            @foreach($allMoveProducts as $p)
+                            @foreach($products as $p)
                                 <option value="{{ $p->id }}" {{ $unit->product_id == $p->id ? 'selected' : '' }}>{{ $p->name }}</option>
                             @endforeach
                         </select>

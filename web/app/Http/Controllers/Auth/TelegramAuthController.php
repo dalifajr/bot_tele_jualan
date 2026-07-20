@@ -219,15 +219,16 @@ class TelegramAuthController extends Controller
                 $counter++;
             }
 
-            $user = User::create([
+            $user = new User([
                 'telegram_id' => $telegramId,
                 'username' => $username,
                 'full_name' => $fullName,
                 'password' => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(16)),
-                'role' => 'customer',
-                'wallet_balance' => 0,
                 'last_seen_at' => now(),
             ]);
+            $user->role = 'customer';
+            $user->wallet_balance = 0;
+            $user->save();
         }
 
         if ($user->is_suspended) {

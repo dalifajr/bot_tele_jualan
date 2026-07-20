@@ -20,7 +20,7 @@ class BroadcastBackgroundTest extends TestCase
     {
         parent::setUp();
 
-        $this->admin = User::create([
+        $this->admin = User::forceCreate([
             'username' => 'admin_test',
             'full_name' => 'Admin Test',
             'email' => 'admin@test.com',
@@ -28,7 +28,7 @@ class BroadcastBackgroundTest extends TestCase
             'password' => bcrypt('password'),
         ]);
 
-        $this->customer = User::create([
+        $this->customer = User::forceCreate([
             'username' => 'customer_test',
             'full_name' => 'Customer Test',
             'email' => 'customer@test.com',

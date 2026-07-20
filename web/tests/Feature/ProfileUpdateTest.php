@@ -12,7 +12,7 @@ class ProfileUpdateTest extends TestCase
 
     public function test_user_can_update_profile_without_changing_username()
     {
-        $user = User::create([
+        $user = User::forceCreate([
             'full_name' => 'Dzulfikri Alifajri',
             'username' => 'dzulfikrialifajri',
             'email' => 'dzulfikrialifajri@gmail.com',
@@ -36,7 +36,7 @@ class ProfileUpdateTest extends TestCase
 
     public function test_user_can_update_profile_with_case_different_username()
     {
-        $user = User::create([
+        $user = User::forceCreate([
             'full_name' => 'Dzulfikri Alifajri',
             'username' => 'DzulfikriAlifajri',
             'email' => 'dzulfikrialifajri@gmail.com',
@@ -56,7 +56,7 @@ class ProfileUpdateTest extends TestCase
 
     public function test_user_cannot_change_username_to_one_already_taken()
     {
-        $otherUser = User::create([
+        $otherUser = User::forceCreate([
             'full_name' => 'Other User',
             'username' => 'otherusername',
             'email' => 'other@example.com',
@@ -64,7 +64,7 @@ class ProfileUpdateTest extends TestCase
             'role' => 'customer',
         ]);
 
-        $user = User::create([
+        $user = User::forceCreate([
             'full_name' => 'Dzulfikri Alifajri',
             'username' => 'dzulfikrialifajri',
             'email' => 'dzulfikrialifajri@gmail.com',
@@ -83,7 +83,7 @@ class ProfileUpdateTest extends TestCase
 
     public function test_user_cannot_change_email_to_one_already_taken()
     {
-        $otherUser = User::create([
+        $otherUser = User::forceCreate([
             'full_name' => 'Other User',
             'username' => 'otherusername',
             'email' => 'other@example.com',
@@ -91,7 +91,7 @@ class ProfileUpdateTest extends TestCase
             'role' => 'customer',
         ]);
 
-        $user = User::create([
+        $user = User::forceCreate([
             'full_name' => 'Dzulfikri Alifajri',
             'username' => 'dzulfikrialifajri',
             'email' => 'dzulfikrialifajri@gmail.com',
@@ -110,7 +110,7 @@ class ProfileUpdateTest extends TestCase
 
     public function test_user_cannot_change_telegram_id_to_one_already_taken()
     {
-        $otherUser = User::create([
+        $otherUser = User::forceCreate([
             'full_name' => 'Other User',
             'username' => 'otherusername',
             'email' => 'other@example.com',
@@ -119,7 +119,7 @@ class ProfileUpdateTest extends TestCase
             'role' => 'customer',
         ]);
 
-        $user = User::create([
+        $user = User::forceCreate([
             'full_name' => 'Dzulfikri Alifajri',
             'username' => 'dzulfikrialifajri',
             'email' => 'dzulfikrialifajri@gmail.com',

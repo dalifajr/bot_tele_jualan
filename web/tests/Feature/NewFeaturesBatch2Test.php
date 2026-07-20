@@ -25,7 +25,7 @@ class NewFeaturesBatch2Test extends TestCase
     {
         parent::setUp();
 
-        $this->user = User::create([
+        $this->user = User::forceCreate([
             'full_name' => 'Test User',
             'username' => 'testuser',
             'email' => 'testuser@example.com',
@@ -33,7 +33,7 @@ class NewFeaturesBatch2Test extends TestCase
             'role' => 'customer',
         ]);
 
-        $this->admin = User::create([
+        $this->admin = User::forceCreate([
             'full_name' => 'Admin User',
             'username' => 'admin',
             'email' => 'admin@example.com',
