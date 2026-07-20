@@ -364,6 +364,55 @@ class SellerController extends Controller
         return redirect()->route('seller.stock.index')->with('success', __(":count stok berhasil diunggah.", ["count" => $count]));
     }
 
+    public function updateStock(Request $request, $id)
+    {
+        $sellerId = Auth::id();
+        $user = Auth::user();
+
+        $request->validate([
+            'product_id' => 'required|exists:products,id',
+            'stock_status' => 'required|in:ready,saved_for_verification',
+            'raw_text' => 'required|string',
+        ]);
+
+        $stock = StockUnit::where('uploaded_by_id', $sellerId)
+            ->orWhere('seller_id', $sellerId)
+            ->findOrFail($id);
+
+        if ($stock->is_sold) {
+            return redirect()->route('seller.stock.index')->with('error', __('Stok yang sudah terjual tidak dapat diedit.'));
+        }
+
+        // Verify seller is allowed to manage this product
+        $allowed = Product::where('id', $request->product_id)
+            ->where(function($q) use ($sellerId) {
+                $q->where('creator_id', $sellerId)
+                  ->orWhereHas('workers', function($w) use ($sellerId) {
+                      $w->where('user_id', $sellerId);
+                  });
+            })->exists();
+
+        if (!$allowed) {
+            return redirect()->back()->with('error', __('Anda tidak memiliki hak untuk mengelola stok pada produk ini.'));
+        }
+
+        $stockStatus = $request->stock_status;
+        $availableAt = null;
+        if ($stockStatus === 'saved_for_verification') {
+            $saveHours = (int)($user->seller_save_hours ?? 80);
+            $availableAt = now()->addHours($saveHours);
+        }
+
+        $stock->update([
+            'product_id' => $request->product_id,
+            'raw_text' => trim($request->raw_text),
+            'stock_status' => $stockStatus,
+            'available_at' => $availableAt,
+        ]);
+
+        return redirect()->route('seller.stock.index')->with('success', __('Detail stok berhasil diperbarui.'));
+    }
+
     public function moveStock(Request $request, $id)
     {
         $sellerId = Auth::id();

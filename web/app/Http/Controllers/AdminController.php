@@ -1235,6 +1235,41 @@ class AdminController extends Controller
         return redirect()->route('admin.stock.index')->with('success', __(":count stok berhasil ditambahkan.", ["count" => $count]));
     }
 
+    public function updateStock(Request $request, $id)
+    {
+        $request->validate([
+            'product_id' => 'required|exists:products,id',
+            'stock_status' => 'required|in:ready,awaiting_benefits,saved_for_verification',
+            'raw_text' => 'required|string',
+        ]);
+
+        $stock = StockUnit::findOrFail($id);
+        
+        if ($stock->is_sold) {
+            return redirect()->route('admin.stock.index')->with('error', __('Stok yang sudah terjual tidak dapat diedit.'));
+        }
+
+        // Only compute available_at if status has changed, or re-compute unconditionally since admin explicitly saves.
+        // We re-compute unconditionally to ensure correctness.
+        $availableAt = null;
+        if ($request->stock_status === 'awaiting_benefits') {
+            $hours = (int)(\App\Models\BotSetting::where('key', 'github_pack.awaiting_hours')->value('value') ?? 78);
+            $availableAt = now()->addHours($hours);
+        } elseif ($request->stock_status === 'saved_for_verification') {
+            $hours = (int)(\App\Models\BotSetting::where('key', 'github_pack.save_hours')->value('value') ?? 80);
+            $availableAt = now()->addHours($hours);
+        }
+
+        $stock->update([
+            'product_id' => $request->product_id,
+            'raw_text' => trim($request->raw_text),
+            'stock_status' => $request->stock_status,
+            'available_at' => $availableAt,
+        ]);
+
+        return redirect()->route('admin.stock.index')->with('success', __('Detail stok berhasil diperbarui.'));
+    }
+
     public function moveStock(Request $request, $id)
     {
         $request->validate([

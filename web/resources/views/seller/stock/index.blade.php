@@ -258,11 +258,15 @@
                                 <button class="btn btn-sm btn-light text-primary rounded-circle" data-bs-toggle="modal" data-bs-target="#moveStockModal{{ $unit->id }}" title="{{ __('Pindahkan / Ubah Status') }}">
                                     <i class="fas fa-exchange-alt"></i>
                                 </button>
-                                @if(!$unit->is_sold)
+                                                                @if(!$unit->is_sold)
+                                <button class="btn btn-sm btn-light text-warning rounded-circle" data-bs-toggle="modal" data-bs-target="#editStockModal{{ $unit->id }}" title="{{ __('Edit') }}">
+                                    <i class="fas fa-edit"></i>
+                                </button>
                                 <button class="btn btn-sm btn-light text-danger rounded-circle" data-bs-toggle="modal" data-bs-target="#deleteStockModal{{ $unit->id }}" title="{{ __('Hapus') }}">
                                     <i class="fas fa-trash-alt"></i>
                                 </button>
                                 @else
+                                <button class="btn btn-sm btn-light text-secondary rounded-circle" disabled title="{{ __('Tidak bisa diedit') }}"><i class="fas fa-edit"></i></button>
                                 <button class="btn btn-sm btn-light text-secondary rounded-circle" disabled title="{{ __('Tidak bisa dihapus') }}"><i class="fas fa-trash-alt"></i></button>
                                 @endif
                             </div>
@@ -410,6 +414,48 @@
 </div>
 
 @if(!$unit->is_sold)
+{{-- Edit Modal --}}
+<div class="modal fade" id="editStockModal{{ $unit->id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 16px; border: none;">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="fw-bold">{{ __('Edit Detail Stok') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ route('seller.stock.update', $unit->id) }}" method="POST">
+                @csrf
+                @method('PUT')
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">{{ __('Pilih Produk') }}</label>
+                        <select name="product_id" class="form-select">
+                            @foreach($allMoveProducts as $p)
+                                <option value="{{ $p->id }}" {{ $unit->product_id == $p->id ? 'selected' : '' }}>{{ $p->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">{{ __('Status Stok') }}</label>
+                        <select name="stock_status" class="form-select">
+                            <option value="ready" {{ $unit->stock_status === 'ready' ? 'selected' : '' }}>{{ __('Ready') }}</option>
+                            <option value="saved_for_verification" {{ $unit->stock_status === 'saved_for_verification' ? 'selected' : '' }}>{{ __('Simpan Akun') }}</option>
+                        </select>
+                        <div class="form-text">{{ __('Mengubah ke status "Awaiting Benefits" atau "Simpan Akun" akan menjadwal ulang ketersediaan akun ini.') }}</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">{{ __('Detail Akun / Raw Text') }}</label>
+                        <textarea name="raw_text" class="form-control" rows="5" required>{{ $unit->raw_text }}</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">{{ __('Batal') }}</button>
+                    <button type="submit" class="btn btn-warning rounded-pill px-4 fw-bold">{{ __('Simpan') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 {{-- Delete Modal --}}
 <div class="modal fade" id="deleteStockModal{{ $unit->id }}" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-sm">
