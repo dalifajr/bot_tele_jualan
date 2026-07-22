@@ -1144,7 +1144,7 @@ def reconcile_payment(
             artisan_path = "artisan"
             output = subprocess.check_output(
                 ["php", artisan_path, "vpn:create-for-order", str(order.id)],
-                cwd="d:/bot_tele_jualan/web",
+                cwd=str(settings.project_root / "web"),
                 stderr=subprocess.STDOUT,
                 text=True,
                 timeout=15
