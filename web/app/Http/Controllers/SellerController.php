@@ -304,9 +304,10 @@ class SellerController extends Controller
             ->orWhereHas('workers', function($q) use ($sellerId) {
                 $q->where('user_id', $sellerId);
             })->get();
+        $allMoveProducts = $products;
 
         return view('seller.stock.index', compact(
-            'stocks', 'products', 'status',
+            'stocks', 'products', 'allMoveProducts', 'status',
             'totalStock', 'readyStock', 'awaitingStock', 'savedStock', 'soldStock'
         ));
     }
