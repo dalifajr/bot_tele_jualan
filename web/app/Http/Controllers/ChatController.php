@@ -34,7 +34,7 @@ class ChatController extends Controller
         $contactIds = array_unique(array_merge($sentMessageUserIds, $receivedMessageUserIds));
 
         // If a specific contact_id was requested but not in history, append it
-        if ($selectedContactId && !in_array($selectedContactId, $contactIds)) {
+        if ($selectedContactId && (int)$selectedContactId !== (int)$user->id && !in_array($selectedContactId, $contactIds)) {
             $contactIds[] = $selectedContactId;
         }
 
@@ -66,7 +66,7 @@ class ChatController extends Controller
             })
             ->sortByDesc('last_message_time');
 
-        if ($selectedContactId) {
+        if ($selectedContactId && (int)$selectedContactId !== (int)$user->id) {
             $selectedContact = User::find($selectedContactId);
         }
 
@@ -107,9 +107,9 @@ class ChatController extends Controller
                     'message' => e($msg->message),
                     'attachment_path' => $msg->attachment_path ? asset('storage/' . $msg->attachment_path) : null,
                     'attachment_type' => $msg->attachment_type,
-                    'is_read' => $msg->is_read,
-                    'is_mine' => $msg->sender_id === $user->id,
-                    'time' => $msg->created_at->format('H:i'),
+                    'is_read' => (bool)$msg->is_read,
+                    'is_mine' => (int)$msg->sender_id === (int)$user->id,
+                    'time' => $msg->created_at ? $msg->created_at->format('H:i') : '',
                 ];
             })
         ]);

@@ -400,7 +400,7 @@
                     uploadProgressBar.style.width = '0%';
                 }
                 
-                if (xhr.status >{{ __('= 200 && xhr.status') }} < 300) {
+                if (xhr.status >= 200 && xhr.status < 300) {
                     const data = JSON.parse(xhr.responseText);
                     if (data.success) {
                         loadMessages();
