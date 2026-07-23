@@ -70,7 +70,7 @@
         
         <div class="position-relative z-1 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
             <div>
-                <span class="badge bg-white bg-opacity-20 text-white rounded-pill px-3 py-2 mb-2 text-uppercase tracking-wider fw-semibold" style="font-size: 0.75rem; letter-spacing: 0.5px;">
+                <span class="badge bg-white text-primary rounded-pill px-3 py-2 mb-2 text-uppercase tracking-wider fw-bold shadow-sm" style="font-size: 0.75rem; letter-spacing: 0.5px;">
                     <i class="fas fa-sparkles me-1 text-warning"></i> {{ __('Selamat Datang Kembali') }}
                 </span>
                 <h1 class="fw-bold mb-2 text-white fs-2 fs-md-1">
