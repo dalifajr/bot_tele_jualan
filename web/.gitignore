@@ -23,3 +23,6 @@ Homestead.json
 /vpnxray-main
 Homestead.yaml
 Thumbs.db
+dashboard.html
+dashboard.css
+dashboard.js

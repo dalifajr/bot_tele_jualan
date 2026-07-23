@@ -1,68 +1,128 @@
 # Laporan Audit Keamanan, Kualitas Kode, & Cacat Logika Sistem 🛡️
 
 **Proyek**: Website & Bot Telegram Jualan  
-**Tanggal Audit**: 22 Juli 2026  
-**Auditor**: Antigravity Security Division  
+**Tanggal Audit**: 23 Juli 2026  
+**Auditor**: Antigravity Security & Architecture Division  
 **Status Proyek**: Produksi / Pra-Rilis  
+
+---
+
+## Executive Summary
+
+Audit mendalam telah dilakukan terhadap seluruh basis kode aplikasi web berbasis **Laravel 13.11.2 / PHP 8.4** dan **Bot Telegram / FastAPI Python 3.12**. Audit ini mencakup analisis keamanan otentikasi & otorisasi, integritas transaksi database, cacat logika alur bisnis, serta potensi kerentanan sistem.
+
+Seluruh temuan telah dikategorikan berdasarkan skala prioritas dampaknya terhadap kerahasiaan (*confidentiality*), integritas (*integrity*), dan ketersediaan (*availability*) sistem.
 
 ---
 
 ## 🔴 PRIORITAS KRITIS (Critical Priority)
 
-### 1. Fitur Restore Pada Bot Telegram Hanya "Stub" / Palsu (Logic Bug)
-- **Lokasi Kode**: `src/app/bot/handlers/main.py` (`_handle_restore_upload`) dan `src/app/bot/services/restore_service.py`
-- **Analisis & Masalah**: 
-  Ketika Admin mengunggah file ZIP cadangan untuk dipulihkan (restore) melalui Bot Telegram:
+### 1. Fitur Restore Pada Bot Telegram Hanya "Stub" / Impoten (Logic Bug)
+- **Lokasi Kode**: `src/app/bot/handlers/main.py` (`_handle_restore_upload`) & `src/app/bot/services/restore_service.py`
+- **Analisis & Masalah**:
+  Ketika Admin mengunggah file ZIP cadangan untuk dipulihkan (*restore*) melalui Bot Telegram:
   1. Bot mengunduh ZIP dan mengekstrak manifestnya.
   2. Bot memvalidasi data dan mendeteksi data duplikat menggunakan `_detect_restore_duplicates`.
   3. Bot menampilkan ringkasan data yang "Siap Diimpor" (jumlah user, produk, order, stock, dll.).
-  4. **Namun, tidak ada satu pun baris kode yang sebenarnya menulis atau menyimpan data baru tersebut ke dalam database SQLite!** Setelah menampilkan ringkasan, alur (*flow*) langsung dibersihkan (`_clear_flow`) dan file temp dihapus.
-- **Dampak**: Fitur restore pada Bot Telegram sama sekali tidak berfungsi secara fungsional. Admin akan mengira data telah dipulihkan padahal data tersebut diabaikan setelah validasi.
-- **Rekomendasi**: Implementasikan fungsi `perform_restore(session, backup_data, duplicates)` di `restore_service.py` yang akan menyisipkan baris-baris entitas baru (yang bukan duplikat) ke database SQL, kemudian panggil fungsi tersebut sebelum alur diselesaikan.
+  4. **Masalah**: Tidak ada satu pun baris kode yang melakukan eksekusi `INSERT` atau `UPDATE` data ke database SQLite `bot_jualan.db`. Setelah menampilkan statistik, alur (*flow*) langsung dibersihkan (`_clear_flow`) dan berkas temp dihapus.
+- **Dampak**: Admin meyakini proses restore cadangan telah sukses padahal tidak ada perubahan data sama sekali pada database.
+- **Rekomendasi Mitigation**:
+  Implementasikan fungsi pemulihan nyata di `restore_service.py` (misalnya `execute_restore(session, entity_data)`) yang melakukan iterasi dan menyimpan entitas non-duplikat ke database sebelum alur diselesaikan.
+
+### 2. Presedensi Operator SQL pada Query Otorisasi Seller (Potensi IDOR / Logic Flaw)
+- **Lokasi Kode**: `web/app/Http/Controllers/SellerController.php` (misal pada `updateStock`)
+- **Analisis & Masalah**:
+  Pada pencarian entitas stok milik seller:
+  ```php
+  $stock = StockUnit::where('uploaded_by_id', $sellerId)
+      ->orWhere('seller_id', $sellerId)
+      ->findOrFail($id);
+  ```
+  Dalam Eloquent Laravel, ekspresi `orWhere` tanpa pembungkus callback `where(function($q)...)` menghasilkan klausa SQL:
+  `WHERE uploaded_by_id = ? OR seller_id = ? AND id = ?`
+  Berdasarkan aturan presedensi operator SQL (`AND` diproses sebelum `OR`), query ini dievaluasi sebagai:
+  `(uploaded_by_id = seller_id) OR (seller_id = seller_id AND id = target_id)`
+- **Dampak**: Jika seorang seller memiliki baris stok lain di database (`uploaded_by_id = seller_id` bernilai `TRUE`), klausa `WHERE` dapat mengevaluasi `TRUE` terlepas dari nilai `id` yang diminta, berpotensi memicu kegagalan isolasi data stok antar-seller.
+- **Rekomendasi Mitigation**:
+  Bungkus klausa `OR` dalam pengelompokan fungsi anonymous:
+  ```php
+  $stock = StockUnit::where(function($q) use ($sellerId) {
+      $q->where('uploaded_by_id', $sellerId)
+        ->orWhere('seller_id', $sellerId);
+  })->findOrFail($id);
+  ```
 
 ---
 
 ## 🟠 PRIORITAS TINGGI (High Priority)
 
-### 2. Risiko Lock Concurrency pada SQLite (Database Concurrency)
+### 3. Concurrency Lock & Transaction Contention pada SQLite
 - **Lokasi Kode**: `src/app/db/database.py` & `web/config/database.php`
 - **Analisis & Masalah**:
-  Sistem ini berjalan menggunakan dua proses runtime yang berbeda dan terpisah:
-  1. **Laravel Web Application** (melayani Admin Panel dan Seller Panel).
-  2. **Python FastAPI + Telegram Bot Application** (melayani notifikasi listener Android dan chat Telegram).
-  Kedua runtime ini membaca dan menulis secara simultan ke satu file database SQLite yang sama (`data/bot_jualan.db`). Meskipun SQLite telah dikonfigurasi dalam mode WAL (*Write-Ahead Logging*) dengan `busy_timeout=5000` pragma, SQLite secara arsitektur hanya mengizinkan **satu penulis (writer) aktif pada satu waktu**. Pada saat lalu lintas tinggi (misalnya banyak checkout dari bot bersamaan dengan ekspor data dari admin panel), salah satu runtime akan mengalami kegagalan dengan error `database is locked` (OperationalError).
-- **Dampak**: Transaksi pembayaran atau checkout dapat gagal secara acak di sisi API/Bot jika website sedang sibuk memproses query tulis yang berat.
-- **Rekomendasi**: Migrasikan database ke sistem database client-server seperti **PostgreSQL** atau **MySQL** jika transaksi harian mulai meningkat signifikan untuk menjamin konkurensi data yang andal dan mencegah penguncian transaksi.
+  Sistem beroperasi dengan dua runtime terpisah yang mengakses satu file database SQLite (`bot_jualan.db`) secara bersamaan:
+  1. Web App Laravel (melayani Admin & Seller Panel).
+  2. Python FastAPI & Telegram Bot (melayani Webhook Listener & Bot Polling).
+  Meskipun SQLite menggunakan mode `WAL` (*Write-Ahead Logging*), SQLite arsitektural hanya mengizinkan **1 proses penulis (writer) aktif pada satu waktu**. Pada lalu lintas tinggi (misalnya pembayaran massal dari bot bersamaan dengan ekspor data dari admin panel), salah satu runtime akan mengalami kegagalan transaksi `OperationalError: database is locked`.
+- **Dampak**: Kegagalan transaksi otomatis, pembatalan order secara mendadak, atau kegagalan webhook listener Android.
+- **Rekomendasi Mitigation**:
+  Migrasikan database produksi ke RDBMS client-server yang mendukung konkurensi tingkat baris (Row-Level Locking) seperti **PostgreSQL** atau **MySQL / MariaDB**.
+
+### 4. Sensitivitas Rahasia Kunci Aplikasi (`APP_KEY`) pada Background Job Webhook
+- **Lokasi Kode**: `web/routes/web.php` (Line 23) & `web/app/Http/Controllers/AdminController.php` (`runBroadcastBackground`)
+- **Analisis & Masalah**:
+  Endpoint `/admin/broadcast/run-bg/{jobId}` ditempatkan di luar grup middleware otentikasi `admin`. Endpoint ini mengandalkan `hash_hmac('sha256', $jobId, config('app.key'))`. Jika `APP_KEY` pada `.env` terkespos/ter-commit ke repositori Git, pihak luar dapat menghitung token HMAC yang valid dan memicu eksekusi massal broadcast job.
+- **Dampak**: Eksekusi pemrosesan latar belakang yang tidak sah atau DoS (*Denial of Service*) pada server bot Telegram.
+- **Rekomendasi Mitigation**:
+  - Pastikan `.env` terdaftar di `.gitignore` dan tidak pernah di-commit.
+  - Masukkan rute `/admin/broadcast/run-bg/{jobId}` ke dalam kerangka otentikasi internal atau gunakan token sesi admin.
 
 ---
 
 ## 🟡 PRIORITAS MENENGAH (Medium Priority)
 
-### 3. Risiko Tabrakan (Collision) Kode Unik Pembayaran QRIS (Usability / Logic Flaw)
+### 5. Potensi Benturan (*Collision*) Kode Unik Pembayaran QRIS
 - **Lokasi Kode**: `src/app/bot/services/order_service.py` (`_generate_unique_code` dan `_resolve_pending_payment`)
 - **Analisis & Masalah**:
-  1. Fungsi `_generate_unique_code` menghasilkan angka acak antara `1` sampai `200` untuk ditambahkan ke subtotal pembayaran.
-  2. Jika ada dua pesanan pending dengan nominal produk yang sama dan secara acak mendapatkan kode unik yang sama (probabilitas 1/200), dan konfirmasi pembayaran masuk dari Android listener tanpa menyertakan referensi transaksi (hanya nominal), pencocokan nominal akan mengembalikan status `ambiguous` (karena nominal cocok ke lebih dari satu order).
-- **Dampak**: Pembayaran pelanggan tidak akan otomatis terproses, melainkan terhambat dan membutuhkan tindakan manual dari admin untuk menyelesaikan order.
-- **Rekomendasi**: 
-  - Tingkatkan rentang kode unik (misalnya `1` hingga `999`).
-  - Dorong penggunaan `reference` wajib dari Android listener API agar pencocokan selalu menggunakan ID transaksi bank yang unik.
+  Sistem menghasilkan kode unik nominal antara `1` sampai `200` untuk membedakan transfer QRIS/Bank yang masuk. Jika terdapat 2 pesanan pending dengan harga produk sama dan secara acak mendapatkan digit kode unik yang sama (probabilitas 1/200), rekonsiliasi otomatis listener Android akan menandai transaksi sebagai `ambiguous`.
+- **Dampak**: Pembayaran tidak otomatis terverifikasi dan membutuhkan intervensi manual dari Admin.
+- **Rekomendasi Mitigation**:
+  - Perluas rentang acak kode unik menjadi `1..999`.
+  - Prioritaskan pencocokan via `reference_id` atau ID transaksi unik dari mutasi bank.
 
----
-
-## 🟢 PRIORITAS RENDAH & INFORMASI (Low / Info Priority)
-
-### 4. Hardcoded Path pada Eksekusi Perintah Subprocess (Resolved ✅)
-- **Lokasi Kode**: `src/app/bot/services/order_service.py`
+### 6. Minimnya Rate Limiting pada API Public / Telegram Helper
+- **Lokasi Kode**: `web/routes/web.php` (`/api/check-telegram-id`, `/auth/telegram/webapp`)
 - **Analisis & Masalah**:
-  Terdapat pemanggilan perintah shell eksternal php artisan (`vpn:create-for-order`) dengan parameter `cwd` yang di-hardcode ke folder lokal pengembang: `cwd="d:/bot_tele_jualan/web"`.
-- **Dampak**: Jika sistem ini dipasang pada Linux VPS atau direktori yang berbeda di server produksi, fitur otomatisasi pembuatan VPN akan gagal total karena direktori `d:/bot_tele_jualan/web` tidak ditemukan.
-- **Perbaikan yang Telah Dilakukan**: Saya telah mengganti hardcode path tersebut dengan merujuk secara dinamis ke `settings.project_root / "web"`.
-
-### 5. Risiko Arbitrary File Upload & Stored XSS (Resolved dalam Patch Sebelumnya ✅)
-- **Status**: Telah diperbaiki secara aman pada patch sebelumnya.
-- **Detail**: Kerentanan pengunggahan file sewenang-wenang (Zip Slip) pada fitur restore cadangan media dan bypass ekstensi file keluhan telah ditutup dengan validasi `realpath` dan pengacakan nama berkas secara kriptografis.
+  Beberapa rute pengecekan akun Telegram belum memiliki pembatas laju pemanggilan (`throttle middleware`).
+- **Dampak**: Potensi enumerasi akun user atau pemuatan berlebih (*enumeration / brute force*).
+- **Rekomendasi Mitigation**:
+  Tambahkan middleware `throttle:10,1` pada rute API publik pendukung otentikasi Telegram.
 
 ---
 
-*Laporan ini disusun secara objektif berdasarkan pembacaan statis terhadap seluruh arsitektur repositori Anda.*
+## 🟢 PRIORITAS RENDAH & STATUS PERBAIKAN (Low Priority & Remediation Log)
+
+### 7. Hardcoded Path pada Eksekusi Subprocess VPN (SOLVED ✅)
+- **Status**: **Telah Diperbaiki**.
+- **Detail**: Jalur eksekusi script `php artisan vpn:create-for-order` sebelumnya di-hardcode ke `d:/bot_tele_jualan/web`. Perbaikan telah menggantinya dengan rujukan dinamis `settings.project_root / "web"`.
+
+### 8. Sanitasi Pengunggahan Berkas Media & Cadangan Restore ZIP (SOLVED ✅)
+- **Status**: **Telah Diperbaiki**.
+- **Detail**: Kerentanan pengunggahan file sewenang-wenang (Zip Slip) dan bypass ekstensi file pada lampiran keluhan telah ditutup menggunakan sanitasi `realpath` dan enkripsi nama berkas.
+
+---
+
+## Ringkasan Matriks Risiko & Tindakan
+
+| No | Komponen / Fitur | Tingkat Keparahan | Status | Tindakan Utama |
+|---|---|---|---|---|
+| 1 | Restore Bot Telegram | 🔴 Critical | Perlu Perbaikan | Implementasi fungsi penulisan SQL pada `restore_service.py` |
+| 2 | Presedensi Query Seller Stock | 🔴 Critical | Perlu Perbaikan | Refactor query dengan `where(function($q)...)` |
+| 3 | Lock Concurrency SQLite | 🟠 High | Disarankan | Migrasi ke MySQL / PostgreSQL |
+| 4 | Endpoint Background Broadcast | 🟠 High | Perlu Perbaikan | Amankan rute atau lindungi secret key `APP_KEY` |
+| 5 | Kode Unik Nominal QRIS | 🟡 Medium | Perlu Perbaikan | Perluas rentang unik `1..999` & matching via reference |
+| 6 | Rate Limiting Telegram API | 🟡 Medium | Perlu Perbaikan | Tambahkan middleware `throttle` pada web.php |
+| 7 | Subprocess CWD Path | 🟢 Low | ✅ Fixed | Path diubah menjadi dinamis |
+| 8 | Zip Slip & Upload Sanitization | 🟢 Low | ✅ Fixed | Sanitasi path & random name applied |
+
+---
+*Laporan ini disusun secara komprehensif untuk penguatan arsitektur dan keamanan sistem secara berkelanjutan.*
