@@ -41,8 +41,8 @@
     <div class="hero-seller-banner p-4 p-md-5 text-white shadow-sm overflow-hidden position-relative">
         <div class="hero-pattern"></div>
         
-        <div class="position-relative z-1 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
-            <div>
+        <div class="position-relative z-1 d-flex flex-column flex-md-row justify-content-between align-items-start gap-3">
+            <div class="flex-grow-1">
                 <span class="badge bg-white text-primary rounded-pill px-3 py-2 mb-2 text-uppercase tracking-wider fw-bold shadow-sm" style="font-size: 0.75rem; letter-spacing: 0.5px;">
                     <i class="fas fa-store me-1 text-warning"></i> {{ __('Seller Portal') }}
                 </span>
@@ -54,8 +54,8 @@
                 </p>
             </div>
             
-            <div class="d-flex align-items-center gap-2 flex-wrap">
-                <select class="form-select form-select-sm rounded-pill px-3 py-2 bg-white text-primary fw-bold border-0 shadow-sm" style="width: auto;" onchange="let params = new URLSearchParams(window.location.search); if(this.value) { params.set('product_id', this.value); } else { params.delete('product_id'); } window.location.href = '{{ route('seller.dashboard') }}?' + params.toString()">
+            <div class="d-flex align-items-center gap-2 flex-wrap flex-md-nowrap align-self-start ms-md-auto pt-1">
+                <select class="form-select form-select-sm rounded-pill px-3 py-2 bg-white text-primary fw-bold border-0 shadow-sm" style="width: auto; min-width: 140px;" onchange="let params = new URLSearchParams(window.location.search); if(this.value) { params.set('product_id', this.value); } else { params.delete('product_id'); } window.location.href = '{{ route('seller.dashboard') }}?' + params.toString()">
                     <option value="" class="text-dark">{{ __('Semua Produk') }}</option>
                     @foreach($products as $p)
                         <option value="{{ $p->id }}" {{ $productId == $p->id ? 'selected' : '' }} class="text-dark">
@@ -63,9 +63,13 @@
                         </option>
                     @endforeach
                 </select>
+
+                <a href="{{ route('seller.stock.index') }}" class="btn btn-outline-light rounded-pill px-3 py-2 text-nowrap fw-bold">
+                    <i class="fas fa-plus me-1"></i>{{ __('Tambah Stok') }}
+                </a>
                 
-                <a href="{{ route('seller.products.index') }}" class="btn btn-light text-primary fw-bold rounded-pill px-4 py-2 shadow-sm lift-hover">
-                    <i class="fas fa-box-open me-2"></i>{{ __('Produk Saya') }}
+                <a href="{{ route('seller.products.index') }}" class="btn btn-light text-primary fw-bold rounded-pill px-3 py-2 shadow-sm lift-hover text-nowrap">
+                    <i class="fas fa-box-open me-1"></i>{{ __('Produk Saya') }}
                 </a>
             </div>
         </div>
@@ -82,7 +86,7 @@
                             <i class="fas fa-wallet"></i>
                         </div>
                         <div class="position-relative z-1">
-                            <span class="badge bg-white bg-opacity-20 text-white rounded-pill px-3 py-1 mb-2 small fw-bold text-uppercase">{{ __('Saldo Dompet Saya') }}</span>
+                            <span class="badge bg-white text-primary rounded-pill px-3 py-1 mb-2 small fw-bold text-uppercase shadow-sm">{{ __('Saldo Dompet Saya') }}</span>
                             <h2 class="fw-bold mb-3 text-white">Rp {{ number_format($user->wallet_balance, 0, ',', '.') }}</h2>
                             <div class="d-flex align-items-center justify-content-between pt-2 border-top border-white border-opacity-25">
                                 <span class="small text-white-50">{{ __('Komisi:') }} <strong>{{ $user->platform_fee_percent }}%</strong></span>
@@ -101,7 +105,7 @@
                             <i class="fas fa-lock"></i>
                         </div>
                         <div class="position-relative z-1">
-                            <span class="badge bg-white bg-opacity-20 text-white rounded-pill px-3 py-1 mb-2 small fw-bold text-uppercase">{{ __('Saldo Tertahan (Garansi)') }}</span>
+                            <span class="badge bg-white text-warning-emphasis rounded-pill px-3 py-1 mb-2 small fw-bold text-uppercase shadow-sm">{{ __('Saldo Tertahan (Garansi)') }}</span>
                             <h2 class="fw-bold mb-3 text-white">Rp {{ number_format($heldBalance, 0, ',', '.') }}</h2>
                             <div class="d-flex align-items-center justify-content-between pt-2 border-top border-white border-opacity-25">
                                 <span class="small text-white-50">{{ __('Menunggu Garansi') }}</span>
