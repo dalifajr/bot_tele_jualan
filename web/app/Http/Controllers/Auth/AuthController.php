@@ -75,19 +75,29 @@ class AuthController extends Controller
         // Validate Captcha
         if ($hasTurnstile) {
             $turnstileSecret = config('services.turnstile.secret_key');
-            $captchaResponse = Http::asForm()->post('https://challenges.cloudflare.com/turnstile/v0/siteverify', [
-                'secret' => $turnstileSecret,
-                'response' => $request->input('cf-turnstile-response'),
-            ]);
+            try {
+                $captchaResponse = Http::timeout(5)->asForm()->post('https://challenges.cloudflare.com/turnstile/v0/siteverify', [
+                    'secret' => $turnstileSecret,
+                    'response' => $request->input('cf-turnstile-response'),
+                ]);
 
-            if (!$captchaResponse->json('success')) {
-                \Illuminate\Support\Facades\Log::warning('Turnstile login verification failed', [
+                if (!$captchaResponse->json('success')) {
+                    \Illuminate\Support\Facades\Log::warning('Turnstile login verification failed', [
+                        'ip' => $request->ip(),
+                        'error_codes' => $captchaResponse->json('error-codes'),
+                        'secret_configured' => substr($turnstileSecret, 0, 6) . '...',
+                    ]);
+                    return back()->withErrors([
+                        'login' => 'Verifikasi captcha (Turnstile) gagal. Silakan coba lagi.',
+                    ])->onlyInput('login');
+                }
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('Turnstile connection error during login: ' . $e->getMessage(), [
                     'ip' => $request->ip(),
-                    'error_codes' => $captchaResponse->json('error-codes'),
-                    'secret_configured' => substr($turnstileSecret, 0, 6) . '...',
+                    'exception' => $e,
                 ]);
                 return back()->withErrors([
-                    'login' => 'Verifikasi captcha (Turnstile) gagal. Silakan coba lagi.',
+                    'login' => 'Gagal terhubung ke server verifikasi captcha (Cloudflare Timeout). Silakan coba beberapa saat lagi.',
                 ])->onlyInput('login');
             }
         }
@@ -194,19 +204,29 @@ class AuthController extends Controller
         // Validate Captcha
         if ($hasTurnstile) {
             $turnstileSecret = config('services.turnstile.secret_key');
-            $captchaResponse = Http::asForm()->post('https://challenges.cloudflare.com/turnstile/v0/siteverify', [
-                'secret' => $turnstileSecret,
-                'response' => $request->input('cf-turnstile-response'),
-            ]);
+            try {
+                $captchaResponse = Http::timeout(5)->asForm()->post('https://challenges.cloudflare.com/turnstile/v0/siteverify', [
+                    'secret' => $turnstileSecret,
+                    'response' => $request->input('cf-turnstile-response'),
+                ]);
 
-            if (!$captchaResponse->json('success')) {
-                \Illuminate\Support\Facades\Log::warning('Turnstile registration verification failed', [
+                if (!$captchaResponse->json('success')) {
+                    \Illuminate\Support\Facades\Log::warning('Turnstile registration verification failed', [
+                        'ip' => $request->ip(),
+                        'error_codes' => $captchaResponse->json('error-codes'),
+                        'secret_configured' => substr($turnstileSecret, 0, 6) . '...',
+                    ]);
+                    return back()->withErrors([
+                        'username' => 'Verifikasi captcha (Turnstile) gagal. Silakan coba lagi.',
+                    ])->withInput();
+                }
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('Turnstile connection error during registration: ' . $e->getMessage(), [
                     'ip' => $request->ip(),
-                    'error_codes' => $captchaResponse->json('error-codes'),
-                    'secret_configured' => substr($turnstileSecret, 0, 6) . '...',
+                    'exception' => $e,
                 ]);
                 return back()->withErrors([
-                    'username' => 'Verifikasi captcha (Turnstile) gagal. Silakan coba lagi.',
+                    'username' => 'Gagal terhubung ke server verifikasi captcha (Cloudflare Timeout). Silakan coba beberapa saat lagi.',
                 ])->withInput();
             }
         }
