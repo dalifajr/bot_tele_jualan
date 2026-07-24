@@ -3,162 +3,181 @@
 @section('title', 'Dashboard Seller')
 @section('page_subtitle', 'Dashboard')
 
+@push('styles')
+<style>
+    .lift-hover {
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .lift-hover:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 14px 28px rgba(0, 0, 0, 0.1) !important;
+    }
+    .hero-seller-banner {
+        background: linear-gradient(135deg, #0d47a1 0%, #1565c0 50%, #1e88e5 100%);
+        min-height: 220px;
+        border-radius: 24px;
+    }
+    .hero-pattern {
+        position: absolute;
+        top: 0; right: 0; bottom: 0; left: 0;
+        opacity: 0.12;
+        background-image: radial-gradient(#ffffff 1.5px, transparent 1.5px);
+        background-size: 22px 22px;
+    }
+    .floating-stats-container {
+        margin-top: -55px;
+    }
+    @media (max-width: 767.98px) {
+        .floating-stats-container {
+            margin-top: 1rem;
+        }
+    }
+</style>
+@endpush
+
 @section('content')
-<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
-    <div>
-        <h4 class="fw-bold mb-1">{{ __('Selamat Datang di Portal Seller,') }} {{ $user->full_name ?? $user->username }}!</h4>
-        <p class="text-muted mb-0">{{ __('Kelola produk Anda, kelola stok akun, dan pantau penghasilan penjualan Anda secara langsung.') }}</p>
-    </div>
-    <div>
-        <select class="form-select form-select-sm rounded-pill px-3 shadow-sm border" style="width: auto;" onchange="let params = new URLSearchParams(window.location.search); if(this.value) { params.set('product_id', this.value); } else { params.delete('product_id'); } window.location.href = '{{ route('seller.dashboard') }}?' + params.toString()">
-            <option value="">{{ __('Semua Produk') }}</option>
-            @foreach($products as $p)
-                <option value="{{ $p->id }}" {{ $productId == $p->id ? 'selected' : '' }}>
-                    {{ $p->is_suspended ? '🔴' : '✅' }} {{ $p->name }}
-                </option>
-            @endforeach
-        </select>
-    </div>
-</div>
-
-{{-- Stats Row --}}
-<div class="row g-4 mb-4">
-    {{-- Card Wallet Balance --}}
-    <div class="col-12 col-md-6 col-lg-3">
-        <div class="card border-0 shadow-sm text-white overflow-hidden" style="border-radius: 20px; background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);">
-            <div class="card-body p-4 position-relative">
-                <div class="position-absolute end-0 bottom-0 text-white" style="font-size: 8rem; transform: translate(20px, 20px); opacity: 0.1; pointer-events: none; z-index: 0;">
-                    <i class="fas fa-wallet"></i>
-                </div>
-                <div class="position-relative" style="z-index: 1;">
-                    <p class="small text-white-50 fw-bold mb-2">{{ __('SALDO DOMPET SAYA') }}</p>
-                    <h2 class="fw-bold mb-3">Rp {{ number_format($user->wallet_balance, 0, ',', '.') }}</h2>
-                    <div class="d-flex align-items-center justify-content-between pt-2 border-top border-white-10">
-                        <span class="small text-white-50">{{ __('Komisi:') }} <strong>{{ $user->platform_fee_percent }}%</strong></span>
-                        <a href="{{ route('seller.finance.index') }}" class="btn btn-light btn-sm rounded-pill px-3 fw-bold text-primary">{{ __('Tarik Saldo') }} <i class="fas fa-arrow-right ms-1"></i></a>
-                    </div>
-                </div>
+<!-- Hero Section (Gradient & Abstract Pattern) -->
+<div class="position-relative mb-5">
+    <div class="hero-seller-banner p-4 p-md-5 text-white shadow-sm overflow-hidden position-relative">
+        <div class="hero-pattern"></div>
+        
+        <div class="position-relative z-1 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+            <div>
+                <span class="badge bg-white text-primary rounded-pill px-3 py-2 mb-2 text-uppercase tracking-wider fw-bold shadow-sm" style="font-size: 0.75rem; letter-spacing: 0.5px;">
+                    <i class="fas fa-store me-1 text-warning"></i> {{ __('Seller Portal') }}
+                </span>
+                <h1 class="fw-bold mb-2 text-white fs-2 fs-md-1">
+                    {{ __('Selamat Datang,') }} {{ $user->full_name ?? $user->username }} 👋
+                </h1>
+                <p class="mb-0 fs-6 opacity-85 fw-light text-white">
+                    {{ __('Kelola produk Anda, kelola stok akun, dan pantau penghasilan penjualan Anda secara langsung.') }}
+                </p>
+            </div>
+            
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <select class="form-select form-select-sm rounded-pill px-3 py-2 bg-white text-primary fw-bold border-0 shadow-sm" style="width: auto;" onchange="let params = new URLSearchParams(window.location.search); if(this.value) { params.set('product_id', this.value); } else { params.delete('product_id'); } window.location.href = '{{ route('seller.dashboard') }}?' + params.toString()">
+                    <option value="" class="text-dark">{{ __('Semua Produk') }}</option>
+                    @foreach($products as $p)
+                        <option value="{{ $p->id }}" {{ $productId == $p->id ? 'selected' : '' }} class="text-dark">
+                            {{ $p->is_suspended ? '🔴' : '✅' }} {{ $p->name }}
+                        </option>
+                    @endforeach
+                </select>
+                
+                <a href="{{ route('seller.products.index') }}" class="btn btn-light text-primary fw-bold rounded-pill px-4 py-2 shadow-sm lift-hover">
+                    <i class="fas fa-box-open me-2"></i>{{ __('Produk Saya') }}
+                </a>
             </div>
         </div>
     </div>
 
-    {{-- Card Held Balance --}}
-    <div class="col-12 col-md-6 col-lg-3">
-        <div class="card border-0 shadow-sm text-white overflow-hidden" style="border-radius: 20px; background: linear-gradient(135deg, hsl(35, 90%, 50%) 0%, hsl(45, 95%, 55%) 100%);">
-            <div class="card-body p-4 position-relative">
-                <div class="position-absolute end-0 bottom-0 text-white" style="font-size: 8rem; transform: translate(20px, 20px); opacity: 0.15; pointer-events: none; z-index: 0;">
-                    <i class="fas fa-lock"></i>
-                </div>
-                <div class="position-relative" style="z-index: 1;">
-                    <p class="small text-white-50 fw-bold mb-2">SALDO TERTAHAN (GARANSI)</p>
-                    <h2 class="fw-bold mb-3">Rp {{ number_format($heldBalance, 0, ',', '.') }}</h2>
-                    <div class="d-flex align-items-center justify-content-between pt-2 border-top border-white-10">
-                        <span class="small text-white-50">{{ __('Menunggu Garansi') }}</span>
-                        <a href="{{ route('seller.finance.index') }}" class="btn btn-light btn-sm rounded-pill px-3 fw-bold text-warning-emphasis">{{ __('Rincian') }} <i class="fas fa-arrow-right ms-1"></i></a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    {{-- Card Monthly Earnings --}}
-    <div class="col-12 col-md-6 col-lg-3">
-        <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 20px; background: rgba(255,255,255,0.7); backdrop-filter: blur(10px);">
-            <div class="card-body p-4 position-relative">
-                <div class="position-absolute end-0 bottom-0 text-success" style="font-size: 8rem; transform: translate(20px, 20px); opacity: 0.1; pointer-events: none; z-index: 0;">
-                    <i class="fas fa-coins"></i>
-                </div>
-                <div class="position-relative" style="z-index: 1;">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <p class="small text-muted fw-bold mb-0">{{ __('PENDAPATAN KOTOR') }}</p>
-                        <select onchange="let params = new URLSearchParams(window.location.search); params.set('earnings_days', this.value); window.location.href = window.location.pathname + '?' + params.toString();" class="form-select form-select-sm py-0 px-2 border-0 shadow-sm" style="width: auto; font-size: 0.7rem; border-radius: 8px; background-color: rgba(255,255,255,0.8); cursor: pointer;">
-                            <option value="all" {{ $earningsDays == 'all' ? 'selected' : '' }}>{{ __('Semua') }}</option>
-                            <option value="7" {{ $earningsDays == '7' ? 'selected' : '' }}>{{ __('7 Hari') }}</option>
-                            <option value="30" {{ $earningsDays == '30' ? 'selected' : '' }}>{{ __('30 Hari') }}</option>
-                            <option value="90" {{ $earningsDays == '90' ? 'selected' : '' }}>{{ __('90 Hari') }}</option>
-                            <option value="365" {{ $earningsDays == '365' ? 'selected' : '' }}>{{ __('1 Tahun') }}</option>
-                        </select>
-                    </div>
-                    <h2 class="fw-bold text-success mb-2">Rp {{ number_format($monthlyEarnings, 0, ',', '.') }}</h2>
-                    <div class="d-flex flex-column gap-1 mb-2 pt-2 border-top" style="font-size: 0.8rem; border-color: rgba(0,0,0,0.08) !important;">
-                        <div class="d-flex justify-content-between text-muted">
-                            <span>{{ __('Pend. Bersih:') }}</span>
-                            <span class="fw-semibold text-dark">Rp {{ number_format($monthlyNet, 0, ',', '.') }}</span>
+    <!-- Floating Stat Cards -->
+    <div class="container-fluid px-2 px-md-3 floating-stats-container">
+        <div class="row g-3">
+            <!-- 1. Wallet Balance Card -->
+            <div class="col-sm-6 col-lg-3">
+                <div class="card border-0 shadow-sm h-100 rounded-4 text-white overflow-hidden lift-hover" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);">
+                    <div class="card-body p-4 position-relative">
+                        <div class="position-absolute end-0 bottom-0 text-white" style="font-size: 7rem; transform: translate(15px, 15px); opacity: 0.12; pointer-events: none;">
+                            <i class="fas fa-wallet"></i>
                         </div>
-                        <div class="d-flex justify-content-between text-muted">
-                            <span>{{ __('Komisi') }} ({{ $user->platform_fee_percent ?? 10 }}%):</span>
-                            <span class="fw-semibold text-danger">Rp {{ number_format($monthlyCommission, 0, ',', '.') }}</span>
+                        <div class="position-relative z-1">
+                            <span class="badge bg-white bg-opacity-20 text-white rounded-pill px-3 py-1 mb-2 small fw-bold text-uppercase">{{ __('Saldo Dompet Saya') }}</span>
+                            <h2 class="fw-bold mb-3 text-white">Rp {{ number_format($user->wallet_balance, 0, ',', '.') }}</h2>
+                            <div class="d-flex align-items-center justify-content-between pt-2 border-top border-white border-opacity-25">
+                                <span class="small text-white-50">{{ __('Komisi:') }} <strong>{{ $user->platform_fee_percent }}%</strong></span>
+                                <a href="{{ route('seller.finance.index') }}" class="btn btn-light btn-sm rounded-pill px-3 fw-bold text-primary shadow-sm">{{ __('Tarik Saldo') }} <i class="fas fa-arrow-right ms-1"></i></a>
+                            </div>
                         </div>
                     </div>
-                    <span class="small text-muted" style="font-size: 0.72rem; display: block; line-height: 1.2;">
-                        <i class="fas fa-info-circle text-primary me-1"></i>
-                        @if($earningsDays == 'all')
-                            {{ __('Akumulasi pendapatan kotor produk Anda (Semua Waktu).') }}
-                        @elseif($earningsDays == '7')
-                            {{ __('Akumulasi pendapatan kotor 7 hari terakhir.') }}
-                        @elseif($earningsDays == '30')
-                            {{ __('Akumulasi pendapatan kotor 30 hari terakhir.') }}
-                        @elseif($earningsDays == '90')
-                            {{ __('Akumulasi pendapatan kotor 90 hari terakhir.') }}
-                        @elseif($earningsDays == '365')
-                            {{ __('Akumulasi pendapatan kotor 1 tahun terakhir.') }}
-                        @endif
-                    </span>
                 </div>
             </div>
-        </div>
-    </div>
 
-    {{-- Card Active Stock --}}
-    <div class="col-12 col-md-6 col-lg-3">
-        <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 20px; background: rgba(255,255,255,0.7); backdrop-filter: blur(10px);">
-            <div class="card-body p-4 position-relative">
-                <div class="position-absolute end-0 bottom-0 text-info" style="font-size: 8rem; transform: translate(20px, 20px); opacity: 0.1; pointer-events: none; z-index: 0;">
-                    <i class="fas fa-boxes"></i>
-                </div>
-                <div class="position-relative" style="z-index: 1;">
-                    <p class="small text-muted fw-bold mb-2">{{ __('STATUS STOK PENJUALAN') }}</p>
-                    <h2 class="fw-bold text-info mb-3">{{ $readyStockCount }} <span class="fs-6 text-muted fw-normal">{{ __('ready') }}</span></h2>
-                    <div class="d-flex gap-2">
-                        <span class="badge bg-warning-subtle text-warning rounded-pill px-2 small">{{ $savedStockCount }} {{ __('karantina') }}</span>
-                        <span class="badge bg-secondary-subtle text-secondary rounded-pill px-2 small">{{ $soldStockCount }} {{ __('terjual') }}</span>
+            <!-- 2. Held Balance Card -->
+            <div class="col-sm-6 col-lg-3">
+                <div class="card border-0 shadow-sm h-100 rounded-4 text-white overflow-hidden lift-hover" style="background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);">
+                    <div class="card-body p-4 position-relative">
+                        <div class="position-absolute end-0 bottom-0 text-white" style="font-size: 7rem; transform: translate(15px, 15px); opacity: 0.15; pointer-events: none;">
+                            <i class="fas fa-lock"></i>
+                        </div>
+                        <div class="position-relative z-1">
+                            <span class="badge bg-white bg-opacity-20 text-white rounded-pill px-3 py-1 mb-2 small fw-bold text-uppercase">{{ __('Saldo Tertahan (Garansi)') }}</span>
+                            <h2 class="fw-bold mb-3 text-white">Rp {{ number_format($heldBalance, 0, ',', '.') }}</h2>
+                            <div class="d-flex align-items-center justify-content-between pt-2 border-top border-white border-opacity-25">
+                                <span class="small text-white-50">{{ __('Menunggu Garansi') }}</span>
+                                <a href="{{ route('seller.finance.index') }}" class="btn btn-light btn-sm rounded-pill px-3 fw-bold text-warning-emphasis shadow-sm">{{ __('Rincian') }} <i class="fas fa-arrow-right ms-1"></i></a>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
 
-    {{-- Card Average Review Rating --}}
-    <div class="col-12 col-md-6 col-lg-3">
-        <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 20px; background: rgba(255,255,255,0.7); backdrop-filter: blur(10px);">
-            <div class="card-body p-4 position-relative">
-                <div class="position-absolute end-0 bottom-0 text-warning" style="font-size: 8rem; transform: translate(20px, 20px); opacity: 0.1; pointer-events: none; z-index: 0;">
-                    <i class="fas fa-star"></i>
+            <!-- 3. Monthly Earnings Card -->
+            <div class="col-sm-6 col-lg-3">
+                <div class="card border-0 shadow-sm h-100 rounded-4 lift-hover overflow-hidden">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="badge bg-success-subtle text-success rounded-pill px-3 py-1 small fw-bold text-uppercase">{{ __('Pendapatan Kotor') }}</span>
+                            <select onchange="let params = new URLSearchParams(window.location.search); params.set('earnings_days', this.value); window.location.href = window.location.pathname + '?' + params.toString();" class="form-select form-select-sm py-0 px-2 border-0 shadow-sm bg-light" style="width: auto; font-size: 0.7rem; border-radius: 8px; cursor: pointer;">
+                                <option value="all" {{ $earningsDays == 'all' ? 'selected' : '' }}>{{ __('Semua') }}</option>
+                                <option value="7" {{ $earningsDays == '7' ? 'selected' : '' }}>{{ __('7 Hari') }}</option>
+                                <option value="30" {{ $earningsDays == '30' ? 'selected' : '' }}>{{ __('30 Hari') }}</option>
+                                <option value="90" {{ $earningsDays == '90' ? 'selected' : '' }}>{{ __('90 Hari') }}</option>
+                                <option value="365" {{ $earningsDays == '365' ? 'selected' : '' }}>{{ __('1 Tahun') }}</option>
+                            </select>
+                        </div>
+                        <h2 class="fw-bold text-success mb-2">Rp {{ number_format($monthlyEarnings, 0, ',', '.') }}</h2>
+                        <div class="d-flex flex-column gap-1 pt-2 border-top" style="font-size: 0.78rem;">
+                            <div class="d-flex justify-content-between text-muted">
+                                <span>{{ __('Pend. Bersih:') }}</span>
+                                <span class="fw-bold text-body">Rp {{ number_format($monthlyNet, 0, ',', '.') }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between text-muted">
+                                <span>{{ __('Komisi') }} ({{ $user->platform_fee_percent ?? 10 }}%):</span>
+                                <span class="fw-bold text-danger">Rp {{ number_format($monthlyCommission, 0, ',', '.') }}</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="position-relative" style="z-index: 1;">
-                    <p class="small text-muted fw-bold mb-2">{{ __('RATING ULASAN SELLER') }}</p>
-                    <h2 class="fw-bold text-warning mb-3">
-                        <i class="fas fa-star text-warning me-1"></i>{{ $avgRating ? number_format($avgRating, 1) : '0.0' }}
-                    </h2>
-                    <span class="small text-muted"><i class="fas fa-comments text-primary me-1"></i>{{ __('Berdasarkan :count ulasan pembeli.', ['count' => $totalReviews]) }}</span>
+            </div>
+
+            <!-- 4. Active Stock & Review Card -->
+            <div class="col-sm-6 col-lg-3">
+                <div class="card border-0 shadow-sm h-100 rounded-4 lift-hover overflow-hidden">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="badge bg-info-subtle text-info rounded-pill px-3 py-1 small fw-bold text-uppercase">{{ __('Status Stok & Rating') }}</span>
+                            <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill px-2 py-1 fw-bold">
+                                <i class="fas fa-star me-1 text-warning"></i>{{ $avgRating ? number_format($avgRating, 1) : '0.0' }}
+                            </span>
+                        </div>
+                        <h2 class="fw-bold text-info mb-2">{{ $readyStockCount }} <span class="fs-6 text-muted fw-normal">{{ __('ready') }}</span></h2>
+                        <div class="d-flex gap-2 mb-2">
+                            <span class="badge bg-warning-subtle text-warning rounded-pill px-2 small">{{ $savedStockCount }} {{ __('karantina') }}</span>
+                            <span class="badge bg-secondary-subtle text-secondary rounded-pill px-2 small">{{ $soldStockCount }} {{ __('terjual') }}</span>
+                        </div>
+                        <div class="pt-2 border-top small text-muted">
+                            <i class="fas fa-comments text-primary me-1"></i>{{ __('Berdasarkan :count ulasan pembeli.', ['count' => $totalReviews]) }}
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-{{-- Charts & Operational Analytics --}}
+<!-- Charts & Operational Analytics -->
 <div class="row g-4 mb-4">
-    {{-- Chart --}}
+    <!-- Chart: Daily Revenue Trend -->
     <div class="col-lg-8">
-        <div class="card border-0 shadow-sm h-100" style="border-radius: 20px;">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
             <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <div>
                     <h5 class="fw-bold mb-1 text-body"><i class="fas fa-chart-line text-primary me-2"></i>{{ __('Tren Pendapatan Harian') }}</h5>
                     <p class="text-muted small mb-0">{{ __('Statistik omzet penjualan dalam :days terakhir', ['days' => $days == 180 ? '6 bulan' : ($days == 365 ? '1 tahun' : $days . ' hari')]) }}</p>
                 </div>
                 <div>
-                    <select class="form-select form-select-sm rounded-pill px-3" style="width: auto;" onchange="let params = new URLSearchParams(window.location.search); params.set('days', this.value); window.location.href = '{{ route('seller.dashboard') }}?' + params.toString()">
+                    <select class="form-select form-select-sm rounded-pill px-3 bg-light border-0 fw-bold" style="width: auto;" onchange="let params = new URLSearchParams(window.location.search); params.set('days', this.value); window.location.href = '{{ route('seller.dashboard') }}?' + params.toString()">
                         <option value="7" {{ $days == 7 ? 'selected' : '' }}>{{ __('7 Hari Terakhir') }}</option>
                         <option value="14" {{ $days == 14 ? 'selected' : '' }}>{{ __('14 Hari Terakhir') }}</option>
                         <option value="30" {{ $days == 30 ? 'selected' : '' }}>{{ __('30 Hari Terakhir') }}</option>
@@ -173,9 +192,9 @@
         </div>
     </div>
 
-    {{-- Order Completion Rate --}}
+    <!-- Chart: Order Status Ratio -->
     <div class="col-lg-4">
-        <div class="card border-0 shadow-sm h-100" style="border-radius: 20px;">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
             <div class="card-header bg-transparent border-0 pt-4 px-4">
                 <h5 class="fw-bold mb-1 text-body"><i class="fas fa-chart-pie text-success me-2"></i>{{ __('Rasio Status Order') }}</h5>
                 <p class="text-muted small mb-0">{{ __('Persentase sukses vs batal/expired') }}</p>
@@ -197,12 +216,12 @@
     </div>
 </div>
 
-{{-- Advanced Analytics Row --}}
+<!-- Advanced Analytics Row (Top Products & Share Donut) -->
 <div class="row g-4 mb-4">
-    {{-- Top Performing Products Table --}}
+    <!-- Top Performing Products Table -->
     <div class="col-lg-7">
-        <div class="card border-0 shadow-sm h-100" style="border-radius: 20px;">
-            <div class="card-header bg-transparent border-0 pt-4 px-4">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-header bg-transparent border-0 pt-4 px-4 pb-2">
                 <h5 class="fw-bold mb-1 text-body"><i class="fas fa-trophy text-warning me-2"></i>{{ __('Produk Terlaris') }}</h5>
                 <p class="text-muted small mb-0">{{ __('5 produk dengan jumlah penjualan unit terbanyak') }}</p>
             </div>
@@ -210,7 +229,7 @@
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
                         <thead>
-                            <tr class="text-secondary small border-bottom">
+                            <tr class="text-secondary small fw-bold text-uppercase" style="letter-spacing: 0.5px;">
                                 <th class="px-4 py-3 border-0">{{ __('Nama Produk') }}</th>
                                 <th class="py-3 border-0">{{ __('Harga') }}</th>
                                 <th class="py-3 border-0 text-center">{{ __('Unit Terjual') }}</th>
@@ -220,8 +239,8 @@
                         <tbody>
                             @forelse($topProducts as $prod)
                             <tr>
-                                <td class="px-4 fw-bold text-dark">{{ $prod->name }}</td>
-                                <td>Rp {{ number_format($prod->price, 0, ',', '.') }}</td>
+                                <td class="px-4 fw-bold text-body">{{ $prod->name }}</td>
+                                <td class="text-body">Rp {{ number_format($prod->price, 0, ',', '.') }}</td>
                                 <td class="text-center fw-bold text-primary">{{ $prod->units_sold }}</td>
                                 <td class="px-4 text-end fw-bold text-success">Rp {{ number_format($prod->total_earnings, 0, ',', '.') }}</td>
                             </tr>
@@ -237,10 +256,10 @@
         </div>
     </div>
 
-    {{-- Product Sales Share Donut Chart --}}
+    <!-- Product Share Donut Chart -->
     <div class="col-lg-5">
-        <div class="card border-0 shadow-sm h-100" style="border-radius: 20px;">
-            <div class="card-header bg-transparent border-0 pt-4 px-4">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-header bg-transparent border-0 pt-4 px-4 pb-2">
                 <h5 class="fw-bold mb-1 text-body"><i class="fas fa-chart-pie text-info me-2"></i>{{ __('Porsi Penjualan per Produk') }}</h5>
                 <p class="text-muted small mb-0">{{ __('Distribusi jumlah unit terjual untuk setiap produk') }}</p>
             </div>
@@ -251,37 +270,38 @@
     </div>
 </div>
 
-<div class="row g-4">
-    {{-- Quick Start Guide --}}
+<!-- Operational Guide & Finance Summary Row -->
+<div class="row g-4 mb-4">
+    <!-- Quick Start Guide -->
     <div class="col-12 col-lg-7">
-        <div class="card border-0 shadow-sm p-4" style="border-radius: 20px;">
-            <h5 class="fw-bold mb-3"><i class="fas fa-compass text-primary me-2"></i>{{ __('Panduan Cepat Operasional Seller') }}</h5>
+        <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+            <h5 class="fw-bold mb-3 text-body"><i class="fas fa-compass text-primary me-2"></i>{{ __('Panduan Cepat Operasional Seller') }}</h5>
             <div class="d-flex flex-column gap-3 mt-2">
                 <div class="d-flex gap-3 align-items-start">
                     <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px; flex-shrink: 0;">1</div>
                     <div>
-                        <h6 class="fw-bold mb-1">{{ __('Miliki atau Ikut Serta dalam Katalog Produk') }}</h6>
+                        <h6 class="fw-bold mb-1 text-body">{{ __('Miliki atau Ikut Serta dalam Katalog Produk') }}</h6>
                         <p class="text-muted small mb-0">{!! 'Anda dapat membuat produk baru secara mandiri di halaman <strong>{{ __(\'Produk Saya\') }}</strong>{{ __(\', atau ditambahkan sebagai\') }} <strong>{{ __(\'Worker\') }}</strong> oleh Admin pada produk global.' !!}</p>
                     </div>
                 </div>
                 <div class="d-flex gap-3 align-items-start">
                     <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px; flex-shrink: 0;">2</div>
                     <div>
-                        <h6 class="fw-bold mb-1">{{ __('Unggah Stok Akun Digital Anda') }}</h6>
+                        <h6 class="fw-bold mb-1 text-body">{{ __('Unggah Stok Akun Digital Anda') }}</h6>
                         <p class="text-muted small mb-0">{!! 'Unggah akun/stok Anda secara massal di menu <strong>{{ __(\'Stok Akun\') }}</strong>{{ __(\'. Akun yang baru diunggah akan masuk ke status\') }} <strong>{{ __(\'Karantina (*Simpan Akun*)\') }}</strong>.' !!}</p>
                     </div>
                 </div>
                 <div class="d-flex gap-3 align-items-start">
                     <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px; flex-shrink: 0;">3</div>
                     <div>
-                        <h6 class="fw-bold mb-1">{{ __('Pindah Otomatis ke Status Ready') }}</h6>
+                        <h6 class="fw-bold mb-1 text-body">{{ __('Pindah Otomatis ke Status Ready') }}</h6>
                         <p class="text-muted small mb-0">{!! 'Stok Anda akan otomatis berpindah ke status <strong>{{ __(\'Ready\') }}</strong> {{ __(\'setelah jam cooldown karantina habis. Anda dapat mengatur jam karantina tersendiri di menu\') }} <strong>{{ __(\'Pengaturan\') }}</strong>.' !!}</p>
                     </div>
                 </div>
                 <div class="d-flex gap-3 align-items-start">
                     <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px; flex-shrink: 0;">4</div>
                     <div>
-                        <h6 class="fw-bold mb-1">{{ __('Terima Komisi & Tarik Saldo Ke Rekening') }}</h6>
+                        <h6 class="fw-bold mb-1 text-body">{{ __('Terima Komisi & Tarik Saldo Ke Rekening') }}</h6>
                         <p class="text-muted small mb-0">{!! 'Setiap pembeli membeli stok Anda, Anda menerima notifikasi Telegram dan dana masuk ke saldo Dompet setelah dipotong platform fee. Anda dapat mengajukan pencairan dana di menu <strong>{{ __(\'Dompet & Keuangan\') }}</strong>.' !!}</p>
                     </div>
                 </div>
@@ -289,10 +309,10 @@
         </div>
     </div>
 
-    {{-- Finance Overview --}}
+    <!-- Finance Overview -->
     <div class="col-12 col-lg-5">
-        <div class="card border-0 shadow-sm p-4" style="border-radius: 20px;">
-            <h5 class="fw-bold mb-3"><i class="fas fa-hand-holding-usd text-primary me-2"></i>{{ __('Status Payout Terakhir') }}</h5>
+        <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+            <h5 class="fw-bold mb-3 text-body"><i class="fas fa-hand-holding-usd text-primary me-2"></i>{{ __('Status Payout Terakhir') }}</h5>
             <div class="text-center py-4 bg-light rounded-4 mb-3">
                 <i class="fas fa-history text-muted mb-2 fs-3"></i>
                 <div class="small text-muted">{{ __('Total Pengajuan Penarikan:') }}</div>
@@ -301,7 +321,7 @@
             <div class="d-flex flex-column gap-2 small">
                 <div class="d-flex justify-content-between py-1 border-bottom">
                     <span class="text-muted"><i class="fas fa-spinner fa-spin text-warning me-1"></i> {{ __('Menunggu Verifikasi Admin') }}</span>
-                    <span class="fw-bold">{{ $pendingWithdrawalCount }} {{ __('Permintaan') }}</span>
+                    <span class="fw-bold text-body">{{ $pendingWithdrawalCount }} {{ __('Permintaan') }}</span>
                 </div>
                 <div class="d-flex justify-content-between py-1">
                     <span class="text-muted"><i class="fas fa-check-circle text-success me-1"></i> {{ __('Penarikan Disetujui') }}</span>
@@ -309,15 +329,15 @@
                 </div>
             </div>
             <div class="mt-4 text-center">
-                <a href="{{ route('seller.finance.index') }}" class="btn btn-outline-primary btn-sm rounded-pill px-4">{{ __('Lihat Dompet Saya') }}</a>
+                <a href="{{ route('seller.finance.index') }}" class="btn btn-outline-primary btn-sm rounded-pill px-4 fw-bold">{{ __('Lihat Dompet Saya') }}</a>
             </div>
         </div>
     </div>
 </div>
 
-{{-- Recent Orders --}}
-<div class="card border-0 shadow-sm overflow-hidden mb-4 mt-4" style="border-radius: 20px;">
-    <div class="card-header bg-transparent border-0 pt-4 px-4">
+<!-- Recent Orders Table -->
+<div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+    <div class="card-header bg-transparent border-0 pt-4 px-4 pb-2">
         <h5 class="fw-bold mb-0 text-body"><i class="fas fa-history text-secondary me-2"></i>5 Pesanan Sukses Terakhir (Stok Anda)</h5>
     </div>
     <div class="card-body p-0">
@@ -325,11 +345,11 @@
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
                 <thead>
-                    <tr class="text-secondary small border-bottom">
+                    <tr class="text-secondary small fw-bold text-uppercase" style="letter-spacing: 0.5px;">
                         <th class="px-4 py-3 border-0">{{ __('No Pesanan') }}</th>
                         <th class="py-3 border-0">{{ __('Pelanggan') }}</th>
                         <th class="py-3 border-0">{{ __('Pendapatan Anda') }}</th>
-                        <th class="py-3 border-0">{{ __('Tanggal Selesai') }}</th>
+                        <th class="py-3 border-0 text-end pe-4">{{ __('Tanggal Selesai') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -343,12 +363,12 @@
                         <td class="px-4 fw-bold text-primary">{{ $order->order_ref }}</td>
                         <td>
                             <div class="d-flex flex-column">
-                                <span class="fw-bold">{{ $order->customer->full_name ?? 'Unknown' }}</span>
+                                <span class="fw-bold text-body">{{ $order->customer->full_name ?? 'Unknown' }}</span>
                                 <span class="small text-muted">{{ $order->customer->username ?? '' }}</span>
                             </div>
                         </td>
                         <td class="text-success fw-bold">Rp {{ number_format($myEarningsInOrder, 0, ',', '.') }}</td>
-                        <td class="text-secondary small">{{ $order->delivered_at ? $order->delivered_at->format('d M Y H:i') : '-' }}</td>
+                        <td class="text-secondary small text-end pe-4">{{ $order->delivered_at ? $order->delivered_at->format('d M Y H:i') : '-' }}</td>
                     </tr>
                     @endforeach
                 </tbody>
@@ -368,7 +388,6 @@
 <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Theme config
         const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
         const chartTheme = {
             mode: isDark ? 'dark' : 'light'
@@ -486,7 +505,6 @@
         const shareChart = new ApexCharts(document.querySelector("#shareChart"), shareOptions);
         shareChart.render();
 
-        // Respond to theme toggle events
         const observer = new MutationObserver((mutations) => {
             mutations.forEach((mutation) => {
                 if (mutation.type === 'attributes' && mutation.attributeName === 'data-bs-theme') {
