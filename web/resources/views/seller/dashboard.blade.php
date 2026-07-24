@@ -63,14 +63,6 @@
                         </option>
                     @endforeach
                 </select>
-
-                <a href="{{ route('seller.stock.index') }}" class="btn btn-outline-light rounded-pill px-3 py-2 text-nowrap fw-bold">
-                    <i class="fas fa-plus me-1"></i>{{ __('Tambah Stok') }}
-                </a>
-                
-                <a href="{{ route('seller.products.index') }}" class="btn btn-light text-primary fw-bold rounded-pill px-3 py-2 shadow-sm lift-hover text-nowrap">
-                    <i class="fas fa-box-open me-1"></i>{{ __('Produk Saya') }}
-                </a>
             </div>
         </div>
     </div>
