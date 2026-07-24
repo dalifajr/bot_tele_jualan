@@ -39,19 +39,8 @@ class BackupController extends Controller
         }
         $dbSizeFormatted = $this->formatBytes($dbSize);
 
-        $totalRecords = 0;
-        try {
-            if (method_exists(\Illuminate\Support\Facades\Schema::class, 'getTables')) {
-                foreach (\Illuminate\Support\Facades\Schema::getTables() as $tableInfo) {
-                    $tableName = is_array($tableInfo) ? ($tableInfo['name'] ?? null) : ($tableInfo->name ?? null);
-                    if ($tableName && !str_starts_with($tableName, 'sqlite_')) {
-                        $totalRecords += \Illuminate\Support\Facades\DB::table($tableName)->count();
-                    }
-                }
-            }
-        } catch (\Exception $e) {
-            // fallback
-        }
+        $tablesStats = $this->getDatabaseTableStats();
+        $totalRecords = array_sum(array_column($tablesStats, 'count'));
 
         // 2. Settings Status
         $autoBackupEnabled = BotSetting::where('key', 'auto_backup_enabled')->value('value') ?: '0';
@@ -88,7 +77,21 @@ class BackupController extends Controller
         $autoBackupSchedule = BotSetting::where('key', 'auto_backup_schedule')->value('value') ?: 'daily';
         $autoBackupLastRun = BotSetting::where('key', 'auto_backup_last_run')->value('value') ?: '-';
 
-        $tablesStats = [];
+        $tablesStats = $this->getDatabaseTableStats();
+
+        return view('admin.backup.settings', compact(
+            'autoBackupEnabled',
+            'autoBackupSchedule',
+            'autoBackupLastRun',
+            'tablesStats'
+        ));
+    }
+
+    /**
+     * Helper to get database tables stats across all DB drivers with multiple fallbacks.
+     */
+    private function getDatabaseTableStats(): array
+    {
         $knownLabels = [
             'users' => 'Pengguna/Pelanggan',
             'products' => 'Produk',
@@ -105,32 +108,84 @@ class BackupController extends Controller
             'held_funds' => 'Dana Tertahan',
             'restock_subscriptions' => 'Langganan Restock',
             'complaint_attachments' => 'Lampiran Komplain',
+            'product_workers' => 'Worker Produk',
+            'maintenance_logs' => 'Log Pemeliharaan',
+            'login_logs' => 'Log Login User',
+            'coupons' => 'Kupon Diskon',
+            'live_chat_messages' => 'Pesan Chat Live',
         ];
 
+        $tableNames = [];
+
+        // Attempt 1: Schema::getTables() (Laravel 10.27+)
         try {
-            if (method_exists(\Illuminate\Support\Facades\Schema::class, 'getTables')) {
-                foreach (\Illuminate\Support\Facades\Schema::getTables() as $tableInfo) {
-                    $tableName = is_array($tableInfo) ? ($tableInfo['name'] ?? null) : ($tableInfo->name ?? null);
-                    if ($tableName && !str_starts_with($tableName, 'sqlite_')) {
-                        $label = $knownLabels[$tableName] ?? ucwords(str_replace('_', ' ', $tableName));
-                        $tablesStats[] = [
-                            'table' => $tableName,
-                            'label' => $label,
-                            'count' => \Illuminate\Support\Facades\DB::table($tableName)->count(),
-                        ];
+            if (method_exists(Schema::class, 'getTables')) {
+                foreach (Schema::getTables() as $tableInfo) {
+                    $name = is_array($tableInfo) 
+                        ? ($tableInfo['name'] ?? null) 
+                        : (is_object($tableInfo) ? ($tableInfo->name ?? null) : (is_string($tableInfo) ? $tableInfo : null));
+                    if ($name) {
+                        $tableNames[] = $name;
                     }
                 }
             }
-        } catch (\Exception $e) {
-            // Fallback
+        } catch (\Throwable $e) {
+            // Ignore
         }
 
-        return view('admin.backup.settings', compact(
-            'autoBackupEnabled',
-            'autoBackupSchedule',
-            'autoBackupLastRun',
-            'tablesStats'
-        ));
+        // Attempt 2: Schema::getTableListing()
+        if (empty($tableNames)) {
+            try {
+                $tableNames = Schema::getTableListing();
+            } catch (\Throwable $e) {
+                // Ignore
+            }
+        }
+
+        // Attempt 3: DB Raw queries depending on driver
+        if (empty($tableNames)) {
+            try {
+                $driver = DB::connection()->getDriverName();
+                if ($driver === 'sqlite') {
+                    $rows = DB::select("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
+                    $tableNames = array_map(fn($r) => $r->name ?? '', $rows);
+                } else {
+                    $rows = DB::select('SHOW TABLES');
+                    foreach ($rows as $row) {
+                        $val = array_values((array)$row)[0] ?? null;
+                        if ($val) {
+                            $tableNames[] = $val;
+                        }
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Ignore
+            }
+        }
+
+        // Attempt 4: Fallback to knownLabels if all queries fail
+        if (empty($tableNames)) {
+            $tableNames = array_keys($knownLabels);
+        }
+
+        $tablesStats = [];
+        foreach (array_unique($tableNames) as $tableName) {
+            if ($tableName && !str_starts_with($tableName, 'sqlite_') && $tableName !== 'migrations' && $tableName !== 'jobs' && $tableName !== 'failed_jobs') {
+                $label = $knownLabels[$tableName] ?? ucwords(str_replace('_', ' ', $tableName));
+                try {
+                    $count = DB::table($tableName)->count();
+                } catch (\Throwable $e) {
+                    $count = 0;
+                }
+                $tablesStats[] = [
+                    'table' => $tableName,
+                    'label' => $label,
+                    'count' => $count,
+                ];
+            }
+        }
+
+        return $tablesStats;
     }
 
     /**
