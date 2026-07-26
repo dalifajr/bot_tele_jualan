@@ -91,9 +91,9 @@
         <div class="card border-0 shadow-sm overflow-hidden h-100" style="border-radius: 14px;">
             <div class="px-3 py-2 text-white d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);">
                 <div class="text-truncate me-2" style="max-width: 65%;">
-                    <a href="{{ route('admin.products.manage', $product->id) }}" class="fw-bold text-white text-decoration-none text-truncate d-block small" title="{{ __('Kelola Stok & Worker') }}: {{ $product->name }}">
+                    <span class="fw-bold text-white text-truncate d-block small" title="{{ $product->name }}">
                         #{{ $product->id }} {{ $product->name }}
-                    </a>
+                    </span>
                 </div>
                 <div>
                     <span class="badge bg-white text-primary rounded-pill fw-bold shadow-sm" style="font-size: 0.75rem;">
@@ -138,10 +138,6 @@
                 </div>
 
                 <div class="border-top pt-2 mt-1 d-flex justify-content-end align-items-center gap-1">
-                    <a href="{{ route('admin.products.manage', $product->id) }}" class="btn btn-sm btn-light text-primary rounded-circle" style="width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center;" title="{{ __('Detail & Kelola Stok') }}">
-                        <i class="fas fa-cog" style="font-size: 0.75rem;"></i>
-                    </a>
-
                     <button class="btn btn-sm btn-light text-primary rounded-circle" data-bs-toggle="modal" data-bs-target="#editProductModal{{ $product->id }}" style="width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center;" title="{{ __('Edit Produk') }}">
                         <i class="fas fa-edit" style="font-size: 0.75rem;"></i>
                     </button>

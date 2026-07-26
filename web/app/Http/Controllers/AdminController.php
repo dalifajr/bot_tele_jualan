@@ -1304,17 +1304,6 @@ class AdminController extends Controller
         }, 200, $responseHeaders);
     }
 
-    public function manageProduct($id)
-    {
-        $product = \App\Models\Product::with('stockUnits')->findOrFail($id);
-        
-        // Count stock statistics
-        $readyStockCount = $product->stockUnits()->where('stock_status', 'ready')->count();
-        $soldStockCount = $product->stockUnits()->where('is_sold', true)->count();
-
-        return view('admin.products.manage', compact('product', 'readyStockCount', 'soldStockCount'));
-    }
-
     // --- CRUD Stock ---
     public function storeStock(Request $request)
     {

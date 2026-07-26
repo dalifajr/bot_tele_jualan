@@ -144,7 +144,6 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         Route::delete('/products/{id}', [\App\Http\Controllers\AdminController::class, 'destroyProduct'])->name('products.destroy');
         Route::post('/products/{id}/takeover', [\App\Http\Controllers\AdminController::class, 'takeoverProduct'])->name('products.takeover');
         Route::post('/products/{id}/reassign', [\App\Http\Controllers\AdminController::class, 'reassignProduct'])->name('products.reassign');
-        Route::get('/products/{id}/manage', [\App\Http\Controllers\AdminController::class, 'manageProduct'])->name('products.manage');
         Route::get('/products/{id}/export-unsold', [\App\Http\Controllers\AdminController::class, 'exportUnsoldStock'])->name('products.export-unsold');
         
         Route::get('/stock', [\App\Http\Controllers\AdminController::class, 'stock'])->name('stock.index');
