@@ -376,9 +376,11 @@ class SellerController extends Controller
             'raw_text' => 'required|string',
         ]);
 
-        $stock = StockUnit::where('uploaded_by_id', $sellerId)
-            ->orWhere('seller_id', $sellerId)
-            ->findOrFail($id);
+        $stock = StockUnit::where('id', $id)
+            ->where(function ($q) use ($sellerId) {
+                $q->where('uploaded_by_id', $sellerId)
+                  ->orWhere('seller_id', $sellerId);
+            })->firstOrFail();
 
         if ($stock->is_sold) {
             return redirect()->route('seller.stock.index')->with('error', __('Stok yang sudah terjual tidak dapat diedit.'));
