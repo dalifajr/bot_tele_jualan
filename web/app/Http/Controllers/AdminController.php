@@ -1319,13 +1319,20 @@ class AdminController extends Controller
         $stockUnits = \App\Models\StockUnit::with(['order.customer', 'uploader', 'seller'])
             ->where('product_id', $product->id)
             ->where('is_sold', true)
-            ->whereIn('sold_order_id', function ($query) use ($startDate, $endDate) {
-                $query->select('id')->from('orders')
-                    ->whereIn('status', ['delivered', 'paid', 'completed'])
-                    ->whereBetween('created_at', [$startDate, $endDate]);
+            ->whereHas('order', function ($query) use ($startDate, $endDate) {
+                $query->whereIn('status', ['delivered', 'paid', 'completed'])
+                    ->where(function ($q) use ($startDate, $endDate) {
+                        $q->whereBetween('created_at', [$startDate, $endDate])
+                          ->orWhereBetween('updated_at', [$startDate, $endDate])
+                          ->orWhereBetween('delivered_at', [$startDate, $endDate])
+                          ->orWhereBetween('paid_at', [$startDate, $endDate]);
+                    });
             })
-            ->orderBy('created_at', 'desc')
-            ->get();
+            ->get()
+            ->sortByDesc(function ($unit) {
+                return $unit->order->created_at ?? $unit->created_at;
+            })
+            ->values();
 
         $seller = $product->creator;
         $sellerName = $seller ? ($seller->full_name ?? $seller->username) : 'Admin Utama';
@@ -1355,7 +1362,13 @@ class AdminController extends Controller
 
         $filename = 'laporan_penjualan_' . \Illuminate\Support\Str::slug($product->name) . '_' . $startDate->format('Ymd') . '-' . $endDate->format('Ymd') . '.pdf';
 
-        return $pdf->download($filename);
+        return response($pdf->output(), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . $filename . '"',
+            'Cache-Control' => 'no-cache, no-store, must-revalidate',
+            'Pragma' => 'no-cache',
+            'Expires' => '0',
+        ]);
     }
 
     // --- CRUD Stock ---

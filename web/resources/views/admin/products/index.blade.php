@@ -439,13 +439,13 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content text-start" style="border-radius: 16px; border: none;">
             <div class="modal-header border-0 pb-0">
-                <h5 class="fw-bold"><i class="fas fa-file-pdf text-danger me-2"></i>{{ __('Unduh Laporan Penjualan (PDF)') }}</h5>
+                <h5 class="fw-bold"><i class="fas fa-file-pdf text-danger me-2"></i>{{ __('Laporan Penjualan (PDF)') }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form action="{{ route('admin.products.report-pdf', $product->id) }}" method="GET" target="_blank">
                 <div class="modal-body">
                     <p class="text-muted small mb-3">
-                        {{ __('Pilih rentang tanggal untuk mengunduh laporan penjualan dan pendapatan produk') }} <strong>"{{ $product->name }}"</strong>.
+                        {{ __('Pilih rentang tanggal untuk melihat laporan penjualan dan pendapatan produk') }} <strong>"{{ $product->name }}"</strong> {{ __('secara live di tab baru') }}.
                     </p>
                     <div class="mb-3">
                         <label class="form-label text-muted small fw-bold">{{ __('Tanggal Mulai') }}</label>
@@ -459,7 +459,7 @@
                 <div class="modal-footer border-0 pt-0">
                     <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">{{ __('Batal') }}</button>
                     <button type="submit" class="btn btn-danger text-white rounded-pill px-4 fw-bold">
-                        <i class="fas fa-download me-1"></i> {{ __('Unduh PDF') }}
+                        <i class="fas fa-external-link-alt me-1"></i> {{ __('Buka PDF (Tab Baru)') }}
                     </button>
                 </div>
             </form>
