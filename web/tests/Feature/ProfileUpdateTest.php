@@ -54,16 +54,8 @@ class ProfileUpdateTest extends TestCase
         $response->assertRedirect();
     }
 
-    public function test_user_cannot_change_username_to_one_already_taken()
+    public function test_user_username_is_permanent_and_cannot_be_changed()
     {
-        $otherUser = User::forceCreate([
-            'full_name' => 'Other User',
-            'username' => 'otherusername',
-            'email' => 'other@example.com',
-            'password' => bcrypt('password123'),
-            'role' => 'customer',
-        ]);
-
         $user = User::forceCreate([
             'full_name' => 'Dzulfikri Alifajri',
             'username' => 'dzulfikrialifajri',
@@ -73,12 +65,14 @@ class ProfileUpdateTest extends TestCase
         ]);
 
         $response = $this->actingAs($user)->post(route('profile.update'), [
-            'full_name' => 'Dzulfikri Alifajri',
-            'username' => 'otherusername', // taken
+            'full_name' => 'Dzulfikri Alifajri Updated',
+            'username' => 'attemptednewusername',
             'email' => 'dzulfikrialifajri@gmail.com',
         ]);
 
-        $response->assertSessionHasErrors(['username']);
+        $response->assertSessionHasNoErrors();
+        $this->assertEquals('dzulfikrialifajri', $user->fresh()->username);
+        $this->assertEquals('Dzulfikri Alifajri Updated', $user->fresh()->full_name);
     }
 
     public function test_user_cannot_change_email_to_one_already_taken()

@@ -191,36 +191,103 @@
                             
                             <!-- Tab 1: Informasi Profil -->
                             <div class="tab-pane fade show active" id="tab-informasi" role="tabpanel">
-                                <h6 class="fw-bold text-primary mb-3">
-                                    <i class="fas fa-id-card me-2"></i>{{ __('Informasi Akun & Pengeditan') }}
-                                </h6>
-                                <form action="{{ route('profile.update') }}" method="POST">
-                                    @csrf
+                                <!-- Summary View Container -->
+                                <div id="profile-summary-view" style="{{ $errors->any() ? 'display: none;' : '' }}">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h6 class="fw-bold text-primary mb-0">
+                                            <i class="fas fa-id-card me-2"></i>{{ __('Informasi Akun') }}
+                                        </h6>
+                                        <button type="button" id="btn-toggle-edit-profile" class="btn btn-primary btn-sm rounded-pill px-4 fw-bold shadow-sm">
+                                            <i class="fas fa-user-edit me-1"></i> {{ __('Edit Profil') }}
+                                        </button>
+                                    </div>
+                                    
                                     <div class="row g-3">
                                         <div class="col-md-6">
-                                            <label class="form-label small fw-bold text-muted">{{ __('Nama Lengkap') }}</label>
-                                            <input type="text" name="full_name" class="form-control form-control-sm rounded-3" required value="{{ old('full_name', Auth::user()->full_name) }}">
+                                            <div class="p-3 bg-light rounded-4 border">
+                                                <div class="small text-muted fw-bold mb-1"><i class="fas fa-user me-1 text-primary"></i>{{ __('Nama Lengkap') }}</div>
+                                                <div class="fw-bold text-body fs-6">{{ Auth::user()->full_name }}</div>
+                                            </div>
                                         </div>
                                         <div class="col-md-6">
-                                            <label class="form-label small fw-bold text-muted">{{ __('Username') }}</label>
-                                            <input type="text" name="username" class="form-control form-control-sm rounded-3" required value="{{ old('username', Auth::user()->username) }}">
+                                            <div class="p-3 bg-light rounded-4 border">
+                                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                                    <div class="small text-muted fw-bold"><i class="fas fa-at me-1 text-primary"></i>{{ __('Username') }}</div>
+                                                    <span class="badge bg-secondary-subtle text-secondary rounded-pill small px-2 py-0" style="font-size: 0.65rem;">
+                                                        <i class="fas fa-lock me-1"></i>Permanen
+                                                    </span>
+                                                </div>
+                                                <div class="fw-bold text-body fs-6">{{ Auth::user()->username }}</div>
+                                            </div>
                                         </div>
                                         <div class="col-md-6">
-                                            <label class="form-label small fw-bold text-muted">{{ __('Alamat Email') }}</label>
-                                            <input type="email" name="email" class="form-control form-control-sm rounded-3" value="{{ old('email', Auth::user()->email) }}">
+                                            <div class="p-3 bg-light rounded-4 border">
+                                                <div class="small text-muted fw-bold mb-1"><i class="fas fa-envelope me-1 text-primary"></i>{{ __('Alamat Email') }}</div>
+                                                <div class="fw-bold text-body fs-6">{{ Auth::user()->email ?: '-' }}</div>
+                                            </div>
                                         </div>
                                         <div class="col-md-6">
-                                            <label class="form-label small fw-bold text-muted">{{ __('Telegram ID') }}</label>
-                                            <input type="number" name="telegram_id" id="telegram_id_input" class="form-control form-control-sm rounded-3" value="{{ old('telegram_id', Auth::user()->telegram_id) }}">
-                                            <div id="telegram_id_feedback" class="form-text small mt-1"></div>
-                                        </div>
-                                        <div class="col-12 mt-4">
-                                            <button type="submit" id="btn-save-profile" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm">
-                                                <i class="fas fa-save me-1"></i> {{ __('Simpan Perubahan Profil') }}
-                                            </button>
+                                            <div class="p-3 bg-light rounded-4 border">
+                                                <div class="small text-muted fw-bold mb-1"><i class="fab fa-telegram me-1 text-primary"></i>{{ __('Telegram ID') }}</div>
+                                                <div class="fw-bold text-body fs-6">
+                                                    {{ Auth::user()->telegram_id ?: '-' }}
+                                                    @if(Auth::user()->telegram_id)
+                                                        <span class="badge bg-success-subtle text-success rounded-pill px-2 py-0 ms-1 small"><i class="fas fa-check-circle me-1"></i>Tertaut</span>
+                                                    @endif
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
-                                </form>
+                                </div>
+
+                                <!-- Edit Form Container -->
+                                <div id="profile-edit-form-container" style="{{ $errors->any() ? '' : 'display: none;' }}">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h6 class="fw-bold text-primary mb-0">
+                                            <i class="fas fa-user-edit me-2"></i>{{ __('Form Pengeditan Profil') }}
+                                        </h6>
+                                        <button type="button" id="btn-cancel-edit-profile" class="btn btn-outline-secondary btn-sm rounded-pill px-3 fw-bold">
+                                            <i class="fas fa-times me-1"></i> {{ __('Batal') }}
+                                        </button>
+                                    </div>
+                                    
+                                    <form action="{{ route('profile.update') }}" method="POST">
+                                        @csrf
+                                        <div class="row g-3">
+                                            <div class="col-md-6">
+                                                <label class="form-label small fw-bold text-muted">{{ __('Nama Lengkap') }}</label>
+                                                <input type="text" name="full_name" class="form-control form-control-sm rounded-3" required value="{{ old('full_name', Auth::user()->full_name) }}">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label small fw-bold text-muted">
+                                                    {{ __('Username') }} 
+                                                    <span class="badge bg-secondary-subtle text-secondary rounded-pill ms-1" style="font-size: 0.65rem;">
+                                                        <i class="fas fa-lock me-1"></i>Permanen
+                                                    </span>
+                                                </label>
+                                                <input type="text" class="form-control form-control-sm rounded-3 bg-light text-muted" value="{{ Auth::user()->username }}" readonly disabled>
+                                                <div class="form-text small text-muted"><i class="fas fa-info-circle me-1"></i>Username tidak dapat diubah setelah pendaftaran.</div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label small fw-bold text-muted">{{ __('Alamat Email') }}</label>
+                                                <input type="email" name="email" class="form-control form-control-sm rounded-3" value="{{ old('email', Auth::user()->email) }}">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label small fw-bold text-muted">{{ __('Telegram ID') }}</label>
+                                                <input type="number" name="telegram_id" id="telegram_id_input" class="form-control form-control-sm rounded-3" value="{{ old('telegram_id', Auth::user()->telegram_id) }}">
+                                                <div id="telegram_id_feedback" class="form-text small mt-1"></div>
+                                            </div>
+                                            <div class="col-12 mt-4 d-flex gap-2">
+                                                <button type="submit" id="btn-save-profile" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm">
+                                                    <i class="fas fa-save me-1"></i> {{ __('Simpan Perubahan Profil') }}
+                                                </button>
+                                                <button type="button" id="btn-cancel-edit-profile-bottom" class="btn btn-outline-secondary rounded-pill px-4 fw-bold">
+                                                    {{ __('Batal') }}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
                             </div>
 
                             <!-- Tab 2: Keamanan & Kata Sandi -->
@@ -421,6 +488,30 @@
                 tab.show();
             }
         }
+
+        // Profile Edit Form Toggle Handler
+        const btnToggleEdit = document.getElementById('btn-toggle-edit-profile');
+        const btnCancelEdit = document.getElementById('btn-cancel-edit-profile');
+        const btnCancelEditBottom = document.getElementById('btn-cancel-edit-profile-bottom');
+        const summaryView = document.getElementById('profile-summary-view');
+        const editFormContainer = document.getElementById('profile-edit-form-container');
+
+        if (btnToggleEdit && summaryView && editFormContainer) {
+            btnToggleEdit.addEventListener('click', function() {
+                summaryView.style.display = 'none';
+                editFormContainer.style.display = 'block';
+            });
+        }
+
+        function cancelEditProfile() {
+            if (summaryView && editFormContainer) {
+                editFormContainer.style.display = 'none';
+                summaryView.style.display = 'block';
+            }
+        }
+
+        if (btnCancelEdit) btnCancelEdit.addEventListener('click', cancelEditProfile);
+        if (btnCancelEditBottom) btnCancelEditBottom.addEventListener('click', cancelEditProfile);
     });
 </script>
 @endsection
