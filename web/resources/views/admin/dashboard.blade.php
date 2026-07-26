@@ -66,8 +66,8 @@
 
         <!-- Filter Form Integrated in Banner Footer -->
         <div class="mt-4 pt-3 border-top border-white border-opacity-25 position-relative z-1">
-            <form action="{{ route('admin.dashboard') }}" method="GET" class="row g-2 align-items-center">
-                <div class="col-md-4">
+            <form action="{{ route('admin.dashboard') }}" method="GET" class="row g-2 g-md-3 align-items-center">
+                <div class="col-12 col-md-4 mb-1 mb-md-0">
                     <div class="input-group input-group-sm">
                         <span class="input-group-text bg-white bg-opacity-10 text-white border-white border-opacity-25"><i class="fas fa-box"></i></span>
                         <select name="product_id" class="form-select form-select-sm bg-white bg-opacity-20 text-white border-white border-opacity-25 shadow-none">
@@ -80,7 +80,7 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-12 col-md-4 mb-1 mb-md-0">
                     <div class="input-group input-group-sm">
                         <span class="input-group-text bg-white bg-opacity-10 text-white border-white border-opacity-25"><i class="fas fa-calendar-alt"></i></span>
                         <select name="period" class="form-select form-select-sm bg-white bg-opacity-20 text-white border-white border-opacity-25 shadow-none">
@@ -91,7 +91,7 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-4 d-flex gap-2">
+                <div class="col-12 col-md-4 d-flex gap-2">
                     <button type="submit" class="btn btn-sm btn-light text-primary fw-bold rounded-pill px-3 flex-fill">
                         <i class="fas fa-search me-1"></i> {{ __('Filter') }}
                     </button>

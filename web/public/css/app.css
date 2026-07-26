@@ -24,6 +24,11 @@
     --glass-bg: rgba(255, 255, 255, 0.7);
     --glass-border: rgba(0, 0, 0, 0.06);
     --glass-blur: 12px;
+
+    /* Corner Radius Design System Tokens */
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 20px;
 }
 
 [data-bs-theme="dark"] {
@@ -686,5 +691,76 @@ body {
     overflow: auto !important;
     overflow-x: auto !important;
 }
+
+/* === DARK MODE BADGE & ALERT CONTRAST HARDENING (WCAG AA COMPLIANCE) === */
+[data-bs-theme="dark"] .badge.bg-warning-subtle,
+[data-bs-theme="dark"] .bg-warning-subtle {
+    background-color: rgba(255, 193, 7, 0.18) !important;
+    color: #ffda6a !important;
+    border: 1px solid rgba(255, 193, 7, 0.3) !important;
+}
+
+[data-bs-theme="dark"] .badge.bg-info-subtle,
+[data-bs-theme="dark"] .bg-info-subtle {
+    background-color: rgba(13, 202, 240, 0.18) !important;
+    color: #6edff6 !important;
+    border: 1px solid rgba(13, 202, 240, 0.3) !important;
+}
+
+[data-bs-theme="dark"] .badge.bg-success-subtle,
+[data-bs-theme="dark"] .bg-success-subtle {
+    background-color: rgba(25, 135, 84, 0.2) !important;
+    color: #75b798 !important;
+    border: 1px solid rgba(25, 135, 84, 0.35) !important;
+}
+
+[data-bs-theme="dark"] .badge.bg-danger-subtle,
+[data-bs-theme="dark"] .bg-danger-subtle {
+    background-color: rgba(220, 53, 69, 0.2) !important;
+    color: #ea868f !important;
+    border: 1px solid rgba(220, 53, 69, 0.35) !important;
+}
+
+[data-bs-theme="dark"] .badge.bg-secondary-subtle,
+[data-bs-theme="dark"] .bg-secondary-subtle {
+    background-color: rgba(108, 117, 125, 0.25) !important;
+    color: #c5d0dc !important;
+    border: 1px solid rgba(108, 117, 125, 0.35) !important;
+}
+
+[data-bs-theme="dark"] .alert-info-subtle {
+    background-color: rgba(13, 202, 240, 0.12) !important;
+    color: #b6effb !important;
+    border: 1px solid rgba(13, 202, 240, 0.25) !important;
+}
+
+[data-bs-theme="dark"] .alert-warning-subtle {
+    background-color: rgba(255, 193, 7, 0.12) !important;
+    color: #ffe69c !important;
+    border: 1px solid rgba(255, 193, 7, 0.25) !important;
+}
+
+/* === SKELETON LOADING SHIMMER ANIMATION === */
+.skeleton-loader {
+    background: linear-gradient(90deg, #e9ecef 25%, #f8f9fa 50%, #e9ecef 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: var(--radius-sm, 8px);
+}
+
+[data-bs-theme="dark"] .skeleton-loader {
+    background: linear-gradient(90deg, #1e2430 25%, #2a3142 50%, #1e2430 75%);
+    background-size: 200% 100%;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
 
 
