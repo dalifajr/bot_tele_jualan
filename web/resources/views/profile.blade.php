@@ -410,6 +410,17 @@
                 }, 500);
             });
         }
+
+        // Auto-activate tab based on URL hash or query param (e.g., #tab-keamanan or ?tab=password)
+        const hash = window.location.hash;
+        const urlParams = new URLSearchParams(window.location.search);
+        if (hash === '#tab-keamanan' || hash === '#password' || urlParams.get('tab') === 'password') {
+            const passwordTabBtn = document.getElementById('tab-keamanan-btn');
+            if (passwordTabBtn) {
+                const tab = new bootstrap.Tab(passwordTabBtn);
+                tab.show();
+            }
+        }
     });
 </script>
 @endsection

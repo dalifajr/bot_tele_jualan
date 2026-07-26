@@ -653,6 +653,99 @@
     }
 </script>
 
+@auth
+    @if(
+        Auth::user()->telegram_id &&
+        !Auth::user()->dismiss_set_password_prompt &&
+        !Auth::user()->has_custom_password &&
+        session('logged_in_via_telegram')
+    )
+        <!-- Telegram Welcome Password Prompt Modal -->
+        <div class="modal fade" id="telegramWelcomePasswordModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="telegramWelcomePasswordModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+                    <div class="modal-header border-0 text-white p-4" style="background: linear-gradient(135deg, #0d47a1 0%, #1565c0 50%, #1e88e5 100%);">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="rounded-circle bg-white bg-opacity-20 p-3 d-flex align-items-center justify-content-center text-warning" style="width: 48px; height: 48px; font-size: 1.5rem;">
+                                <i class="fas fa-key"></i>
+                            </div>
+                            <div>
+                                <h5 class="modal-title fw-bold mb-0 text-white" id="telegramWelcomePasswordModalLabel">
+                                    {{ __('Selamat Datang!') }} 👋
+                                </h5>
+                                <p class="small text-white-50 mb-0">{{ __('Atur kata sandi untuk kemudahan akses akun Anda') }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-body p-4">
+                        <p class="text-body mb-3">
+                            {{ __('Anda berhasil masuk menggunakan akun Telegram') }} <strong>({{ Auth::user()->full_name ?? Auth::user()->username }})</strong>.
+                        </p>
+                        <div class="alert alert-info-subtle border-0 rounded-3 p-3 mb-3" style="font-size: 0.9rem;">
+                            <i class="fas fa-info-circle text-primary me-2"></i>
+                            {{ __('Agar Anda dapat masuk secara langsung menggunakan Username & Kata Sandi tanpa harus via Telegram di lain waktu, silakan atur kata sandi akun Anda.') }}
+                        </div>
+                        <div class="form-check mt-3">
+                            <input class="form-check-input" type="checkbox" id="chkDismissPasswordPrompt">
+                            <label class="form-check-label small text-muted cursor-pointer" for="chkDismissPasswordPrompt">
+                                {{ __('Jangan tampilkan peringatan ini lagi') }}
+                            </label>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0 bg-light p-3 d-flex justify-content-between">
+                        <button type="button" class="btn btn-outline-secondary rounded-pill px-4 fw-semibold" id="btnClosePasswordPrompt">
+                            {{ __('Nanti Saja') }}
+                        </button>
+                        <a href="{{ route('profile') }}?tab=password#tab-keamanan" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm" id="btnGoToSetPassword">
+                            <i class="fas fa-key me-1"></i> {{ __('Atur Kata Sandi Sekarang') }}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const modalElem = document.getElementById('telegramWelcomePasswordModal');
+                if (modalElem) {
+                    const bsModal = new bootstrap.Modal(modalElem);
+                    bsModal.show();
+
+                    const chkDismiss = document.getElementById('chkDismissPasswordPrompt');
+                    const btnClose = document.getElementById('btnClosePasswordPrompt');
+                    const btnGo = document.getElementById('btnGoToSetPassword');
+
+                    function handleDismissIfChecked() {
+                        if (chkDismiss && chkDismiss.checked) {
+                            fetch('{{ route("profile.password.dismiss-prompt") }}', {
+                                method: 'POST',
+                                headers: {
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json'
+                                }
+                            });
+                        }
+                    }
+
+                    if (btnClose) {
+                        btnClose.addEventListener('click', function() {
+                            handleDismissIfChecked();
+                            bsModal.hide();
+                        });
+                    }
+
+                    if (btnGo) {
+                        btnGo.addEventListener('click', function() {
+                            handleDismissIfChecked();
+                        });
+                    }
+                }
+            });
+        </script>
+    @endif
+@endauth
+
 @stack('modals')
 
 </body>

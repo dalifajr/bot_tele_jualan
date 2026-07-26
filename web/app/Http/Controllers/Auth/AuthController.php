@@ -284,6 +284,8 @@ class AuthController extends Controller
 
         $user = Auth::user();
         $user->password = Hash::make($request->password);
+        $user->has_custom_password = true;
+        $user->dismiss_set_password_prompt = true;
         $user->save();
 
         return redirect()->back()->with('success', __('Password berhasil diatur! Anda kini bisa login menggunakan Username/Email dan Password ini.'));

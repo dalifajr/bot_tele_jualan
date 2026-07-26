@@ -22,6 +22,8 @@ class User extends Authenticatable
         'two_factor_enabled',
         'two_factor_code',
         'two_factor_expires_at',
+        'dismiss_set_password_prompt',
+        'has_custom_password',
     ];
 
     protected $hidden = [
@@ -36,6 +38,8 @@ class User extends Authenticatable
         'two_factor_enabled' => 'boolean',
         'two_factor_expires_at' => 'datetime',
         'last_seen_at' => 'datetime',
+        'dismiss_set_password_prompt' => 'boolean',
+        'has_custom_password' => 'boolean',
     ];
 
     public function isOnline()

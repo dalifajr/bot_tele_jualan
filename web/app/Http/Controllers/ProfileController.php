@@ -187,4 +187,16 @@ class ProfileController extends Controller
             'prefill' => $prefill
         ]);
     }
+
+    public function dismissPasswordPrompt(Request $request)
+    {
+        $user = Auth::user();
+        if ($user) {
+            $user->update([
+                'dismiss_set_password_prompt' => true,
+            ]);
+        }
+
+        return response()->json(['success' => true]);
+    }
 }
