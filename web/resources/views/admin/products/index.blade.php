@@ -428,10 +428,16 @@
                         @method('DELETE')
                         <button type="submit" class="btn btn-danger rounded-pill px-4">{{ __('Ya, Hapus') }}</button>
                     </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 {{-- Export PDF Modal --}}
 <div class="modal fade" id="exportPdfModal{{ $product->id }}" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content" style="border-radius: 16px; border: none;">
+        <div class="modal-content text-start" style="border-radius: 16px; border: none;">
             <div class="modal-header border-0 pb-0">
                 <h5 class="fw-bold"><i class="fas fa-file-pdf text-danger me-2"></i>{{ __('Unduh Laporan Penjualan (PDF)') }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
