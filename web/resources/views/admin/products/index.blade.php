@@ -85,83 +85,83 @@
 
 {{-- Product Catalog Card Grid --}}
 @if($products->count() > 0)
-<div class="row g-4 mb-4">
+<div class="row g-3 mb-4">
     @foreach($products as $product)
-    <div class="col-12 col-md-6 col-xl-4">
-        <div class="card border-0 shadow-sm overflow-hidden h-100" style="border-radius: 20px;">
-            <div class="p-3 text-white d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);">
-                <div class="text-truncate" style="max-width: 65%;">
-                    <h6 class="fw-bold m-0 text-truncate text-white" title="{{ $product->name }}">
-                        #{{ $product->id }} - {{ $product->name }}
-                    </h6>
+    <div class="col-12 col-sm-6 col-md-4 col-xl-3">
+        <div class="card border-0 shadow-sm overflow-hidden h-100" style="border-radius: 14px;">
+            <div class="px-3 py-2 text-white d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);">
+                <div class="text-truncate me-2" style="max-width: 65%;">
+                    <a href="{{ route('admin.products.manage', $product->id) }}" class="fw-bold text-white text-decoration-none text-truncate d-block small" title="{{ __('Kelola Stok & Worker') }}: {{ $product->name }}">
+                        #{{ $product->id }} {{ $product->name }}
+                    </a>
                 </div>
                 <div>
-                    <span class="badge bg-white text-primary rounded-pill fw-bold shadow-sm">
+                    <span class="badge bg-white text-primary rounded-pill fw-bold shadow-sm" style="font-size: 0.75rem;">
                         {{ $product->formatted_price }}
                     </span>
                 </div>
             </div>
             
-            <div class="card-body p-4 d-flex flex-column justify-content-between">
+            <div class="card-body p-3 d-flex flex-column justify-content-between">
                 <div>
-                    <div class="d-flex flex-wrap gap-1 mb-2">
+                    <div class="d-flex flex-wrap gap-1 mb-2" style="font-size: 0.7rem;">
                         @if($product->is_suspended)
-                            <span class="badge bg-danger-subtle text-danger rounded-pill px-2 py-1"><i class="fas fa-ban me-1"></i> {{ __('Suspended') }}</span>
+                            <span class="badge bg-danger-subtle text-danger rounded-pill px-2 py-0.5"><i class="fas fa-ban me-1"></i>{{ __('Suspended') }}</span>
                         @else
-                            <span class="badge bg-success-subtle text-success rounded-pill px-2 py-1"><i class="fas fa-check-circle me-1"></i> {{ __('Active') }}</span>
+                            <span class="badge bg-success-subtle text-success rounded-pill px-2 py-0.5"><i class="fas fa-check-circle me-1"></i>{{ __('Active') }}</span>
                         @endif
 
                         @if($product->creator_id === null)
-                            <span class="badge bg-dark-subtle text-dark rounded-pill px-2 py-1" title="{{ __('Dikelola oleh Admin Utama') }}"><i class="fas fa-user-shield me-1"></i> {{ __('Admin Utama') }}</span>
+                            <span class="badge bg-dark-subtle text-dark rounded-pill px-2 py-0.5" title="{{ __('Dikelola oleh Admin Utama') }}"><i class="fas fa-user-shield me-1"></i>{{ __('Admin') }}</span>
                         @else
-                            <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-1" title="{{ __('Pemilik Produk: Seller') }}"><i class="fas fa-store me-1"></i> {{ $product->creator->full_name ?? $product->creator->username }}</span>
+                            <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-0.5" title="{{ __('Pemilik Produk: Seller') }}"><i class="fas fa-store me-1"></i>{{ Str::limit($product->creator->full_name ?? $product->creator->username, 12) }}</span>
                         @endif
 
                         @if($product->is_vpn)
-                            <span class="badge bg-info-subtle text-info rounded-pill px-2 py-1"><i class="fas fa-network-wired me-1"></i> VPN ({{ strtoupper($product->vpn_protocol) }})</span>
+                            <span class="badge bg-info-subtle text-info rounded-pill px-2 py-0.5"><i class="fas fa-network-wired me-1"></i>VPN ({{ strtoupper($product->vpn_protocol) }})</span>
                         @endif
 
                         @if($product->warranty_days > 0)
-                            <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill px-2 py-1"><i class="fas fa-shield-alt me-1"></i> {{ __('Garansi') }} {{ $product->warranty_days }}H</span>
+                            <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill px-2 py-0.5"><i class="fas fa-shield-alt me-1"></i>{{ $product->warranty_days }}H</span>
                         @endif
                     </div>
 
-                    <p class="text-muted small mb-3" style="min-height: 42px;">
-                        {{ Str::limit($product->description ?: 'Tidak ada deskripsi produk.', 110) }}
+                    <p class="text-muted mb-2 text-truncate" style="font-size: 0.78rem;" title="{{ $product->description }}">
+                        {{ $product->description ?: 'Tidak ada deskripsi.' }}
                     </p>
 
-                    <div class="bg-light p-2 rounded-3 mb-3 small d-flex justify-content-between align-items-center">
-                        <span title="{{ __('Stok Ready') }}"><i class="fas fa-cubes text-info me-1"></i> <strong>{{ $product->stockUnits->where('is_sold', false)->count() }}</strong> {{ __('ready') }}</span>
-                        <span title="{{ __('Stok Terjual') }}"><i class="fas fa-shopping-bag text-success me-1"></i> <strong>{{ $product->stockUnits->where('is_sold', true)->count() }}</strong> {{ __('terjual') }}</span>
-                        <span title="{{ __('Worker') }}"><i class="fas fa-users text-secondary me-1"></i> <strong>{{ $product->workers->count() }}</strong> worker</span>
+                    <div class="bg-light px-2 py-1.5 rounded-3 mb-2 d-flex justify-content-between align-items-center" style="font-size: 0.73rem;">
+                        <span title="{{ __('Stok Ready') }}"><i class="fas fa-cubes text-info me-1"></i><strong>{{ $product->stockUnits->where('is_sold', false)->count() }}</strong></span>
+                        <span title="{{ __('Stok Terjual') }}"><i class="fas fa-shopping-bag text-success me-1"></i><strong>{{ $product->stockUnits->where('is_sold', true)->count() }}</strong></span>
+                        <span title="{{ __('Worker') }}"><i class="fas fa-users text-secondary me-1"></i><strong>{{ $product->workers->count() }}</strong></span>
                     </div>
                 </div>
 
-                <div class="border-top pt-3 mt-2 d-flex align-items-center gap-2">
-                    <a href="{{ route('admin.products.manage', $product->id) }}" class="btn btn-sm btn-primary rounded-pill px-3 flex-grow-1" title="{{ __('Detail & Kelola Stok/Worker') }}">
-                        <i class="fas fa-cog me-1"></i> {{ __('Kelola') }}
+                <div class="border-top pt-2 mt-1 d-flex justify-content-end align-items-center gap-1">
+                    <a href="{{ route('admin.products.manage', $product->id) }}" class="btn btn-sm btn-light text-primary rounded-circle" style="width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center;" title="{{ __('Detail & Kelola Stok') }}">
+                        <i class="fas fa-cog" style="font-size: 0.75rem;"></i>
                     </a>
 
-                    <button class="btn btn-sm btn-light text-primary rounded-circle" data-bs-toggle="modal" data-bs-target="#editProductModal{{ $product->id }}" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;" title="{{ __('Edit Produk') }}">
-                        <i class="fas fa-edit"></i>
+                    <button class="btn btn-sm btn-light text-primary rounded-circle" data-bs-toggle="modal" data-bs-target="#editProductModal{{ $product->id }}" style="width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center;" title="{{ __('Edit Produk') }}">
+                        <i class="fas fa-edit" style="font-size: 0.75rem;"></i>
                     </button>
 
                     @if($product->creator_id !== null)
-                    <button class="btn btn-sm btn-light text-warning rounded-circle" data-bs-toggle="modal" data-bs-target="#takeoverProductModal{{ $product->id }}" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;" title="{{ __('Ambil Alih ke Admin') }}">
-                        <i class="fas fa-user-shield"></i>
+                    <button class="btn btn-sm btn-light text-warning rounded-circle" data-bs-toggle="modal" data-bs-target="#takeoverProductModal{{ $product->id }}" style="width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center;" title="{{ __('Ambil Alih ke Admin') }}">
+                        <i class="fas fa-user-shield" style="font-size: 0.75rem;"></i>
                     </button>
                     @else
-                    <button class="btn btn-sm btn-light text-muted rounded-circle opacity-50" disabled style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;" title="{{ __('Sudah Dikelola Admin Utama') }}">
-                        <i class="fas fa-user-shield"></i>
+                    <button class="btn btn-sm btn-light text-muted rounded-circle opacity-50" disabled style="width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center;" title="{{ __('Sudah Dikelola Admin Utama') }}">
+                        <i class="fas fa-user-shield" style="font-size: 0.75rem;"></i>
                     </button>
                     @endif
 
-                    <button class="btn btn-sm btn-light text-info rounded-circle" data-bs-toggle="modal" data-bs-target="#reassignProductModal{{ $product->id }}" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;" title="{{ __('Limpahkan ke Seller Lain') }}">
-                        <i class="fas fa-exchange-alt"></i>
+                    <button class="btn btn-sm btn-light text-info rounded-circle" data-bs-toggle="modal" data-bs-target="#reassignProductModal{{ $product->id }}" style="width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center;" title="{{ __('Limpahkan ke Seller Lain') }}">
+                        <i class="fas fa-exchange-alt" style="font-size: 0.75rem;"></i>
                     </button>
 
-                    <button class="btn btn-sm btn-light text-danger rounded-circle" data-bs-toggle="modal" data-bs-target="#deleteProductModal{{ $product->id }}" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;" title="{{ __('Hapus Produk') }}">
-                        <i class="fas fa-trash-alt"></i>
+                    <button class="btn btn-sm btn-light text-danger rounded-circle" data-bs-toggle="modal" data-bs-target="#deleteProductModal{{ $product->id }}" style="width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center;" title="{{ __('Hapus Produk') }}">
+                        <i class="fas fa-trash-alt" style="font-size: 0.75rem;"></i>
                     </button>
                 </div>
             </div>

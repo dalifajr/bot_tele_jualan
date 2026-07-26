@@ -321,7 +321,7 @@ class AdminController extends Controller
             }
         }
 
-        $products = $query->orderBy('created_at', 'desc')->paginate(12)->withQueryString();
+        $products = $query->orderBy('created_at', 'desc')->paginate(16)->withQueryString();
         $sellers = User::where('role', 'seller')->orderBy('full_name')->orderBy('username')->get();
 
         return view('admin.products.index', compact('products', 'sellers'));
