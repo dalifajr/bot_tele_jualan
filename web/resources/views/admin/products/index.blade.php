@@ -4,17 +4,35 @@
 @section('page_subtitle', 'Produk')
 
 @section('content')
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
     <div>
         <h4 class="fw-bold mb-1">{{ __('Manajemen Produk') }}</h4>
-        <p class="text-muted mb-0">{{ __('Kelola katalog produk digital') }}</p>
+        <p class="text-muted mb-0">{{ __('Kelola katalog produk digital, filter seller, serta kelola hak akses kepemilikan.') }}</p>
     </div>
     <div>
-        <button class="btn btn-primary rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#addProductModal">
+        <button class="btn btn-primary rounded-pill px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#addProductModal">
             <i class="fas fa-plus me-2"></i>{{ __('Tambah Produk') }}
         </button>
     </div>
 </div>
+
+@if(session('success'))
+<div class="alert alert-success shadow-sm rounded-4 mb-4">
+    <i class="fas fa-check-circle me-2"></i>{{ session('success') }}
+</div>
+@endif
+
+@if(session('info'))
+<div class="alert alert-info shadow-sm rounded-4 mb-4">
+    <i class="fas fa-info-circle me-2"></i>{{ session('info') }}
+</div>
+@endif
+
+@if(session('error'))
+<div class="alert alert-danger shadow-sm rounded-4 mb-4">
+    <i class="fas fa-exclamation-circle me-2"></i>{{ session('error') }}
+</div>
+@endif
 
 @if ($errors->any())
 <div class="alert alert-danger shadow-sm rounded-4 mb-4">
@@ -27,66 +45,143 @@
 </div>
 @endif
 
-<div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 16px;">
-    <div class="card-body p-0">
-        @if($products->count() > 0)
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead>
-                    <tr class="text-secondary small border-bottom">
-                        <th class="px-4 py-3 border-0">ID</th>
-                        <th class="py-3 border-0">{{ __('Nama Produk') }}</th>
-                        <th class="py-3 border-0">{{ __('Harga') }}</th>
-                        <th class="py-3 border-0">{{ __('Status') }}</th>
-                        <th class="py-3 border-0">{{ __('Dibuat') }}</th>
-                        <th class="py-3 border-0 text-end px-4">{{ __('Aksi') }}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($products as $product)
-                    <tr>
-                        <td class="px-4 fw-bold text-muted">#{{ $product->id }}</td>
-                        <td class="fw-bold text-primary">{{ $product->name }}</td>
-                        <td>{{ $product->formatted_price }}</td>
-                        <td>
-                            @if($product->is_suspended)
-                            <span class="badge bg-danger-subtle text-danger rounded-pill px-3">{{ __('Suspended') }}</span>
-                            @else
-                            <span class="badge bg-success-subtle text-success rounded-pill px-3">{{ __('Active') }}</span>
-                            @endif
-                        </td>
-                        <td class="text-secondary small">{{ $product->created_at->format('d M Y') }}</td>
-                        <td class="px-4">
-                            <div class="d-flex gap-2 justify-content-end">
-                                <a href="{{ route('admin.products.manage', $product->id) }}" class="btn btn-sm btn-light text-primary rounded-pill px-3" title="{{ __('Detail & Aksi') }}">
-                                    <i class="fas fa-cog"></i> {{ __('Aksi') }}
-                                </a>
-                                <button class="btn btn-sm btn-light text-primary rounded-circle" data-bs-toggle="modal" data-bs-target="#editProductModal{{ $product->id }}" title="{{ __('Edit') }}">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="btn btn-sm btn-light text-danger rounded-circle" data-bs-toggle="modal" data-bs-target="#deleteProductModal{{ $product->id }}" title="{{ __('Hapus') }}">
-                                    <i class="fas fa-trash-alt"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-
-
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-        <div class="px-4 py-3 border-top">
-            {{ $products->links() }}
-        </div>
-        @else
-        <div class="text-center py-5">
-            <i class="fas fa-box text-muted mb-3" style="font-size: 3rem;"></i>
-            <p class="text-muted mb-0">{{ __('Belum ada produk.') }}</p>
-        </div>
-        @endif
+{{-- Filter & Search Card --}}
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-body p-3">
+        <form method="GET" action="{{ route('admin.products.index') }}" class="row g-2 align-items-center">
+            <div class="col-12 col-md-5">
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-0"><i class="fas fa-search text-muted"></i></span>
+                    <input type="text" name="search" class="form-control bg-light border-0" placeholder="{{ __('Cari nama, deskripsi, atau ID produk...') }}" value="{{ request('search') }}">
+                </div>
+            </div>
+            <div class="col-12 col-md-4">
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-0"><i class="fas fa-store text-muted"></i></span>
+                    <select name="seller_id" class="form-select bg-light border-0">
+                        <option value="">{{ __('-- Semua Pemilik / Seller --') }}</option>
+                        <option value="admin" {{ request('seller_id') === 'admin' ? 'selected' : '' }}>{{ __('Admin Utama') }}</option>
+                        @foreach($sellers as $seller)
+                            <option value="{{ $seller->id }}" {{ request('seller_id') == $seller->id ? 'selected' : '' }}>
+                                {{ $seller->full_name ?? $seller->username }} (Seller)
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+            <div class="col-12 col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary rounded-pill px-3 flex-grow-1">
+                    <i class="fas fa-filter me-1"></i> {{ __('Filter') }}
+                </button>
+                @if(request()->hasAny(['search', 'seller_id']))
+                <a href="{{ route('admin.products.index') }}" class="btn btn-light rounded-pill text-muted px-3" title="{{ __('Reset Filter') }}">
+                    <i class="fas fa-undo"></i>
+                </a>
+                @endif
+            </div>
+        </form>
     </div>
 </div>
+
+{{-- Product Catalog Card Grid --}}
+@if($products->count() > 0)
+<div class="row g-4 mb-4">
+    @foreach($products as $product)
+    <div class="col-12 col-md-6 col-xl-4">
+        <div class="card border-0 shadow-sm overflow-hidden h-100" style="border-radius: 20px;">
+            <div class="p-3 text-white d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);">
+                <div class="text-truncate" style="max-width: 65%;">
+                    <h6 class="fw-bold m-0 text-truncate text-white" title="{{ $product->name }}">
+                        #{{ $product->id }} - {{ $product->name }}
+                    </h6>
+                </div>
+                <div>
+                    <span class="badge bg-white text-primary rounded-pill fw-bold shadow-sm">
+                        {{ $product->formatted_price }}
+                    </span>
+                </div>
+            </div>
+            
+            <div class="card-body p-4 d-flex flex-column justify-content-between">
+                <div>
+                    <div class="d-flex flex-wrap gap-1 mb-2">
+                        @if($product->is_suspended)
+                            <span class="badge bg-danger-subtle text-danger rounded-pill px-2 py-1"><i class="fas fa-ban me-1"></i> {{ __('Suspended') }}</span>
+                        @else
+                            <span class="badge bg-success-subtle text-success rounded-pill px-2 py-1"><i class="fas fa-check-circle me-1"></i> {{ __('Active') }}</span>
+                        @endif
+
+                        @if($product->creator_id === null)
+                            <span class="badge bg-dark-subtle text-dark rounded-pill px-2 py-1" title="{{ __('Dikelola oleh Admin Utama') }}"><i class="fas fa-user-shield me-1"></i> {{ __('Admin Utama') }}</span>
+                        @else
+                            <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-1" title="{{ __('Pemilik Produk: Seller') }}"><i class="fas fa-store me-1"></i> {{ $product->creator->full_name ?? $product->creator->username }}</span>
+                        @endif
+
+                        @if($product->is_vpn)
+                            <span class="badge bg-info-subtle text-info rounded-pill px-2 py-1"><i class="fas fa-network-wired me-1"></i> VPN ({{ strtoupper($product->vpn_protocol) }})</span>
+                        @endif
+
+                        @if($product->warranty_days > 0)
+                            <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill px-2 py-1"><i class="fas fa-shield-alt me-1"></i> {{ __('Garansi') }} {{ $product->warranty_days }}H</span>
+                        @endif
+                    </div>
+
+                    <p class="text-muted small mb-3" style="min-height: 42px;">
+                        {{ Str::limit($product->description ?: 'Tidak ada deskripsi produk.', 110) }}
+                    </p>
+
+                    <div class="bg-light p-2 rounded-3 mb-3 small d-flex justify-content-between align-items-center">
+                        <span title="{{ __('Stok Ready') }}"><i class="fas fa-cubes text-info me-1"></i> <strong>{{ $product->stockUnits->where('is_sold', false)->count() }}</strong> {{ __('ready') }}</span>
+                        <span title="{{ __('Stok Terjual') }}"><i class="fas fa-shopping-bag text-success me-1"></i> <strong>{{ $product->stockUnits->where('is_sold', true)->count() }}</strong> {{ __('terjual') }}</span>
+                        <span title="{{ __('Worker') }}"><i class="fas fa-users text-secondary me-1"></i> <strong>{{ $product->workers->count() }}</strong> worker</span>
+                    </div>
+                </div>
+
+                <div class="border-top pt-3 mt-2 d-flex align-items-center gap-2">
+                    <a href="{{ route('admin.products.manage', $product->id) }}" class="btn btn-sm btn-primary rounded-pill px-3 flex-grow-1" title="{{ __('Detail & Kelola Stok/Worker') }}">
+                        <i class="fas fa-cog me-1"></i> {{ __('Kelola') }}
+                    </a>
+
+                    <button class="btn btn-sm btn-light text-primary rounded-circle" data-bs-toggle="modal" data-bs-target="#editProductModal{{ $product->id }}" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;" title="{{ __('Edit Produk') }}">
+                        <i class="fas fa-edit"></i>
+                    </button>
+
+                    @if($product->creator_id !== null)
+                    <button class="btn btn-sm btn-light text-warning rounded-circle" data-bs-toggle="modal" data-bs-target="#takeoverProductModal{{ $product->id }}" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;" title="{{ __('Ambil Alih ke Admin') }}">
+                        <i class="fas fa-user-shield"></i>
+                    </button>
+                    @else
+                    <button class="btn btn-sm btn-light text-muted rounded-circle opacity-50" disabled style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;" title="{{ __('Sudah Dikelola Admin Utama') }}">
+                        <i class="fas fa-user-shield"></i>
+                    </button>
+                    @endif
+
+                    <button class="btn btn-sm btn-light text-info rounded-circle" data-bs-toggle="modal" data-bs-target="#reassignProductModal{{ $product->id }}" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;" title="{{ __('Limpahkan ke Seller Lain') }}">
+                        <i class="fas fa-exchange-alt"></i>
+                    </button>
+
+                    <button class="btn btn-sm btn-light text-danger rounded-circle" data-bs-toggle="modal" data-bs-target="#deleteProductModal{{ $product->id }}" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;" title="{{ __('Hapus Produk') }}">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endforeach
+</div>
+
+<div class="d-flex justify-content-center mb-4">
+    {{ $products->links() }}
+</div>
+@else
+<div class="card border-0 shadow-sm rounded-4 py-5 text-center">
+    <div class="card-body">
+        <i class="fas fa-box text-muted mb-3" style="font-size: 3rem;"></i>
+        <h6 class="fw-bold text-secondary">{{ __('Belum ada produk ditemukan.') }}</h6>
+        <p class="text-muted small mb-0">{{ __('Coba ubah kata kunci pencarian atau filter seller Anda.') }}</p>
+    </div>
+</div>
+@endif
 
 @push('modals')
 {{-- Add Product Modal --}}
@@ -238,6 +333,67 @@
     </div>
 </div>
 
+{{-- Takeover Modal --}}
+@if($product->creator_id !== null)
+<div class="modal fade" id="takeoverProductModal{{ $product->id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content text-center" style="border-radius: 16px; border: none;">
+            <div class="modal-body p-4">
+                <i class="fas fa-user-shield text-warning mb-3" style="font-size: 3rem;"></i>
+                <h5 class="fw-bold">{{ __('Ambil Alih Produk ke Admin?') }}</h5>
+                <p class="text-muted small mb-3">
+                    {{ __('Anda akan mengambil alih kepemilikan produk') }} <strong>"{{ $product->name }}"</strong> {{ __('dari seller') }} <strong>"{{ $product->creator->full_name ?? $product->creator->username }}"</strong> {{ __('ke Admin Utama. Seluruh sisa stok belum terjual juga akan dialihkan ke Admin Utama.') }}
+                </p>
+                <div class="d-flex gap-2 justify-content-center mt-4">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">{{ __('Batal') }}</button>
+                    <form action="{{ route('admin.products.takeover', $product->id) }}" method="POST">
+                        @csrf
+                        <button type="submit" class="btn btn-warning text-dark rounded-pill px-4 fw-bold">{{ __('Ya, Ambil Alih') }}</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
+
+{{-- Reassign / Transfer Modal --}}
+<div class="modal fade" id="reassignProductModal{{ $product->id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 16px; border: none;">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="fw-bold"><i class="fas fa-exchange-alt text-info me-2"></i>{{ __('Limpahkan Produk ke Seller Lain') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ route('admin.products.reassign', $product->id) }}" method="POST">
+                @csrf
+                <div class="modal-body">
+                    <p class="text-muted small mb-3">
+                        {{ __('Pindahkan kepemilikan produk') }} <strong>"{{ $product->name }}"</strong> {{ __('dan seluruh sisa stok belum terjual ke seller lain.') }}
+                    </p>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">{{ __('Pilih Seller Tujuan') }}</label>
+                        <select name="seller_id" class="form-select" required>
+                            <option value="">{{ __('-- Pilih Seller --') }}</option>
+                            @foreach($sellers as $seller)
+                                @if($seller->id !== $product->creator_id)
+                                    <option value="{{ $seller->id }}">
+                                        {{ $seller->full_name ?? $seller->username }} ({{ $seller->username }})
+                                    </option>
+                                @endif
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">{{ __('Batal') }}</button>
+                    <button type="submit" class="btn btn-info text-white rounded-pill px-4 fw-bold">{{ __('Limpahkan Produk') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 {{-- Delete Modal --}}
 <div class="modal fade" id="deleteProductModal{{ $product->id }}" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -280,7 +436,7 @@
 @endforeach
 
 <script>
-    document.getElementById('enableWarrantyAdd').addEventListener('change', function() {
+    document.getElementById('enableWarrantyAdd')?.addEventListener('change', function() {
         document.getElementById('warrantyDaysAddContainer').style.display = this.checked ? 'block' : 'none';
         if (!this.checked) {
             document.getElementById('warrantyDaysAdd').value = '';
@@ -291,15 +447,18 @@
         toggle.addEventListener('change', function() {
             var targetId = this.getAttribute('data-target');
             var container = document.getElementById(targetId);
-            container.style.display = this.checked ? 'block' : 'none';
-            if (!this.checked) {
-                container.querySelector('input[type="number"]').value = '';
+            if (container) {
+                container.style.display = this.checked ? 'block' : 'none';
+                if (!this.checked) {
+                    var input = container.querySelector('input[type="number"]');
+                    if (input) input.value = '';
+                }
             }
         });
     });
 
     // VPN Togglers
-    document.getElementById('isVpnAdd').addEventListener('change', function() {
+    document.getElementById('isVpnAdd')?.addEventListener('change', function() {
         document.getElementById('vpnOptionsAddContainer').style.display = this.checked ? 'block' : 'none';
         if (!this.checked) {
             document.getElementById('vpnProtocolAdd').value = '';
@@ -311,7 +470,9 @@
         toggle.addEventListener('change', function() {
             var targetId = this.getAttribute('data-target');
             var container = document.getElementById(targetId);
-            container.style.display = this.checked ? 'block' : 'none';
+            if (container) {
+                container.style.display = this.checked ? 'block' : 'none';
+            }
         });
     });
 </script>

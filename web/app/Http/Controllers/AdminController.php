@@ -298,10 +298,33 @@ class AdminController extends Controller
         ));
     }
 
-    public function products()
+    public function products(Request $request)
     {
-        $products = Product::orderBy('created_at', 'desc')->paginate(10);
-        return view('admin.products.index', compact('products'));
+        $query = Product::with(['creator', 'stockUnits', 'workers']);
+
+        if ($request->filled('search')) {
+            $search = trim($request->search);
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
+                if (is_numeric($search)) {
+                    $q->orWhere('id', (int)$search);
+                }
+            });
+        }
+
+        if ($request->filled('seller_id')) {
+            if ($request->seller_id === 'admin') {
+                $query->whereNull('creator_id');
+            } else {
+                $query->where('creator_id', $request->seller_id);
+            }
+        }
+
+        $products = $query->orderBy('created_at', 'desc')->paginate(12)->withQueryString();
+        $sellers = User::where('role', 'seller')->orderBy('full_name')->orderBy('username')->get();
+
+        return view('admin.products.index', compact('products', 'sellers'));
     }
 
     public function stock(Request $request)
@@ -1058,6 +1081,101 @@ class AdminController extends Controller
             return redirect()->back()->with('success', __('Produk berhasil dihapus.'));
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Gagal menghapus produk: ' . $e->getMessage());
+        }
+    }
+
+    public function takeoverProduct($id)
+    {
+        $product = Product::findOrFail($id);
+
+        if ($product->creator_id === null) {
+            return redirect()->back()->with('info', __('Produk ini sudah dikelola oleh Admin Utama.'));
+        }
+
+        try {
+            \Illuminate\Support\Facades\DB::beginTransaction();
+
+            $seller = User::find($product->creator_id);
+            $sellerName = $seller ? ($seller->full_name ?? $seller->username) : 'Seller (ID: ' . $product->creator_id . ')';
+
+            // Ambil alih semua stok unit
+            $stockUnits = \App\Models\StockUnit::where('product_id', $product->id)->get();
+            foreach ($stockUnits as $unit) {
+                $unit->uploaded_by_id = $unit->uploaded_by_id ?? $unit->seller_id;
+                $unit->seller_id = null;
+                $unit->save();
+            }
+
+            $note = "\n\n[Catatan: Produk ini sebelumnya dikelola oleh " . $sellerName . "]";
+            if (strpos($product->description ?? '', '[Catatan:') === false) {
+                $product->description = ($product->description ?? '') . $note;
+            }
+
+            $product->creator_id = null;
+            $product->save();
+
+            \Illuminate\Support\Facades\DB::table('audit_logs')->insert([
+                'action' => 'admin_takeover_product',
+                'actor_id' => \Illuminate\Support\Facades\Auth::id(),
+                'entity_type' => 'product',
+                'entity_id' => $product->id,
+                'detail' => "Admin took over seller product: {$product->name} (Original Seller ID: {$seller->id})",
+                'created_at' => now(),
+            ]);
+
+            \Illuminate\Support\Facades\DB::commit();
+
+            return redirect()->back()->with('success', __('Produk buatan seller dan sisa stoknya berhasil diambil alih oleh Admin Utama.'));
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\DB::rollBack();
+            return redirect()->back()->with('error', 'Gagal mengambil alih produk seller: ' . $e->getMessage());
+        }
+    }
+
+    public function reassignProduct(Request $request, $id)
+    {
+        $request->validate([
+            'seller_id' => 'required|exists:users,id',
+        ]);
+
+        $product = Product::findOrFail($id);
+        $targetSeller = User::where('id', $request->seller_id)->whereIn('role', ['seller', 'admin'])->firstOrFail();
+
+        try {
+            \Illuminate\Support\Facades\DB::beginTransaction();
+
+            $oldCreatorName = $product->creator ? ($product->creator->full_name ?? $product->creator->username) : 'Admin Utama';
+            $targetSellerName = $targetSeller->full_name ?? $targetSeller->username;
+
+            // Transfer unsold stock units to target seller
+            $stockUnits = \App\Models\StockUnit::where('product_id', $product->id)->where('is_sold', false)->get();
+            foreach ($stockUnits as $unit) {
+                $unit->uploaded_by_id = $unit->uploaded_by_id ?? $unit->seller_id;
+                $unit->seller_id = $targetSeller->id;
+                $unit->save();
+            }
+
+            $note = "\n\n[Catatan: Produk ini dilimpahkan ke " . $targetSellerName . " (sebelumnya dikelola oleh " . $oldCreatorName . ")]";
+            $product->description = ($product->description ?? '') . $note;
+
+            $product->creator_id = $targetSeller->id;
+            $product->save();
+
+            \Illuminate\Support\Facades\DB::table('audit_logs')->insert([
+                'action' => 'admin_reassign_product',
+                'actor_id' => \Illuminate\Support\Facades\Auth::id(),
+                'entity_type' => 'product',
+                'entity_id' => $product->id,
+                'detail' => "Admin reassigned product {$product->name} from {$oldCreatorName} to {$targetSellerName} (ID: {$targetSeller->id})",
+                'created_at' => now(),
+            ]);
+
+            \Illuminate\Support\Facades\DB::commit();
+
+            return redirect()->back()->with('success', __('Produk :product berhasil dilimpahkan ke :seller.', ['product' => $product->name, 'seller' => $targetSellerName]));
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\DB::rollBack();
+            return redirect()->back()->with('error', 'Gagal melimpahkan produk: ' . $e->getMessage());
         }
     }
 
