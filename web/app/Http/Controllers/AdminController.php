@@ -1323,7 +1323,6 @@ class AdminController extends Controller
                 $query->whereIn('status', ['delivered', 'paid', 'completed'])
                     ->where(function ($q) use ($startDate, $endDate) {
                         $q->whereBetween('created_at', [$startDate, $endDate])
-                          ->orWhereBetween('updated_at', [$startDate, $endDate])
                           ->orWhereBetween('delivered_at', [$startDate, $endDate])
                           ->orWhereBetween('paid_at', [$startDate, $endDate]);
                     });
