@@ -658,8 +658,11 @@
         Auth::user()->telegram_id &&
         !Auth::user()->dismiss_set_password_prompt &&
         !Auth::user()->has_custom_password &&
-        session('logged_in_via_telegram')
+        (session('show_telegram_welcome_modal') || session('logged_in_via_telegram'))
     )
+        @php
+            session()->forget('logged_in_via_telegram');
+        @endphp
         <!-- Telegram Welcome Password Prompt Modal -->
         <div class="modal fade" id="telegramWelcomePasswordModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="telegramWelcomePasswordModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">

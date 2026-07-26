@@ -126,7 +126,7 @@ class TelegramAuthController extends Controller
         config(['session.lifetime' => $rememberDays * 24 * 60]);
 
         $request->session()->regenerate();
-        $request->session()->put('logged_in_via_telegram', true);
+        $request->session()->flash('show_telegram_welcome_modal', true);
 
         return redirect()->intended(route('dashboard'));
     }
@@ -245,7 +245,7 @@ class TelegramAuthController extends Controller
         $rememberDays = (int) config('telegram.remember_me_days', 30);
         config(['session.lifetime' => $rememberDays * 24 * 60]);
         $request->session()->regenerate();
-        $request->session()->put('logged_in_via_telegram', true);
+        $request->session()->flash('show_telegram_welcome_modal', true);
 
         return response()->json(['success' => true]);
     }
