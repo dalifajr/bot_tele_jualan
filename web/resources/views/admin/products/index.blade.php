@@ -138,6 +138,10 @@
                 </div>
 
                 <div class="border-top pt-2 mt-1 d-flex justify-content-end align-items-center gap-1">
+                    <button class="btn btn-sm btn-light text-danger rounded-circle" data-bs-toggle="modal" data-bs-target="#exportPdfModal{{ $product->id }}" style="width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center;" title="{{ __('Unduh Laporan PDF') }}">
+                        <i class="fas fa-file-pdf" style="font-size: 0.75rem;"></i>
+                    </button>
+
                     <button class="btn btn-sm btn-light text-primary rounded-circle" data-bs-toggle="modal" data-bs-target="#editProductModal{{ $product->id }}" style="width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center;" title="{{ __('Edit Produk') }}">
                         <i class="fas fa-edit" style="font-size: 0.75rem;"></i>
                     </button>
@@ -424,8 +428,35 @@
                         @method('DELETE')
                         <button type="submit" class="btn btn-danger rounded-pill px-4">{{ __('Ya, Hapus') }}</button>
                     </form>
-                </div>
+{{-- Export PDF Modal --}}
+<div class="modal fade" id="exportPdfModal{{ $product->id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 16px; border: none;">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="fw-bold"><i class="fas fa-file-pdf text-danger me-2"></i>{{ __('Unduh Laporan Penjualan (PDF)') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
+            <form action="{{ route('admin.products.report-pdf', $product->id) }}" method="GET" target="_blank">
+                <div class="modal-body">
+                    <p class="text-muted small mb-3">
+                        {{ __('Pilih rentang tanggal untuk mengunduh laporan penjualan dan pendapatan produk') }} <strong>"{{ $product->name }}"</strong>.
+                    </p>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">{{ __('Tanggal Mulai') }}</label>
+                        <input type="date" name="start_date" class="form-control" value="{{ now()->subMonth()->format('Y-m-d') }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">{{ __('Tanggal Selesai') }}</label>
+                        <input type="date" name="end_date" class="form-control" value="{{ now()->format('Y-m-d') }}" required>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">{{ __('Batal') }}</button>
+                    <button type="submit" class="btn btn-danger text-white rounded-pill px-4 fw-bold">
+                        <i class="fas fa-download me-1"></i> {{ __('Unduh PDF') }}
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

@@ -1304,6 +1304,60 @@ class AdminController extends Controller
         }, 200, $responseHeaders);
     }
 
+    public function exportProductReportPdf(Request $request, $id)
+    {
+        $request->validate([
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+        ]);
+
+        $product = Product::with(['creator'])->findOrFail($id);
+
+        $startDate = \Carbon\Carbon::parse($request->start_date)->startOfDay();
+        $endDate = \Carbon\Carbon::parse($request->end_date)->endOfDay();
+
+        $stockUnits = \App\Models\StockUnit::with(['order.customer', 'uploader', 'seller'])
+            ->where('product_id', $product->id)
+            ->where('is_sold', true)
+            ->whereIn('sold_order_id', function ($query) use ($startDate, $endDate) {
+                $query->select('id')->from('orders')
+                    ->whereIn('status', ['delivered', 'paid', 'completed'])
+                    ->whereBetween('created_at', [$startDate, $endDate]);
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $seller = $product->creator;
+        $sellerName = $seller ? ($seller->full_name ?? $seller->username) : 'Admin Utama';
+        $sellerRole = $seller ? ucfirst($seller->role) : 'Admin';
+        
+        $totalSoldUnits = $stockUnits->count();
+        $totalGrossRevenue = $totalSoldUnits * $product->price;
+
+        $platformFeePercent = ($seller && $seller->role === 'seller') ? (int)($seller->platform_fee_percent ?? 10) : 0;
+        $platformCommission = (int) round(($totalGrossRevenue * $platformFeePercent) / 100);
+        $totalNetEarnings = $totalGrossRevenue - $platformCommission;
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.products.pdf_report', compact(
+            'product',
+            'seller',
+            'sellerName',
+            'sellerRole',
+            'startDate',
+            'endDate',
+            'stockUnits',
+            'totalSoldUnits',
+            'totalGrossRevenue',
+            'platformFeePercent',
+            'platformCommission',
+            'totalNetEarnings'
+        ))->setPaper('a4', 'portrait');
+
+        $filename = 'laporan_penjualan_' . \Illuminate\Support\Str::slug($product->name) . '_' . $startDate->format('Ymd') . '-' . $endDate->format('Ymd') . '.pdf';
+
+        return $pdf->download($filename);
+    }
+
     // --- CRUD Stock ---
     public function storeStock(Request $request)
     {
