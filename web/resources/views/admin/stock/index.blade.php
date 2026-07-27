@@ -612,13 +612,18 @@
                     return;
                 }
 
-                // Split by double newlines or empty lines
-                const blocks = text.split(/\n\s*\n+/);
+                // Split by line dividers (===..., ___...) or double-newlines
+                let blocks = [];
+                if (/^\s*[=_#-]{3,}\s*$/m.test(text)) {
+                    blocks = text.split(/^\s*[=_#-]{3,}\s*$/m);
+                } else {
+                    blocks = text.split(/\n\s*\n+/);
+                }
                 let html = '';
                 let validCount = 0;
 
                 blocks.forEach((block, index) => {
-                    const cleanBlock = block.trim();
+                    let cleanBlock = block.replace(/^\s*[=_#-]{3,}\s*\n?|\n?\s*[=_#-]{3,}\s*$/gm, '').trim();
                     if (!cleanBlock) return;
 
                     validCount++;
@@ -628,7 +633,7 @@
 
                     lines.forEach(line => {
                         line = line.trim();
-                        if (!line) return;
+                        if (!line || /^\s*[=_#-]{3,}\s*$/.test(line)) return;
 
                         // Check common username formats
                         let userMatch = line.match(/^(username|user|email|login)\s*:\s*(.+)$/i);
@@ -636,9 +641,9 @@
                             username = userMatch[2].trim();
                         } else {
                             let parts = line.split(':');
-                            if (parts.length === 2 && username === 'Tidak Terdeteksi') {
-                                username = parts[0].trim();
-                                details.push(`Password: ${parts[1].trim()}`);
+                            let keyLower = parts[0].trim().toLowerCase();
+                            if (parts.length === 2 && username === 'Tidak Terdeteksi' && (['username', 'user', 'email', 'login', 'akun'].includes(keyLower) || parts[1].includes('@'))) {
+                                username = parts[1].trim();
                             } else {
                                 details.push(line);
                             }
@@ -661,8 +666,8 @@
                         }
                     }
 
-                    // Remove username duplicate from details array if it is present
-                    details = details.filter(d => !d.toLowerCase().includes('username:') && !d.toLowerCase().includes('user:'));
+                    // Remove username duplicate and divider lines from details array
+                    details = details.filter(d => !d.toLowerCase().includes('username:') && !d.toLowerCase().includes('user:') && !/^\s*[=_#-]{3,}\s*$/.test(d));
 
                     html += `
                         <tr>

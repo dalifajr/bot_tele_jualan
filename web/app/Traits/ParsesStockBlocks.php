@@ -23,7 +23,7 @@ trait ParsesStockBlocks
         // Check if raw text contains divider lines (e.g. 3 or more '=', '_', '-', or '#')
         if (preg_match('/^\s*[=_#-]{3,}\s*$/m', $normalized)) {
             // Split by divider lines
-            $rawBlocks = preg_split('/(?:\n|^)\s*[=_#-]{3,}\s*(?:\n|$)/m', $normalized);
+            $rawBlocks = preg_split('/^\s*[=_#-]{3,}\s*$/m', $normalized);
         } else {
             // Split by double-newlines
             $rawBlocks = preg_split('/\n\s*\n/', $normalized);
