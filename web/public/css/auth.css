@@ -1,0 +1,253 @@
+/*
+ * Jualan Web — Auth Page Styling
+ * ===========================================
+ * Integrates with main design system (app.css)
+ */
+
+body {
+    padding: 1.5rem;
+    font-family: 'Outfit', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow-x: hidden;
+    background-color: var(--bs-body-tertiary);
+    transition: background-color 0.3s ease, color 0.3s ease;
+    position: relative;
+}
+
+/* Light / Dark Mode Background Gradients */
+body::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 15% 15%, rgba(13, 110, 253, 0.08) 0%, transparent 45%),
+                radial-gradient(circle at 85% 85%, rgba(13, 110, 253, 0.05) 0%, transparent 45%);
+    z-index: -1;
+    pointer-events: none;
+}
+
+[data-bs-theme="dark"] body::before {
+    background: radial-gradient(circle at 15% 15%, rgba(13, 110, 253, 0.15) 0%, transparent 45%),
+                radial-gradient(circle at 85% 85%, rgba(13, 110, 253, 0.08) 0%, transparent 45%),
+                radial-gradient(circle at 50% 50%, rgba(20, 24, 33, 0.95) 0%, rgb(7, 10, 15) 100%);
+}
+
+/* Theme Toggle Button placement on Login */
+.auth-theme-toggle {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    z-index: 1050;
+}
+
+/* Auth Card Wrapper with Glassmorphism */
+.login-wrapper {
+    width: 100%;
+    max-width: 1050px;
+    min-height: 620px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border-radius: var(--radius-lg);
+    box-shadow: var(--card-shadow);
+    display: flex;
+    overflow: hidden;
+    transition: background 0.3s ease, border 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Left Form Section */
+.login-section {
+    padding: 3rem 3.5rem;
+    background: rgba(255, 255, 255, 0.45);
+    flex: 1.1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    border-right: 1px solid var(--glass-border);
+    transition: background 0.3s ease, border-right 0.3s ease;
+}
+
+[data-bs-theme="dark"] .login-section {
+    background: rgba(20, 24, 33, 0.35);
+}
+
+/* Right Info Section */
+.info-section {
+    padding: 3rem 3.5rem;
+    background: linear-gradient(135deg, rgba(13, 110, 253, 0.08) 0%, rgba(13, 110, 253, 0.03) 100%);
+    flex: 0.9;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+}
+
+[data-bs-theme="dark"] .info-section {
+    background: linear-gradient(135deg, rgba(13, 110, 253, 0.15) 0%, rgba(13, 110, 253, 0.05) 100%);
+}
+
+/* Glass Announcement Card */
+.glass-card {
+    background: rgba(255, 255, 255, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: var(--radius-md);
+    padding: 2rem;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.02);
+}
+
+[data-bs-theme="dark"] .glass-card {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.05);
+}
+
+.glass-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 1.25rem;
+}
+
+/* Tab Pills Navigation */
+.auth-tabs-container {
+    background: rgba(0, 0, 0, 0.04);
+    padding: 0.25rem;
+    border-radius: 50px;
+    display: flex;
+    gap: 0.25rem;
+}
+
+[data-bs-theme="dark"] .auth-tabs-container {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.auth-tab-btn {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 0.5rem 1.5rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--bs-secondary-color);
+    border-radius: 50px;
+    transition: all 0.2s ease;
+}
+
+.auth-tab-btn.active {
+    background: var(--bs-body-bg);
+    color: var(--primary-color);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+[data-bs-theme="dark"] .auth-tab-btn.active {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Form Icons & Fields styling */
+.form-group.relative {
+    position: relative;
+}
+
+.form-group .form-control {
+    padding-left: 2.75rem;
+    border-radius: var(--radius-md);
+    background: var(--bs-body-bg);
+    border: 1px solid var(--glass-border);
+    font-size: 0.9rem;
+    height: 46px;
+    transition: all 0.2s ease;
+}
+
+.form-group .form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15);
+}
+
+.form-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--bs-secondary-color);
+    font-size: 0.95rem;
+    pointer-events: none;
+}
+
+/* Primary Button Styling */
+.btn-primary {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: #fff;
+    border-radius: 50px;
+    font-weight: 700;
+    height: 46px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.15);
+}
+
+.btn-primary:hover {
+    background: var(--primary-hover);
+    border-color: var(--primary-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(13, 110, 253, 0.25);
+}
+
+.btn-outline {
+    background: transparent;
+    border: 1px solid var(--glass-border);
+    color: var(--bs-body-color);
+    border-radius: 50px;
+    font-weight: 600;
+    height: 46px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all 0.2s ease;
+}
+
+.btn-outline:hover {
+    background: rgba(0, 0, 0, 0.02);
+    border-color: var(--bs-secondary-color);
+}
+
+[data-bs-theme="dark"] .btn-outline:hover {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+/* Utility Layout classes */
+.space-y-4 > * + * {
+    margin-top: 1rem;
+}
+
+/* Responsive Overrides */
+@media (max-width: 991.98px) {
+    .login-wrapper {
+        flex-direction: column;
+        max-width: 550px;
+        min-height: auto;
+    }
+
+    .login-section {
+        padding: 2.5rem 2rem;
+        border-right: none;
+        border-bottom: 1px solid var(--glass-border);
+    }
+
+    .info-section {
+        padding: 2.5rem 2rem;
+    }
+}
