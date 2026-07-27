@@ -1,0 +1,167 @@
+/* ==========================================
+   JUALAN DIGITAL - AUTHENTICATION DESIGN SYSTEM
+   Universal Design Tokens & Glassmorphism
+   ========================================== */
+
+body {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem 1rem;
+  background-color: var(--bs-body-bg);
+  position: relative;
+  overflow-x: hidden;
+  font-family: 'Outfit', sans-serif;
+}
+
+/* Background Ambient Glow */
+body::before {
+  content: '';
+  position: fixed;
+  top: -150px;
+  left: -150px;
+  width: 500px;
+  height: 500px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(13, 110, 253, 0.12) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  bottom: -150px;
+  right: -150px;
+  width: 500px;
+  height: 500px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(13, 202, 240, 0.1) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Theme Toggle Button Position */
+.auth-theme-toggle {
+  position: fixed;
+  top: 1.25rem;
+  right: 1.25rem;
+  z-index: 1050;
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
+}
+
+.auth-theme-toggle:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Login Card Wrapper */
+.login-wrapper {
+  width: 100%;
+  max-width: 960px;
+  border-radius: var(--radius-lg, 20px);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: var(--shadow-md);
+  position: relative;
+  z-index: 10;
+  display: flex;
+  overflow: hidden;
+}
+
+/* Left Section: Form */
+.login-section {
+  flex: 1 1 500px;
+  padding: 2.5rem 2.25rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: var(--bs-body-bg);
+  z-index: 2;
+}
+
+/* Right Section: Info & Showcase */
+.info-section {
+  flex: 1 1 400px;
+  padding: 2.5rem 2.25rem;
+  background: linear-gradient(135deg, rgba(13, 110, 253, 0.05) 0%, rgba(13, 202, 240, 0.05) 100%);
+  border-left: 1px solid var(--glass-border);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+}
+
+/* Glass Card inside Info Section */
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md, 12px);
+  padding: 1.75rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.glass-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  font-size: 1rem;
+  margin-bottom: 1rem;
+}
+
+/* Form Controls in Auth */
+.login-section .form-control,
+.login-section .form-select {
+  border-radius: var(--radius-sm, 8px);
+  padding: 0.65rem 0.9rem;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+}
+
+.login-section .input-group .input-group-text {
+  border-radius: var(--radius-sm, 8px) 0 0 var(--radius-sm, 8px);
+  font-size: 0.95rem;
+}
+
+.login-section .input-group .form-control {
+  border-radius: 0 var(--radius-sm, 8px) var(--radius-sm, 8px) 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 991.98px) {
+  .login-wrapper {
+    max-width: 500px;
+    flex-direction: column;
+  }
+  
+  .login-section {
+    padding: 2rem 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  body {
+    padding: 1rem 0.75rem;
+  }
+  
+  .login-section {
+    padding: 1.5rem 1.25rem;
+  }
+}

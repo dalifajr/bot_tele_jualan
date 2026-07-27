@@ -69,7 +69,7 @@
   {{-- Theme Toggle Button --}}
   <div class="auth-theme-toggle">
     <button class="btn btn-link link-body-emphasis p-0" id="themeToggle" title="{{ __('Ganti Tema') }}" aria-label="{{ __('Ganti Tema') }}">
-        <i class="fas fa-moon fs-4" id="themeIcon"></i>
+        <i class="fas fa-moon fs-5" id="themeIcon"></i>
     </button>
   </div>
 
@@ -81,32 +81,35 @@
   <div class="login-wrapper">
     {{-- Left Section: Form --}}
     <div class="login-section">
-      {{-- Logo & Brand --}}
+      {{-- Logo & Brand Header --}}
       <div class="brand-header mb-4 d-flex align-items-center gap-3">
-        <div class="d-flex align-items-center">
-          <div class="rounded-circle d-flex align-items-center justify-content-center text-white" style="width: 44px; height: 44px; background: linear-gradient(135deg, #1b4ab2 0%, #1565c0 100%); z-index: 2;">
-            <i class="fas fa-shopping-bag"></i>
-          </div>
-          <div class="rounded-circle d-flex align-items-center justify-content-center text-white" style="width: 44px; height: 44px; background: linear-gradient(135deg, #00d2ff 0%, #00a8cc 100%); margin-left: -12px; border: 3px solid var(--glass-bg); z-index: 1;">
-            <span class="font-bold" style="font-size: 0.65rem;">{{ __('Mitra') }}</span>
-          </div>
+        <div class="user-avatar rounded-circle d-flex align-items-center justify-content-center text-white bg-primary shadow-sm" style="width: 44px; height: 44px; font-size: 1.2rem;">
+          <i class="fas fa-shopping-bag"></i>
         </div>
         <div>
-          <h2 class="h4 fw-bold tracking-tight text-body m-0" style="line-height: 1;">{{ __('Jualan') }}</h2>
-          <div class="text-muted uppercase tracking-widest mt-1" style="font-size: 0.7rem; font-weight: 700;">{{ config('app.name', 'Dzulfikrialifajri Store') }}</div>
+          <h4 class="fw-bold text-primary m-0" style="line-height: 1.1;">{{ config('app.name', 'Dzulfikrialifajri Store') }}</h4>
+          <span class="text-muted small">{{ __('Portal Autentikasi Pelanggan & Mitra') }}</span>
         </div>
       </div>
 
       <div class="mb-4">
         <h3 class="h4 fw-bold text-body mb-1" id="auth-title">{{ __('Selamat Datang') }}</h3>
-        <p class="small text-secondary" id="auth-subtitle">{{ __('Silakan masuk untuk mengakses portal Anda.') }}</p>
+        <p class="small text-secondary mb-0" id="auth-subtitle">{{ __('Silakan masuk untuk mengakses portal Anda.') }}</p>
       </div>
 
       {{-- Auth Tabs Navigation --}}
-      <div class="auth-tabs-container mb-4">
-          <button type="button" class="auth-tab-btn active" id="tab-btn-login" onclick="switchAuthTab('login')">{{ __('Masuk') }}</button>
-          <button type="button" class="auth-tab-btn" id="tab-btn-register" onclick="switchAuthTab('register')">{{ __('Daftar') }}</button>
-      </div>
+      <ul class="nav nav-pills nav-fill bg-body-tertiary p-1 rounded-pill mb-4 border" role="tablist">
+          <li class="nav-item" role="presentation">
+              <button class="nav-link active rounded-pill py-2 small fw-bold" id="tab-btn-login" type="button" onclick="switchAuthTab('login')">
+                  <i class="fas fa-sign-in-alt me-1.5"></i>{{ __('Masuk') }}
+              </button>
+          </li>
+          <li class="nav-item" role="presentation">
+              <button class="nav-link rounded-pill py-2 small fw-bold text-muted" id="tab-btn-register" type="button" onclick="switchAuthTab('register')">
+                  <i class="fas fa-user-plus me-1.5"></i>{{ __('Daftar') }}
+              </button>
+          </li>
+      </ul>
 
       {{-- Alerts Block --}}
       @if(session('error'))
@@ -125,7 +128,7 @@
           </div>
       @endif
 
-      {{-- Hidden Tab Pillars --}}
+      {{-- Hidden Tab Pillars for Bootstrap Tab JS --}}
       <ul class="nav nav-pills d-none" id="authTabs" role="tablist">
           <li class="nav-item">
               <button class="nav-link active" id="login-tab" data-bs-toggle="tab" data-bs-target="#login-pane" type="button" role="tab">{{ __('Masuk') }}</button>
@@ -139,18 +142,24 @@
           
           {{-- TAB MASUK (LOGIN) --}}
           <div class="tab-pane fade show active" id="login-pane" role="tabpanel">
-              <form action="{{ route('login.post') }}" method="POST" class="space-y-4">
+              <form action="{{ route('login.post') }}" method="POST">
                   @csrf
-                  <div class="form-group relative">
-                      <input type="text" name="login" class="form-control" placeholder="{{ __('Username atau Email') }}" value="{{ old('login') }}" required autofocus />
-                      <i class="fas fa-user form-icon"></i>
+                  <div class="mb-3">
+                      <label class="form-label text-muted small fw-bold">{{ __('Username atau Email') }}</label>
+                      <div class="input-group">
+                          <span class="input-group-text bg-body-tertiary border-0 text-muted"><i class="fas fa-user"></i></span>
+                          <input type="text" name="login" class="form-control bg-body-tertiary border-0" placeholder="{{ __('Masukkan username atau email...') }}" value="{{ old('login') }}" required autofocus />
+                      </div>
                   </div>
-                  <div class="form-group relative">
-                      <input type="password" name="password" class="form-control" placeholder="{{ __('Password') }}" required />
-                      <i class="fas fa-lock form-icon"></i>
+                  <div class="mb-3">
+                      <label class="form-label text-muted small fw-bold">{{ __('Password') }}</label>
+                      <div class="input-group">
+                          <span class="input-group-text bg-body-tertiary border-0 text-muted"><i class="fas fa-lock"></i></span>
+                          <input type="password" name="password" class="form-control bg-body-tertiary border-0" placeholder="{{ __('Masukkan password...') }}" required />
+                      </div>
                   </div>
 
-                  <div class="d-flex justify-content-between align-items-center">
+                  <div class="d-flex justify-content-between align-items-center mb-3">
                       <div class="form-check">
                           <input type="checkbox" name="remember" class="form-check-input" id="rememberCheck">
                           <label class="form-check-label small text-secondary" for="rememberCheck">{{ __('Ingat Saya') }}</label>
@@ -162,9 +171,9 @@
                       <div class="cf-turnstile" data-sitekey="{{ config('services.turnstile.site_key') }}" data-theme="light"></div>
                   </div>
 
-                  <button type="submit" class="btn btn-primary w-100">
+                  <button type="submit" class="btn btn-primary rounded-pill py-2.5 w-100 fw-bold shadow-sm">
                       <span>{{ __('Masuk Sistem') }}</span>
-                      <i class="fas fa-arrow-right"></i>
+                      <i class="fas fa-arrow-right ms-1"></i>
                   </button>
               </form>
 
@@ -175,53 +184,63 @@
 
               <form action="{{ route('auth.telegram.request') }}" method="POST" class="d-grid">
                   @csrf
-                  <button type="submit" class="btn btn-outline w-100">
-                      <i class="fab fa-telegram text-info fs-5"></i> {{ __('Login dengan Telegram') }}
+                  <button type="submit" class="btn btn-outline-primary rounded-pill py-2.5 w-100 fw-bold">
+                      <i class="fab fa-telegram text-info fs-5 me-2"></i>{{ __('Login dengan Telegram') }}
                   </button>
               </form>
           </div>
 
           {{-- TAB DAFTAR (REGISTER) --}}
           <div class="tab-pane fade" id="register-pane" role="tabpanel">
-              <form action="{{ route('register.post') }}" method="POST" class="space-y-4">
+              <form action="{{ route('register.post') }}" method="POST">
                   @csrf
-                  <div class="form-group relative">
-                      <input type="text" name="full_name" class="form-control" placeholder="{{ __('Nama Lengkap') }}" value="{{ old('full_name') }}" required />
-                      <i class="fas fa-id-card form-icon"></i>
-                  </div>
-
-                  <div class="row g-2">
-                      <div class="col-6">
-                          <div class="form-group relative">
-                              <input type="text" name="username" class="form-control" placeholder="{{ __('Username') }}" value="{{ old('username') }}" required />
-                              <i class="fas fa-user-circle form-icon"></i>
-                          </div>
-                      </div>
-                      <div class="col-6">
-                          <div class="form-group relative">
-                              <input type="email" name="email" class="form-control" placeholder="{{ __('Email') }}" value="{{ old('email') }}" />
-                              <i class="fas fa-envelope form-icon"></i>
-                          </div>
+                  <div class="mb-3">
+                      <label class="form-label text-muted small fw-bold">{{ __('Nama Lengkap') }}</label>
+                      <div class="input-group">
+                          <span class="input-group-text bg-body-tertiary border-0 text-muted"><i class="fas fa-id-card"></i></span>
+                          <input type="text" name="full_name" class="form-control bg-body-tertiary border-0" placeholder="{{ __('Nama Lengkap Anda') }}" value="{{ old('full_name') }}" required />
                       </div>
                   </div>
 
-                  <div class="form-group relative">
-                      <input type="number" name="telegram_id" id="telegram_id_reg" class="form-control" placeholder="ID Telegram (Opsional)" value="{{ old('telegram_id') }}" />
-                      <i class="fab fa-telegram-plane form-icon"></i>
-                      <div id="telegram_id_feedback" class="text-secondary mt-1 ms-2" style="font-size: 0.7rem;">{{ __('Agar bisa otomatis login dengan Telegram nantinya.') }}</div>
-                  </div>
-
-                  <div class="row g-2">
+                  <div class="row g-2 mb-3">
                       <div class="col-6">
-                          <div class="form-group relative">
-                              <input type="password" name="password" class="form-control" placeholder="{{ __('Kata Sandi') }}" required />
-                              <i class="fas fa-key form-icon"></i>
+                          <label class="form-label text-muted small fw-bold">{{ __('Username') }}</label>
+                          <div class="input-group">
+                              <span class="input-group-text bg-body-tertiary border-0 text-muted"><i class="fas fa-user-circle"></i></span>
+                              <input type="text" name="username" class="form-control bg-body-tertiary border-0" placeholder="Username" value="{{ old('username') }}" required />
                           </div>
                       </div>
                       <div class="col-6">
-                          <div class="form-group relative">
-                              <input type="password" name="password_confirmation" class="form-control" placeholder="{{ __('Ulangi Sandi') }}" required />
-                              <i class="fas fa-lock form-icon"></i>
+                          <label class="form-label text-muted small fw-bold">{{ __('Email') }}</label>
+                          <div class="input-group">
+                              <span class="input-group-text bg-body-tertiary border-0 text-muted"><i class="fas fa-envelope"></i></span>
+                              <input type="email" name="email" class="form-control bg-body-tertiary border-0" placeholder="Email" value="{{ old('email') }}" />
+                          </div>
+                      </div>
+                  </div>
+
+                  <div class="mb-3">
+                      <label class="form-label text-muted small fw-bold">{{ __('ID Telegram (Opsional)') }}</label>
+                      <div class="input-group">
+                          <span class="input-group-text bg-body-tertiary border-0 text-muted"><i class="fab fa-telegram-plane"></i></span>
+                          <input type="number" name="telegram_id" id="telegram_id_reg" class="form-control bg-body-tertiary border-0" placeholder="123456789" value="{{ old('telegram_id') }}" />
+                      </div>
+                      <div id="telegram_id_feedback" class="text-secondary mt-1 ms-1" style="font-size: 0.72rem;">{{ __('Agar bisa otomatis login dengan Telegram nantinya.') }}</div>
+                  </div>
+
+                  <div class="row g-2 mb-3">
+                      <div class="col-6">
+                          <label class="form-label text-muted small fw-bold">{{ __('Kata Sandi') }}</label>
+                          <div class="input-group">
+                              <span class="input-group-text bg-body-tertiary border-0 text-muted"><i class="fas fa-key"></i></span>
+                              <input type="password" name="password" class="form-control bg-body-tertiary border-0" placeholder="Kata Sandi" required />
+                          </div>
+                      </div>
+                      <div class="col-6">
+                          <label class="form-label text-muted small fw-bold">{{ __('Ulangi Sandi') }}</label>
+                          <div class="input-group">
+                              <span class="input-group-text bg-body-tertiary border-0 text-muted"><i class="fas fa-lock"></i></span>
+                              <input type="password" name="password_confirmation" class="form-control bg-body-tertiary border-0" placeholder="Ulangi Sandi" required />
                           </div>
                       </div>
                   </div>
@@ -231,9 +250,9 @@
                       <div class="cf-turnstile" data-sitekey="{{ config('services.turnstile.site_key') }}" data-theme="light"></div>
                   </div>
 
-                  <button type="submit" id="btn-register" class="btn btn-primary w-100">
+                  <button type="submit" id="btn-register" class="btn btn-primary rounded-pill py-2.5 w-100 fw-bold shadow-sm">
                       <span>{{ __('Daftar Sekarang') }}</span>
-                      <i class="fas fa-user-plus"></i>
+                      <i class="fas fa-user-plus ms-1"></i>
                   </button>
               </form>
           </div>
@@ -244,7 +263,7 @@
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
           <div class="text-muted small">
             <span>© 2026</span>
-            <span class="fw-bold ms-1 text-secondary">{{ __('dzulfikrialifajri_store') }}</span>
+            <span class="fw-bold ms-1 text-secondary">{{ config('app.name', 'dzulfikrialifajri_store') }}</span>
           </div>
         </div>
       </div>
@@ -254,23 +273,23 @@
     <div class="info-section d-none d-lg-flex">
       <div class="glass-card w-100">
         <div class="glass-header text-warning">
-          <i class="fas fa-bullhorn text-lg"></i>
+          <i class="fas fa-bullhorn me-1"></i>
           <span>{{ __('Informasi Store') }}</span>
         </div>
         
-        <p class="small text-secondary mb-4" style="line-height: 1.6;">
+        <div class="small text-secondary mb-4" style="line-height: 1.6;">
           {!! $announcement !!}
-        </p>
+        </div>
 
         {{-- Kontak Admin Box --}}
-        <div class="small mb-4 p-3 rounded-3 border bg-body bg-opacity-25" style="border-color: var(--glass-border) !important;">
+        <div class="small mb-4 p-3 rounded-3 border bg-body bg-opacity-50 border-translucent">
             <strong class="d-block mb-2 text-body">{{ __('Kontak Admin:') }}</strong>
             <a href="https://wa.me/6282269245660" target="_blank" class="text-body text-decoration-none mt-1 d-block"><i class="fab fa-whatsapp text-success me-1"></i> 082269245660 - WA</a>
             <a href="https://t.me/dzulfikrialifajri" target="_blank" class="text-body text-decoration-none mt-1 d-block"><i class="fab fa-telegram text-info me-1"></i> @dzulfikrialifajri - Telegram</a>
         </div>
 
         <div class="d-flex justify-content-between align-items-center">
-            <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill py-2 px-3 border" style="font-size: 0.72rem; border-color: var(--glass-border) !important;">
+            <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill py-2 px-3 border border-translucent" style="font-size: 0.72rem;">
                 <i class="fas fa-users me-1 text-info"></i> Pengunjung Hari Ini: {{ $todayVisitors ?? 0 }}
             </span>
         </div>
@@ -288,8 +307,11 @@
               document.getElementById('auth-title').innerText = 'Daftar Akun Baru';
               document.getElementById('auth-subtitle').innerText = 'Silakan isi formulir untuk mendaftar sebagai pelanggan.';
               
-              loginBtn.classList.remove('active');
+              loginBtn.classList.remove('active', 'text-white');
+              loginBtn.classList.add('text-muted');
+              
               registerBtn.classList.add('active');
+              registerBtn.classList.remove('text-muted');
               
               var tab = new bootstrap.Tab(document.getElementById('register-tab'));
               tab.show();
@@ -297,8 +319,11 @@
               document.getElementById('auth-title').innerText = 'Selamat Datang';
               document.getElementById('auth-subtitle').innerText = 'Silakan masuk untuk mengakses portal Anda.';
               
-              registerBtn.classList.remove('active');
+              registerBtn.classList.remove('active', 'text-white');
+              registerBtn.classList.add('text-muted');
+              
               loginBtn.classList.add('active');
+              loginBtn.classList.remove('text-muted');
               
               var tab = new bootstrap.Tab(document.getElementById('login-tab'));
               tab.show();
