@@ -1,0 +1,193 @@
+/*
+ * Jualan Web — Auth Design System Stylesheet
+ * ===========================================
+ * Harmonized with site-wide design tokens (app.css)
+ * Supports: Light Mode & Dark Mode (WCAG AA), Outfit Font, Glassmorphism
+ */
+
+/* Auth Page Body Background */
+body.auth-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--bs-body-tertiary);
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+    padding: 1.5rem;
+    overflow-x: hidden;
+    position: relative;
+}
+
+/* Ambient Radial Glows (Website Blue/Indigo Theme) */
+.auth-glow-1 {
+    position: fixed;
+    width: 600px;
+    height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(13, 110, 253, 0.12) 0%, transparent 70%);
+    top: -200px;
+    left: -150px;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.auth-glow-2 {
+    position: fixed;
+    width: 600px;
+    height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(13, 202, 240, 0.10) 0%, transparent 70%);
+    bottom: -200px;
+    right: -150px;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Auth Card Wrapper */
+.auth-wrapper {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    max-width: 1050px;
+    border-radius: var(--radius-lg);
+    background: var(--bs-body-bg);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--card-shadow-hover);
+    overflow: hidden;
+    display: flex;
+    min-height: 620px;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Left Section: Form */
+.auth-section-left {
+    padding: 3rem 3.5rem;
+    flex: 1.2;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background: var(--bs-body-bg);
+}
+
+/* Right Section: Hero Banner */
+.auth-section-right {
+    flex: 1;
+    background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 60%, #032870 100%);
+    position: relative;
+    padding: 3.5rem 3rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    color: #ffffff;
+    overflow: hidden;
+}
+
+/* Radial Dot Pattern Overlay for Banner */
+.auth-section-right::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: radial-gradient(rgba(255, 255, 255, 0.15) 1px, transparent 1px);
+    background-size: 20px 20px;
+    pointer-events: none;
+}
+
+/* Auth Navigation Tabs (Pill System) */
+.auth-nav-pills {
+    background: var(--bs-tertiary-bg);
+    padding: 5px;
+    border-radius: 50rem;
+    display: flex;
+    gap: 4px;
+    border: 1px solid var(--glass-border);
+}
+
+.auth-nav-pill-btn {
+    flex: 1;
+    padding: 8px 16px;
+    border-radius: 50rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-align: center;
+    border: none;
+    background: transparent;
+    color: var(--bs-secondary-color);
+    transition: all 0.25s ease;
+    cursor: pointer;
+}
+
+.auth-nav-pill-btn.active {
+    background: var(--primary-color);
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+}
+
+/* Form Input Groups with Icons */
+.auth-input-group {
+    position: relative;
+}
+
+.auth-input-group .form-control {
+    padding-left: 2.8rem;
+    border-radius: var(--radius-md);
+    font-size: 0.9rem;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+}
+
+.auth-input-group .input-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--bs-secondary-color);
+    font-size: 1rem;
+    z-index: 10;
+    pointer-events: none;
+}
+
+/* Floating Lift Effects */
+.lift-hover {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.lift-hover:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--card-shadow-hover);
+}
+
+/* Responsive Media Queries */
+@media (max-width: 991px) {
+    body.auth-page {
+        padding: 1rem;
+        align-items: flex-start;
+        padding-top: 2rem;
+    }
+
+    .auth-wrapper {
+        flex-direction: column;
+        min-height: auto;
+    }
+
+    .auth-section-left {
+        padding: 2rem 1.5rem;
+    }
+
+    .auth-section-right {
+        display: none;
+    }
+}
+
+@media (max-width: 480px) {
+    body.auth-page {
+        padding: 0.5rem;
+        padding-top: 1rem;
+    }
+
+    .auth-section-left {
+        padding: 1.5rem 1rem;
+    }
+}
