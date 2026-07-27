@@ -10,6 +10,8 @@ use Illuminate\Http\Request;
 
 class AdminController extends Controller
 {
+    use \App\Traits\ParsesStockBlocks;
+
     public function dashboard(Request $request)
     {
         $productId = $request->query('product_id');
@@ -1389,9 +1391,8 @@ class AdminController extends Controller
             $availableAt = now()->addHours($hours);
         }
 
-        // Split by double-newlines (blank lines) to separate different accounts,
-        // instead of splitting every single line, preserving complex account formats.
-        $blocks = array_filter(array_map('trim', preg_split('/\n\s*\n/', $request->raw_text)));
+        // Split raw text into individual stock blocks supporting line dividers & double-newlines
+        $blocks = $this->splitStockBlocks($request->raw_text);
         $count = 0;
         foreach ($blocks as $block) {
             if (!empty($block)) {

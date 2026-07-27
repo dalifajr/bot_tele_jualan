@@ -47,7 +47,13 @@
 
 {{-- Filter & Search Card --}}
 <div class="card border-0 shadow-sm rounded-4 mb-4">
-    <div class="card-body p-3">
+    <div class="card-header bg-white border-0 p-3 d-md-none" data-bs-toggle="collapse" data-bs-target="#filterCollapse" style="cursor: pointer;">
+        <div class="d-flex justify-content-between align-items-center">
+            <span class="fw-bold text-primary small"><i class="fas fa-search me-2"></i>{{ __('Cari & Filter Produk') }}</span>
+            <i class="fas fa-chevron-down text-muted"></i>
+        </div>
+    </div>
+    <div class="card-body p-3 collapse d-md-block {{ request()->hasAny(['search', 'seller_id']) ? 'show' : '' }}" id="filterCollapse">
         <form method="GET" action="{{ route('admin.products.index') }}" class="row g-2 align-items-center">
             <div class="col-12 col-md-5">
                 <div class="input-group">
@@ -126,7 +132,7 @@
                         @endif
                     </div>
 
-                    <p class="text-muted mb-2 text-truncate" style="font-size: 0.78rem;" title="{{ $product->description }}">
+                    <p class="text-muted mb-2" style="font-size: 0.78rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.2em;" title="{{ $product->description }}">
                         {{ $product->description ?: 'Tidak ada deskripsi.' }}
                     </p>
 
@@ -138,30 +144,30 @@
                 </div>
 
                 <div class="border-top pt-2 mt-1 d-flex justify-content-end align-items-center gap-1">
-                    <button class="btn btn-sm btn-light text-danger rounded-circle" data-bs-toggle="modal" data-bs-target="#exportPdfModal{{ $product->id }}" style="width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center;" title="{{ __('Unduh Laporan PDF') }}">
-                        <i class="fas fa-file-pdf" style="font-size: 0.75rem;"></i>
+                    <button class="btn btn-sm btn-light text-danger rounded-circle" data-bs-toggle="modal" data-bs-target="#exportPdfModal{{ $product->id }}" style="width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center;" title="{{ __('Laporan PDF') }}">
+                        <i class="fas fa-file-pdf" style="font-size: 0.8rem;"></i>
                     </button>
 
-                    <button class="btn btn-sm btn-light text-primary rounded-circle" data-bs-toggle="modal" data-bs-target="#editProductModal{{ $product->id }}" style="width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center;" title="{{ __('Edit Produk') }}">
-                        <i class="fas fa-edit" style="font-size: 0.75rem;"></i>
+                    <button class="btn btn-sm btn-light text-primary rounded-circle" data-bs-toggle="modal" data-bs-target="#editProductModal{{ $product->id }}" style="width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center;" title="{{ __('Edit Produk') }}">
+                        <i class="fas fa-edit" style="font-size: 0.8rem;"></i>
                     </button>
 
                     @if($product->creator_id !== null)
-                    <button class="btn btn-sm btn-light text-warning rounded-circle" data-bs-toggle="modal" data-bs-target="#takeoverProductModal{{ $product->id }}" style="width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center;" title="{{ __('Ambil Alih ke Admin') }}">
-                        <i class="fas fa-user-shield" style="font-size: 0.75rem;"></i>
+                    <button class="btn btn-sm btn-light text-warning rounded-circle" data-bs-toggle="modal" data-bs-target="#takeoverProductModal{{ $product->id }}" style="width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center;" title="{{ __('Ambil Alih ke Admin') }}">
+                        <i class="fas fa-user-shield" style="font-size: 0.8rem;"></i>
                     </button>
                     @else
-                    <button class="btn btn-sm btn-light text-muted rounded-circle opacity-50" disabled style="width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center;" title="{{ __('Sudah Dikelola Admin Utama') }}">
-                        <i class="fas fa-user-shield" style="font-size: 0.75rem;"></i>
+                    <button class="btn btn-sm btn-light text-muted rounded-circle opacity-50" disabled style="width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center;" title="{{ __('Sudah Dikelola Admin Utama') }}">
+                        <i class="fas fa-user-shield" style="font-size: 0.8rem;"></i>
                     </button>
                     @endif
 
-                    <button class="btn btn-sm btn-light text-info rounded-circle" data-bs-toggle="modal" data-bs-target="#reassignProductModal{{ $product->id }}" style="width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center;" title="{{ __('Limpahkan ke Seller Lain') }}">
-                        <i class="fas fa-exchange-alt" style="font-size: 0.75rem;"></i>
+                    <button class="btn btn-sm btn-light text-info rounded-circle" data-bs-toggle="modal" data-bs-target="#reassignProductModal{{ $product->id }}" style="width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center;" title="{{ __('Limpahkan ke Seller Lain') }}">
+                        <i class="fas fa-exchange-alt" style="font-size: 0.8rem;"></i>
                     </button>
 
-                    <button class="btn btn-sm btn-light text-danger rounded-circle" data-bs-toggle="modal" data-bs-target="#deleteProductModal{{ $product->id }}" style="width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center;" title="{{ __('Hapus Produk') }}">
-                        <i class="fas fa-trash-alt" style="font-size: 0.75rem;"></i>
+                    <button class="btn btn-sm btn-light text-danger rounded-circle" data-bs-toggle="modal" data-bs-target="#deleteProductModal{{ $product->id }}" style="width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center;" title="{{ __('Hapus Produk') }}">
+                        <i class="fas fa-trash-alt" style="font-size: 0.8rem;"></i>
                     </button>
                 </div>
             </div>
@@ -186,7 +192,7 @@
 @push('modals')
 {{-- Add Product Modal --}}
 <div class="modal fade" id="addProductModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content" style="border-radius: 16px; border: none;">
             <div class="modal-header border-0 pb-0">
                 <h5 class="fw-bold">{{ __('Tambah Produk Baru') }}</h5>
@@ -195,56 +201,70 @@
             <form action="{{ route('admin.products.store') }}" method="POST">
                 @csrf
                 <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">{{ __('Nama Produk') }}</label>
-                        <input type="text" name="name" class="form-control" required placeholder="{{ __('Contoh: Netflix Premium 1 Bulan') }}">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">Harga (Rp)</label>
-                        <input type="number" name="price" class="form-control" required placeholder="{{ __('Contoh: 35000') }}">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">{{ __('Deskripsi') }}</label>
-                        <textarea name="description" class="form-control" rows="3" placeholder="{{ __('Informasi produk...') }}"></textarea>
-                    </div>
-                    <div class="form-check form-switch mb-3">
-                        <input class="form-check-input" type="checkbox" role="switch" id="enableWarrantyAdd" name="enable_warranty" value="1">
-                        <label class="form-check-label text-muted small fw-bold" for="enableWarrantyAdd">{{ __('Aktifkan garansi?') }}</label>
-                    </div>
-                    <div class="mb-3" id="warrantyDaysAddContainer" style="display: none;">
-                        <label class="form-label text-muted small fw-bold">Masa Garansi (Hari)</label>
-                        <div class="input-group">
-                            <input type="number" name="warranty_days" id="warrantyDaysAdd" class="form-control" placeholder="{{ __('Contoh: 3') }}" min="1">
-                            <span class="input-group-text bg-light text-muted">{{ __('hari') }}</span>
-                        </div>
-                        <div class="form-text small">{{ __('Menahan saldo seller hingga masa garansi berakhir.') }}</div>
-                    </div>
-                    
-                    <div class="form-check form-switch mb-3 border-top pt-3">
-                        <input class="form-check-input" type="checkbox" role="switch" id="isVpnAdd" name="is_vpn" value="1">
-                        <label class="form-check-label text-primary small fw-bold" for="isVpnAdd"><i class="fas fa-network-wired me-1"></i> {{ __('Jadikan Produk VPN?') }}</label>
-                    </div>
-                    
-                    <div id="vpnOptionsAddContainer" style="display: none;" class="bg-light p-3 rounded mb-3">
-                        <div class="mb-2">
-                            <label class="form-label text-muted small fw-bold">{{ __('Protokol VPN') }}</label>
-                            <select name="vpn_protocol" id="vpnProtocolAdd" class="form-select">
-                                <option value="">{{ __('Pilih Protokol') }}</option>
-                                <option value="vmess">{{ __('VMESS') }}</option>
-                                <option value="vless">{{ __('VLESS') }}</option>
-                                <option value="trojan">{{ __('TROJAN') }}</option>
-                                <option value="shadowsocks">{{ __('SHADOWSOCKS') }}</option>
-                                <option value="ssh">{{ __('SSH') }}</option>
-                            </select>
-                        </div>
-                        <div class="mb-2">
-                            <label class="form-label text-muted small fw-bold">{{ __('Durasi / Masa Aktif') }}</label>
-                            <div class="input-group">
-                                <input type="number" name="vpn_duration_days" id="vpnDurationAdd" class="form-control" placeholder="30" min="1">
-                                <span class="input-group-text bg-white text-muted">{{ __('hari') }}</span>
+                    <ul class="nav nav-pills nav-fill bg-light p-1 rounded-pill mb-3" id="addProductTab" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active rounded-pill py-1.5 small fw-bold" id="general-add-tab" data-bs-toggle="tab" data-bs-target="#general-add" type="button" role="tab"><i class="fas fa-info-circle me-1"></i>Informasi Umum</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link rounded-pill py-1.5 small fw-bold" id="advanced-add-tab" data-bs-toggle="tab" data-bs-target="#advanced-add" type="button" role="tab"><i class="fas fa-cog me-1"></i>Opsi Lanjutan</button>
+                        </li>
+                    </ul>
+                    <div class="tab-content" id="addProductTabContent">
+                        <div class="tab-pane fade show active" id="general-add" role="tabpanel">
+                            <div class="mb-3">
+                                <label class="form-label text-muted small fw-bold">{{ __('Nama Produk') }}</label>
+                                <input type="text" name="name" class="form-control" required placeholder="{{ __('Contoh: Netflix Premium 1 Bulan') }}">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-muted small fw-bold">Harga (Rp)</label>
+                                <input type="number" name="price" class="form-control" required placeholder="{{ __('Contoh: 35000') }}">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-muted small fw-bold">{{ __('Deskripsi') }}</label>
+                                <textarea name="description" class="form-control" rows="3" placeholder="{{ __('Informasi produk...') }}"></textarea>
                             </div>
                         </div>
-                        <div class="form-text text-muted small"><i class="fas fa-info-circle"></i> {{ __('Stok untuk produk VPN tidak perlu ditambahkan secara manual. Saat pembeli melakukan checkout, sistem akan meng-generate akun secara otomatis di VPS sesuai durasi ini.') }}</div>
+                        <div class="tab-pane fade" id="advanced-add" role="tabpanel">
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" role="switch" id="enableWarrantyAdd" name="enable_warranty" value="1">
+                                <label class="form-check-label text-muted small fw-bold" for="enableWarrantyAdd">{{ __('Aktifkan garansi?') }}</label>
+                            </div>
+                            <div class="mb-3" id="warrantyDaysAddContainer" style="display: none;">
+                                <label class="form-label text-muted small fw-bold">Masa Garansi (Hari)</label>
+                                <div class="input-group">
+                                    <input type="number" name="warranty_days" id="warrantyDaysAdd" class="form-control" placeholder="{{ __('Contoh: 3') }}" min="1">
+                                    <span class="input-group-text bg-light text-muted">{{ __('hari') }}</span>
+                                </div>
+                                <div class="form-text small">{{ __('Menahan saldo seller hingga masa garansi berakhir.') }}</div>
+                            </div>
+                            
+                            <div class="form-check form-switch mb-3 border-top pt-3">
+                                <input class="form-check-input" type="checkbox" role="switch" id="isVpnAdd" name="is_vpn" value="1">
+                                <label class="form-check-label text-primary small fw-bold" for="isVpnAdd"><i class="fas fa-network-wired me-1"></i> {{ __('Jadikan Produk VPN?') }}</label>
+                            </div>
+                            
+                            <div id="vpnOptionsAddContainer" style="display: none;" class="bg-light p-3 rounded mb-3">
+                                <div class="mb-2">
+                                    <label class="form-label text-muted small fw-bold">{{ __('Protokol VPN') }}</label>
+                                    <select name="vpn_protocol" id="vpnProtocolAdd" class="form-select">
+                                        <option value="">{{ __('Pilih Protokol') }}</option>
+                                        <option value="vmess">{{ __('VMESS') }}</option>
+                                        <option value="vless">{{ __('VLESS') }}</option>
+                                        <option value="trojan">{{ __('TROJAN') }}</option>
+                                        <option value="shadowsocks">{{ __('SHADOWSOCKS') }}</option>
+                                        <option value="ssh">{{ __('SSH') }}</option>
+                                    </select>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label text-muted small fw-bold">{{ __('Durasi / Masa Aktif') }}</label>
+                                    <div class="input-group">
+                                        <input type="number" name="vpn_duration_days" id="vpnDurationAdd" class="form-control" placeholder="30" min="1">
+                                        <span class="input-group-text bg-white text-muted">{{ __('hari') }}</span>
+                                    </div>
+                                </div>
+                                <div class="form-text text-muted small"><i class="fas fa-info-circle"></i> {{ __('Stok untuk produk VPN tidak perlu ditambahkan secara manual. Saat pembeli melakukan checkout, sistem akan meng-generate akun secara otomatis di VPS sesuai durasi ini.') }}</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer border-0 pt-0">
@@ -259,7 +279,7 @@
 @foreach($products as $product)
 {{-- Edit Modal --}}
 <div class="modal fade" id="editProductModal{{ $product->id }}" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content" style="border-radius: 16px; border: none;">
             <div class="modal-header border-0 pb-0">
                 <h5 class="fw-bold">{{ __('Edit Produk') }}</h5>
@@ -269,59 +289,73 @@
                 @csrf
                 @method('PUT')
                 <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">{{ __('Nama Produk') }}</label>
-                        <input type="text" name="name" class="form-control" value="{{ $product->name }}" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">Harga (Rp)</label>
-                        <input type="number" name="price" class="form-control" value="{{ $product->price }}" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">{{ __('Deskripsi') }}</label>
-                        <textarea name="description" class="form-control" rows="3">{{ $product->description }}</textarea>
-                    </div>
-                    <div class="form-check form-switch mb-3">
-                        <input class="form-check-input toggle-warranty-edit" type="checkbox" role="switch" name="enable_warranty" value="1" id="enableWarrantyEdit{{ $product->id }}" data-target="warrantyDaysEditContainer{{ $product->id }}" {{ $product->warranty_days > 0 ? 'checked' : '' }}>
-                        <label class="form-check-label text-muted small fw-bold" for="enableWarrantyEdit{{ $product->id }}">{{ __('Aktifkan garansi?') }}</label>
-                    </div>
-                    <div class="mb-3" id="warrantyDaysEditContainer{{ $product->id }}" style="display: {{ $product->warranty_days > 0 ? 'block' : 'none' }};">
-                        <label class="form-label text-muted small fw-bold">Masa Garansi (Hari)</label>
-                        <div class="input-group">
-                            <input type="number" name="warranty_days" id="warrantyDaysEdit{{ $product->id }}" class="form-control" value="{{ $product->warranty_days > 0 ? $product->warranty_days : '' }}" min="1">
-                            <span class="input-group-text bg-light text-muted">{{ __('hari') }}</span>
-                        </div>
-                        <div class="form-text small">{{ __('Menahan saldo seller hingga masa garansi berakhir.') }}</div>
-                    </div>
-
-                    <div class="form-check form-switch mb-3 border-top pt-3">
-                        <input class="form-check-input toggle-vpn-edit" type="checkbox" role="switch" name="is_vpn" value="1" id="isVpnEdit{{ $product->id }}" data-target="vpnOptionsEditContainer{{ $product->id }}" {{ $product->is_vpn ? 'checked' : '' }}>
-                        <label class="form-check-label text-primary small fw-bold" for="isVpnEdit{{ $product->id }}"><i class="fas fa-network-wired me-1"></i> {{ __('Jadikan Produk VPN?') }}</label>
-                    </div>
-
-                    <div id="vpnOptionsEditContainer{{ $product->id }}" style="display: {{ $product->is_vpn ? 'block' : 'none' }};" class="bg-light p-3 rounded mb-3">
-                        <div class="mb-2">
-                            <label class="form-label text-muted small fw-bold">{{ __('Protokol VPN') }}</label>
-                            <select name="vpn_protocol" class="form-select">
-                                <option value="">{{ __('Pilih Protokol') }}</option>
-                                <option value="vmess" {{ $product->vpn_protocol == 'vmess' ? 'selected' : '' }}>{{ __('VMESS') }}</option>
-                                <option value="vless" {{ $product->vpn_protocol == 'vless' ? 'selected' : '' }}>{{ __('VLESS') }}</option>
-                                <option value="trojan" {{ $product->vpn_protocol == 'trojan' ? 'selected' : '' }}>{{ __('TROJAN') }}</option>
-                                <option value="shadowsocks" {{ $product->vpn_protocol == 'shadowsocks' ? 'selected' : '' }}>{{ __('SHADOWSOCKS') }}</option>
-                                <option value="ssh" {{ $product->vpn_protocol == 'ssh' ? 'selected' : '' }}>{{ __('SSH') }}</option>
-                            </select>
-                        </div>
-                        <div class="mb-2">
-                            <label class="form-label text-muted small fw-bold">{{ __('Durasi / Masa Aktif') }}</label>
-                            <div class="input-group">
-                                <input type="number" name="vpn_duration_days" class="form-control" value="{{ $product->vpn_duration_days > 0 ? $product->vpn_duration_days : '' }}" min="1">
-                                <span class="input-group-text bg-white text-muted">{{ __('hari') }}</span>
+                    <ul class="nav nav-pills nav-fill bg-light p-1 rounded-pill mb-3" id="editProductTab{{ $product->id }}" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active rounded-pill py-1.5 small fw-bold" id="general-edit-tab-{{ $product->id }}" data-bs-toggle="tab" data-bs-target="#general-edit-{{ $product->id }}" type="button" role="tab"><i class="fas fa-info-circle me-1"></i>Informasi Umum</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link rounded-pill py-1.5 small fw-bold" id="advanced-edit-tab-{{ $product->id }}" data-bs-toggle="tab" data-bs-target="#advanced-edit-{{ $product->id }}" type="button" role="tab"><i class="fas fa-cog me-1"></i>Opsi Lanjutan</button>
+                        </li>
+                    </ul>
+                    <div class="tab-content" id="editProductTabContent{{ $product->id }}">
+                        <div class="tab-pane fade show active" id="general-edit-{{ $product->id }}" role="tabpanel">
+                            <div class="mb-3">
+                                <label class="form-label text-muted small fw-bold">{{ __('Nama Produk') }}</label>
+                                <input type="text" name="name" class="form-control" value="{{ $product->name }}" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-muted small fw-bold">Harga (Rp)</label>
+                                <input type="number" name="price" class="form-control" value="{{ $product->price }}" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-muted small fw-bold">{{ __('Deskripsi') }}</label>
+                                <textarea name="description" class="form-control" rows="3">{{ $product->description }}</textarea>
                             </div>
                         </div>
-                    </div>
-                    <div class="form-check form-switch mb-3">
-                        <input class="form-check-input" type="checkbox" role="switch" name="is_suspended" value="1" id="suspend{{ $product->id }}" {{ $product->is_suspended ? 'checked' : '' }}>
-                        <label class="form-check-label" for="suspend{{ $product->id }}">Suspend (Sembunyikan dari katalog)</label>
+                        <div class="tab-pane fade" id="advanced-edit-{{ $product->id }}" role="tabpanel">
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input toggle-warranty-edit" type="checkbox" role="switch" name="enable_warranty" value="1" id="enableWarrantyEdit{{ $product->id }}" data-target="warrantyDaysEditContainer{{ $product->id }}" {{ $product->warranty_days > 0 ? 'checked' : '' }}>
+                                <label class="form-check-label text-muted small fw-bold" for="enableWarrantyEdit{{ $product->id }}">{{ __('Aktifkan garansi?') }}</label>
+                            </div>
+                            <div class="mb-3" id="warrantyDaysEditContainer{{ $product->id }}" style="display: {{ $product->warranty_days > 0 ? 'block' : 'none' }};">
+                                <label class="form-label text-muted small fw-bold">Masa Garansi (Hari)</label>
+                                <div class="input-group">
+                                    <input type="number" name="warranty_days" id="warrantyDaysEdit{{ $product->id }}" class="form-control" value="{{ $product->warranty_days > 0 ? $product->warranty_days : '' }}" min="1">
+                                    <span class="input-group-text bg-light text-muted">{{ __('hari') }}</span>
+                                </div>
+                                <div class="form-text small">{{ __('Menahan saldo seller hingga masa garansi berakhir.') }}</div>
+                            </div>
+
+                            <div class="form-check form-switch mb-3 border-top pt-3">
+                                <input class="form-check-input toggle-vpn-edit" type="checkbox" role="switch" name="is_vpn" value="1" id="isVpnEdit{{ $product->id }}" data-target="vpnOptionsEditContainer{{ $product->id }}" {{ $product->is_vpn ? 'checked' : '' }}>
+                                <label class="form-check-label text-primary small fw-bold" for="isVpnEdit{{ $product->id }}"><i class="fas fa-network-wired me-1"></i> {{ __('Jadikan Produk VPN?') }}</label>
+                            </div>
+
+                            <div id="vpnOptionsEditContainer{{ $product->id }}" style="display: {{ $product->is_vpn ? 'block' : 'none' }};" class="bg-light p-3 rounded mb-3">
+                                <div class="mb-2">
+                                    <label class="form-label text-muted small fw-bold">{{ __('Protokol VPN') }}</label>
+                                    <select name="vpn_protocol" class="form-select">
+                                        <option value="">{{ __('Pilih Protokol') }}</option>
+                                        <option value="vmess" {{ $product->vpn_protocol == 'vmess' ? 'selected' : '' }}>{{ __('VMESS') }}</option>
+                                        <option value="vless" {{ $product->vpn_protocol == 'vless' ? 'selected' : '' }}>{{ __('VLESS') }}</option>
+                                        <option value="trojan" {{ $product->vpn_protocol == 'trojan' ? 'selected' : '' }}>{{ __('TROJAN') }}</option>
+                                        <option value="shadowsocks" {{ $product->vpn_protocol == 'shadowsocks' ? 'selected' : '' }}>{{ __('SHADOWSOCKS') }}</option>
+                                        <option value="ssh" {{ $product->vpn_protocol == 'ssh' ? 'selected' : '' }}>{{ __('SSH') }}</option>
+                                    </select>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label text-muted small fw-bold">{{ __('Durasi / Masa Aktif') }}</label>
+                                    <div class="input-group">
+                                        <input type="number" name="vpn_duration_days" class="form-control" value="{{ $product->vpn_duration_days > 0 ? $product->vpn_duration_days : '' }}" min="1">
+                                        <span class="input-group-text bg-white text-muted">{{ __('hari') }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" role="switch" name="is_suspended" value="1" id="suspend{{ $product->id }}" {{ $product->is_suspended ? 'checked' : '' }}>
+                                <label class="form-check-label" for="suspend{{ $product->id }}">Suspend (Sembunyikan dari katalog)</label>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer border-0 pt-0">
@@ -336,7 +370,7 @@
 {{-- Takeover Modal --}}
 @if($product->creator_id !== null)
 <div class="modal fade" id="takeoverProductModal{{ $product->id }}" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content text-center" style="border-radius: 16px; border: none;">
             <div class="modal-body p-4">
                 <i class="fas fa-user-shield text-warning mb-3" style="font-size: 3rem;"></i>
@@ -359,7 +393,7 @@
 
 {{-- Reassign / Transfer Modal --}}
 <div class="modal fade" id="reassignProductModal{{ $product->id }}" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content" style="border-radius: 16px; border: none;">
             <div class="modal-header border-0 pb-0">
                 <h5 class="fw-bold"><i class="fas fa-exchange-alt text-info me-2"></i>{{ __('Limpahkan Produk ke Seller Lain') }}</h5>
@@ -396,7 +430,7 @@
 
 {{-- Delete Modal --}}
 <div class="modal fade" id="deleteProductModal{{ $product->id }}" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content text-center" style="border-radius: 16px; border: none;">
             <div class="modal-body p-4">
                 <i class="fas fa-exclamation-triangle text-danger mb-3" style="font-size: 3rem;"></i>
@@ -436,7 +470,7 @@
 
 {{-- Export PDF Modal --}}
 <div class="modal fade" id="exportPdfModal{{ $product->id }}" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content text-start" style="border-radius: 16px; border: none;">
             <div class="modal-header border-0 pb-0">
                 <h5 class="fw-bold"><i class="fas fa-file-pdf text-danger me-2"></i>{{ __('Laporan Penjualan (PDF)') }}</h5>
@@ -505,6 +539,22 @@
             var container = document.getElementById(targetId);
             if (container) {
                 container.style.display = this.checked ? 'block' : 'none';
+            }
+        });
+    });
+
+    // Form submission loading spinner handler
+    document.querySelectorAll('.modal form').forEach(function(form) {
+        form.addEventListener('submit', function() {
+            var btn = this.querySelector('button[type="submit"]');
+            if (btn && !btn.disabled) {
+                var orig = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> {{ __("Memproses...") }}';
+                setTimeout(function() {
+                    btn.disabled = false;
+                    btn.innerHTML = orig;
+                }, 6000);
             }
         });
     });

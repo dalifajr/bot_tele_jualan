@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 
 class SellerController extends Controller
 {
+    use \App\Traits\ParsesStockBlocks;
     // ==========================================
     // SELLER DASHBOARD
     // ==========================================
@@ -343,8 +344,8 @@ class SellerController extends Controller
             $availableAt = now()->addHours($saveHours);
         }
 
-        // Split raw text by double-newlines
-        $blocks = array_filter(array_map('trim', preg_split('/\n\s*\n/', $request->raw_text)));
+        // Split raw text into individual stock blocks supporting line dividers & double-newlines
+        $blocks = $this->splitStockBlocks($request->raw_text);
         $count = 0;
 
         foreach ($blocks as $block) {

@@ -36,19 +36,19 @@
                     <div class="text-truncate" style="max-width: 60%;">
                         <h6 class="fw-bold m-0 text-truncate" title="{{ $product->name }}">{{ $product->name }}</h6>
                     </div>
-                    <div class="d-flex align-items-center gap-1">
+                    <div class="d-flex align-items-center gap-1.5">
                         <span class="badge bg-white text-primary rounded-pill fw-bold">Rp {{ number_format($product->price, 0, ',', '.') }}</span>
-                        <button class="btn btn-sm btn-light text-primary rounded-circle p-0" data-bs-toggle="modal" data-bs-target="#editProductModal{{ $product->id }}" title="{{ __('Edit Info Produk') }}" style="width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center;">
-                            <i class="fas fa-edit" style="font-size: 0.7rem;"></i>
+                        <button class="btn btn-sm btn-light text-primary rounded-circle p-0" data-bs-toggle="modal" data-bs-target="#editProductModal{{ $product->id }}" title="{{ __('Edit Info Produk') }}" style="width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-edit" style="font-size: 0.8rem;"></i>
                         </button>
-                        <button class="btn btn-sm btn-light text-danger rounded-circle p-0" data-bs-toggle="modal" data-bs-target="#deleteProductModal{{ $product->id }}" title="{{ __('Hapus Produk') }}" style="width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center;">
-                            <i class="fas fa-trash-alt" style="font-size: 0.7rem;"></i>
+                        <button class="btn btn-sm btn-light text-danger rounded-circle p-0" data-bs-toggle="modal" data-bs-target="#deleteProductModal{{ $product->id }}" title="{{ __('Hapus Produk') }}" style="width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-trash-alt" style="font-size: 0.8rem;"></i>
                         </button>
                     </div>
                 </div>
                 <div class="card-body p-4 d-flex flex-column justify-content-between">
                     <div class="mb-3">
-                        <p class="text-muted small mb-2">{{ Str::limit($product->description ?: 'Tidak ada deskripsi produk.', 120) }}</p>
+                        <p class="text-muted small mb-2" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.5em;" title="{{ $product->description }}">{{ $product->description ?: 'Tidak ada deskripsi produk.' }}</p>
                         
                         <div class="d-flex gap-3 small text-secondary mt-3">
                             <span><i class="fas fa-cubes text-info me-1"></i> <strong>{{ $product->stockUnits()->where('is_sold', false)->count() }}</strong> {{ __('unit ready') }}</span>
@@ -358,6 +358,22 @@
             } else {
                 input.setAttribute('disabled', 'disabled');
                 input.value = '';
+            }
+        });
+    });
+
+    // Form submission loading spinner handler
+    document.querySelectorAll('.modal form').forEach(function(form) {
+        form.addEventListener('submit', function() {
+            var btn = this.querySelector('button[type="submit"]');
+            if (btn && !btn.disabled) {
+                var orig = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> {{ __("Memproses...") }}';
+                setTimeout(function() {
+                    btn.disabled = false;
+                    btn.innerHTML = orig;
+                }, 6000);
             }
         });
     });
