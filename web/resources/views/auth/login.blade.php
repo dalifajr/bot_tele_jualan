@@ -207,14 +207,14 @@
                           <label class="form-label text-muted small fw-bold">{{ __('Username') }}</label>
                           <div class="input-group">
                               <span class="input-group-text bg-body-tertiary border-0 text-muted"><i class="fas fa-user-circle"></i></span>
-                              <input type="text" name="username" class="form-control bg-body-tertiary border-0" placeholder="Username" value="{{ old('username') }}" required />
+                              <input type="text" name="username" class="form-control bg-body-tertiary border-0" placeholder="{{ __('Username') }}" value="{{ old('username') }}" required />
                           </div>
                       </div>
                       <div class="col-6">
                           <label class="form-label text-muted small fw-bold">{{ __('Email') }}</label>
                           <div class="input-group">
                               <span class="input-group-text bg-body-tertiary border-0 text-muted"><i class="fas fa-envelope"></i></span>
-                              <input type="email" name="email" class="form-control bg-body-tertiary border-0" placeholder="Email" value="{{ old('email') }}" />
+                              <input type="email" name="email" class="form-control bg-body-tertiary border-0" placeholder="{{ __('Email') }}" value="{{ old('email') }}" />
                           </div>
                       </div>
                   </div>
@@ -233,14 +233,14 @@
                           <label class="form-label text-muted small fw-bold">{{ __('Kata Sandi') }}</label>
                           <div class="input-group">
                               <span class="input-group-text bg-body-tertiary border-0 text-muted"><i class="fas fa-key"></i></span>
-                              <input type="password" name="password" class="form-control bg-body-tertiary border-0" placeholder="Kata Sandi" required />
+                              <input type="password" name="password" class="form-control bg-body-tertiary border-0" placeholder="{{ __('Kata Sandi') }}" required />
                           </div>
                       </div>
                       <div class="col-6">
                           <label class="form-label text-muted small fw-bold">{{ __('Ulangi Sandi') }}</label>
                           <div class="input-group">
                               <span class="input-group-text bg-body-tertiary border-0 text-muted"><i class="fas fa-lock"></i></span>
-                              <input type="password" name="password_confirmation" class="form-control bg-body-tertiary border-0" placeholder="Ulangi Sandi" required />
+                              <input type="password" name="password_confirmation" class="form-control bg-body-tertiary border-0" placeholder="{{ __('Ulangi Sandi') }}" required />
                           </div>
                       </div>
                   </div>

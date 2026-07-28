@@ -112,7 +112,7 @@
         <div class="card shadow-sm checker-card h-100">
             <div class="card-body p-4 d-flex flex-column">
                 <h6 class="fw-bold mb-3">
-                    <i class="fas fa-paste text-danger me-2"></i>2. Proses Email Mati (Die)
+                    <i class="fas fa-paste text-danger me-2"></i>{{ __('2. Proses Email Mati (Die)') }}
                 </h6>
                 <div class="flex-grow-1 mb-3">
                     <textarea id="die-emails-textarea" class="form-control" rows="8" 
