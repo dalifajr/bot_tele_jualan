@@ -42,11 +42,14 @@
                     <p class="text-muted small mb-3 flex-grow-1">{{ __('Produk digital') }}</p>
                 @endif
 
-                <div class="mb-3 small">
+                <div class="d-flex justify-content-between align-items-center mb-3 small">
                     @if($product->creator)
                         <span class="text-muted"><i class="fas fa-store me-1 text-info"></i>{{ __('Seller:') }} <strong>{{ $product->creator->full_name ?? $product->creator->username }}</strong></span>
                     @else
                         <span class="text-muted"><i class="fas fa-store me-1 text-primary"></i>{{ __('Seller:') }} <strong>{{ __('Admin Utama') }}</strong></span>
+                    @endif
+                    @if(isset($product->sales_count) && $product->sales_count > 0)
+                        <span class="text-muted small"><i class="fas fa-shopping-bag me-1 text-success"></i><strong>{{ $product->sales_count }}</strong> {{ __('terjual') }}</span>
                     @endif
                 </div>
 
