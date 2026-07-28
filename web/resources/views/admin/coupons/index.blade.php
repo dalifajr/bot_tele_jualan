@@ -160,7 +160,7 @@
                         <div class="modal-dialog modal-dialog-centered">
                             <div class="modal-content border-0 shadow" style="border-radius: 16px;">
                                 <div class="modal-header bg-light border-0">
-                                    <h5 class="modal-title fw-bold">Edit Kupon: {{ $coupon->code }}</h5>
+                                    <h5 class="modal-title fw-bold">{{ __('Edit Kupon:') }} {{ $coupon->code }}</h5>
                                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                 </div>
                                 <form action="{{ route('admin.coupons.update', $coupon->id) }}" method="POST">
@@ -168,15 +168,15 @@
                                     @method('PUT')
                                     <div class="modal-body p-4">
                                         <div class="mb-3">
-                                            <label class="form-label small fw-bold">KODE KUPON (UPPERCASE)</label>
+                                            <label class="form-label small fw-bold">{{ __('KODE KUPON (UPPERCASE)') }}</label>
                                             <input type="text" name="code" class="form-control" value="{{ $coupon->code }}" required style="border-radius: 10px;">
                                         </div>
                                         <div class="row g-3 mb-3">
                                             <div class="col-6">
                                                 <label class="form-label small fw-bold">{{ __('TIPE DISKON') }}</label>
                                                 <select name="type" class="form-select" required style="border-radius: 10px;">
-                                                    <option value="fixed" {{ $coupon->type === 'fixed' ? 'selected' : '' }}>Nominal Tetap (Rp)</option>
-                                                    <option value="percent" {{ $coupon->type === 'percent' ? 'selected' : '' }}>Persentase (%)</option>
+                                                    <option value="fixed" {{ $coupon->type === 'fixed' ? 'selected' : '' }}>{{ __('Nominal Tetap (Rp)') }}</option>
+                                                    <option value="percent" {{ $coupon->type === 'percent' ? 'selected' : '' }}>{{ __('Persentase (%)') }}</option>
                                                 </select>
                                             </div>
                                             <div class="col-6">
@@ -186,11 +186,11 @@
                                         </div>
                                         <div class="row g-3 mb-3">
                                             <div class="col-6">
-                                                <label class="form-label small fw-bold">MIN. BELANJA (Rp)</label>
+                                                <label class="form-label small fw-bold">{{ __('MIN. BELANJA (Rp)') }}</label>
                                                 <input type="number" name="min_spend" class="form-control" value="{{ $coupon->min_spend }}" required min="0" style="border-radius: 10px;">
                                             </div>
                                             <div class="col-6">
-                                                <label class="form-label small fw-bold">MAKS. DISKON (Rp, Opsional)</label>
+                                                <label class="form-label small fw-bold">{{ __('MAKS. DISKON (Rp, Opsional)') }}</label>
                                                 <input type="number" name="max_discount" class="form-control" value="{{ $coupon->max_discount }}" min="1" style="border-radius: 10px;">
                                             </div>
                                         </div>
@@ -249,15 +249,15 @@
                 @csrf
                 <div class="modal-body p-4">
                     <div class="mb-3">
-                        <label class="form-label small fw-bold">KODE KUPON (UPPERCASE)</label>
+                        <label class="form-label small fw-bold">{{ __('KODE KUPON (UPPERCASE)') }}</label>
                         <input type="text" name="code" class="form-control" placeholder="{{ __('MISAL: PROMOHEBAT') }}" required style="border-radius: 10px;">
                     </div>
                     <div class="row g-3 mb-3">
                         <div class="col-6">
                             <label class="form-label small fw-bold">{{ __('TIPE DISKON') }}</label>
                             <select name="type" class="form-select" required style="border-radius: 10px;">
-                                <option value="fixed" selected>Nominal Tetap (Rp)</option>
-                                <option value="percent">Persentase (%)</option>
+                                <option value="fixed" selected>{{ __('Nominal Tetap (Rp)') }}</option>
+                                <option value="percent">{{ __('Persentase (%)') }}</option>
                             </select>
                         </div>
                         <div class="col-6">
@@ -267,11 +267,11 @@
                     </div>
                     <div class="row g-3 mb-3">
                         <div class="col-6">
-                            <label class="form-label small fw-bold">MIN. BELANJA (Rp)</label>
+                            <label class="form-label small fw-bold">{{ __('MIN. BELANJA (Rp)') }}</label>
                             <input type="number" name="min_spend" class="form-control" value="0" required min="0" style="border-radius: 10px;">
                         </div>
                         <div class="col-6">
-                            <label class="form-label small fw-bold">MAKS. DISKON (Rp, Opsional)</label>
+                            <label class="form-label small fw-bold">{{ __('MAKS. DISKON (Rp, Opsional)') }}</label>
                             <input type="number" name="max_discount" class="form-control" placeholder="{{ __('Hanya untuk Persentase') }}" min="1" style="border-radius: 10px;">
                         </div>
                     </div>
