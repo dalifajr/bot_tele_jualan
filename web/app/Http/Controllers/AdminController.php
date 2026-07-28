@@ -1372,6 +1372,145 @@ class AdminController extends Controller
         ]);
     }
 
+    public function exportSellerReportPdf(Request $request, $id)
+    {
+        $request->validate([
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+        ]);
+
+        $seller = User::findOrFail($id);
+
+        $startDate = \Carbon\Carbon::parse($request->start_date)->startOfDay();
+        $endDate = \Carbon\Carbon::parse($request->end_date)->endOfDay();
+
+        // 1. Sold Stock Units for this seller in date range
+        $soldStockUnits = \App\Models\StockUnit::with(['product', 'order.customer', 'uploader'])
+            ->where('seller_id', $seller->id)
+            ->where('is_sold', true)
+            ->whereHas('order', function ($query) use ($startDate, $endDate) {
+                $query->whereIn('status', ['delivered', 'paid', 'completed'])
+                    ->where(function ($q) use ($startDate, $endDate) {
+                        $q->whereBetween('created_at', [$startDate, $endDate])
+                          ->orWhereBetween('delivered_at', [$startDate, $endDate])
+                          ->orWhereBetween('paid_at', [$startDate, $endDate]);
+                    });
+            })
+            ->get()
+            ->sortByDesc(function ($unit) {
+                return $unit->order->created_at ?? $unit->created_at;
+            })
+            ->values();
+
+        $totalSoldUnits = $soldStockUnits->count();
+
+        // Calculate Gross Revenue, Platform Fee, and Net Earnings per unit
+        $platformFeePercent = (int)($seller->platform_fee_percent ?? 10);
+        
+        $totalGrossRevenue = 0;
+        $totalPlatformCommission = 0;
+
+        foreach ($soldStockUnits as $unit) {
+            $unitPrice = (int)($unit->product->price ?? 0);
+            $comm = (int) round(($unitPrice * $platformFeePercent) / 100);
+            $net = $unitPrice - $comm;
+
+            $unit->unit_price = $unitPrice;
+            $unit->unit_commission = $comm;
+            $unit->unit_net = $net;
+
+            $totalGrossRevenue += $unitPrice;
+            $totalPlatformCommission += $comm;
+        }
+
+        $totalNetEarnings = $totalGrossRevenue - $totalPlatformCommission;
+        $averageOrderValue = $totalSoldUnits > 0 ? (int)round($totalGrossRevenue / $totalSoldUnits) : 0;
+
+        // 2. Ready Stock Count for this seller
+        $readyStockCount = \App\Models\StockUnit::where('seller_id', $seller->id)
+            ->where('is_sold', false)
+            ->where('stock_status', 'ready')
+            ->count();
+
+        // 3. Warranty Claims / Refunds count in period
+        $refundedStockCount = \App\Models\StockUnit::where('seller_id', $seller->id)
+            ->where('is_sold', true)
+            ->whereHas('order', function ($query) use ($startDate, $endDate) {
+                $query->whereIn('status', ['cancelled', 'refunded'])
+                    ->whereBetween('updated_at', [$startDate, $endDate]);
+            })
+            ->count();
+
+        $refundRatePercent = ($totalSoldUnits + $refundedStockCount) > 0 
+            ? round(($refundedStockCount / ($totalSoldUnits + $refundedStockCount)) * 100, 1) 
+            : 0;
+
+        // 4. Platform Contribution Percentage
+        $totalPlatformGross = \App\Models\StockUnit::where('is_sold', true)
+            ->whereHas('order', function ($query) use ($startDate, $endDate) {
+                $query->whereIn('status', ['delivered', 'paid', 'completed'])
+                    ->where(function ($q) use ($startDate, $endDate) {
+                        $q->whereBetween('created_at', [$startDate, $endDate])
+                          ->orWhereBetween('delivered_at', [$startDate, $endDate])
+                          ->orWhereBetween('paid_at', [$startDate, $endDate]);
+                    });
+            })
+            ->join('products', 'stock_units.product_id', '=', 'products.id')
+            ->sum('products.price');
+
+        $contributionPercentage = $totalPlatformGross > 0 
+            ? round(($totalGrossRevenue / $totalPlatformGross) * 100, 1) 
+            : 0;
+
+        // 5. Top Performing Products for this seller
+        $topProducts = $soldStockUnits->groupBy('product_id')->map(function ($group) use ($platformFeePercent) {
+            $product = $group->first()->product;
+            $qty = $group->count();
+            $price = (int)($product->price ?? 0);
+            $gross = $qty * $price;
+            $comm = (int) round(($gross * $platformFeePercent) / 100);
+            $net = $gross - $comm;
+
+            return [
+                'name' => $product->name ?? 'Produk Dihapus',
+                'price' => $price,
+                'qty' => $qty,
+                'gross' => $gross,
+                'commission' => $comm,
+                'net' => $net,
+            ];
+        })->sortByDesc('gross')->take(5)->values();
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.sellers.pdf_report', compact(
+            'seller',
+            'startDate',
+            'endDate',
+            'soldStockUnits',
+            'totalSoldUnits',
+            'totalGrossRevenue',
+            'platformFeePercent',
+            'totalPlatformCommission',
+            'totalNetEarnings',
+            'averageOrderValue',
+            'readyStockCount',
+            'refundedStockCount',
+            'refundRatePercent',
+            'contributionPercentage',
+            'topProducts'
+        ))->setPaper('a4', 'portrait');
+
+        $sellerSlug = \Illuminate\Support\Str::slug($seller->full_name ?? $seller->username ?? 'seller');
+        $filename = 'laporan_performa_seller_' . $sellerSlug . '_' . $startDate->format('Ymd') . '-' . $endDate->format('Ymd') . '.pdf';
+
+        return response($pdf->output(), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . $filename . '"',
+            'Cache-Control' => 'no-cache, no-store, must-revalidate',
+            'Pragma' => 'no-cache',
+            'Expires' => '0',
+        ]);
+    }
+
     // --- CRUD Stock ---
     public function storeStock(Request $request)
     {

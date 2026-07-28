@@ -174,6 +174,11 @@
                                             <i class="fas fa-user-shield me-2 text-primary"></i> {{ __('Ubah Detail Akses') }}
                                         </button>
                                     </li>
+                                     <li>
+                                         <button class="dropdown-item py-2 text-danger fw-semibold" data-bs-toggle="modal" data-bs-target="#exportSellerPdfModal{{ $seller->id }}">
+                                             <i class="fas fa-file-pdf me-2 text-danger"></i> {{ __('Laporan Performa (PDF)') }}
+                                         </button>
+                                     </li>
                                     <li>
                                         <form action="{{ route('admin.users.impersonate', $seller->id) }}" method="POST" class="m-0">
                                             @csrf
@@ -314,6 +319,47 @@
                 <div class="modal-footer border-0 pt-0">
                     <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">{{ __('Batal') }}</button>
                     <button type="submit" class="btn btn-primary rounded-pill px-4">{{ __('Simpan Perubahan') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{{-- Export Seller Performance PDF Modal --}}
+<div class="modal fade" id="exportSellerPdfModal{{ $user->id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 16px; border: none;">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="fw-bold"><i class="fas fa-file-pdf text-danger me-2"></i>{{ __('Laporan Performa Seller (PDF)') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ route('admin.sellers.report-pdf', $user->id) }}" method="GET" target="_blank">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <p class="mb-1 text-muted small">{{ __('Seller Target') }}</p>
+                        <h6 class="fw-bold text-primary">{{ $user->full_name ?? $user->username ?? 'Unknown' }}</h6>
+                    </div>
+                    
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label text-muted small fw-bold">{{ __('Tanggal Mulai') }}</label>
+                            <input type="date" name="start_date" class="form-control rounded-3" value="{{ now()->subDays(30)->format('Y-m-d') }}" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label text-muted small fw-bold">{{ __('Tanggal Selesai') }}</label>
+                            <input type="date" name="end_date" class="form-control rounded-3" value="{{ now()->format('Y-m-d') }}" required>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info py-2 small border-0 bg-info bg-opacity-10 text-info rounded-3 mb-0">
+                        <i class="fas fa-info-circle me-1"></i> {{ __('Laporan akan dibuka secara live di tab baru dalam format PDF.') }}
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">{{ __('Batal') }}</button>
+                    <button type="submit" class="btn btn-danger rounded-pill px-4 fw-bold">
+                        <i class="fas fa-external-link-alt me-1"></i> {{ __('Buka PDF Live') }}
+                    </button>
                 </div>
             </form>
         </div>

@@ -168,6 +168,7 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         
         Route::get('/users', [\App\Http\Controllers\AdminController::class, 'users'])->name('users.index');
         Route::get('/sellers', [\App\Http\Controllers\AdminController::class, 'sellers'])->name('sellers.index');
+        Route::get('/sellers/{id}/report-pdf', [\App\Http\Controllers\AdminController::class, 'exportSellerReportPdf'])->name('sellers.report-pdf');
         Route::match(['get', 'post'], '/users/export', [\App\Http\Controllers\AdminController::class, 'exportUsers'])->name('users.export');
         Route::put('/users/{id}', [\App\Http\Controllers\AdminController::class, 'updateUser'])->name('users.update');
         Route::delete('/users/{id}', [\App\Http\Controllers\AdminController::class, 'deleteUser'])->name('users.destroy');
