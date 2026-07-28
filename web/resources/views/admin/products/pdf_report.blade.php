@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="{{ app()->getLocale() }}">
 <head>
     <meta charset="UTF-8">
-    <title>Laporan Penjualan - {{ $product->name }}</title>
+    <title>{{ __('Laporan Penjualan') }} - {{ $product->name }}</title>
     <style>
         @page {
             margin: 25px 30px;
@@ -101,12 +101,11 @@
             color: #ffffff;
             font-weight: bold;
             text-align: left;
-            padding: 6px 8px;
-            font-size: 9.5px;
-            text-transform: uppercase;
+            padding: 7px 10px;
+            font-size: 10px;
         }
         .data-table td {
-            padding: 6px 8px;
+            padding: 6px 10px;
             border-bottom: 1px solid #e9ecef;
             font-size: 10px;
         }
@@ -118,21 +117,6 @@
         }
         .text-center {
             text-align: center;
-        }
-        .badge {
-            display: inline-block;
-            padding: 2px 6px;
-            font-size: 8.5px;
-            font-weight: bold;
-            border-radius: 4px;
-        }
-        .badge-success {
-            background-color: #d1e7dd;
-            color: #0f5132;
-        }
-        .badge-info {
-            background-color: #cff4fc;
-            color: #055160;
         }
         .footer {
             margin-top: 25px;
@@ -150,12 +134,12 @@
         <table>
             <tr>
                 <td>
-                    <div class="title">Laporan Penjualan & Pendapatan</div>
-                    <div class="subtitle">Katalog Produk Digital • {{ config('app.name', 'Bot Tele Jualan') }}</div>
+                    <div class="title">{{ __('Laporan Penjualan & Pendapatan') }}</div>
+                    <div class="subtitle">{{ __('Katalog Produk Digital') }} • {{ config('app.name', 'Bot Tele Jualan') }}</div>
                 </td>
                 <td class="text-right">
-                    <div style="font-weight: bold; color: #495057;">TANGGAL DICETAK</div>
-                    <div class="subtitle">{{ now()->format('d M Y H:i:s') }}</div>
+                    <div style="font-weight: bold; color: #495057;">{{ __('TANGGAL DICETAK') }}</div>
+                    <div class="subtitle">{{ now()->translatedFormat('d M Y H:i:s') }}</div>
                 </td>
             </tr>
         </table>
@@ -164,21 +148,21 @@
     {{-- Informasi Produk & Seller --}}
     <table class="info-table">
         <tr>
-            <td class="info-label">Nama Produk:</td>
+            <td class="info-label">{{ __('Nama Produk:') }}</td>
             <td class="info-value"><strong>#{{ $product->id }} {{ $product->name }}</strong></td>
-            <td class="info-label">Pemilik / Seller:</td>
+            <td class="info-label">{{ __('Pemilik / Seller:') }}</td>
             <td class="info-value"><strong>{{ $sellerName }}</strong> ({{ $sellerRole }})</td>
         </tr>
         <tr>
-            <td class="info-label">Harga Satuan:</td>
+            <td class="info-label">{{ __('Harga Satuan:') }}</td>
             <td class="info-value">{{ $product->formatted_price }}</td>
-            <td class="info-label">Potongan Komisi:</td>
-            <td class="info-value">{{ $platformFeePercent }}% per transaksi</td>
+            <td class="info-label">{{ __('Potongan Komisi:') }}</td>
+            <td class="info-value">{{ $platformFeePercent }}% {{ __('per transaksi') }}</td>
         </tr>
         <tr>
-            <td class="info-label">Periode Laporan:</td>
+            <td class="info-label">{{ __('Periode Laporan:') }}</td>
             <td class="info-value"><strong>{{ $startDate->format('d M Y') }} - {{ $endDate->format('d M Y') }}</strong></td>
-            <td class="info-label">Tipe Produk:</td>
+            <td class="info-label">{{ __('Tipe Produk:') }}</td>
             <td class="info-value">
                 @if($product->is_vpn)
                     VPN ({{ strtoupper($product->vpn_protocol) }})
@@ -193,28 +177,28 @@
     <table class="summary-box">
         <tr>
             <td class="summary-card summary-card-primary">
-                <div class="summary-title">Total Penjualan (Gross)</div>
+                <div class="summary-title">{{ __('Total Penjualan (Gross)') }}</div>
                 <div class="summary-value" style="color: #0d6efd;">Rp {{ number_format($totalGrossRevenue, 0, ',', '.') }}</div>
-                <div class="summary-subtext">{{ $totalSoldUnits }} Unit Terjual</div>
+                <div class="summary-subtext">{{ $totalSoldUnits }} {{ __('Unit Terjual') }}</div>
             </td>
             <td style="width: 2%;"></td>
             <td class="summary-card summary-card-warning">
-                <div class="summary-title">Komisi Platform ({{ $platformFeePercent }}%)</div>
+                <div class="summary-title">{{ __('Komisi Platform') }} ({{ $platformFeePercent }}%)</div>
                 <div class="summary-value" style="color: #d97706;">Rp {{ number_format($platformCommission, 0, ',', '.') }}</div>
-                <div class="summary-subtext">Hak Platform</div>
+                <div class="summary-subtext">{{ __('Hak Platform') }}</div>
             </td>
             <td style="width: 2%;"></td>
             <td class="summary-card summary-card-success">
-                <div class="summary-title">Pendapatan Bersih (Net)</div>
+                <div class="summary-title">{{ __('Pendapatan Bersih (Net)') }}</div>
                 <div class="summary-value" style="color: #198754;">Rp {{ number_format($totalNetEarnings, 0, ',', '.') }}</div>
-                <div class="summary-subtext">Hasil Akhir Seller / Admin</div>
+                <div class="summary-subtext">{{ __('Hasil Akhir Seller / Admin') }}</div>
             </td>
         </tr>
     </table>
 
     {{-- Detail Rincian Transaksi --}}
     <div style="font-weight: bold; font-size: 11px; margin-bottom: 6px; color: #0d6efd;">
-        RINCIAN TRANSAKSI PENJUALAN ({{ $totalSoldUnits }} UNIT)
+        {{ __('RINCIAN TRANSAKSI PENJUALAN (:count UNIT)', ['count' => $totalSoldUnits]) }}
     </div>
 
     @if($stockUnits->count() > 0)
@@ -222,11 +206,11 @@
         <thead>
             <tr>
                 <th class="text-center" style="width: 5%;">No</th>
-                <th style="width: 15%;">ID Order</th>
-                <th style="width: 22%;">Tanggal Terjual</th>
-                <th style="width: 23%;">Pembeli</th>
-                <th style="width: 20%;">Uploader Stok</th>
-                <th class="text-right" style="width: 15%;">Harga</th>
+                <th style="width: 15%;">{{ __('ID Order') }}</th>
+                <th style="width: 22%;">{{ __('Tanggal Terjual') }}</th>
+                <th style="width: 23%;">{{ __('Pembeli') }}</th>
+                <th style="width: 20%;">{{ __('Uploader Stok') }}</th>
+                <th class="text-right" style="width: 15%;">{{ __('Harga') }}</th>
             </tr>
         </thead>
         <tbody>
@@ -237,8 +221,8 @@
                     <strong>#{{ $unit->sold_order_id ?? '-' }}</strong>
                 </td>
                 <td>{{ $unit->order && $unit->order->created_at ? $unit->order->created_at->format('d M Y H:i') : ($unit->created_at ? $unit->created_at->format('d M Y H:i') : '-') }}</td>
-                <td>{{ $unit->order && $unit->order->customer ? ($unit->order->customer->full_name ?? $unit->order->customer->username) : 'Pelanggan' }}</td>
-                <td>{{ $unit->uploader ? ($unit->uploader->full_name ?? $unit->uploader->username) : ($unit->seller ? ($unit->seller->full_name ?? $unit->seller->username) : 'Admin Utama') }}</td>
+                <td>{{ $unit->order && $unit->order->customer ? ($unit->order->customer->full_name ?? $unit->order->customer->username) : __('Pelanggan') }}</td>
+                <td>{{ $unit->uploader ? ($unit->uploader->full_name ?? $unit->uploader->username) : ($unit->seller ? ($unit->seller->full_name ?? $unit->seller->username) : __('Admin Utama')) }}</td>
                 <td class="text-right">Rp {{ number_format($product->price, 0, ',', '.') }}</td>
             </tr>
             @endforeach
@@ -246,7 +230,7 @@
     </table>
     @else
     <div style="text-align: center; padding: 25px; background: #f8f9fa; border: 1px dashed #dee2e6; border-radius: 6px; color: #6c757d; font-style: italic;">
-        Tidak terdapat transaksi penjualan produk pada periode <strong>{{ $startDate->format('d M Y') }}</strong> s/d <strong>{{ $endDate->format('d M Y') }}</strong>.
+        {{ __('Tidak terdapat transaksi penjualan produk pada periode tanggal yang dipilih.') }}
     </div>
     @endif
 
@@ -254,8 +238,8 @@
     <div class="footer">
         <table style="width: 100%;">
             <tr>
-                <td>Laporan ini di-generate secara otomatis oleh sistem {{ config('app.name', 'Bot Tele Jualan') }}.</td>
-                <td class="text-right">Halaman 1 dari 1</td>
+                <td>{{ __('Laporan ini di-generate secara otomatis oleh sistem :app.', ['app' => config('app.name', 'Bot Tele Jualan')]) }}</td>
+                <td class="text-right">{{ __('Halaman 1 dari 1') }}</td>
             </tr>
         </table>
     </div>
