@@ -1325,8 +1325,7 @@ class AdminController extends Controller
                 $query->whereIn('status', ['delivered', 'paid', 'completed'])
                     ->where(function ($q) use ($startDate, $endDate) {
                         $q->whereBetween('created_at', [$startDate, $endDate])
-                          ->orWhereBetween('delivered_at', [$startDate, $endDate])
-                          ->orWhereBetween('paid_at', [$startDate, $endDate]);
+                          ->orWhereBetween('delivered_at', [$startDate, $endDate]);
                     });
             })
             ->get()
@@ -1392,8 +1391,7 @@ class AdminController extends Controller
                 $query->whereIn('status', ['delivered', 'paid', 'completed'])
                     ->where(function ($q) use ($startDate, $endDate) {
                         $q->whereBetween('created_at', [$startDate, $endDate])
-                          ->orWhereBetween('delivered_at', [$startDate, $endDate])
-                          ->orWhereBetween('paid_at', [$startDate, $endDate]);
+                          ->orWhereBetween('delivered_at', [$startDate, $endDate]);
                     });
             })
             ->get()
@@ -1437,7 +1435,10 @@ class AdminController extends Controller
             ->where('is_sold', true)
             ->whereHas('order', function ($query) use ($startDate, $endDate) {
                 $query->whereIn('status', ['cancelled', 'refunded'])
-                    ->whereBetween('updated_at', [$startDate, $endDate]);
+                    ->where(function ($q) use ($startDate, $endDate) {
+                        $q->whereBetween('created_at', [$startDate, $endDate])
+                          ->orWhereBetween('cancelled_at', [$startDate, $endDate]);
+                    });
             })
             ->count();
 
@@ -1451,8 +1452,7 @@ class AdminController extends Controller
                 $query->whereIn('status', ['delivered', 'paid', 'completed'])
                     ->where(function ($q) use ($startDate, $endDate) {
                         $q->whereBetween('created_at', [$startDate, $endDate])
-                          ->orWhereBetween('delivered_at', [$startDate, $endDate])
-                          ->orWhereBetween('paid_at', [$startDate, $endDate]);
+                          ->orWhereBetween('delivered_at', [$startDate, $endDate]);
                     });
             })
             ->join('products', 'stock_units.product_id', '=', 'products.id')
