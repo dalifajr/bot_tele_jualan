@@ -168,7 +168,7 @@
                 @if($complaint->closed_at)
                 <div class="d-flex justify-content-between">
                     <span class="text-muted">{{ __('Ditutup Pada') }}</span>
-                    <span class="text-dark">{{ $complaint->closed_at->format('d M Y H:i') }}</span>
+                    <span class="text-dark">{{ $complaint->closed_at ? $complaint->closed_at->format('d M Y H:i') : '-' }}</span>
                 </div>
                 @endif
             </div>
