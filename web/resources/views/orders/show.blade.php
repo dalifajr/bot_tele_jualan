@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Detail Pesanan ' . $order->reference)
-@section('page_subtitle', 'Detail Pesanan')
+@section('title', __('Detail Pesanan ') . $order->reference)
+@section('page_subtitle', __('Detail Pesanan'))
 
 @section('content')
 <div class="row g-4">

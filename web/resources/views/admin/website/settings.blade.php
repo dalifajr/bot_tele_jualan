@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Kelola Website')
-@section('page_subtitle', 'Website Settings')
+@section('title', __('Kelola Website'))
+@section('page_subtitle', __('Website Settings'))
 
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">

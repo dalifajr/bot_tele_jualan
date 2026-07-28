@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Progres Live Checker')
-@section('page_subtitle', 'Tool')
+@section('title', __('Progres Live Checker'))
+@section('page_subtitle', __('Tool'))
 
 @push('styles')
 <style>

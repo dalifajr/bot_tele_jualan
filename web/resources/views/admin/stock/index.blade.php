@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Manajemen Stok')
-@section('page_subtitle', 'Stok')
+@section('title', __('Manajemen Stok'))
+@section('page_subtitle', __('Stok'))
 
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">

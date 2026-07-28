@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Backup & Restore - Dashboard')
-@section('page_subtitle', 'Backup & Restore')
+@section('title', __('Backup & Restore - Dashboard'))
+@section('page_subtitle', __('Backup & Restore'))
 
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">

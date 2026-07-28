@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Pusat Chat')
-@section('page_subtitle', 'Pesan')
+@section('title', __('Pusat Chat'))
+@section('page_subtitle', __('Pesan'))
 
 @section('content')
 <div class="card border-0 shadow-sm" style="border-radius: 16px; overflow: hidden; height: calc(100vh - 180px); min-height: 500px;">

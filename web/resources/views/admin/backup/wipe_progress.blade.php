@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'System - Progress Pengosongan Data')
-@section('page_subtitle', 'System Maintenance')
+@section('title', __('System - Progress Pengosongan Data'))
+@section('page_subtitle', __('System Maintenance'))
 
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">

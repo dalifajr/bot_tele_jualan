@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Log Audit Sistem')
-@section('page_subtitle', 'Audit Logs')
+@section('title', __('Log Audit Sistem'))
+@section('page_subtitle', __('Audit Logs'))
 
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">

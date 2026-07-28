@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Pembayaran')
-@section('page_subtitle', 'Selesaikan Pembayaran')
+@section('title', __('Pembayaran'))
+@section('page_subtitle', __('Selesaikan Pembayaran'))
 
 @section('content')
 <div class="row justify-content-center">

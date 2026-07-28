@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'GitHub Live Checker')
-@section('page_subtitle', 'Tool')
+@section('title', __('GitHub Live Checker'))
+@section('page_subtitle', __('Tool'))
 
 @push('styles')
 <style>
@@ -123,7 +123,7 @@
         <div class="form-text mt-2">
             <i class="fas fa-info-circle me-1"></i>
             {{ __('Buka') }} <strong>{{ __('github.com') }}</strong> {{ __('→ Login → DevTools (F12) → Application → Cookies → Salin value') }} <code>{{ __('user_session') }}</code>. 
-            Gabungkan menjadi format: <code>{{ __('user_session=NILAI_COOKIE') }}</code>
+            {{ __('Gabungkan menjadi format:') }} <code>{{ __('user_session=NILAI_COOKIE') }}</code>
         </div>
     </div>
 </div>

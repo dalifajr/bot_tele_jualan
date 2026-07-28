@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Dashboard')
-@section('page_subtitle', 'Dashboard')
+@section('title', __('Dashboard'))
+@section('page_subtitle', __('Dashboard'))
 @section('meta_description', 'Dashboard akun Anda — lihat ringkasan pesanan dan aktivitas terbaru')
 
 @push('styles')

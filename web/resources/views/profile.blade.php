@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Profil Saya')
-@section('page_subtitle', 'Profil')
+@section('title', __('Profil Saya'))
+@section('page_subtitle', __('Profil'))
 
 @push('styles')
 <style>

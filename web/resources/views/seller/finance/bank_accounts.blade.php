@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Konfigurasi Rekening Payout')
-@section('page_subtitle', 'Keuangan')
+@section('title', __('Konfigurasi Rekening Payout'))
+@section('page_subtitle', __('Keuangan'))
 
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">

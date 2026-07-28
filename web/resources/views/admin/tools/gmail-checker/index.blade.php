@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Gmail Live Checker')
-@section('page_subtitle', 'Tool')
+@section('title', __('Gmail Live Checker'))
+@section('page_subtitle', __('Tool'))
 
 @push('styles')
 <style>

@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Detail Komplain #' . $complaint->complaint_ref)
-@section('page_subtitle', 'Detail Komplain')
+@section('title', __('Detail Komplain #') . $complaint->complaint_ref)
+@section('page_subtitle', __('Detail Komplain'))
 
 @section('content')
 <div class="mb-4">

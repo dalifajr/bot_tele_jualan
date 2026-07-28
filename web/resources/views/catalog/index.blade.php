@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Katalog Produk')
-@section('page_subtitle', 'Katalog')
+@section('title', __('Katalog Produk'))
+@section('page_subtitle', __('Katalog'))
 @section('meta_description', 'Lihat semua produk digital yang tersedia untuk dibeli')
 
 @section('content')

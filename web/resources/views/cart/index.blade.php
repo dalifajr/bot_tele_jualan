@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Keranjang Belanja')
-@section('page_subtitle', 'Keranjang')
+@section('title', __('Keranjang Belanja'))
+@section('page_subtitle', __('Keranjang'))
 
 @section('content')
 <div class="row g-4">

@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Semua Notifikasi Sistem')
-@section('page_subtitle', 'Notifikasi')
+@section('title', __('Semua Notifikasi Sistem'))
+@section('page_subtitle', __('Notifikasi'))
 
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">

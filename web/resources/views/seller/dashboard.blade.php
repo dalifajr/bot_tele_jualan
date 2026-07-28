@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Dashboard Seller')
-@section('page_subtitle', 'Dashboard')
+@section('title', __('Dashboard Seller'))
+@section('page_subtitle', __('Dashboard'))
 
 @push('styles')
 <style>

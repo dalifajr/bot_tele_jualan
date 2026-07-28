@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Kelola Kupon Diskon')
-@section('page_subtitle', 'Kupon & Promosi')
+@section('title', __('Kelola Kupon Diskon'))
+@section('page_subtitle', __('Kupon & Promosi'))
 
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -72,7 +72,7 @@
                 </div>
                 <div>
                     <h6 class="text-muted small mb-1">{{ __('PENGGUNAAN KUPON') }}</h6>
-                    <h4 class="fw-bold mb-0">{{ \App\Models\Coupon::sum('used_qty') }} kali</h4>
+                    <h4 class="fw-bold mb-0">{{ \App\Models\Coupon::sum('used_qty') }} {{ __('kali') }}</h4>
                 </div>
             </div>
         </div>
@@ -106,7 +106,7 @@
                         <td>
                             @if($coupon->type === 'percent')
                                 <span class="fw-bold">{{ $coupon->value }}%</span> 
-                                <span class="text-muted small">(Maks Rp{{ number_format($coupon->max_discount, 0, ',', '.') }})</span>
+                                <span class="text-muted small">({{ __('Maks') }} Rp{{ number_format($coupon->max_discount, 0, ',', '.') }})</span>
                             @else
                                 <span class="fw-bold">Rp{{ number_format($coupon->value, 0, ',', '.') }}</span>
                             @endif

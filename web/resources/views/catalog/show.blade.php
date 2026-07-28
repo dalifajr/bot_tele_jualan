@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('title', $product->name)
-@section('page_subtitle', 'Detail Produk')
+@section('page_subtitle', __('Detail Produk'))
 
 @section('content')
 <div class="row g-4">

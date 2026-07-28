@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Akun Ditangguhkan')
+@section('title', __('Akun Ditangguhkan'))
 
 @section('content')
 <div class="row justify-content-center py-5">
