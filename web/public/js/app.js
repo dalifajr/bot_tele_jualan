@@ -55,7 +55,7 @@ function initSidebar() {
     if (!sidebar || !toggleBtn) return;
 
     toggleBtn.addEventListener('click', () => {
-        if (window.innerWidth >= 768) {
+        if (window.innerWidth >= 992) {
             // Desktop Collapse
             if (container) {
                 container.classList.toggle('sidebar-collapsed');
@@ -69,7 +69,7 @@ function initSidebar() {
     });
 
     // Restore saved sidebar collapsed state on desktop
-    if (window.innerWidth >= 768 && container) {
+    if (window.innerWidth >= 992 && container) {
         const isCollapsed = localStorage.getItem('jualan-sidebar-collapsed') === 'true';
         if (isCollapsed) {
             container.classList.add('sidebar-collapsed');
