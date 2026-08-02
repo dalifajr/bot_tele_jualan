@@ -2165,30 +2165,9 @@ class AdminController extends Controller
 
     public function unblockAllDevices(Request $request)
     {
-        $logs = \App\Models\LoginLog::all();
-        foreach ($logs as $l) {
-            if ($l->ip_address) {
-                \Illuminate\Support\Facades\Cache::forget('blocked_ip:' . $l->ip_address);
-            }
-            if ($l->device_fingerprint) {
-                \Illuminate\Support\Facades\Cache::forget('blocked_device_fp:' . $l->device_fingerprint);
-            }
-            if ($l->device_id) {
-                \Illuminate\Support\Facades\Cache::forget('blocked_device_id:' . $l->device_id);
-            }
-            if ($l->user_agent) {
-                \Illuminate\Support\Facades\Cache::forget('blocked_device_fp:fp_ua_' . substr(md5($l->user_agent), 0, 16));
-            }
-        }
+        \Illuminate\Support\Facades\Cache::flush();
 
-        if ($request->cookie('_sec_device_fp')) {
-            \Illuminate\Support\Facades\Cache::forget('blocked_device_fp:' . $request->cookie('_sec_device_fp'));
-        }
-        if ($request->cookie('_sec_device_id')) {
-            \Illuminate\Support\Facades\Cache::forget('blocked_device_id:' . $request->cookie('_sec_device_id'));
-        }
-
-        return back()->with('success', __('Seluruh pemblokiran IP dan Perangkat di sistem berhasil direset/dibuka.'));
+        return back()->with('success', __('Seluruh pemblokiran IP, Perangkat, dan Cache sistem berhasil direset/dibuka secara total.'));
     }
 
     public function notifications()
