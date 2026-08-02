@@ -102,8 +102,13 @@ class ProfileController extends Controller
         $user = Auth::user();
         
         $loginLogs = \App\Models\LoginLog::where(function($q) use ($user) {
-            $q->where('username_or_email', $user->username)
-              ->orWhere('username_or_email', $user->email);
+            $q->where('user_id', $user->id);
+            if (!empty($user->username)) {
+                $q->orWhere('username_or_email', $user->username);
+            }
+            if (!empty($user->email)) {
+                $q->orWhere('username_or_email', $user->email);
+            }
         })->orderBy('created_at', 'desc')->paginate(15);
 
         $admins = \App\Models\User::where('role', 'admin')->get(['id', 'username', 'full_name']);

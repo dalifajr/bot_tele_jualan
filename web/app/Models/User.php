@@ -42,6 +42,30 @@ class User extends Authenticatable
         'has_custom_password' => 'boolean',
     ];
 
+    protected static function booted()
+    {
+        static::updating(function ($user) {
+            if ($user->isDirty('role')) {
+                $oldRole = $user->getOriginal('role');
+                $newRole = $user->role;
+                $actorId = \Illuminate\Support\Facades\Auth::id() ?? 0;
+                
+                try {
+                    \Illuminate\Support\Facades\DB::table('audit_logs')->insert([
+                        'action' => 'user_role_change',
+                        'actor_id' => $actorId,
+                        'entity_type' => 'user',
+                        'entity_id' => $user->id,
+                        'detail' => "User role changed: {$user->username} (ID: {$user->id}) from {$oldRole} to {$newRole}",
+                        'created_at' => now(),
+                    ]);
+                } catch (\Exception $e) {
+                    // Ignore audit log write error if audit_logs table isn't ready
+                }
+            }
+        });
+    }
+
     public function isOnline()
     {
         if (!$this->last_seen_at) {

@@ -10,6 +10,7 @@ class LoginLog extends Model
     use HasSystemTimezone;
     protected $table = 'login_logs';
     protected $fillable = [
+        'user_id',
         'ip_address',
         'username_or_email',
         'is_successful',
@@ -18,4 +19,9 @@ class LoginLog extends Model
         'browser',
         'location',
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
 }

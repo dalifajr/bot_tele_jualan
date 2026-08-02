@@ -206,30 +206,43 @@ class TelegramAuthController extends Controller
         // Find or create user
         $user = User::where('telegram_id', $telegramId)->first();
         if (!$user) {
-            $username = $telegramUser['username'] ?? ('tg_' . $telegramId);
-            $fullName = trim(($telegramUser['first_name'] ?? '') . ' ' . ($telegramUser['last_name'] ?? ''));
-            if (empty($fullName)) {
-                $fullName = $username;
+            $rawUsername = $telegramUser['username'] ?? null;
+
+            // Check if user already exists by username (e.g., admin created a seller account without telegram_id)
+            if (!empty($rawUsername)) {
+                $user = User::where('username', $rawUsername)->first();
             }
 
-            // Ensure username uniqueness
-            $baseUsername = $username;
-            $counter = 1;
-            while (User::where('username', $username)->exists()) {
-                $username = $baseUsername . $counter;
-                $counter++;
-            }
+            if ($user) {
+                // Safely link telegram_id to existing account preserving their role (seller/admin/customer)
+                $user->telegram_id = $telegramId;
+                $user->save();
+            } else {
+                $baseUsername = $rawUsername ?: ('tg_' . $telegramId);
+                $fullName = trim(($telegramUser['first_name'] ?? '') . ' ' . ($telegramUser['last_name'] ?? ''));
+                if (empty($fullName)) {
+                    $fullName = $baseUsername;
+                }
 
-            $user = new User([
-                'telegram_id' => $telegramId,
-                'username' => $username,
-                'full_name' => $fullName,
-                'password' => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(16)),
-                'last_seen_at' => now(),
-            ]);
-            $user->role = 'customer';
-            $user->wallet_balance = 0;
-            $user->save();
+                // Ensure username uniqueness
+                $username = $baseUsername;
+                $counter = 1;
+                while (User::where('username', $username)->exists()) {
+                    $username = $baseUsername . $counter;
+                    $counter++;
+                }
+
+                $user = new User([
+                    'telegram_id' => $telegramId,
+                    'username' => $username,
+                    'full_name' => $fullName,
+                    'password' => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(16)),
+                    'last_seen_at' => now(),
+                ]);
+                $user->role = 'customer';
+                $user->wallet_balance = 0;
+                $user->save();
+            }
         }
 
         if ($user->is_suspended) {

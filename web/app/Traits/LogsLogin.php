@@ -4,11 +4,13 @@ namespace App\Traits;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Auth;
 use App\Models\LoginLog;
+use App\Models\User;
 
 trait LogsLogin
 {
-    protected function recordLoginLog(Request $request, $loginValue, $isSuccessful, $forcedBrowser = null)
+    protected function recordLoginLog(Request $request, $loginValue, $isSuccessful, $forcedBrowser = null, $userId = null)
     {
         $ip = $request->ip();
         $userAgent = $request->header('User-Agent');
@@ -45,7 +47,16 @@ trait LogsLogin
             }
         }
 
+        if (!$userId) {
+            if (Auth::check()) {
+                $userId = Auth::id();
+            } elseif ($loginValue) {
+                $userId = User::where('username', $loginValue)->orWhere('email', $loginValue)->value('id');
+            }
+        }
+
         LoginLog::create([
+            'user_id' => $userId,
             'ip_address' => $ip,
             'username_or_email' => $loginValue,
             'is_successful' => $isSuccessful,
