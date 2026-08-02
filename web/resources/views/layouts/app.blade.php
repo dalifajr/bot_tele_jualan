@@ -305,8 +305,13 @@
                     }
                     
                     $userIps = \App\Models\LoginLog::where(function($q) use ($auth) {
-                        $q->where('username_or_email', $auth->username)
-                          ->orWhere('username_or_email', $auth->email);
+                        $q->where('user_id', $auth->id);
+                        if (!empty($auth->username)) {
+                            $q->orWhere('username_or_email', $auth->username);
+                        }
+                        if (!empty($auth->email)) {
+                            $q->orWhere('username_or_email', $auth->email);
+                        }
                     })->pluck('ip_address')->unique();
                     
                     $blockedUserIpsCount = 0;
