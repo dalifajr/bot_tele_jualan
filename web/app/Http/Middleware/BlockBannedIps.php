@@ -35,20 +35,12 @@ class BlockBannedIps
             $isBlocked = true;
         }
 
-        // 2. Check Device Fingerprint block
+        // 2. Check Device Fingerprint block (Canvas/Hardware)
         if (!$isBlocked && $deviceFp && Cache::has('blocked_device_fp:' . $deviceFp)) {
             $isBlocked = true;
         }
 
-        // 3. Check Fallback User-Agent Fingerprint block
-        if (!$isBlocked && $userAgent) {
-            $fallbackFp = 'fp_ua_' . substr(md5($userAgent), 0, 16);
-            if (Cache::has('blocked_device_fp:' . $fallbackFp)) {
-                $isBlocked = true;
-            }
-        }
-
-        // 4. Check Persistent Device Cookie ID block
+        // 3. Check Persistent Device Cookie ID block
         if (!$isBlocked && $deviceId && Cache::has('blocked_device_id:' . $deviceId)) {
             $isBlocked = true;
         }

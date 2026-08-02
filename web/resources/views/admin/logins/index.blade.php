@@ -53,7 +53,7 @@
                         <tbody>
                             @foreach($loginLogs as $log)
                             @php
-                                $effectiveFp = $log->device_fingerprint ?: ($log->user_agent ? 'fp_ua_' . substr(md5($log->user_agent), 0, 16) : null);
+                                $effectiveFp = $log->device_fingerprint;
                                 $effectiveDevId = $log->device_id;
                                 $isIpBlocked = \Illuminate\Support\Facades\Cache::has('blocked_ip:' . $log->ip_address);
                                 $isDeviceBlocked = ($effectiveFp && \Illuminate\Support\Facades\Cache::has('blocked_device_fp:' . $effectiveFp))
