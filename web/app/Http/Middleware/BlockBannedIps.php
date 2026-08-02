@@ -28,18 +28,16 @@ class BlockBannedIps
         $userAgent = $request->header('User-Agent');
 
         $isBlocked = false;
-        $reason = 'Akses ditolak. Anda telah diblokir karena aktivitas mencurigakan.';
+        $reason = 'Kamu diblokir';
 
         // 1. Check IP block
         if ($ip && Cache::has('blocked_ip:' . $ip)) {
             $isBlocked = true;
-            $reason = 'Akses ditolak. Alamat IP Anda (' . $ip . ') telah diblokir.';
         }
 
         // 2. Check Device Fingerprint block
         if (!$isBlocked && $deviceFp && Cache::has('blocked_device_fp:' . $deviceFp)) {
             $isBlocked = true;
-            $reason = 'Akses ditolak. Perangkat Anda (Device Fingerprint) telah diblokir.';
         }
 
         // 3. Check Fallback User-Agent Fingerprint block
@@ -47,14 +45,12 @@ class BlockBannedIps
             $fallbackFp = 'fp_ua_' . substr(md5($userAgent), 0, 16);
             if (Cache::has('blocked_device_fp:' . $fallbackFp)) {
                 $isBlocked = true;
-                $reason = 'Akses ditolak. Perangkat Anda (User Agent) telah diblokir.';
             }
         }
 
         // 4. Check Persistent Device Cookie ID block
         if (!$isBlocked && $deviceId && Cache::has('blocked_device_id:' . $deviceId)) {
             $isBlocked = true;
-            $reason = 'Akses ditolak. Perangkat ini (Security Device ID) telah diblokir.';
         }
 
         // 5. Check User Account Suspension if logged in
@@ -62,7 +58,6 @@ class BlockBannedIps
             $user = Auth::user();
             if ($user && $user->is_suspended) {
                 $isBlocked = true;
-                $reason = 'Akses ditolak. Akun Anda (' . $user->username . ') sedang ditangguhkan oleh Admin.';
             }
         }
 

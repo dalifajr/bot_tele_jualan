@@ -1989,6 +1989,7 @@ class AdminController extends Controller
         $request->validate([
             'device_fingerprint' => 'nullable|string|max:64',
             'device_id' => 'nullable|string|max:64',
+            'ip_address' => 'nullable|ip',
         ]);
 
         if ($request->device_fingerprint) {
@@ -1996,6 +1997,28 @@ class AdminController extends Controller
         }
         if ($request->device_id) {
             \Illuminate\Support\Facades\Cache::forget('blocked_device_id:' . $request->device_id);
+        }
+
+        // Also clear fallback User-Agent fingerprint if request has User-Agent
+        if ($request->header('User-Agent')) {
+            $fallbackFp = 'fp_ua_' . substr(md5($request->header('User-Agent')), 0, 16);
+            \Illuminate\Support\Facades\Cache::forget('blocked_device_fp:' . $fallbackFp);
+        }
+
+        // If IP is passed, clear all device fingerprints logged under this IP
+        if ($request->ip_address) {
+            $logs = \App\Models\LoginLog::where('ip_address', $request->ip_address)->get();
+            foreach ($logs as $l) {
+                if ($l->device_fingerprint) {
+                    \Illuminate\Support\Facades\Cache::forget('blocked_device_fp:' . $l->device_fingerprint);
+                }
+                if ($l->device_id) {
+                    \Illuminate\Support\Facades\Cache::forget('blocked_device_id:' . $l->device_id);
+                }
+                if ($l->user_agent) {
+                    \Illuminate\Support\Facades\Cache::forget('blocked_device_fp:fp_ua_' . substr(md5($l->user_agent), 0, 16));
+                }
+            }
         }
 
         return back()->with('success', __('Blokir perangkat telah dibuka.'));
@@ -2083,6 +2106,29 @@ class AdminController extends Controller
             if ($request->device_id) {
                 \Illuminate\Support\Facades\Cache::forget('blocked_device_id:' . $request->device_id);
             }
+
+            // Also clear request's own User-Agent fallback
+            if ($request->header('User-Agent')) {
+                $fallbackFp = 'fp_ua_' . substr(md5($request->header('User-Agent')), 0, 16);
+                \Illuminate\Support\Facades\Cache::forget('blocked_device_fp:' . $fallbackFp);
+            }
+
+            // Clear all fingerprints logged under this IP
+            if ($request->ip_address) {
+                $logs = \App\Models\LoginLog::where('ip_address', $request->ip_address)->get();
+                foreach ($logs as $l) {
+                    if ($l->device_fingerprint) {
+                        \Illuminate\Support\Facades\Cache::forget('blocked_device_fp:' . $l->device_fingerprint);
+                    }
+                    if ($l->device_id) {
+                        \Illuminate\Support\Facades\Cache::forget('blocked_device_id:' . $l->device_id);
+                    }
+                    if ($l->user_agent) {
+                        \Illuminate\Support\Facades\Cache::forget('blocked_device_fp:fp_ua_' . substr(md5($l->user_agent), 0, 16));
+                    }
+                }
+            }
+
             $actionsDone[] = "Perangkat";
         }
 
