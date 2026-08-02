@@ -17,6 +17,8 @@ class LoginLog extends Model
         'user_agent',
         'device_type',
         'browser',
+        'device_fingerprint',
+        'device_id',
         'location',
     ];
 

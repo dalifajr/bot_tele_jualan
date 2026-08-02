@@ -148,6 +148,33 @@ class ProfileController extends Controller
         return back()->with('success', __("IP Address :ip telah diblokir selama :durationText.", ["ip" => $ip, "durationText" => $durationText]));
     }
 
+    public function blockDevice(Request $request)
+    {
+        $request->validate([
+            'device_fingerprint' => 'nullable|string|max:64',
+            'device_id' => 'nullable|string|max:64',
+            'duration' => 'required|integer|in:1,7,30,365'
+        ]);
+
+        $fp = $request->device_fingerprint;
+        $deviceId = $request->device_id;
+        $duration = (int)$request->duration;
+
+        $expire = now()->addDays($duration);
+        if ($duration === 365) {
+            $expire = now()->addYear();
+        }
+
+        if ($fp) {
+            \Illuminate\Support\Facades\Cache::put('blocked_device_fp:' . $fp, true, $expire);
+        }
+        if ($deviceId) {
+            \Illuminate\Support\Facades\Cache::put('blocked_device_id:' . $deviceId, true, $expire);
+        }
+
+        return back()->with('success', __('Perangkat berhasil diblokir.'));
+    }
+
     public function requestUnblock(Request $request)
     {
         $request->validate([

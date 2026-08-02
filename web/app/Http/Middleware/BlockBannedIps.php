@@ -16,8 +16,20 @@ class BlockBannedIps
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (Cache::has('blocked_ip:' . $request->ip())) {
-            abort(403, 'Akses ditolak. Anda telah diblokir karena aktivitas mencurigakan.');
+        $ip = $request->ip();
+        $deviceFp = $request->input('device_fingerprint') ?: ($request->cookie('_sec_device_fp') ?: $request->header('X-Device-Fingerprint'));
+        $deviceId = $request->input('device_id') ?: ($request->cookie('_sec_device_id') ?: $request->header('X-Device-ID'));
+
+        if ($ip && Cache::has('blocked_ip:' . $ip)) {
+            abort(403, 'Akses ditolak. IP Anda telah diblokir karena aktivitas mencurigakan.');
+        }
+
+        if ($deviceFp && Cache::has('blocked_device_fp:' . $deviceFp)) {
+            abort(403, 'Akses ditolak. Perangkat Anda (Device Fingerprint) telah diblokir karena aktivitas mencurigakan.');
+        }
+
+        if ($deviceId && Cache::has('blocked_device_id:' . $deviceId)) {
+            abort(403, 'Akses ditolak. Perangkat ini (Device ID) telah diblokir karena aktivitas mencurigakan.');
         }
 
         return $next($request);

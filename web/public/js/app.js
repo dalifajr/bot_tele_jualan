@@ -265,3 +265,77 @@ function initTelegramWebApp() {
         }
     }
 }
+
+/* === DEVICE FINGERPRINT & SECURITY COOKIE === */
+function initDeviceSecurity() {
+    try {
+        // 1. Persistent Security Device ID
+        let deviceId = localStorage.getItem('_sec_device_id');
+        if (!deviceId) {
+            deviceId = 'dev_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
+            localStorage.setItem('_sec_device_id', deviceId);
+        }
+        document.cookie = "_sec_device_id=" + encodeURIComponent(deviceId) + "; path=/; max-age=315360000; SameSite=Lax";
+
+        // 2. Hardware / Canvas Fingerprint
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        let canvasHash = 'c0';
+        if (ctx) {
+            ctx.textBaseline = 'top';
+            ctx.font = '14px Arial';
+            ctx.fillStyle = '#f60';
+            ctx.fillRect(125, 1, 62, 20);
+            ctx.fillStyle = '#069';
+            ctx.fillText('JualanSaya_Security_Fingerprint', 2, 15);
+            const dataUrl = canvas.toDataURL();
+            let hash = 0;
+            for (let i = 0; i < dataUrl.length; i++) {
+                hash = ((hash << 5) - hash) + dataUrl.charCodeAt(i);
+                hash |= 0;
+            }
+            canvasHash = 'c' + Math.abs(hash).toString(36);
+        }
+
+        const screenInfo = `${window.screen.width}x${window.screen.height}x${window.screen.colorDepth}`;
+        const timezone = new Date().getTimezoneOffset();
+        const hardware = navigator.hardwareConcurrency || 1;
+        const rawFpString = `${navigator.userAgent}|${screenInfo}|${timezone}|${hardware}|${canvasHash}`;
+
+        let fpHash = 2166136261;
+        for (let i = 0; i < rawFpString.length; i++) {
+            fpHash ^= rawFpString.charCodeAt(i);
+            fpHash += (fpHash << 1) + (fpHash << 4) + (fpHash << 7) + (fpHash << 8) + (fpHash << 24);
+        }
+        const deviceFp = 'fp_' + Math.abs(fpHash).toString(36) + '_' + canvasHash;
+
+        document.cookie = "_sec_device_fp=" + encodeURIComponent(deviceFp) + "; path=/; max-age=315360000; SameSite=Lax";
+
+        // Auto populate form inputs
+        document.querySelectorAll('form').forEach(form => {
+            let fpInput = form.querySelector('input[name="device_fingerprint"]');
+            if (!fpInput) {
+                fpInput = document.createElement('input');
+                fpInput.type = 'hidden';
+                fpInput.name = 'device_fingerprint';
+                form.appendChild(fpInput);
+            }
+            fpInput.value = deviceFp;
+
+            let devIdInput = form.querySelector('input[name="device_id"]');
+            if (!devIdInput) {
+                devIdInput = document.createElement('input');
+                devIdInput.type = 'hidden';
+                devIdInput.name = 'device_id';
+                form.appendChild(devIdInput);
+            }
+            devIdInput.value = deviceId;
+        });
+    } catch (e) {
+        console.warn('Device security initialization failed:', e);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    initDeviceSecurity();
+});

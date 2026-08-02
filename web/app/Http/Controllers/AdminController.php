@@ -1957,6 +1957,50 @@ class AdminController extends Controller
         return back()->with('success', __("Blokir IP Address :ip telah dibuka.", ["ip" => $ip]));
     }
 
+    public function blockDevice(Request $request)
+    {
+        $request->validate([
+            'device_fingerprint' => 'nullable|string|max:64',
+            'device_id' => 'nullable|string|max:64',
+            'duration' => 'required|integer|in:1,7,30,365'
+        ]);
+
+        $fp = $request->device_fingerprint;
+        $deviceId = $request->device_id;
+        $duration = (int)$request->duration;
+
+        $expire = now()->addDays($duration);
+        if ($duration === 365) {
+            $expire = now()->addYear();
+        }
+
+        if ($fp) {
+            \Illuminate\Support\Facades\Cache::put('blocked_device_fp:' . $fp, true, $expire);
+        }
+        if ($deviceId) {
+            \Illuminate\Support\Facades\Cache::put('blocked_device_id:' . $deviceId, true, $expire);
+        }
+
+        return back()->with('success', __('Perangkat berhasil diblokir.'));
+    }
+
+    public function unblockDevice(Request $request)
+    {
+        $request->validate([
+            'device_fingerprint' => 'nullable|string|max:64',
+            'device_id' => 'nullable|string|max:64',
+        ]);
+
+        if ($request->device_fingerprint) {
+            \Illuminate\Support\Facades\Cache::forget('blocked_device_fp:' . $request->device_fingerprint);
+        }
+        if ($request->device_id) {
+            \Illuminate\Support\Facades\Cache::forget('blocked_device_id:' . $request->device_id);
+        }
+
+        return back()->with('success', __('Blokir perangkat telah dibuka.'));
+    }
+
     public function notifications()
     {
         $pendingOrders = \App\Models\Order::whereIn('status', ['pending_payment', 'paid'])->orderBy('created_at', 'desc')->get();

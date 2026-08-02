@@ -60,25 +60,56 @@
                                 <td>
                                     <div class="text-dark small">{{ $log->device_type }}</div>
                                     <div class="text-secondary small" title="{{ $log->user_agent }}"><i class="fab fa-chrome text-primary me-1"></i>{{ $log->browser ?? '-' }}</div>
+                                    @if($log->device_fingerprint)
+                                        <div class="mt-1"><span class="badge bg-secondary bg-opacity-10 text-secondary border font-monospace" style="font-size: 0.65rem;" title="Fingerprint: {{ $log->device_fingerprint }}"><i class="fas fa-fingerprint me-1"></i>{{ Str::limit($log->device_fingerprint, 16) }}</span></div>
+                                    @endif
                                 </td>
                                 <td class="text-end pe-4">
-                                    @if(\Illuminate\Support\Facades\Cache::has('blocked_ip:' . $log->ip_address))
-                                        <form action="{{ route('admin.logins.unblock-ip') }}" method="POST" class="d-inline">
-                                            @csrf
-                                            <input type="hidden" name="ip_address" value="{{ $log->ip_address }}">
-                                            <button type="submit" class="btn btn-sm btn-outline-success rounded-pill px-3" onclick="confirmAction(event, 'Buka blokir IP ini?')">
-                                                <i class="fas fa-unlock me-1"></i>{{ __('Buka Blokir') }}
-                                            </button>
-                                        </form>
-                                    @else
-                                        <form action="{{ route('admin.logins.block-ip') }}" method="POST" class="d-inline" onsubmit="confirmBlockIp(event, this)">
-                                            @csrf
-                                            <input type="hidden" name="ip_address" value="{{ $log->ip_address }}">
-                                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3">
-                                                <i class="fas fa-ban me-1"></i>{{ __('Blokir') }}
-                                            </button>
-                                        </form>
-                                    @endif
+                                    <div class="d-flex justify-content-end gap-1 flex-wrap">
+                                        @if(\Illuminate\Support\Facades\Cache::has('blocked_ip:' . $log->ip_address))
+                                            <form action="{{ route('admin.logins.unblock-ip') }}" method="POST" class="d-inline">
+                                                @csrf
+                                                <input type="hidden" name="ip_address" value="{{ $log->ip_address }}">
+                                                <button type="submit" class="btn btn-sm btn-outline-success rounded-pill px-2 py-1" onclick="confirmAction(event, '{{ __('Buka blokir IP ini?') }}')">
+                                                    <i class="fas fa-unlock me-1"></i>{{ __('Unblock IP') }}
+                                                </button>
+                                            </form>
+                                        @else
+                                            <form action="{{ route('admin.logins.block-ip') }}" method="POST" class="d-inline" onsubmit="confirmBlockIp(event, this)">
+                                                @csrf
+                                                <input type="hidden" name="ip_address" value="{{ $log->ip_address }}">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-2 py-1">
+                                                    <i class="fas fa-ban me-1"></i>{{ __('Blokir IP') }}
+                                                </button>
+                                            </form>
+                                        @endif
+
+                                        @if($log->device_fingerprint || $log->device_id)
+                                            @php
+                                                $isDeviceBlocked = ($log->device_fingerprint && \Illuminate\Support\Facades\Cache::has('blocked_device_fp:' . $log->device_fingerprint))
+                                                    || ($log->device_id && \Illuminate\Support\Facades\Cache::has('blocked_device_id:' . $log->device_id));
+                                            @endphp
+                                            @if($isDeviceBlocked)
+                                                <form action="{{ route('admin.logins.unblock-device') }}" method="POST" class="d-inline">
+                                                    @csrf
+                                                    <input type="hidden" name="device_fingerprint" value="{{ $log->device_fingerprint }}">
+                                                    <input type="hidden" name="device_id" value="{{ $log->device_id }}">
+                                                    <button type="submit" class="btn btn-sm btn-outline-success rounded-pill px-2 py-1" onclick="confirmAction(event, '{{ __('Buka blokir perangkat ini?') }}')">
+                                                        <i class="fas fa-mobile-alt me-1"></i>{{ __('Unblock Perangkat') }}
+                                                    </button>
+                                                </form>
+                                            @else
+                                                <form action="{{ route('admin.logins.block-device') }}" method="POST" class="d-inline" onsubmit="confirmBlockDevice(event, this)">
+                                                    @csrf
+                                                    <input type="hidden" name="device_fingerprint" value="{{ $log->device_fingerprint }}">
+                                                    <input type="hidden" name="device_id" value="{{ $log->device_id }}">
+                                                    <button type="submit" class="btn btn-sm btn-outline-dark rounded-pill px-2 py-1">
+                                                        <i class="fas fa-laptop me-1"></i>{{ __('Blokir Perangkat') }}
+                                                    </button>
+                                                </form>
+                                            @endif
+                                        @endif
+                                    </div>
                                 </td>
                             </tr>
                             @endforeach
@@ -176,6 +207,51 @@
                         resolve();
                     } else {
                         resolve('Anda harus memilih durasi blokir!');
+                    }
+                });
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                let durationInput = document.createElement('input');
+                durationInput.type = 'hidden';
+                durationInput.name = 'duration';
+                durationInput.value = result.value;
+                form.appendChild(durationInput);
+                
+                let loader = document.getElementById('pageLoader');
+                if (loader) {
+                    loader.classList.remove('fade-out');
+                }
+                form.submit();
+            }
+        });
+    }
+
+    function confirmBlockDevice(event, form) {
+        event.preventDefault();
+        Swal.fire({
+            title: '{{ __("Pilih Durasi Blokir Perangkat") }}',
+            text: '{{ __("Perangkat ini (Device Fingerprint & ID Cookie) akan diblokir meskipun pengguna berganti IP publik.") }}',
+            icon: 'warning',
+            input: 'select',
+            inputOptions: {
+                '1': '1 {{ __("Hari") }}',
+                '7': '7 {{ __("Hari") }}',
+                '30': '30 {{ __("Hari") }}',
+                '365': '1 {{ __("Tahun") }}'
+            },
+            inputValue: '1',
+            showCancelButton: true,
+            confirmButtonColor: '#212529',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '{{ __("Blokir Perangkat") }}',
+            cancelButtonText: '{{ __("Batal") }}',
+            inputValidator: (value) => {
+                return new Promise((resolve) => {
+                    if (value) {
+                        resolve();
+                    } else {
+                        resolve('{{ __("Anda harus memilih durasi blokir!") }}');
                     }
                 });
             }

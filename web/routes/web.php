@@ -121,6 +121,7 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
     Route::post('/profile/2fa/toggle', [\App\Http\Controllers\Auth\AuthController::class, 'toggleTwoFactor'])->name('profile.2fa.toggle');
     Route::get('/profile/logins', [\App\Http\Controllers\ProfileController::class, 'loginHistory'])->name('profile.logins');
     Route::post('/profile/logins/block-ip', [\App\Http\Controllers\ProfileController::class, 'blockIp'])->name('profile.logins.block-ip');
+    Route::post('/profile/logins/block-device', [\App\Http\Controllers\ProfileController::class, 'blockDevice'])->name('profile.logins.block-device');
     Route::post('/profile/logins/request-unblock', [\App\Http\Controllers\ProfileController::class, 'requestUnblock'])->name('profile.logins.request-unblock');
 
     Route::post('/admin/stop-impersonating', [\App\Http\Controllers\AdminController::class, 'stopImpersonating'])->name('admin.users.stop-impersonating');
@@ -180,6 +181,8 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         Route::get('/logins', [\App\Http\Controllers\AdminController::class, 'logins'])->name('logins.index');
         Route::post('/logins/block-ip', [\App\Http\Controllers\AdminController::class, 'blockIp'])->name('logins.block-ip');
         Route::post('/logins/unblock-ip', [\App\Http\Controllers\AdminController::class, 'unblockIp'])->name('logins.unblock-ip');
+        Route::post('/logins/block-device', [\App\Http\Controllers\AdminController::class, 'blockDevice'])->name('logins.block-device');
+        Route::post('/logins/unblock-device', [\App\Http\Controllers\AdminController::class, 'unblockDevice'])->name('logins.unblock-device');
         Route::get('/notifications', [\App\Http\Controllers\AdminController::class, 'notifications'])->name('notifications.index');
         Route::post('/notifications/mark-read', [\App\Http\Controllers\AdminController::class, 'markNotificationsRead'])->name('notifications.markRead');
         

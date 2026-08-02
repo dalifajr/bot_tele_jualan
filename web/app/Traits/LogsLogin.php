@@ -55,6 +55,9 @@ trait LogsLogin
             }
         }
 
+        $deviceFingerprint = $request->input('device_fingerprint') ?: ($request->cookie('_sec_device_fp') ?: $request->header('X-Device-Fingerprint'));
+        $deviceId = $request->input('device_id') ?: ($request->cookie('_sec_device_id') ?: $request->header('X-Device-ID'));
+
         LoginLog::create([
             'user_id' => $userId,
             'ip_address' => $ip,
@@ -63,6 +66,8 @@ trait LogsLogin
             'user_agent' => $userAgent,
             'device_type' => $deviceType,
             'browser' => $browser,
+            'device_fingerprint' => $deviceFingerprint,
+            'device_id' => $deviceId,
             'location' => trim($location, ', '),
         ]);
     }
