@@ -43,6 +43,12 @@
                         </thead>
                         <tbody>
                             @foreach($loginLogs as $log)
+                            @php
+                                $effectiveFp = $log->device_fingerprint ?: ($log->user_agent ? 'fp_ua_' . substr(md5($log->user_agent), 0, 16) : null);
+                                $effectiveDevId = $log->device_id;
+                                $isDeviceBlocked = ($effectiveFp && \Illuminate\Support\Facades\Cache::has('blocked_device_fp:' . $effectiveFp))
+                                    || ($effectiveDevId && \Illuminate\Support\Facades\Cache::has('blocked_device_id:' . $effectiveDevId));
+                            @endphp
                             <tr>
                                 <td class="px-4 text-secondary small">{{ $log->created_at->format('d M Y H:i') }}</td>
                                 <td>
@@ -60,8 +66,8 @@
                                 <td>
                                     <div class="text-dark small">{{ $log->device_type }}</div>
                                     <div class="text-secondary small" title="{{ $log->user_agent }}"><i class="fab fa-chrome text-primary me-1"></i>{{ $log->browser ?? '-' }}</div>
-                                    @if($log->device_fingerprint)
-                                        <div class="mt-1"><span class="badge bg-secondary bg-opacity-10 text-secondary border font-monospace" style="font-size: 0.65rem;" title="Fingerprint: {{ $log->device_fingerprint }}"><i class="fas fa-fingerprint me-1"></i>{{ Str::limit($log->device_fingerprint, 16) }}</span></div>
+                                    @if($effectiveFp)
+                                        <div class="mt-1"><span class="badge bg-secondary bg-opacity-10 text-secondary border font-monospace" style="font-size: 0.65rem;" title="Fingerprint: {{ $effectiveFp }}"><i class="fas fa-fingerprint me-1"></i>{{ Str::limit($effectiveFp, 16) }}</span></div>
                                     @endif
                                 </td>
                                 <td class="text-end pe-4">
@@ -84,16 +90,12 @@
                                             </form>
                                         @endif
 
-                                        @if($log->device_fingerprint || $log->device_id)
-                                            @php
-                                                $isDeviceBlocked = ($log->device_fingerprint && \Illuminate\Support\Facades\Cache::has('blocked_device_fp:' . $log->device_fingerprint))
-                                                    || ($log->device_id && \Illuminate\Support\Facades\Cache::has('blocked_device_id:' . $log->device_id));
-                                            @endphp
+                                        @if($effectiveFp || $effectiveDevId)
                                             @if($isDeviceBlocked)
                                                 <form action="{{ route('admin.logins.unblock-device') }}" method="POST" class="d-inline">
                                                     @csrf
-                                                    <input type="hidden" name="device_fingerprint" value="{{ $log->device_fingerprint }}">
-                                                    <input type="hidden" name="device_id" value="{{ $log->device_id }}">
+                                                    <input type="hidden" name="device_fingerprint" value="{{ $effectiveFp }}">
+                                                    <input type="hidden" name="device_id" value="{{ $effectiveDevId }}">
                                                     <button type="submit" class="btn btn-sm btn-outline-success rounded-pill px-2 py-1" onclick="confirmAction(event, '{{ __('Buka blokir perangkat ini?') }}')">
                                                         <i class="fas fa-mobile-alt me-1"></i>{{ __('Unblock Perangkat') }}
                                                     </button>
@@ -101,8 +103,8 @@
                                             @else
                                                 <form action="{{ route('admin.logins.block-device') }}" method="POST" class="d-inline" onsubmit="confirmBlockDevice(event, this)">
                                                     @csrf
-                                                    <input type="hidden" name="device_fingerprint" value="{{ $log->device_fingerprint }}">
-                                                    <input type="hidden" name="device_id" value="{{ $log->device_id }}">
+                                                    <input type="hidden" name="device_fingerprint" value="{{ $effectiveFp }}">
+                                                    <input type="hidden" name="device_id" value="{{ $effectiveDevId }}">
                                                     <button type="submit" class="btn btn-sm btn-outline-dark rounded-pill px-2 py-1">
                                                         <i class="fas fa-laptop me-1"></i>{{ __('Blokir Perangkat') }}
                                                     </button>

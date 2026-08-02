@@ -28,6 +28,13 @@ class BlockBannedIps
             abort(403, 'Akses ditolak. Perangkat Anda (Device Fingerprint) telah diblokir karena aktivitas mencurigakan.');
         }
 
+        if (!$deviceFp && $request->header('User-Agent')) {
+            $fallbackFp = 'fp_ua_' . substr(md5($request->header('User-Agent')), 0, 16);
+            if (Cache::has('blocked_device_fp:' . $fallbackFp)) {
+                abort(403, 'Akses ditolak. Perangkat Anda (User Agent/Device) telah diblokir karena aktivitas mencurigakan.');
+            }
+        }
+
         if ($deviceId && Cache::has('blocked_device_id:' . $deviceId)) {
             abort(403, 'Akses ditolak. Perangkat ini (Device ID) telah diblokir karena aktivitas mencurigakan.');
         }
