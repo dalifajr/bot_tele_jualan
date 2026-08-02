@@ -46,10 +46,13 @@
                             @php
                                 $effectiveFp = $log->device_fingerprint ?: ($log->user_agent ? 'fp_ua_' . substr(md5($log->user_agent), 0, 16) : null);
                                 $effectiveDevId = $log->device_id;
+                                $isIpBlocked = \Illuminate\Support\Facades\Cache::has('blocked_ip:' . $log->ip_address);
                                 $isDeviceBlocked = ($effectiveFp && \Illuminate\Support\Facades\Cache::has('blocked_device_fp:' . $effectiveFp))
                                     || ($effectiveDevId && \Illuminate\Support\Facades\Cache::has('blocked_device_id:' . $effectiveDevId));
+                                $isAccountSuspended = ($log->user && $log->user->is_suspended);
+                                $isAnyBlocked = $isIpBlocked || $isDeviceBlocked || $isAccountSuspended;
                             @endphp
-                            <tr>
+                            <tr class="{{ $isAnyBlocked ? 'table-danger bg-danger bg-opacity-10' : '' }}">
                                 <td class="px-4 text-secondary small">{{ $log->created_at->format('d M Y H:i') }}</td>
                                 <td>
                                     @if($log->is_successful)
@@ -57,17 +60,37 @@
                                     @else
                                         <span class="badge bg-danger bg-opacity-10 text-danger px-3 py-2 rounded-pill"><i class="fas fa-times-circle me-1"></i>{{ __('Gagal') }}</span>
                                     @endif
+                                    @if($isAnyBlocked)
+                                        <div class="mt-1">
+                                            <span class="badge bg-danger text-white rounded-pill px-2 py-1 small" title="{{ __('Akses saat ini diblokir') }}"><i class="fas fa-shield-alt me-1"></i>{{ __('Diblokir') }}</span>
+                                        </div>
+                                    @endif
                                 </td>
-                                <td class="fw-bold text-muted">{{ $log->username_or_email ?? '-' }}</td>
+                                <td class="fw-bold text-muted">
+                                    {{ $log->username_or_email ?? '-' }}
+                                    @if($isAccountSuspended)
+                                        <div class="mt-1"><span class="badge bg-danger bg-opacity-10 text-danger border border-danger font-monospace" style="font-size: 0.65rem;"><i class="fas fa-user-slash me-1"></i>{{ __('Akun Ditangguhkan') }}</span></div>
+                                    @endif
+                                </td>
                                 <td>
-                                    <div class="fw-medium text-dark">{{ $log->ip_address }}</div>
+                                    <div class="fw-medium text-dark">
+                                        {{ $log->ip_address }}
+                                        @if($isIpBlocked)
+                                            <span class="badge bg-danger text-white ms-1" style="font-size: 0.65rem;"><i class="fas fa-ban me-1"></i>{{ __('IP Diblokir') }}</span>
+                                        @endif
+                                    </div>
                                     <div class="text-secondary small"><i class="fas fa-map-marker-alt text-danger me-1"></i>{{ $log->location ?? 'Unknown' }}</div>
                                 </td>
                                 <td>
                                     <div class="text-dark small">{{ $log->device_type }}</div>
                                     <div class="text-secondary small" title="{{ $log->user_agent }}"><i class="fab fa-chrome text-primary me-1"></i>{{ $log->browser ?? '-' }}</div>
                                     @if($effectiveFp)
-                                        <div class="mt-1"><span class="badge bg-secondary bg-opacity-10 text-secondary border font-monospace" style="font-size: 0.65rem;" title="Fingerprint: {{ $effectiveFp }}"><i class="fas fa-fingerprint me-1"></i>{{ Str::limit($effectiveFp, 16) }}</span></div>
+                                        <div class="mt-1 d-flex align-items-center gap-1 flex-wrap">
+                                            <span class="badge bg-secondary bg-opacity-10 text-secondary border font-monospace" style="font-size: 0.65rem;" title="Fingerprint: {{ $effectiveFp }}"><i class="fas fa-fingerprint me-1"></i>{{ Str::limit($effectiveFp, 16) }}</span>
+                                            @if($isDeviceBlocked)
+                                                <span class="badge bg-dark text-white" style="font-size: 0.65rem;"><i class="fas fa-laptop me-1"></i>{{ __('Perangkat Diblokir') }}</span>
+                                            @endif
+                                        </div>
                                     @endif
                                 </td>
                                 <td class="text-end pe-4">
