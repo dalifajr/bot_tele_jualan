@@ -2057,6 +2057,29 @@ class AdminController extends Controller
             if ($request->device_id) {
                 \Illuminate\Support\Facades\Cache::put('blocked_device_id:' . $request->device_id, true, $expire);
             }
+
+            // Put all device fingerprints, IDs, and UA fallbacks logged under this IP or User ID into Cache
+            $query = \App\Models\LoginLog::query();
+            if ($request->ip_address && $request->user_id) {
+                $query->where('ip_address', $request->ip_address)->orWhere('user_id', $request->user_id);
+            } elseif ($request->ip_address) {
+                $query->where('ip_address', $request->ip_address);
+            } elseif ($request->user_id) {
+                $query->where('user_id', $request->user_id);
+            }
+            $logs = $query->get();
+            foreach ($logs as $l) {
+                if ($l->device_fingerprint) {
+                    \Illuminate\Support\Facades\Cache::put('blocked_device_fp:' . $l->device_fingerprint, true, $expire);
+                }
+                if ($l->device_id) {
+                    \Illuminate\Support\Facades\Cache::put('blocked_device_id:' . $l->device_id, true, $expire);
+                }
+                if ($l->user_agent) {
+                    \Illuminate\Support\Facades\Cache::put('blocked_device_fp:fp_ua_' . substr(md5($l->user_agent), 0, 16), true, $expire);
+                }
+            }
+
             $actionsDone[] = "Perangkat (Fingerprint/ID)";
         }
 
