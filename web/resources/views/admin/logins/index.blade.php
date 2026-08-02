@@ -71,46 +71,22 @@
                                     @endif
                                 </td>
                                 <td class="text-end pe-4">
-                                    <div class="d-flex justify-content-end gap-1 flex-wrap">
-                                        @if(\Illuminate\Support\Facades\Cache::has('blocked_ip:' . $log->ip_address))
-                                            <form action="{{ route('admin.logins.unblock-ip') }}" method="POST" class="d-inline">
-                                                @csrf
-                                                <input type="hidden" name="ip_address" value="{{ $log->ip_address }}">
-                                                <button type="submit" class="btn btn-sm btn-outline-success rounded-pill px-2 py-1" onclick="confirmAction(event, '{{ __('Buka blokir IP ini?') }}')">
-                                                    <i class="fas fa-unlock me-1"></i>{{ __('Unblock IP') }}
+                                    <div class="dropdown d-inline-block">
+                                        <button class="btn btn-sm btn-outline-secondary rounded-pill dropdown-toggle px-3" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                            <i class="fas fa-shield-alt me-1"></i>{{ __('Kelola Blokir') }}
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" style="border-radius: 12px; z-index: 1050;">
+                                            <li>
+                                                <button type="button" class="dropdown-item text-danger py-2" onclick="openUnifiedBlockModal('{{ $log->ip_address }}', '{{ $effectiveFp }}', '{{ $effectiveDevId }}', '{{ $log->user_id }}', '{{ $log->user ? $log->user->username : ($log->username_or_email ?? '') }}')">
+                                                    <i class="fas fa-ban me-2 text-danger"></i>{{ __('Blokir Akses') }}
                                                 </button>
-                                            </form>
-                                        @else
-                                            <form action="{{ route('admin.logins.block-ip') }}" method="POST" class="d-inline" onsubmit="confirmBlockIp(event, this)">
-                                                @csrf
-                                                <input type="hidden" name="ip_address" value="{{ $log->ip_address }}">
-                                                <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-2 py-1">
-                                                    <i class="fas fa-ban me-1"></i>{{ __('Blokir IP') }}
+                                            </li>
+                                            <li>
+                                                <button type="button" class="dropdown-item text-success py-2" onclick="openUnifiedUnblockModal('{{ $log->ip_address }}', '{{ $effectiveFp }}', '{{ $effectiveDevId }}', '{{ $log->user_id }}', '{{ $log->user ? $log->user->username : ($log->username_or_email ?? '') }}', {{ \Illuminate\Support\Facades\Cache::has('blocked_ip:' . $log->ip_address) ? 'true' : 'false' }}, {{ $isDeviceBlocked ? 'true' : 'false' }}, {{ ($log->user && $log->user->is_suspended) ? 'true' : 'false' }})">
+                                                    <i class="fas fa-unlock me-2 text-success"></i>{{ __('Buka Blokir (Unblock)') }}
                                                 </button>
-                                            </form>
-                                        @endif
-
-                                        @if($effectiveFp || $effectiveDevId)
-                                            @if($isDeviceBlocked)
-                                                <form action="{{ route('admin.logins.unblock-device') }}" method="POST" class="d-inline">
-                                                    @csrf
-                                                    <input type="hidden" name="device_fingerprint" value="{{ $effectiveFp }}">
-                                                    <input type="hidden" name="device_id" value="{{ $effectiveDevId }}">
-                                                    <button type="submit" class="btn btn-sm btn-outline-success rounded-pill px-2 py-1" onclick="confirmAction(event, '{{ __('Buka blokir perangkat ini?') }}')">
-                                                        <i class="fas fa-mobile-alt me-1"></i>{{ __('Unblock Perangkat') }}
-                                                    </button>
-                                                </form>
-                                            @else
-                                                <form action="{{ route('admin.logins.block-device') }}" method="POST" class="d-inline" onsubmit="confirmBlockDevice(event, this)">
-                                                    @csrf
-                                                    <input type="hidden" name="device_fingerprint" value="{{ $effectiveFp }}">
-                                                    <input type="hidden" name="device_id" value="{{ $effectiveDevId }}">
-                                                    <button type="submit" class="btn btn-sm btn-outline-dark rounded-pill px-2 py-1">
-                                                        <i class="fas fa-laptop me-1"></i>{{ __('Blokir Perangkat') }}
-                                                    </button>
-                                                </form>
-                                            @endif
-                                        @endif
+                                            </li>
+                                        </ul>
                                     </div>
                                 </td>
                             </tr>
@@ -184,91 +160,259 @@
 
 @push('scripts')
 <script>
-    function confirmBlockIp(event, form) {
-        event.preventDefault();
+    function openUnifiedBlockModal(ip, deviceFp, deviceId, userId, username) {
         Swal.fire({
-            title: 'Pilih Durasi Blokir IP',
-            text: `Pilih jangka waktu pemblokiran untuk IP ${form.ip_address.value}`,
-            icon: 'warning',
-            input: 'select',
-            inputOptions: {
-                '1': '1 Hari',
-                '7': '7 Hari',
-                '30': '30 Hari',
-                '365': '1 Tahun'
-            },
-            inputValue: '1',
+            title: '{{ __("Kelola Pemblokiran Akses") }}',
+            html: `
+                <div class="text-start fs-6 p-2">
+                    <p class="text-muted small mb-3">{{ __("Centang opsi pemblokiran yang ingin diterapkan dan tentukan durasinya:") }}</p>
+                    
+                    ${ip ? `
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="swal_block_ip" checked>
+                        <label class="form-check-label fw-bold" for="swal_block_ip">
+                            <i class="fas fa-network-wired text-danger me-1"></i> {{ __("Blokir IP Address") }} (${ip})
+                        </label>
+                    </div>
+                    ` : ''}
+
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="swal_block_device" checked>
+                        <label class="form-check-label fw-bold" for="swal_block_device">
+                            <i class="fas fa-laptop text-dark me-1"></i> {{ __("Blokir Perangkat (Fingerprint & Cookie)") }}
+                        </label>
+                        <div class="text-muted small ms-4">{{ __("Perangkat tetap diblokir meskipun pengguna berganti IP publik / VPN.") }}</div>
+                    </div>
+
+                    ${userId ? `
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="swal_suspend_account">
+                        <label class="form-check-label fw-bold text-danger" for="swal_suspend_account">
+                            <i class="fas fa-user-slash me-1"></i> {{ __("Tangguhkan Akun User") }} (@${username})
+                        </label>
+                    </div>
+                    ` : ''}
+
+                    <div class="mt-3">
+                        <label class="form-label fw-bold small text-muted mb-1">{{ __("Durasi Pemblokiran") }}</label>
+                        <select id="swal_duration" class="form-select">
+                            <option value="1">1 {{ __("Hari") }}</option>
+                            <option value="7">7 {{ __("Hari") }}</option>
+                            <option value="30" selected>30 {{ __("Hari") }}</option>
+                            <option value="365">1 {{ __("Tahun (365 Hari)") }}</option>
+                        </select>
+                    </div>
+                </div>
+            `,
             showCancelButton: true,
             confirmButtonColor: '#dc3545',
             cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Blokir IP',
-            cancelButtonText: 'Batal',
-            inputValidator: (value) => {
-                return new Promise((resolve) => {
-                    if (value) {
-                        resolve();
-                    } else {
-                        resolve('Anda harus memilih durasi blokir!');
-                    }
-                });
+            confirmButtonText: '<i class="fas fa-ban me-1"></i> {{ __("Terapkan Pemblokiran") }}',
+            cancelButtonText: '{{ __("Batal") }}',
+            preConfirm: () => {
+                const blockIp = document.getElementById('swal_block_ip') ? document.getElementById('swal_block_ip').checked : false;
+                const blockDevice = document.getElementById('swal_block_device') ? document.getElementById('swal_block_device').checked : false;
+                const suspendAccount = document.getElementById('swal_suspend_account') ? document.getElementById('swal_suspend_account').checked : false;
+                const duration = document.getElementById('swal_duration').value;
+
+                if (!blockIp && !blockDevice && !suspendAccount) {
+                    Swal.showValidationMessage('{{ __("Pilih minimal satu opsi yang ingin diblokir!") }}');
+                    return false;
+                }
+
+                return { blockIp, blockDevice, suspendAccount, duration };
             }
         }).then((result) => {
             if (result.isConfirmed) {
-                let durationInput = document.createElement('input');
-                durationInput.type = 'hidden';
-                durationInput.name = 'duration';
-                durationInput.value = result.value;
-                form.appendChild(durationInput);
-                
-                let loader = document.getElementById('pageLoader');
-                if (loader) {
-                    loader.classList.remove('fade-out');
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '{{ route("admin.logins.unified-block") }}';
+
+                const csrf = document.createElement('input');
+                csrf.type = 'hidden';
+                csrf.name = '_token';
+                csrf.value = '{{ csrf_token() }}';
+                form.appendChild(csrf);
+
+                if (ip) {
+                    const ipInput = document.createElement('input');
+                    ipInput.type = 'hidden';
+                    ipInput.name = 'ip_address';
+                    ipInput.value = ip;
+                    form.appendChild(ipInput);
                 }
+
+                if (deviceFp) {
+                    const fpInput = document.createElement('input');
+                    fpInput.type = 'hidden';
+                    fpInput.name = 'device_fingerprint';
+                    fpInput.value = deviceFp;
+                    form.appendChild(fpInput);
+                }
+
+                if (deviceId) {
+                    const devInput = document.createElement('input');
+                    devInput.type = 'hidden';
+                    devInput.name = 'device_id';
+                    devInput.value = deviceId;
+                    form.appendChild(devInput);
+                }
+
+                if (userId) {
+                    const uInput = document.createElement('input');
+                    uInput.type = 'hidden';
+                    uInput.name = 'user_id';
+                    uInput.value = userId;
+                    form.appendChild(uInput);
+                }
+
+                const bIp = document.createElement('input');
+                bIp.type = 'hidden';
+                bIp.name = 'block_ip';
+                bIp.value = result.value.blockIp ? '1' : '0';
+                form.appendChild(bIp);
+
+                const bDev = document.createElement('input');
+                bDev.type = 'hidden';
+                bDev.name = 'block_device';
+                bDev.value = result.value.blockDevice ? '1' : '0';
+                form.appendChild(bDev);
+
+                const sAcc = document.createElement('input');
+                sAcc.type = 'hidden';
+                sAcc.name = 'suspend_account';
+                sAcc.value = result.value.suspendAccount ? '1' : '0';
+                form.appendChild(sAcc);
+
+                const dur = document.createElement('input');
+                dur.type = 'hidden';
+                dur.name = 'duration';
+                dur.value = result.value.duration;
+                form.appendChild(dur);
+
+                document.body.appendChild(form);
+                const loader = document.getElementById('pageLoader');
+                if (loader) loader.classList.remove('fade-out');
                 form.submit();
             }
         });
     }
 
-    function confirmBlockDevice(event, form) {
-        event.preventDefault();
+    function openUnifiedUnblockModal(ip, deviceFp, deviceId, userId, username, isIpBlocked, isDeviceBlocked, isAccountSuspended) {
         Swal.fire({
-            title: '{{ __("Pilih Durasi Blokir Perangkat") }}',
-            text: '{{ __("Perangkat ini (Device Fingerprint & ID Cookie) akan diblokir meskipun pengguna berganti IP publik.") }}',
-            icon: 'warning',
-            input: 'select',
-            inputOptions: {
-                '1': '1 {{ __("Hari") }}',
-                '7': '7 {{ __("Hari") }}',
-                '30': '30 {{ __("Hari") }}',
-                '365': '1 {{ __("Tahun") }}'
-            },
-            inputValue: '1',
+            title: '{{ __("Buka Pemblokiran (Unblock)") }}',
+            html: `
+                <div class="text-start fs-6 p-2">
+                    <p class="text-muted small mb-3">{{ __("Centang opsi pemblokiran yang ingin dibuka:") }}</p>
+                    
+                    ${ip ? `
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="swal_unblock_ip" ${isIpBlocked ? 'checked' : ''}>
+                        <label class="form-check-label fw-bold" for="swal_unblock_ip">
+                            <i class="fas fa-network-wired text-success me-1"></i> {{ __("Buka Blokir IP Address") }} (${ip})
+                        </label>
+                    </div>
+                    ` : ''}
+
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="swal_unblock_device" ${isDeviceBlocked ? 'checked' : ''}>
+                        <label class="form-check-label fw-bold" for="swal_unblock_device">
+                            <i class="fas fa-laptop text-success me-1"></i> {{ __("Buka Blokir Perangkat (Fingerprint & Cookie)") }}
+                        </label>
+                    </div>
+
+                    ${userId ? `
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="swal_unsuspend_account" ${isAccountSuspended ? 'checked' : ''}>
+                        <label class="form-check-label fw-bold text-success" for="swal_unsuspend_account">
+                            <i class="fas fa-user-check me-1"></i> {{ __("Aktifkan Kembali Akun User") }} (@${username})
+                        </label>
+                    </div>
+                    ` : ''}
+                </div>
+            `,
             showCancelButton: true,
-            confirmButtonColor: '#212529',
+            confirmButtonColor: '#198754',
             cancelButtonColor: '#6c757d',
-            confirmButtonText: '{{ __("Blokir Perangkat") }}',
+            confirmButtonText: '<i class="fas fa-unlock me-1"></i> {{ __("Proses Buka Blokir") }}',
             cancelButtonText: '{{ __("Batal") }}',
-            inputValidator: (value) => {
-                return new Promise((resolve) => {
-                    if (value) {
-                        resolve();
-                    } else {
-                        resolve('{{ __("Anda harus memilih durasi blokir!") }}');
-                    }
-                });
+            preConfirm: () => {
+                const unblockIp = document.getElementById('swal_unblock_ip') ? document.getElementById('swal_unblock_ip').checked : false;
+                const unblockDevice = document.getElementById('swal_unblock_device') ? document.getElementById('swal_unblock_device').checked : false;
+                const unsuspendAccount = document.getElementById('swal_unsuspend_account') ? document.getElementById('swal_unsuspend_account').checked : false;
+
+                if (!unblockIp && !unblockDevice && !unsuspendAccount) {
+                    Swal.showValidationMessage('{{ __("Pilih minimal satu opsi yang ingin dibuka!") }}');
+                    return false;
+                }
+
+                return { unblockIp, unblockDevice, unsuspendAccount };
             }
         }).then((result) => {
             if (result.isConfirmed) {
-                let durationInput = document.createElement('input');
-                durationInput.type = 'hidden';
-                durationInput.name = 'duration';
-                durationInput.value = result.value;
-                form.appendChild(durationInput);
-                
-                let loader = document.getElementById('pageLoader');
-                if (loader) {
-                    loader.classList.remove('fade-out');
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '{{ route("admin.logins.unified-unblock") }}';
+
+                const csrf = document.createElement('input');
+                csrf.type = 'hidden';
+                csrf.name = '_token';
+                csrf.value = '{{ csrf_token() }}';
+                form.appendChild(csrf);
+
+                if (ip) {
+                    const ipInput = document.createElement('input');
+                    ipInput.type = 'hidden';
+                    ipInput.name = 'ip_address';
+                    ipInput.value = ip;
+                    form.appendChild(ipInput);
                 }
+
+                if (deviceFp) {
+                    const fpInput = document.createElement('input');
+                    fpInput.type = 'hidden';
+                    fpInput.name = 'device_fingerprint';
+                    fpInput.value = deviceFp;
+                    form.appendChild(fpInput);
+                }
+
+                if (deviceId) {
+                    const devInput = document.createElement('input');
+                    devInput.type = 'hidden';
+                    devInput.name = 'device_id';
+                    devInput.value = deviceId;
+                    form.appendChild(devInput);
+                }
+
+                if (userId) {
+                    const uInput = document.createElement('input');
+                    uInput.type = 'hidden';
+                    uInput.name = 'user_id';
+                    uInput.value = userId;
+                    form.appendChild(uInput);
+                }
+
+                const uIp = document.createElement('input');
+                uIp.type = 'hidden';
+                uIp.name = 'unblock_ip';
+                uIp.value = result.value.unblockIp ? '1' : '0';
+                form.appendChild(uIp);
+
+                const uDev = document.createElement('input');
+                uDev.type = 'hidden';
+                uDev.name = 'unblock_device';
+                uDev.value = result.value.unblockDevice ? '1' : '0';
+                form.appendChild(uDev);
+
+                const uAcc = document.createElement('input');
+                uAcc.type = 'hidden';
+                uAcc.name = 'unsuspend_account';
+                uAcc.value = result.value.unsuspendAccount ? '1' : '0';
+                form.appendChild(uAcc);
+
+                document.body.appendChild(form);
+                const loader = document.getElementById('pageLoader');
+                if (loader) loader.classList.remove('fade-out');
                 form.submit();
             }
         });

@@ -183,6 +183,8 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         Route::post('/logins/unblock-ip', [\App\Http\Controllers\AdminController::class, 'unblockIp'])->name('logins.unblock-ip');
         Route::post('/logins/block-device', [\App\Http\Controllers\AdminController::class, 'blockDevice'])->name('logins.block-device');
         Route::post('/logins/unblock-device', [\App\Http\Controllers\AdminController::class, 'unblockDevice'])->name('logins.unblock-device');
+        Route::post('/logins/unified-block', [\App\Http\Controllers\AdminController::class, 'unifiedBlock'])->name('logins.unified-block');
+        Route::post('/logins/unified-unblock', [\App\Http\Controllers\AdminController::class, 'unifiedUnblock'])->name('logins.unified-unblock');
         Route::get('/notifications', [\App\Http\Controllers\AdminController::class, 'notifications'])->name('notifications.index');
         Route::post('/notifications/mark-read', [\App\Http\Controllers\AdminController::class, 'markNotificationsRead'])->name('notifications.markRead');
         

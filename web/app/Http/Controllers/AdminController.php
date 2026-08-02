@@ -2001,6 +2001,105 @@ class AdminController extends Controller
         return back()->with('success', __('Blokir perangkat telah dibuka.'));
     }
 
+    public function unifiedBlock(Request $request)
+    {
+        $request->validate([
+            'ip_address' => 'nullable|ip',
+            'device_fingerprint' => 'nullable|string|max:64',
+            'device_id' => 'nullable|string|max:64',
+            'user_id' => 'nullable|exists:users,id',
+            'block_ip' => 'nullable|boolean',
+            'block_device' => 'nullable|boolean',
+            'suspend_account' => 'nullable|boolean',
+            'duration' => 'required|integer|in:1,7,30,365'
+        ]);
+
+        $duration = (int)$request->duration;
+        $expire = now()->addDays($duration);
+        if ($duration === 365) {
+            $expire = now()->addYear();
+        }
+
+        $actionsDone = [];
+
+        if ($request->boolean('block_ip') && $request->ip_address) {
+            \Illuminate\Support\Facades\Cache::put('blocked_ip:' . $request->ip_address, true, $expire);
+            $actionsDone[] = "IP {$request->ip_address}";
+        }
+
+        if ($request->boolean('block_device')) {
+            if ($request->device_fingerprint) {
+                \Illuminate\Support\Facades\Cache::put('blocked_device_fp:' . $request->device_fingerprint, true, $expire);
+            }
+            if ($request->device_id) {
+                \Illuminate\Support\Facades\Cache::put('blocked_device_id:' . $request->device_id, true, $expire);
+            }
+            $actionsDone[] = "Perangkat (Fingerprint/ID)";
+        }
+
+        if ($request->boolean('suspend_account') && $request->user_id) {
+            $user = User::find($request->user_id);
+            if ($user && !$user->is_suspended) {
+                $user->is_suspended = true;
+                $user->suspension_reason = 'Diblokir oleh Admin dari Riwayat Login.';
+                $user->save();
+                $actionsDone[] = "Akun ({$user->username})";
+            }
+        }
+
+        $msg = empty($actionsDone) 
+            ? __('Pilih minimal satu opsi yang ingin diblokir.') 
+            : __('Tindakan pemblokiran berhasil diterapkan untuk: ') . implode(', ', $actionsDone);
+
+        return back()->with(empty($actionsDone) ? 'error' : 'success', $msg);
+    }
+
+    public function unifiedUnblock(Request $request)
+    {
+        $request->validate([
+            'ip_address' => 'nullable|ip',
+            'device_fingerprint' => 'nullable|string|max:64',
+            'device_id' => 'nullable|string|max:64',
+            'user_id' => 'nullable|exists:users,id',
+            'unblock_ip' => 'nullable|boolean',
+            'unblock_device' => 'nullable|boolean',
+            'unsuspend_account' => 'nullable|boolean',
+        ]);
+
+        $actionsDone = [];
+
+        if ($request->boolean('unblock_ip') && $request->ip_address) {
+            \Illuminate\Support\Facades\Cache::forget('blocked_ip:' . $request->ip_address);
+            $actionsDone[] = "IP {$request->ip_address}";
+        }
+
+        if ($request->boolean('unblock_device')) {
+            if ($request->device_fingerprint) {
+                \Illuminate\Support\Facades\Cache::forget('blocked_device_fp:' . $request->device_fingerprint);
+            }
+            if ($request->device_id) {
+                \Illuminate\Support\Facades\Cache::forget('blocked_device_id:' . $request->device_id);
+            }
+            $actionsDone[] = "Perangkat";
+        }
+
+        if ($request->boolean('unsuspend_account') && $request->user_id) {
+            $user = User::find($request->user_id);
+            if ($user && $user->is_suspended) {
+                $user->is_suspended = false;
+                $user->suspension_reason = null;
+                $user->save();
+                $actionsDone[] = "Akun ({$user->username})";
+            }
+        }
+
+        $msg = empty($actionsDone) 
+            ? __('Pilih minimal satu opsi yang ingin dibuka blokirnya.') 
+            : __('Buka blokir berhasil dilakukan untuk: ') . implode(', ', $actionsDone);
+
+        return back()->with(empty($actionsDone) ? 'error' : 'success', $msg);
+    }
+
     public function notifications()
     {
         $pendingOrders = \App\Models\Order::whereIn('status', ['pending_payment', 'paid'])->orderBy('created_at', 'desc')->get();
