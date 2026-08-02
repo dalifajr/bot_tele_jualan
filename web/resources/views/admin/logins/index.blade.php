@@ -11,18 +11,27 @@
     </div>
 </div>
 
-<ul class="nav nav-pills mb-4 gap-2" id="loginTabs" role="tablist">
-    <li class="nav-item" role="presentation">
-        <button class="nav-link active rounded-pill px-4 fw-medium" id="logs-tab" data-bs-toggle="tab" data-bs-target="#logs-pane" type="button" role="tab" aria-selected="true">
-            <i class="fas fa-shield-alt me-2"></i>{{ __('Semua Percobaan Web') }}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <ul class="nav nav-pills gap-2 mb-0" id="loginTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active rounded-pill px-4 fw-medium" id="logs-tab" data-bs-toggle="tab" data-bs-target="#logs-pane" type="button" role="tab" aria-selected="true">
+                <i class="fas fa-shield-alt me-2"></i>{{ __('Semua Percobaan Web') }}
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link rounded-pill px-4 fw-medium" id="tg-tab" data-bs-toggle="tab" data-bs-target="#tg-pane" type="button" role="tab" aria-selected="false">
+                <i class="fab fa-telegram me-2"></i>{{ __('Login Telegram') }}
+            </button>
+        </li>
+    </ul>
+
+    <form action="{{ route('admin.logins.unblock-all-devices') }}" method="POST" class="d-inline" onclick="confirmAction(event, '{{ __('Reset seluruh pemblokiran IP dan Perangkat di sistem?') }}')">
+        @csrf
+        <button type="submit" class="btn btn-outline-warning btn-sm rounded-pill px-3 py-2 fw-medium">
+            <i class="fas fa-sync-alt me-1"></i>{{ __('Reset Semua Pemblokiran') }}
         </button>
-    </li>
-    <li class="nav-item" role="presentation">
-        <button class="nav-link rounded-pill px-4 fw-medium" id="tg-tab" data-bs-toggle="tab" data-bs-target="#tg-pane" type="button" role="tab" aria-selected="false">
-            <i class="fab fa-telegram me-2"></i>{{ __('Login Telegram') }}
-        </button>
-    </li>
-</ul>
+    </form>
+</div>
 
 <div class="tab-content" id="loginTabsContent">
     <div class="tab-pane fade show active" id="logs-pane" role="tabpanel" tabindex="0">

@@ -2113,20 +2113,34 @@ class AdminController extends Controller
                 \Illuminate\Support\Facades\Cache::forget('blocked_device_fp:' . $fallbackFp);
             }
 
-            // Clear all fingerprints logged under this IP
-            if ($request->ip_address) {
-                $logs = \App\Models\LoginLog::where('ip_address', $request->ip_address)->get();
-                foreach ($logs as $l) {
-                    if ($l->device_fingerprint) {
-                        \Illuminate\Support\Facades\Cache::forget('blocked_device_fp:' . $l->device_fingerprint);
-                    }
-                    if ($l->device_id) {
-                        \Illuminate\Support\Facades\Cache::forget('blocked_device_id:' . $l->device_id);
-                    }
-                    if ($l->user_agent) {
-                        \Illuminate\Support\Facades\Cache::forget('blocked_device_fp:fp_ua_' . substr(md5($l->user_agent), 0, 16));
-                    }
+            // Clear all fingerprints logged under this IP or User ID
+            $query = \App\Models\LoginLog::query();
+            if ($request->ip_address && $request->user_id) {
+                $query->where('ip_address', $request->ip_address)->orWhere('user_id', $request->user_id);
+            } elseif ($request->ip_address) {
+                $query->where('ip_address', $request->ip_address);
+            } elseif ($request->user_id) {
+                $query->where('user_id', $request->user_id);
+            }
+            $logs = $query->get();
+            foreach ($logs as $l) {
+                if ($l->device_fingerprint) {
+                    \Illuminate\Support\Facades\Cache::forget('blocked_device_fp:' . $l->device_fingerprint);
                 }
+                if ($l->device_id) {
+                    \Illuminate\Support\Facades\Cache::forget('blocked_device_id:' . $l->device_id);
+                }
+                if ($l->user_agent) {
+                    \Illuminate\Support\Facades\Cache::forget('blocked_device_fp:fp_ua_' . substr(md5($l->user_agent), 0, 16));
+                }
+            }
+
+            // Also clear request client cookies if present
+            if ($request->cookie('_sec_device_fp')) {
+                \Illuminate\Support\Facades\Cache::forget('blocked_device_fp:' . $request->cookie('_sec_device_fp'));
+            }
+            if ($request->cookie('_sec_device_id')) {
+                \Illuminate\Support\Facades\Cache::forget('blocked_device_id:' . $request->cookie('_sec_device_id'));
             }
 
             $actionsDone[] = "Perangkat";
@@ -2147,6 +2161,34 @@ class AdminController extends Controller
             : __('Buka blokir berhasil dilakukan untuk: ') . implode(', ', $actionsDone);
 
         return back()->with(empty($actionsDone) ? 'error' : 'success', $msg);
+    }
+
+    public function unblockAllDevices(Request $request)
+    {
+        $logs = \App\Models\LoginLog::all();
+        foreach ($logs as $l) {
+            if ($l->ip_address) {
+                \Illuminate\Support\Facades\Cache::forget('blocked_ip:' . $l->ip_address);
+            }
+            if ($l->device_fingerprint) {
+                \Illuminate\Support\Facades\Cache::forget('blocked_device_fp:' . $l->device_fingerprint);
+            }
+            if ($l->device_id) {
+                \Illuminate\Support\Facades\Cache::forget('blocked_device_id:' . $l->device_id);
+            }
+            if ($l->user_agent) {
+                \Illuminate\Support\Facades\Cache::forget('blocked_device_fp:fp_ua_' . substr(md5($l->user_agent), 0, 16));
+            }
+        }
+
+        if ($request->cookie('_sec_device_fp')) {
+            \Illuminate\Support\Facades\Cache::forget('blocked_device_fp:' . $request->cookie('_sec_device_fp'));
+        }
+        if ($request->cookie('_sec_device_id')) {
+            \Illuminate\Support\Facades\Cache::forget('blocked_device_id:' . $request->cookie('_sec_device_id'));
+        }
+
+        return back()->with('success', __('Seluruh pemblokiran IP dan Perangkat di sistem berhasil direset/dibuka.'));
     }
 
     public function notifications()
