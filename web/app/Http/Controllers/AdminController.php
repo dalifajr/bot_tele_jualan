@@ -2038,6 +2038,9 @@ class AdminController extends Controller
         }
 
         if ($request->boolean('suspend_account') && $request->user_id) {
+            if ((int)$request->user_id === (int)auth()->id()) {
+                return back()->with('error', __('Anda tidak dapat menangguhkan akun Admin Anda sendiri.'));
+            }
             $user = User::find($request->user_id);
             if ($user && !$user->is_suspended) {
                 $user->is_suspended = true;

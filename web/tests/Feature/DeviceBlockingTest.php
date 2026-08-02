@@ -39,6 +39,7 @@ class DeviceBlockingTest extends TestCase
         $this->assertTrue(Cache::has('blocked_device_id:' . $testDevId));
 
         // 2. Guest attempts to access website with different IP but sending blocked device fingerprint
+        auth()->logout();
         $blockedResponse = $this->withServerVariables(['REMOTE_ADDR' => '1.2.3.4'])
             ->withCookies(['_sec_device_fp' => $testFp])
             ->get('/');

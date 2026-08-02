@@ -17,6 +17,11 @@ class BlockBannedIps
      */
     public function handle(Request $request, Closure $next): Response
     {
+        // Admin users are never blocked from accessing the panel or executing unblock actions
+        if (Auth::check() && Auth::user()->role === 'admin') {
+            return $next($request);
+        }
+
         $ip = $request->ip();
         $deviceFp = $request->input('device_fingerprint') ?: ($request->cookie('_sec_device_fp') ?: $request->header('X-Device-Fingerprint'));
         $deviceId = $request->input('device_id') ?: ($request->cookie('_sec_device_id') ?: $request->header('X-Device-ID'));
