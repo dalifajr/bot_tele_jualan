@@ -134,6 +134,9 @@
                 <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#bulkDeleteModal">
                     <i class="fas fa-trash-alt me-1"></i>{{ __('Hapus Masal') }}
                 </button>
+                <button type="button" class="btn btn-sm btn-success rounded-pill px-3" id="btn-bulk-checkout" data-bs-toggle="modal" data-bs-target="#bulkCheckoutModal" style="display: none;">
+                    <i class="fas fa-shopping-cart me-1"></i>{{ __('Checkout') }}
+                </button>
             </div>
         </div>
         @endif
@@ -179,7 +182,7 @@
                     <tr>
                         @if(request('status') !== 'terjual')
                         <td class="px-4">
-                            <input type="checkbox" value="{{ $unit->id }}" class="form-check-input stock-checkbox" {{ $unit->is_sold ? 'disabled' : '' }}>
+                            <input type="checkbox" value="{{ $unit->id }}" class="form-check-input stock-checkbox" data-status="{{ $unit->stock_status }}" {{ $unit->is_sold ? 'disabled' : '' }}>
                         </td>
                         <td class="fw-bold text-muted">#{{ $unit->id }}</td>
                         @else
@@ -543,6 +546,29 @@
     </div>
 </div>
 @endif
+
+@if(request('status') !== 'terjual')
+{{-- Bulk Checkout Modal --}}
+<div class="modal fade" id="bulkCheckoutModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content text-center" style="border-radius: 16px; border: none;">
+            <div class="modal-body p-4">
+                <i class="fas fa-shopping-cart text-success mb-3" style="font-size: 3rem;"></i>
+                <h5 class="fw-bold">{{ __('Checkout Masal?') }}</h5>
+                <p class="text-muted small">{{ __('Anda akan memesan') }} <span class="bulk-selected-count">0</span> {{ __('akun yang dipilih.') }}</p>
+                <div class="d-flex gap-2 justify-content-center mt-4">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">{{ __('Batal') }}</button>
+                    <form action="{{ route('seller.stock.checkout') }}" method="POST" id="bulk-checkout-form">
+                        @csrf
+                        <input type="hidden" name="ids" id="bulk-checkout-ids">
+                        <button type="submit" class="btn btn-success rounded-pill px-4">{{ __('Checkout Sekarang') }}</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
 @endpush
 
 @push('scripts')
@@ -665,6 +691,22 @@
                 const idsString = JSON.stringify(ids);
                 if (bulkMoveIdsInput) bulkMoveIdsInput.value = idsString;
                 if (bulkDeleteIdsInput) bulkDeleteIdsInput.value = idsString;
+
+                const checkoutBtn = document.getElementById('btn-bulk-checkout');
+                const bulkCheckoutIdsInput = document.getElementById('bulk-checkout-ids');
+                if (bulkCheckoutIdsInput) bulkCheckoutIdsInput.value = idsString;
+                
+                // Only show checkout button if all selected stocks are valid for checkout
+                let allValidForCheckout = true;
+                Array.from(checkedBoxes).forEach(cb => {
+                    const status = cb.getAttribute('data-status');
+                    if (status !== 'ready' && status !== 'awaiting_benefits' && status !== 'saved_for_verification') {
+                        allValidForCheckout = false;
+                    }
+                });
+                if (checkoutBtn) {
+                    checkoutBtn.style.display = allValidForCheckout ? 'inline-block' : 'none';
+                }
             } else {
                 if (bulkActionBar) {
                     bulkActionBar.classList.add('d-none');
@@ -672,6 +714,9 @@
                 }
                 if (bulkMoveIdsInput) bulkMoveIdsInput.value = '';
                 if (bulkDeleteIdsInput) bulkDeleteIdsInput.value = '';
+                
+                const bulkCheckoutIdsInput = document.getElementById('bulk-checkout-ids');
+                if (bulkCheckoutIdsInput) bulkCheckoutIdsInput.value = '';
             }
         }
 

@@ -152,6 +152,7 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         Route::get('/stock', [\App\Http\Controllers\AdminController::class, 'stock'])->name('stock.index');
         Route::match(['get', 'post'], '/stock/export', [\App\Http\Controllers\AdminController::class, 'exportStock'])->name('stock.export');
         Route::post('/stock', [\App\Http\Controllers\AdminController::class, 'storeStock'])->name('stock.store');
+        Route::post('/stock/checkout', [\App\Http\Controllers\AdminController::class, 'checkoutStocks'])->name('stock.checkout');
         Route::post('/stock/bulk-move', [\App\Http\Controllers\AdminController::class, 'bulkMoveStock'])->name('stock.bulkMove');
         Route::post('/stock/bulk-delete', [\App\Http\Controllers\AdminController::class, 'bulkDestroyStock'])->name('stock.bulkDestroy');
         Route::put('/stock/{id}/move', [\App\Http\Controllers\AdminController::class, 'moveStock'])->name('stock.move');
@@ -300,6 +301,7 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         
         Route::get('/stock', [\App\Http\Controllers\SellerController::class, 'stock'])->name('stock.index');
         Route::post('/stock', [\App\Http\Controllers\SellerController::class, 'storeStock'])->name('stock.store');
+        Route::post('/stock/checkout', [\App\Http\Controllers\SellerController::class, 'checkoutStocks'])->name('stock.checkout');
         Route::post('/stock/bulk-move', [\App\Http\Controllers\SellerController::class, 'bulkMoveStock'])->name('stock.bulkMove');
         Route::post('/stock/bulk-delete', [\App\Http\Controllers\SellerController::class, 'bulkDestroyStock'])->name('stock.bulkDestroy');
         Route::put('/stock/{id}/move', [\App\Http\Controllers\SellerController::class, 'moveStock'])->name('stock.move');

@@ -464,6 +464,137 @@ class SellerController extends Controller
         return back()->with('success', __('Status/Produk stok berhasil dipindahkan.'));
     }
 
+    public function checkoutStocks(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|string',
+        ]);
+
+        $ids = json_decode($request->ids, true);
+        if (!is_array($ids) || empty($ids)) {
+            return back()->with('error', __('Tidak ada stok terpilih.'));
+        }
+
+        $user = \Illuminate\Support\Facades\Auth::user();
+
+        // Limit pending orders
+        $pendingCount = \App\Models\Order::where('customer_id', $user->id)
+            ->where('status', 'pending_payment')
+            ->count();
+        if ($pendingCount >= 2) {
+            return back()->with('error', __('Anda memiliki terlalu banyak pesanan yang menunggu pembayaran.'));
+        }
+
+        try {
+            \Illuminate\Support\Facades\DB::beginTransaction();
+
+            $stocks = StockUnit::with('product')
+                ->whereIn('id', $ids)
+                ->where('seller_id', $user->id) // Security: only allow checking out their own stocks from the seller stock table
+                ->lockForUpdate()
+                ->get();
+
+            if ($stocks->count() !== count($ids)) {
+                throw new \Exception(__('Beberapa stok tidak ditemukan atau bukan milik Anda.'));
+            }
+
+            $subtotal = 0;
+            $itemsGroup = [];
+            $reservedIds = [];
+
+            foreach ($stocks as $stock) {
+                if ($stock->is_sold || $stock->sold_order_id) {
+                    throw new \Exception(__("Stok ID #{$stock->id} sudah dibeli atau tidak tersedia."));
+                }
+                if (!in_array($stock->stock_status, ['ready', 'awaiting_benefits', 'saved_for_verification'])) {
+                    throw new \Exception(__("Stok ID #{$stock->id} memiliki status yang tidak valid untuk dicheckout."));
+                }
+
+                $product = $stock->product;
+                if (!$product || $product->is_suspended) {
+                    throw new \Exception(__("Produk untuk stok ID #{$stock->id} tidak aktif."));
+                }
+
+                $subtotal += $product->price;
+                
+                if (!isset($itemsGroup[$product->id])) {
+                    $itemsGroup[$product->id] = [
+                        'product_id' => $product->id,
+                        'price' => $product->price,
+                        'quantity' => 0
+                    ];
+                }
+                $itemsGroup[$product->id]['quantity']++;
+                $reservedIds[] = $stock->id;
+            }
+
+            $uniqueCode = rand(1, 200);
+            $totalAmount = $subtotal + $uniqueCode;
+            
+            $timestamp = now()->format('ymdHis');
+            $randomHex = strtoupper(substr(md5(uniqid()), 0, 5));
+            $orderRef = 'ORD' . $timestamp . $randomHex;
+
+            $expiryMinutes = (int)(\App\Models\BotSetting::where('key', 'checkout_expiry_minutes')->value('value') ?? 15);
+            $expiresAt = now()->addMinutes($expiryMinutes);
+
+            $order = \App\Models\Order::create([
+                'order_ref' => $orderRef,
+                'customer_id' => $user->id,
+                'subtotal' => $subtotal,
+                'unique_code' => $uniqueCode,
+                'total_amount' => $totalAmount,
+                'status' => 'pending_payment',
+                'expires_at' => $expiresAt,
+            ]);
+
+            foreach ($itemsGroup as $item) {
+                \App\Models\OrderItem::create([
+                    'order_id' => $order->id,
+                    'product_id' => $item['product_id'],
+                    'quantity' => $item['quantity'],
+                    'unit_price' => $item['price'],
+                ]);
+            }
+
+            \App\Models\Payment::create([
+                'order_id' => $order->id,
+                'payment_ref' => 'PAY-' . $orderRef,
+                'expected_amount' => $totalAmount,
+                'status' => 'pending',
+            ]);
+
+            foreach ($stocks as $stock) {
+                $stock->update([
+                    'stock_status' => 'reserved_checkout',
+                    'sold_order_id' => $order->id
+                ]);
+            }
+
+            \Illuminate\Support\Facades\DB::table('audit_logs')->insert([
+                'action' => 'order_create_specific_stock',
+                'actor_id' => $user->id,
+                'entity_type' => 'order',
+                'entity_id' => $order->id,
+                'detail' => \App\Models\AuditLog::maskSensitiveData("qty=" . count($reservedIds) . "; subtotal={$subtotal}; total={$totalAmount}; reserved_stock_ids=[" . implode(',', $reservedIds) . "]"),
+                'created_at' => now(),
+            ]);
+
+            \Illuminate\Support\Facades\DB::commit();
+
+            \App\Services\TelegramService::notifyAdminNewOrder($order);
+            \App\Models\User::where('role', 'admin')->get()->each(function ($admin) use ($order) {
+                $admin->notify(new \App\Notifications\OrderCreatedNotification($order));
+            });
+
+            return redirect()->route('checkout.success', ['order_ref' => $orderRef])->with('checkout_new', true);
+
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\DB::rollBack();
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
     public function bulkMoveStock(Request $request)
     {
         $sellerId = Auth::id();
