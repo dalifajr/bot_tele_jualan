@@ -275,7 +275,8 @@
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
           <div class="text-muted small">
             <span>© 2026</span>
-            <span class="fw-bold ms-1 text-secondary">{{ config('app.name', 'dzulfikrialifajri_store') }}</span>
+            <span class="fw-bold ms-1 text-secondary">{{ config('app.name', "dzulfikrialifajri's store") }}</span>
+            <span class="ms-1 text-secondary">- {{ $companyName ?? 'PT BANGUN JAYA KASIH' }}</span>
           </div>
         </div>
       </div>

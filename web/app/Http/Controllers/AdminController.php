@@ -2980,7 +2980,8 @@ class AdminController extends Controller
     public function websiteSettings()
     {
         $announcement = \App\Models\BotSetting::where('key', 'web_announcement')->value('value') ?? 'Selamat datang Jurangan!<br>kalau punya akun telegram, langsung saja klik "Login Via Telegram" kalau gak punya, bisa regis dulu.';
-        return view('admin.website.settings', compact('announcement'));
+        $companyName = \App\Models\BotSetting::where('key', 'company_name')->value('value') ?? 'PT BANGUN JAYA KASIH';
+        return view('admin.website.settings', compact('announcement', 'companyName'));
     }
 
     // ==========================================

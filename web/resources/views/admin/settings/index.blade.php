@@ -20,6 +20,7 @@
                 border: none;
                 border-bottom: 3px solid transparent;
                 transition: all 0.2s ease-in-out;
+                cursor: pointer;
             }
             .nav-tabs .nav-link:hover {
                 border-color: #e9ecef;
@@ -30,16 +31,22 @@
                 background-color: transparent;
                 border-color: #0d6efd;
             }
+            #settingsTabContent > .tab-pane:not(.active) {
+                display: none !important;
+            }
+            #settingsTabContent > .tab-pane.active {
+                display: block !important;
+            }
         </style>
 
         <ul class="nav nav-tabs mb-4" id="settingsTab" role="tablist">
             <li class="nav-item" role="presentation">
-                <button class="nav-link active fw-bold px-4 py-3" id="bot-tab" data-bs-toggle="tab" data-bs-target="#bot" type="button" role="tab">
+                <button class="nav-link active fw-bold px-4 py-3" id="bot-tab" data-bs-toggle="tab" data-bs-target="#bot" type="button" role="tab" onclick="switchSettingsTab('bot', event)">
                     <i class="fas fa-clock me-2"></i>{{ __('Sistem & Waktu') }}
                 </button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link fw-bold px-4 py-3 d-flex align-items-center gap-1 {{ ($settings['maintenance_mode'] ?? '0') === '1' ? 'text-danger' : '' }}" id="maintenance-tab" data-bs-toggle="tab" data-bs-target="#maintenance" type="button" role="tab">
+                <button class="nav-link fw-bold px-4 py-3 d-flex align-items-center gap-1 {{ ($settings['maintenance_mode'] ?? '0') === '1' ? 'text-danger' : '' }}" id="maintenance-tab" data-bs-toggle="tab" data-bs-target="#maintenance" type="button" role="tab" onclick="switchSettingsTab('maintenance', event)">
                     <i class="fas fa-tools me-1 text-warning"></i>{{ __('Mode Maintenance') }}
                     @if(($settings['maintenance_mode'] ?? '0') === '1')
                         <span class="badge bg-danger rounded-pill px-2 py-0.5" style="font-size: 0.65rem;">AKTIF</span>
@@ -47,17 +54,17 @@
                 </button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link fw-bold px-4 py-3" id="vpn-tab" data-bs-toggle="tab" data-bs-target="#vpn" type="button" role="tab">
+                <button class="nav-link fw-bold px-4 py-3" id="vpn-tab" data-bs-toggle="tab" data-bs-target="#vpn" type="button" role="tab" onclick="switchSettingsTab('vpn', event)">
                     <i class="fas fa-server me-2"></i>{{ __('VPN Server') }}
                 </button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link fw-bold px-4 py-3" id="payment-tab" data-bs-toggle="tab" data-bs-target="#payment" type="button" role="tab">
+                <button class="nav-link fw-bold px-4 py-3" id="payment-tab" data-bs-toggle="tab" data-bs-target="#payment" type="button" role="tab" onclick="switchSettingsTab('payment', event)">
                     <i class="fas fa-qrcode me-2"></i>{{ __('Payment & QRIS') }}
                 </button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link fw-bold px-4 py-3" id="utils-tab" data-bs-toggle="tab" data-bs-target="#utils" type="button" role="tab">
+                <button class="nav-link fw-bold px-4 py-3" id="utils-tab" data-bs-toggle="tab" data-bs-target="#utils" type="button" role="tab" onclick="switchSettingsTab('utils', event)">
                     <i class="fas fa-tools me-2"></i>{{ __('Utilitas') }}
                 </button>
             </li>
@@ -435,27 +442,55 @@
 
 @push('scripts')
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Activate tab from URL hash on load
-        const hash = window.location.hash;
-        if (hash) {
-            const targetBtn = document.querySelector(`#settingsTab button[data-bs-target="${hash}"]`);
-            if (targetBtn && typeof bootstrap !== 'undefined') {
-                const tab = bootstrap.Tab.getOrCreateInstance(targetBtn);
-                tab.show();
-            }
+    function switchSettingsTab(tabId, event) {
+        if (event) {
+            event.preventDefault();
         }
 
-        // Update URL hash when tab is switched
-        const tabBtns = document.querySelectorAll('#settingsTab button[data-bs-toggle="tab"]');
-        tabBtns.forEach(btn => {
-            btn.addEventListener('shown.bs.tab', function(e) {
-                const target = e.target.getAttribute('data-bs-target');
-                if (target && history.replaceState) {
-                    history.replaceState(null, null, target);
-                }
-            });
+        // 1. Update button active states
+        const allButtons = document.querySelectorAll('#settingsTab button');
+        allButtons.forEach(btn => {
+            const target = btn.getAttribute('data-bs-target');
+            if (target === '#' + tabId) {
+                btn.classList.add('active');
+                btn.setAttribute('aria-selected', 'true');
+            } else {
+                btn.classList.remove('active');
+                btn.setAttribute('aria-selected', 'false');
+            }
         });
+
+        // 2. Update tab pane visibility
+        const allPanes = document.querySelectorAll('#settingsTabContent > .tab-pane');
+        allPanes.forEach(pane => {
+            if (pane.id === tabId) {
+                pane.classList.add('show', 'active');
+                pane.style.setProperty('display', 'block', 'important');
+            } else {
+                pane.classList.remove('show', 'active');
+                pane.style.setProperty('display', 'none', 'important');
+            }
+        });
+
+        // 3. Update URL hash
+        if (window.history && window.history.replaceState) {
+            window.history.replaceState(null, null, '#' + tabId);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Activate tab from URL hash on load if present
+        const hash = window.location.hash ? window.location.hash.replace('#', '') : '';
+        if (hash && document.getElementById(hash)) {
+            switchSettingsTab(hash);
+        }
+    });
+
+    window.addEventListener('hashchange', function() {
+        const hash = window.location.hash ? window.location.hash.replace('#', '') : '';
+        if (hash && document.getElementById(hash)) {
+            switchSettingsTab(hash);
+        }
     });
 </script>
 @endpush

@@ -32,8 +32,9 @@ class AuthController extends Controller
         $maintenanceMode = \App\Models\BotSetting::where('key', 'maintenance_mode')->value('value') === '1';
         $maintenanceMessage = \App\Models\BotSetting::where('key', 'maintenance_message')->value('value')
             ?: 'Website sedang dalam pemeliharaan sistem (Maintenance). Hanya Admin yang dapat login.';
+        $companyName = \App\Models\BotSetting::where('key', 'company_name')->value('value') ?? 'PT BANGUN JAYA KASIH';
 
-        return view('auth.login', compact('todayVisitors', 'announcement', 'maintenanceMode', 'maintenanceMessage'));
+        return view('auth.login', compact('todayVisitors', 'announcement', 'maintenanceMode', 'maintenanceMessage', 'companyName'));
     }
 
     /**

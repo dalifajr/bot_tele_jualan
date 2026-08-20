@@ -25,6 +25,12 @@
                     </div>
 
                     <div class="mb-3">
+                        <label class="form-label fw-bold text-muted small">{{ __('NAMA PERUSAHAAN (COMPANY NAME)') }}</label>
+                        <input type="text" name="settings[company_name]" class="form-control" value="{{ $companyName ?? 'PT BANGUN JAYA KASIH' }}" placeholder="PT BANGUN JAYA KASIH" required>
+                        <small class="text-muted">{{ __('Nama perusahaan yang ditampilkan pada footer halaman login.') }}</small>
+                    </div>
+
+                    <div class="mb-3">
                         <label class="form-label fw-bold text-muted small">PENGUMUMAN WEBSITE (HTML DIIZINKAN)</label>
                         <textarea name="settings[web_announcement]" class="form-control" rows="4">{{ $announcement }}</textarea>
                         <small class="text-muted">{{ __('Teks pengumuman yang muncul pada halaman login dan popup smartphone.') }}</small>
