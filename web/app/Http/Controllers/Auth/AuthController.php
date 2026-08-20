@@ -29,8 +29,11 @@ class AuthController extends Controller
 
         $todayVisitors = \App\Models\Visitor::where('visited_date', now()->toDateString())->count();
         $announcement = \App\Models\BotSetting::where('key', 'web_announcement')->value('value') ?? 'Selamat datang Jurangan!<br>kalau punya akun telegram, langsung saja klik "Login Via Telegram" kalau gak punya, bisa regis dulu.';
+        $maintenanceMode = \App\Models\BotSetting::where('key', 'maintenance_mode')->value('value') === '1';
+        $maintenanceMessage = \App\Models\BotSetting::where('key', 'maintenance_message')->value('value')
+            ?: 'Website sedang dalam pemeliharaan sistem (Maintenance). Hanya Admin yang dapat login.';
 
-        return view('auth.login', compact('todayVisitors', 'announcement'));
+        return view('auth.login', compact('todayVisitors', 'announcement', 'maintenanceMode', 'maintenanceMessage'));
     }
 
     /**
@@ -118,8 +121,21 @@ class AuthController extends Controller
         }
 
         if (Auth::attempt([$loginType => $request->login, 'password' => $request->password], $remember)) {
-            RateLimiter::clear($throttleKey);
             $user = Auth::user();
+
+            // Check if Maintenance Mode is active and user is not admin
+            $isMaintenance = \App\Models\BotSetting::where('key', 'maintenance_mode')->value('value') === '1';
+            if ($isMaintenance && $user->role !== 'admin') {
+                Auth::logout();
+                $maintenanceMessage = \App\Models\BotSetting::where('key', 'maintenance_message')->value('value')
+                    ?: 'Website sedang dalam pemeliharaan sistem (Maintenance). Hanya Admin yang dapat login.';
+
+                return back()->withErrors([
+                    'login' => $maintenanceMessage,
+                ])->onlyInput('login');
+            }
+
+            RateLimiter::clear($throttleKey);
 
             $this->recordLoginLog($request, $request->login, true);
 
@@ -183,6 +199,14 @@ class AuthController extends Controller
      */
     public function register(Request $request)
     {
+        $isMaintenance = \App\Models\BotSetting::where('key', 'maintenance_mode')->value('value') === '1';
+        if ($isMaintenance) {
+            $maintenanceMessage = \App\Models\BotSetting::where('key', 'maintenance_message')->value('value')
+                ?: 'Website sedang dalam pemeliharaan sistem (Maintenance). Pendaftaran akun baru ditutup sementara.';
+
+            return back()->withErrors(['full_name' => $maintenanceMessage])->withInput();
+        }
+
         $rules = [
             'full_name' => 'required|string|max:255',
             'username' => 'required|string|max:255|unique:users',

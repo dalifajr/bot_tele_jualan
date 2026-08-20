@@ -140,25 +140,48 @@
         top: 97px !important;
         height: calc(100vh - 97px) !important;
     }
+@endif
+
+@php
+    $globalMaintenanceActive = \App\Models\BotSetting::where('key', 'maintenance_mode')->value('value') === '1';
+    $hideSidebar = View::hasSection('no_sidebar') || ($noSidebar ?? false);
+@endphp
+
+@if($globalMaintenanceActive && Auth::check() && Auth::user()->role === 'admin' && !session()->has('admin_impersonator_id'))
+<div class="bg-danger text-white py-1 px-4 d-flex justify-content-between align-items-center position-fixed w-100 shadow-sm" style="z-index: 1060; top: 0; left: 0; font-size: 0.85rem; height: 38px;">
+    <div class="d-flex align-items-center gap-2">
+        <i class="fas fa-exclamation-triangle"></i> 
+        <span><strong>{{ __('MODE MAINTENANCE AKTIF:') }}</strong> {{ __('Pengguna non-admin diblokir dari login dan akses web.') }}</span>
+    </div>
+    <a href="{{ route('admin.settings.index') }}" class="btn btn-xs btn-light text-danger rounded-pill px-3 py-0 fw-bold" style="font-size: 0.75rem; line-height: 1.6;">
+        <i class="fas fa-cog me-1"></i> {{ __('Kelola Maintenance') }}
+    </a>
+</div>
+<style>
+    body { padding-top: 38px !important; }
+    .navbar { top: 38px !important; }
+    #sidebar { top: 95px !important; height: calc(100vh - 95px) !important; }
 </style>
 @endif
 
-{{-- Top Navbar --}}
 <nav class="navbar navbar-expand fixed-top shadow-sm px-4 bg-body border-bottom" style="z-index: 1030; top: 0;">
     <div class="d-flex align-items-center gap-3">
+        @unless($hideSidebar)
         <button class="btn btn-link link-body-emphasis text-decoration-none p-0 d-lg-none" id="sidebarToggle" aria-label="{{ __('Buka/Tutup Menu Navigasi') }}">
             <i class="fas fa-bars fs-4"></i>
         </button>
+        @endunless
         <div class="navbar-brand d-flex align-items-center gap-2 text-primary fw-bold m-0" style="font-size: 1.05rem;">
             <i class="fas fa-shopping-bag fs-5"></i>
             <span class="fw-semibold">{{ config('app.name', 'Dzulfikrialifajri Store') }} <span class="fw-normal text-secondary d-none d-sm-inline" style="font-size: 0.85rem; opacity: 0.8;">| @yield('page_subtitle', 'Dashboard')</span></span>
         </div>
     </div>
     <div class="ms-auto d-flex align-items-center gap-3">
+        @unless($hideSidebar)
         {{-- Notification Bell (All Authenticated Users) --}}
         @php
-            $unreadNotifications = Auth::user()->unreadNotifications()->take(5)->get();
-            $totalUnreadCount = Auth::user()->unreadNotifications()->count();
+            $unreadNotifications = Auth::check() ? Auth::user()->unreadNotifications()->take(5)->get() : collect();
+            $totalUnreadCount = Auth::check() ? Auth::user()->unreadNotifications()->count() : 0;
         @endphp
         <div class="dropdown">
             <button class="btn btn-link link-body-emphasis p-0 position-relative" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="{{ __('Notifikasi') }}" data-pex="xrpax4o-0">
@@ -225,7 +248,7 @@
         <a href="{{ route('cart.index') }}" class="btn btn-link link-body-emphasis p-0 position-relative me-2" title="{{ __('Keranjang Belanja') }}">
             <i class="fas fa-shopping-cart fs-5"></i>
             @php
-                $cartCount = \App\Models\CartItem::where('user_id', Auth::id())->sum('quantity');
+                $cartCount = Auth::check() ? \App\Models\CartItem::where('user_id', Auth::id())->sum('quantity') : 0;
             @endphp
             @if($cartCount > 0)
             <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.65rem;" id="cart-badge-count">
@@ -233,6 +256,7 @@
             </span>
             @endif
         </a>
+        @endunless
 
         
 
@@ -252,6 +276,7 @@
 </nav>
 
 <div class="app-container">
+    @unless($hideSidebar)
     {{-- Sidebar --}}
     <div id="sidebar" class="sidebar" style="top: 57px; height: calc(100vh - 57px); z-index: 1040; overflow-y: auto; overscroll-behavior: contain;">
         <div class="sidebar-header d-flex align-items-center gap-3">
@@ -515,9 +540,10 @@
             </div>
         </div>
     </div>
+    @endunless
 
     {{-- Main Content --}}
-    <main class="main-content position-relative">
+    <main class="main-content position-relative" @if($hideSidebar) style="margin-left: 0 !important;" @endif>
         <div class="main-background"></div>
         <div class="container-fluid position-relative px-4 pb-4 pt-4" style="z-index: 1;">
             {{-- Flash Messages --}}
@@ -538,8 +564,10 @@
         </div>
     </main>
 
+    @unless($hideSidebar)
     {{-- Sidebar overlay (mobile) --}}
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    @endunless
 
 </div>
 

@@ -27,6 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 \App\Http\Middleware\BlockBannedIps::class,
                 \App\Http\Middleware\UpdateUserLastSeen::class,
                 \App\Http\Middleware\DynamicSessionLifetime::class,
+                \App\Http\Middleware\CheckMaintenanceMode::class,
             ],
             remove: [
                 \Illuminate\Http\Middleware\FrameGuard::class,

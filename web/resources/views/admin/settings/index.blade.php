@@ -39,6 +39,14 @@
                 </button>
             </li>
             <li class="nav-item" role="presentation">
+                <button class="nav-link fw-bold px-4 py-3 d-flex align-items-center gap-1 {{ ($settings['maintenance_mode'] ?? '0') === '1' ? 'text-danger' : '' }}" id="maintenance-tab" data-bs-toggle="tab" data-bs-target="#maintenance" type="button" role="tab">
+                    <i class="fas fa-tools me-1 text-warning"></i>{{ __('Mode Maintenance') }}
+                    @if(($settings['maintenance_mode'] ?? '0') === '1')
+                        <span class="badge bg-danger rounded-pill px-2 py-0.5" style="font-size: 0.65rem;">AKTIF</span>
+                    @endif
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
                 <button class="nav-link fw-bold px-4 py-3" id="vpn-tab" data-bs-toggle="tab" data-bs-target="#vpn" type="button" role="tab">
                     <i class="fas fa-server me-2"></i>{{ __('VPN Server') }}
                 </button>
@@ -142,6 +150,83 @@
                             <div class="d-grid mt-4">
                                 <button type="submit" class="btn btn-primary rounded-pill py-2 fw-bold">
                                     <i class="fas fa-save me-2"></i>{{ __('Simpan Pengaturan Waktu') }}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            {{-- TAB: MODE MAINTENANCE --}}
+            <div class="tab-pane fade" id="maintenance" role="tabpanel">
+                <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
+                    <div class="card-body p-4">
+                        <h5 class="fw-bold mb-1"><i class="fas fa-tools text-warning me-2"></i>{{ __('Kontrol Mode Pemeliharaan (Maintenance Mode)') }}</h5>
+                        <p class="text-muted small mb-4">{{ __('Saat mode maintenance aktif, seluruh pengguna non-admin (customer & seller) tidak dapat login atau mengakses website. Pengguna yang membuka web via Telegram atau browser akan langsung melihat halaman pemeliharaan tanpa menu/sidebar.') }}</p>
+
+                        @php
+                            $isMaintenanceActive = ($settings['maintenance_mode'] ?? '0') === '1';
+                        @endphp
+
+                        {{-- Visual Status Banner --}}
+                        @if($isMaintenanceActive)
+                            <div class="alert alert-danger border-0 shadow-sm rounded-4 mb-4 d-flex align-items-center justify-content-between p-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="rounded-circle bg-danger text-white d-flex align-items-center justify-content-center me-3 flex-shrink-0" style="width: 48px; height: 48px; font-size: 1.3rem;">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="fw-bold mb-0 text-danger">{{ __('MODE MAINTENANCE SEDANG AKTIF') }}</h6>
+                                        <small class="text-secondary">{{ __('Hanya akun Administrator yang dapat login dan mengakses seluruh fitur website saat ini.') }}</small>
+                                    </div>
+                                </div>
+                                <span class="badge bg-danger px-3 py-2 rounded-pill fw-bold">{{ __('AKTIF') }}</span>
+                            </div>
+                        @else
+                            <div class="alert alert-success border-0 shadow-sm rounded-4 mb-4 d-flex align-items-center justify-content-between p-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center me-3 flex-shrink-0" style="width: 48px; height: 48px; font-size: 1.3rem;">
+                                        <i class="fas fa-check-circle"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="fw-bold mb-0 text-success">{{ __('WEBSITE BERJALAN NORMAL') }}</h6>
+                                        <small class="text-secondary">{{ __('Mode maintenance tidak aktif. Seluruh pengguna dapat mengakses website dan login seperti biasa.') }}</small>
+                                    </div>
+                                </div>
+                                <span class="badge bg-success px-3 py-2 rounded-pill fw-bold">{{ __('NORMAL') }}</span>
+                            </div>
+                        @endif
+
+                        <form action="{{ route('admin.settings.update') }}" method="POST" id="formMaintenance">
+                            @csrf
+                            
+                            {{-- Toggle Switch Card --}}
+                            <div class="mb-4 bg-body-tertiary p-3 rounded-4 border">
+                                <div class="form-check form-switch d-flex align-items-center justify-content-between ps-0">
+                                    <label class="form-check-label fw-bold cursor-pointer flex-grow-1" for="toggleMaintenance">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <i class="fas fa-power-off text-primary"></i>
+                                            <span>{{ __('Aktifkan Mode Maintenance') }}</span>
+                                        </div>
+                                        <small class="text-muted fw-normal d-block mt-1">{{ __('Geser switch ini ke kanan untuk mengaktifkan pemeliharaan dan memblokir login non-admin.') }}</small>
+                                    </label>
+                                    <input type="hidden" name="settings[maintenance_mode]" value="0">
+                                    <input class="form-check-input ms-3 fs-4" type="checkbox" role="switch" id="toggleMaintenance" name="settings[maintenance_mode]" value="1" {{ $isMaintenanceActive ? 'checked' : '' }} style="cursor: pointer;">
+                                </div>
+                            </div>
+
+                            {{-- Maintenance Message Textarea --}}
+                            <div class="mb-4">
+                                <label class="form-label fw-bold small text-body" for="maintenanceMessage">
+                                    <i class="fas fa-comment-dots text-primary me-1"></i> {{ __('Pesan Pemeliharaan (Maintenance Message)') }}
+                                </label>
+                                <textarea name="settings[maintenance_message]" id="maintenanceMessage" class="form-control" rows="4" placeholder="{{ __('Tuliskan pesan pemeliharaan yang akan dibaca pengguna...') }}" required>{{ $settings['maintenance_message'] ?? 'Website sedang dalam pemeliharaan sistem (Maintenance). Silakan kembali beberapa saat lagi.' }}</textarea>
+                                <div class="form-text mt-1">
+                                    {{ __('Pesan ini akan ditampilkan kepada customer dan seller saat membuka web via Telegram/browser atau saat mencoba login.') }}
+                                </div>
+                            </div>
+
+                            <div class="d-grid mt-4">
+                                <button type="submit" class="btn btn-primary rounded-pill py-2.5 fw-bold shadow-sm">
+                                    <i class="fas fa-save me-2"></i>{{ __('Simpan Pengaturan Maintenance') }}
                                 </button>
                             </div>
                         </form>

@@ -97,6 +97,18 @@
         <p class="small text-secondary mb-0" id="auth-subtitle">{{ __('Silakan masuk untuk mengakses portal Anda.') }}</p>
       </div>
 
+      @if($maintenanceMode ?? false)
+      <div class="alert alert-warning py-3 px-3 small border-0 bg-warning bg-opacity-10 text-warning-emphasis rounded-4 mb-4">
+          <div class="d-flex align-items-start gap-2">
+              <i class="fas fa-tools text-warning fs-5 mt-0.5 flex-shrink-0"></i>
+              <div>
+                  <strong class="d-block mb-1 text-dark">{{ __('Mode Pemeliharaan (Maintenance) Aktif') }}</strong>
+                  <span class="text-secondary" style="font-size: 0.8rem; line-height: 1.4;">{{ $maintenanceMessage ?? __('Website saat ini sedang dalam pemeliharaan sistem. Hanya Administrator yang dapat login.') }}</span>
+              </div>
+          </div>
+      </div>
+      @endif
+
       {{-- Auth Tabs Navigation --}}
       <ul class="nav nav-pills nav-fill bg-body-tertiary p-1 rounded-pill mb-4 border" role="tablist">
           <li class="nav-item" role="presentation">

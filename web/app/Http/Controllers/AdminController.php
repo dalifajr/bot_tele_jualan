@@ -2811,7 +2811,19 @@ class AdminController extends Controller
             }
         }
 
-        return back()->with('success', __('Konfigurasi berhasil disimpan dan jadwal stok telah diperbarui!'));
+        if (array_key_exists('maintenance_mode', $settings)) {
+            $statusStr = $settings['maintenance_mode'] == '1' ? 'Aktif' : 'Nonaktif';
+            \Illuminate\Support\Facades\DB::table('audit_logs')->insert([
+                'action' => 'toggle_maintenance_mode',
+                'actor_id' => \Illuminate\Support\Facades\Auth::id(),
+                'entity_type' => 'setting',
+                'entity_id' => 0,
+                'detail' => "Admin mengubah status Mode Maintenance menjadi: {$statusStr}",
+                'created_at' => now(),
+            ]);
+        }
+
+        return back()->with('success', __('Konfigurasi berhasil disimpan!'));
     }
 
     public function uploadQris(Request $request)
