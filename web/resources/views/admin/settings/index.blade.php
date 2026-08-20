@@ -155,6 +155,8 @@
                         </form>
                     </div>
                 </div>
+            </div>
+
             {{-- TAB: MODE MAINTENANCE --}}
             <div class="tab-pane fade" id="maintenance" role="tabpanel">
                 <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
@@ -430,3 +432,30 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Activate tab from URL hash on load
+        const hash = window.location.hash;
+        if (hash) {
+            const targetBtn = document.querySelector(`#settingsTab button[data-bs-target="${hash}"]`);
+            if (targetBtn && typeof bootstrap !== 'undefined') {
+                const tab = bootstrap.Tab.getOrCreateInstance(targetBtn);
+                tab.show();
+            }
+        }
+
+        // Update URL hash when tab is switched
+        const tabBtns = document.querySelectorAll('#settingsTab button[data-bs-toggle="tab"]');
+        tabBtns.forEach(btn => {
+            btn.addEventListener('shown.bs.tab', function(e) {
+                const target = e.target.getAttribute('data-bs-target');
+                if (target && history.replaceState) {
+                    history.replaceState(null, null, target);
+                }
+            });
+        });
+    });
+</script>
+@endpush
