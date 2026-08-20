@@ -19,9 +19,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        if (request()->server('HTTP_X_FORWARDED_PROTO') == 'https' || config('app.env') !== 'local' || env('FORCE_HTTPS', true)) {
-            \Illuminate\Support\Facades\URL::forceScheme('https');
-        }
+        \Illuminate\Support\Facades\URL::forceScheme('https');
 
         \Illuminate\Pagination\Paginator::useBootstrapFive();
         \Illuminate\Support\Facades\View::composer('layouts.app', \App\Http\View\Composers\NotificationComposer::class);
