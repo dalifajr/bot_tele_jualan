@@ -250,16 +250,21 @@
                             </div>
                             <div class="form-text small text-muted">{{ __('Durasi karantina stok sebelum pindah otomatis dari *Simpan Akun* ke *Ready*.') }}</div>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label text-muted small fw-bold d-block">{{ __('Akses Fitur Tool') }}</label>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="checkbox" name="allowed_tools[]" value="github_checker" id="tool_github_{{ $user->id }}" {{ is_array($user->allowed_tools) && in_array('github_checker', $user->allowed_tools) ? 'checked' : '' }}>
-                                <label class="form-check-label small" for="tool_github_{{ $user->id }}">{{ __('GitHub Live Checker') }}</label>
-                            </div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="checkbox" name="allowed_tools[]" value="gmail_checker" id="tool_gmail_{{ $user->id }}" {{ is_array($user->allowed_tools) && in_array('gmail_checker', $user->allowed_tools) ? 'checked' : '' }}>
-                                <label class="form-check-label small" for="tool_gmail_{{ $user->id }}">{{ __('Gmail Live Checker') }}</label>
-                            </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold d-block">{{ __('Akses Fitur Tool') }}</label>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" name="allowed_tools[]" value="github_checker" id="tool_github_{{ $user->id }}" {{ is_array($user->allowed_tools) && in_array('github_checker', $user->allowed_tools) ? 'checked' : '' }}>
+                            <label class="form-check-label small" for="tool_github_{{ $user->id }}">{{ __('GitHub Live Checker') }}</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" name="allowed_tools[]" value="gmail_checker" id="tool_gmail_{{ $user->id }}" {{ is_array($user->allowed_tools) && in_array('gmail_checker', $user->allowed_tools) ? 'checked' : '' }}>
+                            <label class="form-check-label small" for="tool_gmail_{{ $user->id }}">{{ __('Gmail Live Checker') }}</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" name="allowed_tools[]" value="2fa_generator" id="tool_2fa_{{ $user->id }}" {{ is_array($user->allowed_tools) && in_array('2fa_generator', $user->allowed_tools) ? 'checked' : '' }}>
+                            <label class="form-check-label small" for="tool_2fa_{{ $user->id }}">{{ __('2FA Code Generator') }}</label>
                         </div>
                     </div>
 

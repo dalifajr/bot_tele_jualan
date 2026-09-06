@@ -367,7 +367,7 @@
                 </div>
                 <div class="mb-0">
                     <label class="form-label fw-bold text-muted small">{{ __('Isi Data') }}</label>
-                    <div class="bg-light rounded-3 p-3 text-break" style="max-height: 300px; overflow-y: auto; font-family: monospace; white-space: pre-wrap; font-size: 0.85rem;">{{ $unit->raw_text }}</div>
+                    <x-account-credential-viewer :rawText="$unit->raw_text" />
                 </div>
             </div>
             <div class="modal-footer border-0">
@@ -646,10 +646,15 @@
                     // Remove username duplicate and divider lines from details array
                     details = details.filter(d => !d.toLowerCase().includes('username:') && !d.toLowerCase().includes('user:') && !/^\s*[=_#-]{3,}\s*$/.test(d));
 
+                    // Detect 2FA in credentials
+                    let has2fa = /(?:f2a|2fa|totp|authenticator|two[\s_-]*factor|secret)\s*[:=]\s*([A-Za-z2-7\s=-]{8,64})/i.test(cleanBlock)
+                        || cleanBlock.includes('otpauth://');
+                    let badge2fa = has2fa ? '<span class="badge bg-success-subtle text-success border border-success-subtle ms-1 py-0 px-1 rounded-pill" style="font-size: 0.68rem;"><i class="fas fa-shield-alt me-1"></i>2FA</span>' : '';
+
                     html += `
                         <tr>
                             <td class="text-muted px-2 py-1">${validCount}</td>
-                            <td class="fw-bold text-primary py-1">${username}</td>
+                            <td class="fw-bold text-primary py-1">${username} ${badge2fa}</td>
                             <td class="text-secondary py-1">${details.join(' | ') || cleanBlock.replace(/\n/g, ', ')}</td>
                         </tr>
                     `;

@@ -106,6 +106,14 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         
         return response()->json(['status' => $order->status]);
     })->name('orders.status');
+
+    // 2FA Code Generator Tool
+    Route::middleware('tool.access:2fa_generator')->group(function () {
+        Route::get('/tools/2fa-generator', [\App\Http\Controllers\TwoFactorController::class, 'index'])->name('tools.2fa-generator');
+        Route::post('/tools/2fa-generator/generate', [\App\Http\Controllers\TwoFactorController::class, 'generateAjax'])->name('tools.2fa-generator.generate');
+        Route::post('/tools/2fa-generator/batch-generate', [\App\Http\Controllers\TwoFactorController::class, 'batchGenerateAjax'])->name('tools.2fa-generator.batch-generate');
+    });
+
     // Customer Complaints
     Route::get('/customer/complaints', [\App\Http\Controllers\ComplaintController::class, 'index'])->name('customer.complaints.index');
     Route::get('/customer/complaints/{id}', [\App\Http\Controllers\ComplaintController::class, 'show'])->name('customer.complaints.show');
@@ -288,6 +296,10 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
                 }
                 return response($out)->header('Content-Type', 'text/plain');
             });
+        });
+
+        Route::middleware('tool.access:2fa_generator')->group(function () {
+            Route::get('/2fa-generator', [\App\Http\Controllers\TwoFactorController::class, 'index'])->name('2fa-generator');
         });
     });
 

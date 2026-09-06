@@ -155,16 +155,16 @@
                 @if($order->status === 'delivered')
                     @if($order->stockUnits && $order->stockUnits->count() > 0)
                     <hr>
-                    <h6 class="fw-bold mb-3"><i class="fas fa-key text-success me-2"></i>{{ __('Detail Akun yang Dibeli') }}</h6>
-                    <div class="bg-body-secondary rounded-3 p-3 text-break" style="max-height: 300px; overflow-y: auto; font-family: monospace; white-space: pre-wrap; font-size: 0.9rem;">
-@foreach($order->stockUnits as $unit)
-{{ $unit->raw_text }}
-@if(!$loop->last)
-
-----------------------------------------
-
-@endif
-@endforeach
+                    <h6 class="fw-bold mb-3"><i class="fas fa-key text-success me-2"></i>{{ __('Detail Akun yang Dibeli') }} ({{ $order->stockUnits->count() }} unit)</h6>
+                    <div class="d-flex flex-column gap-3">
+                        @foreach($order->stockUnits as $unit)
+                            <div>
+                                @if($order->stockUnits->count() > 1)
+                                    <span class="badge bg-secondary-subtle text-secondary mb-1">Unit #{{ $loop->iteration }}</span>
+                                @endif
+                                <x-account-credential-viewer :rawText="$unit->raw_text" />
+                            </div>
+                        @endforeach
                     </div>
                     @endif
 

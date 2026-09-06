@@ -162,6 +162,40 @@
                         </form>
                     </div>
                 </div>
+
+                {{-- Card: Akses Fitur Tool 2FA Generator --}}
+                <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
+                    <div class="card-body p-4">
+                        <form action="{{ route('admin.settings.update') }}" method="POST">
+                            @csrf
+                            <h5 class="fw-bold mb-1"><i class="fas fa-shield-alt text-success me-2"></i>{{ __('Akses Menu Generator Kode 2FA') }}</h5>
+                            <p class="text-muted small mb-3">{{ __('Tentukan siapa yang dapat melihat dan menggunakan menu Generator Kode 2FA di sidebar.') }}</p>
+
+                            <div class="mb-3">
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="radio" name="settings[tool_2fa_access_mode]" id="mode_2fa_all" value="all" {{ ($settings['tool_2fa_access_mode'] ?? 'all') === 'all' ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="mode_2fa_all">
+                                        <strong>{{ __('Semua Pengguna (Default)') }}</strong>
+                                        <div class="text-muted small">{{ __('Admin, Seller, dan Customer dapat mengakses menu Generator 2FA di sidebar secara bebas.') }}</div>
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="settings[tool_2fa_access_mode]" id="mode_2fa_assigned" value="assigned" {{ ($settings['tool_2fa_access_mode'] ?? 'all') === 'assigned' ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="mode_2fa_assigned">
+                                        <strong>{{ __('Hanya Ditugaskan Admin (Custom Assignment)') }}</strong>
+                                        <div class="text-muted small">{{ __('Hanya pengguna yang dicentang izin 2FA Generator pada menu Kelola Pelanggan / Kelola Seller yang dapat mengakses.') }}</div>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="d-grid mt-4">
+                                <button type="submit" class="btn btn-primary rounded-pill py-2.5 fw-bold shadow-sm">
+                                    <i class="fas fa-save me-2"></i>{{ __('Simpan Pengaturan Akses 2FA') }}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             </div>
 
             {{-- TAB: MODE MAINTENANCE --}}

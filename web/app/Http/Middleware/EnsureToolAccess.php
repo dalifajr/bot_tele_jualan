@@ -32,8 +32,16 @@ class EnsureToolAccess
             return $next($request);
         }
 
-        // Seller has access only if the tool is in allowed_tools list
-        if ($user->role === 'seller' && is_array($user->allowed_tools) && in_array($tool, $user->allowed_tools)) {
+        // For 2fa_generator: check system setting access mode ('all' by default)
+        if ($tool === '2fa_generator') {
+            $accessMode = \App\Models\BotSetting::where('key', 'tool_2fa_access_mode')->value('value') ?? 'all';
+            if ($accessMode === 'all') {
+                return $next($request);
+            }
+        }
+
+        // Users (sellers or customers) have access if the tool is in allowed_tools list
+        if (is_array($user->allowed_tools) && in_array($tool, $user->allowed_tools)) {
             return $next($request);
         }
 

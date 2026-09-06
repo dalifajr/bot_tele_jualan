@@ -1879,7 +1879,7 @@ class AdminController extends Controller
             'platform_fee_percent' => 'required|integer|between:0,100',
             'seller_save_hours' => 'required|integer|min:0',
             'allowed_tools' => 'nullable|array',
-            'allowed_tools.*' => 'string|in:github_checker,gmail_checker',
+            'allowed_tools.*' => 'string|in:github_checker,gmail_checker,2fa_generator',
         ]);
 
         $oldRole = $user->role;
@@ -1887,7 +1887,7 @@ class AdminController extends Controller
         $user->wallet_balance = $request->wallet_balance;
         $user->platform_fee_percent = $request->platform_fee_percent;
         $user->seller_save_hours = $request->seller_save_hours;
-        $user->allowed_tools = $request->role === 'seller' ? ($request->allowed_tools ?? []) : null;
+        $user->allowed_tools = in_array($request->role, ['seller', 'customer']) ? ($request->allowed_tools ?? []) : null;
         $user->save();
 
         // Audit log

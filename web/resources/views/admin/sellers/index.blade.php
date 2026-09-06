@@ -306,6 +306,10 @@
                                 <input class="form-check-input" type="checkbox" name="allowed_tools[]" value="gmail_checker" id="tool_gmail_{{ $user->id }}" {{ is_array($user->allowed_tools) && in_array('gmail_checker', $user->allowed_tools) ? 'checked' : '' }}>
                                 <label class="form-check-label small" for="tool_gmail_{{ $user->id }}">{{ __('Gmail Live Checker') }}</label>
                             </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" name="allowed_tools[]" value="2fa_generator" id="tool_2fa_{{ $user->id }}" {{ is_array($user->allowed_tools) && in_array('2fa_generator', $user->allowed_tools) ? 'checked' : '' }}>
+                                <label class="form-check-label small" for="tool_2fa_{{ $user->id }}">{{ __('2FA Code Generator') }}</label>
+                            </div>
                         </div>
                     </div>
 

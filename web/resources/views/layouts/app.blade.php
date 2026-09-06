@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="server-time" content="{{ time() }}">
     <title>@yield('title', 'Dashboard') — {{ config('app.name', 'Dzulfikrialifajri Store') }}</title>
     <meta name="description" content="@yield('meta_description', 'Platform jual beli produk digital terpercaya')">
 
@@ -348,6 +349,11 @@
                     
                     $customerLoginBadgeCount = $customerPendingLogins + $blockedUserIpsCount;
                 }
+
+                $tool2faAccessMode = \App\Models\BotSetting::where('key', 'tool_2fa_access_mode')->value('value') ?? 'all';
+                $canAccess2fa = $auth->role === 'admin' 
+                    || $tool2faAccessMode === 'all' 
+                    || (is_array($auth->allowed_tools) && in_array('2fa_generator', $auth->allowed_tools));
             @endphp
             <div class="menu-group">
                 <a href="{{ route('dashboard') }}" class="menu-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
@@ -395,6 +401,15 @@
                     @endif
                 </a>
             </div>
+
+            @if($canAccess2fa && Auth::user()->role === 'customer')
+            <div class="menu-group">
+                <div class="menu-header text-success"><i class="fas fa-tools me-1"></i> {{ __('Tool') }}</div>
+                <a href="{{ route('tools.2fa-generator') }}" class="menu-item {{ request()->routeIs('tools.2fa-generator*') ? 'active' : '' }}">
+                    <i class="fas fa-shield-alt"></i> {{ __('Generator Kode 2FA') }}
+                </a>
+            </div>
+            @endif
 
             @if(Auth::user()->role === 'admin')
             <div class="menu-group">
@@ -455,6 +470,9 @@
                 <a href="{{ route('admin.tools.gmail-checker') }}" class="menu-item {{ request()->routeIs('admin.tools.gmail-checker*') ? 'active' : '' }}">
                     <i class="fas fa-envelope"></i> {{ __('Gmail Live Checker') }}
                 </a>
+                <a href="{{ route('tools.2fa-generator') }}" class="menu-item {{ request()->routeIs('tools.2fa-generator*') || request()->routeIs('admin.tools.2fa-generator*') ? 'active' : '' }}">
+                    <i class="fas fa-shield-alt"></i> {{ __('Generator Kode 2FA') }}
+                </a>
             </div>
 
             <div class="menu-group">
@@ -505,17 +523,25 @@
                     <i class="fas fa-user-cog"></i> {{ __('Pengaturan Karantina') }}
                 </a>
             </div>
-            @if(is_array(Auth::user()->allowed_tools) && count(Auth::user()->allowed_tools) > 0)
+            @php
+                $sellerHasTools = (is_array(Auth::user()->allowed_tools) && count(Auth::user()->allowed_tools) > 0) || $canAccess2fa;
+            @endphp
+            @if($sellerHasTools)
             <div class="menu-group">
                 <div class="menu-header text-success"><i class="fas fa-tools me-1"></i> {{ __('Tool') }}</div>
-                @if(in_array('github_checker', Auth::user()->allowed_tools))
+                @if(is_array(Auth::user()->allowed_tools) && in_array('github_checker', Auth::user()->allowed_tools))
                 <a href="{{ route('admin.tools.github-checker') }}" class="menu-item {{ request()->routeIs('admin.tools.github-checker*') ? 'active' : '' }}">
                     <i class="fab fa-github"></i> {{ __('GitHub Live Checker') }}
                 </a>
                 @endif
-                @if(in_array('gmail_checker', Auth::user()->allowed_tools))
+                @if(is_array(Auth::user()->allowed_tools) && in_array('gmail_checker', Auth::user()->allowed_tools))
                 <a href="{{ route('admin.tools.gmail-checker') }}" class="menu-item {{ request()->routeIs('admin.tools.gmail-checker*') ? 'active' : '' }}">
                     <i class="fas fa-envelope"></i> {{ __('Gmail Live Checker') }}
+                </a>
+                @endif
+                @if($canAccess2fa)
+                <a href="{{ route('tools.2fa-generator') }}" class="menu-item {{ request()->routeIs('tools.2fa-generator*') ? 'active' : '' }}">
+                    <i class="fas fa-shield-alt"></i> {{ __('Generator Kode 2FA') }}
                 </a>
                 @endif
             </div>
@@ -590,6 +616,26 @@
 
 {{-- Custom JS --}}
 <script src="{{ asset('js/app.js') }}?v={{ filemtime(public_path('js/app.js')) }}"></script>
+<script src="{{ asset('js/totp-engine.js') }}?v={{ filemtime(public_path('js/totp-engine.js')) }}"></script>
+
+<script>
+    window.copyFullCredential = function (btn, text) {
+        if (!text) return;
+        navigator.clipboard.writeText(text).then(() => {
+            const span = btn.querySelector('span');
+            const icon = btn.querySelector('i');
+            const originalText = span ? span.textContent : '';
+            if (span) span.textContent = '{{ __("Tersalin!") }}';
+            if (icon) icon.className = 'fas fa-check text-success';
+            setTimeout(() => {
+                if (span) span.textContent = originalText;
+                if (icon) icon.className = 'fas fa-copy';
+            }, 1500);
+        }).catch(() => {
+            prompt('Salin data kredensial:', text);
+        });
+    };
+</script>
 
 @stack('scripts')
 
