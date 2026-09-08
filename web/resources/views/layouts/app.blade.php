@@ -141,6 +141,7 @@
         top: 97px !important;
         height: calc(100vh - 97px) !important;
     }
+</style>
 @endif
 
 @php
