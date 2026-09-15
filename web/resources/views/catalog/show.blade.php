@@ -3,6 +3,23 @@
 @section('title', $product->name)
 @section('page_subtitle', __('Detail Produk'))
 
+@push('styles')
+<style>
+    .btn-buy-now {
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+    }
+    .btn-buy-now:active:not(:disabled) {
+        transform: scale(0.98);
+    }
+    .btn-buy-now.is-loading {
+        opacity: 0.88;
+        cursor: not-allowed !important;
+        pointer-events: none;
+    }
+</style>
+@endpush
+
 @section('content')
 <div class="product-detail-container pb-5">
     {{-- Top Navigation Back Bar (Mobile & Desktop Friendly) --}}
@@ -297,9 +314,9 @@
 
                         {{-- Desktop Action Buttons --}}
                         <div class="d-none d-md-flex flex-column gap-2">
-                            <button type="submit" class="btn btn-primary w-100 rounded-pill py-3 fw-bold shadow-sm d-flex align-items-center justify-content-center gap-2">
-                                <i class="fas fa-bolt"></i>
-                                <span>{{ __('Beli Sekarang') }}</span>
+                            <button type="submit" id="btnDesktopBuyNow" class="btn btn-primary w-100 rounded-pill py-3 fw-bold shadow-sm d-flex align-items-center justify-content-center gap-2 btn-buy-now">
+                                <i class="fas fa-bolt btn-buy-icon"></i>
+                                <span class="btn-buy-text">{{ __('Beli Sekarang') }}</span>
                             </button>
 
                             @if(!$product->is_vpn)
@@ -347,9 +364,9 @@
         @endif
 
         {{-- Buy Now Button --}}
-        <button type="button" class="btn btn-primary rounded-pill py-2.5 px-3 fw-bold flex-grow-1 d-flex align-items-center justify-content-center gap-1.5 shadow-sm" id="btnMobileBuyNow" style="height: 48px; font-size: 0.85rem;">
-            <i class="fas fa-bolt"></i>
-            <span>{{ __('Beli Sekarang') }}</span>
+        <button type="button" class="btn btn-primary rounded-pill py-2.5 px-3 fw-bold flex-grow-1 d-flex align-items-center justify-content-center gap-1.5 shadow-sm btn-buy-now" id="btnMobileBuyNow" style="height: 48px; font-size: 0.85rem; white-space: nowrap;">
+            <i class="fas fa-bolt btn-buy-icon"></i>
+            <span class="btn-buy-text">{{ __('Beli Sekarang') }}</span>
         </button>
     </div>
 </div>
@@ -505,13 +522,83 @@
             });
         }
 
-        // Mobile Buy Now Trigger
+        // Buy Now Button Loading State & Submission Coordination
+        const btnDesktopBuy = document.getElementById('btnDesktopBuyNow');
         const btnMobileBuy = document.getElementById('btnMobileBuyNow');
+        let isSubmittingOrder = false;
+
+        function setBuyNowLoadingState(loading) {
+            isSubmittingOrder = loading;
+            const buyButtons = [btnDesktopBuy, btnMobileBuy].filter(Boolean);
+            const cartButtons = [btnDesktopCart, btnMobileCart].filter(Boolean);
+
+            buyButtons.forEach(btn => {
+                if (loading) {
+                    btn.disabled = true;
+                    btn.classList.add('is-loading');
+                    btn.setAttribute('aria-busy', 'true');
+                    const icon = btn.querySelector('.btn-buy-icon');
+                    const text = btn.querySelector('.btn-buy-text');
+                    if (icon) {
+                        icon.className = 'spinner-border spinner-border-sm me-1';
+                        icon.setAttribute('role', 'status');
+                        icon.setAttribute('aria-hidden', 'true');
+                    }
+                    if (text) {
+                        text.textContent = "{{ __('Membuat Pesanan...') }}";
+                    }
+                } else {
+                    btn.disabled = false;
+                    btn.classList.remove('is-loading');
+                    btn.removeAttribute('aria-busy');
+                    const icon = btn.querySelector('.btn-buy-icon');
+                    const text = btn.querySelector('.btn-buy-text');
+                    if (icon) {
+                        icon.className = 'fas fa-bolt btn-buy-icon';
+                    }
+                    if (text) {
+                        text.textContent = "{{ __('Beli Sekarang') }}";
+                    }
+                }
+            });
+
+            // Prevent user from clicking add-to-cart simultaneously during checkout
+            cartButtons.forEach(btn => {
+                btn.disabled = loading;
+                if (loading) {
+                    btn.style.opacity = '0.6';
+                    btn.style.pointerEvents = 'none';
+                } else {
+                    btn.style.opacity = '';
+                    btn.style.pointerEvents = '';
+                }
+            });
+        }
+
+        if (mainBuyForm) {
+            mainBuyForm.addEventListener('submit', function(e) {
+                if (isSubmittingOrder) {
+                    e.preventDefault();
+                    return false;
+                }
+
+                if (!mainBuyForm.checkValidity()) {
+                    return; // Let browser trigger native validation tooltips
+                }
+
+                setBuyNowLoadingState(true);
+            });
+        }
+
+        // Mobile Buy Now Trigger
         if (btnMobileBuy && mainBuyForm) {
             btnMobileBuy.addEventListener('click', function(e) {
                 e.preventDefault();
+                if (isSubmittingOrder) return;
+
                 // Validate required inputs (e.g. VPN username if present)
                 if (mainBuyForm.reportValidity()) {
+                    setBuyNowLoadingState(true);
                     mainBuyForm.submit();
                 } else {
                     // Scroll into view if invalid fields exist
