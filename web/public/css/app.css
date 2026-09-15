@@ -637,74 +637,76 @@ body {
         background-color: var(--primary-color);
     }
 
-    /* Mobile Card Grid Layout for Menu Lainnya (Bottom Sheet) */
+    /* Mobile Card Grid Layout for Menu Lainnya (Bottom Sheet) - 3 Columns Minimalist */
     .menu-group {
-        padding: 0.5rem 1rem !important;
+        padding: 0.4rem 0.75rem !important;
     }
 
     .menu-header {
-        padding: 0.5rem 0.25rem 0.65rem !important;
-        font-size: 0.72rem !important;
+        padding: 0.4rem 0.2rem 0.5rem !important;
+        font-size: 0.68rem !important;
+        letter-spacing: 0.06em !important;
     }
 
     .menu-items-grid {
         display: grid !important;
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 10px !important;
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 8px !important;
     }
 
     .menu-item {
         display: flex !important;
         flex-direction: column !important;
-        align-items: flex-start !important;
-        justify-content: space-between !important;
-        min-height: 84px !important;
-        padding: 12px 14px !important;
-        border-radius: 16px !important;
-        background: rgba(var(--primary-rgb), 0.035) !important;
+        align-items: center !important;
+        justify-content: center !important;
+        text-align: center !important;
+        min-height: 72px !important;
+        padding: 8px 4px !important;
+        border-radius: 14px !important;
+        background: rgba(var(--primary-rgb), 0.03) !important;
         border: 1px solid var(--glass-border) !important;
         border-left: 1px solid var(--glass-border) !important;
         position: relative !important;
         transform: none !important;
         text-decoration: none !important;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03) !important;
-        transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease !important;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02) !important;
+        transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease !important;
     }
 
     .menu-item:hover,
     .menu-item:active {
         background: rgba(var(--primary-rgb), 0.08) !important;
         border-color: rgba(var(--primary-rgb), 0.25) !important;
-        transform: translateY(-2px) scale(0.98) !important;
-        box-shadow: 0 4px 14px rgba(var(--primary-rgb), 0.12) !important;
+        transform: scale(0.96) !important;
+        box-shadow: 0 3px 10px rgba(var(--primary-rgb), 0.1) !important;
     }
 
     .menu-item.active {
         background: rgba(var(--primary-rgb), 0.12) !important;
         border: 1px solid var(--primary-color) !important;
         border-left: 1px solid var(--primary-color) !important;
-        box-shadow: 0 4px 16px rgba(var(--primary-rgb), 0.18) !important;
+        box-shadow: 0 3px 12px rgba(var(--primary-rgb), 0.18) !important;
     }
 
     .menu-item .menu-icon-box {
-        width: 38px !important;
-        height: 38px !important;
-        border-radius: 12px !important;
+        width: 32px !important;
+        height: 32px !important;
+        border-radius: 10px !important;
         background: var(--bs-body-bg) !important;
         border: 1px solid var(--glass-border) !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        font-size: 1.15rem !important;
-        margin-bottom: 8px !important;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.04) !important;
+        font-size: 1rem !important;
+        margin-bottom: 4px !important;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04) !important;
         flex-shrink: 0 !important;
-        transition: transform 0.2s ease, background 0.2s ease !important;
+        transition: transform 0.15s ease, background 0.15s ease !important;
     }
 
     .menu-item.active .menu-icon-box {
         background: var(--primary-color) !important;
-        box-shadow: 0 3px 8px rgba(var(--primary-rgb), 0.3) !important;
+        box-shadow: 0 2px 6px rgba(var(--primary-rgb), 0.3) !important;
     }
 
     .menu-item.active .menu-icon-box i {
@@ -712,14 +714,16 @@ body {
     }
 
     .menu-item .menu-label-text {
-        font-size: 0.8rem !important;
+        font-size: 0.72rem !important;
         font-weight: 600 !important;
-        line-height: 1.25 !important;
+        line-height: 1.15 !important;
         color: var(--bs-body-color) !important;
+        text-align: center !important;
         display: -webkit-box !important;
         -webkit-line-clamp: 2 !important;
         -webkit-box-orient: vertical !important;
         overflow: hidden !important;
+        word-break: break-word !important;
     }
 
     .menu-item.active .menu-label-text {
@@ -729,10 +733,10 @@ body {
 
     .menu-item .badge {
         position: absolute !important;
-        top: 10px !important;
-        right: 10px !important;
-        font-size: 0.65rem !important;
-        padding: 0.22rem 0.45rem !important;
+        top: 4px !important;
+        right: 4px !important;
+        font-size: 0.58rem !important;
+        padding: 0.15rem 0.35rem !important;
         border-radius: 999px !important;
     }
 }
@@ -1082,6 +1086,79 @@ body {
     }
     100% {
         background-position: -200% 0;
+    }
+}
+
+/* === MOBILE-FIRST GLOBAL UTILITIES & ENGINE === */
+@media (max-width: 767.98px) {
+    /* Mobile Sticky Bottom Action Bar (e.g. Catalog Show & Checkout) */
+    .mobile-sticky-action-bar {
+        position: fixed !important;
+        bottom: calc(62px + env(safe-area-inset-bottom)) !important;
+        left: 0 !important;
+        right: 0 !important;
+        z-index: 1035 !important;
+        background: var(--glass-bg) !important;
+        backdrop-filter: blur(20px) !important;
+        -webkit-backdrop-filter: blur(20px) !important;
+        border-top: 1px solid var(--glass-border) !important;
+        box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.08) !important;
+        padding: 10px 16px !important;
+    }
+
+    /* Padding for pages with sticky bottom action bar */
+    .has-mobile-action-bar {
+        padding-bottom: calc(130px + env(safe-area-inset-bottom)) !important;
+    }
+
+    /* Product card 2-column mobile optimization */
+    .product-card {
+        border-radius: 14px !important;
+    }
+    .product-card .product-icon-wrapper {
+        height: 95px !important;
+    }
+    .product-card .product-icon-wrapper i {
+        font-size: 2rem !important;
+    }
+    .product-card .card-body {
+        padding: 0.75rem !important;
+    }
+    .product-card .product-price {
+        font-size: 0.95rem !important;
+    }
+    .product-card .product-badge {
+        top: 8px !important;
+        left: 8px !important;
+    }
+    .product-card .product-badge .badge {
+        font-size: 0.65rem !important;
+        padding: 0.2rem 0.5rem !important;
+    }
+
+    /* Touch Stepper Button (Min 38px for Ergonomics) */
+    .stepper-touch-btn {
+        width: 38px !important;
+        height: 38px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-size: 1rem !important;
+        border-radius: 10px !important;
+    }
+
+    /* Mobile Transaction/Activity Card */
+    .mobile-activity-card {
+        border-radius: 14px;
+        background: var(--glass-bg);
+        border: 1px solid var(--glass-border);
+        padding: 12px 14px;
+        margin-bottom: 10px;
+        transition: transform 0.15s ease, background 0.15s ease;
+    }
+    .mobile-activity-card:active {
+        transform: scale(0.98);
+        background: rgba(var(--primary-rgb), 0.04);
     }
 }
 

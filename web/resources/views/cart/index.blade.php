@@ -37,7 +37,8 @@
                     </a>
                 </div>
                 @else
-                <div class="table-responsive">
+                {{-- Desktop Table View --}}
+                <div class="table-responsive d-none d-md-block">
                     <table class="table align-middle border-0 mb-0">
                         <thead>
                             <tr class="text-muted small">
@@ -100,12 +101,68 @@
                         </tbody>
                     </table>
                 </div>
+
+                {{-- Mobile Cart Cards View --}}
+                <div class="d-md-none">
+                    @foreach($cartItems as $item)
+                    @if($item->product)
+                    <div class="card border border-secondary-subtle rounded-4 p-3 mb-3 shadow-none bg-body">
+                        <div class="d-flex gap-3 mb-3">
+                            <div class="d-flex align-items-center justify-content-center bg-light rounded-3 text-primary flex-shrink-0" style="width: 54px; height: 54px; border: 1px solid var(--glass-border);">
+                                <i class="fas fa-box-open fs-4"></i>
+                            </div>
+                            <div class="flex-grow-1 overflow-hidden">
+                                <h6 class="fw-bold mb-1 text-truncate">
+                                    <a href="{{ route('catalog.show', $item->product->id) }}" class="text-decoration-none text-body">{{ $item->product->name }}</a>
+                                </h6>
+                                <span class="text-primary fw-bold" style="font-size: 0.9rem;">{{ $item->product->formatted_price }}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex align-items-center justify-content-between pt-2 border-top">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="d-inline-flex align-items-center bg-light rounded-pill border p-1" style="height: 38px;">
+                                    <form action="{{ route('cart.update', $item->id) }}" method="POST" class="d-inline m-0">
+                                        @csrf
+                                        @method('PUT')
+                                        <input type="hidden" name="quantity" value="{{ $item->quantity - 1 }}">
+                                        <button type="submit" class="btn btn-sm btn-link text-decoration-none px-2 py-0 text-muted" {{ $item->quantity <= 1 ? 'disabled' : '' }}>
+                                            <i class="fas fa-minus fs-6"></i>
+                                        </button>
+                                    </form>
+                                    <span class="px-2 fw-bold text-dark" style="min-width: 24px; font-size: 0.9rem;">{{ $item->quantity }}</span>
+                                    <form action="{{ route('cart.update', $item->id) }}" method="POST" class="d-inline m-0">
+                                        @csrf
+                                        @method('PUT')
+                                        <input type="hidden" name="quantity" value="{{ $item->quantity + 1 }}">
+                                        <button type="submit" class="btn btn-sm btn-link text-decoration-none px-2 py-0 text-muted">
+                                            <i class="fas fa-plus fs-6"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                                <form action="{{ route('cart.remove', $item->id) }}" method="POST" class="d-inline m-0" onsubmit="confirmAction(event, 'Hapus produk ini?');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-sm btn-light text-danger rounded-circle p-2" title="{{ __('Hapus') }}">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </form>
+                            </div>
+                            <div class="text-end">
+                                <span class="text-muted small d-block" style="font-size: 0.7rem;">Subtotal</span>
+                                <span class="fw-bold text-body" style="font-size: 0.95rem;">Rp{{ number_format($item->product->price * $item->quantity, 0, ',', '.') }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+                    @endforeach
+                </div>
                 @endif
             </div>
         </div>
     </div>
 
-    @if(!$cartItems->isEmpty()
+    @if(!$cartItems->isEmpty())
     <div class="col-lg-4">
         <div class="card border-0 shadow-sm" style="border-radius: 16px;">
             <div class="card-body p-4">
@@ -128,12 +185,24 @@
                         <i class="fas fa-shopping-bag me-2"></i>{{ __('Lanjut ke Checkout') }}
                     </a>
                     <a href="{{ route('catalog.index') }}" class="btn btn-outline-secondary rounded-pill py-2">
-                        {{ __('Kembali Belanja') }}
+                        <i class="fas fa-arrow-left me-2"></i>{{ __('Lanjut Belanja') }}
                     </a>
                 </div>
             </div>
         </div>
     </div>
+
+    {{-- Mobile Sticky Checkout Bar --}}
+    <div class="mobile-sticky-action-bar d-md-none">
+        <div class="d-flex align-items-center justify-content-between gap-3">
+            <div>
+                <span class="text-muted d-block" style="font-size: 0.68rem; line-height: 1;">Total ({{ $cartItems->sum('quantity') }} unit)</span>
+                <span class="fw-bold text-primary" style="font-size: 1.1rem;">Rp{{ number_format($subtotal, 0, ',', '.') }}</span>
+            </div>
+            <a href="{{ route('cart.checkout') }}" class="btn btn-success rounded-pill px-4 py-2 fw-bold shadow-sm d-flex align-items-center gap-2" style="font-size: 0.85rem;">
+                <i class="fas fa-shopping-bag"></i> {{ __('Checkout') }}
+            </a>
+        </div>
     @endif
 </div>
 @endsection

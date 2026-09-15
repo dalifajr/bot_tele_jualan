@@ -34,8 +34,8 @@
 
 <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 16px;">
     <div class="card-body p-0">
-        @if($orders->count() > 0)
-        <div class="table-responsive">
+        {{-- Desktop Table View --}}
+        <div class="table-responsive d-none d-md-block">
             <table class="table table-hover align-middle mb-0">
                 <thead>
                     <tr class="text-secondary small border-bottom">
@@ -80,6 +80,41 @@
                     @endforeach
                 </tbody>
             </table>
+        </div>
+
+        {{-- Mobile Order Cards View --}}
+        <div class="d-md-none p-3">
+            @foreach($orders as $order)
+            <div class="mobile-activity-card mb-3 p-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="fw-bold text-primary font-monospace" style="font-size: 0.85rem;">{{ $order->reference }}</span>
+                    <span class="badge bg-{{ $order->status_color }}-subtle text-{{ $order->status_color }} rounded-pill px-2.5 py-1" style="font-size: 0.68rem;">
+                        {{ $order->status_label }}
+                    </span>
+                </div>
+                <h6 class="fw-bold text-body mb-1" style="font-size: 0.92rem;">
+                    {{ $order->product->name ?? '-' }}
+                </h6>
+                <div class="text-muted small mb-3" style="font-size: 0.78rem;">
+                    <span>{{ $order->quantity }} unit</span> &bull; 
+                    <span class="fw-bold text-body">{{ $order->formatted_total }}</span> &bull; 
+                    <span>{{ $order->created_at->format('d M Y H:i') }}</span>
+                </div>
+                <div class="d-flex justify-content-end gap-2 pt-2 border-top">
+                    @if($order->status === 'pending_payment')
+                    <form action="{{ route('orders.cancel', $order->id) }}" method="POST" class="m-0" onsubmit="confirmAction(event, 'Batalkan pesanan ini?');">
+                        @csrf
+                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3 py-1" style="font-size: 0.75rem;">
+                            <i class="fas fa-times me-1"></i>{{ __('Batal') }}
+                        </button>
+                    </form>
+                    @endif
+                    <button class="btn btn-sm btn-primary rounded-pill px-3 py-1 fw-bold" data-bs-toggle="modal" data-bs-target="#detailOrderModal{{ $order->id }}" style="font-size: 0.75rem;">
+                        <i class="fas fa-eye me-1"></i>{{ __('Detail') }}
+                    </button>
+                </div>
+            </div>
+            @endforeach
         </div>
 
         {{-- Pagination --}}

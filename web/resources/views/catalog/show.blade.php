@@ -92,7 +92,7 @@
     </div>
 
     <div class="col-lg-4">
-        <div class="card border-0 shadow-sm" style="border-radius: 16px;">
+        <div class="card border-0 shadow-sm" id="buyFormSection" style="border-radius: 16px;">
             <div class="card-body p-4">
                 <div class="mb-4">
                     <span class="text-muted small">{{ __('Harga') }}</span>
@@ -128,6 +128,7 @@
                                     <label class="form-label text-dark small fw-bold">{{ __('Password SSH') }} <span class="text-danger">*</span></label>
                                     <input type="password" name="vpn_password" class="form-control form-control-sm" required placeholder="{{ __('Masukkan password') }}">
                                 </div>
+                                
                                 @endif
                                 <div class="form-text text-muted" style="font-size: 0.7rem;">{{ __('Masa Aktif:') }} <strong>{{ $product->vpn_duration_days }} Hari</strong></div>
                             </div>
@@ -161,4 +162,21 @@
         </div>
     </div>
 </div>
+
+@if($stockCount > 0)
+{{-- Mobile Sticky Bottom Action Bar (Fixed above mobile nav bar) --}}
+<div class="mobile-sticky-action-bar d-md-none">
+    <div class="d-flex align-items-center justify-content-between gap-2">
+        <div>
+            <span class="text-muted d-block" style="font-size: 0.68rem; line-height: 1;">{{ __('Harga') }}</span>
+            <span class="fw-bold text-primary" style="font-size: 1.1rem;">{{ $product->formatted_price }}</span>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="#buyFormSection" class="btn btn-success btn-sm rounded-pill px-3 py-2 fw-bold shadow-sm d-flex align-items-center gap-1" style="font-size: 0.8rem;">
+                <i class="fas fa-bolt"></i> {{ __('Beli Sekarang') }}
+            </a>
+        </div>
+    </div>
+</div>
+@endif
 @endsection

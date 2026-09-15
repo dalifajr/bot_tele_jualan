@@ -12,18 +12,18 @@
     </div>
 </div>
 
-<div class="row g-4">
+<div class="row g-2 g-md-4">
     @forelse($products as $product)
-    <div class="col-sm-6 col-lg-4 col-xl-3">
+    <div class="col-6 col-lg-4 col-xl-3">
         <div class="card product-card h-100 position-relative">
             {{-- Stock Badge --}}
             <div class="product-badge">
                 @if($product->stock_count > 0)
-                    <span class="badge bg-success-subtle text-success rounded-pill px-3">
-                        <i class="fas fa-check-circle me-1"></i>{{ $product->stock_count }} {{ __('stok') }}
+                    <span class="badge bg-success-subtle text-success rounded-pill px-2 px-md-3">
+                        <i class="fas fa-check-circle me-1"></i>{{ $product->stock_count }} <span class="d-none d-sm-inline">{{ __('stok') }}</span>
                     </span>
                 @else
-                    <span class="badge bg-danger-subtle text-danger rounded-pill px-3">
+                    <span class="badge bg-danger-subtle text-danger rounded-pill px-2 px-md-3">
                         <i class="fas fa-times-circle me-1"></i>{{ __('Habis') }}
                     </span>
                 @endif
@@ -34,34 +34,32 @@
                 <i class="fas fa-box-open"></i>
             </div>
 
-            <div class="card-body d-flex flex-column">
-                <h6 class="fw-bold mb-1">{{ Str::limit($product->name, 30) }}</h6>
+            <div class="card-body d-flex flex-column p-2 p-md-3">
+                <h6 class="fw-bold mb-1" style="font-size: 0.9rem; line-height: 1.3;">{{ Str::limit($product->name, 28) }}</h6>
                 @if($product->description)
-                    <p class="text-muted small mb-3 flex-grow-1">{{ Str::limit($product->description, 60) }}</p>
-                @else
-                    <p class="text-muted small mb-3 flex-grow-1">{{ __('Produk digital') }}</p>
+                    <p class="text-muted small mb-2 flex-grow-1 d-none d-sm-block" style="font-size: 0.78rem;">{{ Str::limit($product->description, 50) }}</p>
                 @endif
 
-                <div class="d-flex justify-content-between align-items-center mb-3 small">
+                <div class="d-flex justify-content-between align-items-center mb-2 small text-muted" style="font-size: 0.72rem;">
                     @if($product->creator)
-                        <span class="text-muted"><i class="fas fa-store me-1 text-info"></i>{{ __('Seller:') }} <strong>{{ $product->creator->full_name ?? $product->creator->username }}</strong></span>
+                        <span class="text-truncate" style="max-width: 65%;"><i class="fas fa-store me-1 text-info"></i>{{ $product->creator->full_name ?? $product->creator->username }}</span>
                     @else
-                        <span class="text-muted"><i class="fas fa-store me-1 text-primary"></i>{{ __('Seller:') }} <strong>{{ __('Admin Utama') }}</strong></span>
+                        <span><i class="fas fa-store me-1 text-primary"></i>Admin</span>
                     @endif
                     @if(isset($product->sales_count) && $product->sales_count > 0)
-                        <span class="text-muted small"><i class="fas fa-shopping-bag me-1 text-success"></i><strong>{{ $product->sales_count }}</strong> {{ __('terjual') }}</span>
+                        <span class="fw-bold text-success">{{ $product->sales_count }} <span class="d-none d-sm-inline">{{ __('terjual') }}</span></span>
                     @endif
                 </div>
 
-                <div class="d-flex justify-content-between align-items-center mt-auto">
-                    <span class="product-price">{{ $product->formatted_price }}</span>
-                    <div class="d-flex gap-2">
+                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-1 mt-auto pt-2 border-top">
+                    <span class="product-price mb-1 mb-sm-0" style="font-size: 0.95rem;">{{ $product->formatted_price }}</span>
+                    <div class="d-flex gap-1">
                         @if($product->stock_count > 0)
-                        <button type="button" class="btn btn-sm btn-primary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#checkoutModal{{ $product->id }}">
-                            {{ __('Beli') }} <i class="fas fa-shopping-cart ms-1"></i>
+                        <button type="button" class="btn btn-xs btn-sm-sm btn-primary rounded-pill px-2 px-md-3 py-1 fw-bold" data-bs-toggle="modal" data-bs-target="#checkoutModal{{ $product->id }}" style="font-size: 0.75rem;">
+                            {{ __('Beli') }} <i class="fas fa-shopping-cart ms-1 d-none d-sm-inline"></i>
                         </button>
                         @endif
-                        <a href="{{ route('catalog.show', $product->id) }}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                        <a href="{{ route('catalog.show', $product->id) }}" class="btn btn-xs btn-sm-sm btn-outline-primary rounded-pill px-2 px-md-3 py-1" style="font-size: 0.75rem;">
                             {{ __('Detail') }}
                         </a>
                     </div>

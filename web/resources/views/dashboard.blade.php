@@ -97,69 +97,69 @@
         </div>
     </div>
 
-    <!-- Floating Stats Cards -->
+    <!-- Floating Stats Cards (2x2 Grid on Mobile, 4x1 on Desktop) -->
     <div class="container-fluid px-2 px-md-3 floating-stats-container">
-        <div class="row g-3 g-md-4">
+        <div class="row g-2 g-md-4">
             <!-- Card 1: Total Orders -->
-            <div class="col-sm-6 col-xl-3">
+            <div class="col-6 col-xl-3">
                 <div class="card border-0 shadow-sm h-100 rounded-4 lift-hover overflow-hidden">
-                    <div class="card-body p-4">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <div class="bg-primary-subtle rounded-3 p-3 text-primary">
-                                <i class="fas fa-shopping-cart fa-2x"></i>
+                    <div class="card-body p-3 p-md-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2 mb-md-3">
+                            <div class="bg-primary-subtle rounded-3 p-2 p-md-3 text-primary">
+                                <i class="fas fa-shopping-cart fa-lg fa-md-2x"></i>
                             </div>
-                            <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-1 fw-bold">{{ __('Akun') }}</span>
+                            <span class="badge bg-primary-subtle text-primary rounded-pill px-2 px-md-3 py-1 fw-bold" style="font-size: 0.7rem;">{{ __('Akun') }}</span>
                         </div>
-                        <div class="text-muted small fw-semibold text-uppercase mb-1" style="letter-spacing: 0.5px;">{{ __('Total Pesanan') }}</div>
-                        <h3 class="h2 fw-bold text-body mb-0">{{ $totalOrders ?? 0 }}</h3>
+                        <div class="text-muted small fw-semibold text-uppercase mb-1" style="letter-spacing: 0.5px; font-size: 0.72rem;">{{ __('Total Pesanan') }}</div>
+                        <h3 class="h3 h2-md fw-bold text-body mb-0">{{ $totalOrders ?? 0 }}</h3>
                     </div>
                 </div>
             </div>
 
             <!-- Card 2: Completed Orders -->
-            <div class="col-sm-6 col-xl-3">
+            <div class="col-6 col-xl-3">
                 <div class="card border-0 shadow-sm h-100 rounded-4 lift-hover overflow-hidden">
-                    <div class="card-body p-4">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <div class="bg-success-subtle rounded-3 p-3 text-success">
-                                <i class="fas fa-check-circle fa-2x"></i>
+                    <div class="card-body p-3 p-md-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2 mb-md-3">
+                            <div class="bg-success-subtle rounded-3 p-2 p-md-3 text-success">
+                                <i class="fas fa-check-circle fa-lg fa-md-2x"></i>
                             </div>
-                            <span class="badge bg-success-subtle text-success rounded-pill px-3 py-1 fw-bold">{{ __('Berhasil') }}</span>
+                            <span class="badge bg-success-subtle text-success rounded-pill px-2 px-md-3 py-1 fw-bold" style="font-size: 0.7rem;">{{ __('Berhasil') }}</span>
                         </div>
-                        <div class="text-muted small fw-semibold text-uppercase mb-1" style="letter-spacing: 0.5px;">{{ __('Pesanan Selesai') }}</div>
-                        <h3 class="h2 fw-bold text-body mb-0">{{ $completedOrders ?? 0 }}</h3>
+                        <div class="text-muted small fw-semibold text-uppercase mb-1" style="letter-spacing: 0.5px; font-size: 0.72rem;">{{ __('Selesai') }}</div>
+                        <h3 class="h3 h2-md fw-bold text-body mb-0">{{ $completedOrders ?? 0 }}</h3>
                     </div>
                 </div>
             </div>
 
             <!-- Card 3: Pending Orders -->
-            <div class="col-sm-6 col-xl-3">
+            <div class="col-6 col-xl-3">
                 <div class="card border-0 shadow-sm h-100 rounded-4 lift-hover overflow-hidden">
-                    <div class="card-body p-4">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <div class="bg-warning-subtle rounded-3 p-3 text-warning-emphasis">
-                                <i class="fas fa-clock fa-2x"></i>
+                    <div class="card-body p-3 p-md-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2 mb-md-3">
+                            <div class="bg-warning-subtle rounded-3 p-2 p-md-3 text-warning-emphasis">
+                                <i class="fas fa-clock fa-lg fa-md-2x"></i>
                             </div>
-                            <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill px-3 py-1 fw-bold">{{ __('Pending') }}</span>
+                            <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill px-2 px-md-3 py-1 fw-bold" style="font-size: 0.7rem;">{{ __('Pending') }}</span>
                         </div>
-                        <div class="text-muted small fw-semibold text-uppercase mb-1" style="letter-spacing: 0.5px;">{{ __('Menunggu Pembayaran') }}</div>
-                        <h3 class="h2 fw-bold text-body mb-0">{{ $pendingOrders ?? 0 }}</h3>
+                        <div class="text-muted small fw-semibold text-uppercase mb-1" style="letter-spacing: 0.5px; font-size: 0.72rem;">{{ __('Menunggu') }}</div>
+                        <h3 class="h3 h2-md fw-bold text-body mb-0">{{ $pendingOrders ?? 0 }}</h3>
                     </div>
                 </div>
             </div>
 
             <!-- Card 4: Total Spent -->
-            <div class="col-sm-6 col-xl-3">
+            <div class="col-6 col-xl-3">
                 <div class="card border-0 shadow-sm h-100 rounded-4 lift-hover overflow-hidden">
-                    <div class="card-body p-4">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <div class="bg-info-subtle rounded-3 p-3 text-info-emphasis">
-                                <i class="fas fa-wallet fa-2x"></i>
+                    <div class="card-body p-3 p-md-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2 mb-md-3">
+                            <div class="bg-info-subtle rounded-3 p-2 p-md-3 text-info-emphasis">
+                                <i class="fas fa-wallet fa-lg fa-md-2x"></i>
                             </div>
-                            <span class="badge bg-info-subtle text-info-emphasis rounded-pill px-3 py-1 fw-bold">{{ __('Total') }}</span>
+                            <span class="badge bg-info-subtle text-info-emphasis rounded-pill px-2 px-md-3 py-1 fw-bold" style="font-size: 0.7rem;">{{ __('Total') }}</span>
                         </div>
-                        <div class="text-muted small fw-semibold text-uppercase mb-1" style="letter-spacing: 0.5px;">{{ __('Total Belanja') }}</div>
-                        <h3 class="h3 fw-bold text-body mb-0">Rp {{ number_format($totalSpent ?? 0, 0, ',', '.') }}</h3>
+                        <div class="text-muted small fw-semibold text-uppercase mb-1" style="letter-spacing: 0.5px; font-size: 0.72rem;">{{ __('Total Belanja') }}</div>
+                        <h3 class="h4 h3-md fw-bold text-body mb-0">Rp {{ number_format($totalSpent ?? 0, 0, ',', '.') }}</h3>
                     </div>
                 </div>
             </div>
@@ -180,9 +180,10 @@
                     {{ __('Lihat Semua') }} <i class="fas fa-arrow-right ms-1 small"></i>
                 </a>
             </div>
-            <div class="card-body px-4 pb-4">
+            <div class="card-body px-3 px-md-4 pb-4">
                 @if(isset($recentOrders) && count($recentOrders) > 0)
-                    <div class="table-responsive">
+                    {{-- Desktop Table View --}}
+                    <div class="table-responsive d-none d-md-block">
                         <table class="table table-hover align-middle mb-0">
                             <thead>
                                 <tr class="text-secondary small fw-bold text-uppercase" style="letter-spacing: 0.5px;">
@@ -229,6 +230,39 @@
                                 @endforeach
                             </tbody>
                         </table>
+                    </div>
+
+                    {{-- Mobile Activity Cards View --}}
+                    <div class="d-md-none">
+                        @foreach($recentOrders as $order)
+                            @php
+                                $statusMap = [
+                                    'pending_payment' => [__('Menunggu'), 'warning'],
+                                    'paid' => [__('Dibayar'), 'info'],
+                                    'delivered' => [__('Selesai'), 'success'],
+                                    'cancelled' => [__('Dibatalkan'), 'danger'],
+                                    'expired' => [__('Kedaluwarsa'), 'secondary'],
+                                ];
+                                [$label, $color] = $statusMap[$order->status] ?? [$order->status, 'secondary'];
+                            @endphp
+                            <a href="{{ route('orders.show', $order->id) }}" class="text-decoration-none text-body">
+                                <div class="mobile-activity-card">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <span class="fw-bold text-primary font-monospace" style="font-size: 0.85rem;">{{ $order->reference }}</span>
+                                        <span class="badge bg-{{ $color }}-subtle text-{{ $color }} rounded-pill px-2.5 py-1" style="font-size: 0.68rem;">
+                                            {{ $label }}
+                                        </span>
+                                    </div>
+                                    <div class="fw-semibold text-body mb-2" style="font-size: 0.88rem;">
+                                        {{ Str::limit($order->product->name ?? '-', 35) }}
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center text-muted small" style="font-size: 0.78rem;">
+                                        <span class="fw-bold text-body">Rp {{ number_format($order->total_price ?? 0, 0, ',', '.') }}</span>
+                                        <span><i class="far fa-calendar-alt me-1"></i>{{ $order->created_at->format('d M Y') }}</span>
+                                    </div>
+                                </div>
+                            </a>
+                        @endforeach
                     </div>
                 @else
                     <div class="text-center py-5">

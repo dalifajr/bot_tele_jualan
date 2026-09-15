@@ -1,8 +1,7 @@
 RENCANA PERBAIKAN DAN PENGEMBANGAN WEBITE JUALAN:
 
-1. berikan icon ilustrasi pada setiap menu lainnya dan pada sidebar.
-2. buat list menu pada menu lainnya di navbar pada perangkat mobile menggunakan layout card dan bukan list.
-3. buatkan rencana pengembangan dan perubahan besar halaman-halaman pada website untuk menyesuaikan pada perangkat mobile.
+1. kerjakan Poin 3: Masterplan Pengembangan & Perubahan Besar Halaman Website untuk Mobile
+2. buat card menu pada menu lainnya di navbar menjadi lebih minimalis mengikuti gaya desain website dan usahakan agar muat lebih banyak card pada satu row.
 
 catat untuk kamu;
 - lakukan brainstroming sebelum melakukan eksekusi, tak lupa pula lakukan analisa kritik dan saran.
