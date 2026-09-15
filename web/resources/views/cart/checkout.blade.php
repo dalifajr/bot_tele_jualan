@@ -4,12 +4,24 @@
 @section('page_subtitle', __('Checkout'))
 
 @section('content')
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <div class="d-flex align-items-center gap-2">
+        <a href="{{ route('cart.index') }}" class="btn btn-light rounded-circle shadow-sm border d-inline-flex align-items-center justify-content-center" style="width: 38px; height: 38px;" title="{{ __('Kembali ke Keranjang') }}">
+            <i class="fas fa-arrow-left text-body"></i>
+        </a>
+        <div>
+            <h5 class="fw-bold m-0 text-body" style="font-size: 1.15rem;">{{ __('Review & Pembayaran') }}</h5>
+            <small class="text-muted" style="font-size: 0.75rem;">{{ __('Periksa kembali rincian pesanan sebelum checkout') }}</small>
+        </div>
+    </div>
+</div>
+
 <div class="row g-4">
     <div class="col-lg-8">
         {{-- Ordered Items Review --}}
         <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
             <div class="card-body p-4">
-                <h5 class="fw-bold mb-4"><i class="fas fa-receipt text-primary me-2"></i>{{ __('Review Pembelian') }}</h5>
+                <h5 class="fw-bold mb-4 d-none d-md-block"><i class="fas fa-receipt text-primary me-2"></i>{{ __('Review Pembelian') }}</h5>
                 
                 {{-- Desktop Table View --}}
                 <div class="table-responsive d-none d-md-block">

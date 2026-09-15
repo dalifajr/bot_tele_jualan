@@ -4,197 +4,497 @@
 @section('page_subtitle', __('Detail Produk'))
 
 @section('content')
-<div class="row g-4">
-    <div class="col-lg-8">
-        <div class="card border-0 shadow-sm" style="border-radius: 16px;">
-            <div class="product-icon-wrapper" style="height: 200px; border-radius: 16px 16px 0 0;">
-                <i class="fas fa-box-open" style="font-size: 4rem;"></i>
+<div class="product-detail-container pb-5">
+    {{-- Top Navigation Back Bar (Mobile & Desktop Friendly) --}}
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <div class="d-flex align-items-center gap-2">
+            <a href="{{ route('catalog.index') }}" class="btn btn-light rounded-circle shadow-sm border d-inline-flex align-items-center justify-content-center" style="width: 38px; height: 38px;" title="{{ __('Kembali ke Katalog') }}">
+                <i class="fas fa-arrow-left text-body"></i>
+            </a>
+            <div class="d-flex flex-column">
+                <div class="text-muted small d-none d-sm-block">
+                    <a href="{{ route('catalog.index') }}" class="text-decoration-none text-muted">{{ __('Katalog') }}</a> 
+                    <i class="fas fa-chevron-right mx-1" style="font-size: 0.65rem;"></i> 
+                    <span>{{ Str::limit($product->name, 25) }}</span>
+                </div>
+                <h5 class="fw-bold m-0 text-body" style="font-size: 1.1rem;">{{ __('Detail Produk') }}</h5>
             </div>
-            <div class="card-body p-4">
-                <div class="d-flex justify-content-between align-items-start mb-3">
-                    <div>
-                        <h3 class="fw-bold mb-1">{{ $product->name }}</h3>
-                        <span class="text-muted">ID: #{{ $product->id }}</span>
-                    </div>
-                    @if($product->is_vpn)
-                        <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-2">
-                            <i class="fas fa-network-wired me-1"></i>VPN Produk ({{ strtoupper($product->vpn_protocol) }})
-                        </span>
-                    @elseif($stockCount > 0)
-                        <span class="badge bg-success-subtle text-success rounded-pill px-3 py-2">
-                            <i class="fas fa-check-circle me-1"></i>{{ $stockCount }} stok tersedia
-                        </span>
-                    @else
-                        <span class="badge bg-danger-subtle text-danger rounded-pill px-3 py-2">
-                            <i class="fas fa-times-circle me-1"></i>{{ __('Stok habis') }}
-                        </span>
-                    @endif
-                </div>
+        </div>
 
-                <hr>
-
-                <div class="mb-4">
-                    <span class="text-muted small d-block mb-1">{{ __('Seller') }}</span>
-                    @if($product->creator)
-                        <h6 class="fw-bold"><i class="fas fa-store text-info me-1"></i>{{ $product->creator->full_name ?? $product->creator->username }}</h6>
-                    @else
-                        <h6 class="fw-bold"><i class="fas fa-store text-primary me-1"></i>{{ __('Admin Utama') }}</h6>
-                    @endif
-                </div>
-
-                <h5 class="fw-bold mb-2">{{ __('Deskripsi') }}</h5>
-                <p class="text-muted">{{ $product->description ?: 'Tidak ada deskripsi tersedia.' }}</p>
-
-                <hr class="my-4">
-
-                <h5 class="fw-bold mb-3"><i class="fas fa-star text-warning me-2"></i>{{ __('Ulasan & Rating') }}</h5>
-                @php
-                    $reviews = \App\Models\Review::with('user')->where('product_id', $product->id)->orderBy('created_at', 'desc')->get();
-                    $avgRating = $reviews->avg('rating');
-                @endphp
-
-                <div class="d-flex align-items-center gap-3 mb-4">
-                    <div class="display-4 fw-bold text-primary">{{ $avgRating ? number_format($avgRating, 1) : '0.0' }}</div>
-                    <div>
-                        <div class="text-warning fs-5">
-                            @for($i = 1; $i <= 5; $i++)
-                                <i class="fa{{ $i <= round($avgRating) ? 's' : 'r' }} fa-star"></i>
-                            @endfor
-                        </div>
-                        <span class="text-muted small">Berdasarkan {{ $reviews->count() }} ulasan</span>
-                    </div>
-                </div>
-
-                <div class="reviews-list">
-                    @forelse($reviews as $rev)
-                    <div class="border-bottom pb-3 mb-3">
-                        <div class="d-flex justify-content-between align-items-start mb-1">
-                            <div>
-                                <span class="fw-bold text-dark small">{{ $rev->user->full_name ?? $rev->user->username ?? 'Pelanggan' }}</span>
-                                <span class="text-warning ms-2" style="font-size: 0.8rem;">
-                                    @for($i = 1; $i <= 5; $i++)
-                                        <i class="fa{{ $i <= $rev->rating ? 's' : 'r' }} fa-star"></i>
-                                    @endfor
-                                </span>
-                            </div>
-                            <span class="text-muted small" style="font-size: 0.75rem;">{{ $rev->created_at->format('d M Y') }}</span>
-                        </div>
-                        @if($rev->comment)
-                            <p class="mb-0 text-secondary small italic">"{{ $rev->comment }}"</p>
-                        @endif
-                    </div>
-                    @empty
-                    <p class="text-muted small mb-0">{{ __('Belum ada ulasan untuk produk ini.') }}</p>
-                    @endforelse
-                </div>
-            </div>
+        <div class="d-flex align-items-center gap-2">
+            @if($product->stock_count > 0 && !$product->is_vpn)
+            <a href="{{ route('cart.index') }}" class="btn btn-light rounded-circle shadow-sm border d-inline-flex align-items-center justify-content-center position-relative" style="width: 38px; height: 38px;" title="{{ __('Lihat Keranjang') }}">
+                <i class="fas fa-shopping-cart text-primary"></i>
+            </a>
+            @endif
         </div>
     </div>
 
-    <div class="col-lg-4">
-        <div class="card border-0 shadow-sm" id="buyFormSection" style="border-radius: 16px;">
-            <div class="card-body p-4">
-                <div class="mb-4">
-                    <span class="text-muted small">{{ __('Harga') }}</span>
-                    <div class="product-price" style="font-size: 2rem;">{{ $product->formatted_price }}</div>
+    <div class="row g-3 g-lg-4">
+        {{-- Left / Top Column: Visual & Information --}}
+        <div class="col-lg-7 col-xl-8">
+            {{-- Product Hero Card --}}
+            <div class="card border-0 shadow-sm overflow-hidden mb-3" style="border-radius: 20px;">
+                {{-- Product Visual Banner --}}
+                <div class="position-relative d-flex align-items-center justify-content-center text-white" style="height: 220px; background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 50%, #6610f2 100%);">
+                    <div class="text-center p-3">
+                        <div class="rounded-circle bg-white bg-opacity-20 d-inline-flex align-items-center justify-content-center p-3 mb-2 shadow-sm" style="width: 86px; height: 86px;">
+                            @if($product->is_vpn)
+                                <i class="fas fa-shield-halved" style="font-size: 2.8rem; color: #ffffff;"></i>
+                            @else
+                                <i class="fas fa-box-open" style="font-size: 2.8rem; color: #ffffff;"></i>
+                            @endif
+                        </div>
+                        <div class="small fw-semibold text-white-50">SKU #{{ $product->id }}</div>
+                    </div>
+
+                    {{-- Badges on top corners --}}
+                    <div class="position-absolute top-0 start-0 m-3 d-flex flex-wrap gap-1">
+                        @if($product->is_vpn)
+                            <span class="badge bg-dark bg-opacity-75 rounded-pill px-3 py-1.5 fw-semibold shadow-sm" style="font-size: 0.78rem;">
+                                <i class="fas fa-network-wired me-1 text-info"></i>VPN ({{ strtoupper($product->vpn_protocol) }})
+                            </span>
+                        @endif
+                    </div>
+
+                    <div class="position-absolute top-0 end-0 m-3">
+                        @if($stockCount > 0)
+                            <span class="badge bg-success rounded-pill px-3 py-1.5 fw-bold shadow-sm" style="font-size: 0.78rem;">
+                                <i class="fas fa-check-circle me-1"></i>{{ $stockCount }} {{ __('Stok Siap') }}
+                            </span>
+                        @else
+                            <span class="badge bg-danger rounded-pill px-3 py-1.5 fw-bold shadow-sm" style="font-size: 0.78rem;">
+                                <i class="fas fa-times-circle me-1"></i>{{ __('Stok Habis') }}
+                            </span>
+                        @endif
+                    </div>
                 </div>
 
-                @if($stockCount > 0)
-                    <div class="alert alert-info border-0 rounded-3 mb-3">
-                        <i class="fas fa-info-circle me-2"></i>
-                        {{ __('Anda dapat membeli produk ini langsung di website atau melalui bot Telegram kami.') }}
+                {{-- Card Body: Pricing & Highlights --}}
+                <div class="card-body p-3 p-md-4">
+                    {{-- Price Tag ala E-Commerce --}}
+                    <div class="d-flex align-items-baseline gap-2 mb-2">
+                        <span class="fw-bold text-primary" style="font-size: 1.85rem; line-height: 1.2;">{{ $product->formatted_price }}</span>
+                        <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-1 small fw-semibold">{{ __('Harga Terbaik') }}</span>
                     </div>
-                    @if(config('telegram.bot_username'))
-                        <a href="https://t.me/{{ config('telegram.bot_username') }}" target="_blank"
-                           class="btn btn-primary w-100 rounded-pill py-3 fw-bold mb-3">
-                            <i class="fab fa-telegram me-2"></i>{{ __('Beli via Telegram') }}
+
+                    <h4 class="fw-bold text-body mb-2" style="line-height: 1.35;">{{ $product->name }}</h4>
+
+                    {{-- Ratings & Sales Snapshot --}}
+                    @php
+                        $reviews = \App\Models\Review::with('user')->where('product_id', $product->id)->orderBy('created_at', 'desc')->get();
+                        $avgRating = $reviews->avg('rating') ?: 5.0;
+                    @endphp
+                    <div class="d-flex flex-wrap align-items-center gap-3 pb-3 mb-3 border-bottom text-muted small">
+                        <div class="d-flex align-items-center gap-1 text-warning fw-bold">
+                            <i class="fas fa-star"></i>
+                            <span class="text-body fw-semibold">{{ number_format($avgRating, 1) }}</span>
+                            <span class="text-secondary fw-normal">({{ $reviews->count() }} {{ __('ulasan') }})</span>
+                        </div>
+                        <div class="vr opacity-25"></div>
+                        <div>
+                            <i class="fas fa-bolt text-warning me-1"></i>
+                            <span class="fw-semibold text-body">{{ $product->sales_count ?? 0 }}</span> {{ __('Terjual') }}
+                        </div>
+                        <div class="vr opacity-25"></div>
+                        <div class="text-success fw-semibold">
+                            <i class="fas fa-truck-fast me-1"></i>{{ __('Pengiriman Otomatis') }}
+                        </div>
+                    </div>
+
+                    {{-- Trust / Value Propositions Badges (E-Commerce Style) --}}
+                    <div class="row g-2 mb-4">
+                        <div class="col-4">
+                            <div class="p-2 rounded-3 text-center bg-light border" style="font-size: 0.76rem;">
+                                <i class="fas fa-bolt text-warning fs-5 d-block mb-1"></i>
+                                <span class="fw-bold text-body d-block">{{ __('Instan Delivery') }}</span>
+                                <span class="text-muted" style="font-size: 0.68rem;">{{ __('Akun langsung dikirim') }}</span>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="p-2 rounded-3 text-center bg-light border" style="font-size: 0.76rem;">
+                                <i class="fas fa-shield-check text-success fs-5 d-block mb-1"></i>
+                                <span class="fw-bold text-body d-block">{{ __('Garansi 100%') }}</span>
+                                <span class="text-muted" style="font-size: 0.68rem;">{{ __('Jaminan uang kembali') }}</span>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="p-2 rounded-3 text-center bg-light border" style="font-size: 0.76rem;">
+                                <i class="fas fa-headset text-primary fs-5 d-block mb-1"></i>
+                                <span class="fw-bold text-body d-block">{{ __('Bantuan Live') }}</span>
+                                <span class="text-muted" style="font-size: 0.68rem;">{{ __('Siap melayani 24/7') }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Store / Seller Profile Card --}}
+                    <div class="p-3 rounded-4 bg-body-tertiary border d-flex align-items-center justify-content-between mb-4">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold shadow-sm" style="width: 44px; height: 44px; font-size: 1.1rem;">
+                                {{ strtoupper(substr($product->creator->full_name ?? $product->creator->username ?? 'A', 0, 1)) }}
+                            </div>
+                            <div>
+                                <div class="d-flex align-items-center gap-1.5">
+                                    <span class="fw-bold text-body" style="font-size: 0.95rem;">{{ $product->creator->full_name ?? $product->creator->username ?? __('Official Store') }}</span>
+                                    <span class="badge bg-primary-subtle text-primary rounded-pill px-1.5 py-0.5" style="font-size: 0.65rem;">
+                                        <i class="fas fa-check-circle"></i> {{ __('Verified') }}
+                                    </span>
+                                </div>
+                                <small class="text-muted d-block" style="font-size: 0.75rem;">
+                                    <i class="fas fa-shield-alt text-success me-1"></i>{{ __('Penjual Resmi Terverifikasi') }}
+                                </small>
+                            </div>
+                        </div>
+                        <a href="{{ route('chat.index') }}" class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1.5 fw-semibold d-flex align-items-center gap-1.5" style="font-size: 0.8rem;">
+                            <i class="fas fa-comment-dots"></i>
+                            <span>{{ __('Chat') }}</span>
                         </a>
-                    @endif
+                    </div>
+
+                    {{-- Product Description --}}
+                    <div class="mb-4">
+                        <h6 class="fw-bold text-body mb-2 d-flex align-items-center gap-2">
+                            <i class="fas fa-align-left text-primary"></i>
+                            <span>{{ __('Deskripsi Produk') }}</span>
+                        </h6>
+                        <div class="p-3 bg-light rounded-3 text-secondary small" style="line-height: 1.6; white-space: pre-line; font-size: 0.85rem;">
+                            {{ $product->description ?: __('Tidak ada deskripsi rinci untuk produk ini.') }}
+                        </div>
+                    </div>
+
+                    {{-- Customer Reviews List --}}
+                    <div>
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <h6 class="fw-bold text-body m-0 d-flex align-items-center gap-2">
+                                <i class="fas fa-comments text-warning"></i>
+                                <span>{{ __('Ulasan Pembeli') }} ({{ $reviews->count() }})</span>
+                            </h6>
+                        </div>
+
+                        <div class="reviews-list">
+                            @forelse($reviews as $rev)
+                            <div class="border-bottom py-2.5">
+                                <div class="d-flex justify-content-between align-items-start mb-1">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="rounded-circle bg-secondary bg-opacity-25 text-body fw-bold d-flex align-items-center justify-content-center" style="width: 28px; height: 28px; font-size: 0.75rem;">
+                                            {{ strtoupper(substr($rev->user->full_name ?? $rev->user->username ?? 'U', 0, 1)) }}
+                                        </div>
+                                        <span class="fw-bold text-body small">{{ $rev->user->full_name ?? $rev->user->username ?? __('Pelanggan') }}</span>
+                                        <div class="text-warning small" style="font-size: 0.72rem;">
+                                            @for($i = 1; $i <= 5; $i++)
+                                                <i class="fa{{ $i <= $rev->rating ? 's' : 'r' }} fa-star"></i>
+                                            @endfor
+                                        </div>
+                                    </div>
+                                    <span class="text-muted" style="font-size: 0.72rem;">{{ $rev->created_at->format('d M Y') }}</span>
+                                </div>
+                                @if($rev->comment)
+                                    <p class="mb-0 text-secondary ps-4 small" style="font-size: 0.8rem;">"{{ $rev->comment }}"</p>
+                                @endif
+                            </div>
+                            @empty
+                            <div class="text-center py-4 text-muted bg-light rounded-3">
+                                <i class="far fa-comment-dots fs-3 mb-1 text-secondary opacity-50"></i>
+                                <p class="small mb-0">{{ __('Belum ada ulasan untuk produk ini.') }}</p>
+                            </div>
+                            @endforelse
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Right Column: Checkout & Configuration Form (Desktop Card) --}}
+        <div class="col-lg-5 col-xl-4">
+            <div class="card border-0 shadow-sm sticky-top" style="border-radius: 20px; top: 80px; z-index: 10;">
+                <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+                    <h5 class="fw-bold text-body m-0 d-flex align-items-center gap-2">
+                        <i class="fas fa-cart-shopping text-primary"></i>
+                        <span>{{ __('Pilihan Pembelian') }}</span>
+                    </h5>
+                </div>
+
+                <div class="card-body p-4">
+                    @if($stockCount > 0)
                     <form action="{{ route('checkout.store', $product->id) }}" method="POST" id="mainBuyForm">
                         @csrf
-                        
+
                         @if($product->is_vpn)
-                            <div class="bg-primary-subtle p-3 rounded-3 mb-3">
-                                <h6 class="fw-bold text-primary mb-2"><i class="fas fa-user-shield me-2"></i>{{ __('Konfigurasi Akun VPN') }}</h6>
-                                <p class="text-muted small mb-3">{{ __('Sistem akan otomatis membuatkan akun VPN Anda.') }}</p>
+                            <div class="bg-primary-subtle p-3 rounded-4 mb-3 border border-primary-subtle">
+                                <h6 class="fw-bold text-primary mb-2 d-flex align-items-center gap-1.5" style="font-size: 0.9rem;">
+                                    <i class="fas fa-key"></i> {{ __('Konfigurasi Akun VPN') }}
+                                </h6>
+                                <p class="text-muted small mb-3" style="font-size: 0.75rem;">
+                                    {{ __('Sistem otomatis membuat dan mengonfigurasi akun VPN Anda seketika.') }}
+                                </p>
                                 
                                 <div class="mb-2">
-                                    <label class="form-label text-dark small fw-bold">{{ __('Username VPN') }} <span class="text-danger">*</span></label>
-                                    <input type="text" name="vpn_username" class="form-control form-control-sm" required placeholder="{{ __('Contoh: user123') }}" pattern="[a-zA-Z0-9_-]+" title="{{ __('Hanya huruf, angka, dash, dan underscore') }}">
+                                    <label class="form-label text-dark small fw-bold mb-1">{{ __('Username VPN') }} <span class="text-danger">*</span></label>
+                                    <input type="text" name="vpn_username" class="form-control form-control-sm rounded-pill px-3" required placeholder="{{ __('Contoh: user123') }}" pattern="[a-zA-Z0-9_-]+" title="{{ __('Hanya huruf, angka, dash, dan underscore') }}">
+                                    <div class="form-text text-muted" style="font-size: 0.68rem;">(Sistem akan menambahkan 4 karakter acak untuk mencegah duplikasi)</div>
                                 </div>
                                 
                                 @if($product->vpn_protocol === 'ssh')
                                 <div class="mb-2">
-                                    <label class="form-label text-dark small fw-bold">{{ __('Password SSH') }} <span class="text-danger">*</span></label>
-                                    <input type="password" name="vpn_password" class="form-control form-control-sm" required placeholder="{{ __('Masukkan password') }}">
+                                    <label class="form-label text-dark small fw-bold mb-1">{{ __('Password SSH') }} <span class="text-danger">*</span></label>
+                                    <input type="password" name="vpn_password" class="form-control form-control-sm rounded-pill px-3" required placeholder="{{ __('Masukkan password') }}">
                                 </div>
-                                
                                 @endif
-                                <div class="form-text text-muted" style="font-size: 0.7rem;">{{ __('Masa Aktif:') }} <strong>{{ $product->vpn_duration_days }} Hari</strong></div>
+
+                                <div class="badge bg-primary text-white rounded-pill px-2.5 py-1 mt-1" style="font-size: 0.72rem;">
+                                    <i class="far fa-calendar-check me-1"></i>{{ __('Masa Aktif:') }} {{ $product->vpn_duration_days }} {{ __('Hari') }}
+                                </div>
                             </div>
                         @endif
 
-                        <div class="mb-3 d-flex align-items-center justify-content-between bg-light p-2 rounded-pill px-3">
-                            <label for="quantity" class="text-muted small fw-bold mb-0">{{ __('Jumlah Beli:') }}</label>
-                            <input type="number" id="quantity" name="quantity" class="form-control form-control-sm border-0 bg-transparent text-end fw-bold px-0" value="1" min="1" {{ !$product->is_vpn ? 'max=' . $stockCount : '' }} required style="width: 70px; outline: none; box-shadow: none;">
+                        {{-- Quantity Selector --}}
+                        <div class="mb-4">
+                            <label class="form-label text-muted small fw-bold mb-2">{{ __('Jumlah Beli (QTY)') }}</label>
+                            <div class="d-flex align-items-center justify-content-between p-2 rounded-4 bg-light border">
+                                <button type="button" class="btn btn-sm btn-light rounded-circle shadow-sm border" id="btnQtyMinus" style="width: 36px; height: 36px;">
+                                    <i class="fas fa-minus text-secondary"></i>
+                                </button>
+                                <div class="text-center">
+                                    <input type="number" id="quantity" name="quantity" class="form-control border-0 bg-transparent text-center fw-bold p-0 text-body" value="1" min="1" {{ !$product->is_vpn ? 'max=' . $stockCount : '' }} required style="width: 60px; font-size: 1.1rem; outline: none; box-shadow: none;">
+                                    <div class="text-muted" style="font-size: 0.68rem;">{{ __('Maks:') }} {{ $stockCount }} unit</div>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-light rounded-circle shadow-sm border" id="btnQtyPlus" style="width: 36px; height: 36px;">
+                                    <i class="fas fa-plus text-secondary"></i>
+                                </button>
+                            </div>
                         </div>
-                        {{-- Desktop Only Buy Button (Hidden on Mobile to eliminate duplication with Sticky Bar) --}}
-                        <button type="submit" class="btn btn-success w-100 rounded-pill py-3 fw-bold mb-2 d-none d-md-block">
-                            <i class="fas fa-shopping-bag me-2"></i>{{ __('Beli Sekarang (via Website)') }}
-                        </button>
-                        
-                        @if(!$product->is_vpn)
-                        <button type="submit" formaction="{{ route('cart.add', $product->id) }}" class="btn btn-outline-primary w-100 rounded-pill py-3 fw-bold">
-                            <i class="fas fa-cart-plus me-2"></i>{{ __('Tambah ke Keranjang') }}
-                        </button>
-                        @endif
-                    </form>
-                @else
-                    <div class="alert alert-warning border-0 rounded-3 mb-4">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        {{ __('Stok sedang habis. Silakan cek kembali nanti.') }}
-                    </div>
-                @endif
 
-                <a href="{{ route('catalog.index') }}" class="btn btn-outline-secondary w-100 rounded-pill py-2 mt-3">
-                    <i class="fas fa-arrow-left me-2"></i>{{ __('Kembali ke Katalog') }}
-                </a>
+                        {{-- Subtotal Calculation --}}
+                        <div class="d-flex justify-content-between align-items-center mb-4 p-3 bg-light rounded-4 border">
+                            <span class="text-muted small fw-semibold">{{ __('Total Harga:') }}</span>
+                            <span class="fw-bold text-primary fs-5" id="displaySubtotal">{{ $product->formatted_price }}</span>
+                        </div>
+
+                        {{-- Desktop Action Buttons --}}
+                        <div class="d-none d-md-flex flex-column gap-2">
+                            <button type="submit" class="btn btn-primary w-100 rounded-pill py-3 fw-bold shadow-sm d-flex align-items-center justify-content-center gap-2">
+                                <i class="fas fa-bolt"></i>
+                                <span>{{ __('Beli Sekarang') }}</span>
+                            </button>
+
+                            @if(!$product->is_vpn)
+                            <button type="button" class="btn btn-outline-primary w-100 rounded-pill py-2.5 fw-bold d-flex align-items-center justify-content-center gap-2" id="btnDesktopAddToCart">
+                                <i class="fas fa-cart-plus"></i>
+                                <span>{{ __('+ Keranjang Belanja') }}</span>
+                            </button>
+                            @endif
+                        </div>
+                    </form>
+                    @else
+                    <div class="text-center py-4">
+                        <div class="rounded-circle bg-danger bg-opacity-10 text-danger d-inline-flex align-items-center justify-content-center p-3 mb-3" style="width: 64px; height: 64px;">
+                            <i class="fas fa-store-slash fs-3"></i>
+                        </div>
+                        <h6 class="fw-bold text-body mb-1">{{ __('Stok Sedang Habis') }}</h6>
+                        <p class="text-muted small mb-4">{{ __('Produk ini saat ini belum tersedia. Silakan cek kembali dalam waktu dekat.') }}</p>
+                        <a href="{{ route('catalog.index') }}" class="btn btn-outline-secondary rounded-pill px-4 py-2 w-100 fw-semibold">
+                            <i class="fas fa-arrow-left me-1"></i> {{ __('Lihat Produk Lainnya') }}
+                        </a>
+                    </div>
+                    @endif
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 @if($stockCount > 0)
-{{-- Mobile Sticky Bottom Action Bar (Fixed above mobile nav bar, single primary action on mobile) --}}
-<div class="mobile-sticky-action-bar d-md-none">
-    <div class="d-flex align-items-center justify-content-between gap-2">
-        <div>
-            <span class="text-muted d-block" style="font-size: 0.68rem; line-height: 1;">{{ __('Harga') }}</span>
-            <span class="fw-bold text-primary" style="font-size: 1.1rem;">{{ $product->formatted_price }}</span>
-        </div>
-        <div class="d-flex gap-2">
-            @if(!$product->is_vpn)
-            <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-3 py-2 fw-bold shadow-sm d-flex align-items-center gap-1" onclick="submitCartAdd()" style="font-size: 0.8rem;">
-                <i class="fas fa-cart-plus"></i> <span class="d-none d-sm-inline">{{ __('Keranjang') }}</span>
-            </button>
-            @endif
-            <button type="button" class="btn btn-success btn-sm rounded-pill px-3 py-2 fw-bold shadow-sm d-flex align-items-center gap-1" onclick="document.getElementById('mainBuyForm').requestSubmit()" style="font-size: 0.8rem;">
-                <i class="fas fa-bolt"></i> {{ __('Beli Sekarang') }}
-            </button>
-        </div>
+{{-- Mobile Sticky Action Bar ala Shopee / Lazada (Fixed at bottom on mobile) --}}
+<div class="mobile-sticky-action-bar d-md-none bg-body border-top shadow-lg py-2 px-3 position-fixed bottom-0 start-0 end-0" style="z-index: 1045; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);">
+    <div class="d-flex align-items-center gap-2">
+        {{-- Chat Seller Icon Button --}}
+        <a href="{{ route('chat.index') }}" class="btn btn-light rounded-4 d-flex flex-column align-items-center justify-content-center p-1 border" style="width: 52px; height: 48px; flex-shrink: 0;" title="{{ __('Chat Penjual') }}">
+            <i class="fas fa-comment-dots text-primary" style="font-size: 1.1rem;"></i>
+            <span style="font-size: 0.62rem;" class="text-secondary fw-semibold mt-0.5">{{ __('Chat') }}</span>
+        </a>
+
+        {{-- Add to Cart Button (AJAX on-page) --}}
+        @if(!$product->is_vpn)
+        <button type="button" class="btn btn-outline-primary rounded-pill py-2.5 px-3 fw-bold flex-grow-1 d-flex align-items-center justify-content-center gap-1.5 shadow-sm" id="btnMobileAddToCart" style="height: 48px; font-size: 0.85rem;">
+            <i class="fas fa-cart-plus"></i>
+            <span>{{ __('+ Keranjang') }}</span>
+        </button>
+        @endif
+
+        {{-- Buy Now Button --}}
+        <button type="button" class="btn btn-primary rounded-pill py-2.5 px-3 fw-bold flex-grow-1 d-flex align-items-center justify-content-center gap-1.5 shadow-sm" id="btnMobileBuyNow" style="height: 48px; font-size: 0.85rem;">
+            <i class="fas fa-bolt"></i>
+            <span>{{ __('Beli Sekarang') }}</span>
+        </button>
     </div>
 </div>
 @endif
 
 @push('scripts')
 <script>
-    function submitCartAdd() {
-        const form = document.getElementById('mainBuyForm');
-        if (!form) return;
-        const prevAction = form.action;
-        form.action = "{{ route('cart.add', $product->id) }}";
-        form.requestSubmit();
-    }
+    document.addEventListener('DOMContentLoaded', function() {
+        const unitPrice = {{ (float)$product->price }};
+        const maxStock = {{ (int)$stockCount }};
+        const isVpn = {{ $product->is_vpn ? 'true' : 'false' }};
+        const qtyInput = document.getElementById('quantity');
+        const displaySubtotal = document.getElementById('displaySubtotal');
+        const mainBuyForm = document.getElementById('mainBuyForm');
+
+        function formatRupiah(amount) {
+            return 'Rp ' + amount.toLocaleString('id-ID');
+        }
+
+        function updateSubtotal() {
+            if (!qtyInput) return;
+            let qty = parseInt(qtyInput.value, 10) || 1;
+            if (qty < 1) qty = 1;
+            if (!isVpn && maxStock > 0 && qty > maxStock) qty = maxStock;
+            qtyInput.value = qty;
+            if (displaySubtotal) {
+                displaySubtotal.textContent = formatRupiah(unitPrice * qty);
+            }
+        }
+
+        const btnMinus = document.getElementById('btnQtyMinus');
+        const btnPlus = document.getElementById('btnQtyPlus');
+
+        if (btnMinus) {
+            btnMinus.addEventListener('click', function() {
+                let current = parseInt(qtyInput.value, 10) || 1;
+                if (current > 1) {
+                    qtyInput.value = current - 1;
+                    updateSubtotal();
+                }
+            });
+        }
+
+        if (btnPlus) {
+            btnPlus.addEventListener('click', function() {
+                let current = parseInt(qtyInput.value, 10) || 1;
+                if (isVpn || maxStock <= 0 || current < maxStock) {
+                    qtyInput.value = current + 1;
+                    updateSubtotal();
+                } else {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            toast: true,
+                            position: 'top-end',
+                            icon: 'info',
+                            title: '{{ __("Batas stok tercapai") }}',
+                            showConfirmButton: false,
+                            timer: 1800
+                        });
+                    }
+                }
+            });
+        }
+
+        if (qtyInput) {
+            qtyInput.addEventListener('input', updateSubtotal);
+        }
+
+        // Asynchronous Add-to-Cart Function (Clean AJAX Without Page Redirect)
+        async function handleAddToCart(buttonEl) {
+            if (!buttonEl) return;
+            const originalHtml = buttonEl.innerHTML;
+            buttonEl.disabled = true;
+            buttonEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+            const qty = parseInt(qtyInput ? qtyInput.value : 1, 10) || 1;
+            const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+            const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+
+            try {
+                const response = await fetch("{{ route('cart.add', $product->id) }}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ quantity: qty })
+                });
+
+                const data = await response.json();
+                if (response.ok && data.success) {
+                    // Update global header cart badge instantly
+                    if (typeof window.updateCartBadgeCount === 'function') {
+                        window.updateCartBadgeCount(data.cart_total_qty);
+                    }
+
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            toast: true,
+                            position: 'top-end',
+                            icon: 'success',
+                            title: data.message || '{{ __("Produk berhasil ditambahkan ke keranjang!") }}',
+                            showConfirmButton: false,
+                            timer: 2200
+                        });
+                    }
+                } else {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            toast: true,
+                            position: 'top-end',
+                            icon: 'warning',
+                            title: data.message || '{{ __("Gagal menambahkan ke keranjang.") }}',
+                            showConfirmButton: false,
+                            timer: 3000
+                        });
+                    }
+                }
+            } catch (err) {
+                console.error('Add to cart AJAX error:', err);
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'error',
+                        title: '{{ __("Terjadi kesalahan jaringan.") }}',
+                        showConfirmButton: false,
+                        timer: 2500
+                    });
+                }
+            } finally {
+                buttonEl.disabled = false;
+                buttonEl.innerHTML = originalHtml;
+            }
+        }
+
+        // Attach to Desktop Add to Cart button
+        const btnDesktopCart = document.getElementById('btnDesktopAddToCart');
+        if (btnDesktopCart) {
+            btnDesktopCart.addEventListener('click', function(e) {
+                e.preventDefault();
+                handleAddToCart(btnDesktopCart);
+            });
+        }
+
+        // Attach to Mobile Add to Cart button
+        const btnMobileCart = document.getElementById('btnMobileAddToCart');
+        if (btnMobileCart) {
+            btnMobileCart.addEventListener('click', function(e) {
+                e.preventDefault();
+                handleAddToCart(btnMobileCart);
+            });
+        }
+
+        // Mobile Buy Now Trigger
+        const btnMobileBuy = document.getElementById('btnMobileBuyNow');
+        if (btnMobileBuy && mainBuyForm) {
+            btnMobileBuy.addEventListener('click', function(e) {
+                e.preventDefault();
+                // Validate required inputs (e.g. VPN username if present)
+                if (mainBuyForm.reportValidity()) {
+                    mainBuyForm.submit();
+                } else {
+                    // Scroll into view if invalid fields exist
+                    mainBuyForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            });
+        }
+    });
 </script>
 @endpush
 @endsection

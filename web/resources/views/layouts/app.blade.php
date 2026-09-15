@@ -8,6 +8,15 @@
     <title>@yield('title', 'Dashboard') — {{ config('app.name', 'Dzulfikrialifajri Store') }}</title>
     <meta name="description" content="@yield('meta_description', 'Platform jual beli produk digital terpercaya')">
 
+    {{-- PWA Manifest & Mobile Meta Tags --}}
+    <link rel="manifest" href="{{ asset('manifest.json') }}">
+    <meta name="theme-color" content="#0d6efd">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="{{ config('app.name', 'Dzulfikrialifajri Store') }}">
+    <link rel="apple-touch-icon" href="{{ asset('images/icons/icon-192x192.png') }}">
+
     {{-- Google Fonts: Outfit --}}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -302,16 +311,14 @@
         </div>
 
         {{-- Shopping Cart Icon --}}
-        <a href="{{ route('cart.index') }}" class="btn btn-link link-body-emphasis p-0 position-relative me-2" title="{{ __('Keranjang Belanja') }}">
+        <a href="{{ route('cart.index') }}" class="btn btn-link link-body-emphasis p-0 position-relative me-2" title="{{ __('Keranjang Belanja') }}" id="headerCartBtn">
             <i class="fas fa-shopping-cart fs-5"></i>
             @php
                 $cartCount = Auth::check() ? \App\Models\CartItem::where('user_id', Auth::id())->sum('quantity') : 0;
             @endphp
-            @if($cartCount > 0)
-            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.65rem;" id="cart-badge-count">
-                {{ $cartCount }}
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger {{ $cartCount > 0 ? '' : 'd-none' }}" style="font-size: 0.65rem;" id="cart-badge-count">
+                {{ $cartCount > 99 ? '99+' : $cartCount }}
             </span>
-            @endif
         </a>
         @endunless
 
@@ -802,6 +809,31 @@
             prompt('Salin data kredensial:', text);
         });
     };
+
+    window.updateCartBadgeCount = function (qty) {
+        const badge = document.getElementById('cart-badge-count');
+        if (!badge) return;
+        const count = parseInt(qty, 10) || 0;
+        badge.textContent = count > 99 ? '99+' : count;
+        if (count > 0) {
+            badge.classList.remove('d-none');
+            badge.style.display = 'inline-block';
+            badge.classList.remove('badge-pop-anim');
+            void badge.offsetWidth;
+            badge.classList.add('badge-pop-anim');
+        } else {
+            badge.classList.add('d-none');
+        }
+    };
+
+    // PWA Service Worker Registration
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function () {
+            navigator.serviceWorker.register('/sw.js').catch(function (err) {
+                console.log('PWA ServiceWorker registration failed: ', err);
+            });
+        });
+    }
 </script>
 
 @stack('scripts')

@@ -1,6 +1,6 @@
 RENCANA PERBAIKAN DAN PENGEMBANGAN WEBITE JUALAN:
 
-1. berikan saya rencana pengembangan website untuk mobile, baik dari segi ui, ux dan lain-lain.
+1. gantikan loading spinning menjadi skeleton shimmering sesuai dengan elemen yang akan ditampilkan nantinya. implementasikan ini ke laman yang menurut kamu cocok.
 
 catat untuk kamu;
 - lakukan brainstroming sebelum melakukan eksekusi, tak lupa pula lakukan analisa kritik dan saran.

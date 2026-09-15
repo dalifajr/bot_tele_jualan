@@ -4,10 +4,25 @@
 @section('page_subtitle', __('Detail Pesanan'))
 
 @section('content')
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <div class="d-flex align-items-center gap-2">
+        <a href="{{ route('orders.index') }}" class="btn btn-light rounded-circle shadow-sm border d-inline-flex align-items-center justify-content-center" style="width: 38px; height: 38px;" title="{{ __('Kembali ke Riwayat Pesanan') }}">
+            <i class="fas fa-arrow-left text-body"></i>
+        </a>
+        <div>
+            <h5 class="fw-bold m-0 text-body" style="font-size: 1.15rem;">{{ __('Detail Pesanan') }}</h5>
+            <small class="text-muted" style="font-size: 0.75rem;">{{ $order->reference }} &bull; {{ $order->created_at->format('d M Y, H:i') }}</small>
+        </div>
+    </div>
+    <span class="badge bg-{{ $order->status_color }}-subtle text-{{ $order->status_color }} rounded-pill px-3 py-1.5 fw-bold">
+        {{ $order->status_label }}
+    </span>
+</div>
+
 <div class="row g-4">
     <div class="col-lg-8">
         <div class="card border-0 shadow-sm" style="border-radius: 16px;">
-            <div class="card-header bg-transparent border-0 pt-4 px-4">
+            <div class="card-header bg-transparent border-0 pt-4 px-4 d-none d-md-block">
                 <div class="d-flex justify-content-between align-items-center">
                     <h5 class="fw-bold mb-0">
                         <i class="fas fa-receipt text-primary me-2"></i>
@@ -19,20 +34,7 @@
                 </div>
             </div>
             <div class="card-body px-4 pb-4">
-                {{-- Flash Messages --}}
-                @if(session('success'))
-                <div class="alert alert-success border-0 shadow-sm d-flex align-items-center gap-2 mb-4" style="border-radius: 12px;">
-                    <i class="fas fa-check-circle fs-5"></i>
-                    <div>{{ session('success') }}</div>
-                </div>
-                @endif
 
-                @if(session('error'))
-                <div class="alert alert-danger border-0 shadow-sm d-flex align-items-center gap-2 mb-4" style="border-radius: 12px;">
-                    <i class="fas fa-exclamation-circle fs-5"></i>
-                    <div>{{ session('error') }}</div>
-                </div>
-                @endif
 
                 <div class="mb-4">
                     <span class="text-muted small d-block mb-2">{{ __('Item Pesanan:') }}</span>

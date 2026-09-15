@@ -4,11 +4,27 @@
 @section('page_subtitle', __('Keranjang'))
 
 @section('content')
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <div class="d-flex align-items-center gap-2">
+        <a href="{{ route('catalog.index') }}" class="btn btn-light rounded-circle shadow-sm border d-inline-flex align-items-center justify-content-center" style="width: 38px; height: 38px;" title="{{ __('Kembali ke Katalog') }}">
+            <i class="fas fa-arrow-left text-body"></i>
+        </a>
+        <div>
+            <h5 class="fw-bold m-0 text-body" style="font-size: 1.15rem;">{{ __('Keranjang Belanja') }}</h5>
+            <small class="text-muted" style="font-size: 0.75rem;">{{ __('Kelola dan periksa produk pilihan Anda') }}</small>
+        </div>
+    </div>
+    <a href="{{ route('catalog.index') }}" class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1.5 fw-semibold d-none d-sm-inline-flex align-items-center gap-1.5" style="font-size: 0.8rem;">
+        <i class="fas fa-plus"></i>
+        <span>{{ __('Lanjut Belanja') }}</span>
+    </a>
+</div>
+
 <div class="row g-4">
     <div class="col-lg-8">
         <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
             <div class="card-body p-4">
-                <h5 class="fw-bold mb-4"><i class="fas fa-shopping-cart text-primary me-2"></i>{{ __('Keranjang Belanja Anda') }}</h5>
+                <h5 class="fw-bold mb-4 d-none d-md-block"><i class="fas fa-shopping-cart text-primary me-2"></i>{{ __('Keranjang Belanja Anda') }}</h5>
 
                 @if($cartItems->isEmpty())
                 <div class="text-center py-5 text-muted">

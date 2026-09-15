@@ -1176,6 +1176,12 @@ body {
     transform: scale(0.985);
 }
 
-
-
-
+/* Cart Badge Micro-interaction */
+@keyframes badgePop {
+    0% { transform: translate(-50%, -50%) scale(0.6); }
+    50% { transform: translate(-50%, -50%) scale(1.35); }
+    100% { transform: translate(-50%, -50%) scale(1); }
+}
+.badge-pop-anim {
+    animation: badgePop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}

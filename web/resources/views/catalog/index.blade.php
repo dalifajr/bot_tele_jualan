@@ -77,90 +77,18 @@
                 </div>
 
                 <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-1 mt-auto pt-2 border-top">
-                    <span class="product-price mb-1 mb-sm-0" style="font-size: 0.95rem;">{{ $product->formatted_price }}</span>
+                    <span class="product-price mb-0" style="font-size: 0.95rem;">{{ $product->formatted_price }}</span>
                     <div class="d-flex gap-1 align-items-center">
-                        @if($product->stock_count > 0)
-                            @if(!$product->is_vpn)
-                            <button type="button" class="btn btn-xs btn-outline-primary rounded-pill px-2 py-1 fw-bold btn-quick-cart-add btn-stop-prop" data-product-id="{{ $product->id }}" title="{{ __('Tambah ke Keranjang') }}" style="font-size: 0.75rem;">
-                                <i class="fas fa-cart-plus me-1"></i><span class="d-none d-sm-inline">+ {{ __('Keranjang') }}</span><span class="d-sm-none">+</span>
-                            </button>
-                            @endif
-                            <button type="button" class="btn btn-xs btn-primary rounded-pill px-2.5 px-md-3 py-1 fw-bold btn-stop-prop" data-bs-toggle="modal" data-bs-target="#checkoutModal{{ $product->id }}" style="font-size: 0.75rem;">
-                                {{ __('Beli') }}
-                            </button>
+                        @if($product->stock_count > 0 && !$product->is_vpn)
+                        <button type="button" class="btn btn-xs btn-outline-primary rounded-pill px-2.5 py-1 fw-bold btn-quick-cart-add btn-stop-prop d-flex align-items-center gap-1" data-product-id="{{ $product->id }}" title="{{ __('Tambah ke Keranjang') }}" style="font-size: 0.75rem;">
+                            <i class="fas fa-cart-plus"></i><span class="d-none d-sm-inline">+ {{ __('Keranjang') }}</span><span class="d-sm-none">+</span>
+                        </button>
                         @endif
                     </div>
                 </div>
             </div>
         </div>
     </div>
-
-    @if($product->stock_count > 0)
-    @push('modals')
-    {{-- Checkout Modal --}}
-    <div class="modal fade" id="checkoutModal{{ $product->id }}" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content" style="border-radius: 16px; border: none;">
-                <div class="modal-header border-0 pb-0">
-                    <h5 class="fw-bold">{{ __('Checkout Produk') }}</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form action="{{ route('checkout.store', $product->id) }}" method="POST">
-                    @csrf
-                    <div class="modal-body p-4">
-                        <div class="mb-3">
-                            <label class="form-label text-muted small fw-bold">{{ __('Produk') }}</label>
-                            <p class="mb-0 fw-bold">{{ $product->name }}</p>
-                            <p class="text-primary fw-bold">{{ $product->formatted_price }}</p>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label text-muted small fw-bold">Kuantitas (QTY)</label>
-                            <div class="input-group mb-1">
-                                <button class="btn btn-outline-secondary px-3" type="button" onclick="this.parentNode.querySelector('input[type=number]').stepDown()">
-                                    <i class="fas fa-minus"></i>
-                                </button>
-                                <input type="number" name="quantity" class="form-control text-center fw-bold" value="1" min="1" max="{{ $product->stock_count }}" {{ $product->is_vpn ? '' : 'required' }}>
-                                <button class="btn btn-outline-secondary px-3" type="button" onclick="this.parentNode.querySelector('input[type=number]').stepUp()">
-                                    <i class="fas fa-plus"></i>
-                                </button>
-                                <button class="btn btn-primary px-3 fw-bold" type="button" onclick="this.parentNode.querySelector('input[type=number]').value = {{ $product->stock_count }}">
-                                    {{ __('Take All') }}
-                                </button>
-                            </div>
-                            <div class="form-text">{{ __('Maksimal pembelian: :count unit.', ['count' => $product->stock_count]) }}</div>
-                        </div>
-
-                        @if($product->is_vpn)
-                            <div class="bg-primary-subtle p-3 rounded-3 mb-3">
-                                <h6 class="fw-bold text-primary mb-2"><i class="fas fa-user-shield me-2"></i>{{ __('Konfigurasi Akun VPN') }}</h6>
-                                <p class="text-muted small mb-3">{{ __('Sistem akan otomatis membuatkan akun VPN Anda.') }}</p>
-                                
-                                <div class="mb-2">
-                                    <label class="form-label text-dark small fw-bold">{{ __('Username VPN') }} <span class="text-danger">*</span></label>
-                                    <input type="text" name="vpn_username" class="form-control form-control-sm" required placeholder="{{ __('Contoh: user123') }}" pattern="[a-zA-Z0-9_-]+" title="{{ __('Hanya huruf, angka, dash, dan underscore') }}">
-                                    <div class="form-text" style="font-size: 0.7rem;">(Sistem akan menambahkan 4 huruf acak di akhir untuk mencegah duplikasi)</div>
-                                </div>
-                                
-                                @if($product->vpn_protocol === 'ssh')
-                                <div class="mb-2">
-                                    <label class="form-label text-dark small fw-bold">{{ __('Password SSH') }} <span class="text-danger">*</span></label>
-                                    <input type="password" name="vpn_password" class="form-control form-control-sm" required placeholder="{{ __('Masukkan password') }}">
-                                </div>
-                                @endif
-                                <div class="form-text text-muted" style="font-size: 0.7rem;">{{ __('Masa Aktif:') }} <strong>{{ $product->vpn_duration_days }} {{ __('Hari') }}</strong></div>
-                            </div>
-                        @endif
-                    </div>
-                    <div class="modal-footer border-0">
-                        <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">{{ __('Batal') }}</button>
-                        <button type="submit" class="btn btn-primary rounded-pill px-4">{{ __('Lanjutkan Pembayaran') }}</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-    @endpush
-    @endif
 
     @empty
     <div class="col-12">
@@ -300,10 +228,15 @@
 
                 const data = await response.json();
                 if (response.ok && data.success) {
-                    const badge = document.getElementById('cart-badge-count');
-                    if (badge) {
-                        badge.textContent = data.cart_total_qty;
-                        badge.style.display = 'inline-block';
+                    if (typeof window.updateCartBadgeCount === 'function') {
+                        window.updateCartBadgeCount(data.cart_total_qty);
+                    } else {
+                        const badge = document.getElementById('cart-badge-count');
+                        if (badge) {
+                            badge.textContent = data.cart_total_qty;
+                            badge.classList.remove('d-none');
+                            badge.style.display = 'inline-block';
+                        }
                     }
                     if (typeof Swal !== 'undefined') {
                         Swal.fire({
