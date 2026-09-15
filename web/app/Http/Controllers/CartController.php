@@ -65,7 +65,11 @@ class CartController extends Controller
         $totalRequestedQty = $currentCartQty + $quantity;
 
         if ($availableStock < $totalRequestedQty) {
-            return back()->with('error', __("Stok tidak mencukupi. Tersedia :availableStock unit, dan Anda sudah memiliki :currentCartQty unit di keranjang.", ["availableStock" => $availableStock, "currentCartQty" => $currentCartQty]));
+            $msg = __("Stok tidak mencukupi. Tersedia :availableStock unit, dan Anda sudah memiliki :currentCartQty unit di keranjang.", ["availableStock" => $availableStock, "currentCartQty" => $currentCartQty]);
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => $msg, 'available_stock' => $availableStock], 422);
+            }
+            return back()->with('error', $msg);
         }
 
         if ($existingCartItem) {
@@ -75,6 +79,15 @@ class CartController extends Controller
                 'user_id' => Auth::id(),
                 'product_id' => $product->id,
                 'quantity' => $quantity,
+            ]);
+        }
+
+        if ($request->expectsJson()) {
+            $totalCartQty = CartItem::where('user_id', Auth::id())->sum('quantity');
+            return response()->json([
+                'success' => true,
+                'message' => __('Produk berhasil ditambahkan ke keranjang belanja.'),
+                'cart_total_qty' => $totalCartQty,
             ]);
         }
 
@@ -103,10 +116,28 @@ class CartController extends Controller
             })->count();
 
         if ($availableStock < $newQuantity) {
-            return back()->with('error', __("Stok tidak mencukupi. Tersedia :availableStock unit.", ["availableStock" => $availableStock]));
+            $msg = __("Stok tidak mencukupi. Tersedia :availableStock unit.", ["availableStock" => $availableStock]);
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => $msg, 'available_stock' => $availableStock], 422);
+            }
+            return back()->with('error', $msg);
         }
 
         $cartItem->update(['quantity' => $newQuantity]);
+
+        if ($request->expectsJson()) {
+            $userCart = CartItem::where('user_id', Auth::id())->with('product')->get();
+            $totalQty = $userCart->sum('quantity');
+            $subtotal = $userCart->sum(fn($i) => $i->product ? $i->product->price * $i->quantity : 0);
+            return response()->json([
+                'success' => true,
+                'message' => __('Jumlah keranjang berhasil diperbarui.'),
+                'quantity' => $newQuantity,
+                'item_subtotal' => $cartItem->product ? $cartItem->product->price * $newQuantity : 0,
+                'cart_total_qty' => $totalQty,
+                'cart_subtotal' => $subtotal,
+            ]);
+        }
 
         return redirect()->route('cart.index')->with('success', __('Jumlah keranjang berhasil diperbarui.'));
     }

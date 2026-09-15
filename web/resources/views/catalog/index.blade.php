@@ -40,7 +40,7 @@
          data-name="{{ strtolower($product->name) }}" 
          data-is-vpn="{{ $product->is_vpn ? '1' : '0' }}" 
          data-has-stock="{{ $product->stock_count > 0 ? '1' : '0' }}">
-        <div class="card product-card h-100 position-relative">
+        <div class="card product-card h-100 position-relative clickable-product-card" data-href="{{ route('catalog.show', $product->id) }}" style="cursor: pointer;">
             {{-- Stock Badge --}}
             <div class="product-badge">
                 @if($product->stock_count > 0)
@@ -78,15 +78,17 @@
 
                 <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-1 mt-auto pt-2 border-top">
                     <span class="product-price mb-1 mb-sm-0" style="font-size: 0.95rem;">{{ $product->formatted_price }}</span>
-                    <div class="d-flex gap-1">
+                    <div class="d-flex gap-1 align-items-center">
                         @if($product->stock_count > 0)
-                        <button type="button" class="btn btn-xs btn-sm-sm btn-primary rounded-pill px-2 px-md-3 py-1 fw-bold" data-bs-toggle="modal" data-bs-target="#checkoutModal{{ $product->id }}" style="font-size: 0.75rem;">
-                            {{ __('Beli') }} <i class="fas fa-shopping-cart ms-1 d-none d-sm-inline"></i>
-                        </button>
+                            @if(!$product->is_vpn)
+                            <button type="button" class="btn btn-xs btn-outline-primary rounded-pill px-2 py-1 fw-bold btn-quick-cart-add btn-stop-prop" data-product-id="{{ $product->id }}" title="{{ __('Tambah ke Keranjang') }}" style="font-size: 0.75rem;">
+                                <i class="fas fa-cart-plus me-1"></i><span class="d-none d-sm-inline">+ {{ __('Keranjang') }}</span><span class="d-sm-none">+</span>
+                            </button>
+                            @endif
+                            <button type="button" class="btn btn-xs btn-primary rounded-pill px-2.5 px-md-3 py-1 fw-bold btn-stop-prop" data-bs-toggle="modal" data-bs-target="#checkoutModal{{ $product->id }}" style="font-size: 0.75rem;">
+                                {{ __('Beli') }}
+                            </button>
                         @endif
-                        <a href="{{ route('catalog.show', $product->id) }}" class="btn btn-xs btn-sm-sm btn-outline-primary rounded-pill px-2 px-md-3 py-1" style="font-size: 0.75rem;">
-                            {{ __('Detail') }}
-                        </a>
                     </div>
                 </div>
             </div>
@@ -255,6 +257,83 @@
             });
             applyFilter();
         };
+
+        // Clickable Product Card Navigation
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.btn-stop-prop') || e.target.closest('button') || e.target.closest('a') || e.target.closest('input')) {
+                return;
+            }
+            const card = e.target.closest('.clickable-product-card');
+            if (card) {
+                const href = card.getAttribute('data-href');
+                if (href) {
+                    window.location.href = href;
+                }
+            }
+        });
+
+        // Quick Add to Cart Handler
+        document.addEventListener('click', async function(e) {
+            const btn = e.target.closest('.btn-quick-cart-add');
+            if (!btn) return;
+            e.preventDefault();
+            e.stopPropagation();
+
+            const productId = btn.getAttribute('data-product-id');
+            const origHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+            try {
+                const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+                const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+
+                const response = await fetch(`/cart/add/${productId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ quantity: 1 })
+                });
+
+                const data = await response.json();
+                if (response.ok && data.success) {
+                    const badge = document.getElementById('cart-badge-count');
+                    if (badge) {
+                        badge.textContent = data.cart_total_qty;
+                        badge.style.display = 'inline-block';
+                    }
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            toast: true,
+                            position: 'top-end',
+                            icon: 'success',
+                            title: data.message || 'Produk ditambahkan ke keranjang!',
+                            showConfirmButton: false,
+                            timer: 2000
+                        });
+                    }
+                } else {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            toast: true,
+                            position: 'top-end',
+                            icon: 'warning',
+                            title: data.message || 'Gagal menambahkan ke keranjang.',
+                            showConfirmButton: false,
+                            timer: 3000
+                        });
+                    }
+                }
+            } catch (err) {
+                console.error('Quick add to cart error:', err);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = origHtml;
+            }
+        });
     });
 </script>
 @endpush

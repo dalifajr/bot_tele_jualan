@@ -158,7 +158,7 @@
                     @endif
                     
                     <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-success rounded-pill py-3 fw-bold btn-lg">
+                        <button type="submit" class="btn btn-success rounded-pill py-3 fw-bold btn-lg d-none d-md-block">
                             <i class="fas fa-check-double me-2"></i>{{ __('Buat Pesanan Sekarang') }}
                         </button>
                         <a href="{{ route('cart.index') }}" class="btn btn-light text-primary rounded-pill py-2">

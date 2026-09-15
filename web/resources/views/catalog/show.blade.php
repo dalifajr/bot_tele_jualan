@@ -110,7 +110,7 @@
                             <i class="fab fa-telegram me-2"></i>{{ __('Beli via Telegram') }}
                         </a>
                     @endif
-                    <form action="{{ route('checkout.store', $product->id) }}" method="POST">
+                    <form action="{{ route('checkout.store', $product->id) }}" method="POST" id="mainBuyForm">
                         @csrf
                         
                         @if($product->is_vpn)
@@ -138,7 +138,8 @@
                             <label for="quantity" class="text-muted small fw-bold mb-0">{{ __('Jumlah Beli:') }}</label>
                             <input type="number" id="quantity" name="quantity" class="form-control form-control-sm border-0 bg-transparent text-end fw-bold px-0" value="1" min="1" {{ !$product->is_vpn ? 'max=' . $stockCount : '' }} required style="width: 70px; outline: none; box-shadow: none;">
                         </div>
-                        <button type="submit" class="btn btn-success w-100 rounded-pill py-3 fw-bold mb-2">
+                        {{-- Desktop Only Buy Button (Hidden on Mobile to eliminate duplication with Sticky Bar) --}}
+                        <button type="submit" class="btn btn-success w-100 rounded-pill py-3 fw-bold mb-2 d-none d-md-block">
                             <i class="fas fa-shopping-bag me-2"></i>{{ __('Beli Sekarang (via Website)') }}
                         </button>
                         
@@ -164,7 +165,7 @@
 </div>
 
 @if($stockCount > 0)
-{{-- Mobile Sticky Bottom Action Bar (Fixed above mobile nav bar) --}}
+{{-- Mobile Sticky Bottom Action Bar (Fixed above mobile nav bar, single primary action on mobile) --}}
 <div class="mobile-sticky-action-bar d-md-none">
     <div class="d-flex align-items-center justify-content-between gap-2">
         <div>
@@ -172,11 +173,28 @@
             <span class="fw-bold text-primary" style="font-size: 1.1rem;">{{ $product->formatted_price }}</span>
         </div>
         <div class="d-flex gap-2">
-            <a href="#buyFormSection" class="btn btn-success btn-sm rounded-pill px-3 py-2 fw-bold shadow-sm d-flex align-items-center gap-1" style="font-size: 0.8rem;">
+            @if(!$product->is_vpn)
+            <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-3 py-2 fw-bold shadow-sm d-flex align-items-center gap-1" onclick="submitCartAdd()" style="font-size: 0.8rem;">
+                <i class="fas fa-cart-plus"></i> <span class="d-none d-sm-inline">{{ __('Keranjang') }}</span>
+            </button>
+            @endif
+            <button type="button" class="btn btn-success btn-sm rounded-pill px-3 py-2 fw-bold shadow-sm d-flex align-items-center gap-1" onclick="document.getElementById('mainBuyForm').requestSubmit()" style="font-size: 0.8rem;">
                 <i class="fas fa-bolt"></i> {{ __('Beli Sekarang') }}
-            </a>
+            </button>
         </div>
     </div>
 </div>
 @endif
+
+@push('scripts')
+<script>
+    function submitCartAdd() {
+        const form = document.getElementById('mainBuyForm');
+        if (!form) return;
+        const prevAction = form.action;
+        form.action = "{{ route('cart.add', $product->id) }}";
+        form.requestSubmit();
+    }
+</script>
+@endpush
 @endsection

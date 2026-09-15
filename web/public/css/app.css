@@ -1162,5 +1162,20 @@ body {
     }
 }
 
+/* Clickable Product Card Feedback */
+.clickable-product-card {
+    cursor: pointer;
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    -webkit-tap-highlight-color: transparent;
+}
+.clickable-product-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+}
+.clickable-product-card:active {
+    transform: scale(0.985);
+}
+
+
 
 

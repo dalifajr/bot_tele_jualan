@@ -1,11 +1,6 @@
 RENCANA PERBAIKAN DAN PENGEMBANGAN WEBITE JUALAN:
 
-1. ada dua tombol beli sekarang dan tombol checkout pada mode mobile, periksa dan perbaiki. 
-2. alert stok tidak mencukupi juga 2 kali ditampilkan, periksa dan perbaiki.
-3. saat user melakukan tambah dan kurang jumlah produk yang akan dibeli pada menu keranjang, saya ingin agar perhitungan dilakukan on device, jadi tidak perlu loading.
-4. saya ingin agar user customer dapat melakukan tambah beberapa produk langsung dari /catalog.
-5. saya ingin agar user dapat mengklik salah satu produk langsung via card dan tanpa mengklik tombol detail dahulu. seingga nantinya tombol detail dihapuskan saja. begitu juga untuk list menu/list data lainnya.
-6. berikan saya rencana pengembangan website untuk mobile, baik dari segi ui, ux, maupun fitur, navigasi, dan lain-lain.
+1. berikan saya rencana pengembangan website untuk mobile, baik dari segi ui, ux dan lain-lain.
 
 catat untuk kamu;
 - lakukan brainstroming sebelum melakukan eksekusi, tak lupa pula lakukan analisa kritik dan saran.
