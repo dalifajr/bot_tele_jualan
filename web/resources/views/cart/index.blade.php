@@ -14,10 +14,6 @@
             <small class="text-muted" style="font-size: 0.75rem;">{{ __('Kelola dan periksa produk pilihan Anda') }}</small>
         </div>
     </div>
-    <a href="{{ route('catalog.index') }}" class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1.5 fw-semibold d-none d-sm-inline-flex align-items-center gap-1.5" style="font-size: 0.8rem;">
-        <i class="fas fa-plus"></i>
-        <span>{{ __('Lanjut Belanja') }}</span>
-    </a>
 </div>
 
 <div class="row g-4">

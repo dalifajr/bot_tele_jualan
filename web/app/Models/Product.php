@@ -14,6 +14,7 @@ class Product extends Model
         'name',
         'price',
         'description',
+        'image',
         'is_suspended',
         'creator_id',
         'warranty_days',
@@ -48,6 +49,27 @@ class Product extends Model
     public function workers()
     {
         return $this->belongsToMany(User::class, 'product_workers', 'product_id', 'user_id');
+    }
+
+    public function reviews()
+    {
+        return $this->hasMany(Review::class, 'product_id');
+    }
+
+    /**
+     * Get image URL from public storage disk if exists.
+     */
+    public function getImageUrlAttribute(): ?string
+    {
+        if (!$this->image) {
+            return null;
+        }
+
+        if (\Illuminate\Support\Str::startsWith($this->image, ['http://', 'https://'])) {
+            return $this->image;
+        }
+
+        return asset('storage/' . $this->image);
     }
 
     /**

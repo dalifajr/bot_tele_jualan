@@ -63,6 +63,9 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
     Route::get('/catalog', [CatalogController::class, 'index'])->name('catalog.index');
     Route::get('/catalog/{id}', [CatalogController::class, 'show'])->name('catalog.show');
 
+    // Seller Public Profile
+    Route::get('/sellers/{user}', [\App\Http\Controllers\SellerProfileController::class, 'show'])->name('sellers.show');
+
     // Orders
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/{id}', [OrderController::class, 'show'])->name('orders.show');

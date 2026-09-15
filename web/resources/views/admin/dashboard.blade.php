@@ -88,6 +88,7 @@
                             <option value="7_days" {{ $period == '7_days' ? 'selected' : '' }} class="text-dark">{{ __('7 Hari Terakhir') }}</option>
                             <option value="30_days" {{ $period == '30_days' ? 'selected' : '' }} class="text-dark">{{ __('30 Hari Terakhir') }}</option>
                             <option value="6_months" {{ $period == '6_months' ? 'selected' : '' }} class="text-dark">{{ __('6 Bulan Terakhir') }}</option>
+                            <option value="all_time" {{ $period == 'all_time' ? 'selected' : '' }} class="text-dark">{{ __('Sepanjang Waktu') }}</option>
                         </select>
                     </div>
                 </div>

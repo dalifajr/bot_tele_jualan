@@ -15,20 +15,25 @@ class AdminController extends Controller
     public function dashboard(Request $request)
     {
         $productId = $request->query('product_id');
-        $period = $request->query('period');
-        if (!$period && $request->has('days')) {
-            $daysParam = (int)$request->query('days');
-            if ($daysParam <= 1) {
-                $period = '24_hours';
-            } elseif ($daysParam <= 7) {
-                $period = '7_days';
-            } elseif ($daysParam <= 30) {
-                $period = '30_days';
+        $period = $request->query('period');        // Backward compatibility if ?days= is passed (e.g. from existing links or tests)
+        if ($request->has('days') && !$period) {
+            $daysParam = $request->query('days');
+            if ($daysParam === 'all' || $daysParam === 'all_time') {
+                $period = 'all_time';
             } else {
-                $period = '6_months';
+                $daysInt = (int)$daysParam;
+                if ($daysInt <= 1) {
+                    $period = '24_hours';
+                } elseif ($daysInt <= 7) {
+                    $period = '7_days';
+                } elseif ($daysInt <= 30) {
+                    $period = '30_days';
+                } else {
+                    $period = '6_months';
+                }
             }
         }
-        if (!in_array($period, ['24_hours', '7_days', '30_days', '6_months'])) {
+        if (!in_array($period, ['24_hours', '7_days', '30_days', '6_months', 'all_time'])) {
             $period = '24_hours';
         }
 
@@ -49,11 +54,16 @@ class AdminController extends Controller
             $previousEnd = $currentStart;
             $previousStart = now()->subDays(60)->startOfDay();
             $days = 30;
-        } else { // 6_months
+        } elseif ($period === '6_months') {
             $currentStart = now()->subMonths(6)->startOfDay();
             $previousEnd = $currentStart;
             $previousStart = now()->subMonths(12)->startOfDay();
             $days = 180;
+        } else { // all_time
+            $currentStart = \Carbon\Carbon::create(2000, 1, 1);
+            $previousEnd = null;
+            $previousStart = null;
+            $days = 'all';
         }
 
         // Helper to query metrics
@@ -167,14 +177,17 @@ class AdminController extends Controller
         };
 
         $currentMetrics = $getMetrics($currentStart, $currentEnd);
-        $previousMetrics = $getMetrics($previousStart, $previousEnd);
+        $previousMetrics = ($previousStart && $previousEnd) ? $getMetrics($previousStart, $previousEnd) : [
+            'totalRevenue' => 0, 'platformCommission' => 0, 'adminEarnings' => 0, 'totalSellerEarnings' => 0,
+            'totalOrders' => 0, 'deliveredOrders' => 0, 'cancelledOrders' => 0
+        ];
 
         // For Products and Users, we want cumulative counts up to end dates
         $currentProducts = Product::where('created_at', '<=', $currentEnd)->count();
-        $previousProducts = Product::where('created_at', '<=', $previousEnd)->count();
+        $previousProducts = $previousEnd ? Product::where('created_at', '<=', $previousEnd)->count() : 0;
 
         $currentUsers = User::where('created_at', '<=', $currentEnd)->count();
-        $previousUsers = User::where('created_at', '<=', $previousEnd)->count();
+        $previousUsers = $previousEnd ? User::where('created_at', '<=', $previousEnd)->count() : 0;
 
         $webUsersCount = User::whereNotNull('password')
             ->where('created_at', '<=', $currentEnd)
@@ -184,7 +197,17 @@ class AdminController extends Controller
             ->count();
 
         // Helper to calculate percentage growth / change
-        $calculateChange = function ($current, $previous) {
+        $calculateChange = function ($current, $previous) use ($period) {
+            if ($period === 'all_time') {
+                return [
+                    'value' => $current,
+                    'diff' => 0,
+                    'percent' => 0,
+                    'formatted_percent' => 'Total',
+                    'class' => 'text-muted',
+                    'icon' => 'fa-check'
+                ];
+            }
             $diff = $current - $previous;
             if ($previous > 0) {
                 $percent = round(($diff / $previous) * 100, 1);
@@ -273,8 +296,17 @@ class AdminController extends Controller
                 $chartLabels[] = $dayObj->format('d M');
                 $chartData[] = $getChartOrderSum($start, $end);
             }
-        } else { // 6_months
+        } elseif ($period === '6_months') {
             for ($i = 5; $i >= 0; $i--) {
+                $monthObj = now()->subMonths($i);
+                $start = (clone $monthObj)->startOfMonth()->startOfDay();
+                $end = (clone $monthObj)->endOfMonth()->endOfDay();
+                
+                $chartLabels[] = $monthObj->format('M Y');
+                $chartData[] = $getChartOrderSum($start, $end);
+            }
+        } else { // all_time
+            for ($i = 11; $i >= 0; $i--) {
                 $monthObj = now()->subMonths($i);
                 $start = (clone $monthObj)->startOfMonth()->startOfDay();
                 $end = (clone $monthObj)->endOfMonth()->endOfDay();
@@ -289,6 +321,7 @@ class AdminController extends Controller
             '7_days' => '7 hari terakhir',
             '30_days' => '30 hari terakhir',
             '6_months' => '6 bulan terakhir',
+            'all_time' => 'Sepanjang waktu',
         };
 
         $products = \App\Models\Product::orderBy('name')->get();
@@ -977,12 +1010,18 @@ class AdminController extends Controller
             'warranty_days' => 'required_if:enable_warranty,1|nullable|integer|min:1',
             'vpn_protocol' => 'required_if:is_vpn,1|nullable|string',
             'vpn_duration_days' => 'required_if:is_vpn,1|nullable|integer|min:1',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp,gif|max:2048',
         ]);
         $data = $request->only(['name', 'description', 'price', 'vpn_protocol', 'vpn_duration_days']);
         $data['description'] = $data['description'] ?? '';
         $data['is_suspended'] = false;
         $data['is_vpn'] = $request->has('is_vpn');
         $data['warranty_days'] = $request->has('enable_warranty') ? $request->warranty_days : 0;
+
+        if ($request->hasFile('image') && $request->file('image')->isValid()) {
+            $data['image'] = $request->file('image')->store('products', 'public');
+        }
+
         Product::create($data);
         return redirect()->route('admin.products.index')->with('success', __('Produk berhasil ditambahkan.'));
     }
@@ -998,12 +1037,21 @@ class AdminController extends Controller
             'warranty_days' => $request->has('enable_warranty') ? 'required|integer|min:1' : 'nullable',
             'vpn_protocol' => $request->has('is_vpn') ? 'required|string' : 'nullable',
             'vpn_duration_days' => $request->has('is_vpn') ? 'required|integer|min:1' : 'nullable',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp,gif|max:2048',
         ]);
         $data = $request->only(['name', 'description', 'price', 'vpn_protocol', 'vpn_duration_days']);
         $data['description'] = $data['description'] ?? '';
         $data['is_suspended'] = $request->has('is_suspended');
         $data['is_vpn'] = $request->has('is_vpn');
         $data['warranty_days'] = $request->has('enable_warranty') ? $request->warranty_days : 0;
+
+        if ($request->hasFile('image') && $request->file('image')->isValid()) {
+            if ($product->image && \Illuminate\Support\Facades\Storage::disk('public')->exists($product->image)) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($product->image);
+            }
+            $data['image'] = $request->file('image')->store('products', 'public');
+        }
+
         $product->update($data);
         return redirect()->route('admin.products.index')->with('success', __('Produk berhasil diperbarui.'));
     }

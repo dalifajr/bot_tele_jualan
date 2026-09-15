@@ -35,21 +35,30 @@
         <div class="col-lg-7 col-xl-8">
             {{-- Product Hero Card --}}
             <div class="card border-0 shadow-sm overflow-hidden mb-3" style="border-radius: 20px;">
-                {{-- Product Visual Banner --}}
-                <div class="position-relative d-flex align-items-center justify-content-center text-white" style="height: 220px; background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 50%, #6610f2 100%);">
-                    <div class="text-center p-3">
-                        <div class="rounded-circle bg-white bg-opacity-20 d-inline-flex align-items-center justify-content-center p-3 mb-2 shadow-sm" style="width: 86px; height: 86px;">
+                {{-- Product Visual Banner / Image --}}
+                @if($product->image_url)
+                <div class="position-relative w-100 overflow-hidden text-center bg-dark" style="min-height: 260px; max-height: 380px; display: flex; align-items: center; justify-content: center;">
+                    <img src="{{ $product->image_url }}" alt="{{ $product->name }}" class="w-100 h-100" style="object-fit: cover; max-height: 380px;">
+                    <div class="position-absolute bottom-0 start-0 end-0 p-2.5 text-start" style="background: linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 100%);">
+                        <span class="badge bg-dark bg-opacity-75 text-white rounded-pill px-2.5 py-1" style="font-size: 0.72rem;">SKU #{{ $product->id }}</span>
+                    </div>
+                @else
+                <div class="position-relative d-flex align-items-center justify-content-center text-white overflow-hidden" style="min-height: 230px; background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 50%, #6610f2 100%);">
+                    <div class="position-absolute w-100 h-100 opacity-10" style="background-image: radial-gradient(#ffffff 2px, transparent 2px); background-size: 24px 24px;"></div>
+                    <div class="text-center p-3 position-relative z-1">
+                        <div class="rounded-4 bg-white bg-opacity-20 d-inline-flex align-items-center justify-content-center p-3 mb-2 shadow-sm border border-white border-opacity-25" style="width: 88px; height: 88px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);">
                             @if($product->is_vpn)
                                 <i class="fas fa-shield-halved" style="font-size: 2.8rem; color: #ffffff;"></i>
                             @else
                                 <i class="fas fa-box-open" style="font-size: 2.8rem; color: #ffffff;"></i>
                             @endif
                         </div>
-                        <div class="small fw-semibold text-white-50">SKU #{{ $product->id }}</div>
+                        <div class="small fw-semibold text-white-50">PRODUK DIGITAL &bull; SKU #{{ $product->id }}</div>
                     </div>
+                @endif
 
                     {{-- Badges on top corners --}}
-                    <div class="position-absolute top-0 start-0 m-3 d-flex flex-wrap gap-1">
+                    <div class="position-absolute top-0 start-0 m-3 d-flex flex-wrap gap-1" style="z-index: 5;">
                         @if($product->is_vpn)
                             <span class="badge bg-dark bg-opacity-75 rounded-pill px-3 py-1.5 fw-semibold shadow-sm" style="font-size: 0.78rem;">
                                 <i class="fas fa-network-wired me-1 text-info"></i>VPN ({{ strtoupper($product->vpn_protocol) }})
@@ -57,7 +66,7 @@
                         @endif
                     </div>
 
-                    <div class="position-absolute top-0 end-0 m-3">
+                    <div class="position-absolute top-0 end-0 m-3" style="z-index: 5;">
                         @if($stockCount > 0)
                             <span class="badge bg-success rounded-pill px-3 py-1.5 fw-bold shadow-sm" style="font-size: 0.78rem;">
                                 <i class="fas fa-check-circle me-1"></i>{{ $stockCount }} {{ __('Stok Siap') }}
@@ -113,7 +122,12 @@
                         </div>
                         <div class="col-4">
                             <div class="p-2 rounded-3 text-center bg-light border" style="font-size: 0.76rem;">
-                                <i class="fas fa-shield-check text-success fs-5 d-block mb-1"></i>
+                                <div class="d-flex justify-content-center mb-1 text-success">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                                        <path d="M9 12l2 2 4-4"></path>
+                                    </svg>
+                                </div>
                                 <span class="fw-bold text-body d-block">{{ __('Garansi 100%') }}</span>
                                 <span class="text-muted" style="font-size: 0.68rem;">{{ __('Jaminan uang kembali') }}</span>
                             </div>
@@ -127,27 +141,38 @@
                         </div>
                     </div>
 
+                    @php
+                        $seller = $product->creator;
+                        if (!$seller) {
+                            $seller = \App\Models\User::where('role', 'admin')->first();
+                        }
+                        $sellerId = $seller ? $seller->id : 1;
+                        $sellerChatUrl = route('chat.index', ['contact_id' => $sellerId]);
+                        $sellerJoinDate = $seller && $seller->created_at ? $seller->created_at->translatedFormat('F Y') : 'Mei 2024';
+                    @endphp
+
                     {{-- Store / Seller Profile Card --}}
                     <div class="p-3 rounded-4 bg-body-tertiary border d-flex align-items-center justify-content-between mb-4">
                         <div class="d-flex align-items-center gap-3">
-                            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold shadow-sm" style="width: 44px; height: 44px; font-size: 1.1rem;">
-                                {{ strtoupper(substr($product->creator->full_name ?? $product->creator->username ?? 'A', 0, 1)) }}
-                            </div>
+                            <a href="{{ route('sellers.show', $sellerId) }}" class="text-decoration-none" title="{{ __('Kunjungi Profil Seller') }}">
+                                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold shadow-sm" style="width: 46px; height: 46px; font-size: 1.15rem;">
+                                    {{ strtoupper(substr($seller->full_name ?? $seller->username ?? 'A', 0, 1)) }}
+                                </div>
+                            </a>
                             <div>
                                 <div class="d-flex align-items-center gap-1.5">
-                                    <span class="fw-bold text-body" style="font-size: 0.95rem;">{{ $product->creator->full_name ?? $product->creator->username ?? __('Official Store') }}</span>
-                                    <span class="badge bg-primary-subtle text-primary rounded-pill px-1.5 py-0.5" style="font-size: 0.65rem;">
-                                        <i class="fas fa-check-circle"></i> {{ __('Verified') }}
-                                    </span>
+                                    <a href="{{ route('sellers.show', $sellerId) }}" class="fw-bold text-body text-decoration-none hover-primary" style="font-size: 0.95rem;">
+                                        {{ $seller->full_name ?? $seller->username ?? __('Official Store') }}
+                                    </a>
+                                    <i class="fas fa-check-circle text-primary" style="font-size: 0.92rem;" title="{{ __('Terverifikasi') }}"></i>
                                 </div>
                                 <small class="text-muted d-block" style="font-size: 0.75rem;">
-                                    <i class="fas fa-shield-alt text-success me-1"></i>{{ __('Penjual Resmi Terverifikasi') }}
+                                    <i class="far fa-calendar-alt text-secondary me-1"></i>{{ __('Bergabung') }} {{ $sellerJoinDate }}
                                 </small>
                             </div>
                         </div>
-                        <a href="{{ route('chat.index') }}" class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1.5 fw-semibold d-flex align-items-center gap-1.5" style="font-size: 0.8rem;">
-                            <i class="fas fa-comment-dots"></i>
-                            <span>{{ __('Chat') }}</span>
+                        <a href="{{ $sellerChatUrl }}" class="btn btn-sm btn-outline-primary rounded-circle d-inline-flex align-items-center justify-content-center shadow-sm" style="width: 38px; height: 38px; flex-shrink: 0;" title="{{ __('Chat Penjual') }}">
+                            <i class="fas fa-comment-dots fs-6"></i>
                         </a>
                     </div>
 
@@ -308,7 +333,7 @@
 <div class="mobile-sticky-action-bar d-md-none bg-body border-top shadow-lg py-2 px-3 position-fixed bottom-0 start-0 end-0" style="z-index: 1045; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);">
     <div class="d-flex align-items-center gap-2">
         {{-- Chat Seller Icon Button --}}
-        <a href="{{ route('chat.index') }}" class="btn btn-light rounded-4 d-flex flex-column align-items-center justify-content-center p-1 border" style="width: 52px; height: 48px; flex-shrink: 0;" title="{{ __('Chat Penjual') }}">
+        <a href="{{ $sellerChatUrl }}" class="btn btn-light rounded-4 d-flex flex-column align-items-center justify-content-center p-1 border" style="width: 52px; height: 48px; flex-shrink: 0;" title="{{ __('Chat Penjual') }}">
             <i class="fas fa-comment-dots text-primary" style="font-size: 1.1rem;"></i>
             <span style="font-size: 0.62rem;" class="text-secondary fw-semibold mt-0.5">{{ __('Chat') }}</span>
         </a>

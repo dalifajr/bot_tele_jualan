@@ -71,9 +71,17 @@
                 @endif
             </div>
 
-            {{-- Product Icon --}}
-            <div class="product-icon-wrapper">
-                <i class="fas fa-box-open"></i>
+            {{-- Product Icon / Thumbnail --}}
+            <div class="product-icon-wrapper position-relative overflow-hidden">
+                @if($product->image_url)
+                    <img src="{{ $product->image_url }}" alt="{{ $product->name }}" class="w-100 h-100" style="object-fit: cover; transition: transform 0.35s ease;">
+                @else
+                    @if($product->is_vpn)
+                        <i class="fas fa-network-wired"></i>
+                    @else
+                        <i class="fas fa-box-open"></i>
+                    @endif
+                @endif
             </div>
 
             <div class="card-body d-flex flex-column p-2 p-md-3">

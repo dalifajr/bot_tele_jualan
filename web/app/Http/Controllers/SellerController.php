@@ -124,36 +124,66 @@ class SellerController extends Controller
             ->get();
 
         // 6. Dynamic trend logic based on filtered days
-        $days = (int) $request->query('days', 7);
-        if (!in_array($days, [7, 14, 30, 180, 365])) {
-            $days = 7;
+        $daysParam = $request->query('days', 7);
+        if ($daysParam === 'all' || $daysParam === 'all_time') {
+            $days = 'all';
+        } else {
+            $days = (int) $daysParam;
+            if (!in_array($days, [7, 14, 30, 180, 365])) {
+                $days = 7;
+            }
         }
 
         $chartLabels = [];
         $chartData = [];
-        for ($i = $days - 1; $i >= 0; $i--) {
-            $dateObj = now()->subDays($i);
-            $date = $dateObj->toDateString();
 
-            if ($days > 30) {
-                $chartLabels[] = $dateObj->format('d M y');
-            } else {
-                $chartLabels[] = $dateObj->format('d M');
+        if ($days === 'all') {
+            for ($i = 11; $i >= 0; $i--) {
+                $monthObj = now()->subMonths($i);
+                $start = (clone $monthObj)->startOfMonth()->startOfDay();
+                $end = (clone $monthObj)->endOfMonth()->endOfDay();
+
+                $chartLabels[] = $monthObj->format('M Y');
+
+                $chartDataQuery = DB::table('stock_units')
+                    ->join('products', 'stock_units.product_id', '=', 'products.id')
+                    ->join('orders', 'stock_units.sold_order_id', '=', 'orders.id')
+                    ->where('stock_units.seller_id', $sellerId)
+                    ->where('stock_units.is_sold', true)
+                    ->where('orders.status', 'delivered')
+                    ->whereBetween('orders.delivered_at', [$start, $end]);
+
+                if ($productId) {
+                    $chartDataQuery->where('stock_units.product_id', $productId);
+                }
+
+                $chartData[] = (int) $chartDataQuery->sum('products.price');
             }
+        } else {
+            for ($i = $days - 1; $i >= 0; $i--) {
+                $dateObj = now()->subDays($i);
+                $date = $dateObj->toDateString();
 
-            $chartDataQuery = DB::table('stock_units')
-                ->join('products', 'stock_units.product_id', '=', 'products.id')
-                ->join('orders', 'stock_units.sold_order_id', '=', 'orders.id')
-                ->where('stock_units.seller_id', $sellerId)
-                ->where('stock_units.is_sold', true)
-                ->where('orders.status', 'delivered')
-                ->whereDate('orders.delivered_at', $date);
+                if ($days > 30) {
+                    $chartLabels[] = $dateObj->format('d M y');
+                } else {
+                    $chartLabels[] = $dateObj->format('d M');
+                }
 
-            if ($productId) {
-                $chartDataQuery->where('stock_units.product_id', $productId);
+                $chartDataQuery = DB::table('stock_units')
+                    ->join('products', 'stock_units.product_id', '=', 'products.id')
+                    ->join('orders', 'stock_units.sold_order_id', '=', 'orders.id')
+                    ->where('stock_units.seller_id', $sellerId)
+                    ->where('stock_units.is_sold', true)
+                    ->where('orders.status', 'delivered')
+                    ->whereDate('orders.delivered_at', $date);
+
+                if ($productId) {
+                    $chartDataQuery->where('stock_units.product_id', $productId);
+                }
+
+                $chartData[] = (int) $chartDataQuery->sum('products.price');
             }
-
-            $chartData[] = (int) $chartDataQuery->sum('products.price');
         }
 
         // Advanced Analytics for Seller Dashboard
@@ -712,12 +742,19 @@ class SellerController extends Controller
             'price' => 'required|integer|min:0',
             'description' => 'nullable|string',
             'warranty_days' => 'required_if:enable_warranty,1|nullable|integer|min:1',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp,gif|max:2048',
         ]);
+
+        $imagePath = null;
+        if ($request->hasFile('image') && $request->file('image')->isValid()) {
+            $imagePath = $request->file('image')->store('products', 'public');
+        }
 
         Product::create([
             'name' => $request->name,
             'price' => $request->price,
             'description' => $request->description ?? '',
+            'image' => $imagePath,
             'creator_id' => Auth::id(),
             'is_suspended' => false,
             'warranty_days' => $request->has('enable_warranty') ? $request->warranty_days : 0,
@@ -778,14 +815,24 @@ class SellerController extends Controller
             'price' => 'required|integer|min:0',
             'description' => 'nullable|string',
             'warranty_days' => 'required_if:enable_warranty,1|nullable|integer|min:1',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp,gif|max:2048',
         ]);
 
-        $product->update([
+        $updateData = [
             'name' => $request->name,
             'price' => $request->price,
             'description' => $request->description ?? '',
             'warranty_days' => $request->has('enable_warranty') ? $request->warranty_days : 0,
-        ]);
+        ];
+
+        if ($request->hasFile('image') && $request->file('image')->isValid()) {
+            if ($product->image && \Illuminate\Support\Facades\Storage::disk('public')->exists($product->image)) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($product->image);
+            }
+            $updateData['image'] = $request->file('image')->store('products', 'public');
+        }
+
+        $product->update($updateData);
 
         return redirect()->route('seller.products.index')->with('success', __('Informasi produk berhasil diperbarui.'));
     }

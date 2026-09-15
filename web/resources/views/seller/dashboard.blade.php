@@ -161,7 +161,7 @@
             <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <div>
                     <h5 class="fw-bold mb-1 text-body"><i class="fas fa-chart-line text-primary me-2"></i>{{ __('Tren Pendapatan Harian') }}</h5>
-                    <p class="text-muted small mb-0">{{ __('Statistik omzet penjualan dalam :days terakhir', ['days' => $days == 180 ? '6 bulan' : ($days == 365 ? '1 tahun' : $days . ' hari')]) }}</p>
+                    <p class="text-muted small mb-0">{{ __('Statistik omzet penjualan dalam :days', ['days' => $days == 180 ? '6 bulan terakhir' : ($days == 365 ? '1 tahun terakhir' : ($days === 'all' ? 'sepanjang waktu' : $days . ' hari terakhir'))]) }}</p>
                 </div>
                 <div>
                     <select class="form-select form-select-sm rounded-pill px-3 bg-light border-0 fw-bold" style="width: auto;" onchange="let params = new URLSearchParams(window.location.search); params.set('days', this.value); window.location.href = '{{ route('seller.dashboard') }}?' + params.toString()">
@@ -170,6 +170,7 @@
                         <option value="30" {{ $days == 30 ? 'selected' : '' }}>{{ __('30 Hari Terakhir') }}</option>
                         <option value="180" {{ $days == 180 ? 'selected' : '' }}>{{ __('6 Bulan Terakhir') }}</option>
                         <option value="365" {{ $days == 365 ? 'selected' : '' }}>{{ __('1 Tahun Terakhir') }}</option>
+                        <option value="all" {{ $days === 'all' ? 'selected' : '' }}>{{ __('Sepanjang Waktu') }}</option>
                     </select>
                 </div>
             </div>

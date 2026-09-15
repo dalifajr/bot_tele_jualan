@@ -198,7 +198,7 @@
                 <h5 class="fw-bold">{{ __('Tambah Produk Baru') }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="{{ route('admin.products.store') }}" method="POST">
+            <form action="{{ route('admin.products.store') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <div class="modal-body">
                     <ul class="nav nav-pills nav-fill bg-light p-1 rounded-pill mb-3" id="addProductTab" role="tablist">
@@ -222,6 +222,11 @@
                             <div class="mb-3">
                                 <label class="form-label text-muted small fw-bold">{{ __('Deskripsi') }}</label>
                                 <textarea name="description" class="form-control" rows="3" placeholder="{{ __('Informasi produk...') }}"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-muted small fw-bold"><i class="fas fa-image me-1 text-primary"></i>{{ __('Gambar Produk (Opsional)') }}</label>
+                                <input type="file" name="image" class="form-control" accept="image/jpeg,image/png,image/jpg,image/webp">
+                                <div class="form-text small">{{ __('Format: JPG, PNG, WebP (maks. 2MB). Jika dikosongkan, detail produk akan menggunakan ilustrasi estetik.') }}</div>
                             </div>
                         </div>
                         <div class="tab-pane fade" id="advanced-add" role="tabpanel">
@@ -285,7 +290,7 @@
                 <h5 class="fw-bold">{{ __('Edit Produk') }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="{{ route('admin.products.update', $product->id) }}" method="POST">
+            <form action="{{ route('admin.products.update', $product->id) }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 @method('PUT')
                 <div class="modal-body">
@@ -310,6 +315,20 @@
                             <div class="mb-3">
                                 <label class="form-label text-muted small fw-bold">{{ __('Deskripsi') }}</label>
                                 <textarea name="description" class="form-control" rows="3">{{ $product->description }}</textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-muted small fw-bold"><i class="fas fa-image me-1 text-primary"></i>{{ __('Gambar Produk (Opsional)') }}</label>
+                                @if($product->image)
+                                    <div class="d-flex align-items-center gap-2 mb-2 p-2 bg-light rounded-3 border">
+                                        <img src="{{ $product->image_url }}" alt="{{ $product->name }}" class="rounded shadow-sm" style="width: 48px; height: 48px; object-fit: cover;">
+                                        <div class="small">
+                                            <span class="d-block fw-semibold text-body">{{ __('Gambar saat ini') }}</span>
+                                            <span class="text-muted" style="font-size: 0.72rem;">{{ __('Pilih file baru di bawah jika ingin mengganti') }}</span>
+                                        </div>
+                                    </div>
+                                @endif
+                                <input type="file" name="image" class="form-control" accept="image/jpeg,image/png,image/jpg,image/webp">
+                                <div class="form-text small">{{ __('Format: JPG, PNG, WebP (maks. 2MB). Biarkan kosong jika tidak ingin mengubah.') }}</div>
                             </div>
                         </div>
                         <div class="tab-pane fade" id="advanced-edit-{{ $product->id }}" role="tabpanel">

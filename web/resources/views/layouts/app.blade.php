@@ -124,53 +124,166 @@
 
 <div id="pageLoader" class="fade-out">
     <div class="skeleton-page-placeholder container-fluid px-3 px-md-4 pt-3 pt-md-4">
-        {{-- Skeleton Header Bar --}}
-        <div class="d-flex align-items-center justify-content-between mb-4 pb-2 border-bottom">
-            <div class="d-flex align-items-center gap-2">
-                <div class="skeleton-shimmer rounded-circle" style="width: 38px; height: 38px;"></div>
-                <div class="skeleton-shimmer" style="height: 22px; width: 140px; border-radius: 8px;"></div>
-            </div>
-            <div class="d-flex align-items-center gap-2">
-                <div class="skeleton-shimmer rounded-pill" style="height: 32px; width: 90px;"></div>
-                <div class="skeleton-shimmer rounded-circle" style="width: 32px; height: 32px;"></div>
-            </div>
-        </div>
-
-        {{-- Skeleton Cards Grid --}}
-        <div class="row g-3 g-md-4">
-            @for($i = 0; $i < 4; $i++)
-            <div class="col-6 col-md-4 col-lg-3 {{ $i >= 2 ? 'd-none d-md-block' : '' }}">
-                <div class="card border-0 shadow-sm p-3 h-100" style="border-radius: 16px;">
-                    <div class="skeleton-shimmer w-100 mb-3" style="height: 125px; border-radius: 12px;"></div>
-                    <div class="skeleton-shimmer mb-2" style="height: 16px; width: 80%;"></div>
-                    <div class="skeleton-shimmer mb-3" style="height: 12px; width: 50%;"></div>
-                    <div class="d-flex justify-content-between align-items-center mt-auto pt-2 border-top">
-                        <div class="skeleton-shimmer" style="height: 18px; width: 65px;"></div>
-                        <div class="skeleton-shimmer rounded-pill" style="height: 26px; width: 36px;"></div>
-                    </div>
+        @if(View::hasSection('page_skeleton'))
+            @yield('page_skeleton')
+        @elseif(request()->routeIs('catalog.show'))
+            {{-- Contextual Skeleton: Detail Produk --}}
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="skeleton-shimmer rounded-circle" style="width: 38px; height: 38px;"></div>
+                    <div class="skeleton-shimmer" style="height: 22px; width: 130px; border-radius: 8px;"></div>
                 </div>
+                <div class="skeleton-shimmer rounded-circle" style="width: 38px; height: 38px;"></div>
             </div>
-            @endfor
-        </div>
-
-        {{-- Skeleton List Items (Mobile Responsive) --}}
-        <div class="mt-4">
-            <div class="skeleton-shimmer mb-3" style="height: 18px; width: 160px; border-radius: 6px;"></div>
-            @for($j = 0; $j < 3; $j++)
-            <div class="card border-0 shadow-sm p-3 mb-2" style="border-radius: 14px;">
-                <div class="d-flex align-items-center justify-content-between">
-                    <div class="d-flex align-items-center gap-2.5 flex-grow-1">
-                        <div class="skeleton-shimmer rounded-3" style="width: 44px; height: 44px; flex-shrink: 0;"></div>
-                        <div class="w-75">
-                            <div class="skeleton-shimmer mb-1.5" style="height: 14px; width: 65%;"></div>
-                            <div class="skeleton-shimmer" style="height: 11px; width: 40%;"></div>
+            <div class="row g-3 g-lg-4">
+                <div class="col-lg-7 col-xl-8">
+                    <div class="card border-0 shadow-sm overflow-hidden mb-3" style="border-radius: 20px;">
+                        <div class="skeleton-shimmer w-100" style="height: 230px; border-radius: 0;"></div>
+                        <div class="card-body p-3 p-md-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div class="skeleton-shimmer" style="height: 28px; width: 140px; border-radius: 8px;"></div>
+                                <div class="skeleton-shimmer rounded-pill" style="height: 24px; width: 90px;"></div>
+                            </div>
+                            <div class="skeleton-shimmer mb-2" style="height: 22px; width: 85%; border-radius: 6px;"></div>
+                            <div class="skeleton-shimmer mb-3" style="height: 14px; width: 45%; border-radius: 4px;"></div>
+                            <div class="row g-2 mb-4">
+                                <div class="col-4"><div class="skeleton-shimmer w-100 rounded-3" style="height: 58px;"></div></div>
+                                <div class="col-4"><div class="skeleton-shimmer w-100 rounded-3" style="height: 58px;"></div></div>
+                                <div class="col-4"><div class="skeleton-shimmer w-100 rounded-3" style="height: 58px;"></div></div>
+                            </div>
+                            <div class="p-3 rounded-4 border d-flex align-items-center justify-content-between mb-4">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="skeleton-shimmer rounded-circle" style="width: 46px; height: 46px;"></div>
+                                    <div>
+                                        <div class="skeleton-shimmer mb-1.5" style="height: 16px; width: 120px;"></div>
+                                        <div class="skeleton-shimmer" style="height: 12px; width: 80px;"></div>
+                                    </div>
+                                </div>
+                                <div class="skeleton-shimmer rounded-circle" style="width: 38px; height: 38px;"></div>
+                            </div>
                         </div>
                     </div>
-                    <div class="skeleton-shimmer rounded-pill" style="height: 24px; width: 70px;"></div>
+                </div>
+                <div class="col-lg-5 col-xl-4 d-none d-lg-block">
+                    <div class="card border-0 shadow-sm p-4" style="border-radius: 20px;">
+                        <div class="skeleton-shimmer mb-3" style="height: 20px; width: 130px;"></div>
+                        <div class="skeleton-shimmer mb-3" style="height: 48px; width: 100%; border-radius: 12px;"></div>
+                        <div class="skeleton-shimmer mb-2" style="height: 48px; width: 100%; border-radius: 24px;"></div>
+                        <div class="skeleton-shimmer" style="height: 48px; width: 100%; border-radius: 24px;"></div>
+                    </div>
                 </div>
             </div>
-            @endfor
-        </div>
+        @elseif(request()->routeIs('sellers.show'))
+            {{-- Contextual Skeleton: Profil Toko Seller --}}
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="skeleton-shimmer rounded-circle" style="width: 38px; height: 38px;"></div>
+                    <div class="skeleton-shimmer" style="height: 22px; width: 120px; border-radius: 8px;"></div>
+                </div>
+                <div class="skeleton-shimmer rounded-circle" style="width: 38px; height: 38px;"></div>
+            </div>
+            <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="skeleton-shimmer rounded-circle" style="width: 64px; height: 64px;"></div>
+                    <div>
+                        <div class="skeleton-shimmer mb-2" style="height: 22px; width: 160px; border-radius: 6px;"></div>
+                        <div class="skeleton-shimmer" style="height: 14px; width: 110px; border-radius: 4px;"></div>
+                    </div>
+                </div>
+                <div class="row g-2 mt-2 pt-2 border-top">
+                    <div class="col-4"><div class="skeleton-shimmer w-100 rounded-3" style="height: 48px;"></div></div>
+                    <div class="col-4"><div class="skeleton-shimmer w-100 rounded-3" style="height: 48px;"></div></div>
+                    <div class="col-4"><div class="skeleton-shimmer w-100 rounded-3" style="height: 48px;"></div></div>
+                </div>
+            </div>
+            <div class="row g-3 g-md-4">
+                @for($i = 0; $i < 4; $i++)
+                <div class="col-6 col-md-4 col-lg-3">
+                    <div class="card border-0 shadow-sm p-3 h-100" style="border-radius: 16px;">
+                        <div class="skeleton-shimmer w-100 mb-2.5" style="height: 120px; border-radius: 12px;"></div>
+                        <div class="skeleton-shimmer mb-2" style="height: 16px; width: 80%;"></div>
+                        <div class="skeleton-shimmer" style="height: 14px; width: 45%;"></div>
+                    </div>
+                </div>
+                @endfor
+            </div>
+        @elseif(request()->routeIs('cart.*'))
+            {{-- Contextual Skeleton: Keranjang Belanja --}}
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <div class="skeleton-shimmer rounded-circle" style="width: 38px; height: 38px;"></div>
+                <div class="skeleton-shimmer" style="height: 22px; width: 150px; border-radius: 8px;"></div>
+            </div>
+            <div class="row g-3 g-lg-4">
+                <div class="col-lg-8">
+                    @for($c = 0; $c < 3; $c++)
+                    <div class="card border-0 shadow-sm p-3 mb-2" style="border-radius: 16px;">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="skeleton-shimmer rounded-3" style="width: 50px; height: 50px;"></div>
+                                <div>
+                                    <div class="skeleton-shimmer mb-1.5" style="height: 16px; width: 140px;"></div>
+                                    <div class="skeleton-shimmer" style="height: 13px; width: 75px;"></div>
+                                </div>
+                            </div>
+                            <div class="skeleton-shimmer rounded-pill" style="height: 32px; width: 90px;"></div>
+                        </div>
+                    </div>
+                    @endfor
+                </div>
+                <div class="col-lg-4">
+                    <div class="card border-0 shadow-sm p-4" style="border-radius: 20px;">
+                        <div class="skeleton-shimmer mb-3" style="height: 20px; width: 130px;"></div>
+                        <div class="skeleton-shimmer mb-2" style="height: 16px; width: 100%;"></div>
+                        <div class="skeleton-shimmer mb-4" style="height: 16px; width: 70%;"></div>
+                        <div class="skeleton-shimmer rounded-pill" style="height: 44px; width: 100%;"></div>
+                    </div>
+                </div>
+            </div>
+        @else
+            {{-- Skeleton Universal Default (Catalog, Dashboard, etc.) --}}
+            <div class="d-flex align-items-center justify-content-between mb-4 pb-2 border-bottom">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="skeleton-shimmer rounded-circle" style="width: 38px; height: 38px;"></div>
+                    <div class="skeleton-shimmer" style="height: 22px; width: 140px; border-radius: 8px;"></div>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <div class="skeleton-shimmer rounded-pill" style="height: 32px; width: 90px;"></div>
+                    <div class="skeleton-shimmer rounded-circle" style="width: 32px; height: 32px;"></div>
+                </div>
+            </div>
+            <div class="row g-3 g-md-4">
+                @for($i = 0; $i < 4; $i++)
+                <div class="col-6 col-md-4 col-lg-3 {{ $i >= 2 ? 'd-none d-md-block' : '' }}">
+                    <div class="card border-0 shadow-sm p-3 h-100" style="border-radius: 16px;">
+                        <div class="skeleton-shimmer w-100 mb-3" style="height: 125px; border-radius: 12px;"></div>
+                        <div class="skeleton-shimmer mb-2" style="height: 16px; width: 80%;"></div>
+                        <div class="skeleton-shimmer mb-3" style="height: 12px; width: 50%;"></div>
+                        <div class="d-flex justify-content-between align-items-center mt-auto pt-2 border-top">
+                            <div class="skeleton-shimmer" style="height: 18px; width: 65px;"></div>
+                            <div class="skeleton-shimmer rounded-pill" style="height: 26px; width: 36px;"></div>
+                        </div>
+                    </div>
+                </div>
+                @endfor
+            </div>
+            <div class="mt-4">
+                <div class="skeleton-shimmer mb-3" style="height: 18px; width: 160px; border-radius: 6px;"></div>
+                @for($j = 0; $j < 3; $j++)
+                <div class="card border-0 shadow-sm p-3 mb-2" style="border-radius: 14px;">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center gap-2.5 flex-grow-1">
+                            <div class="skeleton-shimmer rounded-3" style="width: 44px; height: 44px; flex-shrink: 0;"></div>
+                            <div class="w-75">
+                                <div class="skeleton-shimmer mb-1.5" style="height: 14px; width: 65%;"></div>
+                                <div class="skeleton-shimmer" style="height: 11px; width: 40%;"></div>
+                            </div>
+                        </div>
+                        <div class="skeleton-shimmer rounded-pill" style="height: 24px; width: 70px;"></div>
+                    </div>
+                </div>
+                @endfor
+            </div>
+        @endif
     </div>
 </div>
 
