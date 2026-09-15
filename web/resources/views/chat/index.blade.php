@@ -3,8 +3,21 @@
 @section('title', __('Pusat Chat'))
 @section('page_subtitle', __('Pesan'))
 
+@push('styles')
+<style>
+    @media (max-width: 767.98px) {
+        .chat-viewport-card {
+            height: calc(100vh - var(--total-header-height) - 82px) !important;
+            min-height: calc(100vh - var(--total-header-height) - 82px) !important;
+            border-radius: 12px !important;
+            margin-bottom: 0 !important;
+        }
+    }
+</style>
+@endpush
+
 @section('content')
-<div class="card border-0 shadow-sm" style="border-radius: 16px; overflow: hidden; height: calc(100vh - 180px); min-height: 500px;">
+<div class="card border-0 shadow-sm chat-viewport-card" style="border-radius: 16px; overflow: hidden; height: calc(100vh - 180px); min-height: 500px;">
     <div class="row g-0 h-100">
         {{-- Left Contacts List --}}
         <div class="col-md-4 border-end d-flex flex-column h-100 {{ $selectedContact ? 'd-none d-md-flex' : '' }}" style="background-color: var(--bs-body-bg);">

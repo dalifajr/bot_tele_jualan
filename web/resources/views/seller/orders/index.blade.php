@@ -18,24 +18,27 @@
     <div class="alert alert-danger small py-2 mb-4"><i class="fas fa-exclamation-circle me-1"></i>{{ session('error') }}</div>
 @endif
 
-{{-- Status Filter --}}
-<div class="mb-4 d-flex flex-wrap gap-2">
-    <a href="{{ route('seller.orders.index') }}"
-       class="btn btn-sm rounded-pill px-3 {{ is_null($status) ? 'btn-primary' : 'btn-outline-secondary' }}">
-        {{ __('Semua') }}
-    </a>
-    @foreach(['pending_payment' => 'Pending', 'paid' => 'Paid', 'delivered' => 'Delivered', 'cancelled' => 'Cancelled', 'expired' => 'Expired'] as $key => $label)
-    <a href="{{ route('seller.orders.index', ['status' => $key]) }}"
-       class="btn btn-sm rounded-pill px-3 {{ $status === $key ? 'btn-primary' : 'btn-outline-secondary' }}">
-        {{ $label }}
-    </a>
-    @endforeach
+{{-- Status Filter Chips (Scrollable on Mobile) --}}
+<div class="mb-3 category-scroll-container pb-1">
+    <div class="d-inline-flex gap-2">
+        <a href="{{ route('seller.orders.index') }}"
+           class="btn btn-sm rounded-pill px-3 {{ is_null($status) ? 'btn-primary' : 'btn-outline-secondary' }}">
+            {{ __('Semua') }}
+        </a>
+        @foreach(['pending_payment' => 'Pending', 'paid' => 'Paid', 'delivered' => 'Delivered', 'cancelled' => 'Cancelled', 'expired' => 'Expired'] as $key => $label)
+        <a href="{{ route('seller.orders.index', ['status' => $key]) }}"
+           class="btn btn-sm rounded-pill px-3 {{ $status === $key ? 'btn-primary' : 'btn-outline-secondary' }}">
+            {{ $label }}
+        </a>
+        @endforeach
+    </div>
 </div>
 
 <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 16px;">
     <div class="card-body p-0">
         @if($orders->count() > 0)
-        <div class="table-responsive">
+        <!-- Desktop Table View -->
+        <div class="table-responsive d-none d-md-block">
             <table class="table table-hover align-middle mb-0">
                 <thead>
                     <tr class="text-secondary small border-bottom">
@@ -85,7 +88,47 @@
                 </tbody>
             </table>
         </div>
-        <div class="px-4 py-3 border-top">
+
+        <!-- Mobile Card List View -->
+        <div class="d-md-none p-3 d-flex flex-column gap-2">
+            @foreach($orders as $order)
+            <div class="mobile-activity-card">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="fw-bold font-monospace text-primary small">{{ $order->reference }}</span>
+                    <span class="badge bg-{{ $order->status_color }}-subtle text-{{ $order->status_color }} rounded-pill px-2 py-1 small fw-bold">
+                        {{ $order->status_label }}
+                    </span>
+                </div>
+                <div class="mb-2">
+                    <div class="fw-bold text-body">{{ Str::limit($order->product->name ?? '-', 35) }}</div>
+                    <div class="small text-muted">
+                        <i class="fas fa-user me-1"></i>{{ $order->user->full_name ?? $order->user->username ?? 'User' }}
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                    <div>
+                        <div class="fw-bold text-body">{{ $order->formatted_total }}</div>
+                        <div class="text-secondary" style="font-size: 0.72rem;">{{ $order->created_at->format('d M Y H:i') }}</div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        @if($order->status === 'pending_payment')
+                        <form action="{{ route('seller.orders.cancel', $order->id) }}" method="POST" class="m-0" onsubmit="confirmAction(event, 'Batalkan pesanan ini?');">
+                            @csrf
+                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-2 py-1 small" title="{{ __('Batalkan') }}">
+                                <i class="fas fa-times me-1"></i>{{ __('Batal') }}
+                            </button>
+                        </form>
+                        @endif
+                        <button class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1 fw-bold small" data-bs-toggle="modal" data-bs-target="#detailOrderModal{{ $order->id }}">
+                            <i class="fas fa-eye me-1"></i>{{ __('Detail') }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+            @endforeach
+        </div>
+
+        <div class="px-3 px-md-4 py-3 border-top">
             {{ $orders->withQueryString()->links() }}
         </div>
         @else

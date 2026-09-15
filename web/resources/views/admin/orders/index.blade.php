@@ -11,18 +11,20 @@
     </div>
 </div>
 
-{{-- Status Filter --}}
-<div class="mb-3 d-flex flex-wrap gap-2">
-    <a href="{{ request()->fullUrlWithQuery(['status' => null]) }}"
-       class="btn btn-sm rounded-pill px-3 {{ is_null($status) ? 'btn-primary' : 'btn-outline-secondary' }}">
-        {{ __('Semua') }}
-    </a>
-    @foreach(['pending_payment' => 'Pending', 'paid' => 'Paid', 'delivered' => 'Delivered', 'cancelled' => 'Cancelled', 'expired' => 'Expired'] as $key => $label)
-    <a href="{{ request()->fullUrlWithQuery(['status' => $key]) }}"
-       class="btn btn-sm rounded-pill px-3 {{ $status === $key ? 'btn-primary' : 'btn-outline-secondary' }}">
-        {{ $label }}
-    </a>
-    @endforeach
+{{-- Status Filter Chips (Scrollable on Mobile) --}}
+<div class="mb-3 category-scroll-container pb-1">
+    <div class="d-inline-flex gap-2">
+        <a href="{{ request()->fullUrlWithQuery(['status' => null]) }}"
+           class="btn btn-sm rounded-pill px-3 {{ is_null($status) ? 'btn-primary' : 'btn-outline-secondary' }}">
+            {{ __('Semua') }}
+        </a>
+        @foreach(['pending_payment' => 'Pending', 'paid' => 'Paid', 'delivered' => 'Delivered', 'cancelled' => 'Cancelled', 'expired' => 'Expired'] as $key => $label)
+        <a href="{{ request()->fullUrlWithQuery(['status' => $key]) }}"
+           class="btn btn-sm rounded-pill px-3 {{ $status === $key ? 'btn-primary' : 'btn-outline-secondary' }}">
+            {{ $label }}
+        </a>
+        @endforeach
+    </div>
 </div>
 
 {{-- Filters Row --}}
@@ -36,7 +38,7 @@
             <div class="col-md-6">
                 <div class="input-group">
                     <span class="input-group-text bg-light border-0"><i class="fas fa-search text-muted"></i></span>
-                    <input type="text" name="search" class="form-control border-0 bg-light" placeholder="{{ __('Cari No. Order, nama pelanggan, username, ID Telegram, nama produk...') }}" value="{{ request('search') }}">
+                    <input type="text" name="search" class="form-control border-0 bg-light" placeholder="{{ __('Cari No. Order, nama, Telegram ID...') }}" value="{{ request('search') }}">
                 </div>
             </div>
 
@@ -69,7 +71,8 @@
 <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 16px;">
     <div class="card-body p-0">
         @if($orders->count() > 0)
-        <div class="table-responsive">
+        <!-- Desktop Table View -->
+        <div class="table-responsive d-none d-md-block">
             <table class="table table-hover align-middle mb-0">
                 <thead>
                     <tr class="text-secondary small border-bottom">
@@ -124,13 +127,63 @@
                             </div>
                         </td>
                     </tr>
-
-
                     @endforeach
                 </tbody>
             </table>
         </div>
-        <div class="px-4 py-3 border-top">
+
+        <!-- Mobile Card List View -->
+        <div class="d-md-none p-3 d-flex flex-column gap-2">
+            @foreach($orders as $order)
+            <div class="mobile-activity-card">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="fw-bold font-monospace text-primary small">{{ $order->reference }}</span>
+                    <span class="badge bg-{{ $order->status_color }}-subtle text-{{ $order->status_color }} rounded-pill px-2 py-1 small fw-bold">
+                        {{ $order->status_label }}
+                    </span>
+                </div>
+                <div class="mb-2">
+                    <div class="fw-bold text-body">{{ Str::limit($order->product->name ?? '-', 35) }}</div>
+                    <div class="small text-muted">
+                        <i class="fas fa-user me-1"></i>{{ $order->user->full_name ?? $order->user->username ?? 'User' }}
+                        @if($order->user && $order->user->telegram_id)
+                            <span class="ms-1">(TG: {{ $order->user->telegram_id }})</span>
+                        @endif
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                    <div>
+                        <div class="fw-bold text-body">{{ $order->formatted_total }}</div>
+                        <div class="text-secondary" style="font-size: 0.72rem;">{{ $order->created_at->format('d M Y H:i') }}</div>
+                    </div>
+                    <div class="d-flex gap-1">
+                        @if($order->status === 'pending_payment')
+                        <form action="{{ route('admin.orders.accept', $order->id) }}" method="POST" class="m-0" onsubmit="confirmAction(event, 'Konfirmasi terima pembayaran?');">
+                            @csrf
+                            <button type="submit" class="btn btn-sm btn-outline-success rounded-pill px-2 py-1 small" title="{{ __('Terima') }}">
+                                <i class="fas fa-check"></i>
+                            </button>
+                        </form>
+                        <form action="{{ route('admin.orders.reject', $order->id) }}" method="POST" class="m-0" onsubmit="confirmAction(event, 'Tolak pesanan?');">
+                            @csrf
+                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-2 py-1 small" title="{{ __('Tolak') }}">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </form>
+                        @endif
+                        <button class="btn btn-sm btn-outline-primary rounded-pill px-2 py-1 small" data-bs-toggle="modal" data-bs-target="#detailOrderModal{{ $order->id }}">
+                            <i class="fas fa-eye me-1"></i>{{ __('Detail') }}
+                        </button>
+                        <button class="btn btn-sm btn-light rounded-pill px-2 py-1 small" data-bs-toggle="modal" data-bs-target="#editOrderModal{{ $order->id }}">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            @endforeach
+        </div>
+
+        <div class="px-3 px-md-4 py-3 border-top">
             {{ $orders->withQueryString()->links() }}
         </div>
         @else

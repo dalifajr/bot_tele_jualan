@@ -105,22 +105,22 @@
 
     <!-- Floating Stat Cards -->
     <div class="container-fluid px-2 px-md-3 floating-stats-container">
-        <div class="row g-3">
+        <div class="row g-2 g-md-3">
             <!-- 1. Total Revenue -->
-            <div class="col-sm-6 col-lg-4 col-xl-3">
+            <div class="col-6 col-md-4 col-xl-3">
                 <div class="card border-0 shadow-sm h-100 rounded-4 lift-hover overflow-hidden">
-                    <div class="card-body p-3 d-flex align-items-center">
-                        <div class="stat-icon bg-primary-subtle text-primary rounded-3 p-3 me-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; font-size: 1.3rem;">
+                    <div class="card-body p-2 p-md-3 d-flex align-items-center">
+                        <div class="stat-icon bg-primary-subtle text-primary rounded-3 p-2 p-md-3 me-2 me-md-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 44px; height: 44px; font-size: 1.15rem;">
                             <i class="fas fa-wallet"></i>
                         </div>
                         <div class="text-truncate flex-grow-1">
-                            <div class="text-muted small fw-semibold text-uppercase" style="letter-spacing: 0.5px;">{{ __('Total Pendapatan') }}</div>
-                            <h5 class="fw-bold mb-0 text-nowrap text-body">Rp {{ number_format($totalRevenue, 0, ',', '.') }}</h5>
-                            <div class="mt-1" style="font-size: 0.75rem;">
+                            <div class="text-muted small fw-semibold text-uppercase" style="letter-spacing: 0.5px; font-size: 0.7rem;">{{ __('Total Pendapatan') }}</div>
+                            <h6 class="fw-bold mb-0 text-nowrap text-body fs-6 fs-md-5">Rp {{ number_format($totalRevenue, 0, ',', '.') }}</h6>
+                            <div class="mt-1" style="font-size: 0.72rem;">
                                 <span class="{{ $revenueStats['class'] }} fw-bold">
                                     <i class="fas {{ $revenueStats['icon'] }} me-1"></i>{{ $revenueStats['formatted_percent'] }}
                                 </span>
-                                <span class="text-muted">{{ __('vs periode lalu') }}</span>
+                                <span class="text-muted d-none d-sm-inline">{{ __('vs periode lalu') }}</span>
                             </div>
                         </div>
                     </div>
@@ -128,20 +128,20 @@
             </div>
 
             <!-- 2. Platform Commission -->
-            <div class="col-sm-6 col-lg-4 col-xl-3">
+            <div class="col-6 col-md-4 col-xl-3">
                 <div class="card border-0 shadow-sm h-100 rounded-4 lift-hover overflow-hidden">
-                    <div class="card-body p-3 d-flex align-items-center">
-                        <div class="stat-icon rounded-3 p-3 me-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; font-size: 1.3rem; background-color: rgba(111, 66, 193, 0.12); color: #6f42c1;">
+                    <div class="card-body p-2 p-md-3 d-flex align-items-center">
+                        <div class="stat-icon rounded-3 p-2 p-md-3 me-2 me-md-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 44px; height: 44px; font-size: 1.15rem; background-color: rgba(111, 66, 193, 0.12); color: #6f42c1;">
                             <i class="fas fa-coins"></i>
                         </div>
                         <div class="text-truncate flex-grow-1">
-                            <div class="text-muted small fw-semibold text-uppercase" style="letter-spacing: 0.5px;">{{ __('Komisi Platform') }}</div>
-                            <h5 class="fw-bold mb-0 text-nowrap text-body">Rp {{ number_format($platformCommission, 0, ',', '.') }}</h5>
-                            <div class="mt-1" style="font-size: 0.75rem;">
+                            <div class="text-muted small fw-semibold text-uppercase" style="letter-spacing: 0.5px; font-size: 0.7rem;">{{ __('Komisi Platform') }}</div>
+                            <h6 class="fw-bold mb-0 text-nowrap text-body fs-6 fs-md-5">Rp {{ number_format($platformCommission, 0, ',', '.') }}</h6>
+                            <div class="mt-1" style="font-size: 0.72rem;">
                                 <span class="{{ $commissionStats['class'] }} fw-bold">
                                     <i class="fas {{ $commissionStats['icon'] }} me-1"></i>{{ $commissionStats['formatted_percent'] }}
                                 </span>
-                                <span class="text-muted">{{ __('vs periode lalu') }}</span>
+                                <span class="text-muted d-none d-sm-inline">{{ __('vs periode lalu') }}</span>
                             </div>
                         </div>
                     </div>
@@ -149,20 +149,20 @@
             </div>
 
             <!-- 3. Admin Earnings -->
-            <div class="col-sm-6 col-lg-4 col-xl-3">
+            <div class="col-6 col-md-4 col-xl-3">
                 <div class="card border-0 shadow-sm h-100 rounded-4 lift-hover overflow-hidden">
-                    <div class="card-body p-3 d-flex align-items-center">
-                        <div class="stat-icon bg-danger-subtle text-danger rounded-3 p-3 me-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; font-size: 1.3rem;">
+                    <div class="card-body p-2 p-md-3 d-flex align-items-center">
+                        <div class="stat-icon bg-danger-subtle text-danger rounded-3 p-2 p-md-3 me-2 me-md-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 44px; height: 44px; font-size: 1.15rem;">
                             <i class="fas fa-user-shield"></i>
                         </div>
                         <div class="text-truncate flex-grow-1">
-                            <div class="text-muted small fw-semibold text-uppercase" style="letter-spacing: 0.5px;">{{ __('Pendapatan Admin') }}</div>
-                            <h5 class="fw-bold mb-0 text-nowrap text-body">Rp {{ number_format($adminEarnings, 0, ',', '.') }}</h5>
-                            <div class="mt-1" style="font-size: 0.75rem;">
+                            <div class="text-muted small fw-semibold text-uppercase" style="letter-spacing: 0.5px; font-size: 0.7rem;">{{ __('Pendapatan Admin') }}</div>
+                            <h6 class="fw-bold mb-0 text-nowrap text-body fs-6 fs-md-5">Rp {{ number_format($adminEarnings, 0, ',', '.') }}</h6>
+                            <div class="mt-1" style="font-size: 0.72rem;">
                                 <span class="{{ $adminEarningsStats['class'] }} fw-bold">
                                     <i class="fas {{ $adminEarningsStats['icon'] }} me-1"></i>{{ $adminEarningsStats['formatted_percent'] }}
                                 </span>
-                                <span class="text-muted">{{ __('vs periode lalu') }}</span>
+                                <span class="text-muted d-none d-sm-inline">{{ __('vs periode lalu') }}</span>
                             </div>
                         </div>
                     </div>
@@ -170,25 +170,25 @@
             </div>
 
             <!-- 4. Seller Earnings -->
-            <div class="col-sm-6 col-lg-4 col-xl-3">
+            <div class="col-6 col-md-4 col-xl-3">
                 <div class="card border-0 shadow-sm h-100 rounded-4 lift-hover overflow-hidden">
-                    <div class="card-body p-3 d-flex align-items-center justify-content-between w-100">
-                        <div class="d-flex align-items-center text-truncate me-2">
-                            <div class="stat-icon rounded-3 p-3 me-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; font-size: 1.3rem; background-color: rgba(32, 201, 151, 0.12); color: #20c997;">
+                    <div class="card-body p-2 p-md-3 d-flex align-items-center justify-content-between w-100">
+                        <div class="d-flex align-items-center text-truncate me-1 me-md-2">
+                            <div class="stat-icon rounded-3 p-2 p-md-3 me-2 me-md-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 44px; height: 44px; font-size: 1.15rem; background-color: rgba(32, 201, 151, 0.12); color: #20c997;">
                                 <i class="fas fa-store"></i>
                             </div>
                             <div class="text-truncate">
-                                <div class="text-muted small fw-semibold text-uppercase" style="letter-spacing: 0.5px;">{{ __('Pendapatan Seller') }}</div>
-                                <h5 class="fw-bold mb-0 text-nowrap text-body">Rp {{ number_format($totalSellerEarnings, 0, ',', '.') }}</h5>
-                                <div class="mt-1" style="font-size: 0.75rem;">
+                                <div class="text-muted small fw-semibold text-uppercase" style="letter-spacing: 0.5px; font-size: 0.7rem;">{{ __('Pendapatan Seller') }}</div>
+                                <h6 class="fw-bold mb-0 text-nowrap text-body fs-6 fs-md-5">Rp {{ number_format($totalSellerEarnings, 0, ',', '.') }}</h6>
+                                <div class="mt-1" style="font-size: 0.72rem;">
                                     <span class="{{ $sellerEarningsStats['class'] }} fw-bold">
                                         <i class="fas {{ $sellerEarningsStats['icon'] }} me-1"></i>{{ $sellerEarningsStats['formatted_percent'] }}
                                     </span>
-                                    <span class="text-muted">{{ __('vs periode lalu') }}</span>
+                                    <span class="text-muted d-none d-sm-inline">{{ __('vs periode lalu') }}</span>
                                 </div>
                             </div>
                         </div>
-                        <div>
+                        <div class="d-none d-md-block">
                             <a href="{{ route('admin.sellers.index') }}" class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1 fw-bold">{{ __('Detail') }}</a>
                         </div>
                     </div>
@@ -196,20 +196,20 @@
             </div>
 
             <!-- 5. Total Orders -->
-            <div class="col-sm-6 col-lg-4 col-xl-4">
+            <div class="col-6 col-md-4 col-xl-4">
                 <div class="card border-0 shadow-sm h-100 rounded-4 lift-hover overflow-hidden">
-                    <div class="card-body p-3 d-flex align-items-center">
-                        <div class="stat-icon bg-success-subtle text-success rounded-3 p-3 me-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; font-size: 1.3rem;">
+                    <div class="card-body p-2 p-md-3 d-flex align-items-center">
+                        <div class="stat-icon bg-success-subtle text-success rounded-3 p-2 p-md-3 me-2 me-md-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 44px; height: 44px; font-size: 1.15rem;">
                             <i class="fas fa-shopping-cart"></i>
                         </div>
                         <div class="text-truncate flex-grow-1">
-                            <div class="text-muted small fw-semibold text-uppercase" style="letter-spacing: 0.5px;">{{ __('Total Order') }}</div>
-                            <h4 class="fw-bold mb-0 text-nowrap text-body">{{ number_format($totalOrders, 0, ',', '.') }}</h4>
-                            <div class="mt-1" style="font-size: 0.75rem;">
+                            <div class="text-muted small fw-semibold text-uppercase" style="letter-spacing: 0.5px; font-size: 0.7rem;">{{ __('Total Order') }}</div>
+                            <h4 class="fw-bold mb-0 text-nowrap text-body fs-5 fs-md-4">{{ number_format($totalOrders, 0, ',', '.') }}</h4>
+                            <div class="mt-1" style="font-size: 0.72rem;">
                                 <span class="{{ $ordersStats['class'] }} fw-bold">
                                     <i class="fas {{ $ordersStats['icon'] }} me-1"></i>{{ $ordersStats['formatted_percent'] }}
                                 </span>
-                                <span class="text-muted">{{ __('vs periode lalu') }}</span>
+                                <span class="text-muted d-none d-sm-inline">{{ __('vs periode lalu') }}</span>
                             </div>
                         </div>
                     </div>
@@ -217,20 +217,20 @@
             </div>
 
             <!-- 6. Total Products -->
-            <div class="col-sm-6 col-lg-4 col-xl-4">
+            <div class="col-6 col-md-4 col-xl-4">
                 <div class="card border-0 shadow-sm h-100 rounded-4 lift-hover overflow-hidden">
-                    <div class="card-body p-3 d-flex align-items-center">
-                        <div class="stat-icon bg-info-subtle text-info rounded-3 p-3 me-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; font-size: 1.3rem;">
+                    <div class="card-body p-2 p-md-3 d-flex align-items-center">
+                        <div class="stat-icon bg-info-subtle text-info rounded-3 p-2 p-md-3 me-2 me-md-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 44px; height: 44px; font-size: 1.15rem;">
                             <i class="fas fa-box"></i>
                         </div>
                         <div class="text-truncate flex-grow-1">
-                            <div class="text-muted small fw-semibold text-uppercase" style="letter-spacing: 0.5px;">{{ __('Total Produk') }}</div>
-                            <h4 class="fw-bold mb-0 text-nowrap text-body">{{ number_format($totalProducts, 0, ',', '.') }}</h4>
-                            <div class="mt-1" style="font-size: 0.75rem;">
+                            <div class="text-muted small fw-semibold text-uppercase" style="letter-spacing: 0.5px; font-size: 0.7rem;">{{ __('Total Produk') }}</div>
+                            <h4 class="fw-bold mb-0 text-nowrap text-body fs-5 fs-md-4">{{ number_format($totalProducts, 0, ',', '.') }}</h4>
+                            <div class="mt-1" style="font-size: 0.72rem;">
                                 <span class="{{ $productsStats['class'] }} fw-bold">
                                     <i class="fas {{ $productsStats['icon'] }} me-1"></i>{{ $productsStats['formatted_percent'] }}
                                 </span>
-                                <span class="text-muted">{{ __('vs periode lalu') }}</span>
+                                <span class="text-muted d-none d-sm-inline">{{ __('vs periode lalu') }}</span>
                             </div>
                         </div>
                     </div>
@@ -238,16 +238,16 @@
             </div>
 
             <!-- 7. Total Users -->
-            <div class="col-sm-6 col-lg-4 col-xl-4">
+            <div class="col-12 col-md-4 col-xl-4">
                 <div class="card border-0 shadow-sm h-100 rounded-4 lift-hover overflow-hidden">
-                    <div class="card-body p-3 d-flex align-items-center">
-                        <div class="stat-icon bg-warning-subtle text-warning-emphasis rounded-3 p-3 me-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; font-size: 1.3rem;">
+                    <div class="card-body p-2 p-md-3 d-flex align-items-center">
+                        <div class="stat-icon bg-warning-subtle text-warning-emphasis rounded-3 p-2 p-md-3 me-2 me-md-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 44px; height: 44px; font-size: 1.15rem;">
                             <i class="fas fa-users"></i>
                         </div>
                         <div class="text-truncate flex-grow-1">
-                            <div class="text-muted small fw-semibold text-uppercase" style="letter-spacing: 0.5px;">{{ __('Total User') }}</div>
-                            <h4 class="fw-bold mb-0 text-nowrap text-body">{{ number_format($totalUsers, 0, ',', '.') }}</h4>
-                            <div class="d-flex gap-2 mt-1" style="font-size: 0.75rem;">
+                            <div class="text-muted small fw-semibold text-uppercase" style="letter-spacing: 0.5px; font-size: 0.7rem;">{{ __('Total User') }}</div>
+                            <h4 class="fw-bold mb-0 text-nowrap text-body fs-5 fs-md-4">{{ number_format($totalUsers, 0, ',', '.') }}</h4>
+                            <div class="d-flex gap-2 mt-1" style="font-size: 0.72rem;">
                                 <span class="badge bg-primary-subtle text-primary rounded-pill"><i class="fas fa-desktop me-1"></i>Web: {{ $webUsersCount }}</span>
                                 <span class="badge bg-success-subtle text-success rounded-pill"><i class="fab fa-telegram-plane me-1"></i>TG: {{ $tgUsersCount }}</span>
                             </div>
@@ -314,7 +314,8 @@
     </div>
     <div class="card-body p-0">
         @if($recentOrders->count() > 0)
-        <div class="table-responsive">
+        <!-- Desktop Table View -->
+        <div class="table-responsive d-none d-md-block">
             <table class="table table-hover align-middle mb-0">
                 <thead>
                     <tr class="text-secondary small fw-bold text-uppercase" style="letter-spacing: 0.5px;">
@@ -348,6 +349,33 @@
                     @endforeach
                 </tbody>
             </table>
+        </div>
+
+        <!-- Mobile Card List View -->
+        <div class="d-md-none p-3 d-flex flex-column gap-2">
+            @foreach($recentOrders as $order)
+            <div class="mobile-activity-card">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="fw-bold font-monospace text-primary small">{{ $order->reference }}</span>
+                    <span class="badge bg-{{ $order->status_color }}-subtle text-{{ $order->status_color }} rounded-pill px-2 py-1 small fw-bold">
+                        {{ $order->status_label }}
+                    </span>
+                </div>
+                <div class="mb-2">
+                    <div class="fw-bold text-body">{{ Str::limit($order->product->name ?? '-', 35) }}</div>
+                    <div class="small text-muted">
+                        <i class="fas fa-user me-1"></i>{{ $order->user->full_name ?? $order->user->username ?? 'User' }}
+                        @if($order->user && $order->user->telegram_id)
+                            <span class="ms-1">(TG: {{ $order->user->telegram_id }})</span>
+                        @endif
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                    <span class="small text-muted">{{ $order->created_at->format('d M Y H:i') }}</span>
+                    <span class="fw-bold text-body">{{ $order->formatted_total }}</span>
+                </div>
+            </div>
+            @endforeach
         </div>
         @else
         <div class="text-center py-5">

@@ -11,7 +11,8 @@
             <div class="card-body p-4">
                 <h5 class="fw-bold mb-4"><i class="fas fa-receipt text-primary me-2"></i>{{ __('Review Pembelian') }}</h5>
                 
-                <div class="table-responsive">
+                {{-- Desktop Table View --}}
+                <div class="table-responsive d-none d-md-block">
                     <table class="table align-middle border-0 mb-0">
                         <thead>
                             <tr class="text-muted small">
@@ -46,6 +47,26 @@
                             @endforeach
                         </tbody>
                     </table>
+                </div>
+
+                {{-- Mobile Items Review Cards --}}
+                <div class="d-md-none">
+                    @foreach($cartItems as $item)
+                    @if($item->product)
+                    <div class="d-flex align-items-center justify-content-between py-2.5 border-bottom">
+                        <div class="d-flex align-items-center gap-2.5 overflow-hidden">
+                            <div class="d-flex align-items-center justify-content-center bg-light rounded-3 text-primary flex-shrink-0" style="width: 40px; height: 40px; border: 1px solid var(--glass-border);">
+                                <i class="fas fa-box-open fs-6"></i>
+                            </div>
+                            <div class="overflow-hidden">
+                                <h6 class="fw-bold mb-0 text-truncate" style="font-size: 0.85rem;">{{ $item->product->name }}</h6>
+                                <small class="text-muted" style="font-size: 0.72rem;">{{ $item->quantity }} × {{ $item->product->formatted_price }}</small>
+                            </div>
+                        </div>
+                        <span class="fw-bold text-body ms-2" style="font-size: 0.88rem;">Rp{{ number_format($item->product->price * $item->quantity, 0, ',', '.') }}</span>
+                    </div>
+                    @endif
+                    @endforeach
                 </div>
             </div>
         </div>
@@ -147,6 +168,19 @@
                 </form>
             </div>
         </div>
+    </div>
+</div>
+
+{{-- Mobile Sticky Bottom Bar for Checkout --}}
+<div class="mobile-sticky-action-bar d-md-none">
+    <div class="d-flex align-items-center justify-content-between gap-3">
+        <div>
+            <span class="text-muted d-block" style="font-size: 0.68rem; line-height: 1;">Total Bayar</span>
+            <span class="fw-bold text-primary" style="font-size: 1.15rem;">Rp{{ number_format($total, 0, ',', '.') }}</span>
+        </div>
+        <button type="button" class="btn btn-success rounded-pill px-4 py-2 fw-bold shadow-sm d-flex align-items-center gap-2" onclick="document.getElementById('formProcessCheckout').requestSubmit()" style="font-size: 0.85rem;">
+            <i class="fas fa-check-double"></i> {{ __('Buat Pesanan') }}
+        </button>
     </div>
 </div>
 @endsection

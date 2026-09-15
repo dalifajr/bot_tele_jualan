@@ -67,22 +67,22 @@
         </div>
     </div>
 
-    <!-- Floating Stat Cards -->
+    <!-- Floating Stat Cards (2x2 Grid on Mobile, 4x1 on Desktop) -->
     <div class="container-fluid px-2 px-md-3 floating-stats-container">
-        <div class="row g-3">
+        <div class="row g-2 g-md-3">
             <!-- 1. Wallet Balance Card -->
-            <div class="col-sm-6 col-lg-3">
+            <div class="col-6 col-lg-3">
                 <div class="card border-0 shadow-sm h-100 rounded-4 text-white overflow-hidden lift-hover" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);">
-                    <div class="card-body p-4 position-relative">
-                        <div class="position-absolute end-0 bottom-0 text-white" style="font-size: 7rem; transform: translate(15px, 15px); opacity: 0.12; pointer-events: none;">
+                    <div class="card-body p-3 p-md-4 position-relative">
+                        <div class="position-absolute end-0 bottom-0 text-white d-none d-md-block" style="font-size: 7rem; transform: translate(15px, 15px); opacity: 0.12; pointer-events: none;">
                             <i class="fas fa-wallet"></i>
                         </div>
                         <div class="position-relative z-1">
-                            <span class="badge bg-white text-primary rounded-pill px-3 py-1 mb-2 small fw-bold text-uppercase shadow-sm">{{ __('Saldo Dompet Saya') }}</span>
-                            <h2 class="fw-bold mb-3 text-white">Rp {{ number_format($user->wallet_balance, 0, ',', '.') }}</h2>
-                            <div class="d-flex align-items-center justify-content-between pt-2 border-top border-white border-opacity-25">
-                                <span class="small text-white-50">{{ __('Komisi:') }} <strong>{{ $user->platform_fee_percent }}%</strong></span>
-                                <a href="{{ route('seller.finance.index') }}" class="btn btn-light btn-sm rounded-pill px-3 fw-bold text-primary shadow-sm">{{ __('Tarik Saldo') }} <i class="fas fa-arrow-right ms-1"></i></a>
+                            <span class="badge bg-white text-primary rounded-pill px-2 px-md-3 py-1 mb-2 small fw-bold text-uppercase shadow-sm" style="font-size: 0.68rem;">{{ __('Saldo Dompet') }}</span>
+                            <h3 class="fw-bold mb-2 text-white h4 h2-md">Rp {{ number_format($user->wallet_balance, 0, ',', '.') }}</h3>
+                            <div class="d-flex align-items-center justify-content-between pt-2 border-top border-white border-opacity-25" style="font-size: 0.75rem;">
+                                <span class="text-white-50">{{ __('Komisi:') }} <strong>{{ $user->platform_fee_percent }}%</strong></span>
+                                <a href="{{ route('seller.finance.index') }}" class="btn btn-light btn-xs btn-sm-sm rounded-pill px-2 px-md-3 fw-bold text-primary shadow-sm" style="font-size: 0.72rem;">{{ __('Tarik') }}</a>
                             </div>
                         </div>
                     </div>
@@ -90,18 +90,18 @@
             </div>
 
             <!-- 2. Held Balance Card -->
-            <div class="col-sm-6 col-lg-3">
+            <div class="col-6 col-lg-3">
                 <div class="card border-0 shadow-sm h-100 rounded-4 text-white overflow-hidden lift-hover" style="background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);">
-                    <div class="card-body p-4 position-relative">
-                        <div class="position-absolute end-0 bottom-0 text-white" style="font-size: 7rem; transform: translate(15px, 15px); opacity: 0.15; pointer-events: none;">
+                    <div class="card-body p-3 p-md-4 position-relative">
+                        <div class="position-absolute end-0 bottom-0 text-white d-none d-md-block" style="font-size: 7rem; transform: translate(15px, 15px); opacity: 0.15; pointer-events: none;">
                             <i class="fas fa-lock"></i>
                         </div>
                         <div class="position-relative z-1">
-                            <span class="badge bg-white text-warning-emphasis rounded-pill px-3 py-1 mb-2 small fw-bold text-uppercase shadow-sm">{{ __('Saldo Tertahan (Garansi)') }}</span>
-                            <h2 class="fw-bold mb-3 text-white">Rp {{ number_format($heldBalance, 0, ',', '.') }}</h2>
-                            <div class="d-flex align-items-center justify-content-between pt-2 border-top border-white border-opacity-25">
-                                <span class="small text-white-50">{{ __('Menunggu Garansi') }}</span>
-                                <a href="{{ route('seller.finance.index') }}" class="btn btn-light btn-sm rounded-pill px-3 fw-bold text-warning-emphasis shadow-sm">{{ __('Rincian') }} <i class="fas fa-arrow-right ms-1"></i></a>
+                            <span class="badge bg-white text-warning-emphasis rounded-pill px-2 px-md-3 py-1 mb-2 small fw-bold text-uppercase shadow-sm" style="font-size: 0.68rem;">{{ __('Tertahan') }}</span>
+                            <h3 class="fw-bold mb-2 text-white h4 h2-md">Rp {{ number_format($heldBalance, 0, ',', '.') }}</h3>
+                            <div class="d-flex align-items-center justify-content-between pt-2 border-top border-white border-opacity-25" style="font-size: 0.75rem;">
+                                <span class="text-white-50">{{ __('Garansi') }}</span>
+                                <a href="{{ route('seller.finance.index') }}" class="btn btn-light btn-xs btn-sm-sm rounded-pill px-2 px-md-3 fw-bold text-warning-emphasis shadow-sm" style="font-size: 0.72rem;">{{ __('Rincian') }}</a>
                             </div>
                         </div>
                     </div>
@@ -109,28 +109,22 @@
             </div>
 
             <!-- 3. Monthly Earnings Card -->
-            <div class="col-sm-6 col-lg-3">
+            <div class="col-6 col-lg-3">
                 <div class="card border-0 shadow-sm h-100 rounded-4 lift-hover overflow-hidden">
-                    <div class="card-body p-4">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="badge bg-success-subtle text-success rounded-pill px-3 py-1 small fw-bold text-uppercase">{{ __('Pendapatan Kotor') }}</span>
-                            <select onchange="let params = new URLSearchParams(window.location.search); params.set('earnings_days', this.value); window.location.href = window.location.pathname + '?' + params.toString();" class="form-select form-select-sm py-0 px-2 border-0 shadow-sm bg-light" style="width: auto; font-size: 0.7rem; border-radius: 8px; cursor: pointer;">
+                    <div class="card-body p-3 p-md-4">
+                        <div class="d-flex justify-content-between align-items-center mb-1 mb-md-2">
+                            <span class="badge bg-success-subtle text-success rounded-pill px-2 px-md-3 py-1 small fw-bold text-uppercase" style="font-size: 0.68rem;">{{ __('Pendapatan') }}</span>
+                            <select onchange="let params = new URLSearchParams(window.location.search); params.set('earnings_days', this.value); window.location.href = window.location.pathname + '?' + params.toString();" class="form-select form-select-sm py-0 px-1 border-0 shadow-sm bg-light" style="width: auto; font-size: 0.65rem; border-radius: 8px; cursor: pointer;">
                                 <option value="all" {{ $earningsDays == 'all' ? 'selected' : '' }}>{{ __('Semua') }}</option>
                                 <option value="7" {{ $earningsDays == '7' ? 'selected' : '' }}>{{ __('7 Hari') }}</option>
                                 <option value="30" {{ $earningsDays == '30' ? 'selected' : '' }}>{{ __('30 Hari') }}</option>
-                                <option value="90" {{ $earningsDays == '90' ? 'selected' : '' }}>{{ __('90 Hari') }}</option>
-                                <option value="365" {{ $earningsDays == '365' ? 'selected' : '' }}>{{ __('1 Tahun') }}</option>
                             </select>
                         </div>
-                        <h2 class="fw-bold text-success mb-2">Rp {{ number_format($monthlyEarnings, 0, ',', '.') }}</h2>
-                        <div class="d-flex flex-column gap-1 pt-2 border-top" style="font-size: 0.78rem;">
+                        <h3 class="fw-bold text-success mb-2 h4 h2-md">Rp {{ number_format($monthlyEarnings, 0, ',', '.') }}</h3>
+                        <div class="d-flex flex-column gap-1 pt-1 pt-md-2 border-top" style="font-size: 0.72rem;">
                             <div class="d-flex justify-content-between text-muted">
-                                <span>{{ __('Pend. Bersih:') }}</span>
+                                <span>{{ __('Bersih:') }}</span>
                                 <span class="fw-bold text-body">Rp {{ number_format($monthlyNet, 0, ',', '.') }}</span>
-                            </div>
-                            <div class="d-flex justify-content-between text-muted">
-                                <span>{{ __('Komisi') }} ({{ $user->platform_fee_percent ?? 10 }}%):</span>
-                                <span class="fw-bold text-danger">Rp {{ number_format($monthlyCommission, 0, ',', '.') }}</span>
                             </div>
                         </div>
                     </div>
@@ -138,22 +132,19 @@
             </div>
 
             <!-- 4. Active Stock & Review Card -->
-            <div class="col-sm-6 col-lg-3">
+            <div class="col-6 col-lg-3">
                 <div class="card border-0 shadow-sm h-100 rounded-4 lift-hover overflow-hidden">
-                    <div class="card-body p-4">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="badge bg-info-subtle text-info rounded-pill px-3 py-1 small fw-bold text-uppercase">{{ __('Status Stok & Rating') }}</span>
-                            <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill px-2 py-1 fw-bold">
+                    <div class="card-body p-3 p-md-4">
+                        <div class="d-flex justify-content-between align-items-center mb-1 mb-md-2">
+                            <span class="badge bg-info-subtle text-info rounded-pill px-2 px-md-3 py-1 small fw-bold text-uppercase" style="font-size: 0.68rem;">{{ __('Stok & Rating') }}</span>
+                            <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill px-2 py-1 fw-bold" style="font-size: 0.68rem;">
                                 <i class="fas fa-star me-1 text-warning"></i>{{ $avgRating ? number_format($avgRating, 1) : '0.0' }}
                             </span>
                         </div>
-                        <h2 class="fw-bold text-info mb-2">{{ $readyStockCount }} <span class="fs-6 text-muted fw-normal">{{ __('ready') }}</span></h2>
-                        <div class="d-flex gap-2 mb-2">
-                            <span class="badge bg-warning-subtle text-warning rounded-pill px-2 small">{{ $savedStockCount }} {{ __('karantina') }}</span>
-                            <span class="badge bg-secondary-subtle text-secondary rounded-pill px-2 small">{{ $soldStockCount }} {{ __('terjual') }}</span>
-                        </div>
-                        <div class="pt-2 border-top small text-muted">
-                            <i class="fas fa-comments text-primary me-1"></i>{{ __('Berdasarkan :count ulasan pembeli.', ['count' => $totalReviews]) }}
+                        <h3 class="fw-bold text-info mb-2 h4 h2-md">{{ $readyStockCount }} <span class="fs-6 text-muted fw-normal">{{ __('ready') }}</span></h3>
+                        <div class="d-flex gap-1 mb-1" style="font-size: 0.68rem;">
+                            <span class="badge bg-warning-subtle text-warning rounded-pill px-1.5">{{ $savedStockCount }} {{ __('karantina') }}</span>
+                            <span class="badge bg-secondary-subtle text-secondary rounded-pill px-1.5">{{ $soldStockCount }} {{ __('terjual') }}</span>
                         </div>
                     </div>
                 </div>

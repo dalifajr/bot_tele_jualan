@@ -5,16 +5,41 @@
 @section('meta_description', 'Lihat semua produk digital yang tersedia untuk dibeli')
 
 @section('content')
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
     <div>
         <h4 class="fw-bold mb-1">{{ __('Katalog Produk') }}</h4>
         <p class="text-muted mb-0">{{ __(':count produk tersedia', ['count' => $products->count()]) }}</p>
     </div>
+    <div class="d-flex align-items-center gap-2" style="max-width: 320px; width: 100%;">
+        <div class="input-group input-group-sm">
+            <span class="input-group-text bg-body border-end-0 rounded-start-pill ps-3"><i class="fas fa-search text-muted"></i></span>
+            <input type="text" id="catalogSearchInput" class="form-control border-start-0 rounded-end-pill pe-3" placeholder="{{ __('Cari nama produk...') }}">
+        </div>
+    </div>
 </div>
 
-<div class="row g-2 g-md-4">
+{{-- Horizontal Scroll Category Filter Chips --}}
+<div class="category-chips-wrapper mb-3 pb-1 d-flex gap-2 overflow-x-auto text-nowrap" style="-webkit-overflow-scrolling: touch; scrollbar-width: none;">
+    <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 py-1 fw-bold category-filter-chip active" data-filter="all">
+        <i class="fas fa-th-large me-1"></i> {{ __('Semua') }}
+    </button>
+    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1 fw-semibold category-filter-chip" data-filter="ready">
+        <i class="fas fa-check-circle text-success me-1"></i> {{ __('Ready Stok') }}
+    </button>
+    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1 fw-semibold category-filter-chip" data-filter="account">
+        <i class="fas fa-user-shield text-info me-1"></i> {{ __('Akun Digital') }}
+    </button>
+    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1 fw-semibold category-filter-chip" data-filter="vpn">
+        <i class="fas fa-network-wired text-warning me-1"></i> {{ __('VPN / SSH') }}
+    </button>
+</div>
+
+<div class="row g-2 g-md-4" id="catalogProductsRow">
     @forelse($products as $product)
-    <div class="col-6 col-lg-4 col-xl-3">
+    <div class="col-6 col-lg-4 col-xl-3 product-item-col" 
+         data-name="{{ strtolower($product->name) }}" 
+         data-is-vpn="{{ $product->is_vpn ? '1' : '0' }}" 
+         data-has-stock="{{ $product->stock_count > 0 ? '1' : '0' }}">
         <div class="card product-card h-100 position-relative">
             {{-- Stock Badge --}}
             <div class="product-badge">
@@ -145,4 +170,92 @@
     </div>
     @endforelse
 </div>
+
+<div id="noMatchFound" class="col-12 d-none text-center py-5">
+    <i class="fas fa-search text-muted mb-3" style="font-size: 3rem;"></i>
+    <h6 class="fw-bold text-muted">{{ __('Tidak ada produk yang cocok dengan pencarian / filter Anda') }}</h6>
+    <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3 mt-2" onclick="resetCatalogFilters()">{{ __('Reset Filter') }}</button>
+</div>
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('catalogSearchInput');
+        const filterChips = document.querySelectorAll('.category-filter-chip');
+        const productItems = document.querySelectorAll('.product-item-col');
+        const noMatch = document.getElementById('noMatchFound');
+        let currentFilter = 'all';
+
+        function applyFilter() {
+            const query = (searchInput ? searchInput.value : '').toLowerCase().trim();
+            let visibleCount = 0;
+
+            productItems.forEach(item => {
+                const name = item.getAttribute('data-name') || '';
+                const isVpn = item.getAttribute('data-is-vpn') === '1';
+                const hasStock = item.getAttribute('data-has-stock') === '1';
+
+                const matchesSearch = !query || name.includes(query);
+                let matchesCategory = true;
+
+                if (currentFilter === 'ready') {
+                    matchesCategory = hasStock;
+                } else if (currentFilter === 'account') {
+                    matchesCategory = !isVpn;
+                } else if (currentFilter === 'vpn') {
+                    matchesCategory = isVpn;
+                }
+
+                if (matchesSearch && matchesCategory) {
+                    item.classList.remove('d-none');
+                    visibleCount++;
+                } else {
+                    item.classList.add('d-none');
+                }
+            });
+
+            if (noMatch) {
+                if (visibleCount === 0 && productItems.length > 0) {
+                    noMatch.classList.remove('d-none');
+                } else {
+                    noMatch.classList.add('d-none');
+                }
+            }
+        }
+
+        if (searchInput) {
+            searchInput.addEventListener('input', applyFilter);
+        }
+
+        filterChips.forEach(chip => {
+            chip.addEventListener('click', function() {
+                filterChips.forEach(c => {
+                    c.classList.remove('btn-primary', 'active');
+                    c.classList.add('btn-outline-secondary');
+                });
+                this.classList.remove('btn-outline-secondary');
+                this.classList.add('btn-primary', 'active');
+
+                currentFilter = this.getAttribute('data-filter') || 'all';
+                applyFilter();
+            });
+        });
+
+        window.resetCatalogFilters = function() {
+            if (searchInput) searchInput.value = '';
+            currentFilter = 'all';
+            filterChips.forEach(c => {
+                c.classList.remove('btn-primary', 'active');
+                c.classList.add('btn-outline-secondary');
+                if (c.getAttribute('data-filter') === 'all') {
+                    c.classList.remove('btn-outline-secondary');
+                    c.classList.add('btn-primary', 'active');
+                }
+            });
+            applyFilter();
+        };
+    });
+</script>
+@endpush
+
