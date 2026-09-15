@@ -410,7 +410,21 @@
             $unreadNotifications = Auth::check() ? Auth::user()->unreadNotifications()->take(5)->get() : collect();
             $totalUnreadCount = Auth::check() ? Auth::user()->unreadNotifications()->count() : 0;
         @endphp
-        <div class="dropdown">
+        {{-- Notification Bell for Mobile (< 768px): Direct Link to Notifications Page (Poin 10) --}}
+        <a href="{{ Auth::check() ? route('notifications.index') : route('login') }}" 
+           @guest data-guest-modal="true" data-feature-name="notifikasi" @endguest 
+           class="btn btn-link link-body-emphasis p-0 position-relative d-md-none" 
+           title="{{ __('Notifikasi') }}">
+            <i class="fas fa-bell fs-5"></i>
+            @if($totalUnreadCount > 0)
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.65rem;">
+                {{ $totalUnreadCount > 99 ? '99+' : $totalUnreadCount }}
+            </span>
+            @endif
+        </a>
+
+        {{-- Notification Dropdown for Desktop (>= 768px): Popover --}}
+        <div class="dropdown d-none d-md-block">
             <button class="btn btn-link link-body-emphasis p-0 position-relative" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="{{ __('Notifikasi') }}" data-pex="xrpax4o-0">
                 <i class="fas fa-bell fs-5" data-pex="xrpax4o-1"></i>
                 @if($totalUnreadCount > 0)
@@ -472,7 +486,11 @@
         </div>
 
         {{-- Shopping Cart Icon --}}
-        <a href="{{ route('cart.index') }}" class="btn btn-link link-body-emphasis p-0 position-relative me-2" title="{{ __('Keranjang Belanja') }}" id="headerCartBtn">
+        <a href="{{ Auth::check() ? route('cart.index') : route('login') }}" 
+           @guest data-guest-modal="true" data-feature-name="keranjang belanja" @endguest 
+           class="btn btn-link link-body-emphasis p-0 position-relative me-2" 
+           title="{{ __('Keranjang Belanja') }}" 
+           id="headerCartBtn">
             <i class="fas fa-shopping-cart fs-5"></i>
             @php
                 $cartCount = Auth::check() ? \App\Models\CartItem::where('user_id', Auth::id())->sum('quantity') : 0;
@@ -483,20 +501,24 @@
         </a>
         @endunless
 
-        
-
         {{-- Theme Toggle --}}
         <button class="btn btn-link link-body-emphasis p-0 me-2" id="themeToggle" title="{{ __('Toggle Theme') }}" aria-label="{{ __('Ganti Tema') }}">
             <i class="fas fa-moon fs-5" id="themeIcon"></i>
         </button>
 
-        {{-- Logout (Desktop Only) --}}
+        {{-- Logout or Login Button (Desktop Only) --}}
+        @auth
         <form action="{{ route('logout') }}" method="POST" class="m-0 d-none d-lg-block">
             @csrf
-            <button type="submit" class="btn btn-sm btn-outline-danger d-flex align-items-center gap-2" aria-label="{{ __('Logout') }}">
+            <button type="submit" class="btn btn-sm btn-outline-danger d-flex align-items-center gap-2 rounded-pill px-3" aria-label="{{ __('Logout') }}">
                 <i class="fas fa-sign-out-alt"></i> <span class="d-none d-sm-inline">{{ __('Logout') }}</span>
             </button>
         </form>
+        @else
+        <a href="{{ route('login') }}" class="btn btn-sm btn-primary rounded-pill px-3 d-none d-lg-flex align-items-center gap-1.5 shadow-sm fw-bold">
+            <i class="fas fa-sign-in-alt"></i> <span>{{ __('Masuk') }}</span>
+        </a>
+        @endauth
     </div>
 </nav>
 
@@ -519,13 +541,14 @@
                 </button>
             </div>
         </div>
+        @auth
         <div class="sidebar-header d-flex align-items-center gap-3">
             <div class="user-avatar rounded-circle d-flex align-items-center justify-content-center fw-bold text-white bg-primary" style="width: 40px; height: 40px; flex-shrink: 0;">
                 {{ strtoupper(substr(Auth::user()->full_name ?? Auth::user()->username ?? 'U', 0, 1)) }}
             </div>
             <div class="d-flex flex-column text-truncate">
                 <span class="fw-bold text-body text-truncate" style="font-size: 0.9rem;">{{ Str::limit(Auth::user()->full_name ?? Auth::user()->username ?? 'User', 20) }}</span>
-                <small class="text-secondary" style="font-size: 0.75rem;">ID: {{ Auth::user()->telegram_id }}</small>
+                <small class="text-secondary" style="font-size: 0.75rem;">ID: {{ Auth::user()->telegram_id ?: 'Web User' }}</small>
             </div>
             {{-- Logout Button on Mobile (#sidebar > div:nth-of-type(2)) --}}
             <div class="ms-auto d-lg-none">
@@ -537,6 +560,22 @@
                 </form>
             </div>
         </div>
+        @else
+        <div class="sidebar-header d-flex align-items-center gap-3 bg-light rounded-4 p-3 m-3 border">
+            <div class="user-avatar rounded-circle d-flex align-items-center justify-content-center fw-bold text-white bg-secondary" style="width: 40px; height: 40px; flex-shrink: 0;">
+                <i class="fas fa-user"></i>
+            </div>
+            <div class="d-flex flex-column text-truncate">
+                <span class="fw-bold text-body text-truncate" style="font-size: 0.9rem;">{{ __('Tamu (Guest)') }}</span>
+                <small class="text-muted" style="font-size: 0.75rem;">{{ __('Belum masuk akun') }}</small>
+            </div>
+            <div class="ms-auto">
+                <a href="{{ route('login') }}" class="btn btn-sm btn-primary rounded-pill px-3 py-1 fw-bold" style="font-size: 0.78rem;">
+                    {{ __('Login') }}
+                </a>
+            </div>
+        </div>
+        @endauth
 
         <div class="py-3">
             <div class="menu-group">
@@ -555,18 +594,18 @@
                         <div class="menu-icon-box"><i class="fas fa-store text-primary"></i></div>
                         <span class="menu-label-text">{{ __('Katalog Produk') }}</span>
                     </a>
-                    <a href="{{ route('orders.index') }}" class="menu-item {{ request()->routeIs('orders.*') ? 'active' : '' }}">
+                    <a href="{{ route('orders.index') }}" @guest data-guest-modal="true" data-feature-name="riwayat pesanan" @endguest class="menu-item {{ request()->routeIs('orders.*') ? 'active' : '' }}">
                         <div class="menu-icon-box"><i class="fas fa-receipt text-success"></i></div>
                         <span class="menu-label-text">{{ __('Riwayat Pesanan') }}</span>
                     </a>
-                    <a href="{{ route('customer.complaints.index') }}" class="menu-item {{ request()->routeIs('customer.complaints.*') ? 'active' : '' }}">
+                    <a href="{{ route('customer.complaints.index') }}" @guest data-guest-modal="true" data-feature-name="kelola komplain" @endguest class="menu-item {{ request()->routeIs('customer.complaints.*') ? 'active' : '' }}">
                         <div class="menu-icon-box"><i class="fas fa-headset text-warning"></i></div>
                         <span class="menu-label-text">{{ __('Kelola Komplain') }}</span>
                         @if($customerComplaintsCount > 0)
                             <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.7rem;">{{ $customerComplaintsCount }}</span>
                         @endif
                     </a>
-                    <a href="{{ route('chat.index') }}" class="menu-item {{ request()->routeIs('chat.*') ? 'active' : '' }}">
+                    <a href="{{ route('chat.index') }}" @guest data-guest-modal="true" data-feature-name="pusat chat" @endguest class="menu-item {{ request()->routeIs('chat.*') ? 'active' : '' }}">
                         <div class="menu-icon-box"><i class="fas fa-comments text-info"></i></div>
                         <span class="menu-label-text">{{ __('Pusat Chat') }}</span>
                         @if($unreadChatsCount > 0)
@@ -579,11 +618,11 @@
             <div class="menu-group">
                 <div class="menu-header"><i class="fas fa-user-circle me-1 text-primary"></i> {{ __('Akun') }}</div>
                 <div class="menu-items-grid">
-                    <a href="{{ route('profile') }}" class="menu-item {{ request()->routeIs('profile') ? 'active' : '' }}">
+                    <a href="{{ route('profile') }}" @guest data-guest-modal="true" data-feature-name="profil saya" @endguest class="menu-item {{ request()->routeIs('profile') ? 'active' : '' }}">
                         <div class="menu-icon-box"><i class="fas fa-user-circle text-primary"></i></div>
                         <span class="menu-label-text">{{ __('Profil Saya') }}</span>
                     </a>
-                    <a href="{{ route('profile.logins') }}" class="menu-item {{ request()->routeIs('profile.logins') ? 'active' : '' }}">
+                    <a href="{{ route('profile.logins') }}" @guest data-guest-modal="true" data-feature-name="riwayat login" @endguest class="menu-item {{ request()->routeIs('profile.logins') ? 'active' : '' }}">
                         <div class="menu-icon-box"><i class="fas fa-shield-halved text-danger"></i></div>
                         <span class="menu-label-text">{{ __('Riwayat Login') }}</span>
                         @if($customerLoginBadgeCount > 0)
@@ -593,7 +632,7 @@
                 </div>
             </div>
 
-            @if($canAccess2fa && Auth::user()->role === 'customer')
+            @if(Auth::check() && $canAccess2fa && Auth::user()->role === 'customer')
             <div class="menu-group">
                 <div class="menu-header text-success"><i class="fas fa-tools me-1"></i> {{ __('Tool') }}</div>
                 <div class="menu-items-grid">
@@ -605,7 +644,7 @@
             </div>
             @endif
 
-            @if(Auth::user()->role === 'admin')
+            @if(Auth::check() && Auth::user()->role === 'admin')
             <div class="menu-group">
                 <div class="menu-header text-primary"><i class="fas fa-shield-alt me-1"></i> {{ __('Admin Panel') }}</div>
                 <div class="menu-items-grid">
@@ -709,7 +748,7 @@
             </div>
             @endif
 
-            @if(Auth::user()->role === 'seller')
+            @if(Auth::check() && Auth::user()->role === 'seller')
             <div class="menu-group">
                 <div class="menu-header text-info"><i class="fas fa-store me-1"></i> {{ __('Seller Portal') }}</div>
                 <div class="menu-items-grid">
@@ -750,7 +789,7 @@
                 </div>
             </div>
             @php
-                $sellerHasTools = (is_array(Auth::user()->allowed_tools) && count(Auth::user()->allowed_tools) > 0) || $canAccess2fa;
+                $sellerHasTools = Auth::check() && ((is_array(Auth::user()->allowed_tools) && count(Auth::user()->allowed_tools) > 0) || $canAccess2fa);
             @endphp
             @if($sellerHasTools)
             <div class="menu-group">
@@ -937,6 +976,28 @@
                 <span>{{ __('Lainnya') }}</span>
             </button>
         @endif
+    @else
+        {{-- Guest Bottom Nav --}}
+        <a href="{{ route('dashboard') }}" class="mobile-nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}" title="{{ __('Home') }}">
+            <i class="fas fa-home"></i>
+            <span>{{ __('Home') }}</span>
+        </a>
+        <a href="{{ route('catalog.index') }}" class="mobile-nav-item {{ request()->routeIs('catalog.*') ? 'active' : '' }}" title="{{ __('Katalog') }}">
+            <i class="fas fa-shopping-bag"></i>
+            <span>{{ __('Katalog') }}</span>
+        </a>
+        <button type="button" class="mobile-nav-item" onclick="openGuestModal('Keranjang Belanja')" title="{{ __('Keranjang') }}">
+            <i class="fas fa-shopping-cart"></i>
+            <span>{{ __('Keranjang') }}</span>
+        </button>
+        <button type="button" class="mobile-nav-item" onclick="openGuestModal('Riwayat Pesanan')" title="{{ __('Pesanan') }}">
+            <i class="fas fa-receipt"></i>
+            <span>{{ __('Pesanan') }}</span>
+        </button>
+        <a href="{{ route('login') }}" class="mobile-nav-item {{ request()->routeIs('login') ? 'active' : '' }}" title="{{ __('Masuk') }}">
+            <i class="fas fa-sign-in-alt"></i>
+            <span>{{ __('Masuk') }}</span>
+        </a>
     @endif
 </nav>
 @endunless
@@ -1187,6 +1248,74 @@
         </script>
     @endif
 @endauth
+
+{{-- Guest Authentication Modal --}}
+<div class="modal fade" id="guestAuthModal" tabindex="-1" aria-labelledby="guestAuthModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header border-0 pb-0 pt-4 px-4 position-relative">
+                <button type="button" class="btn-close position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center px-4 pt-2 pb-4">
+                <div class="guest-modal-icon-wrapper mb-3 mx-auto d-flex align-items-center justify-content-center">
+                    <div class="avatar-circle-lg bg-primary-subtle text-primary shadow-sm rounded-circle d-flex align-items-center justify-content-center" style="width: 72px; height: 72px; font-size: 2rem;">
+                        <i class="fas fa-user-lock"></i>
+                    </div>
+                </div>
+                <h4 class="modal-title fw-bold text-dark mb-2" id="guestAuthModalLabel">{{ __('Masuk untuk Melanjutkan') }}</h4>
+                <p class="text-muted small mb-4 px-2" id="guestAuthModalDesc">
+                    {{ __('Fitur ini memerlukan akun. Nikmati riwayat transaksi yang tersimpan rapi, notifikasi pesanan real-time, serta kemudahan klaim garansi.') }}
+                </p>
+
+                <div class="bg-light rounded-3 p-3 mb-4 text-start border border-dashed">
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        <span class="small fw-semibold text-secondary">{{ __('Riwayat belanja & serial key tersimpan aman') }}</span>
+                    </div>
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        <span class="small fw-semibold text-secondary">{{ __('Notifikasi otomatis update pesanan via Telegram & Web') }}</span>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        <span class="small fw-semibold text-secondary">{{ __('Layanan garansi & komplain 1-klik terintegrasi') }}</span>
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <a href="{{ route('login') }}" id="guestModalLoginBtn" class="btn btn-primary btn-lg rounded-pill fw-bold shadow-sm">
+                        <i class="fas fa-sign-in-alt me-2"></i>{{ __('Masuk Sekarang') }}
+                    </a>
+                    <a href="{{ route('register') }}" class="btn btn-outline-primary btn-lg rounded-pill fw-semibold">
+                        <i class="fas fa-user-plus me-2"></i>{{ __('Daftar Akun Baru') }}
+                    </a>
+                    <button type="button" class="btn btn-link text-muted text-decoration-none btn-sm mt-1" data-bs-dismiss="modal">
+                        {{ __('Nanti Saja') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    window.openGuestModal = function(featureName, targetUrl) {
+        const modalEl = document.getElementById('guestAuthModal');
+        if (!modalEl) return;
+        const descEl = document.getElementById('guestAuthModalDesc');
+        const loginBtn = document.getElementById('guestModalLoginBtn');
+        
+        if (featureName && descEl) {
+            descEl.innerHTML = `Fitur <strong>${featureName}</strong> memerlukan akun. Silakan masuk atau daftar untuk menikmati kemudahan transaksi, serial key otomatis, dan garansi cepat.`;
+        }
+        if (loginBtn) {
+            let redirectUrl = targetUrl || window.location.href;
+            loginBtn.href = "{{ route('login') }}?redirect=" + encodeURIComponent(redirectUrl);
+        }
+        const bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        bsModal.show();
+    };
+</script>
 
 @stack('modals')
 

@@ -12,18 +12,27 @@ class DashboardController extends Controller
     public function index()
     {
         $user = Auth::user();
-        $userId = $user->id;
 
-        $totalOrders = Order::where('customer_id', $userId)->count();
-        $completedOrders = Order::where('customer_id', $userId)->where('status', 'delivered')->count();
-        $pendingOrders = Order::where('customer_id', $userId)->whereIn('status', ['pending_payment', 'paid'])->count();
-        $totalSpent = Order::where('customer_id', $userId)->where('status', 'delivered')->sum('total_amount');
+        if (!$user) {
+            $totalOrders = 0;
+            $completedOrders = 0;
+            $pendingOrders = 0;
+            $totalSpent = 0;
+            $recentOrders = collect();
+        } else {
+            $userId = $user->id;
 
-        $recentOrders = Order::where('customer_id', $userId)
-            ->with('items.product')
-            ->orderByDesc('id')
-            ->limit(5)
-            ->get();
+            $totalOrders = Order::where('customer_id', $userId)->count();
+            $completedOrders = Order::where('customer_id', $userId)->where('status', 'delivered')->count();
+            $pendingOrders = Order::where('customer_id', $userId)->whereIn('status', ['pending_payment', 'paid'])->count();
+            $totalSpent = Order::where('customer_id', $userId)->where('status', 'delivered')->sum('total_amount');
+
+            $recentOrders = Order::where('customer_id', $userId)
+                ->with('items.product')
+                ->orderByDesc('id')
+                ->limit(5)
+                ->get();
+        }
 
         return view('dashboard', compact(
             'totalOrders',

@@ -17,6 +17,92 @@ use Illuminate\Support\Str;
 class CheckoutController extends Controller
 {
     /**
+     * Display the review and payment confirmation page before creating an order.
+     */
+    public function review(Request $request, Product $product)
+    {
+        if ($product->is_suspended) {
+            return redirect()->route('catalog.index')->with('error', __('Maaf, produk ini sedang tidak aktif.'));
+        }
+
+        $user = Auth::user();
+
+        // Rate limiting order check (max 2 active pending orders)
+        $pendingOrdersCount = Order::where('customer_id', $user->id)
+            ->where('status', 'pending_payment')
+            ->count();
+
+        if ($pendingOrdersCount >= 2) {
+            return redirect()->route('orders.index', ['status' => 'pending_payment'])
+                ->with('error', __('Anda memiliki terlalu banyak pesanan yang menunggu pembayaran. Silakan selesaikan atau batalkan pesanan Anda sebelumnya.'));
+        }
+
+        $quantity = max(1, (int)$request->input('quantity', 1));
+
+        // Available stock count
+        $availableStockCount = 999;
+        if (!$product->is_vpn) {
+            $availableStockCount = StockUnit::where('product_id', $product->id)
+                ->where('is_sold', false)
+                ->whereNull('sold_order_id')
+                ->where(function ($query) {
+                    $query->where('stock_status', 'ready')
+                          ->orWhereNull('stock_status');
+                })->count();
+
+            if ($availableStockCount < 1) {
+                return redirect()->route('catalog.show', $product->id)->with('error', __('Maaf, stok produk ini baru saja habis.'));
+            }
+
+            if ($quantity > $availableStockCount) {
+                $quantity = $availableStockCount;
+            }
+        }
+
+        $vpnUsername = $request->input('vpn_username');
+        $vpnPassword = $request->input('vpn_password');
+
+        $subtotal = $product->price * $quantity;
+
+        // Optional coupon validation
+        $couponCode = strtoupper(trim($request->input('coupon_code', '')));
+        $discount = 0;
+        $coupon = null;
+        $couponError = null;
+
+        if ($couponCode) {
+            $coupon = \App\Models\Coupon::where('code', $couponCode)->first();
+            if ($coupon) {
+                if ($coupon->isValidFor($subtotal, $user->id)) {
+                    $discount = $coupon->calculateDiscount($subtotal);
+                } else {
+                    $couponError = __('Kupon ini tidak dapat digunakan. Cek minimum belanja, batas pemakaian, atau kupon sudah kedaluwarsa.');
+                }
+            } else {
+                $couponError = __('Kode kupon tidak terdaftar.');
+            }
+        }
+
+        $uniqueCode = rand(1, 200);
+        $totalAmount = max(0, $subtotal - $discount) + $uniqueCode;
+
+        return view('checkout.review', compact(
+            'product',
+            'quantity',
+            'availableStockCount',
+            'vpnUsername',
+            'vpnPassword',
+            'subtotal',
+            'discount',
+            'coupon',
+            'couponCode',
+            'couponError',
+            'uniqueCode',
+            'totalAmount'
+        ));
+    }
+
+    /**
      * Store a newly created order in storage.
      */
     public function store(Request $request, Product $product)
@@ -70,8 +156,22 @@ class CheckoutController extends Controller
             }
 
             $subtotal = $product->price * $quantity;
+
+            // Coupon handling
+            $couponCode = strtoupper(trim($request->input('coupon_code', '')));
+            $discount = 0;
+            if ($couponCode) {
+                $coupon = \App\Models\Coupon::where('code', $couponCode)->first();
+                if ($coupon && $coupon->isValidFor($subtotal, $user->id)) {
+                    $discount = $coupon->calculateDiscount($subtotal);
+                    $coupon->increment('used_count');
+                } else {
+                    $couponCode = null;
+                }
+            }
+
             $uniqueCode = rand(1, 200);
-            $totalAmount = $subtotal + $uniqueCode;
+            $totalAmount = max(0, $subtotal - $discount) + $uniqueCode;
 
             // Generate Order Ref ORD + YYMMDDHHMMSS + 5 chars random hex
             $timestamp = now()->format('ymdHis');
@@ -86,6 +186,8 @@ class CheckoutController extends Controller
                 'order_ref' => $orderRef,
                 'customer_id' => $user->id,
                 'subtotal' => $subtotal,
+                'coupon_code' => $couponCode ?: null,
+                'discount_amount' => $discount,
                 'unique_code' => $uniqueCode,
                 'total_amount' => $totalAmount,
                 'status' => 'pending_payment',

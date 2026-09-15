@@ -15,8 +15,14 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 Route::get('/', function () {
-    return auth()->check() ? redirect()->route('dashboard') : redirect()->route('login');
+    return redirect()->route('dashboard');
 });
+
+// Public Showcase & Catalog Routes (Accessible to Guest & Authenticated Users)
+Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+Route::get('/catalog', [CatalogController::class, 'index'])->name('catalog.index');
+Route::get('/catalog/{id}', [CatalogController::class, 'show'])->name('catalog.show');
+Route::get('/sellers/{user}', [\App\Http\Controllers\SellerProfileController::class, 'show'])->name('sellers.show');
 
 Route::post('/api/payment/midtrans/callback', [\App\Http\Controllers\MidtransController::class, 'callback'])->name('payment.midtrans.callback');
 
@@ -29,6 +35,7 @@ Route::get('/admin/broadcast/run-bg/{jobId}', [\App\Http\Controllers\AdminContro
 */
 Route::post('/api/check-telegram-id', [\App\Http\Controllers\ProfileController::class, 'checkTelegramId'])->name('api.check.telegram');
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login')->middleware(\App\Http\Middleware\TrackVisitor::class);
+Route::get('/register', [AuthController::class, 'showLogin'])->name('register')->middleware(\App\Http\Middleware\TrackVisitor::class);
 Route::post('/login/password', [AuthController::class, 'login'])->name('login.post')->middleware('throttle:5,1');
 Route::post('/register', [AuthController::class, 'register'])->name('register.post')->middleware('throttle:3,1');
 Route::get('/suspended', [AuthController::class, 'suspended'])->name('suspended');
@@ -56,21 +63,12 @@ Route::post('/logout', [TelegramAuthController::class, 'logout'])->name('logout'
 |
 */
 Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
-    // Dashboard
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-
-    // Catalog
-    Route::get('/catalog', [CatalogController::class, 'index'])->name('catalog.index');
-    Route::get('/catalog/{id}', [CatalogController::class, 'show'])->name('catalog.show');
-
-    // Seller Public Profile
-    Route::get('/sellers/{user}', [\App\Http\Controllers\SellerProfileController::class, 'show'])->name('sellers.show');
-
     // Orders
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/{id}', [OrderController::class, 'show'])->name('orders.show');
     
     // Checkout
+    Route::get('/checkout/review/{product}', [CheckoutController::class, 'review'])->name('checkout.review');
     Route::post('/checkout/{product}', [CheckoutController::class, 'store'])->name('checkout.store');
     Route::get('/checkout/success/{order_ref}', [CheckoutController::class, 'success'])->name('checkout.success');
 

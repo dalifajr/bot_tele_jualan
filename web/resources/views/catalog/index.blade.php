@@ -256,11 +256,17 @@
         });
 
         // Quick Add to Cart Handler
+        const isGuest = {{ Auth::guest() ? 'true' : 'false' }};
         document.addEventListener('click', async function(e) {
             const btn = e.target.closest('.btn-quick-cart-add');
             if (!btn) return;
             e.preventDefault();
             e.stopPropagation();
+
+            if (isGuest) {
+                window.location.href = "{{ route('login', ['redirect' => route('catalog.index')]) }}";
+                return;
+            }
 
             const productId = btn.getAttribute('data-product-id');
             const origHtml = btn.innerHTML;

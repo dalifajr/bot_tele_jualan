@@ -2560,6 +2560,22 @@ class AdminController extends Controller
             'is_read' => false,
         ]);
 
+        // Send Website Announcement Notification to all registered users
+        try {
+            $allUsers = \App\Models\User::all();
+            if ($allUsers->isNotEmpty()) {
+                $broadcastNotification = new \App\Notifications\BroadcastAnnouncementNotification(
+                    $request->message ?? 'Ada pengumuman baru dari Admin.',
+                    $request->title ?? 'Pengumuman Penting dari Admin',
+                    $mediaPath,
+                    $mediaType
+                );
+                \Illuminate\Support\Facades\Notification::send($allUsers, $broadcastNotification);
+            }
+        } catch (\Throwable $e) {
+            \Log::warning("Gagal mengirim notifikasi web broadcast: " . $e->getMessage());
+        }
+
         // 1. Try background CLI execution
         $artisan = base_path('artisan');
         $phpFinder = new \Symfony\Component\Process\PhpExecutableFinder();

@@ -307,4 +307,139 @@ class NewImprovementsTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee(route('sellers.show', $this->seller->id));
     }
+
+    public function test_checkout_review_page_loads_correctly(): void
+    {
+        $product = Product::create([
+            'name' => 'Review Test Product',
+            'price' => 100000,
+            'description' => 'Test Desc',
+            'creator_id' => $this->seller->id,
+            'is_suspended' => false,
+        ]);
+
+        StockUnit::create([
+            'product_id' => $product->id,
+            'raw_text' => 'key999',
+            'is_sold' => false,
+            'stock_status' => 'ready',
+            'seller_id' => $this->seller->id,
+            'uploaded_by_id' => $this->seller->id,
+        ]);
+
+        $response = $this->actingAs($this->customer)->get(route('checkout.review', ['product' => $product->id, 'quantity' => 1]));
+
+        $response->assertStatus(200);
+        $response->assertSee('Review &amp; Pembayaran', false);
+        $response->assertSee('Review Test Product');
+        $response->assertSee('Rp 100.000');
+        $response->assertSee('Gunakan Kode Promo / Kupon');
+    }
+
+    public function test_guest_can_access_dashboard_and_catalog_pages(): void
+    {
+        // 1. Guest can access dashboard
+        $dashResponse = $this->get(route('dashboard'));
+        $dashResponse->assertStatus(200);
+        $dashResponse->assertSee('Tamu (Guest)');
+        $dashResponse->assertSee('guestAuthModal');
+
+        // 2. Guest can access catalog index
+        $catalogResponse = $this->get(route('catalog.index'));
+        $catalogResponse->assertStatus(200);
+
+        // 3. Guest can access seller profile
+        $sellerResponse = $this->get(route('sellers.show', $this->seller->id));
+        $sellerResponse->assertStatus(200);
+        $sellerResponse->assertSee('Super Seller Store');
+    }
+
+    public function test_guest_checkout_redirects_to_login(): void
+    {
+        $product = Product::create([
+            'name' => 'Guest Check Product',
+            'price' => 50000,
+            'description' => 'Test Desc',
+            'creator_id' => $this->seller->id,
+            'is_suspended' => false,
+        ]);
+
+        $response = $this->get(route('checkout.review', ['product' => $product->id]));
+        $response->assertRedirect(route('login'));
+    }
+
+    public function test_dashboard_stat_cards_are_clickable_links(): void
+    {
+        $response = $this->actingAs($this->customer)->get(route('dashboard'));
+
+        $response->assertStatus(200);
+        $response->assertSee(route('orders.index'));
+        $response->assertSee(route('orders.index', ['status' => 'pending_payment']));
+        $response->assertSee(route('orders.index', ['status' => 'delivered']));
+    }
+
+    public function test_orders_index_renders_ecommerce_cards_with_quick_actions(): void
+    {
+        $product = Product::create([
+            'name' => 'Ecommerce Card Product',
+            'price' => 25000,
+            'description' => 'Test Item',
+            'creator_id' => $this->seller->id,
+            'is_suspended' => false,
+        ]);
+
+        $order = Order::create([
+            'customer_id' => $this->customer->id,
+            'order_ref' => 'REF-' . time(),
+            'subtotal' => 25000,
+            'unique_code' => 123,
+            'total_amount' => 25123,
+            'status' => 'pending_payment',
+        ]);
+
+        OrderItem::create([
+            'order_id' => $order->id,
+            'product_id' => $product->id,
+            'quantity' => 1,
+            'unit_price' => 25000,
+            'subtotal' => 25000,
+        ]);
+
+        $response = $this->actingAs($this->customer)->get(route('orders.index'));
+
+        $response->assertStatus(200);
+        $response->assertSee('order-transaction-card');
+        $response->assertSee($order->reference);
+        $response->assertSee('Super Seller Store');
+        $response->assertSee('Bayar Sekarang');
+        $response->assertSee(route('checkout.success', ['order_ref' => $order->order_ref]));
+    }
+
+    public function test_admin_broadcast_generates_database_notifications_for_all_users(): void
+    {
+        $response = $this->actingAs($this->admin)->post(route('admin.broadcast.start'), [
+            'message' => 'Pengumuman promo diskon 50% untuk semua member!'
+        ]);
+
+        $response->assertStatus(200);
+
+        // Verify customer has received database notification
+        $this->customer->refresh();
+        $this->assertGreaterThan(0, $this->customer->notifications()->count());
+        $notification = $this->customer->notifications()->first();
+        $this->assertEquals('broadcast_announcement', $notification->data['type']);
+        $this->assertStringContainsString('Pengumuman promo diskon 50%', $notification->data['message']);
+    }
+
+    public function test_notifications_compact_view_renders(): void
+    {
+        $this->customer->notify(new \App\Notifications\SystemEventNotification('Info Update', 'Sistem berhasil diperbarui'));
+
+        $response = $this->actingAs($this->customer)->get(route('notifications.index'));
+
+        $response->assertStatus(200);
+        $response->assertSee('Info Update');
+        $response->assertSee('Sistem berhasil diperbarui');
+    }
 }
+

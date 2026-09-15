@@ -80,84 +80,151 @@
 
         <div id="ordersContentWrapper">
         @if($orders->count() > 0)
-        {{-- Desktop Table View --}}
-        <div class="table-responsive d-none d-md-block">
-            <table class="table table-hover align-middle mb-0">
-                <thead>
-                    <tr class="text-secondary small border-bottom">
-                        <th class="px-4 py-3 border-0">{{ __('No. Order') }}</th>
-                        <th class="py-3 border-0">{{ __('Produk') }}</th>
-                        <th class="py-3 border-0">{{ __('Qty') }}</th>
-                        <th class="py-3 border-0">{{ __('Total') }}</th>
-                        <th class="py-3 border-0">{{ __('Status') }}</th>
-                        <th class="py-3 border-0">{{ __('Tanggal') }}</th>
-                        <th class="py-3 border-0 text-end px-4">{{ __('Aksi') }}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($orders as $order)
-                    <tr>
-                        <td class="px-4 fw-bold text-primary">{{ $order->reference }}</td>
-                        <td>{{ Str::limit($order->product->name ?? '-', 25) }}</td>
-                        <td>{{ $order->quantity }}</td>
-                        <td class="fw-bold">{{ $order->formatted_total }}</td>
-                        <td>
-                            <span class="badge bg-{{ $order->status_color }}-subtle text-{{ $order->status_color }} rounded-pill px-3">
-                                {{ $order->status_label }}
-                            </span>
-                        </td>
-                        <td class="text-secondary small">{{ $order->created_at->format('d M Y H:i') }}</td>
-                        <td class="text-end px-4">
-                            <div class="d-flex gap-2 justify-content-end">
-                                @if($order->status === 'pending_payment')
-                                <form action="{{ route('orders.cancel', $order->id) }}" method="POST" class="m-0" onsubmit="confirmAction(event, 'Apakah Anda yakin ingin membatalkan pesanan ini?');">
-                                    @csrf
-                                    <button type="submit" class="btn btn-sm btn-light text-danger rounded-circle border-danger" title="{{ __('Batalkan Pesanan') }}">
-                                        <i class="fas fa-times"></i>
-                                    </button>
-                                </form>
-                                @endif
-                                <button class="btn btn-sm btn-light text-info rounded-circle" data-bs-toggle="modal" data-bs-target="#detailOrderModal{{ $order->id }}" title="{{ __('Lihat Detail') }}">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-
-        {{-- Mobile Order Cards View --}}
-        <div class="d-md-none p-3">
+        {{-- Modern E-Commerce Order Cards View --}}
+        <div class="orders-list d-flex flex-column gap-3 p-3 p-md-4">
             @foreach($orders as $order)
-            <div class="mobile-activity-card mb-3 p-3">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span class="fw-bold text-primary font-monospace" style="font-size: 0.85rem;">{{ $order->reference }}</span>
-                    <span class="badge bg-{{ $order->status_color }}-subtle text-{{ $order->status_color }} rounded-pill px-2.5 py-1" style="font-size: 0.68rem;">
-                        {{ $order->status_label }}
-                    </span>
+            @php
+                $product = $order->product;
+                $seller = $product?->creator;
+                $sellerId = $seller ? $seller->id : null;
+                $sellerName = $seller ? ($seller->full_name ?? $seller->username ?? 'Official Store') : 'Official Store';
+            @endphp
+            <div class="card border border-subtle shadow-sm rounded-4 overflow-hidden order-transaction-card lift-hover">
+                {{-- Card Header: Toko, Reference, Tanggal, Status --}}
+                <div class="card-header bg-light bg-opacity-50 border-bottom px-3 px-md-4 py-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
+                    <div class="d-flex flex-wrap align-items-center gap-2 gap-md-3">
+                        @if($sellerId)
+                        <a href="{{ route('sellers.show', $sellerId) }}" class="fw-bold text-dark text-decoration-none hover-primary d-inline-flex align-items-center gap-1.5" title="{{ __('Kunjungi Toko') }}">
+                            <i class="fas fa-store text-primary"></i>
+                            <span>{{ $sellerName }}</span>
+                            <i class="fas fa-check-circle text-primary small" title="{{ __('Seller Terverifikasi') }}"></i>
+                        </a>
+                        @else
+                        <span class="fw-bold text-dark d-inline-flex align-items-center gap-1.5">
+                            <i class="fas fa-store text-primary"></i>
+                            <span>{{ $sellerName }}</span>
+                        </span>
+                        @endif
+
+                        <span class="text-muted d-none d-sm-inline">|</span>
+
+                        <span class="text-muted small font-monospace">
+                            #{{ $order->reference }}
+                        </span>
+
+                        <span class="text-muted d-none d-md-inline">&bull;</span>
+
+                        <span class="text-muted small d-none d-md-inline">
+                            {{ $order->created_at->format('d M Y, H:i') }}
+                        </span>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-{{ $order->status_color }}-subtle text-{{ $order->status_color }} rounded-pill px-3 py-1.5 fw-bold" style="font-size: 0.78rem;">
+                            @if($order->status === 'delivered')
+                                <i class="fas fa-check-circle me-1"></i>
+                            @elseif($order->status === 'pending_payment')
+                                <i class="fas fa-clock me-1"></i>
+                            @elseif($order->status === 'cancelled' || $order->status === 'expired')
+                                <i class="fas fa-times-circle me-1"></i>
+                            @endif
+                            {{ $order->status_label }}
+                        </span>
+                    </div>
                 </div>
-                <h6 class="fw-bold text-body mb-1" style="font-size: 0.92rem;">
-                    {{ $order->product->name ?? '-' }}
-                </h6>
-                <div class="text-muted small mb-3" style="font-size: 0.78rem;">
-                    <span>{{ $order->quantity }} unit</span> &bull; 
-                    <span class="fw-bold text-body">{{ $order->formatted_total }}</span> &bull; 
-                    <span>{{ $order->created_at->format('d M Y H:i') }}</span>
+
+                {{-- Card Body: Item Details, Thumbnail, Qty, Price --}}
+                <div class="card-body p-3 p-md-4">
+                    <div class="row align-items-center g-3">
+                        <div class="col-12 col-md-8">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="rounded-3 bg-light border p-2 d-flex align-items-center justify-content-center text-primary flex-shrink-0" style="width: 58px; height: 58px;">
+                                    @if($product && $product->image_url)
+                                        <img src="{{ $product->image_url }}" alt="{{ $product->name }}" class="img-fluid rounded-2" style="max-height: 44px; object-fit: contain;">
+                                    @else
+                                        <i class="fas fa-box-open fa-2x opacity-75"></i>
+                                    @endif
+                                </div>
+                                <div class="flex-grow-1 min-w-0">
+                                    <h6 class="fw-bold text-dark mb-1 text-truncate" title="{{ $product->name ?? '-' }}">
+                                        @if($product)
+                                        <a href="{{ route('catalog.show', $product->id) }}" class="text-dark text-decoration-none hover-primary">
+                                            {{ $product->name }}
+                                        </a>
+                                        @else
+                                        <span>{{ __('Produk Tidak Tersedia') }}</span>
+                                        @endif
+                                    </h6>
+                                    <div class="text-muted small d-flex flex-wrap align-items-center gap-2">
+                                        <span>{{ $order->quantity }} unit &times; {{ $order->product ? 'Rp ' . number_format($order->product->price, 0, ',', '.') : '-' }}</span>
+                                        @if($product && $product->warranty_days)
+                                            <span class="badge bg-info-subtle text-info rounded-pill px-2 py-0.5" style="font-size: 0.68rem;">
+                                                <i class="fas fa-shield-alt me-1"></i>Garansi {{ $product->warranty_days }} Hari
+                                            </span>
+                                        @endif
+                                        @if($order->coupon_code)
+                                            <span class="badge bg-success-subtle text-success rounded-pill px-2 py-0.5" style="font-size: 0.68rem;">
+                                                <i class="fas fa-tag me-1"></i>Kupon {{ $order->coupon_code }}
+                                            </span>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-4 text-md-end border-top border-md-top-0 pt-2 pt-md-0">
+                            <div class="text-muted small mb-0.5">{{ __('Total Belanja') }}</div>
+                            <div class="fw-bold text-primary fs-5">{{ $order->formatted_total }}</div>
+                        </div>
+                    </div>
                 </div>
-                <div class="d-flex justify-content-end gap-2 pt-2 border-top">
-                    @if($order->status === 'pending_payment')
-                    <form action="{{ route('orders.cancel', $order->id) }}" method="POST" class="m-0" onsubmit="confirmAction(event, 'Batalkan pesanan ini?');">
-                        @csrf
-                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3 py-1" style="font-size: 0.75rem;">
-                            <i class="fas fa-times me-1"></i>{{ __('Batal') }}
+
+                {{-- Card Footer: Contextual Quick Actions --}}
+                <div class="card-footer bg-white border-top px-3 px-md-4 py-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
+                    <div class="text-muted small">
+                        @if($order->status === 'pending_payment')
+                            <span class="text-warning-emphasis"><i class="fas fa-info-circle me-1"></i>{{ __('Selesaikan pembayaran sebelum batas waktu.') }}</span>
+                        @elseif($order->status === 'delivered')
+                            <span class="text-success"><i class="fas fa-check-circle me-1"></i>{{ __('Pesanan telah terkirim secara otomatis.') }}</span>
+                        @elseif($order->status === 'cancelled')
+                            <span class="text-danger"><i class="fas fa-ban me-1"></i>{{ __('Pesanan telah dibatalkan.') }}</span>
+                        @else
+                            <span>{{ $order->created_at->format('d M Y, H:i') }}</span>
+                        @endif
+                    </div>
+
+                    <div class="d-flex flex-wrap align-items-center gap-2 ms-auto">
+                        @if($order->status === 'pending_payment')
+                            <form action="{{ route('orders.cancel', $order->id) }}" method="POST" class="m-0" onsubmit="confirmAction(event, 'Apakah Anda yakin ingin membatalkan pesanan ini?');">
+                                @csrf
+                                <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3 py-1.5 fw-semibold">
+                                    <i class="fas fa-times me-1"></i>{{ __('Batalkan') }}
+                                </button>
+                            </form>
+                            <a href="{{ route('checkout.success', ['order_ref' => $order->order_ref]) }}" class="btn btn-sm btn-success rounded-pill px-4 py-1.5 fw-bold shadow-sm">
+                                <i class="fas fa-wallet me-1"></i>{{ __('Bayar Sekarang') }}
+                            </a>
+                        @elseif($order->status === 'delivered' || $order->status === 'paid')
+                            <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 py-1.5 fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#detailOrderModal{{ $order->id }}">
+                                <i class="fas fa-key me-1"></i>{{ __('Lihat Akun / Lisensi') }}
+                            </button>
+                            @if($product)
+                            <a href="{{ route('catalog.show', $product->id) }}" class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1.5 fw-semibold">
+                                <i class="fas fa-redo me-1"></i>{{ __('Beli Lagi') }}
+                            </a>
+                            @endif
+                        @elseif($order->status === 'cancelled' || $order->status === 'expired')
+                            @if($product)
+                            <a href="{{ route('catalog.show', $product->id) }}" class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1.5 fw-semibold">
+                                <i class="fas fa-redo me-1"></i>{{ __('Beli Lagi') }}
+                            </a>
+                            @endif
+                        @endif
+
+                        <button type="button" class="btn btn-sm btn-light text-secondary rounded-circle border d-inline-flex align-items-center justify-content-center" style="width: 34px; height: 34px;" data-bs-toggle="modal" data-bs-target="#detailOrderModal{{ $order->id }}" title="{{ __('Detail Transaksi') }}">
+                            <i class="fas fa-chevron-right small"></i>
                         </button>
-                    </form>
-                    @endif
-                    <button class="btn btn-sm btn-primary rounded-pill px-3 py-1 fw-bold" data-bs-toggle="modal" data-bs-target="#detailOrderModal{{ $order->id }}" style="font-size: 0.75rem;">
-                        <i class="fas fa-eye me-1"></i>{{ __('Detail') }}
-                    </button>
+                    </div>
                 </div>
             </div>
             @endforeach

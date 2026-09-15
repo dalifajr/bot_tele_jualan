@@ -967,7 +967,7 @@ body {
     background-color: var(--bs-body-bg, #f8f9fa);
     opacity: 1;
     visibility: visible;
-    transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.35s cubic-bezier(0.16, 1, 0.3, 1);
     overflow-y: hidden;
     pointer-events: none;
 }
@@ -975,6 +975,7 @@ body {
 #pageLoader.fade-out {
     opacity: 0;
     visibility: hidden;
+    pointer-events: none;
 }
 
 [data-bs-theme="dark"] #pageLoader {
@@ -1204,3 +1205,127 @@ body {
 .badge-pop-anim {
     animation: badgePop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
+
+/* Content Smooth Reveal Animation */
+@keyframes contentReveal {
+    0% {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.main-content,
+main.flex-grow-1 {
+    animation: contentReveal 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ==========================================================================
+   Modern SweetAlert2 Toast Notification Styles (Glassmorphic + Spring Physics)
+   ========================================================================== */
+.swal2-container.swal2-top-end .swal2-popup.swal2-toast,
+.swal2-popup.swal2-toast {
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    border-radius: 16px !important;
+    padding: 12px 18px !important;
+    background: rgba(255, 255, 255, 0.92) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.04) !important;
+    color: #1e293b !important;
+    font-size: 0.9rem !important;
+}
+
+/* Spring entrance animation for toast */
+@keyframes toastSlideInDown {
+    0% {
+        opacity: 0;
+        transform: translateY(-16px) scale(0.96);
+    }
+    65% {
+        transform: translateY(2px) scale(1.01);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.swal2-toast.swal2-show {
+    animation: toastSlideInDown 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.swal2-popup.swal2-toast .swal2-title {
+    font-family: 'Outfit', sans-serif !important;
+    font-weight: 600 !important;
+    font-size: 0.92rem !important;
+    color: #1e293b !important;
+    margin: 0 !important;
+    padding: 0 0.5rem 0 0 !important;
+}
+
+.swal2-popup.swal2-toast .swal2-html-container {
+    font-size: 0.85rem !important;
+    color: #475569 !important;
+    margin: 4px 0 0 0 !important;
+}
+
+/* Toast Icons Modern Styling */
+.swal2-popup.swal2-toast .swal2-icon {
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    margin: 0 10px 0 0 !important;
+    border-width: 2px !important;
+}
+
+.swal2-popup.swal2-toast .swal2-icon.swal2-success {
+    border-color: #10b981 !important;
+    color: #10b981 !important;
+}
+.swal2-popup.swal2-toast .swal2-icon.swal2-success [class^='swal2-success-line'] {
+    background-color: #10b981 !important;
+}
+.swal2-popup.swal2-toast .swal2-icon.swal2-success .swal2-success-ring {
+    border-color: rgba(16, 185, 129, 0.3) !important;
+}
+
+.swal2-popup.swal2-toast .swal2-icon.swal2-error {
+    border-color: #ef4444 !important;
+    color: #ef4444 !important;
+}
+.swal2-popup.swal2-toast .swal2-icon.swal2-error [class^='swal2-x-mark-line'] {
+    background-color: #ef4444 !important;
+}
+
+.swal2-popup.swal2-toast .swal2-icon.swal2-warning {
+    border-color: #f59e0b !important;
+    color: #f59e0b !important;
+}
+
+.swal2-popup.swal2-toast .swal2-icon.swal2-info {
+    border-color: #3b82f6 !important;
+    color: #3b82f6 !important;
+}
+
+/* Toast Dark Mode Support */
+[data-bs-theme="dark"] .swal2-container.swal2-top-end .swal2-popup.swal2-toast,
+[data-bs-theme="dark"] .swal2-popup.swal2-toast {
+    background: rgba(22, 27, 34, 0.94) !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 12px 35px -5px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
+    color: #f1f5f9 !important;
+}
+
+[data-bs-theme="dark"] .swal2-popup.swal2-toast .swal2-title {
+    color: #f8fafc !important;
+}
+
+[data-bs-theme="dark"] .swal2-popup.swal2-toast .swal2-html-container {
+    color: #94a3b8 !important;
+}
+

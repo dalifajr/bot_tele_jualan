@@ -1,8 +1,16 @@
 RENCANA PERBAIKAN DAN PENGEMBANGAN WEBITE JUALAN:
 
-1. body > div:nth-of-type(2) > main > div:nth-of-type(2) > div > div:nth-of-type(2) > div:nth-of-type(4) > div > div:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(2) > span:nth-of-type(2) teks didalam elemen tsb punya warna teks yang sama dengan latar, shingga menyaru.
-2. elemen card penilaian pada laman profil seller bagaimana bisa terisi 5.0 namun dengan 0 review. mohon perbaiki.
-3. buat rencana perbaikan ui, ux, dan lain-lain pada website baik untuk mode desktop ataupun mobile. lakukan jelajah secara lengkap pada website untuk menemukan segala hal yang perlu diperbaiki. 
+1. Tombol beli sekarang pada detail produk seharusnya mengarah ke halaman review dan pembayaran. jangan langsung ke halaman menunggu pembayaran.
+2. saya ingin, agar user yang belum login bisa mengakses laman jualan saya seperti katalog dan detail produk. dan ketika user yang belum login menekan tombol beli, masukan ke keranjang, maka akan diarahkan ke halaman login terlebih dahulu. user yang belum login dinamai sebagai guest pada laman home. untuk mengakses laman lain, maka dimunculkan popup untuk login terlebih dahulu.
+3. ubah style toast message agar mengikuti gaya website dari segi font dan warna serta bentuk. dan buatlah animasi kemunculan yang smooth.
+4. halaman profil tidak mobile friendly, ubahlah layout halaman profil pada tampilan mobile agar lebih rapi dan user friendly.
+5. konten card info pada halaman home tidak bisa diklik dan hanya sekedar angka, tolong dibuat agar clikable dan mengarahkan ke halaman yang sesuai dengan konten card info tersebut.
+6. laman riwayat pesanan kurang informatif, tolong dibuat agar lebih informatif dan user friendly seperti pada aplikasi e-commerce pada umumnya.
+7. laman tool generator kode 2fa masih belum optimal, tolong dibuat agar lebih optimal dan user friendly pada perangkat moble.
+8. buat animasi antara skeleton shimer dan kemunculan laman lebih smooth lagi.
+9. pada menu boradcast, saat ini pengumuman yang dibuat admin hanya bisa diterima user yang mengaitkan akun websitenya dengan telegram atau yang login dengan akun telegram saja. karena pesan broadcast hanya terkirim via bot telegram jualan. saya ingin agar pesan broadcast bisa diterima oleh semua user, meskipun user tersebut login tidak melalui akun telegram melalui notifikasi hub yang tersedia pada website.
+10. elemen notification popover pada perangkat mobile terpotong setengah karena elemen tersebut muncul hingga melebihi layar sebelah kiri pengguna. perbaiki. mungkin ketika user mobile mengklik notifikasi maka langsung diarahkan ke laman pusat notifikasi.
+11. halaman pusat notifikasi terutama pada list data notifikasi terlihat terlalu besar baik pada desktop dan sangat besar pada perangkat mobile. tolong rapihkan dan hemat ruang layar namun dengan data yang tetap informatif.
 
 catat untuk kamu;
 - lakukan brainstroming sebelum melakukan eksekusi, tak lupa pula lakukan analisa kritik dan saran.

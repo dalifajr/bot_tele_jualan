@@ -269,8 +269,7 @@
 
                 <div class="card-body p-4">
                     @if($stockCount > 0)
-                    <form action="{{ route('checkout.store', $product->id) }}" method="POST" id="mainBuyForm">
-                        @csrf
+                    <form action="{{ route('checkout.review', $product->id) }}" method="GET" id="mainBuyForm">
 
                         @if($product->is_vpn)
                             <div class="bg-primary-subtle p-3 rounded-4 mb-3 border border-primary-subtle">
@@ -446,9 +445,17 @@
             qtyInput.addEventListener('input', updateSubtotal);
         }
 
+        const isGuest = {{ Auth::guest() ? 'true' : 'false' }};
+
         // Asynchronous Add-to-Cart Function (Clean AJAX Without Page Redirect)
         async function handleAddToCart(buttonEl) {
             if (!buttonEl) return;
+
+            if (isGuest) {
+                window.location.href = "{{ route('login', ['redirect' => route('catalog.show', $product->id)]) }}";
+                return;
+            }
+
             const originalHtml = buttonEl.innerHTML;
             buttonEl.disabled = true;
             buttonEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
@@ -556,7 +563,7 @@
                         icon.setAttribute('aria-hidden', 'true');
                     }
                     if (text) {
-                        text.textContent = "{{ __('Membuat Pesanan...') }}";
+                        text.textContent = "{{ __('Menyiapkan Review...') }}";
                     }
                 } else {
                     btn.disabled = false;
@@ -588,6 +595,12 @@
 
         if (mainBuyForm) {
             mainBuyForm.addEventListener('submit', function(e) {
+                if (isGuest) {
+                    e.preventDefault();
+                    window.location.href = "{{ route('login', ['redirect' => route('catalog.show', $product->id)]) }}";
+                    return false;
+                }
+
                 if (isSubmittingOrder) {
                     e.preventDefault();
                     return false;
@@ -605,6 +618,11 @@
         if (btnMobileBuy && mainBuyForm) {
             btnMobileBuy.addEventListener('click', function(e) {
                 e.preventDefault();
+                if (isGuest) {
+                    window.location.href = "{{ route('login', ['redirect' => route('catalog.show', $product->id)]) }}";
+                    return;
+                }
+
                 if (isSubmittingOrder) return;
 
                 // Validate required inputs (e.g. VPN username if present)

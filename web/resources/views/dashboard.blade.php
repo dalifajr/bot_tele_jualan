@@ -70,6 +70,7 @@
         
         <div class="position-relative z-1 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
             <div>
+                @auth
                 <span class="badge bg-white text-primary rounded-pill px-3 py-2 mb-2 text-uppercase tracking-wider fw-bold shadow-sm" style="font-size: 0.75rem; letter-spacing: 0.5px;">
                     <i class="fas fa-sparkles me-1 text-warning"></i> {{ __('Selamat Datang Kembali') }}
                 </span>
@@ -87,81 +88,125 @@
                         <i class="fas fa-shield-alt me-1 text-success"></i> {{ __('Status Akun: Aktif') }}
                     </span>
                 </div>
+                @else
+                <span class="badge bg-white text-primary rounded-pill px-3 py-2 mb-2 text-uppercase tracking-wider fw-bold shadow-sm" style="font-size: 0.75rem; letter-spacing: 0.5px;">
+                    <i class="fas fa-sparkles me-1 text-warning"></i> {{ __('Selamat Datang') }}
+                </span>
+                <h1 class="fw-bold mb-2 text-white fs-2 fs-md-1">
+                    {{ __('Tamu (Guest)') }} 👋
+                </h1>
+                <p class="mb-0 fs-6 opacity-85 fw-light text-white max-w-2xl">
+                    {{ __('Jelajahi berbagai produk digital terbaik kami dengan harga bersahabat dan pengiriman otomatis instan.') }}
+                </p>
+                <div class="mt-3 d-flex align-items-center gap-2 flex-wrap">
+                    <a href="{{ route('login') }}" class="badge bg-white text-primary text-decoration-none rounded-pill px-3 py-1.5 fw-bold shadow-sm">
+                        <i class="fas fa-sign-in-alt me-1"></i> {{ __('Masuk / Daftar Akun') }}
+                    </a>
+                    <span class="badge bg-white bg-opacity-10 border border-white border-opacity-25 rounded-pill px-3 py-1 text-white small">
+                        <i class="fas fa-shield-alt me-1 text-success"></i> {{ __('Akses: Tamu') }}
+                    </span>
+                </div>
+                @endauth
             </div>
             
-            <div class="d-flex align-items-center gap-2">
+            <div class="d-flex align-items-center gap-2 flex-wrap">
                 <a href="{{ route('catalog.index') }}" class="btn btn-light text-primary fw-bold rounded-pill px-4 py-2 shadow-sm lift-hover">
                     <i class="fas fa-shopping-bag me-2"></i>{{ __('Jelajahi Katalog') }}
                 </a>
+                @guest
+                <a href="{{ route('login') }}" class="btn btn-outline-light fw-bold rounded-pill px-3 py-2 shadow-sm">
+                    <i class="fas fa-arrow-right-to-bracket me-1"></i>{{ __('Login') }}
+                </a>
+                @endguest
             </div>
         </div>
     </div>
 
-    <!-- Floating Stats Cards (2x2 Grid on Mobile, 4x1 on Desktop) -->
+    <!-- Floating Stats Cards (2x2 Grid on Mobile, 4x1 on Desktop - All Clickable) -->
     <div class="container-fluid px-2 px-md-3 floating-stats-container">
         <div class="row g-2 g-md-4">
             <!-- Card 1: Total Orders -->
             <div class="col-6 col-xl-3">
-                <div class="card border-0 shadow-sm h-100 rounded-4 lift-hover overflow-hidden">
-                    <div class="card-body p-3 p-md-4">
-                        <div class="d-flex justify-content-between align-items-center mb-2 mb-md-3">
-                            <div class="bg-primary-subtle rounded-3 p-2 p-md-3 text-primary">
-                                <i class="fas fa-shopping-cart fa-lg fa-md-2x"></i>
+                <a href="{{ Auth::check() ? route('orders.index') : route('login') }}" @guest data-guest-modal="true" data-feature-name="riwayat pesanan" @endguest class="text-decoration-none d-block h-100">
+                    <div class="card border-0 shadow-sm h-100 rounded-4 lift-hover overflow-hidden">
+                        <div class="card-body p-3 p-md-4">
+                            <div class="d-flex justify-content-between align-items-center mb-2 mb-md-3">
+                                <div class="bg-primary-subtle rounded-3 p-2 p-md-3 text-primary">
+                                    <i class="fas fa-shopping-cart fa-lg fa-md-2x"></i>
+                                </div>
+                                <span class="badge bg-primary-subtle text-primary rounded-pill px-2 px-md-3 py-1 fw-bold" style="font-size: 0.7rem;">{{ __('Akun') }}</span>
                             </div>
-                            <span class="badge bg-primary-subtle text-primary rounded-pill px-2 px-md-3 py-1 fw-bold" style="font-size: 0.7rem;">{{ __('Akun') }}</span>
+                            <div class="text-muted small fw-semibold text-uppercase mb-1" style="letter-spacing: 0.5px; font-size: 0.72rem;">{{ __('Total Pesanan') }}</div>
+                            <div class="d-flex align-items-baseline justify-content-between">
+                                <h3 class="h3 h2-md fw-bold text-body mb-0">{{ $totalOrders ?? 0 }}</h3>
+                                <i class="fas fa-chevron-right text-muted small opacity-50 d-none d-sm-inline"></i>
+                            </div>
                         </div>
-                        <div class="text-muted small fw-semibold text-uppercase mb-1" style="letter-spacing: 0.5px; font-size: 0.72rem;">{{ __('Total Pesanan') }}</div>
-                        <h3 class="h3 h2-md fw-bold text-body mb-0">{{ $totalOrders ?? 0 }}</h3>
                     </div>
-                </div>
+                </a>
             </div>
 
             <!-- Card 2: Completed Orders -->
             <div class="col-6 col-xl-3">
-                <div class="card border-0 shadow-sm h-100 rounded-4 lift-hover overflow-hidden">
-                    <div class="card-body p-3 p-md-4">
-                        <div class="d-flex justify-content-between align-items-center mb-2 mb-md-3">
-                            <div class="bg-success-subtle rounded-3 p-2 p-md-3 text-success">
-                                <i class="fas fa-check-circle fa-lg fa-md-2x"></i>
+                <a href="{{ Auth::check() ? route('orders.index', ['status' => 'delivered']) : route('login') }}" @guest data-guest-modal="true" data-feature-name="pesanan selesai" @endguest class="text-decoration-none d-block h-100">
+                    <div class="card border-0 shadow-sm h-100 rounded-4 lift-hover overflow-hidden">
+                        <div class="card-body p-3 p-md-4">
+                            <div class="d-flex justify-content-between align-items-center mb-2 mb-md-3">
+                                <div class="bg-success-subtle rounded-3 p-2 p-md-3 text-success">
+                                    <i class="fas fa-check-circle fa-lg fa-md-2x"></i>
+                                </div>
+                                <span class="badge bg-success-subtle text-success rounded-pill px-2 px-md-3 py-1 fw-bold" style="font-size: 0.7rem;">{{ __('Berhasil') }}</span>
                             </div>
-                            <span class="badge bg-success-subtle text-success rounded-pill px-2 px-md-3 py-1 fw-bold" style="font-size: 0.7rem;">{{ __('Berhasil') }}</span>
+                            <div class="text-muted small fw-semibold text-uppercase mb-1" style="letter-spacing: 0.5px; font-size: 0.72rem;">{{ __('Selesai') }}</div>
+                            <div class="d-flex align-items-baseline justify-content-between">
+                                <h3 class="h3 h2-md fw-bold text-body mb-0">{{ $completedOrders ?? 0 }}</h3>
+                                <i class="fas fa-chevron-right text-muted small opacity-50 d-none d-sm-inline"></i>
+                            </div>
                         </div>
-                        <div class="text-muted small fw-semibold text-uppercase mb-1" style="letter-spacing: 0.5px; font-size: 0.72rem;">{{ __('Selesai') }}</div>
-                        <h3 class="h3 h2-md fw-bold text-body mb-0">{{ $completedOrders ?? 0 }}</h3>
                     </div>
-                </div>
+                </a>
             </div>
 
             <!-- Card 3: Pending Orders -->
             <div class="col-6 col-xl-3">
-                <div class="card border-0 shadow-sm h-100 rounded-4 lift-hover overflow-hidden">
-                    <div class="card-body p-3 p-md-4">
-                        <div class="d-flex justify-content-between align-items-center mb-2 mb-md-3">
-                            <div class="bg-warning-subtle rounded-3 p-2 p-md-3 text-warning-emphasis">
-                                <i class="fas fa-clock fa-lg fa-md-2x"></i>
+                <a href="{{ Auth::check() ? route('orders.index', ['status' => 'pending_payment']) : route('login') }}" @guest data-guest-modal="true" data-feature-name="pesanan menunggu" @endguest class="text-decoration-none d-block h-100">
+                    <div class="card border-0 shadow-sm h-100 rounded-4 lift-hover overflow-hidden">
+                        <div class="card-body p-3 p-md-4">
+                            <div class="d-flex justify-content-between align-items-center mb-2 mb-md-3">
+                                <div class="bg-warning-subtle rounded-3 p-2 p-md-3 text-warning-emphasis">
+                                    <i class="fas fa-clock fa-lg fa-md-2x"></i>
+                                </div>
+                                <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill px-2 px-md-3 py-1 fw-bold" style="font-size: 0.7rem;">{{ __('Pending') }}</span>
                             </div>
-                            <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill px-2 px-md-3 py-1 fw-bold" style="font-size: 0.7rem;">{{ __('Pending') }}</span>
+                            <div class="text-muted small fw-semibold text-uppercase mb-1" style="letter-spacing: 0.5px; font-size: 0.72rem;">{{ __('Menunggu') }}</div>
+                            <div class="d-flex align-items-baseline justify-content-between">
+                                <h3 class="h3 h2-md fw-bold text-body mb-0">{{ $pendingOrders ?? 0 }}</h3>
+                                <i class="fas fa-chevron-right text-muted small opacity-50 d-none d-sm-inline"></i>
+                            </div>
                         </div>
-                        <div class="text-muted small fw-semibold text-uppercase mb-1" style="letter-spacing: 0.5px; font-size: 0.72rem;">{{ __('Menunggu') }}</div>
-                        <h3 class="h3 h2-md fw-bold text-body mb-0">{{ $pendingOrders ?? 0 }}</h3>
                     </div>
-                </div>
+                </a>
             </div>
 
             <!-- Card 4: Total Spent -->
             <div class="col-6 col-xl-3">
-                <div class="card border-0 shadow-sm h-100 rounded-4 lift-hover overflow-hidden">
-                    <div class="card-body p-3 p-md-4">
-                        <div class="d-flex justify-content-between align-items-center mb-2 mb-md-3">
-                            <div class="bg-info-subtle rounded-3 p-2 p-md-3 text-info-emphasis">
-                                <i class="fas fa-wallet fa-lg fa-md-2x"></i>
+                <a href="{{ Auth::check() ? route('orders.index', ['status' => 'delivered']) : route('login') }}" @guest data-guest-modal="true" data-feature-name="total belanja" @endguest class="text-decoration-none d-block h-100">
+                    <div class="card border-0 shadow-sm h-100 rounded-4 lift-hover overflow-hidden">
+                        <div class="card-body p-3 p-md-4">
+                            <div class="d-flex justify-content-between align-items-center mb-2 mb-md-3">
+                                <div class="bg-info-subtle rounded-3 p-2 p-md-3 text-info-emphasis">
+                                    <i class="fas fa-wallet fa-lg fa-md-2x"></i>
+                                </div>
+                                <span class="badge bg-info-subtle text-info-emphasis rounded-pill px-2 px-md-3 py-1 fw-bold" style="font-size: 0.7rem;">{{ __('Total') }}</span>
                             </div>
-                            <span class="badge bg-info-subtle text-info-emphasis rounded-pill px-2 px-md-3 py-1 fw-bold" style="font-size: 0.7rem;">{{ __('Total') }}</span>
+                            <div class="text-muted small fw-semibold text-uppercase mb-1" style="letter-spacing: 0.5px; font-size: 0.72rem;">{{ __('Total Belanja') }}</div>
+                            <div class="d-flex align-items-baseline justify-content-between">
+                                <h3 class="h4 h3-md fw-bold text-body mb-0">Rp {{ number_format($totalSpent ?? 0, 0, ',', '.') }}</h3>
+                                <i class="fas fa-chevron-right text-muted small opacity-50 d-none d-sm-inline"></i>
+                            </div>
                         </div>
-                        <div class="text-muted small fw-semibold text-uppercase mb-1" style="letter-spacing: 0.5px; font-size: 0.72rem;">{{ __('Total Belanja') }}</div>
-                        <h3 class="h4 h3-md fw-bold text-body mb-0">Rp {{ number_format($totalSpent ?? 0, 0, ',', '.') }}</h3>
                     </div>
-                </div>
+                </a>
             </div>
         </div>
     </div>
@@ -176,12 +221,29 @@
                 <h5 class="fw-bold mb-0 text-body">
                     <i class="fas fa-history text-primary me-2"></i>{{ __('Pesanan Terbaru') }}
                 </h5>
-                <a href="{{ route('orders.index') }}" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-semibold">
+                <a href="{{ route('orders.index') }}" @guest data-guest-modal="true" data-feature-name="riwayat pesanan" @endguest class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-semibold">
                     {{ __('Lihat Semua') }} <i class="fas fa-arrow-right ms-1 small"></i>
                 </a>
             </div>
             <div class="card-body px-3 px-md-4 pb-4">
-                @if(isset($recentOrders) && count($recentOrders) > 0)
+                @guest
+                    <div class="text-center py-5">
+                        <div class="bg-primary-subtle text-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 72px; height: 72px;">
+                            <i class="fas fa-user-lock" style="font-size: 1.85rem;"></i>
+                        </div>
+                        <h6 class="fw-bold text-body mb-1">{{ __('Masuk untuk Melihat Riwayat Transaksi') }}</h6>
+                        <p class="text-muted small mb-3 mx-auto" style="max-width: 420px;">{{ __('Masuk atau buat akun baru untuk melihat status pesanan, mengakses lisensi dan akun digital Anda, serta mendapatkan bantuan garansi.') }}</p>
+                        <div class="d-flex justify-content-center gap-2">
+                            <a href="{{ route('login') }}" class="btn btn-primary rounded-pill px-4 shadow-sm fw-bold">
+                                <i class="fas fa-sign-in-alt me-1"></i> {{ __('Masuk Akun') }}
+                            </a>
+                            <a href="{{ route('catalog.index') }}" class="btn btn-outline-primary rounded-pill px-4 fw-bold">
+                                <i class="fas fa-shopping-bag me-1"></i> {{ __('Lihat Katalog') }}
+                            </a>
+                        </div>
+                    </div>
+                @else
+                    @if(isset($recentOrders) && count($recentOrders) > 0)
                     {{-- Desktop Table View --}}
                     <div class="table-responsive d-none d-md-block">
                         <table class="table table-hover align-middle mb-0">
@@ -276,6 +338,7 @@
                         </a>
                     </div>
                 @endif
+                @endguest
             </div>
         </div>
     </div>
@@ -301,7 +364,7 @@
                         <i class="fas fa-chevron-right text-secondary ms-auto small"></i>
                     </a>
 
-                    <a href="{{ route('orders.index') }}" class="quick-action-card p-3 d-flex align-items-center text-decoration-none">
+                    <a href="{{ route('orders.index') }}" @guest data-guest-modal="true" data-feature-name="riwayat pesanan" @endguest class="quick-action-card p-3 d-flex align-items-center text-decoration-none">
                         <div class="bg-success-subtle rounded-3 p-3 text-success me-3">
                             <i class="fas fa-receipt fa-lg"></i>
                         </div>
@@ -312,7 +375,7 @@
                         <i class="fas fa-chevron-right text-secondary ms-auto small"></i>
                     </a>
 
-                    <a href="{{ route('chat.index') }}" class="quick-action-card p-3 d-flex align-items-center text-decoration-none">
+                    <a href="{{ route('chat.index') }}" @guest data-guest-modal="true" data-feature-name="pusat chat" @endguest class="quick-action-card p-3 d-flex align-items-center text-decoration-none">
                         <div class="bg-info-subtle rounded-3 p-3 text-info me-3">
                             <i class="fas fa-comments fa-lg"></i>
                         </div>

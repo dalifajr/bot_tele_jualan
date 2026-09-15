@@ -60,6 +60,58 @@
         color: #ffffff !important;
         box-shadow: 0 4px 12px rgba(13, 110, 253, 0.25);
     }
+    
+    /* Horizontal scrollable pills for tab navigation */
+    .profile-nav-scroll {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding-bottom: 2px;
+    }
+    .profile-nav-scroll::-webkit-scrollbar {
+        display: none;
+    }
+    .profile-nav-scroll .nav-item {
+        flex: 0 0 auto;
+    }
+    .profile-nav-scroll .nav-link {
+        white-space: nowrap;
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.6rem 1.25rem;
+    }
+
+    @media (min-width: 768px) {
+        .profile-nav-scroll .nav-item {
+            flex: 1 1 0px;
+        }
+    }
+
+    @media (max-width: 767.98px) {
+        .avatar-circle {
+            width: 84px;
+            height: 84px;
+            font-size: 2.1rem;
+            border-width: 3px;
+        }
+        .hero-profile-banner {
+            min-height: 140px;
+            padding: 1.5rem !important;
+            border-radius: 18px;
+        }
+        .floating-profile-container {
+            margin-top: -30px;
+        }
+        .btn, .form-control, .form-select {
+            min-height: 44px;
+            font-size: 0.95rem;
+        }
+    }
 </style>
 @endpush
 
@@ -161,25 +213,25 @@
             <!-- Right Column: Details & Tabbed Card -->
             <div class="col-lg-8">
                 <div class="card border-0 shadow-sm rounded-4 h-100">
-                    <div class="card-header bg-transparent border-0 pt-4 px-4 pb-2">
-                        <ul class="nav nav-pills card-header-pills bg-light rounded-pill p-1 flex-column flex-sm-row gap-1" id="profile-tab" role="tablist">
-                            <li class="nav-item flex-fill text-center" role="presentation">
-                                <button class="nav-link active rounded-pill fw-bold small w-100 py-2" id="tab-informasi-btn" data-bs-toggle="pill" data-bs-target="#tab-informasi" type="button" role="tab">
+                    <div class="card-header bg-transparent border-0 pt-4 px-3 px-md-4 pb-2">
+                        <ul class="nav nav-pills card-header-pills bg-light rounded-pill p-1 profile-nav-scroll gap-1" id="profile-tab" role="tablist">
+                            <li class="nav-item text-center" role="presentation">
+                                <button class="nav-link active rounded-pill fw-bold small w-100" id="tab-informasi-btn" data-bs-toggle="pill" data-bs-target="#tab-informasi" type="button" role="tab">
                                     <i class="fas fa-user-edit me-1"></i> {{ __('Data Profil') }}
                                 </button>
                             </li>
-                            <li class="nav-item flex-fill text-center" role="presentation">
-                                <button class="nav-link rounded-pill fw-bold small w-100 py-2" id="tab-keamanan-btn" data-bs-toggle="pill" data-bs-target="#tab-keamanan" type="button" role="tab">
+                            <li class="nav-item text-center" role="presentation">
+                                <button class="nav-link rounded-pill fw-bold small w-100" id="tab-keamanan-btn" data-bs-toggle="pill" data-bs-target="#tab-keamanan" type="button" role="tab">
                                     <i class="fas fa-key me-1"></i> {{ __('Sandi & 2FA') }}
                                 </button>
                             </li>
-                            <li class="nav-item flex-fill text-center" role="presentation">
-                                <button class="nav-link rounded-pill fw-bold small w-100 py-2" id="tab-telegram-btn" data-bs-toggle="pill" data-bs-target="#tab-telegram" type="button" role="tab">
+                            <li class="nav-item text-center" role="presentation">
+                                <button class="nav-link rounded-pill fw-bold small w-100" id="tab-telegram-btn" data-bs-toggle="pill" data-bs-target="#tab-telegram" type="button" role="tab">
                                     <i class="fab fa-telegram me-1"></i> {{ __('Integrasi Bot') }}
                                 </button>
                             </li>
-                            <li class="nav-item flex-fill text-center" role="presentation">
-                                <button class="nav-link rounded-pill fw-bold small w-100 py-2" id="tab-geolokasi-btn" data-bs-toggle="pill" data-bs-target="#tab-geolokasi" type="button" role="tab">
+                            <li class="nav-item text-center" role="presentation">
+                                <button class="nav-link rounded-pill fw-bold small w-100" id="tab-geolokasi-btn" data-bs-toggle="pill" data-bs-target="#tab-geolokasi" type="button" role="tab">
                                     <i class="fas fa-shield-alt me-1"></i> {{ __('Keamanan IP') }}
                                 </button>
                             </li>
