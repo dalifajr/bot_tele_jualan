@@ -140,6 +140,73 @@
 @php
     $globalMaintenanceActive = \App\Models\BotSetting::where('key', 'maintenance_mode')->value('value') === '1';
     $hideSidebar = View::hasSection('no_sidebar') || ($noSidebar ?? false);
+
+    $auth = Auth::user();
+    $unreadChatsCount = 0;
+    $adminComplaintsCount = 0;
+    $sellerComplaintsCount = 0;
+    $customerComplaintsCount = 0;
+    $adminOrdersCount = 0;
+    $sellerOrdersCount = 0;
+    $pendingPayoutsCount = 0;
+    $pendingLoginsCount = 0;
+    $customerLoginBadgeCount = 0;
+    $canAccess2fa = false;
+
+    if ($auth) {
+        $unreadChatsCount = \App\Models\ChatMessage::where('receiver_id', $auth->id)->where('is_read', false)->count();
+        
+        if ($auth->role === 'admin') {
+            $adminComplaintsCount = \App\Models\ComplaintCase::whereIn('status', ['open', 'customer_replied'])->count();
+            $adminOrdersCount = \App\Models\Order::whereIn('status', ['pending_payment', 'paid'])->count();
+            $pendingPayoutsCount = \App\Models\WithdrawalRequest::where('status', 'pending')->count();
+            $pendingLoginsCount = \App\Models\TelegramLoginToken::where('status', 'pending')->count();
+        } elseif ($auth->role === 'seller') {
+            $sellerComplaintsCount = \App\Models\ComplaintCase::whereIn('status', ['open', 'customer_replied'])
+                ->whereHas('order.items.product', function($q) use ($auth) {
+                    $q->where('creator_id', $auth->id);
+                })->count();
+            $sellerOrdersCount = \App\Models\Order::whereIn('status', ['pending_payment', 'paid'])
+                ->whereHas('items.product', function($q) use ($auth) {
+                    $q->where('creator_id', $auth->id);
+                })->count();
+        } else {
+            $customerComplaintsCount = \App\Models\ComplaintCase::where('customer_id', $auth->id)
+                ->whereIn('status', ['seller_replied'])
+                ->count();
+                
+            $customerPendingLogins = 0;
+            if ($auth->telegram_id) {
+                $customerPendingLogins = \App\Models\TelegramLoginToken::where('telegram_id', $auth->telegram_id)
+                    ->where('status', 'pending')
+                    ->count();
+            }
+            
+            $userIps = \App\Models\LoginLog::where(function($q) use ($auth) {
+                $q->where('user_id', $auth->id);
+                if (!empty($auth->username)) {
+                    $q->orWhere('username_or_email', $auth->username);
+                }
+                if (!empty($auth->email)) {
+                    $q->orWhere('username_or_email', $auth->email);
+                }
+            })->pluck('ip_address')->unique();
+            
+            $blockedUserIpsCount = 0;
+            foreach ($userIps as $ip) {
+                if (\Illuminate\Support\Facades\Cache::has('blocked_ip:' . $ip)) {
+                    $blockedUserIpsCount++;
+                }
+            }
+            
+            $customerLoginBadgeCount = $customerPendingLogins + $blockedUserIpsCount;
+        }
+
+        $tool2faAccessMode = \App\Models\BotSetting::where('key', 'tool_2fa_access_mode')->value('value') ?? 'all';
+        $canAccess2fa = $auth->role === 'admin' 
+            || $tool2faAccessMode === 'all' 
+            || (is_array($auth->allowed_tools) && in_array('2fa_generator', $auth->allowed_tools));
+    }
 @endphp
 
 @if($globalMaintenanceActive && Auth::check() && Auth::user()->role === 'admin' && !session()->has('admin_impersonator_id'))
@@ -275,18 +342,18 @@
     @unless($hideSidebar)
     {{-- Sidebar (Desktop Column / Mobile Card Sheet) --}}
     <div id="sidebar" class="sidebar" style="z-index: 1040; overflow-y: auto; overscroll-behavior: contain;">
-        {{-- Mobile Card Grab Handle & Close Header (Mobile Only) --}}
-        <div class="mobile-card-topbar d-lg-none">
-            <div class="mobile-card-handle" id="mobileCardHandle" title="{{ __('Tutup Menu') }}">
-                <div class="mobile-card-handle-bar"></div>
+        {{-- Mobile Bottom Sheet Grab Handle & Header (Mobile Only) --}}
+        <div class="sheet-header-mobile d-lg-none sticky-top bg-body pt-2 pb-1 border-bottom" style="border-top-left-radius: 24px; border-top-right-radius: 24px; z-index: 10;">
+            <div class="sheet-handle-area" id="sheetHandleArea" title="{{ __('Geser ke bawah untuk menutup') }}">
+                <div class="sheet-handle-bar"></div>
             </div>
-            <div class="d-flex align-items-center justify-content-between px-3 pb-2 pt-1 border-bottom">
+            <div class="d-flex align-items-center justify-content-between px-3 pb-2 pt-1">
                 <div class="d-flex align-items-center gap-2">
-                    <i class="fas fa-compass text-primary"></i>
-                    <span class="fw-bold text-body" style="font-size: 0.9rem;">{{ __('Navigasi Menu') }}</span>
+                    <i class="fas fa-bars-staggered text-primary"></i>
+                    <span class="fw-bold text-body" style="font-size: 0.95rem;">{{ __('Menu & Layanan Lainnya') }}</span>
                 </div>
-                <button type="button" class="btn btn-sm btn-icon btn-light rounded-circle text-secondary" id="sidebarCloseBtn" aria-label="{{ __('Tutup') }}" style="width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; padding: 0;">
-                    <i class="fas fa-times" style="font-size: 0.85rem;"></i>
+                <button type="button" class="btn btn-sm btn-icon btn-light rounded-circle text-secondary" id="sidebarCloseBtn" aria-label="{{ __('Tutup') }}" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; padding: 0;">
+                    <i class="fas fa-times" style="font-size: 0.9rem;"></i>
                 </button>
             </div>
         </div>
@@ -301,70 +368,6 @@
         </div>
 
         <div class="py-3">
-            @php
-                $auth = Auth::user();
-                $unreadChatsCount = \App\Models\ChatMessage::where('receiver_id', $auth->id)->where('is_read', false)->count();
-                
-                $adminComplaintsCount = 0;
-                $sellerComplaintsCount = 0;
-                $customerComplaintsCount = 0;
-                $adminOrdersCount = 0;
-                $sellerOrdersCount = 0;
-                $pendingPayoutsCount = 0;
-                $pendingLoginsCount = 0;
-                $customerLoginBadgeCount = 0;
-                
-                if ($auth->role === 'admin') {
-                    $adminComplaintsCount = \App\Models\ComplaintCase::whereIn('status', ['open', 'customer_replied'])->count();
-                    $adminOrdersCount = \App\Models\Order::whereIn('status', ['pending_payment', 'paid'])->count();
-                    $pendingPayoutsCount = \App\Models\WithdrawalRequest::where('status', 'pending')->count();
-                    $pendingLoginsCount = \App\Models\TelegramLoginToken::where('status', 'pending')->count();
-                } elseif ($auth->role === 'seller') {
-                    $sellerComplaintsCount = \App\Models\ComplaintCase::whereIn('status', ['open', 'customer_replied'])
-                        ->whereHas('order.items.product', function($q) use ($auth) {
-                            $q->where('creator_id', $auth->id);
-                        })->count();
-                    $sellerOrdersCount = \App\Models\Order::whereIn('status', ['pending_payment', 'paid'])
-                        ->whereHas('items.product', function($q) use ($auth) {
-                            $q->where('creator_id', $auth->id);
-                        })->count();
-                } else {
-                    $customerComplaintsCount = \App\Models\ComplaintCase::where('customer_id', $auth->id)
-                        ->whereIn('status', ['seller_replied'])
-                        ->count();
-                        
-                    $customerPendingLogins = 0;
-                    if ($auth->telegram_id) {
-                        $customerPendingLogins = \App\Models\TelegramLoginToken::where('telegram_id', $auth->telegram_id)
-                            ->where('status', 'pending')
-                            ->count();
-                    }
-                    
-                    $userIps = \App\Models\LoginLog::where(function($q) use ($auth) {
-                        $q->where('user_id', $auth->id);
-                        if (!empty($auth->username)) {
-                            $q->orWhere('username_or_email', $auth->username);
-                        }
-                        if (!empty($auth->email)) {
-                            $q->orWhere('username_or_email', $auth->email);
-                        }
-                    })->pluck('ip_address')->unique();
-                    
-                    $blockedUserIpsCount = 0;
-                    foreach ($userIps as $ip) {
-                        if (\Illuminate\Support\Facades\Cache::has('blocked_ip:' . $ip)) {
-                            $blockedUserIpsCount++;
-                        }
-                    }
-                    
-                    $customerLoginBadgeCount = $customerPendingLogins + $blockedUserIpsCount;
-                }
-
-                $tool2faAccessMode = \App\Models\BotSetting::where('key', 'tool_2fa_access_mode')->value('value') ?? 'all';
-                $canAccess2fa = $auth->role === 'admin' 
-                    || $tool2faAccessMode === 'all' 
-                    || (is_array($auth->allowed_tools) && in_array('2fa_generator', $auth->allowed_tools));
-            @endphp
             <div class="menu-group">
                 <a href="{{ route('dashboard') }}" class="menu-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
                     <i class="fas fa-home"></i> <span>{{ __('Dashboard') }}</span>
@@ -626,6 +629,99 @@
     @endunless
 
 </div>
+
+@unless($hideSidebar)
+{{-- Mobile Bottom Navigation Bar (Mobile Only) --}}
+<nav class="mobile-bottom-nav d-lg-none" id="mobileBottomNav" aria-label="{{ __('Navigasi Bawah') }}">
+    @if(Auth::check())
+        @php
+            $currentRole = Auth::user()->role;
+        @endphp
+
+        @if($currentRole === 'admin')
+            {{-- Admin Bottom Nav --}}
+            <a href="{{ route('admin.dashboard') }}" class="mobile-nav-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}" title="{{ __('Dashboard') }}">
+                <i class="fas fa-chart-line"></i>
+                <span>{{ __('Dashboard') }}</span>
+            </a>
+            <a href="{{ route('admin.products.index') }}" class="mobile-nav-item {{ request()->routeIs('admin.products.*') ? 'active' : '' }}" title="{{ __('Katalog') }}">
+                <i class="fas fa-box"></i>
+                <span>{{ __('Katalog') }}</span>
+            </a>
+            <a href="{{ route('admin.orders.index') }}" class="mobile-nav-item {{ request()->routeIs('admin.orders.*') ? 'active' : '' }}" title="{{ __('Pesanan') }}">
+                <i class="fas fa-shopping-cart"></i>
+                <span>{{ __('Pesanan') }}</span>
+                @if($adminOrdersCount > 0)
+                    <span class="badge bg-danger mobile-nav-badge">{{ $adminOrdersCount > 99 ? '99+' : $adminOrdersCount }}</span>
+                @endif
+            </a>
+            <a href="{{ route('admin.complaints.index') }}" class="mobile-nav-item {{ request()->routeIs('admin.complaints.*') ? 'active' : '' }}" title="{{ __('Komplain') }}">
+                <i class="fas fa-toolbox"></i>
+                <span>{{ __('Komplain') }}</span>
+                @if($adminComplaintsCount > 0)
+                    <span class="badge bg-danger mobile-nav-badge">{{ $adminComplaintsCount > 99 ? '99+' : $adminComplaintsCount }}</span>
+                @endif
+            </a>
+            <button type="button" class="mobile-nav-item" id="bottomNavMenuToggle" aria-label="{{ __('Menu Lainnya') }}">
+                <i class="fas fa-bars"></i>
+                <span>{{ __('Lainnya') }}</span>
+            </button>
+
+        @elseif($currentRole === 'seller')
+            {{-- Seller Bottom Nav --}}
+            <a href="{{ route('seller.dashboard') }}" class="mobile-nav-item {{ request()->routeIs('seller.dashboard') ? 'active' : '' }}" title="{{ __('Dashboard') }}">
+                <i class="fas fa-chart-pie"></i>
+                <span>{{ __('Dashboard') }}</span>
+            </a>
+            <a href="{{ route('seller.products.index') }}" class="mobile-nav-item {{ request()->routeIs('seller.products.*') ? 'active' : '' }}" title="{{ __('Produk') }}">
+                <i class="fas fa-box-open"></i>
+                <span>{{ __('Produk') }}</span>
+            </a>
+            <a href="{{ route('seller.orders.index') }}" class="mobile-nav-item {{ request()->routeIs('seller.orders.*') ? 'active' : '' }}" title="{{ __('Pesanan') }}">
+                <i class="fas fa-receipt"></i>
+                <span>{{ __('Pesanan') }}</span>
+                @if($sellerOrdersCount > 0)
+                    <span class="badge bg-danger mobile-nav-badge">{{ $sellerOrdersCount > 99 ? '99+' : $sellerOrdersCount }}</span>
+                @endif
+            </a>
+            <a href="{{ route('seller.finance.index') }}" class="mobile-nav-item {{ request()->routeIs('seller.finance.*') ? 'active' : '' }}" title="{{ __('Dompet') }}">
+                <i class="fas fa-wallet"></i>
+                <span>{{ __('Dompet') }}</span>
+            </a>
+            <button type="button" class="mobile-nav-item" id="bottomNavMenuToggle" aria-label="{{ __('Menu Lainnya') }}">
+                <i class="fas fa-bars"></i>
+                <span>{{ __('Lainnya') }}</span>
+            </button>
+
+        @else
+            {{-- Customer Bottom Nav --}}
+            <a href="{{ route('dashboard') }}" class="mobile-nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}" title="{{ __('Beranda') }}">
+                <i class="fas fa-home"></i>
+                <span>{{ __('Beranda') }}</span>
+            </a>
+            <a href="{{ route('catalog.index') }}" class="mobile-nav-item {{ request()->routeIs('catalog.*') ? 'active' : '' }}" title="{{ __('Katalog') }}">
+                <i class="fas fa-shopping-bag"></i>
+                <span>{{ __('Katalog') }}</span>
+            </a>
+            <a href="{{ route('orders.index') }}" class="mobile-nav-item {{ request()->routeIs('orders.*') ? 'active' : '' }}" title="{{ __('Pesanan') }}">
+                <i class="fas fa-receipt"></i>
+                <span>{{ __('Pesanan') }}</span>
+            </a>
+            <a href="{{ route('chat.index') }}" class="mobile-nav-item {{ request()->routeIs('chat.*') ? 'active' : '' }}" title="{{ __('Chat') }}">
+                <i class="fas fa-comments"></i>
+                <span>{{ __('Chat') }}</span>
+                @if($unreadChatsCount > 0)
+                    <span class="badge bg-danger mobile-nav-badge">{{ $unreadChatsCount > 99 ? '99+' : $unreadChatsCount }}</span>
+                @endif
+            </a>
+            <button type="button" class="mobile-nav-item" id="bottomNavMenuToggle" aria-label="{{ __('Menu Lainnya') }}">
+                <i class="fas fa-bars"></i>
+                <span>{{ __('Lainnya') }}</span>
+            </button>
+        @endif
+    @endif
+</nav>
+@endunless
 
 {{-- Floating Help Button moved into Sidebar --}}
 

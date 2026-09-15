@@ -470,70 +470,162 @@ body {
     opacity: 1;
 }
 
-/* === MOBILE CARD SHEET WITH HANDLE (max-width: 991.98px) === */
+/* === MOBILE BOTTOM NAVIGATION BAR & BOTTOM SHEET CARD === */
+.mobile-bottom-nav {
+    display: none;
+}
+
 @media (max-width: 991.98px) {
+    body {
+        padding-bottom: calc(65px + env(safe-area-inset-bottom)) !important;
+    }
+
+    .mobile-bottom-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: calc(62px + env(safe-area-inset-bottom));
+        padding-bottom: env(safe-area-inset-bottom);
+        background: var(--glass-bg) !important;
+        backdrop-filter: blur(var(--glass-blur)) !important;
+        -webkit-backdrop-filter: blur(var(--glass-blur)) !important;
+        border-top: 1px solid var(--glass-border) !important;
+        z-index: 1040;
+        display: flex;
+        align-items: stretch;
+        justify-content: space-around;
+        box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.08);
+    }
+
+    .mobile-nav-item {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 6px 4px;
+        color: var(--bs-secondary-color);
+        text-decoration: none;
+        font-size: 0.68rem;
+        font-weight: 500;
+        line-height: 1.2;
+        background: transparent;
+        border: none;
+        position: relative;
+        cursor: pointer;
+        transition: color 0.2s ease, transform 0.15s ease;
+    }
+
+    .mobile-nav-item i {
+        font-size: 1.18rem;
+        margin-bottom: 3px;
+        transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .mobile-nav-item:active {
+        transform: scale(0.92);
+    }
+
+    .mobile-nav-item.active {
+        color: var(--primary-color) !important;
+        font-weight: 700;
+    }
+
+    .mobile-nav-item.active i {
+        transform: translateY(-2px);
+    }
+
+    .mobile-nav-badge {
+        position: absolute;
+        top: 4px;
+        right: calc(50% - 18px);
+        font-size: 0.65rem;
+        padding: 0.15rem 0.35rem;
+        border-radius: 999px;
+        line-height: 1;
+    }
+
+    /* === BOTTOM SHEET CARD (SIDEBAR ON MOBILE) === */
     .sidebar {
-        top: calc(var(--total-header-height) + 10px) !important;
-        bottom: 14px !important;
-        height: calc(100vh - var(--total-header-height) - 24px) !important;
-        left: 12px !important;
-        width: calc(100vw - 24px) !important;
-        max-width: 380px !important;
-        border-radius: 20px !important;
-        border: 1px solid var(--glass-border) !important;
-        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.2) !important;
-        transform: translateX(calc(-100% - 24px));
-        opacity: 0;
-        z-index: 1050 !important;
+        position: fixed !important;
+        top: auto !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: 100vw !important;
+        max-width: 100% !important;
+        height: auto !important;
+        max-height: 84vh !important;
+        border-radius: 24px 24px 0 0 !important;
+        border-top: 1px solid var(--glass-border) !important;
+        border-right: none !important;
+        border-left: none !important;
+        border-bottom: none !important;
+        background: var(--glass-bg) !important;
+        backdrop-filter: blur(24px) !important;
+        -webkit-backdrop-filter: blur(24px) !important;
+        box-shadow: 0 -12px 48px rgba(0, 0, 0, 0.3) !important;
+        transform: translateY(105%) !important;
+        transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        z-index: 1060 !important;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto !important;
+        overscroll-behavior: contain;
+        touch-action: pan-y;
+        padding-bottom: calc(20px + env(safe-area-inset-bottom)) !important;
     }
 
     .sidebar.show {
-        transform: translateX(0);
-        opacity: 1;
+        transform: translateY(0) !important;
     }
 
     .main-content {
         margin-left: 0 !important;
     }
+
+    /* Pull/Swipe Handle Area at Top of Bottom Sheet */
+    .sheet-handle-area {
+        width: 100%;
+        padding: 10px 0 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: grab;
+        touch-action: none;
+        user-select: none;
+        -webkit-user-select: none;
+    }
+
+    .sheet-handle-area:active {
+        cursor: grabbing;
+    }
+
+    .sheet-handle-bar {
+        width: 48px;
+        height: 5px;
+        border-radius: 999px;
+        background-color: var(--bs-secondary-color);
+        opacity: 0.35;
+        transition: all 0.2s ease;
+    }
+
+    .sheet-handle-area:hover .sheet-handle-bar,
+    .sheet-handle-area:active .sheet-handle-bar {
+        opacity: 0.8;
+        width: 58px;
+        background-color: var(--primary-color);
+    }
 }
 
-/* Mobile Card Grab Handle */
-.mobile-card-topbar {
-    display: flex;
-    flex-direction: column;
-    padding: 8px 0 0 0;
-    position: sticky;
-    top: 0;
-    background: var(--glass-bg);
-    backdrop-filter: blur(var(--glass-blur));
-    -webkit-backdrop-filter: blur(var(--glass-blur));
-    z-index: 10;
-    border-top-left-radius: 20px;
-    border-top-right-radius: 20px;
-}
-
-.mobile-card-handle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 6px 0 8px;
-    cursor: pointer;
-}
-
-.mobile-card-handle-bar {
-    width: 44px;
-    height: 5px;
-    border-radius: 999px;
-    background-color: var(--bs-secondary-color);
-    opacity: 0.35;
-    transition: all 0.2s ease;
-}
-
-.mobile-card-handle:hover .mobile-card-handle-bar,
-.mobile-card-handle:active .mobile-card-handle-bar {
-    opacity: 0.8;
-    width: 54px;
-    background-color: var(--primary-color);
+/* On Desktop (>= 992px): hide handle & bottom nav completely */
+@media (min-width: 992px) {
+    .mobile-bottom-nav,
+    .sheet-handle-area,
+    .sheet-header-mobile {
+        display: none !important;
+    }
 }
 
 /* Sidebar Telegram Support Card */

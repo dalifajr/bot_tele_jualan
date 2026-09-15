@@ -34,10 +34,11 @@ class LayoutNavigationTest extends TestCase
         // 2. Verify floating button style has been removed from body > a
         $response->assertDontSee('style="bottom: 30px; right: 30px; height: 50px; z-index: 1050;', false);
 
-        // 3. Verify mobile nav handle and card grab handle exist
-        $response->assertSee('mobile-nav-handle', false);
-        $response->assertSee('mobile-card-handle', false);
-        $response->assertSee('mobile-card-handle-bar', false);
+        // 3. Verify mobile bottom nav, sheet handle, and close button exist
+        $response->assertSee('mobile-bottom-nav', false);
+        $response->assertSee('sheet-handle-area', false);
+        $response->assertSee('sheet-handle-bar', false);
+        $response->assertSee('bottomNavMenuToggle', false);
         $response->assertSee('sidebarCloseBtn', false);
     }
 
@@ -58,8 +59,10 @@ class LayoutNavigationTest extends TestCase
 
         $response->assertSee('sidebar-help-card', false);
         $response->assertSee('https://t.me/seller_support_bot', false);
-        $response->assertSee('mobile-nav-handle', false);
-        $response->assertSee('mobile-card-handle', false);
+        $response->assertSee('mobile-bottom-nav', false);
+        $response->assertSee('sheet-handle-area', false);
+        $response->assertSee('sheet-handle-bar', false);
+        $response->assertSee('bottomNavMenuToggle', false);
         $response->assertDontSee('style="bottom: 30px; right: 30px;', false);
     }
 }

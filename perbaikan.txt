@@ -1,10 +1,8 @@
 RENCANA PERBAIKAN DAN PENGEMBANGAN WEBITE JUALAN:
 
-1. elemen tombol bantuan body > a harap dipindahkan ke sidebar.
-2. saya ingin agar website optimal dibuka pada perangkat mobile, maka dari itu saya ingin mengimplementasikan navbar pada website saya dan merubah menu sidebar (khusus pada perangkat mobile) menjadi card dengan handle yang bisa diakses pada bagian navbar. handle tersebut hanya bisa diakses pada perangkat mobile, sedangkan pada perangkat desktop, sidebar akan tetap seperti semula.
-3. perbaiki celah antara elemen sidebar, dan container dengan header.
-4. berikan saya saran untuk implementasi website pada perangkat mobile yang lebih baik, baik dalam bernavigasi, tata letak, serta aspek lainnya.
-5. serta lakukan analisa atas masalah yang dialami oleh salah satu seller saya, dimana user role seller sering kali berubah sendirinya ke role customer.
+1. berikan icon ilustrasi pada setiap menu lainnya dan pada sidebar.
+2. buat list menu pada menu lainnya di navbar pada perangkat mobile menggunakan layout card dan bukan list.
+3. buatkan rencana pengembangan dan perubahan besar halaman-halaman pada website untuk menyesuaikan pada perangkat mobile.
 
 catat untuk kamu;
 - lakukan brainstroming sebelum melakukan eksekusi, tak lupa pula lakukan analisa kritik dan saran.

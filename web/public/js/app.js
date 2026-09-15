@@ -45,76 +45,139 @@ function updateThemeIcon(icon, theme) {
     icon.className = theme === 'dark' ? 'fas fa-sun fs-5' : 'fas fa-moon fs-5';
 }
 
-/* === SIDEBAR (Mobile & Desktop Toggle) === */
+/* === SIDEBAR & BOTTOM SHEET (Mobile Bottom Sheet + Swipe Down to Close) === */
 function initSidebar() {
     const sidebar = document.getElementById('sidebar');
     const toggleBtn = document.getElementById('sidebarToggle');
+    const bottomNavToggle = document.getElementById('bottomNavMenuToggle');
     const closeBtn = document.getElementById('sidebarCloseBtn');
-    const cardHandle = document.getElementById('mobileCardHandle');
+    const handleArea = document.getElementById('sheetHandleArea');
     const overlay = document.getElementById('sidebarOverlay');
     const container = document.querySelector('.app-container');
 
     if (!sidebar) return;
 
-    const closeMobileSidebar = () => {
+    const closeMobileSheet = () => {
+        sidebar.style.transition = 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)';
+        sidebar.style.transform = '';
         sidebar.classList.remove('show');
         if (overlay) overlay.classList.remove('show');
         document.body.classList.remove('sidebar-open');
+        if (bottomNavToggle) bottomNavToggle.classList.remove('active');
     };
 
-    const openMobileSidebar = () => {
+    const openMobileSheet = () => {
+        sidebar.style.transition = 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)';
+        sidebar.style.transform = '';
         sidebar.classList.add('show');
         if (overlay) overlay.classList.add('show');
         document.body.classList.add('sidebar-open');
+        if (bottomNavToggle) bottomNavToggle.classList.add('active');
     };
 
+    const toggleMobileSheet = () => {
+        if (sidebar.classList.contains('show')) {
+            closeMobileSheet();
+        } else {
+            openMobileSheet();
+        }
+    };
+
+    // Toggle triggers
     if (toggleBtn) {
-        toggleBtn.addEventListener('click', () => {
+        toggleBtn.addEventListener('click', (e) => {
+            e.preventDefault();
             if (window.innerWidth >= 992) {
-                // Desktop Collapse
                 if (container) {
                     container.classList.toggle('sidebar-collapsed');
                     localStorage.setItem('jualan-sidebar-collapsed', container.classList.contains('sidebar-collapsed'));
                 }
             } else {
-                // Mobile Card Drawer
-                if (sidebar.classList.contains('show')) {
-                    closeMobileSidebar();
-                } else {
-                    openMobileSidebar();
-                }
+                toggleMobileSheet();
             }
+        });
+    }
+
+    if (bottomNavToggle) {
+        bottomNavToggle.addEventListener('click', (e) => {
+            e.preventDefault();
+            toggleMobileSheet();
         });
     }
 
     if (closeBtn) {
-        closeBtn.addEventListener('click', closeMobileSidebar);
-    }
-
-    if (cardHandle) {
-        cardHandle.addEventListener('click', closeMobileSidebar);
+        closeBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            closeMobileSheet();
+        });
     }
 
     if (overlay) {
-        overlay.addEventListener('click', closeMobileSidebar);
+        overlay.addEventListener('click', closeMobileSheet);
     }
 
-    // Close on Escape key
+    // Escape key
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && sidebar.classList.contains('show') && window.innerWidth < 992) {
-            closeMobileSidebar();
+            closeMobileSheet();
         }
     });
 
-    // Close mobile card on menu link click (if link isn't preventDefault)
-    const mobileLinks = sidebar.querySelectorAll('a.menu-item');
-    mobileLinks.forEach(link => {
+    // Close when clicking internal menu links on mobile
+    const menuLinks = sidebar.querySelectorAll('a.menu-item');
+    menuLinks.forEach(link => {
         link.addEventListener('click', () => {
             if (window.innerWidth < 992) {
-                closeMobileSidebar();
+                closeMobileSheet();
             }
         });
     });
+
+    // === SWIPE DOWN TO CLOSE GESTURE ON HANDLE AREA ===
+    if (handleArea) {
+        let startY = 0;
+        let currentY = 0;
+        let isDragging = false;
+
+        const onTouchStart = (e) => {
+            if (window.innerWidth >= 992) return;
+            startY = e.touches[0].clientY;
+            currentY = startY;
+            isDragging = true;
+            sidebar.style.transition = 'none'; // Instant finger tracking
+        };
+
+        const onTouchMove = (e) => {
+            if (!isDragging || window.innerWidth >= 992) return;
+            currentY = e.touches[0].clientY;
+            const deltaY = currentY - startY;
+            if (deltaY > 0) {
+                // Dragging downwards
+                e.preventDefault();
+                sidebar.style.transform = `translateY(${deltaY}px)`;
+            }
+        };
+
+        const onTouchEnd = () => {
+            if (!isDragging || window.innerWidth >= 992) return;
+            isDragging = false;
+            const deltaY = currentY - startY;
+            sidebar.style.transition = 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)';
+            
+            // Threshold to close: 80px downward drag
+            if (deltaY > 80) {
+                closeMobileSheet();
+            } else {
+                // Snap/spring back to open
+                sidebar.style.transform = 'translateY(0)';
+            }
+        };
+
+        handleArea.addEventListener('touchstart', onTouchStart, { passive: false });
+        handleArea.addEventListener('touchmove', onTouchMove, { passive: false });
+        handleArea.addEventListener('touchend', onTouchEnd, { passive: true });
+        handleArea.addEventListener('touchcancel', onTouchEnd, { passive: true });
+    }
 
     // Restore saved sidebar collapsed state on desktop
     if (window.innerWidth >= 992 && container) {
