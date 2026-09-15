@@ -45,11 +45,20 @@ class SellerProfileController extends Controller
             ->groupBy('product_id')
             ->pluck('total', 'product_id');
 
-        // Products owned by this seller
-        $products = Product::with('creator')
-            ->where('creator_id', $seller->id)
-            ->where('is_suspended', false)
-            ->get()
+        // Products owned by this seller (if admin, include creator_id === null as primary admin products)
+        $productsQuery = Product::with('creator')
+            ->where('is_suspended', false);
+
+        if ($seller->role === 'admin') {
+            $productsQuery->where(function ($q) use ($seller) {
+                $q->where('creator_id', $seller->id)
+                  ->orWhereNull('creator_id');
+            });
+        } else {
+            $productsQuery->where('creator_id', $seller->id);
+        }
+
+        $products = $productsQuery->get()
             ->map(function ($product) use ($readyStockCounts, $soldStockCounts, $orderItemSoldCounts) {
                 if ($product->is_vpn) {
                     $product->stock_count = 999;
@@ -76,17 +85,27 @@ class SellerProfileController extends Controller
         // Metrics
         $totalProducts = $products->count();
 
-        $totalSoldUnits = StockUnit::where('seller_id', $seller->id)
-            ->where('is_sold', true)
-            ->count();
+        $soldUnitsQuery = StockUnit::where('is_sold', true);
+        if ($seller->role === 'admin') {
+            $soldUnitsQuery->where(function ($q) use ($seller) {
+                $q->where('seller_id', $seller->id)
+                  ->orWhereNull('seller_id');
+            });
+        } else {
+            $soldUnitsQuery->where('seller_id', $seller->id);
+        }
+        $totalSoldUnits = $soldUnitsQuery->count();
 
-        $avgRating = Review::whereHas('product', function ($q) use ($seller) {
-            $q->where('creator_id', $seller->id);
-        })->avg('rating');
-
-        $totalReviews = Review::whereHas('product', function ($q) use ($seller) {
-            $q->where('creator_id', $seller->id);
-        })->count();
+        $reviewsQuery = Review::whereHas('product', function ($q) use ($seller) {
+            if ($seller->role === 'admin') {
+                $q->where('creator_id', $seller->id)
+                  ->orWhereNull('creator_id');
+            } else {
+                $q->where('creator_id', $seller->id);
+            }
+        });
+        $avgRating = (clone $reviewsQuery)->avg('rating');
+        $totalReviews = (clone $reviewsQuery)->count();
 
         $sellerJoinDate = $seller->created_at ? $seller->created_at->translatedFormat('F Y') : 'Mei 2024';
 

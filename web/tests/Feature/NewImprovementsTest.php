@@ -243,4 +243,43 @@ class NewImprovementsTest extends TestCase
         $response->assertSee('Sepanjang Waktu');
         $response->assertSee('150.000');
     }
+
+    public function test_seller_profile_shows_admin_products_with_null_creator_id(): void
+    {
+        // Admin product with creator_id = null
+        $adminProductNull = Product::create([
+            'name' => 'Admin Exclusive Product Null Creator',
+            'price' => 250000,
+            'description' => 'Admin exclusive null creator item',
+            'creator_id' => null,
+            'is_suspended' => false,
+        ]);
+
+        // Admin product with creator_id = admin id
+        $adminProductExplicit = Product::create([
+            'name' => 'Admin Explicit Creator Product',
+            'price' => 350000,
+            'description' => 'Admin explicit item',
+            'creator_id' => $this->admin->id,
+            'is_suspended' => false,
+        ]);
+
+        $response = $this->actingAs($this->customer)->get(route('sellers.show', $this->admin->id));
+
+        $response->assertStatus(200);
+        $response->assertSee('Admin Exclusive Product Null Creator');
+        $response->assertSee('Admin Explicit Creator Product');
+        $response->assertSee('Official Store Admin');
+        $this->assertStringNotContainsString('fas fa-shopping-cart text-primary', $response->getContent());
+    }
+
+    public function test_admin_sellers_page_has_visit_profile_links(): void
+    {
+        $response = $this->actingAs($this->admin)->get(route('admin.sellers.index'));
+
+        $response->assertStatus(200);
+        $response->assertSee('Kunjungi Profil Toko');
+        $response->assertSee(route('sellers.show', $this->seller->id));
+        $response->assertSee(route('sellers.show', $this->admin->id));
+    }
 }

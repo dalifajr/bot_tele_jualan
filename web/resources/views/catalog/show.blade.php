@@ -5,6 +5,13 @@
 
 @push('styles')
 <style>
+    .lift-hover {
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .lift-hover:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08) !important;
+    }
     .btn-buy-now {
         transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         position: relative;
@@ -128,31 +135,35 @@
                         </div>
                     </div>
 
-                    {{-- Trust / Value Propositions Badges (E-Commerce Style) --}}
+                    {{-- Trust / Value Propositions Badges (Ala Home Stat Cards) --}}
                     <div class="row g-2 mb-4">
                         <div class="col-4">
-                            <div class="p-2 rounded-3 text-center bg-light border" style="font-size: 0.76rem;">
-                                <i class="fas fa-bolt text-warning fs-5 d-block mb-1"></i>
-                                <span class="fw-bold text-body d-block">{{ __('Instan Delivery') }}</span>
+                            <div class="card border-0 shadow-sm rounded-4 h-100 lift-hover bg-body p-2.5 text-center">
+                                <div class="d-inline-flex bg-warning-subtle text-warning rounded-circle p-2 mx-auto mb-1.5 align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                                    <i class="fas fa-bolt" style="font-size: 1rem;"></i>
+                                </div>
+                                <span class="fw-bold text-body d-block" style="font-size: 0.76rem;">{{ __('Instan Delivery') }}</span>
                                 <span class="text-muted" style="font-size: 0.68rem;">{{ __('Akun langsung dikirim') }}</span>
                             </div>
                         </div>
                         <div class="col-4">
-                            <div class="p-2 rounded-3 text-center bg-light border" style="font-size: 0.76rem;">
-                                <div class="d-flex justify-content-center mb-1 text-success">
-                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <div class="card border-0 shadow-sm rounded-4 h-100 lift-hover bg-body p-2.5 text-center">
+                                <div class="d-inline-flex bg-success-subtle text-success rounded-circle p-2 mx-auto mb-1.5 align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
                                         <path d="M9 12l2 2 4-4"></path>
                                     </svg>
                                 </div>
-                                <span class="fw-bold text-body d-block">{{ __('Garansi 100%') }}</span>
+                                <span class="fw-bold text-body d-block" style="font-size: 0.76rem;">{{ __('Garansi 100%') }}</span>
                                 <span class="text-muted" style="font-size: 0.68rem;">{{ __('Jaminan uang kembali') }}</span>
                             </div>
                         </div>
                         <div class="col-4">
-                            <div class="p-2 rounded-3 text-center bg-light border" style="font-size: 0.76rem;">
-                                <i class="fas fa-headset text-primary fs-5 d-block mb-1"></i>
-                                <span class="fw-bold text-body d-block">{{ __('Bantuan Live') }}</span>
+                            <div class="card border-0 shadow-sm rounded-4 h-100 lift-hover bg-body p-2.5 text-center">
+                                <div class="d-inline-flex bg-primary-subtle text-primary rounded-circle p-2 mx-auto mb-1.5 align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                                    <i class="fas fa-headset" style="font-size: 1rem;"></i>
+                                </div>
+                                <span class="fw-bold text-body d-block" style="font-size: 0.76rem;">{{ __('Bantuan Live') }}</span>
                                 <span class="text-muted" style="font-size: 0.68rem;">{{ __('Siap melayani 24/7') }}</span>
                             </div>
                         </div>

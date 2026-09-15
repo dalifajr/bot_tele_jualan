@@ -4,10 +4,15 @@
 @section('page_subtitle', __('Sellers'))
 
 @section('content')
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
     <div>
         <h4 class="fw-bold mb-1">{{ __('Manajemen Seller & Kemitraan') }}</h4>
         <p class="text-muted mb-0">{{ __('Daftar mitra seller, status penangguhan, dan detail saldo pendapatan') }}</p>
+    </div>
+    <div>
+        <a href="{{ route('sellers.show', Auth::id()) }}" target="_blank" class="btn btn-outline-primary rounded-pill px-3 py-2 fw-semibold shadow-sm">
+            <i class="fas fa-store me-1.5"></i> {{ __('Kunjungi Profil Toko Saya') }}
+        </a>
     </div>
 </div>
 
@@ -170,6 +175,12 @@
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" style="border-radius: 12px; min-width: 200px;">
                                     <li>
+                                        <a class="dropdown-item py-2 text-primary fw-semibold" href="{{ route('sellers.show', $seller->id) }}" target="_blank">
+                                            <i class="fas fa-external-link-alt me-2 text-primary"></i> {{ __('Kunjungi Profil Toko') }}
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
                                         <button class="dropdown-item py-2" data-bs-toggle="modal" data-bs-target="#editUserModal{{ $seller->id }}">
                                             <i class="fas fa-user-shield me-2 text-primary"></i> {{ __('Ubah Detail Akses') }}
                                         </button>
@@ -222,7 +233,12 @@
                                 </ul>
                             </div>
                             @else
-                            <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" disabled>{{ __('Ini Anda') }}</button>
+                            <div class="d-flex align-items-center justify-content-end gap-2">
+                                <a href="{{ route('sellers.show', $seller->id) }}" target="_blank" class="btn btn-sm btn-outline-primary rounded-pill px-3" title="{{ __('Kunjungi Profil Toko Anda') }}">
+                                    <i class="fas fa-external-link-alt me-1"></i> {{ __('Profil Toko') }}
+                                </a>
+                                <span class="badge bg-secondary-subtle text-secondary rounded-pill px-2.5 py-1.5">{{ __('Ini Anda') }}</span>
+                            </div>
                             @endif
                         </td>
                     </tr>

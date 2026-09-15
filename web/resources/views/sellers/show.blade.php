@@ -4,47 +4,88 @@
 @section('page_subtitle', __('Profil Seller'))
 @section('meta_description', 'Lihat profil toko dan katalog produk dari ' . ($seller->full_name ?? $seller->username))
 
+@push('styles')
+<style>
+    .lift-hover {
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .lift-hover:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08) !important;
+    }
+    .hero-banner-seller {
+        background: linear-gradient(135deg, #0d47a1 0%, #1565c0 50%, #1e88e5 100%);
+        border-radius: 24px;
+        position: relative;
+        overflow: hidden;
+    }
+    .hero-pattern {
+        position: absolute;
+        top: 0; right: 0; bottom: 0; left: 0;
+        opacity: 0.12;
+        background-image: radial-gradient(#ffffff 1.5px, transparent 1.5px);
+        background-size: 22px 22px;
+        pointer-events: none;
+    }
+    .hero-circle-1 {
+        position: absolute;
+        top: -60px; right: -60px;
+        width: 300px; height: 300px;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 50%;
+        pointer-events: none;
+    }
+    .hero-circle-2 {
+        position: absolute;
+        bottom: -80px; right: 100px;
+        width: 180px; height: 180px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 50%;
+        pointer-events: none;
+    }
+</style>
+@endpush
+
 @section('content')
 <div class="seller-profile-container pb-5">
-    {{-- Top Back & Action Bar --}}
-    <div class="d-flex justify-content-between align-items-center mb-3">
+    {{-- Top Back Navigation --}}
+    <div class="d-flex align-items-center mb-3">
         <div class="d-flex align-items-center gap-2">
             <a href="{{ route('catalog.index') }}" class="btn btn-light rounded-circle shadow-sm border d-inline-flex align-items-center justify-content-center" style="width: 38px; height: 38px;" title="{{ __('Kembali ke Katalog') }}">
                 <i class="fas fa-arrow-left text-secondary"></i>
             </a>
             <h5 class="fw-bold m-0 text-body" style="font-size: 1.1rem;">{{ __('Profil Seller') }}</h5>
         </div>
-        <div class="d-flex align-items-center gap-2">
-            <a href="{{ route('cart.index') }}" class="btn btn-light rounded-circle shadow-sm border d-inline-flex align-items-center justify-content-center" style="width: 38px; height: 38px;" title="{{ __('Keranjang Belanja') }}">
-                <i class="fas fa-shopping-cart text-primary"></i>
-            </a>
-        </div>
     </div>
 
-    {{-- Seller Hero Banner Card --}}
-    <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4 position-relative text-white" style="background: linear-gradient(135deg, #0d47a1 0%, #1565c0 50%, #1e88e5 100%);">
-        <div class="position-absolute w-100 h-100 opacity-10" style="background-image: radial-gradient(#ffffff 1.5px, transparent 1.5px); background-size: 20px 20px; pointer-events: none;"></div>
+    {{-- Seller Hero Banner Card ala Home --}}
+    <div class="hero-banner-seller p-4 p-md-5 text-white shadow-sm mb-4 position-relative">
+        <div class="hero-pattern"></div>
+        <div class="hero-circle-1"></div>
+        <div class="hero-circle-2"></div>
         
-        <div class="card-body p-3 p-md-4 position-relative z-1">
+        <div class="position-relative z-1">
             <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
                 {{-- Left: Seller Avatar & Identity --}}
                 <div class="d-flex align-items-center gap-3">
-                    <div class="rounded-circle bg-white text-primary fw-bold d-flex align-items-center justify-content-center shadow-lg border border-3 border-white flex-shrink-0" style="width: 64px; height: 64px; font-size: 1.6rem;">
+                    <div class="rounded-circle bg-white text-primary fw-bold d-flex align-items-center justify-content-center shadow-lg border border-3 border-white flex-shrink-0" style="width: 68px; height: 68px; font-size: 1.75rem;">
                         {{ strtoupper(substr($seller->full_name ?? $seller->username ?? 'S', 0, 1)) }}
                     </div>
                     <div>
-                        <div class="d-flex align-items-center gap-1.5 flex-wrap">
-                            <h4 class="fw-bold mb-0 text-white" style="font-size: 1.3rem;">
+                        <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                            <h3 class="fw-bold mb-0 text-white" style="font-size: 1.35rem;">
                                 {{ $seller->full_name ?? $seller->username }}
-                            </h4>
+                            </h3>
                             <i class="fas fa-check-circle text-info" style="font-size: 1.15rem;" title="{{ __('Penjual Terverifikasi') }}"></i>
                         </div>
-                        <div class="d-flex align-items-center gap-2 mt-1 flex-wrap">
-                            <span class="badge bg-white bg-opacity-20 text-white rounded-pill px-2.5 py-1 fw-semibold" style="font-size: 0.72rem;">
-                                <i class="fas fa-store me-1"></i>{{ $seller->role === 'admin' ? __('Official Store Admin') : __('Official Seller') }}
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            {{-- Solid White Badge dengan Teks Primary (Kontras Tinggi) --}}
+                            <span class="badge bg-white text-primary rounded-pill px-3 py-1.5 fw-bold shadow-sm" style="font-size: 0.75rem; letter-spacing: 0.3px;">
+                                <i class="fas fa-store me-1 text-primary"></i>{{ $seller->role === 'admin' ? __('Official Store Admin') : __('Official Seller') }}
                             </span>
-                            <span class="text-white-50 small" style="font-size: 0.75rem;">
-                                <i class="far fa-calendar-alt me-1"></i>{{ __('Bergabung') }} {{ $sellerJoinDate }}
+                            {{-- Badge Tanggal Bergabung Bergaris Tepi Putih Tajam --}}
+                            <span class="badge bg-white bg-opacity-15 border border-white border-opacity-30 rounded-pill px-3 py-1.5 text-white fw-semibold small">
+                                <i class="far fa-calendar-alt me-1 text-white"></i>{{ __('Bergabung') }} {{ $sellerJoinDate }}
                             </span>
                         </div>
                     </div>
@@ -52,38 +93,59 @@
 
                 {{-- Right: Direct Actions --}}
                 <div class="d-flex align-items-center gap-2 w-100 w-md-auto mt-2 mt-md-0">
-                    <a href="{{ route('chat.index', ['contact_id' => $seller->id]) }}" class="btn btn-light text-primary rounded-pill px-3 py-2 fw-bold d-flex align-items-center justify-content-center gap-1.5 flex-grow-1 flex-md-grow-0 shadow-sm" style="font-size: 0.85rem;">
+                    <a href="{{ route('chat.index', ['contact_id' => $seller->id]) }}" class="btn btn-light text-primary rounded-pill px-4 py-2.5 fw-bold d-flex align-items-center justify-content-center gap-2 flex-grow-1 flex-md-grow-0 shadow-sm lift-hover" style="font-size: 0.88rem;">
                         <i class="fas fa-comment-dots text-primary"></i>
                         <span>{{ __('Chat Penjual') }}</span>
                     </a>
-                    <button type="button" id="btnShareSellerProfile" class="btn btn-outline-light rounded-pill px-3 py-2 fw-semibold d-flex align-items-center justify-content-center gap-1.5 shadow-sm" style="font-size: 0.85rem;" title="{{ __('Bagikan Profil') }}">
+                    <button type="button" id="btnShareSellerProfile" class="btn btn-outline-light rounded-pill px-3 py-2.5 fw-semibold d-flex align-items-center justify-content-center gap-1.5 shadow-sm" style="font-size: 0.88rem;" title="{{ __('Bagikan Profil') }}">
                         <i class="fas fa-share-alt"></i>
                         <span class="d-none d-sm-inline">{{ __('Bagikan') }}</span>
                     </button>
                 </div>
             </div>
+        </div>
+    </div>
 
-            {{-- Store Metrics Grid (Ala Tokopedia / Shopee) --}}
-            <div class="row g-2 mt-3 pt-3 border-top border-white border-opacity-25">
-                <div class="col-4">
-                    <div class="text-center p-2 rounded-3 bg-white bg-opacity-10">
-                        <span class="d-block text-white fw-bold fs-6">{{ $totalProducts }}</span>
-                        <span class="text-white-50" style="font-size: 0.7rem;">{{ __('Produk Aktif') }}</span>
+    {{-- Store Stats Cards Independen ala Home (Produk Aktif, Unit Terjual, Rating) --}}
+    <div class="row g-2 g-md-3 mb-4">
+        <!-- Card 1: Produk Aktif -->
+        <div class="col-4">
+            <div class="card border-0 shadow-sm h-100 rounded-4 lift-hover overflow-hidden bg-body text-body">
+                <div class="card-body p-3 text-center">
+                    <div class="d-inline-flex bg-primary-subtle text-primary rounded-circle p-2.5 mb-2">
+                        <i class="fas fa-box-open fa-lg"></i>
                     </div>
+                    <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.68rem; letter-spacing: 0.5px;">{{ __('Produk Aktif') }}</div>
+                    <h4 class="fw-bold mb-0 text-body mt-1">{{ $totalProducts }}</h4>
                 </div>
-                <div class="col-4">
-                    <div class="text-center p-2 rounded-3 bg-white bg-opacity-10">
-                        <span class="d-block text-white fw-bold fs-6">{{ $totalSoldUnits }}</span>
-                        <span class="text-white-50" style="font-size: 0.7rem;">{{ __('Unit Terjual') }}</span>
+            </div>
+        </div>
+
+        <!-- Card 2: Unit Terjual -->
+        <div class="col-4">
+            <div class="card border-0 shadow-sm h-100 rounded-4 lift-hover overflow-hidden bg-body text-body">
+                <div class="card-body p-3 text-center">
+                    <div class="d-inline-flex bg-success-subtle text-success rounded-circle p-2.5 mb-2">
+                        <i class="fas fa-bag-shopping fa-lg"></i>
                     </div>
+                    <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.68rem; letter-spacing: 0.5px;">{{ __('Unit Terjual') }}</div>
+                    <h4 class="fw-bold mb-0 text-body mt-1">{{ $totalSoldUnits }}</h4>
                 </div>
-                <div class="col-4">
-                    <div class="text-center p-2 rounded-3 bg-white bg-opacity-10">
-                        <span class="d-block text-white fw-bold fs-6">
-                            <i class="fas fa-star text-warning me-1"></i>{{ $avgRating ? number_format($avgRating, 1) : '5.0' }}
-                        </span>
-                        <span class="text-white-50" style="font-size: 0.7rem;">{{ $totalReviews }} {{ __('Ulasan') }}</span>
+            </div>
+        </div>
+
+        <!-- Card 3: Rating Toko -->
+        <div class="col-4">
+            <div class="card border-0 shadow-sm h-100 rounded-4 lift-hover overflow-hidden bg-body text-body">
+                <div class="card-body p-3 text-center">
+                    <div class="d-inline-flex bg-warning-subtle text-warning rounded-circle p-2.5 mb-2">
+                        <i class="fas fa-star fa-lg"></i>
                     </div>
+                    <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.68rem; letter-spacing: 0.5px;">{{ __('Penilaian') }}</div>
+                    <h4 class="fw-bold mb-0 text-body mt-1">
+                        {{ $avgRating ? number_format($avgRating, 1) : '5.0' }}
+                        <small class="text-muted fw-normal" style="font-size: 0.72rem;">({{ $totalReviews }})</small>
+                    </h4>
                 </div>
             </div>
         </div>
@@ -154,7 +216,7 @@
                 </div>
 
                 <div class="card-body d-flex flex-column p-2 p-md-3">
-                    <h6 class="fw-bold mb-1" style="font-size: 0.9rem; line-height: 1.3;">{{ Str::limit($product->name, 28) }}</h6>
+                    <h6 class="fw-bold mb-1 text-body" style="font-size: 0.9rem; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.4em;" title="{{ $product->name }}">{{ $product->name }}</h6>
                     @if($product->description)
                         <p class="text-muted small mb-2 flex-grow-1 d-none d-sm-block" style="font-size: 0.78rem;">{{ Str::limit($product->description, 50) }}</p>
                     @endif
