@@ -12,16 +12,40 @@ class OrderController extends Controller
     {
         $userId = Auth::id();
         $status = $request->query('status');
+        $search = trim((string)$request->query('search'));
 
-        $query = Order::where('customer_id', $userId)->with(['items.product', 'stockUnits'])->orderByDesc('id');
+        $query = Order::where('customer_id', $userId)->with(['items.product.creator', 'stockUnits'])->orderByDesc('id');
 
-        if ($status && in_array($status, ['pending_payment', 'paid', 'delivered', 'cancelled', 'expired'])) {
+        // Status Filtering (Simplified Categories)
+        if ($status === 'pending_payment') {
+            $query->where('status', 'pending_payment');
+        } elseif ($status === 'delivered') {
+            $query->whereIn('status', ['delivered', 'paid']);
+        } elseif ($status === 'cancelled_expired' || $status === 'cancelled') {
+            $query->whereIn('status', ['cancelled', 'expired']);
+        } elseif ($status && in_array($status, ['paid', 'expired'])) {
             $query->where('status', $status);
         }
 
-        $orders = $query->paginate(15);
+        // Search by Product Name, Order Reference, and Nominal
+        if ($search !== '') {
+            $cleanNominal = preg_replace('/[^0-9]/', '', $search);
+            $query->where(function ($q) use ($search, $cleanNominal) {
+                $q->where('order_ref', 'like', "%{$search}%")
+                  ->orWhereHas('items.product', function ($pq) use ($search) {
+                      $pq->where('name', 'like', "%{$search}%");
+                  });
 
-        return view('orders.index', compact('orders', 'status'));
+                if (!empty($cleanNominal) && is_numeric($cleanNominal)) {
+                    $q->orWhere('total_amount', (int)$cleanNominal)
+                      ->orWhere('subtotal', (int)$cleanNominal);
+                }
+            });
+        }
+
+        $orders = $query->paginate(12)->withQueryString();
+
+        return view('orders.index', compact('orders', 'status', 'search'));
     }
 
     public function show($id)

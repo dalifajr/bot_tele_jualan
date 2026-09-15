@@ -613,7 +613,11 @@ class AdminController extends Controller
         $query = Order::with(['customer', 'items.product', 'stockUnits'])->orderBy('created_at', 'desc');
 
         if ($request->filled('status')) {
-            $query->where('status', $request->status);
+            if ($request->status === 'cancelled_expired') {
+                $query->whereIn('status', ['cancelled', 'expired']);
+            } else {
+                $query->where('status', $request->status);
+            }
         }
 
         if ($request->filled('product_id')) {
@@ -624,7 +628,8 @@ class AdminController extends Controller
 
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function ($q) use ($search) {
+            $cleanNominal = preg_replace('/[^0-9]/', '', $search);
+            $query->where(function ($q) use ($search, $cleanNominal) {
                 $q->where('order_ref', 'like', "%{$search}%")
                   ->orWhereHas('customer', function ($cq) use ($search) {
                       $cq->where('username', 'like', "%{$search}%")
@@ -637,13 +642,26 @@ class AdminController extends Controller
                   ->orWhereHas('stockUnits', function ($suq) use ($search) {
                       $suq->where('raw_text', 'like', "%{$search}%");
                   });
+
+                if (!empty($cleanNominal) && is_numeric($cleanNominal)) {
+                    $q->orWhere('total_amount', (int)$cleanNominal)
+                      ->orWhere('subtotal', (int)$cleanNominal);
+                }
             });
         }
 
-        $orders = $query->paginate(10);
+        $orders = $query->paginate(12)->withQueryString();
         $status = $request->status;
 
         return view('admin.orders.index', compact('orders', 'status'));
+    }
+
+    public function showOrder($id)
+    {
+        $order = Order::with(['customer', 'items.product.creator', 'stockUnits.seller', 'complaintCase', 'payment', 'vpnAccounts'])
+            ->findOrFail($id);
+
+        return view('admin.orders.show', compact('order'));
     }
 
     public function users(Request $request)

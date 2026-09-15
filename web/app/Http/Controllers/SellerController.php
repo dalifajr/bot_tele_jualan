@@ -1087,19 +1087,59 @@ class SellerController extends Controller
     {
         $sellerId = Auth::id();
         $query = Order::with(['customer', 'items.product', 'stockUnits'])
-            ->whereHas('items.product', function($q) use ($sellerId) {
+            ->whereHas('items.product', function ($q) use ($sellerId) {
                 $q->where('creator_id', $sellerId);
             })
             ->orderBy('created_at', 'desc');
 
-        if ($request->has('status') && $request->status !== '') {
-            $query->where('status', $request->status);
+        if ($request->filled('status')) {
+            $status = $request->status;
+            if ($status === 'delivered') {
+                $query->whereIn('status', ['delivered', 'paid']);
+            } elseif ($status === 'cancelled_expired' || $status === 'cancelled') {
+                $query->whereIn('status', ['cancelled', 'expired']);
+            } else {
+                $query->where('status', $status);
+            }
         }
 
-        $orders = $query->paginate(10);
-        $status = $request->status;
+        if ($request->filled('search')) {
+            $search = trim((string)$request->search);
+            $cleanNominal = preg_replace('/[^0-9]/', '', $search);
+            $query->where(function ($q) use ($search, $cleanNominal) {
+                $q->where('order_ref', 'like', "%{$search}%")
+                  ->orWhereHas('customer', function ($cq) use ($search) {
+                      $cq->where('username', 'like', "%{$search}%")
+                         ->orWhere('full_name', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('items.product', function ($pq) use ($search) {
+                      $pq->where('name', 'like', "%{$search}%");
+                  });
 
-        return view('seller.orders.index', compact('orders', 'status'));
+                if (!empty($cleanNominal) && is_numeric($cleanNominal)) {
+                    $q->orWhere('total_amount', (int)$cleanNominal)
+                      ->orWhere('subtotal', (int)$cleanNominal);
+                }
+            });
+        }
+
+        $orders = $query->paginate(12)->withQueryString();
+        $status = $request->status;
+        $search = $request->search;
+
+        return view('seller.orders.index', compact('orders', 'status', 'search'));
+    }
+
+    public function showOrder($id)
+    {
+        $sellerId = Auth::id();
+        $order = Order::with(['customer', 'items.product', 'stockUnits', 'complaintCase'])
+            ->whereHas('items.product', function ($q) use ($sellerId) {
+                $q->where('creator_id', $sellerId);
+            })
+            ->findOrFail($id);
+
+        return view('seller.orders.show', compact('order'));
     }
 
     public function cancelOrder($id, \App\Services\OrderService $orderService)

@@ -169,6 +169,7 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         Route::delete('/stock/{id}', [\App\Http\Controllers\AdminController::class, 'destroyStock'])->name('stock.destroy');
         
         Route::get('/orders', [\App\Http\Controllers\AdminController::class, 'orders'])->name('orders.index');
+        Route::get('/orders/{id}', [\App\Http\Controllers\AdminController::class, 'showOrder'])->name('orders.show');
         Route::put('/orders/{id}', [\App\Http\Controllers\AdminController::class, 'updateOrder'])->name('orders.update');
         Route::post('/orders/{id}/accept', [\App\Http\Controllers\AdminController::class, 'acceptOrder'])->name('orders.accept');
         Route::post('/orders/{id}/reject', [\App\Http\Controllers\AdminController::class, 'rejectOrder'])->name('orders.reject');
@@ -337,6 +338,7 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         Route::delete('/bank-accounts/{id}', [\App\Http\Controllers\SellerController::class, 'destroyBankAccount'])->name('bank-accounts.destroy');
 
         Route::get('/orders', [\App\Http\Controllers\SellerController::class, 'orders'])->name('orders.index');
+        Route::get('/orders/{id}', [\App\Http\Controllers\SellerController::class, 'showOrder'])->name('orders.show');
         Route::post('/orders/{id}/cancel', [\App\Http\Controllers\SellerController::class, 'cancelOrder'])->name('orders.cancel');
 
         Route::get('/complaints', [\App\Http\Controllers\SellerController::class, 'complaints'])->name('complaints.index');

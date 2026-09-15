@@ -441,5 +441,192 @@ class NewImprovementsTest extends TestCase
         $response->assertSee('Info Update');
         $response->assertSee('Sistem berhasil diperbarui');
     }
+
+    public function test_customer_orders_search_by_product_name_reference_and_nominal(): void
+    {
+        $prod1 = Product::create([
+            'name' => 'Canva Pro Edu 1 Tahun',
+            'price' => 35000,
+            'description' => 'Canva',
+            'creator_id' => $this->seller->id,
+            'is_suspended' => false,
+        ]);
+
+        $prod2 = Product::create([
+            'name' => 'Netflix Premium 4K UHD',
+            'price' => 50000,
+            'description' => 'Netflix',
+            'creator_id' => $this->seller->id,
+            'is_suspended' => false,
+        ]);
+
+        $order1 = Order::create([
+            'customer_id' => $this->customer->id,
+            'order_ref' => 'REF-CANVA-111',
+            'subtotal' => 35000,
+            'unique_code' => 55,
+            'total_amount' => 35055,
+            'status' => 'pending_payment',
+        ]);
+        OrderItem::create([
+            'order_id' => $order1->id,
+            'product_id' => $prod1->id,
+            'quantity' => 1,
+            'unit_price' => 35000,
+            'subtotal' => 35000,
+        ]);
+
+        $order2 = Order::create([
+            'customer_id' => $this->customer->id,
+            'order_ref' => 'REF-NETFLIX-222',
+            'subtotal' => 50000,
+            'unique_code' => 88,
+            'total_amount' => 50088,
+            'status' => 'delivered',
+        ]);
+        OrderItem::create([
+            'order_id' => $order2->id,
+            'product_id' => $prod2->id,
+            'quantity' => 1,
+            'unit_price' => 50000,
+            'subtotal' => 50000,
+        ]);
+
+        // Search by product name 'Canva'
+        $resName = $this->actingAs($this->customer)->get(route('orders.index', ['search' => 'Canva']));
+        $resName->assertStatus(200);
+        $resName->assertSee('REF-CANVA-111');
+        $resName->assertDontSee('REF-NETFLIX-222');
+
+        // Search by order reference
+        $resRef = $this->actingAs($this->customer)->get(route('orders.index', ['search' => 'NETFLIX-222']));
+        $resRef->assertStatus(200);
+        $resRef->assertSee('REF-NETFLIX-222');
+        $resRef->assertDontSee('REF-CANVA-111');
+
+        // Search by formatted nominal '35.000' or '35055'
+        $resNominal = $this->actingAs($this->customer)->get(route('orders.index', ['search' => '35.055']));
+        $resNominal->assertStatus(200);
+        $resNominal->assertSee('REF-CANVA-111');
+        $resNominal->assertDontSee('REF-NETFLIX-222');
+
+        // Test simplified filter 'cancelled_expired'
+        $order3 = Order::create([
+            'customer_id' => $this->customer->id,
+            'order_ref' => 'REF-EXPIRED-333',
+            'subtotal' => 10000,
+            'unique_code' => 1,
+            'total_amount' => 10001,
+            'status' => 'expired',
+        ]);
+        OrderItem::create([
+            'order_id' => $order3->id,
+            'product_id' => $prod1->id,
+            'quantity' => 1,
+            'unit_price' => 10000,
+            'subtotal' => 10000,
+        ]);
+
+        $resFilter = $this->actingAs($this->customer)->get(route('orders.index', ['status' => 'cancelled_expired']));
+        $resFilter->assertStatus(200);
+        $resFilter->assertSee('REF-EXPIRED-333');
+        $resFilter->assertDontSee('REF-CANVA-111');
+    }
+
+    public function test_seller_orders_show_and_index(): void
+    {
+        $product = Product::create([
+            'name' => 'Seller Stock Item',
+            'price' => 60000,
+            'description' => 'Test Item',
+            'creator_id' => $this->seller->id,
+            'is_suspended' => false,
+        ]);
+
+        $order = Order::create([
+            'customer_id' => $this->customer->id,
+            'order_ref' => 'REF-SELLER-999',
+            'subtotal' => 60000,
+            'unique_code' => 99,
+            'total_amount' => 60099,
+            'status' => 'delivered',
+            'delivered_at' => now(),
+        ]);
+        OrderItem::create([
+            'order_id' => $order->id,
+            'product_id' => $product->id,
+            'quantity' => 1,
+            'unit_price' => 60000,
+            'subtotal' => 60000,
+        ]);
+
+        $stock = StockUnit::create([
+            'product_id' => $product->id,
+            'sold_order_id' => $order->id,
+            'raw_text' => 'email:pass|seller-test',
+            'is_sold' => true,
+            'stock_status' => 'sold',
+            'seller_id' => $this->seller->id,
+            'uploaded_by_id' => $this->seller->id,
+        ]);
+
+        // Seller can access dedicated show page
+        $response = $this->actingAs($this->seller)->get(route('seller.orders.show', $order->id));
+        $response->assertStatus(200);
+        $response->assertSee('REF-SELLER-999');
+        $response->assertSee('Customer One');
+        $response->assertSee('Seller Stock Item');
+        $response->assertSee('email:pass|seller-test');
+
+        // Other seller cannot access this order
+        $otherSeller = User::forceCreate([
+            'username' => 'otherseller',
+            'full_name' => 'Other Seller',
+            'email' => 'other@test.com',
+            'role' => 'seller',
+            'telegram_id' => 888888,
+            'password' => bcrypt('password'),
+        ]);
+        $forbidden = $this->actingAs($otherSeller)->get(route('seller.orders.show', $order->id));
+        $forbidden->assertStatus(404);
+    }
+
+    public function test_admin_orders_show_renders_complete_order_management(): void
+    {
+        $product = Product::create([
+            'name' => 'Admin Managed Item',
+            'price' => 80000,
+            'description' => 'Test Item',
+            'creator_id' => $this->seller->id,
+            'is_suspended' => false,
+        ]);
+
+        $order = Order::create([
+            'customer_id' => $this->customer->id,
+            'order_ref' => 'REF-ADMIN-777',
+            'subtotal' => 80000,
+            'unique_code' => 11,
+            'total_amount' => 80011,
+            'status' => 'pending_payment',
+        ]);
+        OrderItem::create([
+            'order_id' => $order->id,
+            'product_id' => $product->id,
+            'quantity' => 1,
+            'unit_price' => 80000,
+            'subtotal' => 80000,
+        ]);
+
+        $response = $this->actingAs($this->admin)->get(route('admin.orders.show', $order->id));
+        $response->assertStatus(200);
+        $response->assertSee('REF-ADMIN-777');
+        $response->assertSee('Detail Pesanan (Admin)');
+        $response->assertSee('Customer One');
+        $response->assertSee('Super Seller Store');
+        $response->assertSee('Terima Pembayaran');
+        $response->assertSee('Tolak Pesanan');
+        $response->assertSee('Ubah Status');
+    }
 }
+
 

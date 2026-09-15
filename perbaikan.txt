@@ -1,16 +1,8 @@
 RENCANA PERBAIKAN DAN PENGEMBANGAN WEBITE JUALAN:
 
-1. Tombol beli sekarang pada detail produk seharusnya mengarah ke halaman review dan pembayaran. jangan langsung ke halaman menunggu pembayaran.
-2. saya ingin, agar user yang belum login bisa mengakses laman jualan saya seperti katalog dan detail produk. dan ketika user yang belum login menekan tombol beli, masukan ke keranjang, maka akan diarahkan ke halaman login terlebih dahulu. user yang belum login dinamai sebagai guest pada laman home. untuk mengakses laman lain, maka dimunculkan popup untuk login terlebih dahulu.
-3. ubah style toast message agar mengikuti gaya website dari segi font dan warna serta bentuk. dan buatlah animasi kemunculan yang smooth.
-4. halaman profil tidak mobile friendly, ubahlah layout halaman profil pada tampilan mobile agar lebih rapi dan user friendly.
-5. konten card info pada halaman home tidak bisa diklik dan hanya sekedar angka, tolong dibuat agar clikable dan mengarahkan ke halaman yang sesuai dengan konten card info tersebut.
-6. laman riwayat pesanan kurang informatif, tolong dibuat agar lebih informatif dan user friendly seperti pada aplikasi e-commerce pada umumnya.
-7. laman tool generator kode 2fa masih belum optimal, tolong dibuat agar lebih optimal dan user friendly pada perangkat moble.
-8. buat animasi antara skeleton shimer dan kemunculan laman lebih smooth lagi.
-9. pada menu boradcast, saat ini pengumuman yang dibuat admin hanya bisa diterima user yang mengaitkan akun websitenya dengan telegram atau yang login dengan akun telegram saja. karena pesan broadcast hanya terkirim via bot telegram jualan. saya ingin agar pesan broadcast bisa diterima oleh semua user, meskipun user tersebut login tidak melalui akun telegram melalui notifikasi hub yang tersedia pada website.
-10. elemen notification popover pada perangkat mobile terpotong setengah karena elemen tersebut muncul hingga melebihi layar sebelah kiri pengguna. perbaiki. mungkin ketika user mobile mengklik notifikasi maka langsung diarahkan ke laman pusat notifikasi.
-11. halaman pusat notifikasi terutama pada list data notifikasi terlihat terlalu besar baik pada desktop dan sangat besar pada perangkat mobile. tolong rapihkan dan hemat ruang layar namun dengan data yang tetap informatif.
+1. buat layout, gaya tampilan riwayat pesanan menjadi seperti aplikasi e-commerce shopee, karena saat ini tampilan riwayat pesanan kurang menarik dan hanya memperbesar card yang menyebabkan ruang layar menjadi penuh untuk layar mobile namun dengan fungsionalitas dan informasi yang tidak terlalu banyak. manfaatkan ruang layar dengan lebih baik. belum ada fitur pencarian pada riwayat pesanan dengan variabel pencarian nama produk, nominal. untuk filter status pesanan sudah ada namun buat menjadi lebih minimal dengan meminimalkan filter, saat ini yang berguna adalah filter semua, menunggu, selesai, dibatalkan dan kadaluarsa. gabungkan dibatalkan dan kadaluarsa menjadi satu kategori saja.
+2. buat agar saya tidak perlu klik tombol "lihat akun/lisensi" untuk membuka modal detail pesanan pada card pesanan cukup klik card pesanan maka saya akan langsung diarahkan ke laman detail pesanan. hal ini juga berlaku untuk perangkat desktop.
+3. perlakukan hal yang sama untuk halaman manajemen pesanan seller dan admin. tiadakan tombol detail karena akan digantikan dengan klik cardnya secara langsung, untuk akses menu spesifik barulah disediakan tombol khusus misal untuk mengganti status pesanan, dll. untuk laman manajemen pesanan pada role seller dan admin, sepertinya belum ada laman khusus karena saat ini hanya popup modal saja. jadi buatkanlah.
 
 catat untuk kamu;
 - lakukan brainstroming sebelum melakukan eksekusi, tak lupa pula lakukan analisa kritik dan saran.
