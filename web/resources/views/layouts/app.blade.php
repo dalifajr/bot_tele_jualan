@@ -228,12 +228,6 @@
 
 <nav class="navbar navbar-expand fixed-top shadow-sm px-3 px-md-4 bg-body border-bottom" style="z-index: 1030;">
     <div class="d-flex align-items-center gap-2 gap-sm-3">
-        @unless($hideSidebar)
-        <button class="mobile-nav-handle btn btn-sm d-lg-none" id="sidebarToggle" aria-label="{{ __('Buka Menu Navigasi') }}" title="{{ __('Buka Menu Navigasi') }}">
-            <i class="fas fa-bars-staggered"></i>
-            <span class="d-none d-sm-inline">{{ __('Menu') }}</span>
-        </button>
-        @endunless
         <div class="navbar-brand d-flex align-items-center gap-2 text-primary fw-bold m-0" style="font-size: 1.05rem;">
             <i class="fas fa-shopping-bag fs-5"></i>
             <span class="fw-semibold">{{ config('app.name', 'Dzulfikrialifajri Store') }} <span class="fw-normal text-secondary d-none d-sm-inline" style="font-size: 0.85rem; opacity: 0.8;">| @yield('page_subtitle', 'Dashboard')</span></span>
@@ -328,8 +322,8 @@
             <i class="fas fa-moon fs-5" id="themeIcon"></i>
         </button>
 
-        {{-- Logout --}}
-        <form action="{{ route('logout') }}" method="POST" class="m-0">
+        {{-- Logout (Desktop Only) --}}
+        <form action="{{ route('logout') }}" method="POST" class="m-0 d-none d-lg-block">
             @csrf
             <button type="submit" class="btn btn-sm btn-outline-danger d-flex align-items-center gap-2" aria-label="{{ __('Logout') }}">
                 <i class="fas fa-sign-out-alt"></i> <span class="d-none d-sm-inline">{{ __('Logout') }}</span>
@@ -358,12 +352,21 @@
             </div>
         </div>
         <div class="sidebar-header d-flex align-items-center gap-3">
-            <div class="user-avatar rounded-circle d-flex align-items-center justify-content-center fw-bold text-white bg-primary" style="width: 40px; height: 40px;">
+            <div class="user-avatar rounded-circle d-flex align-items-center justify-content-center fw-bold text-white bg-primary" style="width: 40px; height: 40px; flex-shrink: 0;">
                 {{ strtoupper(substr(Auth::user()->full_name ?? Auth::user()->username ?? 'U', 0, 1)) }}
             </div>
-            <div class="d-flex flex-column">
-                <span class="fw-bold text-body" style="font-size: 0.9rem;">{{ Str::limit(Auth::user()->full_name ?? Auth::user()->username ?? 'User', 20) }}</span>
+            <div class="d-flex flex-column text-truncate">
+                <span class="fw-bold text-body text-truncate" style="font-size: 0.9rem;">{{ Str::limit(Auth::user()->full_name ?? Auth::user()->username ?? 'User', 20) }}</span>
                 <small class="text-secondary" style="font-size: 0.75rem;">ID: {{ Auth::user()->telegram_id }}</small>
+            </div>
+            {{-- Logout Button on Mobile (#sidebar > div:nth-of-type(2)) --}}
+            <div class="ms-auto d-lg-none">
+                <form action="{{ route('logout') }}" method="POST" class="m-0">
+                    @csrf
+                    <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3 py-1 d-flex align-items-center gap-1.5" aria-label="{{ __('Logout') }}" title="{{ __('Logout') }}">
+                        <i class="fas fa-sign-out-alt"></i> <span style="font-size: 0.78rem;" class="fw-semibold">{{ __('Logout') }}</span>
+                    </button>
+                </form>
             </div>
         </div>
 
@@ -372,7 +375,7 @@
                 <div class="menu-items-grid">
                     <a href="{{ route('dashboard') }}" class="menu-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
                         <div class="menu-icon-box"><i class="fas fa-home text-primary"></i></div>
-                        <span class="menu-label-text">{{ __('Dashboard') }}</span>
+                        <span class="menu-label-text">{{ __('Home') }}</span>
                     </a>
                 </div>
             </div>
@@ -687,9 +690,9 @@
 
         @if($currentRole === 'admin')
             {{-- Admin Bottom Nav --}}
-            <a href="{{ route('admin.dashboard') }}" class="mobile-nav-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}" title="{{ __('Dashboard') }}">
-                <i class="fas fa-chart-line"></i>
-                <span>{{ __('Dashboard') }}</span>
+            <a href="{{ route('dashboard') }}" class="mobile-nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}" title="{{ __('Home') }}">
+                <i class="fas fa-home"></i>
+                <span>{{ __('Home') }}</span>
             </a>
             <a href="{{ route('admin.products.index') }}" class="mobile-nav-item {{ request()->routeIs('admin.products.*') ? 'active' : '' }}" title="{{ __('Katalog') }}">
                 <i class="fas fa-box"></i>
@@ -716,9 +719,9 @@
 
         @elseif($currentRole === 'seller')
             {{-- Seller Bottom Nav --}}
-            <a href="{{ route('seller.dashboard') }}" class="mobile-nav-item {{ request()->routeIs('seller.dashboard') ? 'active' : '' }}" title="{{ __('Dashboard') }}">
-                <i class="fas fa-chart-pie"></i>
-                <span>{{ __('Dashboard') }}</span>
+            <a href="{{ route('dashboard') }}" class="mobile-nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}" title="{{ __('Home') }}">
+                <i class="fas fa-home"></i>
+                <span>{{ __('Home') }}</span>
             </a>
             <a href="{{ route('seller.products.index') }}" class="mobile-nav-item {{ request()->routeIs('seller.products.*') ? 'active' : '' }}" title="{{ __('Produk') }}">
                 <i class="fas fa-box-open"></i>
@@ -742,9 +745,9 @@
 
         @else
             {{-- Customer Bottom Nav --}}
-            <a href="{{ route('dashboard') }}" class="mobile-nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}" title="{{ __('Beranda') }}">
+            <a href="{{ route('dashboard') }}" class="mobile-nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}" title="{{ __('Home') }}">
                 <i class="fas fa-home"></i>
-                <span>{{ __('Beranda') }}</span>
+                <span>{{ __('Home') }}</span>
             </a>
             <a href="{{ route('catalog.index') }}" class="mobile-nav-item {{ request()->routeIs('catalog.*') ? 'active' : '' }}" title="{{ __('Katalog') }}">
                 <i class="fas fa-shopping-bag"></i>

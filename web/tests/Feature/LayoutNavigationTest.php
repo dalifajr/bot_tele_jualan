@@ -51,6 +51,12 @@ class LayoutNavigationTest extends TestCase
         $response->assertSee('fa-comments', false);
         $response->assertSee('fa-user-circle', false);
         $response->assertSee('fa-shield-halved', false);
+
+        // 5. Verify hamburger button removed, mobile logout repositioned, and Home menu
+        $response->assertDontSee('id="sidebarToggle"', false);
+        $response->assertSee('d-none d-lg-block', false); // Header logout hidden on mobile
+        $response->assertSee('ms-auto d-lg-none', false); // Sidebar header logout for mobile
+        $response->assertSee('Home');
     }
 
     public function test_seller_navigation_includes_mobile_handle_and_support_card()
