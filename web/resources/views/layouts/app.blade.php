@@ -122,8 +122,56 @@
 </head>
 <body class="bg-body-tertiary">
 
-<div id="pageLoader">
-    <div class="spinner"></div>
+<div id="pageLoader" class="fade-out">
+    <div class="skeleton-page-placeholder container-fluid px-3 px-md-4 pt-3 pt-md-4">
+        {{-- Skeleton Header Bar --}}
+        <div class="d-flex align-items-center justify-content-between mb-4 pb-2 border-bottom">
+            <div class="d-flex align-items-center gap-2">
+                <div class="skeleton-shimmer rounded-circle" style="width: 38px; height: 38px;"></div>
+                <div class="skeleton-shimmer" style="height: 22px; width: 140px; border-radius: 8px;"></div>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <div class="skeleton-shimmer rounded-pill" style="height: 32px; width: 90px;"></div>
+                <div class="skeleton-shimmer rounded-circle" style="width: 32px; height: 32px;"></div>
+            </div>
+        </div>
+
+        {{-- Skeleton Cards Grid --}}
+        <div class="row g-3 g-md-4">
+            @for($i = 0; $i < 4; $i++)
+            <div class="col-6 col-md-4 col-lg-3 {{ $i >= 2 ? 'd-none d-md-block' : '' }}">
+                <div class="card border-0 shadow-sm p-3 h-100" style="border-radius: 16px;">
+                    <div class="skeleton-shimmer w-100 mb-3" style="height: 125px; border-radius: 12px;"></div>
+                    <div class="skeleton-shimmer mb-2" style="height: 16px; width: 80%;"></div>
+                    <div class="skeleton-shimmer mb-3" style="height: 12px; width: 50%;"></div>
+                    <div class="d-flex justify-content-between align-items-center mt-auto pt-2 border-top">
+                        <div class="skeleton-shimmer" style="height: 18px; width: 65px;"></div>
+                        <div class="skeleton-shimmer rounded-pill" style="height: 26px; width: 36px;"></div>
+                    </div>
+                </div>
+            </div>
+            @endfor
+        </div>
+
+        {{-- Skeleton List Items (Mobile Responsive) --}}
+        <div class="mt-4">
+            <div class="skeleton-shimmer mb-3" style="height: 18px; width: 160px; border-radius: 6px;"></div>
+            @for($j = 0; $j < 3; $j++)
+            <div class="card border-0 shadow-sm p-3 mb-2" style="border-radius: 14px;">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-2.5 flex-grow-1">
+                        <div class="skeleton-shimmer rounded-3" style="width: 44px; height: 44px; flex-shrink: 0;"></div>
+                        <div class="w-75">
+                            <div class="skeleton-shimmer mb-1.5" style="height: 14px; width: 65%;"></div>
+                            <div class="skeleton-shimmer" style="height: 11px; width: 40%;"></div>
+                        </div>
+                    </div>
+                    <div class="skeleton-shimmer rounded-pill" style="height: 24px; width: 70px;"></div>
+                </div>
+            </div>
+            @endfor
+        </div>
+    </div>
 </div>
 
 @if(session()->has('admin_impersonator_id'))

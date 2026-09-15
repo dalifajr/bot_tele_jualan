@@ -1,6 +1,10 @@
 RENCANA PERBAIKAN DAN PENGEMBANGAN WEBITE JUALAN:
 
-1. gantikan loading spinning menjadi skeleton shimmering sesuai dengan elemen yang akan ditampilkan nantinya. implementasikan ini ke laman yang menurut kamu cocok.
+1. pada detail produk, ilustrasi ikon garansi belum ada.
+2. pada profil seller di detail produk, logo verified ganti menjadi centang biru, kemudian tombol chat ganti menjadi logo chat saja buang teks "chat". dan teks "penjual resmi terverifikasi" ganti menjadi sejak kapan seller tersebut bergabung.
+3. buatkan gambar produk, pada halaman detail produk. tambahkan dukungan untuk upload gambar di menu manajemen produk admin dan seller. buat menjadi opsional. jika belum mengupload gambar produk, buatkan ilustrasi placeholder pada detail produk.
+4. tombol lanjut belanja, pada menu keranjang mohon dihapus karena digantikan dengan tombol kembali.
+5. 
 
 catat untuk kamu;
 - lakukan brainstroming sebelum melakukan eksekusi, tak lupa pula lakukan analisa kritik dan saran.

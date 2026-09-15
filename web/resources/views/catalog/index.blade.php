@@ -34,6 +34,23 @@
     </button>
 </div>
 
+{{-- Skeleton Shimmer Grid Placeholder (Shows while loading / filter transitions) --}}
+<div class="row g-2 g-md-4 d-none" id="catalogSkeletonGrid">
+    @for($s = 0; $s < 6; $s++)
+    <div class="col-6 col-lg-4 col-xl-3">
+        <div class="card product-card h-100 p-2 p-md-3 border-0 shadow-sm" style="border-radius: 16px;">
+            <div class="skeleton-shimmer w-100 mb-2.5" style="height: 125px; border-radius: 12px;"></div>
+            <div class="skeleton-shimmer mb-1.5" style="height: 16px; width: 85%;"></div>
+            <div class="skeleton-shimmer mb-3" style="height: 12px; width: 50%;"></div>
+            <div class="d-flex justify-content-between align-items-center mt-auto pt-2 border-top">
+                <div class="skeleton-shimmer" style="height: 18px; width: 65px;"></div>
+                <div class="skeleton-shimmer rounded-pill" style="height: 26px; width: 36px;"></div>
+            </div>
+        </div>
+    </div>
+    @endfor
+</div>
+
 <div class="row g-2 g-md-4" id="catalogProductsRow">
     @forelse($products as $product)
     <div class="col-6 col-lg-4 col-xl-3 product-item-col" 
@@ -158,6 +175,25 @@
             searchInput.addEventListener('input', applyFilter);
         }
 
+        const skeletonGrid = document.getElementById('catalogSkeletonGrid');
+        const productsRow = document.getElementById('catalogProductsRow');
+        let shimmerTimer = null;
+
+        function triggerFilterWithShimmer() {
+            if (skeletonGrid && productsRow) {
+                skeletonGrid.classList.remove('d-none');
+                productsRow.classList.add('d-none');
+                clearTimeout(shimmerTimer);
+                shimmerTimer = setTimeout(() => {
+                    applyFilter();
+                    skeletonGrid.classList.add('d-none');
+                    productsRow.classList.remove('d-none');
+                }, 160);
+            } else {
+                applyFilter();
+            }
+        }
+
         filterChips.forEach(chip => {
             chip.addEventListener('click', function() {
                 filterChips.forEach(c => {
@@ -168,7 +204,7 @@
                 this.classList.add('btn-primary', 'active');
 
                 currentFilter = this.getAttribute('data-filter') || 'all';
-                applyFilter();
+                triggerFilterWithShimmer();
             });
         });
 

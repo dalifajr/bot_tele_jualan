@@ -36,7 +36,49 @@
 </div>
 
 <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 16px;">
-    <div class="card-body p-0">
+    <div class="card-body p-0" id="ordersMainCardBody">
+        {{-- Skeleton Shimmer Placeholder for Order Transitions --}}
+        <div class="d-none" id="ordersSkeletonContainer">
+            {{-- Mobile Skeleton Cards --}}
+            <div class="d-md-none p-3">
+                @for($sk = 0; $sk < 3; $sk++)
+                <div class="card border-0 shadow-sm p-3 mb-2.5" style="border-radius: 14px;">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="skeleton-shimmer" style="height: 14px; width: 90px;"></div>
+                        <div class="skeleton-shimmer rounded-pill" style="height: 22px; width: 70px;"></div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <div class="skeleton-shimmer rounded-3" style="width: 40px; height: 40px; flex-shrink: 0;"></div>
+                        <div class="flex-grow-1">
+                            <div class="skeleton-shimmer mb-1.5" style="height: 14px; width: 70%;"></div>
+                            <div class="skeleton-shimmer" style="height: 11px; width: 35%;"></div>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                        <div class="skeleton-shimmer" style="height: 16px; width: 85px;"></div>
+                        <div class="skeleton-shimmer rounded-pill" style="height: 26px; width: 65px;"></div>
+                    </div>
+                </div>
+                @endfor
+            </div>
+
+            {{-- Desktop Skeleton Rows --}}
+            <div class="d-none d-md-block p-4">
+                @for($st = 0; $st < 4; $st++)
+                <div class="d-flex align-items-center justify-content-between py-3 border-bottom">
+                    <div class="skeleton-shimmer" style="height: 16px; width: 110px;"></div>
+                    <div class="skeleton-shimmer" style="height: 16px; width: 180px;"></div>
+                    <div class="skeleton-shimmer" style="height: 16px; width: 35px;"></div>
+                    <div class="skeleton-shimmer" style="height: 16px; width: 95px;"></div>
+                    <div class="skeleton-shimmer rounded-pill" style="height: 24px; width: 75px;"></div>
+                    <div class="skeleton-shimmer" style="height: 14px; width: 90px;"></div>
+                    <div class="skeleton-shimmer rounded-pill" style="height: 28px; width: 65px;"></div>
+                </div>
+                @endfor
+            </div>
+        </div>
+
+        <div id="ordersContentWrapper">
         @if($orders->count() > 0)
         {{-- Desktop Table View --}}
         <div class="table-responsive d-none d-md-block">
@@ -140,8 +182,29 @@
             </a>
         </div>
         @endif
+        </div>{{-- /#ordersContentWrapper --}}
     </div>
 </div>
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const filterLinks = document.querySelectorAll('.category-chips-wrapper a, a[href*="status="], a[href="{{ route('orders.index') }}"]');
+        const skeleton = document.getElementById('ordersSkeletonContainer');
+        const content = document.getElementById('ordersContentWrapper');
+
+        filterLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                if (e.ctrlKey || e.metaKey || e.shiftKey) return;
+                if (skeleton && content) {
+                    skeleton.classList.remove('d-none');
+                    content.classList.add('d-none');
+                }
+            });
+        });
+    });
+</script>
+@endpush
 
 @push('modals')
 @foreach($orders as $order)

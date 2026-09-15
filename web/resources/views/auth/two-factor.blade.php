@@ -35,8 +35,19 @@
     </button>
   </div>
 
-  <div id="pageLoader">
-    <div class="spinner"></div>
+  {{-- Loader Overlay: Skeleton Shimmer --}}
+  <div id="pageLoader" class="fade-out">
+    <div class="d-flex align-items-center justify-content-center h-100 p-4">
+      <div class="card border-0 shadow-lg p-4 w-100" style="max-width: 440px; border-radius: 20px;">
+        <div class="text-center mb-4">
+          <div class="skeleton-shimmer rounded-circle mx-auto mb-3" style="width: 54px; height: 54px;"></div>
+          <div class="skeleton-shimmer mb-2 mx-auto" style="height: 22px; width: 60%;"></div>
+          <div class="skeleton-shimmer mx-auto" style="height: 14px; width: 80%;"></div>
+        </div>
+        <div class="skeleton-shimmer mb-4" style="height: 52px; border-radius: 12px; width: 100%;"></div>
+        <div class="skeleton-shimmer mb-3" style="height: 46px; border-radius: 24px; width: 100%;"></div>
+      </div>
+    </div>
   </div>
 
   <div class="login-wrapper" style="max-width: 500px;">
