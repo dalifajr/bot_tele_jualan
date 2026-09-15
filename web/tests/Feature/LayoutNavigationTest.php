@@ -40,6 +40,17 @@ class LayoutNavigationTest extends TestCase
         $response->assertSee('sheet-handle-bar', false);
         $response->assertSee('bottomNavMenuToggle', false);
         $response->assertSee('sidebarCloseBtn', false);
+
+        // 4. Verify card grid layout and illustrative icons
+        $response->assertSee('menu-items-grid', false);
+        $response->assertSee('menu-icon-box', false);
+        $response->assertSee('menu-label-text', false);
+        $response->assertSee('fa-store', false);
+        $response->assertSee('fa-receipt', false);
+        $response->assertSee('fa-headset', false);
+        $response->assertSee('fa-comments', false);
+        $response->assertSee('fa-user-circle', false);
+        $response->assertSee('fa-shield-halved', false);
     }
 
     public function test_seller_navigation_includes_mobile_handle_and_support_card()
@@ -64,5 +75,13 @@ class LayoutNavigationTest extends TestCase
         $response->assertSee('sheet-handle-bar', false);
         $response->assertSee('bottomNavMenuToggle', false);
         $response->assertDontSee('style="bottom: 30px; right: 30px;', false);
+
+        // Verify seller card grid layout and icons
+        $response->assertSee('menu-items-grid', false);
+        $response->assertSee('menu-icon-box', false);
+        $response->assertSee('menu-label-text', false);
+        $response->assertSee('fa-chart-pie', false);
+        $response->assertSee('fa-box-open', false);
+        $response->assertSee('fa-wallet', false);
     }
 }

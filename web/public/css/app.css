@@ -153,6 +153,25 @@ body {
     opacity: 0.7;
 }
 
+.menu-items-grid {
+    display: flex;
+    flex-direction: column;
+}
+
+.menu-icon-box {
+    width: 24px;
+    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    flex-shrink: 0;
+}
+
+.menu-label-text {
+    flex-grow: 1;
+}
+
 .menu-item {
     display: flex;
     align-items: center;
@@ -616,6 +635,105 @@ body {
         opacity: 0.8;
         width: 58px;
         background-color: var(--primary-color);
+    }
+
+    /* Mobile Card Grid Layout for Menu Lainnya (Bottom Sheet) */
+    .menu-group {
+        padding: 0.5rem 1rem !important;
+    }
+
+    .menu-header {
+        padding: 0.5rem 0.25rem 0.65rem !important;
+        font-size: 0.72rem !important;
+    }
+
+    .menu-items-grid {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 10px !important;
+    }
+
+    .menu-item {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        justify-content: space-between !important;
+        min-height: 84px !important;
+        padding: 12px 14px !important;
+        border-radius: 16px !important;
+        background: rgba(var(--primary-rgb), 0.035) !important;
+        border: 1px solid var(--glass-border) !important;
+        border-left: 1px solid var(--glass-border) !important;
+        position: relative !important;
+        transform: none !important;
+        text-decoration: none !important;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03) !important;
+        transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease !important;
+    }
+
+    .menu-item:hover,
+    .menu-item:active {
+        background: rgba(var(--primary-rgb), 0.08) !important;
+        border-color: rgba(var(--primary-rgb), 0.25) !important;
+        transform: translateY(-2px) scale(0.98) !important;
+        box-shadow: 0 4px 14px rgba(var(--primary-rgb), 0.12) !important;
+    }
+
+    .menu-item.active {
+        background: rgba(var(--primary-rgb), 0.12) !important;
+        border: 1px solid var(--primary-color) !important;
+        border-left: 1px solid var(--primary-color) !important;
+        box-shadow: 0 4px 16px rgba(var(--primary-rgb), 0.18) !important;
+    }
+
+    .menu-item .menu-icon-box {
+        width: 38px !important;
+        height: 38px !important;
+        border-radius: 12px !important;
+        background: var(--bs-body-bg) !important;
+        border: 1px solid var(--glass-border) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-size: 1.15rem !important;
+        margin-bottom: 8px !important;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.04) !important;
+        flex-shrink: 0 !important;
+        transition: transform 0.2s ease, background 0.2s ease !important;
+    }
+
+    .menu-item.active .menu-icon-box {
+        background: var(--primary-color) !important;
+        box-shadow: 0 3px 8px rgba(var(--primary-rgb), 0.3) !important;
+    }
+
+    .menu-item.active .menu-icon-box i {
+        color: #ffffff !important;
+    }
+
+    .menu-item .menu-label-text {
+        font-size: 0.8rem !important;
+        font-weight: 600 !important;
+        line-height: 1.25 !important;
+        color: var(--bs-body-color) !important;
+        display: -webkit-box !important;
+        -webkit-line-clamp: 2 !important;
+        -webkit-box-orient: vertical !important;
+        overflow: hidden !important;
+    }
+
+    .menu-item.active .menu-label-text {
+        color: var(--primary-color) !important;
+        font-weight: 700 !important;
+    }
+
+    .menu-item .badge {
+        position: absolute !important;
+        top: 10px !important;
+        right: 10px !important;
+        font-size: 0.65rem !important;
+        padding: 0.22rem 0.45rem !important;
+        border-radius: 999px !important;
     }
 }
 
