@@ -18,7 +18,7 @@
                 </span>
             @endif
         </div>
-        <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill py-1 px-3 d-inline-flex align-items-center gap-1" style="font-size: 0.78rem;" onclick="copyFullCredential(this, {{ json_encode($rawText) }})">
+        <button type="button" class="btn btn-sm btn-outline-primary rounded-pill py-1 px-3 d-inline-flex align-items-center gap-1.5 shadow-sm fw-semibold" style="font-size: 0.78rem;" onclick="copyFullCredential(this, {{ json_encode($rawText) }})">
             <i class="fas fa-copy"></i>
             <span>{{ __('Salin Seluruh Data') }}</span>
         </button>

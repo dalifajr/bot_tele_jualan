@@ -282,4 +282,29 @@ class NewImprovementsTest extends TestCase
         $response->assertSee(route('sellers.show', $this->seller->id));
         $response->assertSee(route('sellers.show', $this->admin->id));
     }
+
+    public function test_seller_profile_zero_reviews_shows_no_review_state(): void
+    {
+        $response = $this->actingAs($this->customer)->get(route('sellers.show', $this->seller->id));
+
+        $response->assertStatus(200);
+        $response->assertSee('Belum ada ulasan');
+        $response->assertSee('badge bg-white text-secondary rounded-pill', false);
+    }
+
+    public function test_catalog_index_has_seller_store_profile_link(): void
+    {
+        Product::create([
+            'name' => 'Linked Seller Product Demo',
+            'price' => 50000,
+            'description' => 'Demo',
+            'creator_id' => $this->seller->id,
+            'is_suspended' => false,
+        ]);
+
+        $response = $this->actingAs($this->customer)->get(route('catalog.index'));
+
+        $response->assertStatus(200);
+        $response->assertSee(route('sellers.show', $this->seller->id));
+    }
 }

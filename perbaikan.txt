@@ -1,17 +1,8 @@
 RENCANA PERBAIKAN DAN PENGEMBANGAN WEBITE JUALAN:
 
-2. body > div:nth-of-type(2) > main > div:nth-of-type(2) > div > div:nth-of-type(2) > div:nth-of-type(2) buat sytling elemen ini pada laman profil seller sama dengan elemen body > div:nth-of-type(2) > main > div:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) pada halaman home. lakukan hal yang sama pada detail produk.
-3. teks pada elemen body > div:nth-of-type(2) > main > div:nth-of-type(2) > div > div:nth-of-type(2) > div:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(2) > span:nth-of-type(1) menyaru dengan latar sehingga tidak terlihat.
-4. <div class="col-4">
-                    <div class="text-center p-2 rounded-3 bg-white bg-opacity-10">
-                        <span class="d-block text-white fw-bold fs-6">0</span>
-                        <span class="text-white-50" style="font-size: 0.7rem;">Unit Terjual</span>
-                    </div>
-                </div> isi pada elemen tersebut hampir menyaru dengan elemen dibelakangnya.
-4. teks bergabung sejak kapan pada profil seller hampir menyaru.
-5. tambahkan menu kunjungi profil pada menu https://belajaridn.id/admin/sellers di list menu dropdwon.
-6. body > div:nth-of-type(2) > main > div:nth-of-type(2) > div > div:nth-of-type(1) > div:nth-of-type(2) > a hilangkan ikon keranjang pada laman profil seller.
-7. katalog produk tidak terlihat pada profil seller untuk user admin. padahal admin juga berjualan dan produknya terdaftar pada katalog, namun ketika saya mengunjungi profil admin, produk yang tadi ada dikatalog tidak tampil pada profil seller.
+1. body > div:nth-of-type(2) > main > div:nth-of-type(2) > div > div:nth-of-type(2) > div:nth-of-type(4) > div > div:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(2) > span:nth-of-type(2) teks didalam elemen tsb punya warna teks yang sama dengan latar, shingga menyaru.
+2. elemen card penilaian pada laman profil seller bagaimana bisa terisi 5.0 namun dengan 0 review. mohon perbaiki.
+3. buat rencana perbaikan ui, ux, dan lain-lain pada website baik untuk mode desktop ataupun mobile. lakukan jelajah secara lengkap pada website untuk menemukan segala hal yang perlu diperbaiki. 
 
 catat untuk kamu;
 - lakukan brainstroming sebelum melakukan eksekusi, tak lupa pula lakukan analisa kritik dan saran.

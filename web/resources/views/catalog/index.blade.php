@@ -85,16 +85,27 @@
             </div>
 
             <div class="card-body d-flex flex-column p-2 p-md-3">
-                <h6 class="fw-bold mb-1" style="font-size: 0.9rem; line-height: 1.3;">{{ Str::limit($product->name, 28) }}</h6>
+                <h6 class="fw-bold mb-1 text-body" style="font-size: 0.9rem; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.4em;" title="{{ $product->name }}">{{ $product->name }}</h6>
                 @if($product->description)
                     <p class="text-muted small mb-2 flex-grow-1 d-none d-sm-block" style="font-size: 0.78rem;">{{ Str::limit($product->description, 50) }}</p>
                 @endif
 
                 <div class="d-flex justify-content-between align-items-center mb-2 small text-muted" style="font-size: 0.72rem;">
+                    @php
+                        $storeSellerId = $product->creator_id;
+                        if (!$storeSellerId) {
+                            $adminUser = \App\Models\User::where('role', 'admin')->first();
+                            $storeSellerId = $adminUser ? $adminUser->id : 1;
+                        }
+                    @endphp
                     @if($product->creator)
-                        <span class="text-truncate" style="max-width: 65%;"><i class="fas fa-store me-1 text-info"></i>{{ $product->creator->full_name ?? $product->creator->username }}</span>
+                        <a href="{{ route('sellers.show', $storeSellerId) }}" class="btn-stop-prop text-decoration-none text-muted hover-primary text-truncate d-inline-flex align-items-center" style="max-width: 65%; font-size: 0.72rem;" title="{{ __('Kunjungi Toko') }}">
+                            <i class="fas fa-store me-1 text-info"></i><span class="text-truncate">{{ $product->creator->full_name ?? $product->creator->username }}</span>
+                        </a>
                     @else
-                        <span><i class="fas fa-store me-1 text-primary"></i>Admin</span>
+                        <a href="{{ route('sellers.show', $storeSellerId) }}" class="btn-stop-prop text-decoration-none text-muted hover-primary text-truncate d-inline-flex align-items-center" style="max-width: 65%; font-size: 0.72rem;" title="{{ __('Kunjungi Toko Resmi') }}">
+                            <i class="fas fa-store me-1 text-primary"></i><span>Official Store</span>
+                        </a>
                     @endif
                     @if(isset($product->sales_count) && $product->sales_count > 0)
                         <span class="fw-bold text-success">{{ $product->sales_count }} <span class="d-none d-sm-inline">{{ __('terjual') }}</span></span>

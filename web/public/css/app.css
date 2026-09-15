@@ -556,7 +556,10 @@ body {
     }
 
     .mobile-nav-item.active i {
-        transform: translateY(-2px);
+        transform: translateY(-1px);
+        background: var(--bs-primary-bg-subtle, rgba(13, 110, 253, 0.12));
+        padding: 2px 10px;
+        border-radius: 12px;
     }
 
     .mobile-nav-badge {

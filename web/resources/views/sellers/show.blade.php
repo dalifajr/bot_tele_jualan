@@ -83,9 +83,9 @@
                             <span class="badge bg-white text-primary rounded-pill px-3 py-1.5 fw-bold shadow-sm" style="font-size: 0.75rem; letter-spacing: 0.3px;">
                                 <i class="fas fa-store me-1 text-primary"></i>{{ $seller->role === 'admin' ? __('Official Store Admin') : __('Official Seller') }}
                             </span>
-                            {{-- Badge Tanggal Bergabung Bergaris Tepi Putih Tajam --}}
-                            <span class="badge bg-white bg-opacity-15 border border-white border-opacity-30 rounded-pill px-3 py-1.5 text-white fw-semibold small">
-                                <i class="far fa-calendar-alt me-1 text-white"></i>{{ __('Bergabung') }} {{ $sellerJoinDate }}
+                            {{-- Solid White Badge Tanggal Bergabung (Kontras Tinggi Anti-Menyaru) --}}
+                            <span class="badge bg-white text-secondary rounded-pill px-3 py-1.5 fw-semibold shadow-sm" style="font-size: 0.75rem; letter-spacing: 0.3px;">
+                                <i class="far fa-calendar-alt me-1 text-primary"></i>{{ __('Bergabung') }} {{ $sellerJoinDate }}
                             </span>
                         </div>
                     </div>
@@ -138,14 +138,21 @@
         <div class="col-4">
             <div class="card border-0 shadow-sm h-100 rounded-4 lift-hover overflow-hidden bg-body text-body">
                 <div class="card-body p-3 text-center">
-                    <div class="d-inline-flex bg-warning-subtle text-warning rounded-circle p-2.5 mb-2">
+                    <div class="d-inline-flex {{ $totalReviews > 0 ? 'bg-warning-subtle text-warning' : 'bg-secondary-subtle text-secondary' }} rounded-circle p-2.5 mb-2">
                         <i class="fas fa-star fa-lg"></i>
                     </div>
                     <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.68rem; letter-spacing: 0.5px;">{{ __('Penilaian') }}</div>
-                    <h4 class="fw-bold mb-0 text-body mt-1">
-                        {{ $avgRating ? number_format($avgRating, 1) : '5.0' }}
-                        <small class="text-muted fw-normal" style="font-size: 0.72rem;">({{ $totalReviews }})</small>
-                    </h4>
+                    @if($totalReviews > 0)
+                        <h4 class="fw-bold mb-0 text-body mt-1">
+                            {{ number_format($avgRating, 1) }}
+                            <small class="text-muted fw-normal" style="font-size: 0.72rem;">({{ $totalReviews }})</small>
+                        </h4>
+                    @else
+                        <h4 class="fw-bold mb-0 text-muted mt-1" style="font-size: 1.1rem;">
+                            -
+                            <small class="text-muted fw-normal d-block" style="font-size: 0.68rem;">{{ __('Belum ada ulasan') }}</small>
+                        </h4>
+                    @endif
                 </div>
             </div>
         </div>
