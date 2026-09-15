@@ -1,0 +1,17 @@
+RENCANA PERBAIKAN DAN PENGEMBANGAN WEBITE JUALAN:
+
+1. elemen tombol bantuan body > a harap dipindahkan ke sidebar.
+2. saya ingin agar website optimal dibuka pada perangkat mobile, maka dari itu saya ingin mengimplementasikan navbar pada website saya dan merubah menu sidebar (khusus pada perangkat mobile) menjadi card dengan handle yang bisa diakses pada bagian navbar. handle tersebut hanya bisa diakses pada perangkat mobile, sedangkan pada perangkat desktop, sidebar akan tetap seperti semula.
+3. perbaiki celah antara elemen sidebar, dan container dengan header.
+4. berikan saya saran untuk implementasi website pada perangkat mobile yang lebih baik, baik dalam bernavigasi, tata letak, serta aspek lainnya.
+5. serta lakukan analisa atas masalah yang dialami oleh salah satu seller saya, dimana user role seller sering kali berubah sendirinya ke role customer.
+
+catat untuk kamu;
+- lakukan brainstroming sebelum melakukan eksekusi, tak lupa pula lakukan analisa kritik dan saran.
+- pastikan untuk melakukan test pada setiap perubahan yang kamu buat. agar tidak ada error yang terlewatkan.
+- jangan pernah ragu untuk meminta arahan lebih detail.
+- tidak usah melakukan test menggunakan agent browser.
+- identifikasikan dirimu sebagai developer fullstack laravel yang berpengalaman dan berpedoman dengan prinsip clean code, user experience (ux), design thinking, dan best practices.
+- gunakan bahasa indonesia yang baik dan benar.
+- jika melakukan perubahan maka berikan penjelasan atas setiap perubahan yang kamu buat.
+- 

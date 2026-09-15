@@ -49,23 +49,71 @@ function updateThemeIcon(icon, theme) {
 function initSidebar() {
     const sidebar = document.getElementById('sidebar');
     const toggleBtn = document.getElementById('sidebarToggle');
+    const closeBtn = document.getElementById('sidebarCloseBtn');
+    const cardHandle = document.getElementById('mobileCardHandle');
     const overlay = document.getElementById('sidebarOverlay');
     const container = document.querySelector('.app-container');
 
-    if (!sidebar || !toggleBtn) return;
+    if (!sidebar) return;
 
-    toggleBtn.addEventListener('click', () => {
-        if (window.innerWidth >= 992) {
-            // Desktop Collapse
-            if (container) {
-                container.classList.toggle('sidebar-collapsed');
-                localStorage.setItem('jualan-sidebar-collapsed', container.classList.contains('sidebar-collapsed'));
+    const closeMobileSidebar = () => {
+        sidebar.classList.remove('show');
+        if (overlay) overlay.classList.remove('show');
+        document.body.classList.remove('sidebar-open');
+    };
+
+    const openMobileSidebar = () => {
+        sidebar.classList.add('show');
+        if (overlay) overlay.classList.add('show');
+        document.body.classList.add('sidebar-open');
+    };
+
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', () => {
+            if (window.innerWidth >= 992) {
+                // Desktop Collapse
+                if (container) {
+                    container.classList.toggle('sidebar-collapsed');
+                    localStorage.setItem('jualan-sidebar-collapsed', container.classList.contains('sidebar-collapsed'));
+                }
+            } else {
+                // Mobile Card Drawer
+                if (sidebar.classList.contains('show')) {
+                    closeMobileSidebar();
+                } else {
+                    openMobileSidebar();
+                }
             }
-        } else {
-            // Mobile Drawer
-            sidebar.classList.toggle('show');
-            if (overlay) overlay.classList.toggle('show');
+        });
+    }
+
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closeMobileSidebar);
+    }
+
+    if (cardHandle) {
+        cardHandle.addEventListener('click', closeMobileSidebar);
+    }
+
+    if (overlay) {
+        overlay.addEventListener('click', closeMobileSidebar);
+    }
+
+    // Close on Escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && sidebar.classList.contains('show') && window.innerWidth < 992) {
+            closeMobileSidebar();
         }
+    });
+
+    // Close mobile card on menu link click (if link isn't preventDefault)
+    const mobileLinks = sidebar.querySelectorAll('a.menu-item');
+    mobileLinks.forEach(link => {
+        link.addEventListener('click', () => {
+            if (window.innerWidth < 992) {
+                closeMobileSidebar();
+            }
+        });
     });
 
     // Restore saved sidebar collapsed state on desktop
@@ -74,13 +122,6 @@ function initSidebar() {
         if (isCollapsed) {
             container.classList.add('sidebar-collapsed');
         }
-    }
-
-    if (overlay) {
-        overlay.addEventListener('click', () => {
-            sidebar.classList.remove('show');
-            overlay.classList.remove('show');
-        });
     }
 }
 

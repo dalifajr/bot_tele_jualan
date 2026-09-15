@@ -286,7 +286,16 @@ def _instrument_handler(name: str, callback: HandlerCallback) -> HandlerCallback
 
 
 def _role_for_telegram_id(telegram_id: int) -> str:
-    return "admin" if is_admin(telegram_id, settings.role_file_path) else "customer"
+    if is_admin(telegram_id, settings.role_file_path):
+        return "admin"
+    try:
+        with get_session() as session:
+            user = get_user_by_telegram_id(session, telegram_id)
+            if user is not None and user.role:
+                return str(user.role)
+    except Exception:
+        pass
+    return "customer"
 
 
 def _format_rupiah(amount: int) -> str:
@@ -3242,17 +3251,18 @@ async def _ensure_user(
             raise ValueError("Gagal menyimpan user Telegram.")
         if db_user.is_suspended:
             raise UserSuspendedError("Akun Anda telah ditangguhkan.", db_user.suspension_reason)
+        effective_role = str(db_user.role or role or "customer")
         user_ctx = UserContext(id=int(db_user.id), telegram_id=int(db_user.telegram_id))
 
     if context is not None:
         context.user_data[USER_CTX_CACHE_KEY] = {
             "id": user_ctx.id,
             "telegram_id": user_ctx.telegram_id,
-            "role": role,
+            "role": effective_role,
             "until": time.monotonic() + USER_CTX_CACHE_TTL_SECONDS,
         }
 
-    return user_ctx, role
+    return user_ctx, effective_role
 
 
 def _ensure_admin(update: Update) -> bool:

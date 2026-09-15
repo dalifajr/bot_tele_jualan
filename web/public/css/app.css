@@ -7,6 +7,11 @@
 
 /* === CORE VARIABLES === */
 :root {
+    --header-height: 58px;
+    --banner-height: 0px;
+    --total-header-height: calc(var(--header-height) + var(--banner-height));
+    --sidebar-width: 260px;
+
     --primary-h: 220;
     --primary-s: 90%;
     --primary-l: 52%;
@@ -60,25 +65,63 @@ body {
     transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* === NAVIGATION (GLASSMORPHISM) === */
+/* === NAVIGATION (GLASSMORPHISM & ZERO GAP) === */
 .navbar {
+    height: var(--header-height);
+    min-height: var(--header-height);
+    max-height: var(--header-height);
+    top: var(--banner-height) !important;
     background: var(--glass-bg) !important;
     backdrop-filter: blur(var(--glass-blur)) !important;
     -webkit-backdrop-filter: blur(var(--glass-blur)) !important;
     border-bottom: 1px solid var(--glass-border) !important;
-    transition: background 0.3s ease, border-bottom 0.3s ease;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    transition: background 0.3s ease, border-bottom 0.3s ease, top 0.3s ease;
 }
 
-/* === SIDEBAR (GLASSMORPHISM) === */
+/* Mobile Nav Handle Button in Navbar */
+.mobile-nav-handle {
+    border: 1px solid var(--glass-border) !important;
+    background: rgba(var(--primary-rgb), 0.08) !important;
+    color: var(--primary-color) !important;
+    border-radius: 999px !important;
+    padding: 6px 12px !important;
+    font-size: 0.85rem !important;
+    font-weight: 600 !important;
+    line-height: 1 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mobile-nav-handle:hover, .mobile-nav-handle:focus {
+    background: rgba(var(--primary-rgb), 0.16) !important;
+    color: var(--primary-color) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(var(--primary-rgb), 0.15);
+}
+
+.mobile-nav-handle:active {
+    transform: scale(0.96);
+}
+
+/* === SIDEBAR (GLASSMORPHISM & ZERO GAP) === */
 .sidebar {
-    width: 260px;
+    width: var(--sidebar-width);
     background: var(--glass-bg);
     backdrop-filter: blur(var(--glass-blur));
     -webkit-backdrop-filter: blur(var(--glass-blur));
     border-right: 1px solid var(--glass-border);
     position: fixed;
-    top: 57px !important;
-    height: calc(100vh - 57px) !important;
+    top: var(--total-header-height) !important;
+    height: calc(100vh - var(--total-header-height)) !important;
     left: 0;
     z-index: 1040 !important;
     display: flex;
@@ -86,7 +129,8 @@ body {
     overflow-y: auto !important;
     overscroll-behavior: contain;
     flex-shrink: 0;
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s ease, border-right 0.3s ease;
+    box-sizing: border-box;
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), background 0.3s ease, border-right 0.3s ease, top 0.3s ease;
 }
 
 .sidebar-header {
@@ -141,17 +185,18 @@ body {
     text-align: center;
 }
 
-/* === APP LAYOUT === */
+/* === APP LAYOUT (ZERO GAP) === */
 .app-container {
-    padding-top: 57px !important;
+    padding-top: var(--total-header-height) !important;
     min-height: 100vh;
+    box-sizing: border-box;
 }
 
 .main-content {
-    margin-left: 260px;
+    margin-left: var(--sidebar-width);
     margin-top: 0 !important;
     flex: 1;
-    min-height: calc(100vh - 57px);
+    min-height: calc(100vh - var(--total-header-height));
     overflow: hidden;
 }
 
@@ -412,28 +457,96 @@ body {
     display: none;
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(4px);
-    z-index: 1019;
+    background: rgba(10, 15, 29, 0.5);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    z-index: 1045;
+    opacity: 0;
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .sidebar-overlay.show {
     display: block;
+    opacity: 1;
 }
 
-/* === RESPONSIVE === */
+/* === MOBILE CARD SHEET WITH HANDLE (max-width: 991.98px) === */
 @media (max-width: 991.98px) {
     .sidebar {
-        transform: translateX(-100%);
+        top: calc(var(--total-header-height) + 10px) !important;
+        bottom: 14px !important;
+        height: calc(100vh - var(--total-header-height) - 24px) !important;
+        left: 12px !important;
+        width: calc(100vw - 24px) !important;
+        max-width: 380px !important;
+        border-radius: 20px !important;
+        border: 1px solid var(--glass-border) !important;
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.2) !important;
+        transform: translateX(calc(-100% - 24px));
+        opacity: 0;
+        z-index: 1050 !important;
     }
 
     .sidebar.show {
         transform: translateX(0);
+        opacity: 1;
     }
 
     .main-content {
-        margin-left: 0;
+        margin-left: 0 !important;
     }
+}
+
+/* Mobile Card Grab Handle */
+.mobile-card-topbar {
+    display: flex;
+    flex-direction: column;
+    padding: 8px 0 0 0;
+    position: sticky;
+    top: 0;
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    z-index: 10;
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+}
+
+.mobile-card-handle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 0 8px;
+    cursor: pointer;
+}
+
+.mobile-card-handle-bar {
+    width: 44px;
+    height: 5px;
+    border-radius: 999px;
+    background-color: var(--bs-secondary-color);
+    opacity: 0.35;
+    transition: all 0.2s ease;
+}
+
+.mobile-card-handle:hover .mobile-card-handle-bar,
+.mobile-card-handle:active .mobile-card-handle-bar {
+    opacity: 0.8;
+    width: 54px;
+    background-color: var(--primary-color);
+}
+
+/* Sidebar Telegram Support Card */
+.sidebar-help-card {
+    background: rgba(var(--primary-rgb), 0.05);
+    border: 1px solid rgba(var(--primary-rgb), 0.15) !important;
+    transition: all 0.25s ease;
+}
+
+.sidebar-help-card:hover {
+    background: rgba(var(--primary-rgb), 0.08);
+    border-color: rgba(var(--primary-rgb), 0.25) !important;
+    transform: translateY(-2px);
 }
 
 /* === DARK MODE ADJUSTMENTS === */

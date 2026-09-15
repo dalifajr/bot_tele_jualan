@@ -131,15 +131,8 @@
     </form>
 </div>
 <style>
-    body {
-        padding-top: 40px !important;
-    }
-    .navbar {
-        top: 40px !important;
-    }
-    #sidebar {
-        top: 97px !important;
-        height: calc(100vh - 97px) !important;
+    :root {
+        --banner-height: 40px !important;
     }
 </style>
 @endif
@@ -160,17 +153,18 @@
     </a>
 </div>
 <style>
-    body { padding-top: 38px !important; }
-    .navbar { top: 38px !important; }
-    #sidebar { top: 95px !important; height: calc(100vh - 95px) !important; }
+    :root {
+        --banner-height: 38px !important;
+    }
 </style>
 @endif
 
-<nav class="navbar navbar-expand fixed-top shadow-sm px-4 bg-body border-bottom" style="z-index: 1030; top: 0;">
-    <div class="d-flex align-items-center gap-3">
+<nav class="navbar navbar-expand fixed-top shadow-sm px-3 px-md-4 bg-body border-bottom" style="z-index: 1030;">
+    <div class="d-flex align-items-center gap-2 gap-sm-3">
         @unless($hideSidebar)
-        <button class="btn btn-link link-body-emphasis text-decoration-none p-0 d-lg-none" id="sidebarToggle" aria-label="{{ __('Buka/Tutup Menu Navigasi') }}">
-            <i class="fas fa-bars fs-4"></i>
+        <button class="mobile-nav-handle btn btn-sm d-lg-none" id="sidebarToggle" aria-label="{{ __('Buka Menu Navigasi') }}" title="{{ __('Buka Menu Navigasi') }}">
+            <i class="fas fa-bars-staggered"></i>
+            <span class="d-none d-sm-inline">{{ __('Menu') }}</span>
         </button>
         @endunless
         <div class="navbar-brand d-flex align-items-center gap-2 text-primary fw-bold m-0" style="font-size: 1.05rem;">
@@ -279,8 +273,23 @@
 
 <div class="app-container">
     @unless($hideSidebar)
-    {{-- Sidebar --}}
-    <div id="sidebar" class="sidebar" style="top: 57px; height: calc(100vh - 57px); z-index: 1040; overflow-y: auto; overscroll-behavior: contain;">
+    {{-- Sidebar (Desktop Column / Mobile Card Sheet) --}}
+    <div id="sidebar" class="sidebar" style="z-index: 1040; overflow-y: auto; overscroll-behavior: contain;">
+        {{-- Mobile Card Grab Handle & Close Header (Mobile Only) --}}
+        <div class="mobile-card-topbar d-lg-none">
+            <div class="mobile-card-handle" id="mobileCardHandle" title="{{ __('Tutup Menu') }}">
+                <div class="mobile-card-handle-bar"></div>
+            </div>
+            <div class="d-flex align-items-center justify-content-between px-3 pb-2 pt-1 border-bottom">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="fas fa-compass text-primary"></i>
+                    <span class="fw-bold text-body" style="font-size: 0.9rem;">{{ __('Navigasi Menu') }}</span>
+                </div>
+                <button type="button" class="btn btn-sm btn-icon btn-light rounded-circle text-secondary" id="sidebarCloseBtn" aria-label="{{ __('Tutup') }}" style="width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; padding: 0;">
+                    <i class="fas fa-times" style="font-size: 0.85rem;"></i>
+                </button>
+            </div>
+        </div>
         <div class="sidebar-header d-flex align-items-center gap-3">
             <div class="user-avatar rounded-circle d-flex align-items-center justify-content-center fw-bold text-white bg-primary" style="width: 40px; height: 40px;">
                 {{ strtoupper(substr(Auth::user()->full_name ?? Auth::user()->username ?? 'U', 0, 1)) }}
@@ -549,7 +558,27 @@
             @endif
             @endif
 
-            <div class="menu-group mt-3 border-top pt-3 px-3">
+            @if(config('telegram.bot_username'))
+            <div class="menu-group px-3 pt-3 pb-1 border-top">
+                <div class="sidebar-help-card p-3 rounded-3 text-center">
+                    <div class="d-flex align-items-center justify-content-center mb-2">
+                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center shadow-sm" style="width: 36px; height: 36px;">
+                            <i class="fab fa-telegram-plane fs-6"></i>
+                        </div>
+                    </div>
+                    <div class="fw-bold text-body mb-1" style="font-size: 0.82rem;">{{ __('Pusat Bantuan') }}</div>
+                    <p class="text-muted small mb-2" style="font-size: 0.72rem; line-height: 1.35;">{{ __('Butuh bantuan atau pertanyaan? Hubungi admin via Telegram.') }}</p>
+                    <a href="https://t.me/{{ config('telegram.bot_username') }}" target="_blank"
+                       class="btn btn-primary btn-sm w-100 rounded-pill fw-bold shadow-sm d-flex align-items-center justify-content-center gap-2 py-1.5"
+                       style="font-size: 0.78rem;">
+                        <i class="fab fa-telegram"></i>
+                        <span>{{ __('Chat Telegram') }}</span>
+                    </a>
+                </div>
+            </div>
+            @endif
+
+            <div class="menu-group border-top pt-3 px-3">
                 <div class="menu-header text-secondary"><i class="fas fa-language me-1"></i> {{ __('Bahasa / Language') }}</div>
                 @php
                     $currentLocale = App::getLocale();
@@ -598,16 +627,7 @@
 
 </div>
 
-{{-- Floating Help Button (links to Telegram bot) --}}
-@if(config('telegram.bot_username'))
-<a href="https://t.me/{{ config('telegram.bot_username') }}"
-   class="btn btn-primary rounded-pill shadow-lg position-fixed d-flex align-items-center justify-content-center gap-2 px-4"
-   style="bottom: 30px; right: 30px; height: 50px; z-index: 1050; border: 2px solid rgba(255,255,255,0.2);"
-   title="{{ __('Hubungi via Telegram') }}" target="_blank">
-    <i class="fab fa-telegram fa-lg"></i>
-    <span class="fw-bold">{{ __('Bantuan') }}</span>
-</a>
-@endif
+{{-- Floating Help Button moved into Sidebar --}}
 
 {{-- Bootstrap JS --}}
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

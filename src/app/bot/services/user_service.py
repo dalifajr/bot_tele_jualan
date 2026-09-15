@@ -30,7 +30,13 @@ def upsert_user(
 
     user.username = username
     user.full_name = full_name
-    user.role = role
+    # Jangan turunkan role yang sudah diatur di database (seperti seller/admin) menjadi customer
+    if user.role == "seller" and role == "customer":
+        pass
+    elif role == "admin":
+        user.role = "admin"
+    elif user.role not in ("seller", "admin"):
+        user.role = role
     user.last_seen_at = datetime.utcnow()
     session.add(user)
     session.flush()
