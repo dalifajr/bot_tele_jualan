@@ -225,20 +225,6 @@
     </div>
 </div>
 
-{{-- Mobile Sticky Action Bar for Checkout Review --}}
-<div class="d-md-none bg-body border-top shadow-lg py-2.5 px-3 position-fixed bottom-0 start-0 end-0" style="z-index: 1045; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);">
-    <div class="d-flex align-items-center justify-content-between gap-3">
-        <div>
-            <span class="text-muted d-block" style="font-size: 0.68rem;">{{ __('Total Pembayaran') }}</span>
-            <span class="fw-bold text-primary" style="font-size: 1.15rem;">Rp {{ number_format($totalAmount, 0, ',', '.') }}</span>
-        </div>
-        <button type="button" class="btn btn-primary rounded-pill px-4 py-2.5 fw-bold shadow-sm d-flex align-items-center gap-2" onclick="document.getElementById('finalCheckoutForm').submit();">
-            <i class="fas fa-lock small"></i>
-            <span>{{ __('Bayar Sekarang') }}</span>
-        </button>
-    </div>
-</div>
-
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -254,4 +240,20 @@
     });
 </script>
 @endpush
+@endsection
+
+@section('mobile_bottom_action_bar')
+{{-- Mobile Sticky Action Bar for Checkout Review (Directly attached above Mobile Bottom Nav) --}}
+<div class="mobile-sticky-action-bar d-lg-none">
+    <div class="d-flex align-items-center justify-content-between gap-3">
+        <div>
+            <span class="text-muted d-block" style="font-size: 0.68rem; line-height: 1.1;">{{ __('Total Pembayaran') }}</span>
+            <span class="fw-bold text-primary" style="font-size: 1.15rem;">Rp {{ number_format($totalAmount, 0, ',', '.') }}</span>
+        </div>
+        <button type="button" class="btn btn-primary rounded-pill px-4 py-2 fw-bold shadow-sm d-flex align-items-center gap-2 lift-hover" onclick="document.getElementById('finalCheckoutForm').submit();" style="height: 44px; font-size: 0.88rem;">
+            <i class="fas fa-lock small"></i>
+            <span>{{ __('Bayar Sekarang') }}</span>
+        </button>
+    </div>
+</div>
 @endsection

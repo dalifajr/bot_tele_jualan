@@ -683,6 +683,41 @@ class NewImprovementsTest extends TestCase
         // Bottom nav must also be present
         $response->assertSee('id="mobileBottomNav"', false);
     }
+
+    public function test_checkout_review_renders_sticky_mobile_action_bar_and_bottom_nav(): void
+    {
+        $product = Product::create([
+            'name' => 'Review Checkout Item',
+            'price' => 50000,
+            'description' => 'Checkout review test',
+            'creator_id' => $this->seller->id,
+            'is_suspended' => false,
+        ]);
+
+        StockUnit::create([
+            'product_id' => $product->id,
+            'raw_text' => 'checkout_item_key_999',
+            'is_sold' => false,
+            'stock_status' => 'ready',
+            'seller_id' => $this->seller->id,
+            'uploaded_by_id' => $this->seller->id,
+        ]);
+
+        $response = $this->actingAs($this->customer)->get(route('checkout.review', [
+            'product' => $product->id,
+            'quantity' => 1,
+        ]));
+
+        $response->assertStatus(200);
+
+        // Sticky action bar for checkout review must be present
+        $response->assertSee('mobile-sticky-action-bar');
+        $response->assertSee('Total Pembayaran');
+        $response->assertSee('Bayar Sekarang');
+
+        // Mobile bottom nav must also be present
+        $response->assertSee('id="mobileBottomNav"', false);
+    }
 }
 
 

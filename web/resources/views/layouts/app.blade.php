@@ -164,17 +164,17 @@
                 right: auto !important;
                 width: 100% !important;
                 margin: 0 !important;
-                background: var(--bs-body-bg) !important;
-                border-top: 1px solid var(--bs-border-color) !important;
-                border-bottom: 1px solid var(--bs-border-color-translucent) !important;
-                box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08) !important;
+                background: var(--glass-bg) !important;
+                border-top: 1px solid var(--glass-border) !important;
+                border-bottom: 1px solid var(--glass-border) !important;
+                box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.08) !important;
                 padding: 0.5rem 0.75rem !important;
-                backdrop-filter: blur(16px) !important;
-                -webkit-backdrop-filter: blur(16px) !important;
+                backdrop-filter: blur(var(--glass-blur)) !important;
+                -webkit-backdrop-filter: blur(var(--glass-blur)) !important;
                 z-index: 1046 !important;
             }
 
-            @if(request()->routeIs('catalog.show'))
+            @if(request()->routeIs('catalog.show') || request()->routeIs('checkout.review') || request()->routeIs('cart.*'))
             body {
                 padding-bottom: calc(130px + env(safe-area-inset-bottom)) !important;
             }
