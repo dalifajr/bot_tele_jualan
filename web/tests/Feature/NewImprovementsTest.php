@@ -627,6 +627,62 @@ class NewImprovementsTest extends TestCase
         $response->assertSee('Tolak Pesanan');
         $response->assertSee('Ubah Status');
     }
+
+    public function test_catalog_show_renders_sticky_mobile_action_bar_and_hides_bottom_nav(): void
+    {
+        $product = Product::create([
+            'name' => 'Sticky Bar Test Item',
+            'price' => 25000,
+            'description' => 'Testing mobile sticky purchase bar',
+            'creator_id' => $this->seller->id,
+            'is_suspended' => false,
+        ]);
+
+        StockUnit::create([
+            'product_id' => $product->id,
+            'raw_text' => 'sample_credentials_123',
+            'is_sold' => false,
+            'stock_status' => 'ready',
+            'seller_id' => $this->seller->id,
+            'uploaded_by_id' => $this->seller->id,
+        ]);
+
+        $response = $this->actingAs($this->customer)->get(route('catalog.show', $product->id));
+
+        $response->assertStatus(200);
+
+        // Sticky action bar elements must be present
+        $response->assertSee('mobile-sticky-action-bar');
+        $response->assertSee('btnMobileBuyNow');
+        $response->assertSee('btnMobileAddToCart');
+        $response->assertSee(route('chat.index', ['contact_id' => $this->seller->id]));
+
+        // Global mobileBottomNav must be suppressed on catalog.show
+        $response->assertDontSee('id="mobileBottomNav"', false);
+    }
+
+    public function test_catalog_show_out_of_stock_renders_sticky_bar_with_chat_and_disabled_button(): void
+    {
+        $product = Product::create([
+            'name' => 'Out of Stock Item',
+            'price' => 30000,
+            'description' => 'Sold out item',
+            'creator_id' => $this->seller->id,
+            'is_suspended' => false,
+        ]);
+
+        $response = $this->actingAs($this->customer)->get(route('catalog.show', $product->id));
+
+        $response->assertStatus(200);
+
+        // Sticky bar still present
+        $response->assertSee('mobile-sticky-action-bar');
+        $response->assertSee('Stok Habis');
+        // Chat seller is still available
+        $response->assertSee(route('chat.index', ['contact_id' => $this->seller->id]));
+        // Bottom nav still suppressed
+        $response->assertDontSee('id="mobileBottomNav"', false);
+    }
 }
 
 

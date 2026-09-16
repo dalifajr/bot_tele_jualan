@@ -1,8 +1,6 @@
 RENCANA PERBAIKAN DAN PENGEMBANGAN WEBITE JUALAN:
 
-1. buat layout, gaya tampilan riwayat pesanan menjadi seperti aplikasi e-commerce shopee, karena saat ini tampilan riwayat pesanan kurang menarik dan hanya memperbesar card yang menyebabkan ruang layar menjadi penuh untuk layar mobile namun dengan fungsionalitas dan informasi yang tidak terlalu banyak. manfaatkan ruang layar dengan lebih baik. belum ada fitur pencarian pada riwayat pesanan dengan variabel pencarian nama produk, nominal. untuk filter status pesanan sudah ada namun buat menjadi lebih minimal dengan meminimalkan filter, saat ini yang berguna adalah filter semua, menunggu, selesai, dibatalkan dan kadaluarsa. gabungkan dibatalkan dan kadaluarsa menjadi satu kategori saja.
-2. buat agar saya tidak perlu klik tombol "lihat akun/lisensi" untuk membuka modal detail pesanan pada card pesanan cukup klik card pesanan maka saya akan langsung diarahkan ke laman detail pesanan. hal ini juga berlaku untuk perangkat desktop.
-3. perlakukan hal yang sama untuk halaman manajemen pesanan seller dan admin. tiadakan tombol detail karena akan digantikan dengan klik cardnya secara langsung, untuk akses menu spesifik barulah disediakan tombol khusus misal untuk mengganti status pesanan, dll. untuk laman manajemen pesanan pada role seller dan admin, sepertinya belum ada laman khusus karena saat ini hanya popup modal saja. jadi buatkanlah.
+1. elemen body > div:nth-of-type(2) > main > div:nth-of-type(2) > div:nth-of-type(2) yitu tombol beli sekarang, + keranjang dan chat pada user mobile harusnya sticky.
 
 catat untuk kamu;
 - lakukan brainstroming sebelum melakukan eksekusi, tak lupa pula lakukan analisa kritik dan saran.

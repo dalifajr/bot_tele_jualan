@@ -130,6 +130,29 @@
             justify-content: center !important;
         }
 
+        /* Mobile Sticky Action Bar for Product Detail */
+        .mobile-sticky-action-bar {
+            position: fixed !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            z-index: 1050 !important;
+            background: var(--bs-body-bg) !important;
+            border-top: 1px solid var(--bs-border-color) !important;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08) !important;
+            padding-bottom: calc(0.65rem + env(safe-area-inset-bottom)) !important;
+            backdrop-filter: blur(16px) !important;
+            -webkit-backdrop-filter: blur(16px) !important;
+        }
+
+        @if(request()->routeIs('catalog.show'))
+        @media (max-width: 991.98px) {
+            body {
+                padding-bottom: calc(75px + env(safe-area-inset-bottom)) !important;
+            }
+        }
+        @endif
+
         @media (max-width: 576px) {
             .navbar {
                 padding-left: 0.75rem !important;
@@ -347,6 +370,7 @@
 @php
     $globalMaintenanceActive = \App\Models\BotSetting::where('key', 'maintenance_mode')->value('value') === '1';
     $hideSidebar = View::hasSection('no_sidebar') || ($noSidebar ?? false);
+    $hideBottomNav = View::hasSection('no_bottom_nav') || ($noBottomNav ?? false) || request()->routeIs('catalog.show');
 
     $auth = Auth::user();
     $unreadChatsCount = 0;
@@ -924,7 +948,7 @@
 
 </div>
 
-@unless($hideSidebar)
+@unless($hideSidebar || $hideBottomNav)
 {{-- Mobile Bottom Navigation Bar (Mobile Only) --}}
 <nav class="mobile-bottom-nav d-lg-none" id="mobileBottomNav" aria-label="{{ __('Navigasi Bawah') }}">
     @if(Auth::check())
