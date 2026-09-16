@@ -49,25 +49,23 @@
 </div>
 
 {{-- Simplified Filter Tabs (Shopee Style) --}}
-<div class="category-scroll-container pb-1 mb-3">
-    <div class="d-inline-flex gap-2">
-        <a href="{{ route('orders.index', array_filter(['search' => request('search')])) }}"
-           class="btn btn-sm rounded-pill px-3 py-1.5 fw-semibold {{ is_null($status) ? 'btn-primary' : 'btn-outline-secondary' }}">
-            {{ __('Semua') }}
-        </a>
-        <a href="{{ route('orders.index', array_filter(['status' => 'pending_payment', 'search' => request('search')])) }}"
-           class="btn btn-sm rounded-pill px-3 py-1.5 fw-semibold {{ $status === 'pending_payment' ? 'btn-primary' : 'btn-outline-secondary' }}">
-            {{ __('Menunggu') }}
-        </a>
-        <a href="{{ route('orders.index', array_filter(['status' => 'delivered', 'search' => request('search')])) }}"
-           class="btn btn-sm rounded-pill px-3 py-1.5 fw-semibold {{ $status === 'delivered' ? 'btn-primary' : 'btn-outline-secondary' }}">
-            {{ __('Selesai') }}
-        </a>
-        <a href="{{ route('orders.index', array_filter(['status' => 'cancelled_expired', 'search' => request('search')])) }}"
-           class="btn btn-sm rounded-pill px-3 py-1.5 fw-semibold {{ $status === 'cancelled_expired' || in_array($status, ['cancelled', 'expired']) ? 'btn-primary' : 'btn-outline-secondary' }}">
-            {{ __('Dibatalkan & Kedaluwarsa') }}
-        </a>
-    </div>
+<div class="category-scroll-container mb-3">
+    <a href="{{ route('orders.index', array_filter(['search' => request('search')])) }}"
+       class="btn btn-sm rounded-pill px-3 py-1.5 fw-semibold text-nowrap flex-shrink-0 {{ is_null($status) ? 'btn-primary' : 'btn-outline-secondary' }}">
+        {{ __('Semua') }}
+    </a>
+    <a href="{{ route('orders.index', array_filter(['status' => 'pending_payment', 'search' => request('search')])) }}"
+       class="btn btn-sm rounded-pill px-3 py-1.5 fw-semibold text-nowrap flex-shrink-0 {{ $status === 'pending_payment' ? 'btn-primary' : 'btn-outline-secondary' }}">
+        {{ __('Menunggu') }}
+    </a>
+    <a href="{{ route('orders.index', array_filter(['status' => 'delivered', 'search' => request('search')])) }}"
+       class="btn btn-sm rounded-pill px-3 py-1.5 fw-semibold text-nowrap flex-shrink-0 {{ $status === 'delivered' ? 'btn-primary' : 'btn-outline-secondary' }}">
+        {{ __('Selesai') }}
+    </a>
+    <a href="{{ route('orders.index', array_filter(['status' => 'cancelled_expired', 'search' => request('search')])) }}"
+       class="btn btn-sm rounded-pill px-3 py-1.5 fw-semibold text-nowrap flex-shrink-0 {{ $status === 'cancelled_expired' || in_array($status, ['cancelled', 'expired']) ? 'btn-primary' : 'btn-outline-secondary' }}">
+        {{ __('Dibatalkan & Kedaluwarsa') }}
+    </a>
 </div>
 
 {{-- Orders List Container --}}
@@ -148,20 +146,20 @@
                 </div>
 
                 {{-- Body: Compact Product Item --}}
-                <div class="card-body p-3">
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="rounded-3 bg-light border p-1.5 d-flex align-items-center justify-content-center text-primary flex-shrink-0" style="width: 52px; height: 52px;">
+                <div class="card-body p-2.5 p-md-3">
+                    <div class="d-flex align-items-center gap-2.5">
+                        <div class="rounded-3 bg-light border p-1.5 d-flex align-items-center justify-content-center text-primary flex-shrink-0" style="width: 50px; height: 50px;">
                             @if($product && $product->image_url)
-                                <img src="{{ $product->image_url }}" alt="{{ $product->name }}" class="img-fluid rounded-2" style="max-height: 42px; object-fit: contain;">
+                                <img src="{{ $product->image_url }}" alt="{{ $product->name }}" class="img-fluid rounded-2" style="max-height: 40px; object-fit: contain;">
                             @else
                                 <i class="fas fa-box-open fa-lg opacity-75"></i>
                             @endif
                         </div>
                         <div class="flex-grow-1 min-w-0">
-                            <h6 class="fw-semibold text-dark mb-1 text-truncate" style="font-size: 0.92rem;">
+                            <h6 class="fw-semibold text-dark mb-1 text-truncate" style="font-size: 0.9rem;" title="{{ $product->name ?? '-' }}">
                                 {{ $product->name ?? __('Produk Tidak Tersedia') }}
                             </h6>
-                            <div class="text-muted small d-flex flex-wrap align-items-center gap-2">
+                            <div class="text-muted small d-flex flex-wrap align-items-center gap-1.5" style="font-size: 0.76rem;">
                                 <span>{{ $order->quantity }} &times; Rp {{ number_format($order->subtotal / max(1, $order->quantity), 0, ',', '.') }}</span>
                                 @if($product && $product->warranty_days)
                                     <span class="badge bg-info-subtle text-info rounded-pill px-1.5 py-0.5" style="font-size: 0.65rem;">
@@ -175,9 +173,16 @@
                                 @endif
                             </div>
                         </div>
-                        <div class="text-end flex-shrink-0 ps-2">
-                            <div class="text-muted small d-none d-sm-block" style="font-size: 0.75rem;">{{ __('Total Pesanan') }}</div>
-                            <div class="fw-bold text-primary" style="font-size: 1rem;">{{ $order->formatted_total }}</div>
+                    </div>
+
+                    {{-- Shopee-style Dedicated Total Row (Lega, jelas, tidak pernah terpotong) --}}
+                    <div class="d-flex justify-content-between align-items-center pt-2 mt-2 border-top">
+                        <span class="text-muted small" style="font-size: 0.76rem;">
+                            {{ $order->quantity }} {{ __('Produk') }}
+                        </span>
+                        <div class="d-flex align-items-baseline gap-1.5">
+                            <span class="text-muted small" style="font-size: 0.76rem;">{{ __('Total Pesanan:') }}</span>
+                            <span class="fw-bold text-primary fs-6">{{ $order->formatted_total }}</span>
                         </div>
                     </div>
                 </div>

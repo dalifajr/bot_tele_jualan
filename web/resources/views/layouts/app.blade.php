@@ -99,6 +99,37 @@
 
     @stack('styles')
     <style>
+        /* Ensure modals always stay above backdrops and stacking contexts */
+        .modal {
+            z-index: 1060 !important;
+        }
+        .modal-backdrop {
+            z-index: 1050 !important;
+        }
+
+        /* Horizontal category/status chips smooth scroll */
+        .category-scroll-container {
+            display: flex;
+            gap: 0.5rem;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            white-space: nowrap;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            padding-bottom: 0.25rem;
+        }
+        .category-scroll-container::-webkit-scrollbar {
+            display: none;
+        }
+        .category-scroll-container .btn {
+            white-space: nowrap !important;
+            flex-shrink: 0 !important;
+            height: 34px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+
         @media (max-width: 576px) {
             .navbar {
                 padding-left: 0.75rem !important;
@@ -106,6 +137,12 @@
             }
             .navbar-brand {
                 font-size: 0.9rem !important;
+            }
+            .main-content .container-fluid {
+                padding-left: 0.75rem !important;
+                padding-right: 0.75rem !important;
+                padding-top: 1rem !important;
+                padding-bottom: 1rem !important;
             }
         }
         @media (max-width: 375px) {

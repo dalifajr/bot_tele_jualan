@@ -4,40 +4,42 @@
 @section('page_subtitle', __('Pesanan'))
 
 @section('content')
-<div class="d-flex align-items-center justify-content-between mb-4">
-    <div class="d-flex align-items-center gap-2">
-        <a href="{{ route('admin.orders.index') }}" class="btn btn-light rounded-circle shadow-sm border d-inline-flex align-items-center justify-content-center" style="width: 38px; height: 38px;" title="{{ __('Kembali ke Daftar Pesanan') }}">
+{{-- Header --}}
+<div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3 mb-3">
+    <div class="d-flex align-items-center gap-2 min-w-0">
+        <a href="{{ route('admin.orders.index') }}" class="btn btn-light rounded-circle shadow-sm border d-inline-flex align-items-center justify-content-center flex-shrink-0" style="width: 38px; height: 38px;" title="{{ __('Kembali ke Daftar Pesanan') }}">
             <i class="fas fa-arrow-left text-body"></i>
         </a>
-        <div>
-            <h5 class="fw-bold m-0 text-body" style="font-size: 1.15rem;">{{ __('Detail Pesanan (Admin)') }}</h5>
-            <small class="text-muted" style="font-size: 0.75rem;">{{ $order->reference }} &bull; {{ $order->created_at->format('d M Y, H:i') }}</small>
+        <div class="min-w-0">
+            <h5 class="fw-bold m-0 text-body text-truncate" style="font-size: 1.15rem;">{{ __('Detail Pesanan (Admin)') }}</h5>
+            <small class="text-muted d-block text-truncate" style="font-size: 0.75rem;">{{ $order->reference }} &bull; {{ $order->created_at->format('d M Y, H:i') }}</small>
         </div>
     </div>
-    <div class="d-flex align-items-center gap-2">
-        <span class="badge bg-{{ $order->status_color }}-subtle text-{{ $order->status_color }} rounded-pill px-3 py-1.5 fw-bold fs-6">
+    <div class="d-flex align-items-center gap-2 ms-auto ms-sm-0 flex-shrink-0">
+        <span class="badge bg-{{ $order->status_color }}-subtle text-{{ $order->status_color }} rounded-pill px-3 py-1.5 fw-bold" style="font-size: 0.8rem;">
             {{ $order->status_label }}
         </span>
-        <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#editOrderStatusModal">
-            <i class="fas fa-edit me-1"></i>{{ __('Ubah Status') }}
+        <button class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-sm" data-bs-toggle="modal" data-bs-target="#editOrderStatusModal" style="font-size: 0.8rem;">
+            <i class="fas fa-edit"></i>
+            <span>{{ __('Ubah Status') }}</span>
         </button>
     </div>
 </div>
 
 @if(session('success'))
-    <div class="alert alert-success small py-2 mb-4"><i class="fas fa-check-circle me-1"></i>{{ session('success') }}</div>
+    <div class="alert alert-success small py-2 mb-3"><i class="fas fa-check-circle me-1"></i>{{ session('success') }}</div>
 @endif
 @if(session('error'))
-    <div class="alert alert-danger small py-2 mb-4"><i class="fas fa-exclamation-circle me-1"></i>{{ session('error') }}</div>
+    <div class="alert alert-danger small py-2 mb-3"><i class="fas fa-exclamation-circle me-1"></i>{{ session('error') }}</div>
 @endif
 
-<div class="row g-4">
+<div class="row g-3 g-md-4">
     {{-- Main Column (Left) --}}
     <div class="col-lg-8">
         {{-- Pending Payment Approval Banner --}}
         @if($order->status === 'pending_payment')
-        <div class="card border-0 shadow-sm mb-4 bg-primary-subtle border-start border-primary border-4" style="border-radius: 16px;">
-            <div class="card-body p-4 d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div class="card border-0 shadow-sm mb-3 bg-primary-subtle border-start border-primary border-4" style="border-radius: 16px;">
+            <div class="card-body p-3 p-md-4 d-flex flex-wrap justify-content-between align-items-center gap-3">
                 <div>
                     <h6 class="fw-bold text-primary mb-1"><i class="fas fa-clock me-1"></i>{{ __('Menunggu Verifikasi Pembayaran') }}</h6>
                     <p class="text-secondary small mb-0">{{ __('Pelanggan telah membuat pesanan sebesar ') }} <b>{{ $order->formatted_total }}</b>.</p>
@@ -61,41 +63,44 @@
         @endif
 
         {{-- Order Items Card --}}
-        <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
-            <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+        <div class="card border-0 shadow-sm mb-3" style="border-radius: 16px;">
+            <div class="card-header bg-transparent border-0 pt-3 pt-md-4 px-3 px-md-4 pb-0">
                 <h6 class="fw-bold text-dark mb-0">
                     <i class="fas fa-shopping-bag text-primary me-2"></i>{{ __('Item Pesanan') }}
                 </h6>
             </div>
-            <div class="card-body px-4 pb-4">
-                <div class="p-3 bg-light rounded-3 d-flex align-items-center gap-3 mt-2">
-                    <div class="rounded-3 bg-white border p-2 d-flex align-items-center justify-content-center text-primary flex-shrink-0" style="width: 60px; height: 60px;">
-                        @if($order->product && $order->product->image_url)
-                            <img src="{{ $order->product->image_url }}" alt="{{ $order->product->name }}" class="img-fluid rounded-2" style="max-height: 48px; object-fit: contain;">
-                        @else
-                            <i class="fas fa-box fa-2x opacity-75"></i>
-                        @endif
-                    </div>
-                    <div class="flex-grow-1 min-w-0">
-                        <h6 class="fw-bold text-dark mb-1 text-truncate">{{ $order->product->name ?? '-' }}</h6>
-                        <div class="text-muted small">
-                            {{ $order->quantity }} unit &times; Rp {{ number_format($order->subtotal / max(1, $order->quantity), 0, ',', '.') }}
+            <div class="card-body p-3 p-md-4">
+                <div class="p-2.5 p-md-3 bg-light rounded-3 d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-2.5 mt-1">
+                    <div class="d-flex align-items-center gap-2.5 min-w-0 flex-grow-1">
+                        <div class="rounded-3 bg-white border p-1.5 d-flex align-items-center justify-content-center text-primary flex-shrink-0" style="width: 50px; height: 50px;">
+                            @if($order->product && $order->product->image_url)
+                                <img src="{{ $order->product->image_url }}" alt="{{ $order->product->name }}" class="img-fluid rounded-2" style="max-height: 42px; object-fit: contain;">
+                            @else
+                                <i class="fas fa-box fa-lg opacity-75"></i>
+                            @endif
+                        </div>
+                        <div class="flex-grow-1 min-w-0">
+                            <h6 class="fw-bold text-dark mb-1 text-truncate" style="font-size: 0.92rem;" title="{{ $order->product->name ?? '-' }}">{{ $order->product->name ?? '-' }}</h6>
+                            <div class="text-muted small" style="font-size: 0.78rem;">
+                                {{ $order->quantity }} unit &times; Rp {{ number_format($order->subtotal / max(1, $order->quantity), 0, ',', '.') }}
+                            </div>
                         </div>
                     </div>
-                    <div class="text-end">
-                        <div class="fw-bold text-dark">Rp {{ number_format($order->subtotal, 0, ',', '.') }}</div>
+                    <div class="text-end d-flex justify-content-between justify-content-sm-end align-items-center pt-2 pt-sm-0 border-top border-sm-top-0 flex-shrink-0">
+                        <span class="text-muted small d-sm-none">{{ __('Subtotal:') }}</span>
+                        <span class="fw-bold text-dark fs-6">Rp {{ number_format($order->subtotal, 0, ',', '.') }}</span>
                     </div>
                 </div>
 
                 <div class="border-top mt-3 pt-3">
-                    <div class="d-flex justify-content-between mb-1 small text-muted">
+                    <div class="d-flex justify-content-between mb-1.5 small text-muted">
                         <span>{{ __('Subtotal') }}</span>
-                        <span>Rp {{ number_format($order->subtotal, 0, ',', '.') }}</span>
+                        <span class="fw-semibold text-dark">Rp {{ number_format($order->subtotal, 0, ',', '.') }}</span>
                     </div>
                     @if($order->unique_code)
-                    <div class="d-flex justify-content-between mb-1 small text-muted">
+                    <div class="d-flex justify-content-between mb-1.5 small text-muted">
                         <span>{{ __('Kode Unik') }}</span>
-                        <span>Rp {{ $order->unique_code }}</span>
+                        <span class="fw-semibold text-dark">Rp {{ $order->unique_code }}</span>
                     </div>
                     @endif
                     <div class="d-flex justify-content-between pt-2 border-top fw-bold fs-6">
@@ -108,8 +113,8 @@
 
         {{-- Sent Stock / Credentials & Admin Stock Replacement Section --}}
         @if($order->stockUnits && $order->stockUnits->count() > 0)
-        <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
-            <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
+        <div class="card border-0 shadow-sm mb-3" style="border-radius: 16px;">
+            <div class="card-header bg-transparent border-0 pt-3 pt-md-4 px-3 px-md-4 pb-0 d-flex flex-wrap justify-content-between align-items-center gap-2">
                 <div>
                     <h6 class="fw-bold text-dark mb-0">
                         <i class="fas fa-key text-success me-2"></i>{{ __('Data Akun / Lisensi Terkirim') }} ({{ $order->stockUnits->count() }} unit)
@@ -125,9 +130,9 @@
                 </form>
                 @endif
             </div>
-            <div class="card-body px-4 pb-4">
+            <div class="card-body p-3 p-md-4">
                 @php $isMultiUnit = $order->stockUnits->count() > 1; @endphp
-                <div class="d-flex flex-column gap-3 mt-3">
+                <div class="d-flex flex-column gap-3 mt-1">
                     @foreach($order->stockUnits as $unit)
                     <div class="p-3 bg-light rounded-3 border d-flex justify-content-between align-items-center gap-3">
                         <div class="text-break flex-grow-1" style="font-family: monospace; white-space: pre-wrap; font-size: 0.85rem;">
@@ -173,8 +178,8 @@
 
         {{-- Complaint Case Card if any --}}
         @if($order->complaintCase)
-        <div class="card border-0 shadow-sm mb-4 border-start border-danger border-4" style="border-radius: 16px;">
-            <div class="card-body p-4">
+        <div class="card border-0 shadow-sm mb-3 border-start border-danger border-4" style="border-radius: 16px;">
+            <div class="card-body p-3 p-md-4">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <h6 class="fw-bold text-danger mb-0">
                         <i class="fas fa-shield-alt me-2"></i>{{ __('Pusat Komplain / Dispute') }}
@@ -197,20 +202,20 @@
     {{-- Side Column (Right) --}}
     <div class="col-lg-4">
         {{-- Customer Info Card --}}
-        <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
-            <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+        <div class="card border-0 shadow-sm mb-3" style="border-radius: 16px;">
+            <div class="card-header bg-transparent border-0 pt-3 pt-md-4 px-3 px-md-4 pb-0">
                 <h6 class="fw-bold text-dark mb-0">
                     <i class="fas fa-user text-primary me-2"></i>{{ __('Informasi Pelanggan') }}
                 </h6>
             </div>
-            <div class="card-body px-4 pb-4">
-                <div class="d-flex align-items-center gap-3 mb-3 mt-2">
-                    <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center fw-bold fs-5" style="width: 46px; height: 46px;">
+            <div class="card-body p-3 p-md-4">
+                <div class="d-flex align-items-center gap-3 mb-3 mt-1">
+                    <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center fw-bold fs-5 flex-shrink-0" style="width: 44px; height: 44px;">
                         {{ strtoupper(substr($order->customer->full_name ?? $order->customer->username ?? 'P', 0, 1)) }}
                     </div>
-                    <div>
-                        <h6 class="fw-bold mb-0 text-dark">{{ $order->customer->full_name ?? $order->customer->username ?? '-' }}</h6>
-                        <small class="text-muted">{{ $order->customer->username ? '@'.$order->customer->username : '-' }}</small>
+                    <div class="min-w-0">
+                        <h6 class="fw-bold mb-0 text-dark text-truncate">{{ $order->customer->full_name ?? $order->customer->username ?? '-' }}</h6>
+                        <small class="text-muted text-truncate d-block">{{ $order->customer->username ? '@'.$order->customer->username : '-' }}</small>
                     </div>
                 </div>
 
@@ -243,23 +248,23 @@
             $seller = $order->product?->creator;
         @endphp
         @if($seller)
-        <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
-            <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+        <div class="card border-0 shadow-sm mb-3" style="border-radius: 16px;">
+            <div class="card-header bg-transparent border-0 pt-3 pt-md-4 px-3 px-md-4 pb-0">
                 <h6 class="fw-bold text-dark mb-0">
                     <i class="fas fa-store text-success me-2"></i>{{ __('Penjual / Seller') }}
                 </h6>
             </div>
-            <div class="card-body px-4 pb-4">
-                <div class="d-flex align-items-center gap-3 mb-2 mt-2">
-                    <div class="rounded-circle bg-success-subtle text-success d-flex align-items-center justify-content-center fw-bold fs-5" style="width: 44px; height: 44px;">
+            <div class="card-body p-3 p-md-4">
+                <div class="d-flex align-items-center gap-3 mb-2 mt-1">
+                    <div class="rounded-circle bg-success-subtle text-success d-flex align-items-center justify-content-center fw-bold fs-5 flex-shrink-0" style="width: 44px; height: 44px;">
                         {{ strtoupper(substr($seller->full_name ?? $seller->username ?? 'S', 0, 1)) }}
                     </div>
-                    <div>
-                        <h6 class="fw-bold mb-0 text-dark">{{ $seller->full_name ?? $seller->username }}</h6>
-                        <small class="text-muted">{{ $seller->username ? '@'.$seller->username : '-' }}</small>
+                    <div class="min-w-0">
+                        <h6 class="fw-bold mb-0 text-dark text-truncate">{{ $seller->full_name ?? $seller->username }}</h6>
+                        <small class="text-muted text-truncate d-block">{{ $seller->username ? '@'.$seller->username : '-' }}</small>
                     </div>
                 </div>
-                <div class="p-2 bg-light rounded-3 small">
+                <div class="p-2.5 bg-light rounded-3 small">
                     <div class="d-flex justify-content-between">
                         <span class="text-muted">{{ __('Telegram ID:') }}</span>
                         <code>{{ $seller->telegram_id ?? '-' }}</code>
@@ -270,13 +275,13 @@
         @endif
 
         {{-- Transaction Log & Timeline Card --}}
-        <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
-            <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+        <div class="card border-0 shadow-sm mb-3" style="border-radius: 16px;">
+            <div class="card-header bg-transparent border-0 pt-3 pt-md-4 px-3 px-md-4 pb-0">
                 <h6 class="fw-bold text-dark mb-0">
                     <i class="fas fa-history text-secondary me-2"></i>{{ __('Log Sistem') }}
                 </h6>
             </div>
-            <div class="card-body px-4 pb-4">
+            <div class="card-body p-3 p-md-4">
                 <ul class="list-unstyled mb-0 small">
                     <li class="d-flex align-items-start gap-2 mb-2.5">
                         <i class="fas fa-clock text-muted mt-1"></i>
@@ -323,13 +328,15 @@
         </div>
     </div>
 </div>
+@endsection
 
-{{-- Edit Status Modal --}}
-<div class="modal fade" id="editOrderStatusModal" tabindex="-1" aria-hidden="true">
+@push('modals')
+{{-- Edit Status Modal (Rendered at Root Body outside container) --}}
+<div class="modal fade" id="editOrderStatusModal" tabindex="-1" aria-labelledby="editOrderStatusModalLabel" aria-hidden="true" style="z-index: 1060;">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content" style="border-radius: 16px; border: none;">
+        <div class="modal-content" style="border-radius: 16px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
             <div class="modal-header border-0 pb-0">
-                <h5 class="fw-bold">{{ __('Ubah Status Pesanan') }}</h5>
+                <h5 class="fw-bold" id="editOrderStatusModalLabel">{{ __('Ubah Status Pesanan') }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form action="{{ route('admin.orders.update', $order->id) }}" method="POST">
@@ -338,7 +345,7 @@
                 <div class="modal-body p-4">
                     <div class="mb-3">
                         <p class="mb-1 text-muted small">{{ __('No. Order') }}</p>
-                        <h6 class="fw-bold text-primary">{{ $order->reference }}</h6>
+                        <h6 class="fw-bold text-primary font-monospace">{{ $order->reference }}</h6>
                     </div>
                     <div class="mb-3">
                         <label class="form-label text-muted small fw-bold">{{ __('Status Baru') }}</label>
@@ -359,6 +366,7 @@
         </div>
     </div>
 </div>
+@endpush
 
 @push('scripts')
 <script>
@@ -379,7 +387,7 @@
     }
 
     function submitBulkAction(orderId, actionType) {
-        const checked = document.querySelectorAll(`.stock-checkbox[data-order-id="${orderId}"]:checked`);
+        const checked = document.querySelectorAll(`.stock-checkbox[data-order-id="${orderId}"]`);
         if (checked.length === 0) return;
         
         const ids = Array.from(checked).map(cb => cb.value);
@@ -445,4 +453,3 @@
     }
 </script>
 @endpush
-@endsection

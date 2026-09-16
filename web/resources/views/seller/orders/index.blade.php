@@ -46,25 +46,23 @@
 </div>
 
 {{-- Simplified Filter Chips --}}
-<div class="mb-3 category-scroll-container pb-1">
-    <div class="d-inline-flex gap-2">
-        <a href="{{ route('seller.orders.index', array_filter(['search' => request('search')])) }}"
-           class="btn btn-sm rounded-pill px-3 py-1.5 fw-semibold {{ is_null($status) ? 'btn-primary' : 'btn-outline-secondary' }}">
-            {{ __('Semua') }}
-        </a>
-        <a href="{{ route('seller.orders.index', array_filter(['status' => 'pending_payment', 'search' => request('search')])) }}"
-           class="btn btn-sm rounded-pill px-3 py-1.5 fw-semibold {{ $status === 'pending_payment' ? 'btn-primary' : 'btn-outline-secondary' }}">
-            {{ __('Pending') }}
-        </a>
-        <a href="{{ route('seller.orders.index', array_filter(['status' => 'delivered', 'search' => request('search')])) }}"
-           class="btn btn-sm rounded-pill px-3 py-1.5 fw-semibold {{ $status === 'delivered' || $status === 'paid' ? 'btn-primary' : 'btn-outline-secondary' }}">
-            {{ __('Selesai') }}
-        </a>
-        <a href="{{ route('seller.orders.index', array_filter(['status' => 'cancelled_expired', 'search' => request('search')])) }}"
-           class="btn btn-sm rounded-pill px-3 py-1.5 fw-semibold {{ $status === 'cancelled_expired' || in_array($status, ['cancelled', 'expired']) ? 'btn-primary' : 'btn-outline-secondary' }}">
-            {{ __('Dibatalkan & Kedaluwarsa') }}
-        </a>
-    </div>
+<div class="category-scroll-container mb-3">
+    <a href="{{ route('seller.orders.index', array_filter(['search' => request('search')])) }}"
+       class="btn btn-sm rounded-pill px-3 py-1.5 fw-semibold text-nowrap flex-shrink-0 {{ is_null($status) ? 'btn-primary' : 'btn-outline-secondary' }}">
+        {{ __('Semua') }}
+    </a>
+    <a href="{{ route('seller.orders.index', array_filter(['status' => 'pending_payment', 'search' => request('search')])) }}"
+       class="btn btn-sm rounded-pill px-3 py-1.5 fw-semibold text-nowrap flex-shrink-0 {{ $status === 'pending_payment' ? 'btn-primary' : 'btn-outline-secondary' }}">
+        {{ __('Pending') }}
+    </a>
+    <a href="{{ route('seller.orders.index', array_filter(['status' => 'delivered', 'search' => request('search')])) }}"
+       class="btn btn-sm rounded-pill px-3 py-1.5 fw-semibold text-nowrap flex-shrink-0 {{ $status === 'delivered' || $status === 'paid' ? 'btn-primary' : 'btn-outline-secondary' }}">
+        {{ __('Selesai') }}
+    </a>
+    <a href="{{ route('seller.orders.index', array_filter(['status' => 'cancelled_expired', 'search' => request('search')])) }}"
+       class="btn btn-sm rounded-pill px-3 py-1.5 fw-semibold text-nowrap flex-shrink-0 {{ $status === 'cancelled_expired' || in_array($status, ['cancelled', 'expired']) ? 'btn-primary' : 'btn-outline-secondary' }}">
+        {{ __('Dibatalkan & Kedaluwarsa') }}
+    </a>
 </div>
 
 <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 16px;">

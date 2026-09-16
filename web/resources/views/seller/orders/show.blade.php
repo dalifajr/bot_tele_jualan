@@ -4,72 +4,78 @@
 @section('page_subtitle', __('Pesanan'))
 
 @section('content')
-<div class="d-flex align-items-center justify-content-between mb-4">
-    <div class="d-flex align-items-center gap-2">
-        <a href="{{ route('seller.orders.index') }}" class="btn btn-light rounded-circle shadow-sm border d-inline-flex align-items-center justify-content-center" style="width: 38px; height: 38px;" title="{{ __('Kembali ke Daftar Pesanan') }}">
+{{-- Header --}}
+<div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3 mb-3">
+    <div class="d-flex align-items-center gap-2 min-w-0">
+        <a href="{{ route('seller.orders.index') }}" class="btn btn-light rounded-circle shadow-sm border d-inline-flex align-items-center justify-content-center flex-shrink-0" style="width: 38px; height: 38px;" title="{{ __('Kembali ke Daftar Pesanan') }}">
             <i class="fas fa-arrow-left text-body"></i>
         </a>
-        <div>
-            <h5 class="fw-bold m-0 text-body" style="font-size: 1.15rem;">{{ __('Detail Pesanan Toko') }}</h5>
-            <small class="text-muted" style="font-size: 0.75rem;">{{ $order->reference }} &bull; {{ $order->created_at->format('d M Y, H:i') }}</small>
+        <div class="min-w-0">
+            <h5 class="fw-bold m-0 text-body text-truncate" style="font-size: 1.15rem;">{{ __('Detail Pesanan Toko') }}</h5>
+            <small class="text-muted d-block text-truncate" style="font-size: 0.75rem;">{{ $order->reference }} &bull; {{ $order->created_at->format('d M Y, H:i') }}</small>
         </div>
     </div>
-    <span class="badge bg-{{ $order->status_color }}-subtle text-{{ $order->status_color }} rounded-pill px-3 py-1.5 fw-bold fs-6">
-        {{ $order->status_label }}
-    </span>
+    <div class="ms-auto ms-sm-0 flex-shrink-0">
+        <span class="badge bg-{{ $order->status_color }}-subtle text-{{ $order->status_color }} rounded-pill px-3 py-1.5 fw-bold" style="font-size: 0.8rem;">
+            {{ $order->status_label }}
+        </span>
+    </div>
 </div>
 
 @if(session('success'))
-    <div class="alert alert-success small py-2 mb-4"><i class="fas fa-check-circle me-1"></i>{{ session('success') }}</div>
+    <div class="alert alert-success small py-2 mb-3"><i class="fas fa-check-circle me-1"></i>{{ session('success') }}</div>
 @endif
 @if(session('error'))
-    <div class="alert alert-danger small py-2 mb-4"><i class="fas fa-exclamation-circle me-1"></i>{{ session('error') }}</div>
+    <div class="alert alert-danger small py-2 mb-3"><i class="fas fa-exclamation-circle me-1"></i>{{ session('error') }}</div>
 @endif
 
-<div class="row g-4">
+<div class="row g-3 g-md-4">
     {{-- Main Left Column --}}
     <div class="col-lg-8">
         {{-- Product Details Card --}}
-        <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
-            <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+        <div class="card border-0 shadow-sm mb-3" style="border-radius: 16px;">
+            <div class="card-header bg-transparent border-0 pt-3 pt-md-4 px-3 px-md-4 pb-0">
                 <h6 class="fw-bold text-dark mb-0">
                     <i class="fas fa-box text-primary me-2"></i>{{ __('Item yang Dipesan') }}
                 </h6>
             </div>
-            <div class="card-body px-4 pb-4">
-                <div class="p-3 bg-light rounded-3 d-flex align-items-center gap-3 mt-2">
-                    <div class="rounded-3 bg-white border p-2 d-flex align-items-center justify-content-center text-primary flex-shrink-0" style="width: 60px; height: 60px;">
-                        @if($order->product && $order->product->image_url)
-                            <img src="{{ $order->product->image_url }}" alt="{{ $order->product->name }}" class="img-fluid rounded-2" style="max-height: 48px; object-fit: contain;">
-                        @else
-                            <i class="fas fa-cube fa-2x opacity-75"></i>
-                        @endif
-                    </div>
-                    <div class="flex-grow-1 min-w-0">
-                        <h6 class="fw-bold text-dark mb-1 text-truncate">{{ $order->product->name ?? '-' }}</h6>
-                        <div class="text-muted small">
-                            {{ $order->quantity }} x Rp {{ number_format($order->subtotal / max(1, $order->quantity), 0, ',', '.') }}
+            <div class="card-body p-3 p-md-4">
+                <div class="p-2.5 p-md-3 bg-light rounded-3 d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-2.5 mt-1">
+                    <div class="d-flex align-items-center gap-2.5 min-w-0 flex-grow-1">
+                        <div class="rounded-3 bg-white border p-1.5 d-flex align-items-center justify-content-center text-primary flex-shrink-0" style="width: 50px; height: 50px;">
+                            @if($order->product && $order->product->image_url)
+                                <img src="{{ $order->product->image_url }}" alt="{{ $order->product->name }}" class="img-fluid rounded-2" style="max-height: 42px; object-fit: contain;">
+                            @else
+                                <i class="fas fa-cube fa-lg opacity-75"></i>
+                            @endif
+                        </div>
+                        <div class="flex-grow-1 min-w-0">
+                            <h6 class="fw-bold text-dark mb-1 text-truncate" style="font-size: 0.92rem;">{{ $order->product->name ?? '-' }}</h6>
+                            <div class="text-muted small" style="font-size: 0.78rem;">
+                                {{ $order->quantity }} x Rp {{ number_format($order->subtotal / max(1, $order->quantity), 0, ',', '.') }}
+                            </div>
                         </div>
                     </div>
-                    <div class="text-end">
-                        <div class="fw-bold text-dark">Rp {{ number_format($order->subtotal, 0, ',', '.') }}</div>
+                    <div class="text-end d-flex justify-content-between justify-content-sm-end align-items-center pt-2 pt-sm-0 border-top border-sm-top-0 flex-shrink-0">
+                        <span class="text-muted small d-sm-none">{{ __('Subtotal:') }}</span>
+                        <span class="fw-bold text-dark fs-6">Rp {{ number_format($order->subtotal, 0, ',', '.') }}</span>
                     </div>
                 </div>
 
                 <div class="border-top mt-3 pt-3">
-                    <div class="d-flex justify-content-between mb-1 small text-muted">
+                    <div class="d-flex justify-content-between mb-1.5 small text-muted">
                         <span>{{ __('Subtotal Produk') }}</span>
-                        <span>Rp {{ number_format($order->subtotal, 0, ',', '.') }}</span>
+                        <span class="fw-semibold text-dark">Rp {{ number_format($order->subtotal, 0, ',', '.') }}</span>
                     </div>
                     @if($order->unique_code)
-                    <div class="d-flex justify-content-between mb-1 small text-muted">
+                    <div class="d-flex justify-content-between mb-1.5 small text-muted">
                         <span>{{ __('Kode Unik') }}</span>
-                        <span>Rp {{ $order->unique_code }}</span>
+                        <span class="fw-semibold text-dark">Rp {{ $order->unique_code }}</span>
                     </div>
                     @endif
                     <div class="d-flex justify-content-between pt-2 border-top fw-bold fs-6">
                         <span>{{ __('Total Pendapatan Pesanan') }}</span>
-                        <span class="text-primary">Rp {{ number_format($order->total_amount, 0, ',', '.') }}</span>
+                        <span class="text-primary">{{ $order->formatted_total }}</span>
                     </div>
                 </div>
             </div>
@@ -77,14 +83,14 @@
 
         {{-- Sent Stock / Credentials Card --}}
         @if($order->stockUnits && $order->stockUnits->count() > 0)
-        <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
-            <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
+        <div class="card border-0 shadow-sm mb-3" style="border-radius: 16px;">
+            <div class="card-header bg-transparent border-0 pt-3 pt-md-4 px-3 px-md-4 pb-0 d-flex justify-content-between align-items-center">
                 <h6 class="fw-bold text-dark mb-0">
                     <i class="fas fa-key text-success me-2"></i>{{ __('Data Akun / Lisensi Terkirim') }} ({{ $order->stockUnits->count() }} unit)
                 </h6>
             </div>
-            <div class="card-body px-4 pb-4">
-                <div class="d-flex flex-column gap-3 mt-2">
+            <div class="card-body p-3 p-md-4">
+                <div class="d-flex flex-column gap-3 mt-1">
                     @foreach($order->stockUnits as $unit)
                         <div>
                             @if($order->stockUnits->count() > 1)
@@ -100,8 +106,8 @@
 
         {{-- Complaint Case Card if any --}}
         @if($order->complaintCase)
-        <div class="card border-0 shadow-sm mb-4 border-start border-warning border-4" style="border-radius: 16px;">
-            <div class="card-body p-4">
+        <div class="card border-0 shadow-sm mb-3 border-start border-warning border-4" style="border-radius: 16px;">
+            <div class="card-body p-3 p-md-4">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <h6 class="fw-bold text-warning-emphasis mb-0">
                         <i class="fas fa-exclamation-triangle me-2"></i>{{ __('Pusat Resolusi / Komplain Aktif') }}
@@ -122,20 +128,20 @@
     {{-- Right Side Column --}}
     <div class="col-lg-4">
         {{-- Customer Info Card --}}
-        <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
-            <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+        <div class="card border-0 shadow-sm mb-3" style="border-radius: 16px;">
+            <div class="card-header bg-transparent border-0 pt-3 pt-md-4 px-3 px-md-4 pb-0">
                 <h6 class="fw-bold text-dark mb-0">
                     <i class="fas fa-user text-primary me-2"></i>{{ __('Informasi Pembeli') }}
                 </h6>
             </div>
-            <div class="card-body px-4 pb-4">
-                <div class="d-flex align-items-center gap-3 mb-3 mt-2">
-                    <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center fw-bold fs-5" style="width: 46px; height: 46px;">
+            <div class="card-body p-3 p-md-4">
+                <div class="d-flex align-items-center gap-3 mb-3 mt-1">
+                    <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center fw-bold fs-5 flex-shrink-0" style="width: 44px; height: 44px;">
                         {{ strtoupper(substr($order->user->full_name ?? $order->user->username ?? 'U', 0, 1)) }}
                     </div>
-                    <div>
-                        <h6 class="fw-bold mb-0 text-dark">{{ $order->user->full_name ?? '-' }}</h6>
-                        <small class="text-muted">{{ $order->user->username ? '@'.$order->user->username : '-' }}</small>
+                    <div class="min-w-0">
+                        <h6 class="fw-bold mb-0 text-dark text-truncate">{{ $order->user->full_name ?? '-' }}</h6>
+                        <small class="text-muted text-truncate d-block">{{ $order->user->username ? '@'.$order->user->username : '-' }}</small>
                     </div>
                 </div>
 
@@ -157,13 +163,13 @@
         </div>
 
         {{-- Transaction Log & Timeline Card --}}
-        <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
-            <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+        <div class="card border-0 shadow-sm mb-3" style="border-radius: 16px;">
+            <div class="card-header bg-transparent border-0 pt-3 pt-md-4 px-3 px-md-4 pb-0">
                 <h6 class="fw-bold text-dark mb-0">
                     <i class="fas fa-history text-secondary me-2"></i>{{ __('Log Transaksi') }}
                 </h6>
             </div>
-            <div class="card-body px-4 pb-4">
+            <div class="card-body p-3 p-md-4">
                 <ul class="list-unstyled mb-0 small">
                     <li class="d-flex align-items-start gap-2 mb-2.5">
                         <i class="fas fa-clock text-muted mt-1"></i>
