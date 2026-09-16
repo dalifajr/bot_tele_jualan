@@ -28,7 +28,7 @@
 @endpush
 
 @section('content')
-<div class="product-detail-container pb-5">
+<div class="product-detail-container pb-2">
     {{-- Top Navigation Back Bar (Mobile & Desktop Friendly) --}}
     <div class="d-flex align-items-center justify-content-between mb-3">
         <div class="d-flex align-items-center gap-2">
@@ -355,37 +355,7 @@
     </div>
 </div>
 
-{{-- Mobile Sticky Action Bar ala Shopee / Tokopedia (Fixed precisely above Mobile Bottom Nav) --}}
-<div class="mobile-sticky-action-bar d-lg-none bg-body">
-    <div class="d-flex align-items-center gap-2">
-        {{-- Chat Seller Icon Button --}}
-        <a href="{{ $sellerChatUrl }}" class="btn btn-light rounded-4 d-flex flex-column align-items-center justify-content-center p-1 border shadow-sm" style="width: 48px; height: 44px; flex-shrink: 0;" title="{{ __('Chat Penjual') }}">
-            <i class="fas fa-comment-dots text-primary" style="font-size: 1.05rem;"></i>
-            <span style="font-size: 0.62rem;" class="text-secondary fw-bold mt-0.5">{{ __('Chat') }}</span>
-        </a>
 
-        @if($stockCount > 0)
-            {{-- Add to Cart Button (AJAX on-page) --}}
-            @if(!$product->is_vpn)
-            <button type="button" class="btn btn-outline-primary rounded-pill py-2 px-3 fw-bold flex-grow-1 d-flex align-items-center justify-content-center gap-1.5 shadow-sm" id="btnMobileAddToCart" style="height: 44px; font-size: 0.85rem;">
-                <i class="fas fa-cart-plus"></i>
-                <span>{{ __('+ Keranjang') }}</span>
-            </button>
-            @endif
-
-            {{-- Buy Now Button --}}
-            <button type="button" class="btn btn-primary rounded-pill py-2 px-3 fw-bold flex-grow-1 d-flex align-items-center justify-content-center gap-1.5 shadow-sm btn-buy-now" id="btnMobileBuyNow" style="height: 44px; font-size: 0.85rem; white-space: nowrap;">
-                <i class="fas fa-bolt btn-buy-icon"></i>
-                <span class="btn-buy-text">{{ __('Beli Sekarang') }}</span>
-            </button>
-        @else
-            <button type="button" class="btn btn-secondary rounded-pill py-2 px-3 fw-bold flex-grow-1 d-flex align-items-center justify-content-center gap-1.5 shadow-sm" disabled style="height: 44px; font-size: 0.85rem; opacity: 0.75;">
-                <i class="fas fa-times-circle me-1"></i>
-                <span>{{ __('Stok Habis') }}</span>
-            </button>
-        @endif
-    </div>
-</div>
 
 @push('scripts')
 <script>
@@ -643,4 +613,38 @@
     });
 </script>
 @endpush
+@endsection
+
+@section('mobile_bottom_action_bar')
+{{-- Mobile Sticky Action Bar ala Shopee / Tokopedia (Directly attached above Mobile Bottom Nav) --}}
+<div class="mobile-sticky-action-bar d-lg-none">
+    <div class="d-flex align-items-center gap-2">
+        {{-- Chat Seller Icon Button --}}
+        <a href="{{ $sellerChatUrl }}" class="btn btn-light rounded-4 d-flex flex-column align-items-center justify-content-center p-1 border shadow-sm" style="width: 48px; height: 44px; flex-shrink: 0;" title="{{ __('Chat Penjual') }}">
+            <i class="fas fa-comment-dots text-primary" style="font-size: 1.05rem;"></i>
+            <span style="font-size: 0.62rem;" class="text-secondary fw-bold mt-0.5">{{ __('Chat') }}</span>
+        </a>
+
+        @if($stockCount > 0)
+            {{-- Add to Cart Button (AJAX on-page) --}}
+            @if(!$product->is_vpn)
+            <button type="button" class="btn btn-outline-primary rounded-pill py-2 px-3 fw-bold flex-grow-1 d-flex align-items-center justify-content-center gap-1.5 shadow-sm" id="btnMobileAddToCart" style="height: 44px; font-size: 0.85rem;">
+                <i class="fas fa-cart-plus"></i>
+                <span>{{ __('+ Keranjang') }}</span>
+            </button>
+            @endif
+
+            {{-- Buy Now Button --}}
+            <button type="button" class="btn btn-primary rounded-pill py-2 px-3 fw-bold flex-grow-1 d-flex align-items-center justify-content-center gap-1.5 shadow-sm btn-buy-now" id="btnMobileBuyNow" style="height: 44px; font-size: 0.85rem; white-space: nowrap;">
+                <i class="fas fa-bolt btn-buy-icon"></i>
+                <span class="btn-buy-text">{{ __('Beli Sekarang') }}</span>
+            </button>
+        @else
+            <button type="button" class="btn btn-secondary rounded-pill py-2 px-3 fw-bold flex-grow-1 d-flex align-items-center justify-content-center gap-1.5 shadow-sm" disabled style="height: 44px; font-size: 0.85rem; opacity: 0.75;">
+                <i class="fas fa-times-circle me-1"></i>
+                <span>{{ __('Stok Habis') }}</span>
+            </button>
+        @endif
+    </div>
+</div>
 @endsection

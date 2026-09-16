@@ -130,29 +130,56 @@
             justify-content: center !important;
         }
 
-        /* Mobile Sticky Action Bar for Product Detail (Positioned above Mobile Bottom Nav) */
-        .mobile-sticky-action-bar {
-            position: fixed !important;
-            bottom: calc(62px + env(safe-area-inset-bottom)) !important;
-            left: 0 !important;
-            right: 0 !important;
-            z-index: 1045 !important;
-            background: var(--bs-body-bg) !important;
-            border-top: 1px solid var(--bs-border-color) !important;
-            border-bottom: 1px solid var(--bs-border-color-translucent) !important;
-            box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.06) !important;
-            padding: 0.5rem 0.75rem !important;
-            backdrop-filter: blur(16px) !important;
-            -webkit-backdrop-filter: blur(16px) !important;
-        }
-
-        @if(request()->routeIs('catalog.show'))
+        /* Mobile Bottom Wrapper: Perfectly stacks Sticky Action Bar on top of Bottom Nav with ZERO gap */
         @media (max-width: 991.98px) {
+            .mobile-bottom-wrapper {
+                position: fixed !important;
+                bottom: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                width: 100% !important;
+                z-index: 1045 !important;
+                display: flex !important;
+                flex-direction: column !important;
+                pointer-events: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            .mobile-bottom-wrapper > * {
+                pointer-events: auto !important;
+            }
+            .mobile-bottom-wrapper .mobile-bottom-nav {
+                position: relative !important;
+                bottom: auto !important;
+                left: auto !important;
+                right: auto !important;
+                width: 100% !important;
+                margin: 0 !important;
+            }
+            .mobile-bottom-wrapper .mobile-sticky-action-bar,
+            .mobile-sticky-action-bar {
+                position: relative !important;
+                bottom: auto !important;
+                left: auto !important;
+                right: auto !important;
+                width: 100% !important;
+                margin: 0 !important;
+                background: var(--bs-body-bg) !important;
+                border-top: 1px solid var(--bs-border-color) !important;
+                border-bottom: 1px solid var(--bs-border-color-translucent) !important;
+                box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08) !important;
+                padding: 0.5rem 0.75rem !important;
+                backdrop-filter: blur(16px) !important;
+                -webkit-backdrop-filter: blur(16px) !important;
+                z-index: 1046 !important;
+            }
+
+            @if(request()->routeIs('catalog.show'))
             body {
                 padding-bottom: calc(130px + env(safe-area-inset-bottom)) !important;
             }
+            @endif
         }
-        @endif
 
         @media (max-width: 576px) {
             .navbar {
@@ -949,9 +976,13 @@
 
 </div>
 
-@unless($hideSidebar || $hideBottomNav)
-{{-- Mobile Bottom Navigation Bar (Mobile Only) --}}
-<nav class="mobile-bottom-nav d-lg-none" id="mobileBottomNav" aria-label="{{ __('Navigasi Bawah') }}">
+{{-- Mobile Bottom Stack: Sticky Action Bar + Bottom Navigation with ZERO gap --}}
+<div class="mobile-bottom-wrapper d-lg-none" id="mobileBottomWrapper">
+    @yield('mobile_bottom_action_bar')
+
+    @unless($hideSidebar || $hideBottomNav)
+    {{-- Mobile Bottom Navigation Bar (Mobile Only) --}}
+    <nav class="mobile-bottom-nav" id="mobileBottomNav" aria-label="{{ __('Navigasi Bawah') }}">
     @if(Auth::check())
         @php
             $currentRole = Auth::user()->role;
@@ -1062,7 +1093,8 @@
         </a>
     @endif
 </nav>
-@endunless
+    @endunless
+</div>
 
 {{-- Floating Help Button moved into Sidebar --}}
 
