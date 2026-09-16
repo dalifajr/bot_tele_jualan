@@ -1,6 +1,7 @@
 RENCANA PERBAIKAN DAN PENGEMBANGAN WEBITE JUALAN:
 
-1. elemen body > div:nth-of-type(2) > main > div:nth-of-type(2) > div:nth-of-type(2) yitu tombol beli sekarang, + keranjang dan chat pada user mobile harusnya sticky.
+1. elemen body > div:nth-of-type(2) > main > div:nth-of-type(2) > div:nth-of-type(2) yitu tombol beli sekarang, + keranjang dan chat pada user mobile harusnya sticky diatas navbar.
+2. navbar hilang pada laman detail produk dan seterusnya.
 
 catat untuk kamu;
 - lakukan brainstroming sebelum melakukan eksekusi, tak lupa pula lakukan analisa kritik dan saran.

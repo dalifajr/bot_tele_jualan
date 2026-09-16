@@ -628,7 +628,7 @@ class NewImprovementsTest extends TestCase
         $response->assertSee('Ubah Status');
     }
 
-    public function test_catalog_show_renders_sticky_mobile_action_bar_and_hides_bottom_nav(): void
+    public function test_catalog_show_renders_sticky_mobile_action_bar_and_retains_bottom_nav(): void
     {
         $product = Product::create([
             'name' => 'Sticky Bar Test Item',
@@ -657,8 +657,8 @@ class NewImprovementsTest extends TestCase
         $response->assertSee('btnMobileAddToCart');
         $response->assertSee(route('chat.index', ['contact_id' => $this->seller->id]));
 
-        // Global mobileBottomNav must be suppressed on catalog.show
-        $response->assertDontSee('id="mobileBottomNav"', false);
+        // Global mobileBottomNav must also be present (stacked below the sticky action bar)
+        $response->assertSee('id="mobileBottomNav"', false);
     }
 
     public function test_catalog_show_out_of_stock_renders_sticky_bar_with_chat_and_disabled_button(): void
@@ -680,8 +680,8 @@ class NewImprovementsTest extends TestCase
         $response->assertSee('Stok Habis');
         // Chat seller is still available
         $response->assertSee(route('chat.index', ['contact_id' => $this->seller->id]));
-        // Bottom nav still suppressed
-        $response->assertDontSee('id="mobileBottomNav"', false);
+        // Bottom nav must also be present
+        $response->assertSee('id="mobileBottomNav"', false);
     }
 }
 

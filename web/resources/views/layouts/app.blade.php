@@ -130,17 +130,18 @@
             justify-content: center !important;
         }
 
-        /* Mobile Sticky Action Bar for Product Detail */
+        /* Mobile Sticky Action Bar for Product Detail (Positioned above Mobile Bottom Nav) */
         .mobile-sticky-action-bar {
             position: fixed !important;
-            bottom: 0 !important;
+            bottom: calc(62px + env(safe-area-inset-bottom)) !important;
             left: 0 !important;
             right: 0 !important;
-            z-index: 1050 !important;
+            z-index: 1045 !important;
             background: var(--bs-body-bg) !important;
             border-top: 1px solid var(--bs-border-color) !important;
-            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08) !important;
-            padding-bottom: calc(0.65rem + env(safe-area-inset-bottom)) !important;
+            border-bottom: 1px solid var(--bs-border-color-translucent) !important;
+            box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.06) !important;
+            padding: 0.5rem 0.75rem !important;
             backdrop-filter: blur(16px) !important;
             -webkit-backdrop-filter: blur(16px) !important;
         }
@@ -148,7 +149,7 @@
         @if(request()->routeIs('catalog.show'))
         @media (max-width: 991.98px) {
             body {
-                padding-bottom: calc(75px + env(safe-area-inset-bottom)) !important;
+                padding-bottom: calc(130px + env(safe-area-inset-bottom)) !important;
             }
         }
         @endif
@@ -370,7 +371,7 @@
 @php
     $globalMaintenanceActive = \App\Models\BotSetting::where('key', 'maintenance_mode')->value('value') === '1';
     $hideSidebar = View::hasSection('no_sidebar') || ($noSidebar ?? false);
-    $hideBottomNav = View::hasSection('no_bottom_nav') || ($noBottomNav ?? false) || request()->routeIs('catalog.show');
+    $hideBottomNav = View::hasSection('no_bottom_nav') || ($noBottomNav ?? false);
 
     $auth = Auth::user();
     $unreadChatsCount = 0;
