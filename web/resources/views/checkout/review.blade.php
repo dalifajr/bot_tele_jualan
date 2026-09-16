@@ -3,6 +3,30 @@
 @section('title', __('Review & Pembayaran'))
 @section('page_subtitle', __('Review Pesanan'))
 
+@push('styles')
+<style>
+    .lift-hover {
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .lift-hover:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08) !important;
+    }
+    .btn-buy-now {
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+    }
+    .btn-buy-now:active:not(:disabled) {
+        transform: scale(0.98);
+    }
+    .btn-buy-now.is-loading {
+        opacity: 0.88;
+        cursor: not-allowed !important;
+        pointer-events: none;
+    }
+</style>
+@endpush
+
 @section('content')
 <div class="d-flex align-items-center justify-content-between mb-4">
     <div class="d-flex align-items-center gap-2">
@@ -200,9 +224,9 @@
                     @if($vpnUsername)<input type="hidden" name="vpn_username" value="{{ $vpnUsername }}">@endif
                     @if($vpnPassword)<input type="hidden" name="vpn_password" value="{{ $vpnPassword }}">@endif
 
-                    <button type="submit" id="btnConfirmPay" class="btn btn-primary btn-lg w-100 rounded-pill fw-bold shadow-sm py-3 d-flex align-items-center justify-content-center gap-2 lift-hover">
-                        <i class="fas fa-lock"></i>
-                        <span>{{ __('Konfirmasi & Bayar Sekarang') }}</span>
+                    <button type="submit" id="btnConfirmPay" class="btn btn-primary btn-lg w-100 rounded-pill fw-bold shadow-sm py-3 d-flex align-items-center justify-content-center gap-2 lift-hover btn-buy-now">
+                        <i class="fas fa-lock btn-buy-icon"></i>
+                        <span class="btn-buy-text">{{ __('Konfirmasi & Bayar Sekarang') }}</span>
                     </button>
                 </form>
 
@@ -229,12 +253,71 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const finalForm = document.getElementById('finalCheckoutForm');
-        const btnConfirm = document.getElementById('btnConfirmPay');
+        const btnDesktopPay = document.getElementById('btnConfirmPay');
+        const btnMobilePay = document.getElementById('btnMobilePayNow');
+        let isSubmittingPayment = false;
 
-        if (finalForm && btnConfirm) {
-            finalForm.addEventListener('submit', function() {
-                btnConfirm.disabled = true;
-                btnConfirm.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>{{ __("Menyiapkan Pembayaran...") }}';
+        function setPayNowLoadingState(loading) {
+            isSubmittingPayment = loading;
+            const payButtons = [btnDesktopPay, btnMobilePay].filter(Boolean);
+
+            payButtons.forEach(btn => {
+                if (loading) {
+                    btn.disabled = true;
+                    btn.classList.add('is-loading');
+                    btn.setAttribute('aria-busy', 'true');
+                    const icon = btn.querySelector('.btn-buy-icon');
+                    const text = btn.querySelector('.btn-buy-text');
+                    if (icon) {
+                        icon.className = 'spinner-border spinner-border-sm me-1';
+                        icon.setAttribute('role', 'status');
+                        icon.setAttribute('aria-hidden', 'true');
+                    }
+                    if (text) {
+                        text.textContent = "{{ __('Menyiapkan Pembayaran...') }}";
+                    }
+                } else {
+                    btn.disabled = false;
+                    btn.classList.remove('is-loading');
+                    btn.removeAttribute('aria-busy');
+                    const icon = btn.querySelector('.btn-buy-icon');
+                    const text = btn.querySelector('.btn-buy-text');
+                    if (icon) {
+                        icon.className = 'fas fa-lock btn-buy-icon';
+                    }
+                    if (text) {
+                        text.textContent = btn === btnMobilePay ? "{{ __('Bayar Sekarang') }}" : "{{ __('Konfirmasi & Bayar Sekarang') }}";
+                    }
+                }
+            });
+        }
+
+        if (finalForm) {
+            finalForm.addEventListener('submit', function(e) {
+                if (isSubmittingPayment) {
+                    e.preventDefault();
+                    return false;
+                }
+
+                if (!finalForm.checkValidity()) {
+                    return;
+                }
+
+                setPayNowLoadingState(true);
+            });
+        }
+
+        if (btnMobilePay && finalForm) {
+            btnMobilePay.addEventListener('click', function(e) {
+                e.preventDefault();
+                if (isSubmittingPayment) return;
+
+                if (finalForm.reportValidity()) {
+                    setPayNowLoadingState(true);
+                    finalForm.submit();
+                } else {
+                    finalForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
             });
         }
     });
@@ -250,9 +333,9 @@
             <span class="text-muted d-block" style="font-size: 0.68rem; line-height: 1.1;">{{ __('Total Pembayaran') }}</span>
             <span class="fw-bold text-primary" style="font-size: 1.15rem;">Rp {{ number_format($totalAmount, 0, ',', '.') }}</span>
         </div>
-        <button type="button" class="btn btn-primary rounded-pill px-4 py-2 fw-bold shadow-sm d-flex align-items-center gap-2 lift-hover" onclick="document.getElementById('finalCheckoutForm').submit();" style="height: 44px; font-size: 0.88rem;">
-            <i class="fas fa-lock small"></i>
-            <span>{{ __('Bayar Sekarang') }}</span>
+        <button type="button" id="btnMobilePayNow" class="btn btn-primary rounded-pill px-4 py-2 fw-bold shadow-sm d-flex align-items-center gap-2 lift-hover btn-buy-now" style="height: 44px; font-size: 0.88rem;">
+            <i class="fas fa-lock small btn-buy-icon"></i>
+            <span class="btn-buy-text">{{ __('Bayar Sekarang') }}</span>
         </button>
     </div>
 </div>

@@ -714,6 +714,10 @@ class NewImprovementsTest extends TestCase
         $response->assertSee('mobile-sticky-action-bar');
         $response->assertSee('Total Pembayaran');
         $response->assertSee('Bayar Sekarang');
+        $response->assertSee('btn-buy-now');
+        $response->assertSee('btn-buy-icon');
+        $response->assertSee('btn-buy-text');
+        $response->assertSee('id="btnMobilePayNow"', false);
 
         // Mobile bottom nav must also be present
         $response->assertSee('id="mobileBottomNav"', false);
