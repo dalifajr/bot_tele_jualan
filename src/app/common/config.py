@@ -64,6 +64,7 @@ class Settings(BaseSettings):
     website_enabled: bool = Field(default=False, alias="WEBSITE_ENABLED")
     website_domain: str = Field(default="", alias="WEBSITE_DOMAIN")
     website_bot_username: str = Field(default="", alias="WEBSITE_BOT_USERNAME")
+    disable_bot_commands: bool = Field(default=False, alias="DISABLE_BOT_COMMANDS")
     web_login_token_ttl_minutes: int = Field(default=5, alias="WEB_LOGIN_TOKEN_TTL_MINUTES")
     web_login_link_ttl_minutes: int = Field(default=5, alias="WEB_LOGIN_LINK_TTL_MINUTES")
     web_remember_me_days: int = Field(default=30, alias="WEB_REMEMBER_ME_DAYS")

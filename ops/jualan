@@ -104,6 +104,14 @@ Commands:
                Configure Cloudflare Turnstile captcha keys for website
   reset-password [username]
                Reset password for a website admin user
+  toggle-bot-commands
+               Toggle customer bot ordering commands (normal vs migrate-to-web)
+  disable-bot-commands
+               Disable bot customer commands & migrate users to Mini WebApp
+  enable-bot-commands
+               Enable bot customer ordering commands back to normal
+  bot-commands-status
+               Show current migration status and website prerequisites check
   uninstall    Stop/disable services and remove alias
 EOF
 }
@@ -403,8 +411,184 @@ reset_admin_password() {
   fi
 }
 
+check_website_prerequisites() {
+  local verbose="${1:-1}"
+  local WEB_DIR="${PROJECT_DIR}/web"
+  local WEB_ENV="${WEB_DIR}/.env"
+  local errors=0
+
+  if [[ "${verbose}" == "1" ]]; then
+    echo "=== Pengecekan Persyaratan Migrasi Website ==="
+    echo ""
+  fi
+
+  # 1. Cek direktori dan file konfigurasi website
+  if [[ -f "${WEB_DIR}/artisan" && -f "${WEB_ENV}" ]]; then
+    [[ "${verbose}" == "1" ]] && echo "  [✓] File Laravel dan web/.env terpasang."
+  else
+    [[ "${verbose}" == "1" ]] && echo "  [✗] Website Laravel belum terpasang dengan baik (web/.env atau web/artisan tidak ditemukan)."
+    errors=$((errors + 1))
+  fi
+
+  # 2. Cek konfigurasi WEBSITE_ENABLED di root .env
+  local web_enabled="false"
+  if [[ -f "${ENV_FILE}" ]]; then
+    web_enabled="$(grep -E "^WEBSITE_ENABLED=" "${ENV_FILE}" | cut -d'=' -f2- | tr -d ' "' || echo "false")"
+  fi
+  if [[ "${web_enabled}" == "true" ]]; then
+    [[ "${verbose}" == "1" ]] && echo "  [✓] WEBSITE_ENABLED bernilai true di .env."
+  else
+    [[ "${verbose}" == "1" ]] && echo "  [✗] WEBSITE_ENABLED belum aktif di .env (harus WEBSITE_ENABLED=true)."
+    errors=$((errors + 1))
+  fi
+
+  # 3. Cek domain website dan kesiapan button Mini WebApp
+  local domain=""
+  if [[ -f "${ENV_FILE}" ]]; then
+    domain="$(grep -E "^WEBSITE_DOMAIN=" "${ENV_FILE}" | cut -d'=' -f2- | tr -d ' "' || echo "")"
+  fi
+  if [[ -n "${domain}" ]]; then
+    local clean_domain="${domain#http://}"
+    clean_domain="${clean_domain#https://}"
+    clean_domain="${clean_domain%%/*}"
+    if [[ -n "${clean_domain}" ]]; then
+      [[ "${verbose}" == "1" ]] && echo "  [✓] WEBSITE_DOMAIN terpasang: https://${clean_domain}"
+      [[ "${verbose}" == "1" ]] && echo "  [✓] URL Mini WebApp bot siap: https://${clean_domain}/dashboard"
+    else
+      [[ "${verbose}" == "1" ]] && echo "  [✗] Format WEBSITE_DOMAIN tidak valid: '${domain}'."
+      errors=$((errors + 1))
+    fi
+  else
+    [[ "${verbose}" == "1" ]] && echo "  [✗] WEBSITE_DOMAIN belum diatur di .env (diperlukan untuk tombol Mini WebApp)."
+    errors=$((errors + 1))
+  fi
+
+  # 4. Cek service web Nginx dan PHP-FPM jika di lingkungan Linux/systemd
+  if command -v systemctl >/dev/null 2>&1; then
+    if systemctl is-active --quiet nginx 2>/dev/null; then
+      [[ "${verbose}" == "1" ]] && echo "  [✓] Layanan Nginx berjalan normal (active/running)."
+    else
+      [[ "${verbose}" == "1" ]] && echo "  [✗] Layanan Nginx tidak aktif atau belum berjalan."
+      errors=$((errors + 1))
+    fi
+
+    local php_fpm_active=0
+    for s in php8.3-fpm php8.2-fpm php8.1-fpm php8.4-fpm php-fpm; do
+      if systemctl is-active --quiet "${s}" 2>/dev/null; then
+        php_fpm_active=1
+        [[ "${verbose}" == "1" ]] && echo "  [✓] Layanan PHP-FPM (${s}) berjalan normal (active/running)."
+        break
+      fi
+    done
+    if [[ "${php_fpm_active}" == "0" ]]; then
+      [[ "${verbose}" == "1" ]] && echo "  [✗] Layanan PHP-FPM tidak aktif atau belum berjalan."
+      errors=$((errors + 1))
+    fi
+  fi
+
+  if [[ "${verbose}" == "1" ]]; then
+    echo ""
+  fi
+
+  return "${errors}"
+}
+
+disable_bot_commands_cmd() {
+  echo "=== Aktivasi Mode Migrasi Website (Nonaktifkan Command Bot) ==="
+  echo ""
+  if ! check_website_prerequisites 1; then
+    echo "❌ GAGAL: Persyaratan migrasi website belum terpenuhi!" >&2
+    echo "Pastikan website sudah terpasang, domain sudah diatur, dan layanan web berjalan normal." >&2
+    echo "Langkah perbaikan:" >&2
+    echo "  1) Jalankan: jualan install-website <domain>" >&2
+    echo "  2) Pastikan: jualan website-status menunjukkan Nginx & PHP-FPM active" >&2
+    return 1
+  fi
+
+  set_env_var "DISABLE_BOT_COMMANDS" "true"
+  echo "✅ Pengaturan tersimpan: DISABLE_BOT_COMMANDS=true di .env"
+
+  if command -v systemctl >/dev/null 2>&1 && systemctl list-units --full -all | grep -Fq "${BOT_SERVICE}"; then
+    echo "Me-restart ${BOT_SERVICE}..."
+    sudo systemctl restart "${BOT_SERVICE}" 2>/dev/null || true
+    echo "✅ ${BOT_SERVICE} berhasil di-restart."
+  fi
+
+  echo ""
+  echo "🎉 Mode migrasi website BERHASIL DIAKTIFKAN!"
+  echo "  - Perintah pemesanan bot (/start, /buy, /catalog, dll.) telah dinonaktifkan untuk pelanggan."
+  echo "  - Pelanggan yang menjalankan perintah bot akan menerima pesan pengalihan ramah."
+  echo "  - Tombol Mini WebApp siap mengarahkan pelanggan langsung ke website."
+}
+
+enable_bot_commands_cmd() {
+  echo "=== Nonaktifkan Mode Migrasi (Aktifkan Kembali Command Bot) ==="
+  echo ""
+  set_env_var "DISABLE_BOT_COMMANDS" "false"
+  echo "✅ Pengaturan tersimpan: DISABLE_BOT_COMMANDS=false di .env"
+
+  if command -v systemctl >/dev/null 2>&1 && systemctl list-units --full -all | grep -Fq "${BOT_SERVICE}"; then
+    echo "Me-restart ${BOT_SERVICE}..."
+    sudo systemctl restart "${BOT_SERVICE}" 2>/dev/null || true
+    echo "✅ ${BOT_SERVICE} berhasil di-restart."
+  fi
+
+  echo ""
+  echo "✅ Perintah pemesanan bot Telegram (/start, /buy, dll.) telah DIAKTIFKAN KEMBALI."
+  echo "Pelanggan kini dapat berbelanja melalui bot seperti biasa."
+}
+
+toggle_bot_commands_cmd() {
+  local current="false"
+  if [[ -f "${ENV_FILE}" ]]; then
+    current="$(grep -E "^DISABLE_BOT_COMMANDS=" "${ENV_FILE}" | cut -d'=' -f2- | tr -d ' "' || echo "false")"
+  fi
+
+  if [[ "${current}" == "true" ]]; then
+    echo "Status saat ini: Command Bot DINONAKTIFKAN (Mode Migrasi Web Aktif)"
+    read -r -p "Aktifkan kembali perintah pemesanan bot Telegram? (y/N): " confirm
+    if [[ "${confirm}" =~ ^[Yy]$ ]]; then
+      enable_bot_commands_cmd
+    else
+      echo "Dibatalkan."
+    fi
+  else
+    echo "Status saat ini: Command Bot NORMAL (Aktif)"
+    read -r -p "Nonaktifkan perintah bot dan alihkan pelanggan ke website? (y/N): " confirm
+    if [[ "${confirm}" =~ ^[Yy]$ ]]; then
+      disable_bot_commands_cmd
+    else
+      echo "Dibatalkan."
+    fi
+  fi
+}
+
+status_bot_commands_cmd() {
+  local current="false"
+  if [[ -f "${ENV_FILE}" ]]; then
+    current="$(grep -E "^DISABLE_BOT_COMMANDS=" "${ENV_FILE}" | cut -d'=' -f2- | tr -d ' "' || echo "false")"
+  fi
+
+  echo "=== Status Mode Migrasi & Command Bot ==="
+  echo ""
+  if [[ "${current}" == "true" ]]; then
+    echo "  Status Command Bot: [ DINONAKTIFKAN (MIGRASI KE WEB AKTIF) ]"
+    echo "  Pelanggan dialihkan otomatis ke Mini WebApp / Website."
+  else
+    echo "  Status Command Bot: [ NORMAL (AKTIF) ]"
+    echo "  Pelanggan dapat melakukan transaksi langsung via bot Telegram."
+  fi
+  echo ""
+  check_website_prerequisites 1 || true
+}
+
 menu() {
-  cat <<'EOF'
+  local bot_cmd_status="NORMAL"
+  if [[ -f "${ENV_FILE}" ]] && grep -qE "^DISABLE_BOT_COMMANDS=true" "${ENV_FILE}"; then
+    bot_cmd_status="NONAKTIF (MIGRASI KE WEB)"
+  fi
+
+  cat <<EOF
 Panel Jualan
 1) start
 2) stop
@@ -427,6 +611,8 @@ Panel Jualan
 19) reset-password
 20) uninstall-website
 21) uninstall bot service
+22) toggle-bot-commands [Status: ${bot_cmd_status}]
+23) bot-commands-status (Cek prasyarat & status migrasi)
 0) keluar
 EOF
   read -r -p "Pilih menu: " choice
@@ -452,6 +638,8 @@ EOF
     19) reset_admin_password ;;
     20) sudo bash "${WEBSITE_SCRIPT}" uninstall ;;
     21) uninstall_bot ;;
+    22) toggle_bot_commands_cmd ;;
+    23) status_bot_commands_cmd ;;
     0) exit 0 ;;
     *) echo "Pilihan tidak valid." ;;
   esac
@@ -481,6 +669,10 @@ case "${cmd}" in
   reset-password) reset_admin_password "${2:-}" ;;
   uninstall-website) sudo bash "${WEBSITE_SCRIPT}" uninstall ;;
   uninstall) uninstall_bot ;;
+  toggle-bot-commands) toggle_bot_commands_cmd ;;
+  disable-bot-commands) disable_bot_commands_cmd ;;
+  enable-bot-commands) enable_bot_commands_cmd ;;
+  bot-commands-status) status_bot_commands_cmd ;;
   "") menu ;;
   *) print_usage; exit 1 ;;
 esac

@@ -893,6 +893,11 @@ async def _send_main_menu(
     now_text = _format_display_time(_now_display_time())
     total_text = str(total_transaksi)
 
+    settings = get_settings()
+    if settings.disable_bot_commands and role not in ("admin", "seller"):
+        await _send_bot_commands_disabled_notice(update, context)
+        return
+
     if role == "seller":
         text = (
             f"✨ <b>Halo, Seller {html.escape(display_name)}!</b>\n"
@@ -3393,6 +3398,36 @@ async def _handle_web_link_deeplink(
             )
 
 
+async def _send_bot_commands_disabled_notice(update: Update, context: ContextTypes.DEFAULT_TYPE | None = None) -> None:
+    settings = get_settings()
+    url = settings.website_domain or ""
+    if url and not url.startswith(("http://", "https://")):
+        url = f"https://{url}"
+
+    buttons = []
+    if url:
+        dashboard_url = f"{url.rstrip('/')}/dashboard"
+        buttons.append([InlineKeyboardButton("📱 Buka Mini App", web_app=WebAppInfo(url=dashboard_url))])
+        buttons.append([InlineKeyboardButton("🌐 Kunjungi Website", url=url)])
+
+    text = (
+        "📢 <b>Pemberitahuan Migrasi Layanan</b>\n\n"
+        "Halo, kak! 👋\n"
+        "Untuk memberikan pengalaman berbelanja yang lebih cepat, nyaman, aman, "
+        "dan fitur yang lebih lengkap, seluruh transaksi dan katalog produk kini telah "
+        "dialihkan ke <b>Website Resmi</b> kami.\n\n"
+        "ℹ️ <i>Penggunaan perintah teks / command bot untuk pemesanan saat ini telah <b>dinonaktifkan</b>.</i>\n\n"
+        "Silakan klik tombol di bawah untuk membuka <b>Toko / Mini WebApp</b> dan menikmati kemudahan berbelanja langsung di Telegram! 🚀"
+    )
+
+    await _respond(
+        update,
+        text,
+        InlineKeyboardMarkup(buttons) if buttons else None,
+        parse_mode=ParseMode.HTML,
+    )
+
+
 async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     args = context.args
     # Intercept weblink_ BEFORE _ensure_user to prevent creating a new duplicate user
@@ -3407,6 +3442,13 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     if args and args[0].startswith("weblogin_"):
         web_token = args[0][len("weblogin_"):]
         await _handle_web_login_deeplink(update, context, db_user, web_token)
+        return
+
+    settings = get_settings()
+    if settings.disable_bot_commands and role != "admin":
+        _clear_flow(context)
+        context.user_data.pop(AWAIT_QRIS_IMAGE_KEY, None)
+        await _send_bot_commands_disabled_notice(update, context)
         return
 
     tg_user = update.effective_user
@@ -3428,6 +3470,10 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 
 async def help_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     _, role = await _ensure_user(update, context)
+    settings = get_settings()
+    if settings.disable_bot_commands and role != "admin":
+        await _send_bot_commands_disabled_notice(update, context)
+        return
     await _send_help(update, role)
 
 
@@ -3436,6 +3482,10 @@ async def catalog_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     _clear_flow(context)
     if role == "admin":
         await _send_admin_catalog_menu(update)
+        return
+    settings = get_settings()
+    if settings.disable_bot_commands:
+        await _send_bot_commands_disabled_notice(update, context)
         return
     await _send_customer_catalog(update)
 
@@ -3522,6 +3572,11 @@ async def product_delete_handler(update: Update, context: ContextTypes.DEFAULT_T
 
 
 async def buy_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    settings = get_settings()
+    if settings.disable_bot_commands:
+        await _send_bot_commands_disabled_notice(update, context)
+        return
+
     db_user, role = await _ensure_user(update, context)
     if role != "customer":
         await _respond(update, "🚫 Admin tidak bisa checkout sebagai customer.", _back_keyboard("main"))
@@ -3551,7 +3606,11 @@ async def buy_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
 
 async def my_orders_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    db_user, _ = await _ensure_user(update, context)
+    db_user, role = await _ensure_user(update, context)
+    settings = get_settings()
+    if settings.disable_bot_commands and role != "admin":
+        await _send_bot_commands_disabled_notice(update, context)
+        return
     await _send_customer_orders(update, db_user.telegram_id, page=1)
 
 
@@ -3559,6 +3618,11 @@ async def order_status_handler(update: Update, context: ContextTypes.DEFAULT_TYP
     db_user, role = await _ensure_user(update, context)
     if role == "admin":
         await _respond(update, "🚫 Admin tidak menggunakan command ini.", _back_keyboard("main"))
+        return
+
+    settings = get_settings()
+    if settings.disable_bot_commands:
+        await _send_bot_commands_disabled_notice(update, context)
         return
 
     if not context.args:
@@ -3597,6 +3661,11 @@ async def reorder_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     db_user, role = await _ensure_user(update, context)
     if role == "admin":
         await _respond(update, "🚫 Admin tidak menggunakan command ini.", _back_keyboard("main"))
+        return
+
+    settings = get_settings()
+    if settings.disable_bot_commands:
+        await _send_bot_commands_disabled_notice(update, context)
         return
 
     if not context.args:
@@ -3700,6 +3769,19 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         return cached_user_ctx
 
     data = query.data or ""
+    settings = get_settings()
+    if settings.disable_bot_commands and role != "admin":
+        if (
+            data.startswith("buy:")
+            or data.startswith("buyall:")
+            or data.startswith("ord:reorder:")
+            or data.startswith("cat:")
+            or data in ("cus:cat", "cus:ord", "cus:help")
+        ):
+            await query.answer()
+            await _send_bot_commands_disabled_notice(update, context)
+            return
+
     if data.startswith("buy:") or data.startswith("buyall:") or data.startswith("ord:reorder:"):
         await query.answer("⏳ Memproses checkout...", show_alert=False)
     else:
@@ -3715,6 +3797,9 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         _clear_flow(context)
         context.user_data.pop(AWAIT_QRIS_IMAGE_KEY, None)
         _clear_complaint_draft(context)
+        if settings.disable_bot_commands and role != "admin" and target in ("main", "cus_cat"):
+            await _send_bot_commands_disabled_notice(update, context)
+            return
         if target == "main":
             await _send_main_menu(update, role, context=context)
             return
@@ -6533,6 +6618,12 @@ async def text_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             return
 
         if flow == FLOW_CUSTOMER_MANUAL_QTY:
+            settings = get_settings()
+            if settings.disable_bot_commands and role != "admin":
+                _clear_flow(context)
+                await _send_bot_commands_disabled_notice(update, context)
+                return
+
             if role == "admin":
                 _clear_flow(context)
                 await _respond(update, "🚫 Admin tidak bisa checkout sebagai customer.", _back_keyboard("main"))
@@ -6572,6 +6663,11 @@ async def text_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
                     _back_keyboard("adm_cat"),
                 )
                 return
+
+        settings = get_settings()
+        if settings.disable_bot_commands and role not in ("admin", "seller"):
+            await _send_bot_commands_disabled_notice(update, context)
+            return
 
         await _respond(
             update,

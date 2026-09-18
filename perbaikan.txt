@@ -1,14 +1,12 @@
 RENCANA PERBAIKAN DAN PENGEMBANGAN WEBITE JUALAN:
 
-1. elemen body > div:nth-of-type(2) > main > div:nth-of-type(2) > div:nth-of-type(2) yitu tombol beli sekarang, + keranjang dan chat pada user mobile harusnya sticky diatas navbar.
-2. navbar hilang pada laman detail produk dan seterusnya.
+1. tolong buatkan fungsi menu pada terminal jualan di vps, menu untuk menonaktifkan penggunaan command pada bot tele seperti /start, /buy, dan lain-lain. untuk mengaktifkan fnugsi ini, ada persyaratan yang harus dipenuhi, website sudah terpasang dengan baik dan berjalan normal, lalu bot telegram punya button untuk mengakses mini webapp (url website). fungsi menu ini bertujuan untuk memigrasi user yang masih melakukan order via bot telegram untuk fitur website yang lebih ramah pengguna. tidak lupa juga pada saat menu ini diaktifkan maka user yang mencoba menggunakan command yang sudah dinonaktifkan akan mendapatkan pesan pemberitahuan bahwa penggunaan command sudah dinonaktifkan dan akan diarahkan untuk menggunakan fitur website.
+
 
 catat untuk kamu;
 - lakukan brainstroming sebelum melakukan eksekusi, tak lupa pula lakukan analisa kritik dan saran.
 - pastikan untuk melakukan test pada setiap perubahan yang kamu buat. agar tidak ada error yang terlewatkan.
 - jangan pernah ragu untuk meminta arahan lebih detail.
-- tidak usah melakukan test menggunakan agent browser.
 - identifikasikan dirimu sebagai developer fullstack laravel yang berpengalaman dan berpedoman dengan prinsip clean code, user experience (ux), design thinking, dan best practices.
 - gunakan bahasa indonesia yang baik dan benar.
 - jika melakukan perubahan maka berikan penjelasan atas setiap perubahan yang kamu buat.
-- 
