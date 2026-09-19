@@ -508,11 +508,13 @@ disable_bot_commands_cmd() {
   set_env_var "DISABLE_BOT_COMMANDS" "true"
   echo "✅ Pengaturan tersimpan: DISABLE_BOT_COMMANDS=true di .env"
 
-  if command -v systemctl >/dev/null 2>&1 && systemctl list-units --full -all | grep -Fq "${BOT_SERVICE}"; then
-    echo "Me-restart ${BOT_SERVICE}..."
+  if command -v systemctl >/dev/null 2>&1; then
+    echo "Mencoba me-restart ${BOT_SERVICE}..."
     sudo systemctl restart "${BOT_SERVICE}" 2>/dev/null || true
-    echo "✅ ${BOT_SERVICE} berhasil di-restart."
+    echo "✅ Instruksi restart service telah dikirim."
   fi
+  echo "⚠️ PERHATIAN: Pastikan bot telah di-restart agar pengaturan baru aktif."
+  echo "⚠️ Jika Anda menjalankan bot secara manual (misal via PM2/Screen/Tmux), silakan restart bot sekarang."
 
   echo ""
   echo "🎉 Mode migrasi website BERHASIL DIAKTIFKAN!"
@@ -527,11 +529,13 @@ enable_bot_commands_cmd() {
   set_env_var "DISABLE_BOT_COMMANDS" "false"
   echo "✅ Pengaturan tersimpan: DISABLE_BOT_COMMANDS=false di .env"
 
-  if command -v systemctl >/dev/null 2>&1 && systemctl list-units --full -all | grep -Fq "${BOT_SERVICE}"; then
-    echo "Me-restart ${BOT_SERVICE}..."
+  if command -v systemctl >/dev/null 2>&1; then
+    echo "Mencoba me-restart ${BOT_SERVICE}..."
     sudo systemctl restart "${BOT_SERVICE}" 2>/dev/null || true
-    echo "✅ ${BOT_SERVICE} berhasil di-restart."
+    echo "✅ Instruksi restart service telah dikirim."
   fi
+  echo "⚠️ PERHATIAN: Pastikan bot telah di-restart agar pengaturan baru aktif."
+  echo "⚠️ Jika Anda menjalankan bot secara manual (misal via PM2/Screen/Tmux), silakan restart bot sekarang."
 
   echo ""
   echo "✅ Perintah pemesanan bot Telegram (/start, /buy, dll.) telah DIAKTIFKAN KEMBALI."
