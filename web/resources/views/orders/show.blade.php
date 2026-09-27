@@ -159,12 +159,21 @@
                     <hr>
                     <h6 class="fw-bold mb-3"><i class="fas fa-key text-success me-2"></i>{{ __('Detail Akun yang Dibeli') }} ({{ $order->stockUnits->count() }} unit)</h6>
                     <div class="d-flex flex-column gap-3">
-                        @foreach($order->stockUnits as $unit)
-                            <div>
-                                @if($order->stockUnits->count() > 1)
-                                    <span class="badge bg-secondary-subtle text-secondary mb-1">Unit #{{ $loop->iteration }}</span>
-                                @endif
-                                <x-account-credential-viewer :rawText="$unit->raw_text" />
+                        @php $groupedUnits = $order->stockUnits->groupBy('product_id'); @endphp
+                        @foreach($groupedUnits as $productId => $units)
+                            @php $productName = $units->first()->product->name ?? 'Produk'; @endphp
+                            <div class="mb-1">
+                                <span class="badge bg-primary-subtle text-primary mb-2 fw-bold" style="font-size: 0.85rem;">{{ $productName }}</span>
+                                <div class="d-flex flex-column gap-2">
+                                    @foreach($units as $unit)
+                                    <div>
+                                        @if($units->count() > 1)
+                                            <span class="badge bg-secondary-subtle text-secondary mb-1">Unit #{{ $loop->iteration }}</span>
+                                        @endif
+                                        <x-account-credential-viewer :rawText="$unit->raw_text" />
+                                    </div>
+                                    @endforeach
+                                </div>
                             </div>
                         @endforeach
                     </div>

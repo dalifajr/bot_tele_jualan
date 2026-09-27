@@ -40,26 +40,30 @@
                 </h6>
             </div>
             <div class="card-body p-3 p-md-4">
-                <div class="p-2.5 p-md-3 bg-light rounded-3 d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-2.5 mt-1">
-                    <div class="d-flex align-items-center gap-2.5 min-w-0 flex-grow-1">
-                        <div class="rounded-3 bg-white border p-1.5 d-flex align-items-center justify-content-center text-primary flex-shrink-0" style="width: 50px; height: 50px;">
-                            @if($order->product && $order->product->image_url)
-                                <img src="{{ $order->product->image_url }}" alt="{{ $order->product->name }}" class="img-fluid rounded-2" style="max-height: 42px; object-fit: contain;">
-                            @else
-                                <i class="fas fa-cube fa-lg opacity-75"></i>
-                            @endif
-                        </div>
-                        <div class="flex-grow-1 min-w-0">
-                            <h6 class="fw-bold text-dark mb-1 text-truncate" style="font-size: 0.92rem;">{{ $order->product->name ?? '-' }}</h6>
-                            <div class="text-muted small" style="font-size: 0.78rem;">
-                                {{ $order->quantity }} x Rp {{ number_format($order->subtotal / max(1, $order->quantity), 0, ',', '.') }}
+                <div class="list-group list-group-flush border rounded-3 overflow-hidden mt-1">
+                    @foreach($order->items as $item)
+                    <div class="list-group-item p-2.5 p-md-3 bg-light d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-2.5 border-bottom">
+                        <div class="d-flex align-items-center gap-2.5 min-w-0 flex-grow-1">
+                            <div class="rounded-3 bg-white border p-1.5 d-flex align-items-center justify-content-center text-primary flex-shrink-0" style="width: 50px; height: 50px;">
+                                @if($item->product && $item->product->image_url)
+                                    <img src="{{ $item->product->image_url }}" alt="{{ $item->product->name }}" class="img-fluid rounded-2" style="max-height: 42px; object-fit: contain;">
+                                @else
+                                    <i class="fas fa-cube fa-lg opacity-75"></i>
+                                @endif
+                            </div>
+                            <div class="flex-grow-1 min-w-0">
+                                <h6 class="fw-bold text-dark mb-1 text-truncate" style="font-size: 0.92rem;">{{ $item->product->name ?? '-' }}</h6>
+                                <div class="text-muted small" style="font-size: 0.78rem;">
+                                    {{ $item->quantity }} x Rp {{ number_format($item->unit_price, 0, ',', '.') }}
+                                </div>
                             </div>
                         </div>
+                        <div class="text-end d-flex justify-content-between justify-content-sm-end align-items-center pt-2 pt-sm-0 border-top border-sm-top-0 flex-shrink-0">
+                            <span class="text-muted small d-sm-none">{{ __('Subtotal:') }}</span>
+                            <span class="fw-bold text-dark fs-6">Rp {{ number_format($item->unit_price * $item->quantity, 0, ',', '.') }}</span>
+                        </div>
                     </div>
-                    <div class="text-end d-flex justify-content-between justify-content-sm-end align-items-center pt-2 pt-sm-0 border-top border-sm-top-0 flex-shrink-0">
-                        <span class="text-muted small d-sm-none">{{ __('Subtotal:') }}</span>
-                        <span class="fw-bold text-dark fs-6">Rp {{ number_format($order->subtotal, 0, ',', '.') }}</span>
-                    </div>
+                    @endforeach
                 </div>
 
                 <div class="border-top mt-3 pt-3">
@@ -91,12 +95,21 @@
             </div>
             <div class="card-body p-3 p-md-4">
                 <div class="d-flex flex-column gap-3 mt-1">
-                    @foreach($order->stockUnits as $unit)
-                        <div>
-                            @if($order->stockUnits->count() > 1)
-                                <div class="badge bg-secondary-subtle text-secondary mb-1">Unit #{{ $loop->iteration }}</div>
-                            @endif
-                            <x-account-credential-viewer :rawText="$unit->raw_text" />
+                    @php $groupedUnits = $order->stockUnits->groupBy('product_id'); @endphp
+                    @foreach($groupedUnits as $productId => $units)
+                        @php $productName = $units->first()->product->name ?? 'Produk'; @endphp
+                        <div class="mb-1">
+                            <span class="badge bg-primary-subtle text-primary mb-2 fw-bold" style="font-size: 0.85rem;">{{ $productName }}</span>
+                            <div class="d-flex flex-column gap-2">
+                                @foreach($units as $unit)
+                                <div>
+                                    @if($units->count() > 1)
+                                        <div class="badge bg-secondary-subtle text-secondary mb-1">Unit #{{ $loop->iteration }}</div>
+                                    @endif
+                                    <x-account-credential-viewer :rawText="$unit->raw_text" />
+                                </div>
+                                @endforeach
+                            </div>
                         </div>
                     @endforeach
                 </div>
