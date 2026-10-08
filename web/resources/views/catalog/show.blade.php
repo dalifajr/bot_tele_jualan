@@ -127,47 +127,21 @@
                         <div class="vr opacity-25"></div>
                         <div>
                             <i class="fas fa-bolt text-warning me-1"></i>
-                            <span class="fw-semibold text-body">{{ $product->sales_count ?? 0 }}</span> {{ __('Terjual') }}
+                            <span class="fw-semibold text-body">{{ $product->sales_count }}</span> {{ __('Terjual') }}
                         </div>
                         <div class="vr opacity-25"></div>
                         <div class="text-success fw-semibold">
                             <i class="fas fa-truck-fast me-1"></i>{{ __('Pengiriman Otomatis') }}
                         </div>
+                        @if(isset($product->warranty_days) && $product->warranty_days > 0)
+                        <div class="vr opacity-25"></div>
+                        <div class="text-info fw-semibold">
+                            <i class="fas fa-shield-alt me-1"></i>Garansi {{ $product->warranty_days }} Hari
+                        </div>
+                        @endif
                     </div>
 
-                    {{-- Trust / Value Propositions Badges (Ala Home Stat Cards) --}}
-                    <div class="row g-2 mb-4">
-                        <div class="col-4">
-                            <div class="card border-0 shadow-sm rounded-4 h-100 lift-hover bg-body p-2.5 text-center">
-                                <div class="d-inline-flex bg-warning-subtle text-warning rounded-circle p-2 mx-auto mb-1.5 align-items-center justify-content-center" style="width: 36px; height: 36px;">
-                                    <i class="fas fa-bolt" style="font-size: 1rem;"></i>
-                                </div>
-                                <span class="fw-bold text-body d-block" style="font-size: 0.76rem;">{{ __('Instan Delivery') }}</span>
-                                <span class="text-muted" style="font-size: 0.68rem;">{{ __('Akun langsung dikirim') }}</span>
-                            </div>
-                        </div>
-                        <div class="col-4">
-                            <div class="card border-0 shadow-sm rounded-4 h-100 lift-hover bg-body p-2.5 text-center">
-                                <div class="d-inline-flex bg-success-subtle text-success rounded-circle p-2 mx-auto mb-1.5 align-items-center justify-content-center" style="width: 36px; height: 36px;">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                                        <path d="M9 12l2 2 4-4"></path>
-                                    </svg>
-                                </div>
-                                <span class="fw-bold text-body d-block" style="font-size: 0.76rem;">{{ __('Garansi 100%') }}</span>
-                                <span class="text-muted" style="font-size: 0.68rem;">{{ __('Jaminan uang kembali') }}</span>
-                            </div>
-                        </div>
-                        <div class="col-4">
-                            <div class="card border-0 shadow-sm rounded-4 h-100 lift-hover bg-body p-2.5 text-center">
-                                <div class="d-inline-flex bg-primary-subtle text-primary rounded-circle p-2 mx-auto mb-1.5 align-items-center justify-content-center" style="width: 36px; height: 36px;">
-                                    <i class="fas fa-headset" style="font-size: 1rem;"></i>
-                                </div>
-                                <span class="fw-bold text-body d-block" style="font-size: 0.76rem;">{{ __('Bantuan Live') }}</span>
-                                <span class="text-muted" style="font-size: 0.68rem;">{{ __('Siap melayani 24/7') }}</span>
-                            </div>
-                        </div>
-                    </div>
+
 
                     @php
                         $seller = $product->creator;

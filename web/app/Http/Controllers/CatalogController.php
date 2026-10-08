@@ -83,6 +83,13 @@ class CatalogController extends Controller
                 ->count();
         }
 
+        $stockSold = StockUnit::where('product_id', $product->id)->where('is_sold', true)->count();
+        $orderSold = OrderItem::where('product_id', $product->id)->whereHas('order', function ($q) {
+            $q->whereIn('status', ['delivered', 'completed', 'paid']);
+        })->sum('quantity');
+        
+        $product->sales_count = max($stockSold, $orderSold);
+
         return view('catalog.show', compact('product', 'stockCount'));
     }
 }
