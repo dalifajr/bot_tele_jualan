@@ -223,8 +223,12 @@
             </div>
             <div class="card-body p-3 p-md-4">
                 <div class="d-flex align-items-center gap-3 mb-3 mt-1">
-                    <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center fw-bold fs-5 flex-shrink-0" style="width: 44px; height: 44px;">
-                        {{ strtoupper(substr($order->customer->full_name ?? $order->customer->username ?? 'P', 0, 1)) }}
+                    <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center fw-bold fs-5 flex-shrink-0 overflow-hidden" style="width: 44px; height: 44px;">
+                        @if($order->customer && $order->customer->avatar)
+                            <img src="{{ \Illuminate\Support\Facades\Storage::url($order->customer->avatar) }}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover;">
+                        @else
+                            {{ strtoupper(substr($order->customer->full_name ?? $order->customer->username ?? 'P', 0, 1)) }}
+                        @endif
                     </div>
                     <div class="min-w-0">
                         <h6 class="fw-bold mb-0 text-dark text-truncate">{{ $order->customer->full_name ?? $order->customer->username ?? '-' }}</h6>

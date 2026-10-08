@@ -156,8 +156,12 @@
             <div class="col-lg-4">
                 <div class="card border-0 shadow-sm rounded-4 text-center p-4 h-100 lift-hover">
                     <div class="avatar-wrapper mx-auto mb-3">
-                        <div class="avatar-circle">
-                            {{ strtoupper(substr(Auth::user()->full_name ?? Auth::user()->username ?? 'U', 0, 1)) }}
+                        <div class="avatar-circle overflow-hidden">
+                            @if(Auth::user()->avatar)
+                                <img src="{{ \Illuminate\Support\Facades\Storage::url(Auth::user()->avatar) }}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover;">
+                            @else
+                                {{ strtoupper(substr(Auth::user()->full_name ?? Auth::user()->username ?? 'U', 0, 1)) }}
+                            @endif
                         </div>
                     </div>
 
@@ -303,9 +307,14 @@
                                         </button>
                                     </div>
                                     
-                                    <form action="{{ route('profile.update') }}" method="POST">
+                                    <form action="{{ route('profile.update') }}" method="POST" enctype="multipart/form-data">
                                         @csrf
                                         <div class="row g-3">
+                                            <div class="col-12">
+                                                <label class="form-label small fw-bold text-muted">{{ __('Foto Profil (Avatar)') }}</label>
+                                                <input type="file" name="avatar" class="form-control form-control-sm rounded-3" accept="image/*">
+                                                <div class="form-text small text-muted"><i class="fas fa-info-circle me-1"></i>Format: JPG, PNG, WEBP, GIF. Maks: 2MB.</div>
+                                            </div>
                                             <div class="col-md-6">
                                                 <label class="form-label small fw-bold text-muted">{{ __('Nama Lengkap') }}</label>
                                                 <input type="text" name="full_name" class="form-control form-control-sm rounded-3" required value="{{ old('full_name', Auth::user()->full_name) }}">

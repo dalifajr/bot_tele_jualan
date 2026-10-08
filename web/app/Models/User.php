@@ -24,6 +24,7 @@ class User extends Authenticatable
         'two_factor_expires_at',
         'dismiss_set_password_prompt',
         'has_custom_password',
+        'avatar',
     ];
 
     protected $hidden = [

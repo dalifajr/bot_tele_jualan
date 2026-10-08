@@ -23,15 +23,26 @@ class ProfileController extends Controller
             'full_name' => 'required|string|max:255',
             'email' => 'nullable|string|email|max:255|unique:users,email,' . $user->id,
             'telegram_id' => 'nullable|integer|unique:users,telegram_id,' . $user->id,
+            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
         ];
 
         $request->validate($rules);
 
-        $user->update([
+        $data = [
             'full_name' => $request->full_name,
             'email' => $request->email,
             'telegram_id' => $request->telegram_id,
-        ]);
+        ];
+
+        if ($request->hasFile('avatar')) {
+            if ($user->avatar && \Illuminate\Support\Facades\Storage::disk('public')->exists($user->avatar)) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($user->avatar);
+            }
+            $path = $request->file('avatar')->store('avatars', 'public');
+            $data['avatar'] = $path;
+        }
+
+        $user->update($data);
 
         return redirect()->back()->with('success', __('Profil berhasil diperbarui!'));
     }

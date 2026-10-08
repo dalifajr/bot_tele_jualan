@@ -632,8 +632,12 @@
         </div>
         @auth
         <div class="sidebar-header d-flex align-items-center gap-3">
-            <div class="user-avatar rounded-circle d-flex align-items-center justify-content-center fw-bold text-white bg-primary" style="width: 40px; height: 40px; flex-shrink: 0;">
-                {{ strtoupper(substr(Auth::user()->full_name ?? Auth::user()->username ?? 'U', 0, 1)) }}
+            <div class="user-avatar rounded-circle d-flex align-items-center justify-content-center fw-bold text-white bg-primary overflow-hidden" style="width: 40px; height: 40px; flex-shrink: 0;">
+                @if(Auth::user()->avatar)
+                    <img src="{{ \Illuminate\Support\Facades\Storage::url(Auth::user()->avatar) }}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover;">
+                @else
+                    {{ strtoupper(substr(Auth::user()->full_name ?? Auth::user()->username ?? 'U', 0, 1)) }}
+                @endif
             </div>
             <div class="d-flex flex-column text-truncate">
                 <span class="fw-bold text-body text-truncate" style="font-size: 0.9rem;">{{ Str::limit(Auth::user()->full_name ?? Auth::user()->username ?? 'User', 20) }}</span>
