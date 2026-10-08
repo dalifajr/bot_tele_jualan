@@ -1366,7 +1366,6 @@
                     </div>
                     <form action="{{ route('profile.update') }}" method="POST" enctype="multipart/form-data">
                         @csrf
-                        @method('PUT')
                         <input type="hidden" name="full_name" value="{{ Auth::user()->full_name ?? Auth::user()->username }}">
                         <input type="hidden" name="email" value="{{ Auth::user()->email }}">
                         <input type="hidden" name="telegram_id" value="{{ Auth::user()->telegram_id }}">
