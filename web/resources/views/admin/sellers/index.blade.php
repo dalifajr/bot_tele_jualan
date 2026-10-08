@@ -108,14 +108,25 @@
                     <tr>
                         <td class="px-4 text-muted small fw-bold">{{ $loop->iteration + ($sellers->firstItem() - 1) }}</td>
                         <td>
-                            <div class="fw-bold text-primary">{{ $seller->full_name ?? 'Unknown' }}</div>
-                            <div class="small text-muted d-flex align-items-center gap-1">
-                                <span>{{ $seller->username ? '@'.$seller->username : '-' }}</span>
-                                @if($seller->telegram_id)
-                                    <span class="badge bg-light text-secondary small py-0 px-1 border" style="font-size: 0.7rem;">
-                                        <i class="fab fa-telegram-plane text-info me-1"></i>{{ $seller->telegram_id }}
-                                    </span>
-                                @endif
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center fw-bold flex-shrink-0 overflow-hidden" style="width: 36px; height: 36px;">
+                                    @if($seller->avatar)
+                                        <img src="{{ \Illuminate\Support\Facades\Storage::url($seller->avatar) }}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover;">
+                                    @else
+                                        {{ strtoupper(substr($seller->full_name ?? $seller->username ?? 'U', 0, 1)) }}
+                                    @endif
+                                </div>
+                                <div>
+                                    <div class="fw-bold text-primary">{{ $seller->full_name ?? 'Unknown' }}</div>
+                                    <div class="small text-muted d-flex align-items-center gap-1">
+                                        <span>{{ $seller->username ? '@'.$seller->username : '-' }}</span>
+                                        @if($seller->telegram_id)
+                                            <span class="badge bg-light text-secondary small py-0 px-1 border" style="font-size: 0.7rem;">
+                                                <i class="fab fa-telegram-plane text-info me-1"></i>{{ $seller->telegram_id }}
+                                            </span>
+                                        @endif
+                                    </div>
+                                </div>
                             </div>
                         </td>
                         <td>

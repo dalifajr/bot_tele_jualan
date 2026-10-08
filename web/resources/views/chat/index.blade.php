@@ -38,8 +38,12 @@
                            class="list-group-item list-group-item-action border-bottom py-3 px-4 d-flex align-items-center gap-3 bg-primary-subtle"
                            style="border-left: 0px solid transparent;">
                             <div class="position-relative">
-                                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold small" style="width: 42px; height: 42px; min-width: 42px;">
-                                    {{ strtoupper(substr($contact->full_name ?? $contact->username, 0, 1)) }}
+                                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold small overflow-hidden" style="width: 42px; height: 42px; min-width: 42px;">
+                                    @if($contact->avatar)
+                                        <img src="{{ \Illuminate\Support\Facades\Storage::url($contact->avatar) }}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover;">
+                                    @else
+                                        {{ strtoupper(substr($contact->full_name ?? $contact->username, 0, 1)) }}
+                                    @endif
                                 </div>
                                 @if($contact->isOnline())
                                     <span class="position-absolute bottom-0 end-0 bg-success border border-white border-2 rounded-circle" style="width: 12px; height: 12px;" title="{{ __('Online') }}"></span>
@@ -64,8 +68,12 @@
                            class="list-group-item list-group-item-action border-bottom py-3 px-4 d-flex align-items-center gap-3 {{ ($selectedContact && $selectedContact->id === $contact->id) ? 'active bg-light border-start border-primary border-4 text-dark' : '' }}"
                            style="{{ ($selectedContact && $selectedContact->id === $contact->id) ? 'border-left: 4px solid var(--bs-primary) !important;' : '' }}">
                             <div class="position-relative">
-                                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold small" style="width: 42px; height: 42px; min-width: 42px;">
-                                    {{ strtoupper(substr($contact->full_name ?? $contact->username, 0, 1)) }}
+                                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold small overflow-hidden" style="width: 42px; height: 42px; min-width: 42px;">
+                                    @if($contact->avatar)
+                                        <img src="{{ \Illuminate\Support\Facades\Storage::url($contact->avatar) }}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover;">
+                                    @else
+                                        {{ strtoupper(substr($contact->full_name ?? $contact->username, 0, 1)) }}
+                                    @endif
                                 </div>
                                 @if($contact->isOnline())
                                     <span class="position-absolute bottom-0 end-0 bg-success border border-white border-2 rounded-circle" style="width: 12px; height: 12px;" title="{{ __('Online') }}"></span>
@@ -102,8 +110,12 @@
                         <i class="fas fa-arrow-left text-dark"></i>
                     </a>
                     <div class="position-relative">
-                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold small" style="width: 40px; height: 40px; min-width: 40px;">
-                            {{ strtoupper(substr($selectedContact->full_name ?? $selectedContact->username, 0, 1)) }}
+                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold small overflow-hidden" style="width: 40px; height: 40px; min-width: 40px;">
+                            @if($selectedContact->avatar)
+                                <img src="{{ \Illuminate\Support\Facades\Storage::url($selectedContact->avatar) }}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover;">
+                            @else
+                                {{ strtoupper(substr($selectedContact->full_name ?? $selectedContact->username, 0, 1)) }}
+                            @endif
                         </div>
                         <span id="headerOnlineDot" class="position-absolute bottom-0 end-0 bg-success border border-white border-2 rounded-circle {{ $selectedContact->isOnline() ? '' : 'd-none' }}" style="width: 11px; height: 11px;"></span>
                     </div>

@@ -68,8 +68,12 @@
             <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
                 {{-- Left: Seller Avatar & Identity --}}
                 <div class="d-flex align-items-center gap-3">
-                    <div class="rounded-circle bg-white text-primary fw-bold d-flex align-items-center justify-content-center shadow-lg border border-3 border-white flex-shrink-0" style="width: 68px; height: 68px; font-size: 1.75rem;">
-                        {{ strtoupper(substr($seller->full_name ?? $seller->username ?? 'S', 0, 1)) }}
+                    <div class="rounded-circle bg-white text-primary fw-bold d-flex align-items-center justify-content-center shadow-lg border border-3 border-white flex-shrink-0 overflow-hidden" style="width: 68px; height: 68px; font-size: 1.75rem;">
+                        @if($seller->avatar)
+                            <img src="{{ \Illuminate\Support\Facades\Storage::url($seller->avatar) }}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover;">
+                        @else
+                            {{ strtoupper(substr($seller->full_name ?? $seller->username ?? 'S', 0, 1)) }}
+                        @endif
                     </div>
                     <div>
                         <div class="d-flex align-items-center gap-2 flex-wrap mb-1">

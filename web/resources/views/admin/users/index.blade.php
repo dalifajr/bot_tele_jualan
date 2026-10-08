@@ -105,8 +105,19 @@
                     <tr>
                         <td class="px-4 fw-bold text-muted">{{ $user->telegram_id ?? '-' }}</td>
                         <td>
-                            <div class="fw-bold text-primary">{{ $user->full_name ?? 'Unknown' }}</div>
-                            <div class="small text-muted">{{ $user->username ? '@'.$user->username : '-' }}</div>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center fw-bold flex-shrink-0 overflow-hidden" style="width: 36px; height: 36px;">
+                                    @if($user->avatar)
+                                        <img src="{{ \Illuminate\Support\Facades\Storage::url($user->avatar) }}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover;">
+                                    @else
+                                        {{ strtoupper(substr($user->full_name ?? $user->username ?? 'U', 0, 1)) }}
+                                    @endif
+                                </div>
+                                <div>
+                                    <div class="fw-bold text-primary">{{ $user->full_name ?? 'Unknown' }}</div>
+                                    <div class="small text-muted">{{ $user->username ? '@'.$user->username : '-' }}</div>
+                                </div>
+                            </div>
                         </td>
                         <td class="text-muted small">{{ $user->email ?? '-' }}</td>
                         <td>
