@@ -183,8 +183,12 @@
                     <div class="p-3 rounded-4 bg-body-tertiary border d-flex align-items-center justify-content-between mb-4">
                         <div class="d-flex align-items-center gap-3">
                             <a href="{{ route('sellers.show', $sellerId) }}" class="text-decoration-none" title="{{ __('Kunjungi Profil Seller') }}">
-                                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold shadow-sm" style="width: 46px; height: 46px; font-size: 1.15rem;">
-                                    {{ strtoupper(substr($seller->full_name ?? $seller->username ?? 'A', 0, 1)) }}
+                                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold shadow-sm overflow-hidden" style="width: 46px; height: 46px; font-size: 1.15rem;">
+                                    @if($seller && $seller->avatar)
+                                        <img src="{{ \Illuminate\Support\Facades\Storage::url($seller->avatar) }}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover;">
+                                    @else
+                                        {{ strtoupper(substr($seller->full_name ?? $seller->username ?? 'A', 0, 1)) }}
+                                    @endif
                                 </div>
                             </a>
                             <div>
@@ -229,8 +233,12 @@
                             <div class="border-bottom py-2.5">
                                 <div class="d-flex justify-content-between align-items-start mb-1">
                                     <div class="d-flex align-items-center gap-2">
-                                        <div class="rounded-circle bg-secondary bg-opacity-25 text-body fw-bold d-flex align-items-center justify-content-center" style="width: 28px; height: 28px; font-size: 0.75rem;">
-                                            {{ strtoupper(substr($rev->user->full_name ?? $rev->user->username ?? 'U', 0, 1)) }}
+                                        <div class="rounded-circle bg-secondary bg-opacity-25 text-body fw-bold d-flex align-items-center justify-content-center overflow-hidden" style="width: 28px; height: 28px; font-size: 0.75rem;">
+                                            @if($rev->user && $rev->user->avatar)
+                                                <img src="{{ \Illuminate\Support\Facades\Storage::url($rev->user->avatar) }}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover;">
+                                            @else
+                                                {{ strtoupper(substr($rev->user->full_name ?? $rev->user->username ?? 'U', 0, 1)) }}
+                                            @endif
                                         </div>
                                         <span class="fw-bold text-body small">{{ $rev->user->full_name ?? $rev->user->username ?? __('Pelanggan') }}</span>
                                         <div class="text-warning small" style="font-size: 0.72rem;">

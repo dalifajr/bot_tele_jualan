@@ -1,6 +1,8 @@
 RENCANA PERBAIKAN DAN PENGEMBANGAN WEBITE JUALAN:
 
-tambahkan dukungan untuk mengatur poto profil user pada https://belajaridn.id/profile. poto profil tsb harus bisa diterapkan pada; profil akun, akun, profil seller, profil toko, profil chat.
+tambahkan dukungan untuk mengatur poto profil user pada https://belajaridn.id/profile. poto profil tsb harus bisa diterapkan pada; profil akun, akun, profil seller, profil toko, profil chat. laman detai produk.
+
+kemudian untuk para seller, jika seller belum mengatur poto profilnya, munculkan popup untuk menyuruh seller mengatur poto profil terlebih dahulu. popup ini tidak bisa dihiraukan atau ditutup.
 
 catat untuk kamu;
 - lakukan brainstroming sebelum melakukan eksekusi, tak lupa pula lakukan analisa kritik dan saran.

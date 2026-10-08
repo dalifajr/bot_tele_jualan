@@ -1345,6 +1345,62 @@
             });
         </script>
     @endif
+
+    @if(Auth::user()->role === 'seller' && empty(Auth::user()->avatar))
+        <!-- Force Avatar Modal untuk Seller -->
+        <div class="modal fade" id="forceAvatarModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="forceAvatarModalLabel" aria-hidden="true" style="z-index: 1070;">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+                    <div class="modal-header border-0 text-white p-4" style="background: linear-gradient(135deg, #0d47a1 0%, #1565c0 50%, #1e88e5 100%);">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="rounded-circle bg-white bg-opacity-20 p-3 d-flex align-items-center justify-content-center text-warning" style="width: 48px; height: 48px; font-size: 1.5rem;">
+                                <i class="fas fa-camera"></i>
+                            </div>
+                            <div>
+                                <h5 class="modal-title fw-bold mb-0 text-white" id="forceAvatarModalLabel">
+                                    {{ __('Atur Foto Profil Toko') }}
+                                </h5>
+                                <p class="small text-white-50 mb-0">{{ __('Tingkatkan kepercayaan pelanggan Anda') }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <form action="{{ route('profile.update') }}" method="POST" enctype="multipart/form-data">
+                        @csrf
+                        @method('PUT')
+                        <input type="hidden" name="full_name" value="{{ Auth::user()->full_name ?? Auth::user()->username }}">
+                        <input type="hidden" name="email" value="{{ Auth::user()->email }}">
+                        <input type="hidden" name="telegram_id" value="{{ Auth::user()->telegram_id }}">
+                        
+                        <div class="modal-body p-4 text-center">
+                            <p class="text-body mb-3">
+                                {{ __('Sebagai penjual mitra, Anda diwajibkan untuk mengunggah foto profil toko sebelum dapat melanjutkan aktivitas. Hal ini bertujuan untuk meningkatkan kepercayaan pelanggan dan keamanan platform.') }}
+                            </p>
+                            <div class="mb-3 text-start">
+                                <label class="form-label fw-semibold small text-muted">{{ __('Unggah Foto Profil Baru') }} <span class="text-danger">*</span></label>
+                                <input type="file" class="form-control" name="avatar" accept="image/jpeg,image/png,image/webp,image/gif" required>
+                                <div class="form-text" style="font-size: 0.75rem;">Maksimal 2MB. Format: JPG, PNG, WEBP, GIF.</div>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-0 bg-light p-3">
+                            <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm w-100">
+                                <i class="fas fa-upload me-1"></i> {{ __('Simpan Foto Profil') }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const modalElem = document.getElementById('forceAvatarModal');
+                if (modalElem) {
+                    const bsModal = new bootstrap.Modal(modalElem);
+                    bsModal.show();
+                }
+            });
+        </script>
+    @endif
 @endauth
 
 {{-- Guest Authentication Modal --}}
