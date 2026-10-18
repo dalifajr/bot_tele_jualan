@@ -73,10 +73,20 @@ class CheckoutController extends Controller
         if ($couponCode) {
             $coupon = \App\Models\Coupon::where('code', $couponCode)->first();
             if ($coupon) {
-                if ($coupon->isValidFor($subtotal, $user->id)) {
-                    $discount = $coupon->calculateDiscount($subtotal);
+                if (!$coupon->is_active || ($coupon->expires_at && $coupon->expires_at->isPast()) || ($coupon->qty > 0 && $coupon->used_qty >= $coupon->qty)) {
+                    $couponError = __('Kupon tidak valid, kuota habis, atau sudah kedaluwarsa.');
+                } elseif (!$coupon->appliesToProduct($product)) {
+                    if ($coupon->user_id && $product->creator_id != $coupon->user_id) {
+                        $couponError = __('Kupon ini hanya berlaku untuk produk dari penjual toko terkait.');
+                    } else {
+                        $couponError = __('Kupon ini tidak dapat digunakan untuk produk ini.');
+                    }
+                } elseif ($subtotal < $coupon->min_spend) {
+                    $couponError = __('Minimum belanja untuk kupon ini adalah Rp:min.', ['min' => number_format($coupon->min_spend, 0, ',', '.')]);
+                } elseif ($user && \Illuminate\Support\Facades\DB::table('coupon_user')->where('coupon_id', $coupon->id)->where('user_id', $user->id)->exists()) {
+                    $couponError = __('Anda sudah pernah menggunakan kupon ini.');
                 } else {
-                    $couponError = __('Kupon ini tidak dapat digunakan. Cek minimum belanja, batas pemakaian, atau kupon sudah kedaluwarsa.');
+                    $discount = $coupon->calculateDiscount($subtotal);
                 }
             } else {
                 $couponError = __('Kode kupon tidak terdaftar.');
@@ -162,9 +172,14 @@ class CheckoutController extends Controller
             $discount = 0;
             if ($couponCode) {
                 $coupon = \App\Models\Coupon::where('code', $couponCode)->first();
-                if ($coupon && $coupon->isValidFor($subtotal, $user->id)) {
+                if ($coupon && $coupon->isValidFor($subtotal, $user->id) && $coupon->appliesToProduct($product)) {
                     $discount = $coupon->calculateDiscount($subtotal);
-                    $coupon->increment('used_count');
+                    $coupon->increment('used_qty');
+                    DB::table('coupon_user')->insert([
+                        'coupon_id' => $coupon->id,
+                        'user_id' => $user->id,
+                        'created_at' => now(),
+                    ]);
                 } else {
                     $couponCode = null;
                 }

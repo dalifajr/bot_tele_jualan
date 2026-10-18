@@ -56,6 +56,11 @@ class Product extends Model
         return $this->hasMany(Review::class, 'product_id');
     }
 
+    public function coupons()
+    {
+        return $this->belongsToMany(Coupon::class, 'coupon_product');
+    }
+
     /**
      * Get image URL from public storage disk if exists.
      */

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Coupon;
+use App\Models\Product;
 use App\Models\AuditLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -15,8 +16,15 @@ class CouponController extends Controller
      */
     public function index()
     {
-        $coupons = Coupon::orderBy('created_at', 'desc')->paginate(10);
-        return view('admin.coupons.index', compact('coupons'));
+        $coupons = Coupon::with(['creator', 'products'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+
+        $products = Product::where('is_suspended', false)
+            ->orderBy('name', 'asc')
+            ->get();
+
+        return view('admin.coupons.index', compact('coupons', 'products'));
     }
 
     /**
@@ -33,13 +41,21 @@ class CouponController extends Controller
             'qty' => 'required|integer|min:0',
             'expires_at' => 'nullable|date',
             'is_active' => 'nullable|boolean',
+            'scope' => 'required|in:all,specific',
+            'product_ids' => 'nullable|array',
+            'product_ids.*' => 'exists:products,id',
         ]);
 
         // Standardize coupon code to uppercase
         $validated['code'] = strtoupper($validated['code']);
         $validated['is_active'] = $request->has('is_active') ? true : false;
-        
+        $validated['user_id'] = Auth::id();
+
         $coupon = Coupon::create($validated);
+
+        if ($request->input('scope') === 'specific' && $request->has('product_ids')) {
+            $coupon->products()->sync($request->input('product_ids', []));
+        }
 
         // Audit Log
         if (class_exists(\App\Models\AuditLog::class)) {
@@ -73,12 +89,21 @@ class CouponController extends Controller
             'qty' => 'required|integer|min:0',
             'expires_at' => 'nullable|date',
             'is_active' => 'nullable|boolean',
+            'scope' => 'required|in:all,specific',
+            'product_ids' => 'nullable|array',
+            'product_ids.*' => 'exists:products,id',
         ]);
 
         $validated['code'] = strtoupper($validated['code']);
         $validated['is_active'] = $request->has('is_active') ? true : false;
 
         $coupon->update($validated);
+
+        if ($request->input('scope') === 'specific') {
+            $coupon->products()->sync($request->input('product_ids', []));
+        } else {
+            $coupon->products()->detach();
+        }
 
         // Audit Log
         if (class_exists(\App\Models\AuditLog::class)) {
@@ -103,6 +128,7 @@ class CouponController extends Controller
     {
         $coupon = Coupon::findOrFail($id);
         $code = $coupon->code;
+        $coupon->products()->detach();
         $coupon->delete();
 
         // Audit Log

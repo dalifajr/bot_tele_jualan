@@ -182,13 +182,36 @@ class CartController extends Controller
         if ($couponCode) {
             $coupon = Coupon::where('code', $couponCode)->first();
             if ($coupon) {
-                if ($coupon->isValidFor($subtotal, Auth::id())) {
-                    $discount = $coupon->calculateDiscount($subtotal);
+                if (!$coupon->is_active || ($coupon->expires_at && $coupon->expires_at->isPast()) || ($coupon->qty > 0 && $coupon->used_qty >= $coupon->qty)) {
+                    $couponError = __('Kupon tidak valid, kuota habis, atau sudah kedaluwarsa.');
+                } elseif (Auth::check() && DB::table('coupon_user')->where('coupon_id', $coupon->id)->where('user_id', Auth::id())->exists()) {
+                    $couponError = __('Anda sudah pernah menggunakan kupon ini.');
                 } else {
-                    $couponError = 'Kupon ini tidak dapat digunakan. Cek minimum belanja, batas pemakaian, atau kupon sudah kedaluwarsa.';
+                    // Calculate eligible subtotal for this coupon
+                    $eligibleSubtotal = 0;
+                    foreach ($cartItems as $item) {
+                        if ($coupon->appliesToProduct($item->product)) {
+                            $eligibleSubtotal += $item->product->price * $item->quantity;
+                        }
+                    }
+
+                    if ($eligibleSubtotal <= 0) {
+                        if ($coupon->user_id) {
+                            $couponError = __('Kupon ini hanya berlaku untuk produk dari toko penjual tertentu.');
+                        } else {
+                            $couponError = __('Kupon ini tidak dapat digunakan untuk produk yang ada di keranjang Anda.');
+                        }
+                    } elseif ($eligibleSubtotal < $coupon->min_spend) {
+                        $couponError = __('Minimum belanja untuk produk kupon ini adalah Rp:min. (Subtotal produk terkait: Rp:subtotal)', [
+                            'min' => number_format($coupon->min_spend, 0, ',', '.'),
+                            'subtotal' => number_format($eligibleSubtotal, 0, ',', '.')
+                        ]);
+                    } else {
+                        $discount = $coupon->calculateDiscount($eligibleSubtotal);
+                    }
                 }
             } else {
-                $couponError = 'Kode kupon tidak terdaftar.';
+                $couponError = __('Kode kupon tidak terdaftar.');
             }
         }
 
@@ -255,18 +278,32 @@ class CartController extends Controller
 
             if ($couponCode) {
                 $coupon = Coupon::where('code', $couponCode)->first();
-                if ($coupon && $coupon->isValidFor($subtotal, $user->id)) {
-                    $discount = $coupon->calculateDiscount($subtotal);
-                    
-                    // Increment coupon usage
-                    $coupon->increment('used_qty');
+                if ($coupon && $coupon->is_active && (!$coupon->expires_at || !$coupon->expires_at->isPast()) && ($coupon->qty == 0 || $coupon->used_qty < $coupon->qty)) {
+                    $hasUsed = DB::table('coupon_user')->where('coupon_id', $coupon->id)->where('user_id', $user->id)->exists();
+                    if (!$hasUsed) {
+                        $eligibleSubtotal = 0;
+                        foreach ($cartItems as $item) {
+                            if ($coupon->appliesToProduct($item->product)) {
+                                $eligibleSubtotal += $item->product->price * $item->quantity;
+                            }
+                        }
 
-                    // Save coupon_user mapping
-                    DB::table('coupon_user')->insert([
-                        'coupon_id' => $coupon->id,
-                        'user_id' => $user->id,
-                        'created_at' => now()
-                    ]);
+                        if ($eligibleSubtotal > 0 && $eligibleSubtotal >= $coupon->min_spend) {
+                            $discount = $coupon->calculateDiscount($eligibleSubtotal);
+                            $coupon->increment('used_qty');
+                            DB::table('coupon_user')->insert([
+                                'coupon_id' => $coupon->id,
+                                'user_id' => $user->id,
+                                'created_at' => now()
+                            ]);
+                        } else {
+                            $couponCode = null;
+                        }
+                    } else {
+                        $couponCode = null;
+                    }
+                } else {
+                    $couponCode = null;
                 }
             }
 

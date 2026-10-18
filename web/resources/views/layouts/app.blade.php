@@ -875,6 +875,10 @@
                         <div class="menu-icon-box"><i class="fas fa-wallet text-success"></i></div>
                         <span class="menu-label-text">{{ __('Dompet & Keuangan') }}</span>
                     </a>
+                    <a href="{{ route('seller.coupons.index') }}" class="menu-item {{ request()->routeIs('seller.coupons.*') ? 'active' : '' }}">
+                        <div class="menu-icon-box"><i class="fas fa-tags text-warning"></i></div>
+                        <span class="menu-label-text">{{ __('Kupon & Promosi') }}</span>
+                    </a>
                     <a href="{{ route('seller.settings.index') }}" class="menu-item {{ request()->routeIs('seller.settings.*') ? 'active' : '' }}">
                         <div class="menu-icon-box"><i class="fas fa-user-gear text-secondary"></i></div>
                         <span class="menu-label-text">{{ __('Pengaturan Karantina') }}</span>
@@ -954,7 +958,7 @@
     {{-- Main Content --}}
     <main class="main-content position-relative" @if($hideSidebar) style="margin-left: 0 !important;" @endif>
         <div class="main-background"></div>
-        <div class="container-fluid position-relative px-4 pb-4 pt-4" style="z-index: 1;">
+        <div class="container-fluid position-relative px-4 pb-4 pt-4">
             {{-- Flash Messages --}}
             @if(session('success'))
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -1471,6 +1475,15 @@
 </script>
 
 @stack('modals')
+
+<script>
+    // Global fix for Bootstrap modals: ensure modal is never trapped inside parent stacking context (e.g. z-index, backdrop-filter, overflow)
+    document.addEventListener('show.bs.modal', function(event) {
+        if (event.target && event.target.parentElement !== document.body) {
+            document.body.appendChild(event.target);
+        }
+    });
+</script>
 
 </body>
 </html>

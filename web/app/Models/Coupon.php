@@ -10,6 +10,7 @@ class Coupon extends Model
     use HasFactory;
 
     protected $fillable = [
+        'user_id',
         'code',
         'type',
         'value',
@@ -22,6 +23,7 @@ class Coupon extends Model
     ];
 
     protected $casts = [
+        'user_id' => 'integer',
         'value' => 'integer',
         'min_spend' => 'integer',
         'max_discount' => 'integer',
@@ -30,6 +32,57 @@ class Coupon extends Model
         'expires_at' => 'datetime',
         'is_active' => 'boolean',
     ];
+
+    /**
+     * Get the user / seller that created this coupon.
+     */
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /**
+     * Products assigned specifically to this coupon.
+     */
+    public function products()
+    {
+        return $this->belongsToMany(Product::class, 'coupon_product');
+    }
+
+    /**
+     * Determine if this coupon is restricted to specific products.
+     */
+    public function isRestrictedToProducts(): bool
+    {
+        return $this->products()->exists();
+    }
+
+    /**
+     * Determine if this coupon applies to a given product.
+     */
+    public function appliesToProduct($product): bool
+    {
+        $productId = is_object($product) ? $product->id : (int) $product;
+        $productModel = is_object($product) ? $product : Product::find($productId);
+
+        if (!$productModel) {
+            return false;
+        }
+
+        // If coupon was created by a seller, the product must belong to that seller
+        if ($this->user_id && $this->creator && $this->creator->role === 'seller') {
+            if ($productModel->creator_id != $this->user_id) {
+                return false;
+            }
+        }
+
+        // If coupon has specific products assigned, check if this product is in the list
+        if ($this->products()->exists()) {
+            return $this->products()->where('products.id', $productId)->exists();
+        }
+
+        return true;
+    }
 
     /**
      * Check if the coupon is valid for a given total and user.

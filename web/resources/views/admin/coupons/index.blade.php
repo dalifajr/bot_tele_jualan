@@ -4,12 +4,12 @@
 @section('page_subtitle', __('Kupon & Promosi'))
 
 @section('content')
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
     <div>
         <h4 class="fw-bold mb-1">{{ __('Kupon & Promosi') }}</h4>
-        <p class="text-muted mb-0">{{ __('Kelola kode diskon, persentase potongan harga, dan batasan penggunaan kupon.') }}</p>
+        <p class="text-muted mb-0">{{ __('Kelola kode diskon, batasan produk, dan kuota pemakaian kupon.') }}</p>
     </div>
-    <button type="button" class="btn btn-primary rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#createCouponModal">
+    <button type="button" class="btn btn-primary rounded-pill px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#createCouponModal">
         <i class="fas fa-plus-circle me-1"></i> {{ __('Tambah Kupon') }}
     </button>
 </div>
@@ -88,6 +88,8 @@
                     <tr>
                         <th class="px-4 py-3">{{ __('Kode Kupon') }}</th>
                         <th class="py-3">{{ __('Tipe & Nilai') }}</th>
+                        <th class="py-3">{{ __('Pembuat') }}</th>
+                        <th class="py-3">{{ __('Berlaku Untuk') }}</th>
                         <th class="py-3">{{ __('Min Belanja') }}</th>
                         <th class="py-3">{{ __('Limit Penggunaan') }}</th>
                         <th class="py-3">{{ __('Tgl Kadaluarsa') }}</th>
@@ -105,10 +107,35 @@
                         </td>
                         <td>
                             @if($coupon->type === 'percent')
-                                <span class="fw-bold">{{ $coupon->value }}%</span> 
+                                <span class="fw-bold text-success">{{ $coupon->value }}%</span> 
                                 <span class="text-muted small">({{ __('Maks') }} Rp{{ number_format($coupon->max_discount, 0, ',', '.') }})</span>
                             @else
-                                <span class="fw-bold">Rp{{ number_format($coupon->value, 0, ',', '.') }}</span>
+                                <span class="fw-bold text-success">Rp{{ number_format($coupon->value, 0, ',', '.') }}</span>
+                            @endif
+                        </td>
+                        <td>
+                            @if($coupon->creator)
+                                <div class="d-flex align-items-center gap-1">
+                                    <span class="badge {{ $coupon->creator->role === 'admin' ? 'bg-primary' : 'bg-info' }} rounded-pill px-2 py-1">
+                                        {{ $coupon->creator->role === 'admin' ? __('Admin') : __('Seller') }}
+                                    </span>
+                                    <span class="small fw-semibold text-truncate" style="max-width: 120px;" title="{{ $coupon->creator->full_name ?? $coupon->creator->username }}">
+                                        {{ $coupon->creator->full_name ?? $coupon->creator->username }}
+                                    </span>
+                                </div>
+                            @else
+                                <span class="badge bg-secondary rounded-pill px-2 py-1">{{ __('Platform') }}</span>
+                            @endif
+                        </td>
+                        <td>
+                            @if($coupon->products->count() > 0)
+                                <span class="badge bg-info-subtle text-info rounded-pill px-2 py-1" data-bs-toggle="tooltip" data-bs-html="true" title="{{ $coupon->products->pluck('name')->implode('<br>') }}">
+                                    <i class="fas fa-boxes me-1"></i>{{ $coupon->products->count() }} {{ __('Produk') }}
+                                </span>
+                            @else
+                                <span class="badge bg-secondary-subtle text-secondary rounded-pill px-2 py-1">
+                                    <i class="fas fa-globe me-1"></i>{{ __('Semua Produk') }}
+                                </span>
                             @endif
                         </td>
                         <td>
@@ -154,73 +181,9 @@
                             </form>
                         </td>
                     </tr>
-
-                    {{-- Edit Coupon Modal --}}
-                    <div class="modal fade" id="editCouponModal-{{ $coupon->id }}" tabindex="-1" aria-hidden="true">
-                        <div class="modal-dialog modal-dialog-centered">
-                            <div class="modal-content border-0 shadow" style="border-radius: 16px;">
-                                <div class="modal-header bg-light border-0">
-                                    <h5 class="modal-title fw-bold">{{ __('Edit Kupon:') }} {{ $coupon->code }}</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                </div>
-                                <form action="{{ route('admin.coupons.update', $coupon->id) }}" method="POST">
-                                    @csrf
-                                    @method('PUT')
-                                    <div class="modal-body p-4">
-                                        <div class="mb-3">
-                                            <label class="form-label small fw-bold">{{ __('KODE KUPON (UPPERCASE)') }}</label>
-                                            <input type="text" name="code" class="form-control" value="{{ $coupon->code }}" required style="border-radius: 10px;">
-                                        </div>
-                                        <div class="row g-3 mb-3">
-                                            <div class="col-6">
-                                                <label class="form-label small fw-bold">{{ __('TIPE DISKON') }}</label>
-                                                <select name="type" class="form-select" required style="border-radius: 10px;">
-                                                    <option value="fixed" {{ $coupon->type === 'fixed' ? 'selected' : '' }}>{{ __('Nominal Tetap (Rp)') }}</option>
-                                                    <option value="percent" {{ $coupon->type === 'percent' ? 'selected' : '' }}>{{ __('Persentase (%)') }}</option>
-                                                </select>
-                                            </div>
-                                            <div class="col-6">
-                                                <label class="form-label small fw-bold">{{ __('NILAI DISKON') }}</label>
-                                                <input type="number" name="value" class="form-control" value="{{ $coupon->value }}" required min="1" style="border-radius: 10px;">
-                                            </div>
-                                        </div>
-                                        <div class="row g-3 mb-3">
-                                            <div class="col-6">
-                                                <label class="form-label small fw-bold">{{ __('MIN. BELANJA (Rp)') }}</label>
-                                                <input type="number" name="min_spend" class="form-control" value="{{ $coupon->min_spend }}" required min="0" style="border-radius: 10px;">
-                                            </div>
-                                            <div class="col-6">
-                                                <label class="form-label small fw-bold">{{ __('MAKS. DISKON (Rp, Opsional)') }}</label>
-                                                <input type="number" name="max_discount" class="form-control" value="{{ $coupon->max_discount }}" min="1" style="border-radius: 10px;">
-                                            </div>
-                                        </div>
-                                        <div class="row g-3 mb-3">
-                                            <div class="col-6">
-                                                <label class="form-label small fw-bold">{{ __('KUOTA PENGGUNAAN') }}</label>
-                                                <input type="number" name="qty" class="form-control" value="{{ $coupon->qty }}" required min="0" style="border-radius: 10px;">
-                                                <span class="small text-muted">{{ __('Isi 0 untuk tanpa batas') }}</span>
-                                            </div>
-                                            <div class="col-6">
-                                                <label class="form-label small fw-bold">{{ __('TGL KADALUARSA') }}</label>
-                                                <input type="datetime-local" name="expires_at" class="form-control" value="{{ $coupon->expires_at ? $coupon->expires_at->format('Y-m-d\TH:i') : '' }}" style="border-radius: 10px;">
-                                            </div>
-                                        </div>
-                                        <div class="form-check form-switch mt-3">
-                                            <input class="form-check-input" type="checkbox" name="is_active" id="editIsActive-{{ $coupon->id }}" value="1" {{ $coupon->is_active ? 'checked' : '' }}>
-                                            <label class="form-check-label small fw-bold" for="editIsActive-{{ $coupon->id }}">{{ __('Aktifkan Kupon') }}</label>
-                                        </div>
-                                    </div>
-                                    <div class="modal-footer bg-light border-0">
-                                        <button type="button" class="btn btn-secondary rounded-pill px-3" data-bs-dismiss="modal">{{ __('Batal') }}</button>
-                                        <button type="submit" class="btn btn-primary rounded-pill px-4">{{ __('Simpan Perubahan') }}</button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
                     @empty
                     <tr>
-                        <td colspan="7" class="text-center py-4 text-muted">
+                        <td colspan="9" class="text-center py-4 text-muted">
                             <i class="fas fa-ticket-alt fs-2 mb-2 text-secondary"></i><br>
                             {{ __('Belum ada kupon diskon yang dibuat.') }}
                         </td>
@@ -236,62 +199,125 @@
 <div class="d-flex justify-content-center">
     {{ $coupons->links() }}
 </div>
+@endsection
 
+@push('modals')
 {{-- Create Coupon Modal --}}
-<div class="modal fade" id="createCouponModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow" style="border-radius: 16px;">
-            <div class="modal-header bg-light border-0">
-                <h5 class="modal-title fw-bold">{{ __('Tambah Kupon Baru') }}</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+<div class="modal fade" id="createCouponModal" tabindex="-1" aria-labelledby="createCouponModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
+            <div class="modal-header border-0 bg-primary text-white p-4">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-circle bg-white bg-opacity-20 p-2 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px;">
+                        <i class="fas fa-ticket-alt fs-5"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title fw-bold mb-0 text-white" id="createCouponModalLabel">{{ __('Tambah Kupon Baru') }}</h5>
+                        <p class="small text-white-50 mb-0">{{ __('Tentukan kode promo, diskon, dan cakupan produk.') }}</p>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form action="{{ route('admin.coupons.store') }}" method="POST">
                 @csrf
                 <div class="modal-body p-4">
-                    <div class="mb-3">
-                        <label class="form-label small fw-bold">{{ __('KODE KUPON (UPPERCASE)') }}</label>
-                        <input type="text" name="code" class="form-control" placeholder="{{ __('MISAL: PROMOHEBAT') }}" required style="border-radius: 10px;">
-                    </div>
                     <div class="row g-3 mb-3">
-                        <div class="col-6">
-                            <label class="form-label small fw-bold">{{ __('TIPE DISKON') }}</label>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">{{ __('KODE KUPON (UPPERCASE)') }} <span class="text-danger">*</span></label>
+                            <input type="text" name="code" class="form-control font-monospace" placeholder="{{ __('MISAL: PROMODISKON') }}" required style="border-radius: 10px; text-transform: uppercase;">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">{{ __('TIPE DISKON') }} <span class="text-danger">*</span></label>
                             <select name="type" class="form-select" required style="border-radius: 10px;">
                                 <option value="fixed" selected>{{ __('Nominal Tetap (Rp)') }}</option>
                                 <option value="percent">{{ __('Persentase (%)') }}</option>
                             </select>
                         </div>
-                        <div class="col-6">
-                            <label class="form-label small fw-bold">{{ __('NILAI DISKON') }}</label>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">{{ __('NILAI DISKON') }} <span class="text-danger">*</span></label>
                             <input type="number" name="value" class="form-control" placeholder="{{ __('10000 atau 10') }}" required min="1" style="border-radius: 10px;">
                         </div>
-                    </div>
-                    <div class="row g-3 mb-3">
-                        <div class="col-6">
-                            <label class="form-label small fw-bold">{{ __('MIN. BELANJA (Rp)') }}</label>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">{{ __('MIN. BELANJA (Rp)') }} <span class="text-danger">*</span></label>
                             <input type="number" name="min_spend" class="form-control" value="0" required min="0" style="border-radius: 10px;">
                         </div>
-                        <div class="col-6">
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
                             <label class="form-label small fw-bold">{{ __('MAKS. DISKON (Rp, Opsional)') }}</label>
-                            <input type="number" name="max_discount" class="form-control" placeholder="{{ __('Hanya untuk Persentase') }}" min="1" style="border-radius: 10px;">
+                            <input type="number" name="max_discount" class="form-control" placeholder="{{ __('Hanya untuk tipe Persentase') }}" min="1" style="border-radius: 10px;">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">{{ __('KUOTA PENGGUNAAN') }} <span class="text-danger">*</span></label>
+                            <input type="number" name="qty" class="form-control" value="100" required min="0" style="border-radius: 10px;">
+                            <span class="small text-muted">{{ __('Isi 0 untuk tanpa batas kuota') }}</span>
                         </div>
                     </div>
+
                     <div class="row g-3 mb-3">
-                        <div class="col-6">
-                            <label class="form-label small fw-bold">{{ __('KUOTA PENGGUNAAN') }}</label>
-                            <input type="number" name="qty" class="form-control" value="100" required min="0" style="border-radius: 10px;">
-                            <span class="small text-muted">{{ __('Isi 0 untuk tanpa batas') }}</span>
-                        </div>
-                        <div class="col-6">
+                        <div class="col-md-6">
                             <label class="form-label small fw-bold">{{ __('TGL KADALUARSA') }}</label>
                             <input type="datetime-local" name="expires_at" class="form-control" style="border-radius: 10px;">
+                            <span class="small text-muted">{{ __('Kosongkan jika tidak ada batas waktu') }}</span>
+                        </div>
+                        <div class="col-md-6 d-flex align-items-center">
+                            <div class="form-check form-switch mt-3">
+                                <input class="form-check-input" type="checkbox" name="is_active" id="createIsActive" value="1" checked>
+                                <label class="form-check-label small fw-bold" for="createIsActive">{{ __('Aktifkan Kupon Ini') }}</label>
+                            </div>
                         </div>
                     </div>
-                    <div class="form-check form-switch mt-3">
-                        <input class="form-check-input" type="checkbox" name="is_active" id="createIsActive" value="1" checked>
-                        <label class="form-check-label small fw-bold" for="createIsActive">{{ __('Aktifkan Kupon') }}</label>
+
+                    <hr class="my-3">
+
+                    {{-- Product Scope Selection --}}
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold d-block">{{ __('CAKUPAN PRODUK') }} <span class="text-danger">*</span></label>
+                        <div class="d-flex gap-3 mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="scope" id="createScopeAll" value="all" checked onchange="toggleScopeProducts('create', false)">
+                                <label class="form-check-label small fw-semibold" for="createScopeAll">
+                                    <i class="fas fa-globe text-muted me-1"></i> {{ __('Semua Produk (Global)') }}
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="scope" id="createScopeSpecific" value="specific" onchange="toggleScopeProducts('create', true)">
+                                <label class="form-check-label small fw-semibold" for="createScopeSpecific">
+                                    <i class="fas fa-boxes text-info me-1"></i> {{ __('Hanya Produk Tertentu') }}
+                                </label>
+                            </div>
+                        </div>
+
+                        {{-- Specific Products Box --}}
+                        <div id="createSpecificProductsBox" class="border rounded-3 p-3 bg-light d-none">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="small fw-bold text-secondary">{{ __('Pilih Produk yang Memenuhi Syarat:') }}</span>
+                                <div class="btn-group btn-group-sm">
+                                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="toggleAllCheckboxes('createProductCheck', true)">{{ __('Pilih Semua') }}</button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleAllCheckboxes('createProductCheck', false)">{{ __('Hapus Semua') }}</button>
+                                </div>
+                            </div>
+                            <input type="text" class="form-control form-control-sm mb-2" placeholder="{{ __('Cari nama produk...') }}" oninput="filterProductList(this, 'createProductList')">
+                            <div id="createProductList" class="overflow-auto bg-white border rounded p-2" style="max-height: 200px;">
+                                @foreach($products as $prod)
+                                <div class="form-check py-1 product-item-row" data-name="{{ strtolower($prod->name) }}">
+                                    <input class="form-check-input createProductCheck" type="checkbox" name="product_ids[]" value="{{ $prod->id }}" id="createProd-{{ $prod->id }}">
+                                    <label class="form-check-label small d-flex justify-content-between align-items-center w-100 cursor-pointer" for="createProd-{{ $prod->id }}">
+                                        <span>{{ $prod->name }}</span>
+                                        <span class="text-muted">Rp{{ number_format($prod->price, 0, ',', '.') }}</span>
+                                    </label>
+                                </div>
+                                @endforeach
+                            </div>
+                        </div>
                     </div>
+
                 </div>
-                <div class="modal-footer bg-light border-0">
+                <div class="modal-footer bg-light border-0 px-4 py-3">
                     <button type="button" class="btn btn-secondary rounded-pill px-3" data-bs-dismiss="modal">{{ __('Batal') }}</button>
                     <button type="submit" class="btn btn-primary rounded-pill px-4">{{ __('Buat Kupon') }}</button>
                 </div>
@@ -299,4 +325,178 @@
         </div>
     </div>
 </div>
-@endsection
+
+{{-- Edit Coupon Modals --}}
+@foreach($coupons as $coupon)
+<div class="modal fade" id="editCouponModal-{{ $coupon->id }}" tabindex="-1" aria-labelledby="editCouponModalLabel-{{ $coupon->id }}" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
+            <div class="modal-header border-0 bg-secondary-subtle p-4">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-circle bg-white p-2 d-flex align-items-center justify-content-center shadow-sm" style="width: 44px; height: 44px;">
+                        <i class="fas fa-edit text-primary fs-5"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title fw-bold mb-0 text-dark" id="editCouponModalLabel-{{ $coupon->id }}">{{ __('Edit Kupon:') }} {{ $coupon->code }}</h5>
+                        <p class="small text-muted mb-0">{{ __('Perbarui rincian potongan harga atau batasan kupon.') }}</p>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ route('admin.coupons.update', $coupon->id) }}" method="POST">
+                @csrf
+                @method('PUT')
+                <div class="modal-body p-4">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">{{ __('KODE KUPON (UPPERCASE)') }} <span class="text-danger">*</span></label>
+                            <input type="text" name="code" class="form-control font-monospace" value="{{ $coupon->code }}" required style="border-radius: 10px; text-transform: uppercase;">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">{{ __('TIPE DISKON') }} <span class="text-danger">*</span></label>
+                            <select name="type" class="form-select" required style="border-radius: 10px;">
+                                <option value="fixed" {{ $coupon->type === 'fixed' ? 'selected' : '' }}>{{ __('Nominal Tetap (Rp)') }}</option>
+                                <option value="percent" {{ $coupon->type === 'percent' ? 'selected' : '' }}>{{ __('Persentase (%)') }}</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">{{ __('NILAI DISKON') }} <span class="text-danger">*</span></label>
+                            <input type="number" name="value" class="form-control" value="{{ $coupon->value }}" required min="1" style="border-radius: 10px;">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">{{ __('MIN. BELANJA (Rp)') }} <span class="text-danger">*</span></label>
+                            <input type="number" name="min_spend" class="form-control" value="{{ $coupon->min_spend }}" required min="0" style="border-radius: 10px;">
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">{{ __('MAKS. DISKON (Rp, Opsional)') }}</label>
+                            <input type="number" name="max_discount" class="form-control" value="{{ $coupon->max_discount }}" min="1" style="border-radius: 10px;">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">{{ __('KUOTA PENGGUNAAN') }} <span class="text-danger">*</span></label>
+                            <input type="number" name="qty" class="form-control" value="{{ $coupon->qty }}" required min="0" style="border-radius: 10px;">
+                            <span class="small text-muted">{{ __('Isi 0 untuk tanpa batas') }}</span>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">{{ __('TGL KADALUARSA') }}</label>
+                            <input type="datetime-local" name="expires_at" class="form-control" value="{{ $coupon->expires_at ? $coupon->expires_at->format('Y-m-d\TH:i') : '' }}" style="border-radius: 10px;">
+                        </div>
+                        <div class="col-md-6 d-flex align-items-center">
+                            <div class="form-check form-switch mt-3">
+                                <input class="form-check-input" type="checkbox" name="is_active" id="editIsActive-{{ $coupon->id }}" value="1" {{ $coupon->is_active ? 'checked' : '' }}>
+                                <label class="form-check-label small fw-bold" for="editIsActive-{{ $coupon->id }}">{{ __('Aktifkan Kupon') }}</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-3">
+
+                    {{-- Product Scope Selection for Edit --}}
+                    @php
+                        $hasSpecific = $coupon->products->count() > 0;
+                        $assignedIds = $coupon->products->pluck('id')->toArray();
+                    @endphp
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold d-block">{{ __('CAKUPAN PRODUK') }} <span class="text-danger">*</span></label>
+                        <div class="d-flex gap-3 mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="scope" id="editScopeAll-{{ $coupon->id }}" value="all" {{ !$hasSpecific ? 'checked' : '' }} onchange="toggleScopeProducts('edit-{{ $coupon->id }}', false)">
+                                <label class="form-check-label small fw-semibold" for="editScopeAll-{{ $coupon->id }}">
+                                    <i class="fas fa-globe text-muted me-1"></i> {{ __('Semua Produk (Global)') }}
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="scope" id="editScopeSpecific-{{ $coupon->id }}" value="specific" {{ $hasSpecific ? 'checked' : '' }} onchange="toggleScopeProducts('edit-{{ $coupon->id }}', true)">
+                                <label class="form-check-label small fw-semibold" for="editScopeSpecific-{{ $coupon->id }}">
+                                    <i class="fas fa-boxes text-info me-1"></i> {{ __('Hanya Produk Tertentu') }}
+                                </label>
+                            </div>
+                        </div>
+
+                        {{-- Specific Products Box --}}
+                        <div id="edit-{{ $coupon->id }}SpecificProductsBox" class="border rounded-3 p-3 bg-light {{ !$hasSpecific ? 'd-none' : '' }}">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="small fw-bold text-secondary">{{ __('Pilih Produk yang Memenuhi Syarat:') }}</span>
+                                <div class="btn-group btn-group-sm">
+                                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="toggleAllCheckboxes('editProductCheck-{{ $coupon->id }}', true)">{{ __('Pilih Semua') }}</button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleAllCheckboxes('editProductCheck-{{ $coupon->id }}', false)">{{ __('Hapus Semua') }}</button>
+                                </div>
+                            </div>
+                            <input type="text" class="form-control form-control-sm mb-2" placeholder="{{ __('Cari nama produk...') }}" oninput="filterProductList(this, 'editProductList-{{ $coupon->id }}')">
+                            <div id="editProductList-{{ $coupon->id }}" class="overflow-auto bg-white border rounded p-2" style="max-height: 200px;">
+                                @foreach($products as $prod)
+                                <div class="form-check py-1 product-item-row" data-name="{{ strtolower($prod->name) }}">
+                                    <input class="form-check-input editProductCheck-{{ $coupon->id }}" type="checkbox" name="product_ids[]" value="{{ $prod->id }}" id="editProd-{{ $coupon->id }}-{{ $prod->id }}" {{ in_array($prod->id, $assignedIds) ? 'checked' : '' }}>
+                                    <label class="form-check-label small d-flex justify-content-between align-items-center w-100 cursor-pointer" for="editProd-{{ $coupon->id }}-{{ $prod->id }}">
+                                        <span>{{ $prod->name }}</span>
+                                        <span class="text-muted">Rp{{ number_format($prod->price, 0, ',', '.') }}</span>
+                                    </label>
+                                </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="modal-footer bg-light border-0 px-4 py-3">
+                    <button type="button" class="btn btn-secondary rounded-pill px-3" data-bs-dismiss="modal">{{ __('Batal') }}</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">{{ __('Simpan Perubahan') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endforeach
+@endpush
+
+@push('scripts')
+<script>
+    function toggleScopeProducts(prefix, show) {
+        const box = document.getElementById(prefix + 'SpecificProductsBox');
+        if (box) {
+            if (show) {
+                box.classList.remove('d-none');
+            } else {
+                box.classList.add('d-none');
+            }
+        }
+    }
+
+    function toggleAllCheckboxes(className, check) {
+        document.querySelectorAll('.' + className).forEach(cb => {
+            cb.checked = check;
+        });
+    }
+
+    function filterProductList(input, containerId) {
+        const query = input.value.toLowerCase().trim();
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        const rows = container.querySelectorAll('.product-item-row');
+        rows.forEach(row => {
+            const name = row.getAttribute('data-name') || '';
+            if (name.includes(query)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
+</script>
+@endpush

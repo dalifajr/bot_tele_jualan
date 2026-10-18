@@ -345,6 +345,12 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         Route::get('/complaints/{id}', [\App\Http\Controllers\SellerController::class, 'showComplaint'])->name('complaints.show');
         Route::post('/complaints/{id}/status', [\App\Http\Controllers\SellerController::class, 'updateComplaintStatus'])->name('complaints.updateStatus');
 
+        // Seller Coupons Management
+        Route::get('/coupons', [\App\Http\Controllers\Seller\CouponController::class, 'index'])->name('coupons.index');
+        Route::post('/coupons', [\App\Http\Controllers\Seller\CouponController::class, 'store'])->name('coupons.store');
+        Route::put('/coupons/{id}', [\App\Http\Controllers\Seller\CouponController::class, 'update'])->name('coupons.update');
+        Route::delete('/coupons/{id}', [\App\Http\Controllers\Seller\CouponController::class, 'destroy'])->name('coupons.destroy');
+
         Route::get('/settings', [\App\Http\Controllers\SellerController::class, 'settings'])->name('settings.index');
         Route::post('/settings', [\App\Http\Controllers\SellerController::class, 'updateSettings'])->name('settings.update');
     });

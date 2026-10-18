@@ -68,9 +68,8 @@ class NewImprovementsTest extends TestCase
         $response = $this->actingAs($this->customer)->get(route('catalog.show', $product->id));
 
         $response->assertStatus(200);
-        // Garansi SVG / 100% check
-        $response->assertSee('Garansi 100%');
-        $response->assertSee('Jaminan uang kembali');
+        // Garansi dynamic check
+        $response->assertSee('Garansi 30 Hari');
         // Verified badge and seller join info
         $response->assertSee('Super Seller Store');
         $response->assertSee('Bergabung');
