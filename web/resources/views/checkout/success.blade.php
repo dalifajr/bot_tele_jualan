@@ -23,6 +23,17 @@
                         <span class="text-muted">{{ __('Order Ref') }}</span>
                         <span class="fw-bold font-monospace">{{ $order->order_ref }}</span>
                     </div>
+                    @if($order->customer)
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">{{ __('Customer') }}</span>
+                        <span class="fw-semibold text-dark">
+                            {{ $order->customer->full_name ?? $order->customer->username }}
+                            @if($order->customer->username)
+                                <small class="text-muted">(@<span>{{ $order->customer->username }}</span>)</small>
+                            @endif
+                        </span>
+                    </div>
+                    @endif
                     <div class="d-flex justify-content-between mb-2">
                         <span class="text-muted">{{ __('Batas Bayar') }}</span>
                         <span class="fw-bold text-danger" id="countdownTimer" data-expires="{{ $order->expires_at->toIso8601String() }}">

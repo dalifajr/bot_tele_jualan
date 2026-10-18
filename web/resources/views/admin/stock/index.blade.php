@@ -597,23 +597,131 @@
 @endif
 
 @if(request('status') !== 'terjual')
-{{-- Bulk Checkout Modal --}}
-<div class="modal fade" id="bulkCheckoutModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-sm">
-        <div class="modal-content text-center" style="border-radius: 16px; border: none;">
-            <div class="modal-body p-4">
-                <i class="fas fa-shopping-cart text-success mb-3" style="font-size: 3rem;"></i>
-                <h5 class="fw-bold">{{ __('Checkout Masal?') }}</h5>
-                <p class="text-muted small">{{ __('Anda akan memesan') }} <span class="bulk-selected-count">0</span> {{ __('akun yang dipilih.') }}</p>
-                <div class="d-flex gap-2 justify-content-center mt-4">
-                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">{{ __('Batal') }}</button>
-                    <form action="{{ route('admin.stock.checkout') }}" method="POST" id="bulk-checkout-form">
-                        @csrf
-                        <input type="hidden" name="ids" id="bulk-checkout-ids">
-                        <button type="submit" class="btn btn-success rounded-pill px-4">{{ __('Checkout Sekarang') }}</button>
-                    </form>
+{{-- Bulk Checkout Modal with Optional Customer Assignment --}}
+<div class="modal fade" id="bulkCheckoutModal" tabindex="-1" aria-labelledby="bulkCheckoutModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
+            <div class="modal-header border-0 bg-success text-white p-4">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-circle bg-white bg-opacity-20 p-2 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px;">
+                        <i class="fas fa-shopping-cart fs-5 text-white"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title fw-bold mb-0 text-white" id="bulkCheckoutModalLabel">{{ __('Checkout Stok Akun') }}</h5>
+                        <p class="small text-white-50 mb-0">{{ __('Buat pesanan langsung dari stok akun yang dipilih.') }}</p>
+                    </div>
                 </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
+            <form action="{{ route('admin.stock.checkout') }}" method="POST" id="bulk-checkout-form">
+                @csrf
+                <input type="hidden" name="ids" id="bulk-checkout-ids">
+                <input type="hidden" name="customer_id" id="bulk-checkout-customer-id" value="">
+
+                <div class="modal-body p-4 text-start">
+                    {{-- Summary info --}}
+                    <div class="alert alert-success-subtle border-0 rounded-3 p-3 mb-4 d-flex align-items-center gap-3">
+                        <i class="fas fa-boxes-stacked text-success fs-4"></i>
+                        <div>
+                            <div class="fw-bold text-dark"><span class="bulk-selected-count">0</span> {{ __('akun terpilih') }}</div>
+                            <div class="small text-muted">{{ __('Stok yang dipesan akan otomatis di-reserve dan diteruskan ke pesanan.') }}</div>
+                        </div>
+                    </div>
+
+                    {{-- Customer Assignment Section --}}
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-dark d-block mb-2">
+                            <i class="fas fa-user-tag text-primary me-1"></i> {{ __('Tugaskan Pesanan ke Pelanggan (Opsional)') }}
+                        </label>
+                        
+                        <div class="d-flex gap-3 mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="assign_target" id="assignTargetSelf" value="self" checked onchange="toggleCustomerAssign(false)">
+                                <label class="form-check-label small fw-semibold cursor-pointer" for="assignTargetSelf">
+                                    <i class="fas fa-user-shield text-muted me-1"></i> {{ __('Saya Sendiri (Admin)') }}
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="assign_target" id="assignTargetCustomer" value="customer" onchange="toggleCustomerAssign(true)">
+                                <label class="form-check-label small fw-semibold cursor-pointer" for="assignTargetCustomer">
+                                    <i class="fas fa-user-check text-success me-1"></i> {{ __('Tugaskan ke Customer Tertentu') }}
+                                </label>
+                            </div>
+                        </div>
+
+                        {{-- Search & Select Customer Container --}}
+                        <div id="customerAssignBox" class="border rounded-3 p-3 bg-light d-none">
+                            {{-- Selected Customer Chip --}}
+                            <div id="selectedCustomerDisplay" class="alert alert-success border-0 shadow-sm d-none align-items-center justify-content-between p-2 mb-2" style="border-radius: 12px;">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center" style="width: 34px; height: 34px; font-size: 0.85rem;">
+                                        <i class="fas fa-user"></i>
+                                    </div>
+                                    <div>
+                                        <strong class="d-block text-dark small" id="selectedCustomerNameText">-</strong>
+                                        <span class="text-muted" style="font-size: 0.75rem;" id="selectedCustomerDetailText">-</span>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2 rounded-pill" onclick="clearSelectedCustomer()" style="font-size: 0.75rem;">
+                                    <i class="fas fa-times me-1"></i>{{ __('Ganti') }}
+                                </button>
+                            </div>
+
+                            <div id="customerSearchWrapper">
+                                <label class="form-label small fw-bold text-secondary mb-1">{{ __('Cari Customer:') }}</label>
+                                <div class="input-group input-group-sm mb-2">
+                                    <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
+                                    <input type="text" id="checkoutCustomerSearch" class="form-control border-start-0" placeholder="{{ __('Ketik nama, @username, email, atau ID Telegram...') }}" autocomplete="off" oninput="debounceCustomerSearch(this.value)">
+                                </div>
+
+                                <div id="checkoutCustomerList" class="bg-white border rounded p-1 overflow-auto" style="max-height: 180px;">
+                                    @if(isset($customers) && $customers->count() > 0)
+                                        @foreach($customers as $c)
+                                        <div class="customer-picker-item d-flex align-items-center justify-content-between p-2 rounded cursor-pointer" 
+                                             style="cursor: pointer; transition: background-color 0.15s ease;"
+                                             onmouseover="this.style.backgroundColor='#f1f5f9'"
+                                             onmouseout="this.style.backgroundColor='transparent'"
+                                             data-id="{{ $c->id }}" 
+                                             data-name="{{ $c->full_name ?? $c->username }}" 
+                                             data-username="{{ $c->username }}" 
+                                             data-telegram="{{ $c->telegram_id }}" 
+                                             data-role="{{ $c->role }}"
+                                             onclick="selectCustomerFromPicker({{ $c->id }}, '{{ addslashes($c->full_name ?? $c->username) }}', '{{ addslashes($c->username) }}', '{{ addslashes($c->telegram_id ?? '-') }}')">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center" style="width: 28px; height: 28px; font-size: 0.75rem;">
+                                                    <i class="fas fa-user"></i>
+                                                </div>
+                                                <div>
+                                                    <div class="small fw-semibold text-dark">{{ $c->full_name ?? $c->username }}</div>
+                                                    <div class="text-muted" style="font-size: 0.7rem;">
+                                                        @if($c->username) @<span>{{ $c->username }}</span> @endif
+                                                        @if($c->telegram_id) • TG: <code>{{ $c->telegram_id }}</code> @endif
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <span class="badge {{ $c->role === 'seller' ? 'bg-info' : 'bg-secondary' }}-subtle text-dark rounded-pill" style="font-size: 0.65rem;">{{ ucfirst($c->role) }}</span>
+                                        </div>
+                                        @endforeach
+                                    @else
+                                        <div class="p-3 text-center text-muted small">{{ __('Ketik untuk mencari customer...') }}</div>
+                                    @endif
+                                </div>
+                            </div>
+
+                            <div class="form-text small text-muted mt-2" style="font-size: 0.75rem;">
+                                <i class="fas fa-info-circle text-primary me-1"></i>
+                                {{ __('Setelah diproses, invoice tagihan, rincian pesanan, dan serial key akan otomatis muncul pada menu Pesanan akun customer yang dipilih.') }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-0 px-4 py-3">
+                    <button type="button" class="btn btn-secondary rounded-pill px-3" data-bs-dismiss="modal">{{ __('Batal') }}</button>
+                    <button type="submit" class="btn btn-success rounded-pill px-4 fw-bold" id="btn-submit-bulk-checkout">
+                        <i class="fas fa-shopping-cart me-1"></i> {{ __('Checkout Sekarang') }}
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -874,6 +982,143 @@ function confirmExportStock() {
             form.innerHTML = '@csrf<input type="hidden" name="password" value="' + result.value + '">';
             document.body.appendChild(form);
             form.submit();
+        }
+    });
+}
+
+function toggleCustomerAssign(show) {
+    const box = document.getElementById('customerAssignBox');
+    if (box) {
+        if (show) {
+            box.classList.remove('d-none');
+        } else {
+            box.classList.add('d-none');
+            clearSelectedCustomer();
+        }
+    }
+}
+
+function selectCustomerFromPicker(id, name, username, telegram) {
+    const idInput = document.getElementById('bulk-checkout-customer-id');
+    if (idInput) idInput.value = id;
+
+    const nameText = document.getElementById('selectedCustomerNameText');
+    if (nameText) nameText.textContent = name;
+
+    const detailText = document.getElementById('selectedCustomerDetailText');
+    if (detailText) {
+        let det = (username ? '@' + username : '');
+        if (telegram && telegram !== '-') {
+            det += (det ? ' | ' : '') + 'TG: ' + telegram;
+        }
+        detailText.textContent = det || 'ID #' + id;
+    }
+
+    const display = document.getElementById('selectedCustomerDisplay');
+    if (display) {
+        display.classList.remove('d-none');
+        display.classList.add('d-flex');
+    }
+
+    const searchWrapper = document.getElementById('customerSearchWrapper');
+    if (searchWrapper) searchWrapper.classList.add('d-none');
+}
+
+function clearSelectedCustomer() {
+    const idInput = document.getElementById('bulk-checkout-customer-id');
+    if (idInput) idInput.value = '';
+
+    const display = document.getElementById('selectedCustomerDisplay');
+    if (display) {
+        display.classList.add('d-none');
+        display.classList.remove('d-flex');
+    }
+
+    const searchWrapper = document.getElementById('customerSearchWrapper');
+    if (searchWrapper) searchWrapper.classList.remove('d-none');
+
+    const searchInput = document.getElementById('checkoutCustomerSearch');
+    if (searchInput) {
+        searchInput.value = '';
+        filterLocalCustomerList('');
+    }
+}
+
+let customerSearchTimeout = null;
+function debounceCustomerSearch(query) {
+    clearTimeout(customerSearchTimeout);
+    customerSearchTimeout = setTimeout(() => {
+        performCustomerSearch(query);
+    }, 250);
+}
+
+function performCustomerSearch(query) {
+    const trimmed = query.trim().toLowerCase();
+    const container = document.getElementById('checkoutCustomerList');
+    if (!container) return;
+
+    if (trimmed.length === 0) {
+        filterLocalCustomerList('');
+        return;
+    }
+
+    // First filter locally
+    filterLocalCustomerList(trimmed);
+
+    // Also fetch from API to ensure complete matches
+    fetch(`{{ route('admin.stock.search-customers') }}?q=${encodeURIComponent(trimmed)}`)
+        .then(res => res.json())
+        .then(users => {
+            if (users && users.length > 0) {
+                let html = '';
+                users.forEach(u => {
+                    const displayName = u.full_name || u.username || 'User #' + u.id;
+                    const uname = u.username ? '@' + u.username : '';
+                    const tg = u.telegram_id ? `• TG: <code>${u.telegram_id}</code>` : '';
+                    const roleBadge = u.role === 'seller' ? 'bg-info' : 'bg-secondary';
+                    const safeName = displayName.replace(/'/g, "\\'");
+                    const safeUname = (u.username || '').replace(/'/g, "\\'");
+                    const safeTg = (u.telegram_id || '-').toString().replace(/'/g, "\\'");
+
+                    html += `
+                        <div class="customer-picker-item d-flex align-items-center justify-content-between p-2 rounded cursor-pointer"
+                             style="cursor: pointer; transition: background-color 0.15s ease;"
+                             onmouseover="this.style.backgroundColor='#f1f5f9'"
+                             onmouseout="this.style.backgroundColor='transparent'"
+                             onclick="selectCustomerFromPicker(${u.id}, '${safeName}', '${safeUname}', '${safeTg}')">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center" style="width: 28px; height: 28px; font-size: 0.75rem;">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <div>
+                                    <div class="small fw-semibold text-dark">${displayName}</div>
+                                    <div class="text-muted" style="font-size: 0.7rem;">${uname} ${tg}</div>
+                                </div>
+                            </div>
+                            <span class="badge ${roleBadge}-subtle text-dark rounded-pill" style="font-size: 0.65rem;">${u.role}</span>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            } else {
+                container.innerHTML = '<div class="p-3 text-center text-muted small">{{ __("Tidak ada customer yang cocok.") }}</div>';
+            }
+        })
+        .catch(err => {
+            console.error('Customer search error:', err);
+        });
+}
+
+function filterLocalCustomerList(filter) {
+    const container = document.getElementById('checkoutCustomerList');
+    if (!container) return;
+    const items = container.querySelectorAll('.customer-picker-item');
+    items.forEach(el => {
+        const text = (el.textContent || '').toLowerCase();
+        if (!filter || text.includes(filter)) {
+            el.style.display = 'flex';
+        } else {
+            el.style.display = 'none';
         }
     });
 }

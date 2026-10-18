@@ -427,9 +427,26 @@ class AdminController extends Controller
 
         $stockUnits = $query->paginate(15);
         $status = $request->status;
+        $customers = User::orderBy('full_name')->orderBy('username')->take(60)->get(['id', 'full_name', 'username', 'email', 'telegram_id', 'role']);
+
         return view('admin.stock.index', compact(
-            'stockUnits', 'status', 'totalStock', 'readyStock', 'awaitingStock', 'savedStock', 'soldStock'
+            'stockUnits', 'status', 'totalStock', 'readyStock', 'awaitingStock', 'savedStock', 'soldStock', 'customers'
         ));
+    }
+
+    public function searchCustomers(Request $request)
+    {
+        $search = trim($request->query('q', ''));
+        $users = User::where(function ($query) use ($search) {
+                $query->where('username', 'like', "%{$search}%")
+                    ->orWhere('full_name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('telegram_id', 'like', "%{$search}%");
+            })
+            ->limit(25)
+            ->get(['id', 'username', 'full_name', 'email', 'telegram_id', 'role']);
+
+        return response()->json($users);
     }
 
     public function exportStock(Request $request)
@@ -1705,6 +1722,7 @@ class AdminController extends Controller
     {
         $request->validate([
             'ids' => 'required|string',
+            'customer_id' => 'nullable|exists:users,id',
         ]);
 
         $ids = json_decode($request->ids, true);
@@ -1714,12 +1732,18 @@ class AdminController extends Controller
 
         $user = \Illuminate\Support\Facades\Auth::user();
 
-        // Limit pending orders
-        $pendingCount = Order::where('customer_id', $user->id)
-            ->where('status', 'pending_payment')
-            ->count();
-        if ($pendingCount >= 2) {
-            return back()->with('error', __('Anda memiliki terlalu banyak pesanan yang menunggu pembayaran.'));
+        // Determine target customer (optional assignment)
+        $targetUser = $user;
+        if ($request->filled('customer_id')) {
+            $targetUser = User::findOrFail($request->customer_id);
+        } else {
+            // Limit pending orders only when checkout is for admin themselves
+            $pendingCount = Order::where('customer_id', $user->id)
+                ->where('status', 'pending_payment')
+                ->count();
+            if ($pendingCount >= 2) {
+                return back()->with('error', __('Anda memiliki terlalu banyak pesanan yang menunggu pembayaran. Selesaikan atau batalkan pesanan sebelumnya.'));
+            }
         }
 
         try {
@@ -1776,7 +1800,7 @@ class AdminController extends Controller
 
             $order = Order::create([
                 'order_ref' => $orderRef,
-                'customer_id' => $user->id,
+                'customer_id' => $targetUser->id,
                 'subtotal' => $subtotal,
                 'unique_code' => $uniqueCode,
                 'total_amount' => $totalAmount,
@@ -1812,7 +1836,7 @@ class AdminController extends Controller
                 'actor_id' => $user->id,
                 'entity_type' => 'order',
                 'entity_id' => $order->id,
-                'detail' => \App\Models\AuditLog::maskSensitiveData("qty=" . count($reservedIds) . "; subtotal={$subtotal}; total={$totalAmount}; reserved_stock_ids=[" . implode(',', $reservedIds) . "]"),
+                'detail' => \App\Models\AuditLog::maskSensitiveData("qty=" . count($reservedIds) . "; customer_id={$targetUser->id}; subtotal={$subtotal}; total={$totalAmount}; reserved_stock_ids=[" . implode(',', $reservedIds) . "]"),
                 'created_at' => now(),
             ]);
 
@@ -1823,7 +1847,18 @@ class AdminController extends Controller
                 $admin->notify(new \App\Notifications\OrderCreatedNotification($order));
             });
 
-            return redirect()->route('checkout.success', ['order_ref' => $orderRef])->with('checkout_new', true);
+            // If assigned to another customer, notify customer
+            if ($targetUser->id !== $user->id) {
+                $targetUser->notify(new \App\Notifications\OrderCreatedNotification($order));
+            }
+
+            $successMsg = $targetUser->id !== $user->id 
+                ? __("Pesanan berhasil dibuat dan ditugaskan ke customer :name (:ref).", ['name' => $targetUser->full_name ?? $targetUser->username, 'ref' => $orderRef])
+                : __("Pesanan berhasil dibuat (:ref).", ['ref' => $orderRef]);
+
+            return redirect()->route('checkout.success', ['order_ref' => $orderRef])
+                ->with('checkout_new', true)
+                ->with('success', $successMsg);
 
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\DB::rollBack();

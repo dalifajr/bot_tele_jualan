@@ -159,6 +159,7 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         Route::get('/products/{id}/report-pdf', [\App\Http\Controllers\AdminController::class, 'exportProductReportPdf'])->name('products.report-pdf');
         
         Route::get('/stock', [\App\Http\Controllers\AdminController::class, 'stock'])->name('stock.index');
+        Route::get('/stock/search-customers', [\App\Http\Controllers\AdminController::class, 'searchCustomers'])->name('stock.search-customers');
         Route::match(['get', 'post'], '/stock/export', [\App\Http\Controllers\AdminController::class, 'exportStock'])->name('stock.export');
         Route::post('/stock', [\App\Http\Controllers\AdminController::class, 'storeStock'])->name('stock.store');
         Route::post('/stock/checkout', [\App\Http\Controllers\AdminController::class, 'checkoutStocks'])->name('stock.checkout');

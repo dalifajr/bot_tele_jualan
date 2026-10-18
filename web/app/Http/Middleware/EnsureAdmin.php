@@ -16,6 +16,9 @@ class EnsureAdmin
     public function handle(Request $request, Closure $next): Response
     {
         if (!auth()->check() || auth()->user()->role !== 'admin') {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Akses ditolak. Khusus admin.'], 403);
+            }
             return redirect()->route('dashboard')->with('error', 'Akses ditolak. Halaman khusus admin.');
         }
         
