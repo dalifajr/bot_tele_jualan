@@ -286,13 +286,14 @@
         });
     };
 
-    // Export to window for standalone generator page
+    // Export to window for standalone generator page and dynamic views
     window.TotpEngine = {
         compute: computeTotp,
         base32Decode: base32Decode,
         getNow: getNow,
         getRemainingSeconds: function () {
             return 30 - (getNow() % 30);
-        }
+        },
+        updateAllTotpElements: updateAllTotpElements
     };
 })();

@@ -255,7 +255,12 @@
                         @endif
                         <td class="text-end px-4">
                             <div class="d-flex gap-2 justify-content-end">
-                                <button class="btn btn-sm btn-light text-info rounded-circle" data-bs-toggle="modal" data-bs-target="#detailStockModal{{ $unit->id }}" title="{{ __('Lihat Detail') }}">
+                                <button class="btn btn-sm btn-light text-info rounded-circle btn-view-stock-detail" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#detailStockModal" 
+                                        data-stock-detail-index="{{ $loop->index }}" 
+                                        onclick="openStockDetailModal({{ $loop->index }})" 
+                                        title="{{ __('Lihat Detail') }}">
                                     <i class="fas fa-eye"></i>
                                 </button>
                                 <button class="btn btn-sm btn-light text-primary rounded-circle" data-bs-toggle="modal" data-bs-target="#moveStockModal{{ $unit->id }}" title="{{ __('Pindahkan / Ubah Status') }}">
@@ -351,30 +356,51 @@
     </div>
 </div>
 
-@foreach($stocks as $unit)
-{{-- Detail Stock Modal --}}
-<div class="modal fade" id="detailStockModal{{ $unit->id }}" tabindex="-1" aria-hidden="true">
+{{-- Master Detail Stock Modal with Prev/Next Navigation --}}
+<div class="modal fade" id="detailStockModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content" style="border-radius: 16px; border: none;">
-            <div class="modal-header border-0 pb-0">
-                <h5 class="fw-bold">{{ __('Detail Data Akun') }}</h5>
+        <div class="modal-content shadow-lg" style="border-radius: 16px; border: none;">
+            <div class="modal-header border-0 pb-0 d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <h5 class="fw-bold mb-0 text-dark">{{ __('Detail Data Akun') }}</h5>
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill fw-semibold px-2.5 py-1" id="stockDetailCounterBadge" style="font-size: 0.72rem;">1 / 1</span>
+                </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-4">
                 <div class="mb-3">
-                    <label class="form-label fw-bold text-muted small">{{ __('Produk') }}</label>
-                    <p class="mb-0">{{ $unit->product->name ?? '-' }}</p>
+                    <label class="form-label fw-bold text-muted small mb-1">{{ __('Produk') }}</label>
+                    <p class="mb-0 fw-semibold text-dark fs-6" id="stockDetailProductName">-</p>
                 </div>
                 <div class="mb-0">
-                    <label class="form-label fw-bold text-muted small">{{ __('Isi Data') }}</label>
-                    <x-account-credential-viewer :rawText="$unit->raw_text" />
+                    <label class="form-label fw-bold text-muted small mb-1">{{ __('Isi Data') }}</label>
+                    <div id="stockDetailViewerContainer" style="transition: opacity 0.08s ease-in-out;"></div>
                 </div>
             </div>
-            <div class="modal-footer border-0">
-                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">{{ __('Tutup') }}</button>
+            <div class="modal-footer border-0 pt-0 px-4 pb-4 d-flex justify-content-between align-items-center">
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5" id="stockDetailPrevBtn" onclick="navigateStockDetail(-1)" title="{{ __('Akun Sebelumnya (Panah Kiri)') }}">
+                        <i class="fas fa-chevron-left" style="font-size: 0.75rem;"></i>
+                        <span>{{ __('Sebelumnya') }}</span>
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5" id="stockDetailNextBtn" onclick="navigateStockDetail(1)" title="{{ __('Akun Selanjutnya (Panah Kanan)') }}">
+                        <span>{{ __('Selanjutnya') }}</span>
+                        <i class="fas fa-chevron-right" style="font-size: 0.75rem;"></i>
+                    </button>
+                </div>
+                <button type="button" class="btn btn-light rounded-pill px-4 fw-semibold" data-bs-dismiss="modal">{{ __('Tutup') }}</button>
             </div>
         </div>
     </div>
+</div>
+
+@foreach($stocks as $unit)
+{{-- Hidden Source Data for Detail Stock Modal --}}
+<div id="stockDetailSource{{ $unit->id }}" class="d-none stock-detail-source-item"
+     data-id="{{ $unit->id }}"
+     data-index="{{ $loop->index }}"
+     data-product="{{ $unit->product->name ?? '-' }}">
+    <x-account-credential-viewer :rawText="$unit->raw_text" />
 </div>
 
 {{-- Move Stock Modal --}}

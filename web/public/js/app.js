@@ -11,6 +11,7 @@ function initAll() {
     initCsrfToken();
     initTelegramWebApp();
     initSweetAlertConfirms();
+    initStockDetailNavigator();
 }
 
 if (document.readyState === 'loading') {
@@ -443,3 +444,120 @@ function initDeviceSecurity() {
 document.addEventListener('DOMContentLoaded', () => {
     initDeviceSecurity();
 });
+
+/* === DETAIL DATA AKUN POPUP NAVIGATOR (Prev / Next Without Closing Popup) === */
+window.stockDetailSources = [];
+window.currentStockDetailIndex = 0;
+
+window.initStockDetailNavigation = function () {
+    window.stockDetailSources = [];
+    const items = document.querySelectorAll('.stock-detail-source-item');
+    items.forEach((item) => {
+        window.stockDetailSources.push({
+            id: item.dataset.id,
+            product: item.dataset.product || '-',
+            html: item.innerHTML
+        });
+    });
+};
+
+window.openStockDetailModal = function (index) {
+    if (!window.stockDetailSources || window.stockDetailSources.length === 0) {
+        window.initStockDetailNavigation();
+    }
+    window.renderStockDetail(index);
+};
+
+window.renderStockDetail = function (index) {
+    if (!window.stockDetailSources || window.stockDetailSources.length === 0) {
+        window.initStockDetailNavigation();
+    }
+    const sources = window.stockDetailSources;
+    if (!sources || sources.length === 0) return;
+
+    let targetIdx = parseInt(index, 10);
+    if (isNaN(targetIdx) || targetIdx < 0) targetIdx = 0;
+    if (targetIdx >= sources.length) targetIdx = sources.length - 1;
+
+    window.currentStockDetailIndex = targetIdx;
+    const item = sources[targetIdx];
+
+    const prodEl = document.getElementById('stockDetailProductName');
+    const containerEl = document.getElementById('stockDetailViewerContainer');
+    const badgeEl = document.getElementById('stockDetailCounterBadge');
+    const prevBtn = document.getElementById('stockDetailPrevBtn');
+    const nextBtn = document.getElementById('stockDetailNextBtn');
+
+    if (prodEl) {
+        prodEl.textContent = item.product;
+    }
+
+    if (containerEl) {
+        containerEl.style.opacity = '0.35';
+        setTimeout(() => {
+            containerEl.innerHTML = item.html;
+            containerEl.style.opacity = '1';
+            if (window.TotpEngine && typeof window.TotpEngine.updateAllTotpElements === 'function') {
+                window.TotpEngine.updateAllTotpElements();
+            }
+        }, 40);
+    }
+
+    if (badgeEl) {
+        badgeEl.textContent = (targetIdx + 1) + ' / ' + sources.length;
+    }
+
+    if (prevBtn) {
+        prevBtn.disabled = (targetIdx === 0);
+    }
+    if (nextBtn) {
+        nextBtn.disabled = (targetIdx === sources.length - 1);
+    }
+};
+
+window.navigateStockDetail = function (step) {
+    window.renderStockDetail((window.currentStockDetailIndex || 0) + step);
+};
+
+function initStockDetailNavigator() {
+    window.initStockDetailNavigation();
+
+    const detailModalEl = document.getElementById('detailStockModal');
+    if (!detailModalEl) return;
+
+    let keyHandler = null;
+
+    detailModalEl.addEventListener('show.bs.modal', function () {
+        if (!keyHandler) {
+            keyHandler = function (e) {
+                if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+                if (e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    window.navigateStockDetail(-1);
+                } else if (e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    window.navigateStockDetail(1);
+                }
+            };
+            document.addEventListener('keydown', keyHandler);
+        }
+    });
+
+    detailModalEl.addEventListener('hidden.bs.modal', function () {
+        if (keyHandler) {
+            document.removeEventListener('keydown', keyHandler);
+            keyHandler = null;
+        }
+    });
+
+    // Delegated click on any detail trigger
+    document.addEventListener('click', function (e) {
+        const btn = e.target.closest('[data-stock-detail-index], .btn-view-stock-detail');
+        if (btn) {
+            const index = parseInt(btn.getAttribute('data-stock-detail-index'), 10);
+            if (!isNaN(index)) {
+                window.openStockDetailModal(index);
+            }
+        }
+    });
+}
