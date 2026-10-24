@@ -1,14 +1,13 @@
 @props(['rawText' => '', 'maxHeight' => '300px', 'showCopyAll' => true])
 
 @php
-    $renderedHtml = \App\Services\TwoFactorService::renderWith2fa($rawText, true);
-    $has2fa = \App\Services\TwoFactorService::has2faSecret($rawText);
+    $cleanedRawText = trim($rawText);
+    $renderedHtml = \App\Services\TwoFactorService::renderWith2fa($cleanedRawText, true);
+    $has2fa = \App\Services\TwoFactorService::has2faSecret($cleanedRawText);
 @endphp
 
 <div class="account-credential-viewer position-relative">
-    <div class="bg-body-secondary rounded-3 p-3 text-break border" style="max-height: {{ $maxHeight }}; overflow-y: auto; font-family: SFMono-Regular, Menlo, Monaco, Consolas, monospace; white-space: pre-wrap; font-size: 0.88rem; line-height: 1.6;">
-        {!! $renderedHtml !!}
-    </div>
+    <div class="bg-body-secondary rounded-3 p-3 text-break border" style="max-height: {{ $maxHeight }}; overflow-y: auto; font-family: SFMono-Regular, Menlo, Monaco, Consolas, monospace; white-space: pre-wrap; font-size: 0.88rem; line-height: 1.6;">{!! trim($renderedHtml) !!}</div>
     @if($showCopyAll)
     <div class="d-flex justify-content-between align-items-center mt-2 px-1">
         <div>
@@ -18,10 +17,11 @@
                 </span>
             @endif
         </div>
-        <button type="button" class="btn btn-sm btn-outline-primary rounded-pill py-1 px-3 d-inline-flex align-items-center gap-1.5 shadow-sm fw-semibold" style="font-size: 0.78rem;" onclick="copyFullCredential(this, {{ json_encode($rawText) }})">
+        <button type="button" class="btn btn-sm btn-outline-primary rounded-pill py-1 px-3 d-inline-flex align-items-center gap-1.5 shadow-sm fw-semibold" style="font-size: 0.78rem;" onclick="copyFullCredential(this, {{ json_encode($cleanedRawText) }})">
             <i class="fas fa-copy"></i>
             <span>{{ __('Salin Seluruh Data') }}</span>
         </button>
     </div>
     @endif
 </div>
+

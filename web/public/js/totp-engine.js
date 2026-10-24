@@ -286,6 +286,64 @@
         });
     };
 
+    /**
+     * Extract 2FA secret from arbitrary string or line
+     */
+    function extractSecret(text) {
+        if (!text) return null;
+        // 1. otpauth URL
+        let otpMatch = text.match(/otpauth:\/\/totp\/[^\s]+/i);
+        if (otpMatch) {
+            let secretMatch = otpMatch[0].match(/[?&]secret=([A-Za-z2-7]+)/i);
+            if (secretMatch) return secretMatch[1].toUpperCase();
+        }
+        // 2. Key-value: F2A, 2FA, TOTP, secret, etc.
+        let kvMatch = text.match(/(?:f2a|2fa|totp|authenticator|two[\s_-]*factor|secret)\s*[:=]\s*([A-Za-z2-7\s=-]{8,64})/i);
+        if (kvMatch) {
+            let clean = kvMatch[1].replace(/[\s=-]/g, '').toUpperCase();
+            if (clean.length >= 8) return clean;
+        }
+        // 3. Delimited line: pipe or colon
+        let lines = text.split(/\r?\n/);
+        for (let line of lines) {
+            let trimmed = line.trim();
+            if (trimmed.includes('|') || (trimmed.split(':').length >= 3 && !trimmed.includes('http'))) {
+                let delimiter = trimmed.includes('|') ? '|' : ':';
+                let parts = trimmed.split(delimiter);
+                for (let part of parts) {
+                    let candidate = part.trim();
+                    if (candidate.includes('@') || candidate.length < 16 || candidate.length > 64) continue;
+                    let clean = candidate.replace(/[\s=-]/g, '').toUpperCase();
+                    if (/^[A-Z2-7]{16,64}$/.test(clean)) {
+                        return clean;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Render an interactive 2FA badge HTML string
+     */
+    function renderBadgeHtml(secret, customClass = '') {
+        if (!secret) return '';
+        const now = getNow();
+        const code = computeTotp(secret, now) || '------';
+        const remaining = 30 - (now % 30);
+        const timerBg = remaining <= 5 ? 'bg-danger text-white' : 'bg-success text-white';
+
+        return `<span class="f2a-code-badge d-inline-flex align-items-center gap-1.5 px-2 py-0.5 rounded bg-success-subtle border border-success-subtle font-monospace text-dark ms-1 align-middle ${customClass}" data-totp-container data-totp-secret="${secret}">`
+            + `<i class="fas fa-shield-alt text-success"></i>`
+            + `<strong class="text-success-emphasis" style="font-size: 0.72rem;">F2A Code:</strong> `
+            + `<span class="totp-code fw-bold text-dark fs-6" style="letter-spacing: 1px;">${code}</span>`
+            + `<span class="totp-timer badge ${timerBg} py-0 px-1 rounded-pill" style="font-size: 0.68rem;">${remaining}s</span>`
+            + `<button type="button" class="btn btn-sm btn-link p-0 text-success ms-1 btn-copy-totp" title="Salin Kode 2FA" onclick="copyTotpCode(this, '${secret}')">`
+            + `<i class="far fa-copy"></i>`
+            + `</button>`
+            + `</span>`;
+    }
+
     // Export to window for standalone generator page and dynamic views
     window.TotpEngine = {
         compute: computeTotp,
@@ -294,6 +352,8 @@
         getRemainingSeconds: function () {
             return 30 - (getNow() % 30);
         },
-        updateAllTotpElements: updateAllTotpElements
+        updateAllTotpElements: updateAllTotpElements,
+        extractSecret: extractSecret,
+        renderBadgeHtml: renderBadgeHtml
     };
 })();

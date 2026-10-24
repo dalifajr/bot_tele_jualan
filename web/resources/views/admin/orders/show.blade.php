@@ -145,9 +145,7 @@
                             <div class="d-flex flex-column gap-2">
                                 @foreach($units as $unit)
                                 <div class="p-3 bg-light rounded-3 border d-flex justify-content-between align-items-center gap-3">
-                                    <div class="text-break flex-grow-1" style="font-family: monospace; white-space: pre-wrap; font-size: 0.85rem;">
-                                        {!! \App\Services\TwoFactorService::renderWith2fa($unit->raw_text, true) !!}
-                                    </div>
+                                    <div class="text-break flex-grow-1" style="font-family: monospace; white-space: pre-wrap; font-size: 0.85rem;">{!! trim(\App\Services\TwoFactorService::renderWith2fa($unit->raw_text, true)) !!}</div>
                                     @if($order->status === 'delivered')
                                     <div class="flex-shrink-0">
                                         @if($isMultiUnit)

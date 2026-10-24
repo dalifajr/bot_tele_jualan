@@ -206,16 +206,19 @@ class TwoFactorService
      */
     public static function renderWith2fa(string $rawText, bool $asHtml = true): string
     {
-        if (empty(trim($rawText))) {
+        $rawText = trim($rawText);
+        if (empty($rawText)) {
             return '';
         }
 
         $secrets = self::detect2faSecrets($rawText);
+        $lines = preg_split("/\r\n|\n|\r/", $rawText);
+        $cleanLines = array_map('trim', $lines);
+
         if (empty($secrets)) {
-            return $asHtml ? nl2br(e($rawText)) : $rawText;
+            return $asHtml ? nl2br(e(implode("\n", $cleanLines))) : implode("\n", $cleanLines);
         }
 
-        $lines = preg_split("/\r\n|\n|\r/", $rawText);
         $outputLines = [];
         $secretLineMap = [];
 
@@ -223,7 +226,7 @@ class TwoFactorService
             $secretLineMap[$item['line_index']] = $item;
         }
 
-        foreach ($lines as $idx => $line) {
+        foreach ($cleanLines as $idx => $line) {
             $outputLines[] = $asHtml ? e($line) : $line;
 
             if (isset($secretLineMap[$idx])) {
@@ -248,9 +251,6 @@ class TwoFactorService
             }
         }
 
-        // If delimited (like email|pass|2fa) where we didn't insert a key-value under it,
-        // or if secret was detected in a line that wasn't key_value:
-        // check if any secret was not added yet
-        return implode($asHtml ? "<br>" : "\n", $outputLines);
+        return trim(implode($asHtml ? "<br>" : "\n", $outputLines));
     }
 }

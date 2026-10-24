@@ -73,6 +73,8 @@ class StockDetailNavigatorTest extends TestCase
         $response->assertSee('id="stockDetailViewerContainer"', false);
         $response->assertSee('btn-view-stock-detail', false);
         $response->assertSee('stock-detail-source-item', false);
+        $response->assertSee('id="stock-live-2fa-alert"', false);
+        $response->assertSee('edit-stock-2fa-alert', false);
         $response->assertSee('user_one');
         $response->assertSee('user_two');
     }
@@ -89,7 +91,21 @@ class StockDetailNavigatorTest extends TestCase
         $response->assertSee('id="stockDetailViewerContainer"', false);
         $response->assertSee('btn-view-stock-detail', false);
         $response->assertSee('stock-detail-source-item', false);
+        $response->assertSee('id="stock-live-2fa-alert"', false);
+        $response->assertSee('edit-stock-2fa-alert', false);
         $response->assertSee('user_one');
         $response->assertSee('user_two');
+    }
+
+    public function test_account_credential_viewer_has_no_leading_indentation_or_spaces()
+    {
+        $rawWithTabs = "   \t  email: test@example.com\npass: 123456\nF2A: JBSWY3DPEHPK3PXP";
+        $rendered = \App\Services\TwoFactorService::renderWith2fa($rawWithTabs, true);
+        
+        $this->assertStringStartsWith('email: test@example.com', $rendered);
+        $this->assertStringNotContainsString("\t", $rendered);
+
+        $viewHtml = (string) $this->blade('<x-account-credential-viewer :rawText="$raw" />', ['raw' => $rawWithTabs]);
+        $this->assertMatchesRegularExpression('/>email: test@example\.com/', $viewHtml);
     }
 }

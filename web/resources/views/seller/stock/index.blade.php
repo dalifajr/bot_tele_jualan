@@ -328,6 +328,7 @@
                         <label class="form-label text-muted small fw-bold">{{ __('Data Akun (Mendukung Multi-baris)') }}</label>
                         <textarea name="raw_text" class="form-control" rows="5" required placeholder="{{ __('Username: x&#10;Password: y&#10;2FA: z&#10;&#10;Username: a&#10;Password: b...') }}"></textarea>
                         <div class="form-text mb-2">{{ __('Pisahkan antar akun dengan') }} <b>{{ __('baris kosong (Enter 2x)') }}</b> {{ __('jika ingin menginput banyak akun sekaligus.') }}</div>
+                        <div id="stock-live-2fa-alert" class="mt-2 d-none"></div>
                         
                         {{-- Live Preview Parser --}}
                         <div id="stock-preview-container" class="mt-3 d-none">
@@ -476,7 +477,8 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label text-muted small fw-bold">{{ __('Detail Akun / Raw Text') }}</label>
-                        <textarea name="raw_text" class="form-control" rows="5" required>{{ $unit->raw_text }}</textarea>
+                        <textarea name="raw_text" class="form-control edit-stock-textarea" rows="5" required>{{ $unit->raw_text }}</textarea>
+                        <div class="edit-stock-2fa-alert mt-2 d-none"></div>
                     </div>
                 </div>
                 <div class="modal-footer border-0">
@@ -600,11 +602,19 @@
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Live Preview Parser
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/[&<>"']/g, function(m) {
+                return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[m];
+            });
+        }
+
+        // Live Preview Parser & Real-time 2FA Auto-detection
         const rawTextArea = document.querySelector('#addStockModal textarea[name="raw_text"]');
         const previewContainer = document.getElementById('stock-preview-container');
         const previewCount = document.getElementById('preview-count');
         const previewBody = document.getElementById('stock-preview-body');
+        const live2faAlert = document.getElementById('stock-live-2fa-alert');
 
         if (rawTextArea && previewContainer && previewCount && previewBody) {
             rawTextArea.addEventListener('input', function() {
@@ -612,6 +622,10 @@
                 if (!text) {
                     previewContainer.classList.add('d-none');
                     previewBody.innerHTML = '';
+                    if (live2faAlert) {
+                        live2faAlert.classList.add('d-none');
+                        live2faAlert.innerHTML = '';
+                    }
                     return;
                 }
 
@@ -624,6 +638,7 @@
                 }
                 let html = '';
                 let validCount = 0;
+                let detected2faBadges = [];
 
                 blocks.forEach((block, index) => {
                     let cleanBlock = block.replace(/^\s*[=_#-]{3,}\s*\n?|\n?\s*[=_#-]{3,}\s*$/gm, '').trim();
@@ -648,7 +663,15 @@
                             if (parts.length === 2 && username === 'Tidak Terdeteksi' && (['username', 'user', 'email', 'login', 'akun'].includes(keyLower) || parts[1].includes('@'))) {
                                 username = parts[1].trim();
                             } else {
-                                details.push(line);
+                                // Check if this detail line contains a 2FA secret
+                                let secret = window.TotpEngine ? window.TotpEngine.extractSecret(line) : null;
+                                if (secret) {
+                                    let badgeHtml = window.TotpEngine.renderBadgeHtml(secret);
+                                    details.push(`<span class="text-dark fw-medium">${escapeHtml(line)}</span> ${badgeHtml}`);
+                                    detected2faBadges.push({ username: username, secret: secret, line: line });
+                                } else {
+                                    details.push(escapeHtml(line));
+                                }
                             }
                         }
                     });
@@ -659,9 +682,17 @@
                         let parts = firstLine.split(/[|:]/);
                         if (parts.length >= 2) {
                             username = parts[0].trim();
-                            details.push(`Password: ${parts[1].trim()}`);
+                            details.push(`Password: ${escapeHtml(parts[1].trim())}`);
                             for (let i = 2; i < parts.length; i++) {
-                                details.push(parts[i].trim());
+                                let partCandidate = parts[i].trim();
+                                let secret = window.TotpEngine ? window.TotpEngine.extractSecret(partCandidate) : null;
+                                if (secret) {
+                                    let badgeHtml = window.TotpEngine.renderBadgeHtml(secret);
+                                    details.push(`<span class="text-dark fw-medium">${escapeHtml(partCandidate)}</span> ${badgeHtml}`);
+                                    detected2faBadges.push({ username: username, secret: secret, line: partCandidate });
+                                } else {
+                                    details.push(escapeHtml(partCandidate));
+                                }
                             }
                         } else {
                             username = firstLine.substring(0, 30);
@@ -672,16 +703,21 @@
                     // Remove username duplicate and divider lines from details array
                     details = details.filter(d => !d.toLowerCase().includes('username:') && !d.toLowerCase().includes('user:') && !/^\s*[=_#-]{3,}\s*$/.test(d));
 
-                    // Detect 2FA in credentials
-                    let has2fa = /(?:f2a|2fa|totp|authenticator|two[\s_-]*factor|secret)\s*[:=]\s*([A-Za-z2-7\s=-]{8,64})/i.test(cleanBlock)
+                    // Detect 2FA in full block if not already caught per-line
+                    let blockSecret = window.TotpEngine ? window.TotpEngine.extractSecret(cleanBlock) : null;
+                    let has2fa = blockSecret || /(?:f2a|2fa|totp|authenticator|two[\s_-]*factor|secret)\s*[:=]\s*([A-Za-z2-7\s=-]{8,64})/i.test(cleanBlock)
                         || cleanBlock.includes('otpauth://');
-                    let badge2fa = has2fa ? '<span class="badge bg-success-subtle text-success border border-success-subtle ms-1 py-0 px-1 rounded-pill" style="font-size: 0.68rem;"><i class="fas fa-shield-alt me-1"></i>2FA</span>' : '';
+                    let badge2fa = has2fa ? '<span class="badge bg-success-subtle text-success border border-success-subtle ms-1 py-0 px-1.5 rounded-pill" style="font-size: 0.68rem;"><i class="fas fa-shield-alt me-1"></i>2FA Live</span>' : '';
+
+                    if (blockSecret && !detected2faBadges.some(b => b.secret === blockSecret)) {
+                        detected2faBadges.push({ username: username, secret: blockSecret, line: '2FA' });
+                    }
 
                     html += `
                         <tr>
                             <td class="text-muted px-2 py-1">${validCount}</td>
-                            <td class="fw-bold text-primary py-1">${username} ${badge2fa}</td>
-                            <td class="text-secondary py-1">${details.join(' | ') || cleanBlock.replace(/\n/g, ', ')}</td>
+                            <td class="fw-bold text-primary py-1">${escapeHtml(username)} ${badge2fa}</td>
+                            <td class="text-secondary py-1">${details.join(' <span class="text-muted opacity-50">|</span> ') || escapeHtml(cleanBlock.replace(/\n/g, ', '))}</td>
                         </tr>
                     `;
                 });
@@ -694,8 +730,69 @@
                     previewContainer.classList.add('d-none');
                     previewBody.innerHTML = '';
                 }
+
+                // Render real-time 2FA alert box under textarea
+                if (live2faAlert) {
+                    if (detected2faBadges.length > 0 && window.TotpEngine) {
+                        let alertHtml = '<div class="alert alert-success border-success-subtle bg-success-subtle text-success-emphasis p-2.5 mb-2 rounded-3 shadow-sm">';
+                        alertHtml += '<div class="d-flex align-items-center gap-2 mb-1.5"><i class="fas fa-shield-alt text-success"></i><strong style="font-size: 0.82rem;">{{ __("2FA Terdeteksi & Live Code:") }}</strong></div>';
+                        alertHtml += '<div class="d-flex flex-column gap-1.5">';
+                        detected2faBadges.forEach(item => {
+                            let badge = window.TotpEngine.renderBadgeHtml(item.secret);
+                            let title = item.username !== 'Tidak Terdeteksi' ? escapeHtml(item.username) : 'Akun';
+                            alertHtml += `<div class="d-flex align-items-center justify-content-between bg-white bg-opacity-75 p-1.5 px-2 rounded border border-success-subtle" style="font-size: 0.8rem;">`
+                                       + `<span class="fw-semibold text-dark text-truncate me-2" style="max-width: 180px;"><i class="fas fa-user-circle text-muted me-1"></i>${title}</span>`
+                                       + `<div>${badge}</div>`
+                                       + `</div>`;
+                        });
+                        alertHtml += '</div></div>';
+                        live2faAlert.innerHTML = alertHtml;
+                        live2faAlert.classList.remove('d-none');
+                    } else {
+                        live2faAlert.innerHTML = '';
+                        live2faAlert.classList.add('d-none');
+                    }
+                }
             });
         }
+
+        // Real-time 2FA Detection for Edit Stock Modals
+        function handleEditStock2fa(textarea) {
+            const container = textarea.closest('.modal-body') || textarea.parentElement;
+            const alertBox = container.querySelector('.edit-stock-2fa-alert');
+            if (!alertBox) return;
+
+            const text = textarea.value.trim();
+            const secret = window.TotpEngine ? window.TotpEngine.extractSecret(text) : null;
+            if (secret && window.TotpEngine) {
+                const badge = window.TotpEngine.renderBadgeHtml(secret);
+                alertBox.innerHTML = `
+                    <div class="alert alert-success border-success-subtle bg-success-subtle text-success-emphasis p-2 rounded-3 d-flex align-items-center justify-content-between shadow-sm">
+                        <div class="d-flex align-items-center gap-2 small">
+                            <i class="fas fa-shield-alt text-success"></i>
+                            <span class="fw-bold">{{ __('2FA Terdeteksi Realtime:') }}</span>
+                        </div>
+                        <div>${badge}</div>
+                    </div>
+                `;
+                alertBox.classList.remove('d-none');
+            } else {
+                alertBox.innerHTML = '';
+                alertBox.classList.add('d-none');
+            }
+        }
+
+        document.querySelectorAll('.edit-stock-textarea').forEach(textarea => {
+            textarea.addEventListener('input', function() {
+                handleEditStock2fa(this);
+            });
+            const modal = textarea.closest('.modal');
+            if (modal) {
+                modal.addEventListener('shown.bs.modal', function() {
+                    handleEditStock2fa(textarea);
+                });
+            }
+        });
 
         // Bulk Action Logic
         const selectAllCheckbox = document.getElementById('select-all-stocks');
