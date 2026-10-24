@@ -338,62 +338,125 @@
 @push('modals')
 {{-- Add Stock Modal --}}
 <div class="modal fade" id="addStockModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content" style="border-radius: 16px; border: none;">
-            <div class="modal-header border-0 pb-0">
-                <h5 class="fw-bold">{{ __('Tambah Stok Produk') }}</h5>
+    <div class="modal-dialog modal-dialog-centered modal-lg" style="max-width: 860px;">
+        <div class="modal-content shadow-lg" style="border-radius: 18px; border: none;">
+            <div class="modal-header border-0 pb-0 d-flex justify-content-between align-items-center px-4 pt-4">
+                <div class="d-flex align-items-center gap-2.5">
+                    <div class="rounded-3 bg-primary-subtle text-primary d-flex align-items-center justify-content-center shadow-xs" style="width: 40px; height: 40px; font-size: 1.15rem;">
+                        <i class="fas fa-layer-group"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-0 text-dark">{{ __('Tambah Stok Produk') }}</h5>
+                        <p class="text-muted small mb-0" style="font-size: 0.78rem;">{{ __('Input kredensial akun satuan maupun banyak sekaligus dengan auto-deteksi 2FA') }}</p>
+                    </div>
+                </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="{{ route('admin.stock.store') }}" method="POST">
+            <form action="{{ route('admin.stock.store') }}" method="POST" id="addStockForm">
                 @csrf
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">{{ __('Pilih Produk') }}</label>
-                        <select name="product_id" class="form-select" required>
-                            <option value="">{{ __('-- Pilih Produk --') }}</option>
-                            @php
-                                $allProducts = \App\Models\Product::where('is_suspended', false)->get();
-                            @endphp
-                            @foreach($allProducts as $p)
-                                <option value="{{ $p->id }}">{{ $p->name }} (Rp {{ number_format($p->price, 0, ',', '.') }})</option>
-                            @endforeach
-                        </select>
+                <div class="modal-body px-4 py-3">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-7">
+                            <label class="form-label text-muted small fw-bold mb-1.5 d-flex align-items-center gap-1.5">
+                                <i class="fas fa-box text-primary"></i>
+                                <span>{{ __('Pilih Produk') }}</span>
+                                <span class="text-danger">*</span>
+                            </label>
+                            <select name="product_id" id="addStockProductId" class="form-select rounded-3 py-2 border-secondary-subtle" required>
+                                <option value="">{{ __('-- Pilih Produk Digital --') }}</option>
+                                @php
+                                    $allProducts = \App\Models\Product::where('is_suspended', false)->get();
+                                @endphp
+                                @foreach($allProducts as $p)
+                                    <option value="{{ $p->id }}">{{ $p->name }} (Rp {{ number_format($p->price, 0, ',', '.') }})</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label text-muted small fw-bold mb-1.5 d-flex align-items-center gap-1.5">
+                                <i class="fas fa-toggle-on text-success"></i>
+                                <span>{{ __('Status Awal Stok') }}</span>
+                                <span class="text-danger">*</span>
+                            </label>
+                            <select name="stock_status" id="addStockStatus" class="form-select rounded-3 py-2 border-secondary-subtle" required>
+                                <option value="ready">{{ __('Ready') }}</option>
+                                <option value="awaiting_benefits">{{ __('Awaiting Benefits') }}</option>
+                                <option value="saved_for_verification">{{ __('Simpan Akun (Karantina)') }}</option>
+                            </select>
+                        </div>
                     </div>
+
                     <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">{{ __('Status Awal Stok') }}</label>
-                        <select name="stock_status" class="form-select" required>
-                            <option value="ready">{{ __('Ready') }}</option>
-                            <option value="awaiting_benefits">{{ __('Awaiting Benefits') }}</option>
-                            <option value="saved_for_verification">{{ __('Simpan Akun') }}</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">{{ __('Data Akun (Mendukung Multi-baris)') }}</label>
-                        <textarea name="raw_text" class="form-control" rows="5" required placeholder="{{ __('Username: x&#10;Password: y&#10;2FA: z&#10;&#10;Username: a&#10;Password: b...') }}"></textarea>
-                        <div class="form-text mb-2">{{ __('Pisahkan antar akun dengan') }} <b>{{ __('baris kosong (Enter 2x)') }}</b> {{ __('jika ingin menginput banyak akun sekaligus.') }}</div>
-                        <div id="stock-live-2fa-alert" class="mt-2 d-none"></div>
+                        <div class="d-flex justify-content-between align-items-center mb-1.5">
+                            <label class="form-label text-muted small fw-bold mb-0 d-flex align-items-center gap-1.5">
+                                <i class="fas fa-key text-warning"></i>
+                                <span>{{ __('Data Kredensial Akun') }}</span>
+                                <span class="badge bg-secondary-subtle text-secondary rounded-pill fw-normal px-2" style="font-size: 0.7rem;">Multi-Baris</span>
+                            </label>
+                            <span id="stock-draft-status" class="small text-muted d-inline-flex align-items-center gap-1" style="font-size: 0.75rem;">
+                                <i class="fas fa-cloud text-secondary"></i>
+                                <span>{{ __('Auto-save aktif') }}</span>
+                            </span>
+                        </div>
+                        <textarea name="raw_text" id="addStockRawText" class="form-control rounded-3 p-3 border-secondary-subtle" rows="6" required
+                                  style="font-family: SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.88rem; line-height: 1.55; resize: vertical;"
+                                  placeholder="{{ __('Contoh format:&#10;email: user@domain.com&#10;pass: password123&#10;F2A: JBSWY3DPEHPK3PXP&#10;&#10;-- Pisahkan antar akun dengan Enter 2x untuk input banyak sekaligus --') }}"></textarea>
+
+                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mt-2 px-1 text-muted" style="font-size: 0.78rem;">
+                            <div class="d-flex align-items-center gap-1 text-secondary">
+                                <i class="fas fa-info-circle text-primary"></i>
+                                <span>{{ __('Pisahkan antar akun dengan') }} <kbd class="bg-light text-dark border px-1 py-0.5 rounded shadow-xs" style="font-size: 0.72rem;">Enter 2x</kbd> {{ __('jika ingin menginput banyak akun sekaligus.') }}</span>
+                            </div>
+                            <div id="stock-line-counter" class="text-muted fw-medium" style="font-size: 0.75rem;">0 baris / 0 karakter</div>
+                        </div>
 
                         {{-- Live Preview Parser --}}
-                        <div id="stock-preview-container" class="mt-3 d-none">
-                            <h6 class="fw-bold mb-2 text-primary small"><i class="fas fa-eye me-1"></i>{{ __('Pratinjau Hasil Pemecahan Akun (') }}<span id="preview-count">0</span>)</h6>
-                            <div class="table-responsive border rounded-3 bg-body-tertiary" style="max-height: 200px; overflow-y: auto;">
-                                <table class="table table-sm table-hover align-middle mb-0" style="font-size: 0.8rem;">
-                                    <thead>
-                                        <tr class="table-light">
-                                            <th class="px-2 py-1" style="width: 40px;">#</th>
-                                            <th class="py-1">{{ __('Username') }}</th>
-                                            <th class="py-1">{{ __('Detail Kredensial') }}</th>
+                        <div id="stock-preview-container" class="mt-3.5 d-none">
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge bg-primary rounded-pill px-2.5 py-1 fw-semibold d-inline-flex align-items-center gap-1" style="font-size: 0.75rem;">
+                                        <i class="fas fa-eye"></i>
+                                        <span>{{ __('Pratinjau') }}</span>
+                                    </span>
+                                    <span class="fw-bold text-dark small">{{ __('Hasil Pemecahan Akun') }} (<span id="preview-count" class="text-primary">0</span>)</span>
+                                </div>
+                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2.5 py-1" style="font-size: 0.72rem;">
+                                    <i class="fas fa-shield-alt me-1"></i>{{ __('Auto-Deteksi F2A Aktif') }}
+                                </span>
+                            </div>
+                            <div class="table-responsive border rounded-3 bg-body-tertiary shadow-xs" style="max-height: 220px; overflow-y: auto;">
+                                <table class="table table-sm table-hover align-middle mb-0" style="font-size: 0.82rem;">
+                                    <thead class="table-light sticky-top" style="z-index: 1;">
+                                        <tr>
+                                            <th class="px-3 py-2 text-center text-muted" style="width: 45px;">#</th>
+                                            <th class="py-2 text-muted fw-bold" style="width: 220px;">{{ __('USERNAME') }}</th>
+                                            <th class="py-2 text-muted fw-bold">{{ __('DETAIL KREDENSIAL') }}</th>
                                         </tr>
                                     </thead>
-                                    <tbody id="stock-preview-body"></tbody>
+                                    <tbody id="stock-preview-body" class="bg-white"></tbody>
                                 </table>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer border-0 pt-0">
-                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">{{ __('Batal') }}</button>
-                    <button type="submit" class="btn btn-primary rounded-pill px-4">{{ __('Simpan Stok') }}</button>
+                <div class="modal-footer border-0 px-4 pb-4 pt-1 d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-2">
+                        <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 d-none shadow-xs" id="btn-discard-draft" onclick="discardStockDraft()" title="{{ __('Hapus Draft Tersimpan') }}">
+                            <i class="fas fa-trash-alt" style="font-size: 0.75rem;"></i>
+                            <span>{{ __('Hapus Draft') }}</span>
+                        </button>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <button type="button" class="btn btn-light rounded-pill px-3.5 py-1.5 fw-semibold text-secondary" data-bs-dismiss="modal">{{ __('Batal') }}</button>
+                        <button type="button" class="btn btn-outline-secondary rounded-pill px-3.5 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-xs" id="btn-save-draft" onclick="saveStockDraft(true)" title="{{ __('Simpan draf saat ini secara manual') }}">
+                            <i class="fas fa-bookmark" style="font-size: 0.8rem;"></i>
+                            <span>{{ __('Simpan Draft') }}</span>
+                        </button>
+                        <button type="submit" class="btn btn-primary rounded-pill px-4 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-sm">
+                            <i class="fas fa-check-circle"></i>
+                            <span>{{ __('Simpan Stok') }}</span>
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>
@@ -766,38 +829,190 @@
             });
         }
 
-        // Live Preview Parser & Real-time 2FA Auto-detection
+        // ==========================================
+        // DRAFT MANAGEMENT & LIVE PARSER FOR ADD STOCK
+        // ==========================================
+        const DRAFT_KEY = 'bot_stock_draft_admin';
+        const addStockForm = document.getElementById('addStockForm') || document.querySelector('#addStockModal form');
         const rawTextArea = document.querySelector('#addStockModal textarea[name="raw_text"]');
+        const selectProduct = document.querySelector('#addStockModal select[name="product_id"]');
+        const selectStatus = document.querySelector('#addStockModal select[name="stock_status"]');
         const previewContainer = document.getElementById('stock-preview-container');
         const previewCount = document.getElementById('preview-count');
         const previewBody = document.getElementById('stock-preview-body');
-        const live2faAlert = document.getElementById('stock-live-2fa-alert');
+        const draftStatus = document.getElementById('stock-draft-status');
+        const btnDiscardDraft = document.getElementById('btn-discard-draft');
+        const btnSaveDraft = document.getElementById('btn-save-draft');
+        const lineCounter = document.getElementById('stock-line-counter');
+
+        let autoSaveTimer = null;
+
+        function updateDraftStatus(text, iconClass = 'fa-check-circle text-success') {
+            if (draftStatus) {
+                draftStatus.innerHTML = `<i class="fas ${iconClass}"></i><span>${text}</span>`;
+            }
+        }
+
+        function saveStockDraft(isManual = false) {
+            if (!rawTextArea) return;
+            const text = rawTextArea.value;
+            const prod = selectProduct ? selectProduct.value : '';
+            const status = selectStatus ? selectStatus.value : 'ready';
+
+            if (!text.trim() && !isManual) {
+                return;
+            }
+
+            const now = new Date();
+            const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const draftData = {
+                product_id: prod,
+                stock_status: status,
+                raw_text: text,
+                timeString: timeString,
+                timestamp: now.getTime()
+            };
+
+            try {
+                localStorage.setItem(DRAFT_KEY, JSON.stringify(draftData));
+                updateDraftStatus(`Draft tersimpan (${timeString})`, 'fa-check-circle text-success');
+                if (btnDiscardDraft && text.trim().length > 0) {
+                    btnDiscardDraft.classList.remove('d-none');
+                }
+
+                if (isManual) {
+                    if (btnSaveDraft) {
+                        const origHtml = btnSaveDraft.innerHTML;
+                        btnSaveDraft.innerHTML = '<i class="fas fa-check text-success"></i><span>{{ __("Tersimpan!") }}</span>';
+                        btnSaveDraft.disabled = true;
+                        setTimeout(() => {
+                            btnSaveDraft.innerHTML = origHtml;
+                            btnSaveDraft.disabled = false;
+                        }, 1200);
+                    }
+                    if (typeof Swal !== 'undefined') {
+                        const Toast = Swal.mixin({
+                            toast: true,
+                            position: 'top-end',
+                            showConfirmButton: false,
+                            timer: 1500,
+                            timerProgressBar: true
+                        });
+                        Toast.fire({
+                            icon: 'success',
+                            title: '{{ __("Draft berhasil disimpan") }}'
+                        });
+                    }
+                }
+            } catch (e) {
+                console.warn('Gagal menyimpan draft:', e);
+            }
+        }
+
+        window.saveStockDraft = saveStockDraft;
+
+        window.discardStockDraft = function() {
+            try {
+                localStorage.removeItem(DRAFT_KEY);
+            } catch (e) {}
+
+            if (rawTextArea) {
+                rawTextArea.value = '';
+                rawTextArea.dispatchEvent(new Event('input'));
+            }
+            if (btnDiscardDraft) {
+                btnDiscardDraft.classList.add('d-none');
+            }
+            updateDraftStatus('{{ __("Draft dibersihkan") }}', 'fa-info-circle text-muted');
+            if (typeof Swal !== 'undefined') {
+                const Toast = Swal.mixin({
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 1200
+                });
+                Toast.fire({
+                    icon: 'info',
+                    title: '{{ __("Draft telah dibersihkan") }}'
+                });
+            }
+        };
+
+        function restoreStockDraft() {
+            try {
+                const raw = localStorage.getItem(DRAFT_KEY);
+                if (!raw) return;
+                const draft = JSON.parse(raw);
+                if (!draft || !draft.raw_text) return;
+
+                if (rawTextArea && !rawTextArea.value.trim()) {
+                    rawTextArea.value = draft.raw_text;
+                    if (selectProduct && draft.product_id) {
+                        selectProduct.value = draft.product_id;
+                    }
+                    if (selectStatus && draft.stock_status) {
+                        selectStatus.value = draft.stock_status;
+                    }
+                    rawTextArea.dispatchEvent(new Event('input'));
+                    updateDraftStatus(`Draft dipulihkan (${draft.timeString || 'sebelumnya'})`, 'fa-history text-primary');
+                    if (btnDiscardDraft) {
+                        btnDiscardDraft.classList.remove('d-none');
+                    }
+                }
+            } catch (e) {
+                console.warn('Gagal memulihkan draft:', e);
+            }
+        }
+
+        // Clear draft when form is successfully submitted
+        if (addStockForm) {
+            addStockForm.addEventListener('submit', function() {
+                try {
+                    localStorage.removeItem(DRAFT_KEY);
+                } catch (e) {}
+            });
+        }
 
         if (rawTextArea && previewContainer && previewCount && previewBody) {
             rawTextArea.addEventListener('input', function() {
-                const text = this.value.trim();
-                if (!text) {
+                const text = this.value;
+                const trimmed = text.trim();
+
+                // Update line & character counter
+                if (lineCounter) {
+                    const linesCount = trimmed ? trimmed.split('\n').length : 0;
+                    lineCounter.textContent = `${linesCount} baris / ${text.length} karakter`;
+                }
+
+                // Debounced auto-save
+                updateDraftStatus('{{ __("Menyimpan draft...") }}', 'fa-spinner fa-spin text-secondary');
+                clearTimeout(autoSaveTimer);
+                autoSaveTimer = setTimeout(() => {
+                    saveStockDraft(false);
+                }, 300);
+
+                if (!trimmed) {
                     previewContainer.classList.add('d-none');
                     previewBody.innerHTML = '';
-                    if (live2faAlert) {
-                        live2faAlert.classList.add('d-none');
-                        live2faAlert.innerHTML = '';
-                    }
+                    if (btnDiscardDraft) btnDiscardDraft.classList.add('d-none');
                     return;
+                }
+
+                if (btnDiscardDraft) {
+                    btnDiscardDraft.classList.remove('d-none');
                 }
 
                 // Split by line dividers (===..., ___...) or double-newlines
                 let blocks = [];
-                if (/^\s*[=_#-]{3,}\s*$/m.test(text)) {
-                    blocks = text.split(/^\s*[=_#-]{3,}\s*$/m);
+                if (/^\s*[=_#-]{3,}\s*$/m.test(trimmed)) {
+                    blocks = trimmed.split(/^\s*[=_#-]{3,}\s*$/m);
                 } else {
-                    blocks = text.split(/\n\s*\n+/);
+                    blocks = trimmed.split(/\n\s*\n+/);
                 }
                 let html = '';
                 let validCount = 0;
-                let detected2faBadges = [];
 
-                blocks.forEach((block, index) => {
+                blocks.forEach((block) => {
                     let cleanBlock = block.replace(/^\s*[=_#-]{3,}\s*\n?|\n?\s*[=_#-]{3,}\s*$/gm, '').trim();
                     if (!cleanBlock) return;
 
@@ -825,7 +1040,6 @@
                                 if (secret) {
                                     let badgeHtml = window.TotpEngine.renderBadgeHtml(secret);
                                     details.push(`<span class="text-dark fw-medium">${escapeHtml(line)}</span> ${badgeHtml}`);
-                                    detected2faBadges.push({ username: username, secret: secret, line: line });
                                 } else {
                                     details.push(escapeHtml(line));
                                 }
@@ -846,7 +1060,6 @@
                                 if (secret) {
                                     let badgeHtml = window.TotpEngine.renderBadgeHtml(secret);
                                     details.push(`<span class="text-dark fw-medium">${escapeHtml(partCandidate)}</span> ${badgeHtml}`);
-                                    detected2faBadges.push({ username: username, secret: secret, line: partCandidate });
                                 } else {
                                     details.push(escapeHtml(partCandidate));
                                 }
@@ -866,15 +1079,11 @@
                         || cleanBlock.includes('otpauth://');
                     let badge2fa = has2fa ? '<span class="badge bg-success-subtle text-success border border-success-subtle ms-1 py-0 px-1.5 rounded-pill" style="font-size: 0.68rem;"><i class="fas fa-shield-alt me-1"></i>2FA Live</span>' : '';
 
-                    if (blockSecret && !detected2faBadges.some(b => b.secret === blockSecret)) {
-                        detected2faBadges.push({ username: username, secret: blockSecret, line: '2FA' });
-                    }
-
                     html += `
                         <tr>
-                            <td class="text-muted px-2 py-1">${validCount}</td>
-                            <td class="fw-bold text-primary py-1">${escapeHtml(username)} ${badge2fa}</td>
-                            <td class="text-secondary py-1">${details.join(' <span class="text-muted opacity-50">|</span> ') || escapeHtml(cleanBlock.replace(/\n/g, ', '))}</td>
+                            <td class="text-muted text-center px-3 py-2 fw-medium">${validCount}</td>
+                            <td class="fw-bold text-primary py-2 text-break" style="max-width: 220px;">${escapeHtml(username)} ${badge2fa}</td>
+                            <td class="text-secondary py-2 text-break">${details.join(' <span class="text-muted opacity-50">|</span> ') || escapeHtml(cleanBlock.replace(/\n/g, ', '))}</td>
                         </tr>
                     `;
                 });
@@ -887,30 +1096,21 @@
                     previewContainer.classList.add('d-none');
                     previewBody.innerHTML = '';
                 }
-
-                // Render real-time 2FA alert box under textarea
-                if (live2faAlert) {
-                    if (detected2faBadges.length > 0 && window.TotpEngine) {
-                        let alertHtml = '<div class="alert alert-success border-success-subtle bg-success-subtle text-success-emphasis p-2.5 mb-2 rounded-3 shadow-sm">';
-                        alertHtml += '<div class="d-flex align-items-center gap-2 mb-1.5"><i class="fas fa-shield-alt text-success"></i><strong style="font-size: 0.82rem;">{{ __("2FA Terdeteksi & Live Code:") }}</strong></div>';
-                        alertHtml += '<div class="d-flex flex-column gap-1.5">';
-                        detected2faBadges.forEach(item => {
-                            let badge = window.TotpEngine.renderBadgeHtml(item.secret);
-                            let title = item.username !== 'Tidak Terdeteksi' ? escapeHtml(item.username) : 'Akun';
-                            alertHtml += `<div class="d-flex align-items-center justify-content-between bg-white bg-opacity-75 p-1.5 px-2 rounded border border-success-subtle" style="font-size: 0.8rem;">`
-                                       + `<span class="fw-semibold text-dark text-truncate me-2" style="max-width: 180px;"><i class="fas fa-user-circle text-muted me-1"></i>${title}</span>`
-                                       + `<div>${badge}</div>`
-                                       + `</div>`;
-                        });
-                        alertHtml += '</div></div>';
-                        live2faAlert.innerHTML = alertHtml;
-                        live2faAlert.classList.remove('d-none');
-                    } else {
-                        live2faAlert.innerHTML = '';
-                        live2faAlert.classList.add('d-none');
-                    }
-                }
             });
+
+            // Also auto-save when product or status changes
+            if (selectProduct) selectProduct.addEventListener('change', () => saveStockDraft(false));
+            if (selectStatus) selectStatus.addEventListener('change', () => saveStockDraft(false));
+
+            // Restore draft on load & when modal opens
+            restoreStockDraft();
+            const addModalEl = document.getElementById('addStockModal');
+            if (addModalEl) {
+                addModalEl.addEventListener('shown.bs.modal', function() {
+                    restoreStockDraft();
+                    if (rawTextArea) rawTextArea.focus();
+                });
+            }
         }
 
         // Real-time 2FA Detection for Edit Stock Modals

@@ -126,7 +126,7 @@
                     </div>
                 @endif
 
-                @if(($complaint->status === 'done' || $complaint->status === 'refund_requested') && $complaint->refund_note
+                @if(($complaint->status === 'done' || $complaint->status === 'refund_requested') && $complaint->refund_note)
                     <div class="alert alert-success small mb-3">
                         <strong>{{ __('Penyelesaian:') }}</strong><br>
                         {{ $complaint->refund_note }}
@@ -135,18 +135,52 @@
 
                 @if(in_array($complaint->status, ['done', 'rejected', 'refund_requested']))
                     <hr>
+                    @php
+                        $order = $complaint->order;
+                        $isWarrantyActive = $order && $order->is_warranty_active;
+                        $warrantyExpiresAt = $order ? $order->warranty_expires_at : null;
+                    @endphp
+
                     @if($complaint->reopen_count < 3)
                         <div class="text-center mt-3">
-                            <p class="small text-muted mb-2">Masih memiliki kendala dengan pesanan ini? (Sisa kesempatan: {{ 3 - $complaint->reopen_count }})</p>
-                            <form action="{{ route('customer.complaints.reopen', $complaint->id) }}" method="POST">
-                                @csrf
-                                <button type="submit" class="btn btn-outline-warning w-100 rounded-pill" onclick="return confirm('Apakah Anda yakin ingin membuka kembali komplain ini?')">
-                                    <i class="fas fa-redo me-1"></i> {{ __('Buka Kembali Komplain') }}
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <span class="small text-muted">{{ __('Sisa kesempatan:') }} <b>{{ 3 - $complaint->reopen_count }}x</b></span>
+                                @if($isWarrantyActive && $warrantyExpiresAt)
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill py-1 px-2" style="font-size: 0.72rem;">
+                                        <i class="fas fa-shield-alt me-1"></i>{{ __('Garansi s/d :date', ['date' => $warrantyExpiresAt->format('d M H:i')]) }}
+                                    </span>
+                                @elseif(!$isWarrantyActive)
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill py-1 px-2" style="font-size: 0.72rem;">
+                                        <i class="fas fa-times-circle me-1"></i>{{ __('Garansi Berakhir') }}
+                                    </span>
+                                @endif
+                            </div>
+
+                            @if($isWarrantyActive)
+                                <p class="small text-muted mb-2 text-start">{{ __('Masih memiliki kendala dengan pesanan ini? Anda dapat membuka kembali komplain ini selama masa garansi masih berlaku.') }}</p>
+                                <form action="{{ route('customer.complaints.reopen', $complaint->id) }}" method="POST">
+                                    @csrf
+                                    <button type="submit" class="btn btn-outline-warning w-100 rounded-pill fw-semibold py-2 shadow-xs" onclick="return confirm('{{ __('Apakah Anda yakin ingin membuka kembali komplain ini?') }}')">
+                                        <i class="fas fa-redo me-1"></i> {{ __('Buka Kembali Komplain') }}
+                                    </button>
+                                </form>
+                            @else
+                                <button type="button" class="btn btn-light text-muted border w-100 rounded-pill fw-semibold py-2 opacity-75" disabled style="cursor: not-allowed;" title="{{ __('Masa garansi toko untuk pesanan ini telah berakhir') }}">
+                                    <i class="fas fa-lock me-1"></i> {{ __('Buka Kembali Komplain') }}
                                 </button>
-                            </form>
+                                <div class="alert alert-danger border-danger-subtle bg-danger-subtle text-danger-emphasis small mt-2.5 p-2 rounded-3 text-start mb-0" style="font-size: 0.78rem;">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>
+                                    @if($warrantyExpiresAt)
+                                        {{ __('Masa garansi toko untuk pesanan ini telah berakhir pada :date. Komplain tidak dapat dibuka kembali.', ['date' => $warrantyExpiresAt->format('d M Y H:i')]) }}
+                                    @else
+                                        {{ __('Garansi toko untuk pesanan ini telah kedaluwarsa atau tidak berlaku sehingga komplain tidak dapat dibuka kembali.') }}
+                                    @endif
+                                </div>
+                            @endif
                         </div>
                     @else
                         <div class="alert alert-secondary small mb-0 text-center">
+                            <i class="fas fa-info-circle me-1"></i>
                             {{ __('Anda telah mencapai batas maksimal pembukaan ulang (3 kali) untuk komplain ini.') }}
                         </div>
                     @endif

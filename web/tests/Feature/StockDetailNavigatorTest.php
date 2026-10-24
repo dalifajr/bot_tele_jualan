@@ -73,8 +73,10 @@ class StockDetailNavigatorTest extends TestCase
         $response->assertSee('id="stockDetailViewerContainer"', false);
         $response->assertSee('btn-view-stock-detail', false);
         $response->assertSee('stock-detail-source-item', false);
-        $response->assertSee('id="stock-live-2fa-alert"', false);
-        $response->assertSee('edit-stock-2fa-alert', false);
+        $response->assertSee('id="btn-save-draft"', false);
+        $response->assertSee('id="btn-discard-draft"', false);
+        $response->assertSee('id="stock-preview-container"', false);
+        $response->assertDontSee('id="stock-live-2fa-alert"', false);
         $response->assertSee('user_one');
         $response->assertSee('user_two');
     }
@@ -91,8 +93,10 @@ class StockDetailNavigatorTest extends TestCase
         $response->assertSee('id="stockDetailViewerContainer"', false);
         $response->assertSee('btn-view-stock-detail', false);
         $response->assertSee('stock-detail-source-item', false);
-        $response->assertSee('id="stock-live-2fa-alert"', false);
-        $response->assertSee('edit-stock-2fa-alert', false);
+        $response->assertSee('id="btn-save-draft"', false);
+        $response->assertSee('id="btn-discard-draft"', false);
+        $response->assertSee('id="stock-preview-container"', false);
+        $response->assertDontSee('id="stock-live-2fa-alert"', false);
         $response->assertSee('user_one');
         $response->assertSee('user_two');
     }
