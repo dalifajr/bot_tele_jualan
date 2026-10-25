@@ -177,18 +177,13 @@
             <form action="{{ route('admin.escrow.settings') }}" method="POST">
                 @csrf
                 <div class="modal-body p-3">
-                    <div class="row g-3 mb-3">
-                        <div class="col-6">
-                            <label class="form-label small fw-bold text-muted">{{ __('Persentase Biaya Rekber (%)') }} <span class="text-danger">*</span></label>
-                            <div class="input-group">
-                                <input type="number" step="0.1" name="fee_percent" class="form-control rounded-start-3" value="{{ $feePercent }}" min="0" max="50" required>
-                                <span class="input-group-text bg-light text-muted">%</span>
-                            </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">{{ __('Persentase Biaya Rekber (%)') }} <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <input type="number" step="0.1" name="fee_percent" class="form-control rounded-start-3" value="{{ $feePercent }}" min="0" max="50" required>
+                            <span class="input-group-text bg-light text-muted">%</span>
                         </div>
-                        <div class="col-6">
-                            <label class="form-label small fw-bold text-muted">{{ __('Biaya Minimum (Rp)') }} <span class="text-danger">*</span></label>
-                            <input type="number" name="min_fee" class="form-control rounded-3" value="{{ $minFee }}" min="0" step="500" required>
-                        </div>
+                        <div class="form-text small text-muted">{{ __('Biaya dihitung murni berdasarkan persentase nominal transaksi rekber.') }}</div>
                     </div>
 
                     <div class="mb-3">

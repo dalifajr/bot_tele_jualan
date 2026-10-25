@@ -252,4 +252,92 @@ class EscrowFeatureTest extends TestCase
         $this->assertEquals(EscrowTransaction::STATUS_REFUNDED, $trx->status);
         $this->assertNotNull($trx->dispute_resolved_at);
     }
+
+    public function test_escrow_room_renders_qris_and_bank_options_and_floating_chat_button()
+    {
+        // 1. Simpan dummy static QRIS payload valid di BotSetting
+        $staticQris = "0002010102115204599953033605802ID5910DZUL STORE6007JAKARTA6304ABCD";
+        \App\Models\BotSetting::updateOrCreate(
+            ['key' => 'qris_static_payload'],
+            ['value' => $staticQris]
+        );
+
+        $trx = EscrowTransaction::forceCreate([
+            'transaction_code' => 'RKB-TEST-QRIS',
+            'creator_id' => $this->buyer->id,
+            'creator_role' => 'buyer',
+            'buyer_user_id' => $this->buyer->id,
+            'buyer_name' => 'Buyer Escrow',
+            'buyer_contact' => '@buyer_tele',
+            'seller_name' => 'Penjual Luar',
+            'seller_contact' => '@penjual_luar',
+            'title' => 'Transaksi Rekber QRIS & Chat',
+            'amount' => 50000,
+            'fee_amount' => 5000,
+            'fee_payer' => 'buyer',
+            'total_buyer_pay' => 55000,
+            'total_seller_receive' => 50000,
+            'status' => EscrowTransaction::STATUS_WAITING_DEPOSIT,
+            'public_token' => 'token-qris-test-abcdef',
+        ]);
+
+        // 2. Akses halaman rekber oleh buyer
+        $response = $this->actingAs($this->buyer)->get(route('escrow.show', $trx->transaction_code));
+        $response->assertStatus(200);
+
+        // Verifikasi tab pembayaran QRIS dan Bank
+        $response->assertSee('QRIS (Otomatis &amp; Instan)', false);
+        $response->assertSee('Transfer Rekening Bank');
+        $response->assertSee('QRIS Dinamis Terisi Nominal Otomatis');
+        $response->assertSee('Unduh Kode QR');
+        $response->assertSee('qrcode.min.js');
+
+        // Verifikasi floating action button chat dan offcanvas drawer
+        $response->assertSee('escrow-chat-fab');
+        $response->assertSee('id="escrowChatDrawer"', false);
+        $response->assertSee('Obrolan Ruang Rekber');
+
+        // 3. Buyer mengirim pesan di ruang rekber
+        $msgResponse = $this->actingAs($this->buyer)->post(route('escrow.send-message', $trx->transaction_code), [
+            'message' => 'Halo admin & penjual, saya sudah bayar via QRIS!',
+        ]);
+        $msgResponse->assertRedirect();
+
+        $this->assertDatabaseHas('escrow_messages', [
+            'escrow_transaction_id' => $trx->id,
+            'sender_id' => $this->buyer->id,
+            'message' => 'Halo admin & penjual, saya sudah bayar via QRIS!',
+        ]);
+
+        // 4. Verifikasi counter pesan bertambah di view
+        $responseAfterMsg = $this->actingAs($this->buyer)->get(route('escrow.show', $trx->transaction_code));
+        $responseAfterMsg->assertStatus(200);
+        $responseAfterMsg->assertSee('Halo admin &amp; penjual, saya sudah bayar via QRIS!', false);
+    }
+
+    public function test_admin_can_update_escrow_settings_without_min_fee()
+    {
+        $response = $this->actingAs($this->admin)->post(route('admin.escrow.settings'), [
+            'fee_percent' => 2.5,
+            'bank_info' => "Bank Mandiri: 999888777\na.n Toko Resmi",
+        ]);
+
+        $response->assertRedirect();
+        $this->assertEquals(2.5, (float)\App\Models\BotSetting::where('key', 'escrow.fee_percent')->value('value'));
+        $this->assertNull(\App\Models\BotSetting::where('key', 'escrow.min_fee')->value('value'));
+
+        // Cek kalkulasi fee murni persentase tanpa biaya minimum
+        // Nominal 100.000 * 2.5% = 2.500
+        $feeCalc = \App\Http\Controllers\EscrowController::calculateFee(100000, 'buyer');
+        $this->assertEquals(2500, $feeCalc['fee_amount']);
+        $this->assertEquals(102500, $feeCalc['total_buyer_pay']);
+        $this->assertEquals(100000, $feeCalc['total_seller_receive']);
+        $this->assertArrayNotHasKey('min_fee', $feeCalc);
+
+        // Pastikan halaman form pembuatan rekber tidak lagi menampilkan min_fee
+        $createPage = $this->actingAs($this->buyer)->get(route('escrow.create'));
+        $createPage->assertStatus(200);
+        $createPage->assertDontSee('min Rp');
+        $createPage->assertSee('Biaya Admin Rekber (2.5%):');
+    }
 }

@@ -48,9 +48,8 @@ class EscrowAdminController extends Controller
         $disputedCount = EscrowTransaction::where('status', EscrowTransaction::STATUS_DISPUTED)->count();
         $completedTotalFee = EscrowTransaction::where('status', EscrowTransaction::STATUS_COMPLETED)->sum('fee_amount');
 
-        // Pengaturan Rekber
+        // Pengaturan Rekber (Persentase Fee & Rekening Toko)
         $feePercent = (float)(BotSetting::where('key', 'escrow.fee_percent')->value('value') ?? 1.5);
-        $minFee = (float)(BotSetting::where('key', 'escrow.min_fee')->value('value') ?? 5000);
         $bankInfo = BotSetting::where('key', 'escrow.bank_info')->value('value') ?? "Bank BCA: 1234567890\na.n Dzulfikrialifajri Store";
 
         return view('admin.escrow.index', compact(
@@ -63,7 +62,6 @@ class EscrowAdminController extends Controller
             'disputedCount',
             'completedTotalFee',
             'feePercent',
-            'minFee',
             'bankInfo'
         ));
     }
@@ -215,19 +213,20 @@ class EscrowAdminController extends Controller
     }
 
     /**
-     * Simpan Pengaturan Rekber (Tarif Fee & Rekening Toko).
+     * Simpan Pengaturan Rekber (Tarif Fee Persentase & Rekening Toko).
      */
     public function updateSettings(Request $request)
     {
         $request->validate([
             'fee_percent' => 'required|numeric|between:0,50',
-            'min_fee' => 'required|numeric|min:0',
             'bank_info' => 'required|string|max:2000',
         ]);
 
-        BotSetting::updateOrCreate(['key' => 'escrow.fee_percent'], ['value' => $request->fee_percent]);
-        BotSetting::updateOrCreate(['key' => 'escrow.min_fee'], ['value' => $request->min_fee]);
-        BotSetting::updateOrCreate(['key' => 'escrow.bank_info'], ['value' => $request->bank_info]);
+        BotSetting::setSetting('escrow.fee_percent', $request->fee_percent);
+        BotSetting::setSetting('escrow.bank_info', $request->bank_info);
+
+        // Hapus konfigurasi min_fee jika ada agar tidak lagi digunakan
+        BotSetting::where('key', 'escrow.min_fee')->delete();
 
         return redirect()->back()->with('success', __('Pengaturan rekber berhasil diperbarui.'));
     }

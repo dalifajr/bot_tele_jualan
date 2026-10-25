@@ -12,14 +12,12 @@ use Illuminate\Support\Facades\Storage;
 class EscrowController extends Controller
 {
     /**
-     * Menghitung fee rekber berdasarkan pengaturan platform.
+     * Menghitung fee rekber berdasarkan persentase platform saja (tanpa minimum fee).
      */
     public static function calculateFee(float $amount, string $feePayer = 'buyer'): array
     {
         $feePercent = (float)(BotSetting::where('key', 'escrow.fee_percent')->value('value') ?? 1.5);
-        $minFee = (float)(BotSetting::where('key', 'escrow.min_fee')->value('value') ?? 5000);
-
-        $feeAmount = max($minFee, round(($amount * $feePercent) / 100));
+        $feeAmount = round(($amount * $feePercent) / 100);
 
         if ($feePayer === 'seller') {
             $totalBuyerPay = $amount;
@@ -37,7 +35,6 @@ class EscrowController extends Controller
         return [
             'fee_amount' => $feeAmount,
             'fee_percent' => $feePercent,
-            'min_fee' => $minFee,
             'total_buyer_pay' => $totalBuyerPay,
             'total_seller_receive' => $totalSellerReceive,
         ];
@@ -83,9 +80,8 @@ class EscrowController extends Controller
     public function create()
     {
         $feePercent = (float)(BotSetting::where('key', 'escrow.fee_percent')->value('value') ?? 1.5);
-        $minFee = (float)(BotSetting::where('key', 'escrow.min_fee')->value('value') ?? 5000);
 
-        return view('escrow.create', compact('feePercent', 'minFee'));
+        return view('escrow.create', compact('feePercent'));
     }
 
     /**
@@ -165,6 +161,29 @@ class EscrowController extends Controller
     }
 
     /**
+     * Dapatkan payload QRIS dinamis dan gambar QRIS cadangan untuk transaksi rekber.
+     */
+    protected function getQrisData(EscrowTransaction $transaction): array
+    {
+        $staticQris = BotSetting::where('key', 'qris_static_payload')->value('value');
+        $qrisImagePath = BotSetting::where('key', 'qris_image_path')->value('value');
+        $dynamicQris = null;
+
+        if ($staticQris && $transaction->total_buyer_pay > 0) {
+            try {
+                $dynamicQris = \App\Services\QrisService::buildDynamicPayload($staticQris, (int)$transaction->total_buyer_pay);
+            } catch (\Throwable $e) {
+                \Log::warning("Escrow Dynamic QRIS Generation Failed for {$transaction->transaction_code}: " . $e->getMessage());
+            }
+        }
+
+        return [
+            'dynamicQris' => $dynamicQris,
+            'qrisImagePath' => $qrisImagePath,
+        ];
+    }
+
+    /**
      * Ruang transaksi rekber internal user.
      */
     public function show(string $code)
@@ -179,8 +198,9 @@ class EscrowController extends Controller
         }
 
         $bankInfo = BotSetting::where('key', 'escrow.bank_info')->value('value') ?? "Bank BCA: 1234567890\na.n Dzulfikrialifajri Store";
+        $qrisData = $this->getQrisData($transaction);
 
-        return view('escrow.show', compact('transaction', 'bankInfo'));
+        return view('escrow.show', array_merge(compact('transaction', 'bankInfo'), $qrisData));
     }
 
     /**
@@ -194,8 +214,9 @@ class EscrowController extends Controller
 
         $bankInfo = BotSetting::where('key', 'escrow.bank_info')->value('value') ?? "Bank BCA: 1234567890\na.n Dzulfikrialifajri Store";
         $isPublic = true;
+        $qrisData = $this->getQrisData($transaction);
 
-        return view('escrow.show', compact('transaction', 'bankInfo', 'isPublic'));
+        return view('escrow.show', array_merge(compact('transaction', 'bankInfo', 'isPublic'), $qrisData));
     }
 
     /**

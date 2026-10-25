@@ -128,13 +128,13 @@
                             <span class="fw-semibold text-dark" id="displayAmount">Rp 50.000</span>
                         </div>
                         <div class="d-flex justify-content-between align-items-center mb-1">
-                            <span class="small text-muted">{{ __('Biaya Admin Rekber (:percent%, min Rp:min):', ['percent' => $feePercent, 'min' => number_format($minFee, 0, ',', '.')]) }}</span>
-                            <span class="fw-semibold text-info" id="displayFee">Rp 5.000</span>
+                            <span class="small text-muted">{{ __('Biaya Admin Rekber (:percent%):', ['percent' => $feePercent]) }}</span>
+                            <span class="fw-semibold text-info" id="displayFee">Rp 750</span>
                         </div>
                         <hr class="my-2 opacity-25">
                         <div class="d-flex justify-content-between align-items-center mb-1">
                             <span class="fw-bold text-dark">{{ __('Total yang Harus Ditransfer Pembeli:') }}</span>
-                            <span class="fs-5 fw-bold text-primary" id="displayTotalBuyer">Rp 55.000</span>
+                            <span class="fs-5 fw-bold text-primary" id="displayTotalBuyer">Rp 50.750</span>
                         </div>
                         <div class="d-flex justify-content-between align-items-center">
                             <span class="small text-muted">{{ __('Total Bersih yang Diterima Penjual:') }}</span>
@@ -172,7 +172,6 @@
 
 <script>
     const feePercent = {{ $feePercent }};
-    const minFee = {{ $minFee }};
 
     function formatRupiah(num) {
         return 'Rp ' + Number(num).toLocaleString('id-ID');
@@ -182,7 +181,7 @@
         const amount = parseFloat(document.getElementById('amountInput').value) || 0;
         const payer = document.getElementById('feePayerSelect').value;
 
-        let fee = Math.max(minFee, Math.round((amount * feePercent) / 100));
+        let fee = Math.round((amount * feePercent) / 100);
         let totalBuyer = amount;
         let totalSeller = amount;
 
