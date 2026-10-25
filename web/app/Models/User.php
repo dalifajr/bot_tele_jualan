@@ -128,4 +128,21 @@ class User extends Authenticatable
     {
         return $this->full_name ?: $this->username ?: 'User #' . $this->telegram_id;
     }
+
+    /**
+     * Check if user is allowed to access and use the Rekber (Escrow) feature.
+     * Default is TRUE for all users, unless explicitly unchecked by admin in allowed_tools.
+     */
+    public function canUseRekber(): bool
+    {
+        if ($this->role === 'admin') {
+            return true;
+        }
+
+        if (is_null($this->allowed_tools)) {
+            return true;
+        }
+
+        return is_array($this->allowed_tools) && in_array('rekber', $this->allowed_tools);
+    }
 }

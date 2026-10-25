@@ -56,6 +56,14 @@ Route::get('/auth/telegram/callback', [TelegramAuthController::class, 'callback'
 Route::post('/auth/telegram/webapp', [TelegramAuthController::class, 'webAppLogin'])->name('auth.telegram.webapp');
 Route::post('/logout', [TelegramAuthController::class, 'logout'])->name('logout');
 
+// Public Escrow Room (Accessible by external seller/buyer via token link)
+Route::get('/rekber/room/{token}', [\App\Http\Controllers\EscrowController::class, 'showPublic'])->name('escrow.public.show');
+Route::post('/rekber/room/{token}/deposit', [\App\Http\Controllers\EscrowController::class, 'uploadDepositPublic'])->name('escrow.public.deposit');
+Route::post('/rekber/room/{token}/deliver', [\App\Http\Controllers\EscrowController::class, 'uploadDeliveryPublic'])->name('escrow.public.deliver');
+Route::post('/rekber/room/{token}/confirm', [\App\Http\Controllers\EscrowController::class, 'confirmCompletePublic'])->name('escrow.public.confirm');
+Route::post('/rekber/room/{token}/dispute', [\App\Http\Controllers\EscrowController::class, 'openDisputePublic'])->name('escrow.public.dispute');
+Route::post('/rekber/room/{token}/message', [\App\Http\Controllers\EscrowController::class, 'sendMessagePublic'])->name('escrow.public.message');
+
 /*
 |--------------------------------------------------------------------------
 | Protected Routes (require Telegram authentication)
@@ -63,6 +71,20 @@ Route::post('/logout', [TelegramAuthController::class, 'logout'])->name('logout'
 |
 */
 Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
+    // Escrow / Rekening Bersama (Accessible by users allowed to use rekber)
+    Route::middleware('rekber.access')->prefix('rekber')->name('escrow.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\EscrowController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\EscrowController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\EscrowController::class, 'store'])->name('store');
+        Route::get('/{code}', [\App\Http\Controllers\EscrowController::class, 'show'])->name('show');
+        Route::post('/{code}/deposit', [\App\Http\Controllers\EscrowController::class, 'uploadDeposit'])->name('upload-deposit');
+        Route::post('/{code}/deliver', [\App\Http\Controllers\EscrowController::class, 'uploadDelivery'])->name('upload-delivery');
+        Route::post('/{code}/confirm', [\App\Http\Controllers\EscrowController::class, 'confirmComplete'])->name('confirm-complete');
+        Route::post('/{code}/dispute', [\App\Http\Controllers\EscrowController::class, 'openDispute'])->name('open-dispute');
+        Route::post('/{code}/message', [\App\Http\Controllers\EscrowController::class, 'sendMessage'])->name('send-message');
+        Route::post('/{code}/cancel', [\App\Http\Controllers\EscrowController::class, 'cancel'])->name('cancel');
+    });
+
     // Orders
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/{id}', [OrderController::class, 'show'])->name('orders.show');
@@ -259,6 +281,16 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         // Admin Product Workers management
         Route::post('/products/{id}/workers', [\App\Http\Controllers\AdminController::class, 'addWorker'])->name('products.workers.store');
         Route::delete('/products/{id}/workers/{userId}', [\App\Http\Controllers\AdminController::class, 'removeWorker'])->name('products.workers.destroy');
+
+        // Escrow Management (Rekber Admin Panel)
+        Route::prefix('rekber')->name('escrow.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\EscrowAdminController::class, 'index'])->name('index');
+            Route::get('/{code}', [\App\Http\Controllers\Admin\EscrowAdminController::class, 'show'])->name('show');
+            Route::post('/{code}/verify-deposit', [\App\Http\Controllers\Admin\EscrowAdminController::class, 'verifyDeposit'])->name('verify-deposit');
+            Route::post('/{code}/payout', [\App\Http\Controllers\Admin\EscrowAdminController::class, 'processPayout'])->name('payout');
+            Route::post('/{code}/resolve-dispute', [\App\Http\Controllers\Admin\EscrowAdminController::class, 'resolveDispute'])->name('resolve-dispute');
+            Route::post('/settings', [\App\Http\Controllers\Admin\EscrowAdminController::class, 'updateSettings'])->name('settings');
+        });
 
     });
 

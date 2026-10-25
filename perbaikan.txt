@@ -1,6 +1,6 @@
 RENCANA PERBAIKAN DAN PENGEMBANGAN WEBITE JUALAN:
 
-coba perbaiki 
+saya ingin menambahkan menu pada sidebar yaitu menu rekber atau rekening bersama. tujuannya adalah untuk membantu customer dalam melakukan transaksi pembayaran dengan penjual diluar platform ini dengan aman, dengan saya/admin sebagai penengah atau perantara. jadi tolong buatkan rencana pengembangannya yang berisi deskripsi, alur, logika, menu dan fitur, akses boleh dan tidak boleh, model db, dll. menu rekber ini secara default dapat diakses oleh semua user (admin/seller/customer), namun admin dapat meng-uncheck fitur ini pada kelola pelanggan.
 
 catat untuk kamu;
 - lakukan brainstroming sebelum melakukan eksekusi, tak lupa pula lakukan analisa kritik dan saran.

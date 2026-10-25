@@ -38,6 +38,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'seller' => \App\Http\Middleware\EnsureSeller::class,
             'telegram.auth' => \App\Http\Middleware\EnsureTelegramAuthenticated::class,
             'tool.access' => \App\Http\Middleware\EnsureToolAccess::class,
+            'rekber.access' => \App\Http\Middleware\EnsureCanUseRekber::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

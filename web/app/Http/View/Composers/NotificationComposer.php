@@ -47,6 +47,33 @@ class NotificationComposer
         $completedBroadcastsCount = $completedBroadcastsQuery->count();
         $completedBroadcasts = $completedBroadcastsQuery->get();
 
+        // Escrow Count for Sidebar Badges
+        $activeEscrowCount = 0;
+        $adminEscrowCount = 0;
+        if (\Illuminate\Support\Facades\Auth::check()) {
+            $authUser = \Illuminate\Support\Facades\Auth::user();
+            if ($authUser->role === 'admin') {
+                $adminEscrowCount = \App\Models\EscrowTransaction::whereIn('status', [
+                    \App\Models\EscrowTransaction::STATUS_DEPOSIT_SUBMITTED,
+                    \App\Models\EscrowTransaction::STATUS_WAITING_PAYOUT,
+                    \App\Models\EscrowTransaction::STATUS_DISPUTED,
+                ])->count();
+            }
+
+            if ($authUser->canUseRekber()) {
+                $activeEscrowCount = \App\Models\EscrowTransaction::where(function ($q) use ($authUser) {
+                    $q->where('creator_id', $authUser->id)
+                      ->orWhere('buyer_user_id', $authUser->id)
+                      ->orWhere('seller_user_id', $authUser->id);
+                })->whereIn('status', [
+                    \App\Models\EscrowTransaction::STATUS_WAITING_DEPOSIT,
+                    \App\Models\EscrowTransaction::STATUS_FUNDS_HELD,
+                    \App\Models\EscrowTransaction::STATUS_DELIVERED,
+                    \App\Models\EscrowTransaction::STATUS_DISPUTED,
+                ])->count();
+            }
+        }
+
         $totalNotifications = $pendingOrdersCount + $pendingLoginsCount + $readyToVerifyCount + $completedBroadcastsCount;
 
         $view->with(compact(
@@ -56,7 +83,9 @@ class NotificationComposer
             'readyToVerifyCount', 
             'completedBroadcastsCount',
             'completedBroadcasts',
-            'totalNotifications'
+            'totalNotifications',
+            'activeEscrowCount',
+            'adminEscrowCount'
         ));
     }
 }

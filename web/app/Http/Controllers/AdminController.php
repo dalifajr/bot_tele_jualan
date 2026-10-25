@@ -1980,7 +1980,7 @@ class AdminController extends Controller
             'platform_fee_percent' => 'required|integer|between:0,100',
             'seller_save_hours' => 'required|integer|min:0',
             'allowed_tools' => 'nullable|array',
-            'allowed_tools.*' => 'string|in:github_checker,gmail_checker,2fa_generator',
+            'allowed_tools.*' => 'string|in:github_checker,gmail_checker,2fa_generator,rekber',
         ]);
 
         $oldRole = $user->role;

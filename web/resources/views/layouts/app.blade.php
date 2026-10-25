@@ -705,6 +705,15 @@
                             <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.7rem;">{{ $unreadChatsCount }}</span>
                         @endif
                     </a>
+                    @if(Auth::check() && Auth::user()->canUseRekber())
+                    <a href="{{ route('escrow.index') }}" class="menu-item {{ request()->routeIs('escrow.*') ? 'active' : '' }}">
+                        <div class="menu-icon-box"><i class="fas fa-handshake text-info"></i></div>
+                        <span class="menu-label-text">{{ __('Rekber (Escrow)') }}</span>
+                        @if(isset($activeEscrowCount) && $activeEscrowCount > 0)
+                            <span class="badge bg-primary rounded-pill ms-auto" style="font-size: 0.7rem;">{{ $activeEscrowCount }}</span>
+                        @endif
+                    </a>
+                    @endif
                 </div>
             </div>
 
@@ -795,6 +804,13 @@
                         <span class="menu-label-text">{{ __('Percobaan Login') }}</span>
                         @if($pendingLoginsCount > 0)
                             <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.7rem;">{{ $pendingLoginsCount }}</span>
+                        @endif
+                    </a>
+                    <a href="{{ route('admin.escrow.index') }}" class="menu-item {{ request()->routeIs('admin.escrow.*') ? 'active' : '' }}">
+                        <div class="menu-icon-box"><i class="fas fa-handshake text-info"></i></div>
+                        <span class="menu-label-text">{{ __('Kelola Rekber') }}</span>
+                        @if(isset($adminEscrowCount) && $adminEscrowCount > 0)
+                            <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.7rem;">{{ $adminEscrowCount }}</span>
                         @endif
                     </a>
                 </div>
