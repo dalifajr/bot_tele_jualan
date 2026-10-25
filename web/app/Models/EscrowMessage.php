@@ -12,6 +12,15 @@ class EscrowMessage extends Model
 
     public $timestamps = false;
 
+    protected static function booted(): void
+    {
+        static::creating(function ($model) {
+            if (empty($model->created_at)) {
+                $model->created_at = now();
+            }
+        });
+    }
+
     protected $fillable = [
         'escrow_transaction_id',
         'sender_id',

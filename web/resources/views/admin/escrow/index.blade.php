@@ -5,13 +5,16 @@
 
 @section('content')
 <div class="row g-3 mb-4">
-    <div class="col-12 col-md-8">
+    <div class="col-12 col-md-5">
         <h4 class="fw-bold mb-1 text-dark">{{ __('Kelola Layanan Rekber (Escrow)') }}</h4>
         <p class="text-muted small mb-0">{{ __('Kelola transaksi rekening bersama, verifikasi deposit masuk, pelepasan payout, dan penyelesaian sengketa.') }}</p>
     </div>
-    <div class="col-12 col-md-4 text-md-end d-flex align-items-center justify-content-md-end gap-2">
-        <button type="button" class="btn btn-outline-primary rounded-pill px-3 shadow-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#escrowSettingsModal">
-            <i class="fas fa-cog me-1"></i> {{ __('Pengaturan Tarif & Rekening') }}
+    <div class="col-12 col-md-7 text-md-end d-flex align-items-center justify-content-md-end gap-2 flex-wrap">
+        <a href="{{ route('admin.escrow.create') }}" class="btn btn-primary rounded-pill px-3 shadow-sm fw-semibold">
+            <i class="fas fa-plus me-1"></i> {{ __('Inisiasi Rekber Baru') }}
+        </a>
+        <button type="button" class="btn btn-outline-secondary rounded-pill px-3 shadow-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#escrowSettingsModal">
+            <i class="fas fa-cog me-1"></i> {{ __('Tarif & Rekening') }}
         </button>
     </div>
 </div>
@@ -146,8 +149,40 @@
                                     </span>
                                 </td>
                                 <td class="pe-4 py-3 text-end">
-                                    <a href="{{ route('admin.escrow.show', $trx->transaction_code) }}" class="btn btn-sm btn-primary rounded-pill px-3 fw-semibold">
-                                        {{ __('Kelola') }} <i class="fas fa-arrow-right ms-1"></i>
+                                    <div class="dropdown d-inline-block">
+                                        <button class="btn btn-sm btn-light rounded-pill px-2.5 border" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="{{ __('Pilihan Aksi') }}">
+                                            <i class="fas fa-ellipsis-vertical"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3">
+                                            <li>
+                                                <a class="dropdown-item small py-2" href="{{ route('admin.escrow.show', $trx->transaction_code) }}">
+                                                    <i class="fas fa-eye text-primary me-2"></i> {{ __('Detail & Kelola') }}
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item small py-2" href="{{ route('admin.escrow.edit', $trx->transaction_code) }}">
+                                                    <i class="fas fa-edit text-warning me-2"></i> {{ __('Edit Transaksi') }}
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item small py-2" href="{{ route('escrow.public.show', $trx->public_token) }}" target="_blank">
+                                                    <i class="fas fa-external-link-alt text-info me-2"></i> {{ __('Buka Ruang Publik') }}
+                                                </a>
+                                            </li>
+                                            <li><hr class="dropdown-divider my-1"></li>
+                                            <li>
+                                                <form action="{{ route('admin.escrow.destroy', $trx->transaction_code) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus transaksi rekber {{ $trx->transaction_code }} beserta seluruh obrolan dan bukti lampiran?')">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="dropdown-item small py-2 text-danger">
+                                                        <i class="fas fa-trash-alt me-2"></i> {{ __('Hapus Permanen') }}
+                                                    </button>
+                                                </form>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                    <a href="{{ route('admin.escrow.show', $trx->transaction_code) }}" class="btn btn-sm btn-primary rounded-pill px-3 fw-semibold ms-1">
+                                        {{ __('Kelola') }}
                                     </a>
                                 </td>
                             </tr>

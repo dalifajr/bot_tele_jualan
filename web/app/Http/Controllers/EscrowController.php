@@ -455,6 +455,79 @@ class EscrowController extends Controller
         return $this->processSendMessage($request, $transaction, $role, $name, null);
     }
 
+    /**
+     * Dapatkan daftar pesan chat rekber via JSON untuk pembaruan real-time di UI.
+     */
+    public function getMessages(Request $request, string $code)
+    {
+        $transaction = EscrowTransaction::where('transaction_code', $code)->firstOrFail();
+        $user = Auth::user();
+
+        if (!$transaction->isParticipant($user)) {
+            abort(403);
+        }
+
+        return $this->fetchMessagesJson($request, $transaction, $user ? $user->id : null);
+    }
+
+    public function getMessagesPublic(Request $request, string $token)
+    {
+        $transaction = EscrowTransaction::where('public_token', $token)->firstOrFail();
+        $role = $transaction->creator_role === 'buyer' ? 'seller' : 'buyer';
+
+        return $this->fetchMessagesJson($request, $transaction, null, $role);
+    }
+
+    protected function fetchMessagesJson(Request $request, EscrowTransaction $transaction, ?int $currentUserId, ?string $publicRole = null)
+    {
+        $afterId = (int)$request->query('after_id', 0);
+        $query = $transaction->messages()->orderBy('id', 'asc');
+        if ($afterId > 0) {
+            $query->where('id', '>', $afterId);
+        }
+
+        $messages = $query->get()->map(function ($msg) use ($currentUserId, $publicRole) {
+            $isMyMsg = false;
+            if ($currentUserId) {
+                $isMyMsg = ($msg->sender_id === $currentUserId);
+            } elseif ($publicRole) {
+                $isMyMsg = ($msg->sender_role === $publicRole);
+            }
+
+            $isImage = false;
+            $attachmentUrl = null;
+            if ($msg->attachment_path) {
+                $attachmentUrl = Storage::url($msg->attachment_path);
+                $ext = strtolower(pathinfo($msg->attachment_path, PATHINFO_EXTENSION));
+                $isImage = in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif']);
+            }
+
+            return [
+                'id' => $msg->id,
+                'sender_id' => $msg->sender_id,
+                'sender_role' => $msg->sender_role,
+                'sender_name' => $msg->sender_name,
+                'message' => $msg->message,
+                'attachment_url' => $attachmentUrl,
+                'is_image' => $isImage,
+                'is_mine' => $isMyMsg,
+                'is_admin' => ($msg->sender_role === 'admin'),
+                'time' => $msg->created_at->format('H:i'),
+                'created_at' => $msg->created_at->toIso8601String(),
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'count' => $messages->count(),
+            'total_messages' => $transaction->messages()->count(),
+            'messages' => $messages,
+            'status' => $transaction->status,
+            'status_label' => $transaction->status_label,
+            'status_badge' => $transaction->status_badge,
+        ]);
+    }
+
     protected function processSendMessage(Request $request, EscrowTransaction $transaction, string $role, string $name, ?int $senderId)
     {
         $request->validate([
@@ -467,13 +540,41 @@ class EscrowController extends Controller
             $attachmentPath = $request->file('attachment')->store('escrow_chats', 'public');
         }
 
-        $transaction->messages()->create([
+        $msg = $transaction->messages()->create([
             'sender_id' => $senderId,
             'sender_role' => $role,
             'sender_name' => $name,
             'message' => $request->input('message'),
             'attachment_path' => $attachmentPath,
         ]);
+
+        if ($request->ajax() || $request->wantsJson()) {
+            $isImage = false;
+            $attachmentUrl = null;
+            if ($msg->attachment_path) {
+                $attachmentUrl = Storage::url($msg->attachment_path);
+                $ext = strtolower(pathinfo($msg->attachment_path, PATHINFO_EXTENSION));
+                $isImage = in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif']);
+            }
+
+            return response()->json([
+                'success' => true,
+                'total_messages' => $transaction->messages()->count(),
+                'message' => [
+                    'id' => $msg->id,
+                    'sender_id' => $msg->sender_id,
+                    'sender_role' => $msg->sender_role,
+                    'sender_name' => $msg->sender_name,
+                    'message' => $msg->message,
+                    'attachment_url' => $attachmentUrl,
+                    'is_image' => $isImage,
+                    'is_mine' => true,
+                    'is_admin' => ($role === 'admin'),
+                    'time' => $msg->created_at->format('H:i'),
+                    'created_at' => $msg->created_at->toIso8601String(),
+                ],
+            ]);
+        }
 
         return redirect()->back()->with('success', __('Pesan berhasil dikirim.'));
     }

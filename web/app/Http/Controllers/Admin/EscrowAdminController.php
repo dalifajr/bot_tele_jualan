@@ -3,10 +3,14 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\EscrowController;
 use App\Models\BotSetting;
 use App\Models\EscrowTransaction;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class EscrowAdminController extends Controller
 {
@@ -64,6 +68,201 @@ class EscrowAdminController extends Controller
             'feePercent',
             'bankInfo'
         ));
+    }
+
+    /**
+     * Tampilan form inisiasi room rekber baru oleh Admin.
+     */
+    public function create()
+    {
+        $users = User::orderBy('full_name')->get();
+        $feePercent = (float)(BotSetting::where('key', 'escrow.fee_percent')->value('value') ?? 1.5);
+
+        return view('admin.escrow.create', compact('users', 'feePercent'));
+    }
+
+    /**
+     * Simpan inisiasi room rekber baru oleh Admin.
+     */
+    public function store(Request $request)
+    {
+        $request->validate([
+            'title' => 'required|string|max:150',
+            'description' => 'nullable|string|max:2000',
+            'amount' => 'required|numeric|min:10000',
+            'fee_payer' => 'required|in:buyer,seller,split',
+            'inspection_hours' => 'required|integer|min:1|max:168',
+            'buyer_type' => 'required|in:registered,external',
+            'buyer_user_id' => 'nullable|required_if:buyer_type,registered|exists:users,id',
+            'buyer_name' => 'required|string|max:100',
+            'buyer_contact' => 'required|string|max:100',
+            'seller_type' => 'required|in:registered,external',
+            'seller_user_id' => 'nullable|required_if:seller_type,registered|exists:users,id',
+            'seller_name' => 'required|string|max:100',
+            'seller_contact' => 'required|string|max:100',
+            'seller_bank_name' => 'nullable|string|max:50',
+            'seller_account_number' => 'nullable|string|max:50',
+            'seller_account_holder' => 'nullable|string|max:100',
+        ]);
+
+        $code = 'RKB-' . date('Ymd') . '-' . strtoupper(Str::random(5));
+        $publicToken = Str::random(32);
+        $amount = (float)$request->amount;
+        $feeCalc = EscrowController::calculateFee($amount, $request->fee_payer);
+        $uniqueCode = rand(1, 250);
+        $totalBuyerPay = $feeCalc['total_buyer_pay'] + $uniqueCode;
+
+        $transaction = EscrowTransaction::create([
+            'transaction_code' => $code,
+            'creator_id' => Auth::id(),
+            'creator_role' => 'buyer',
+            'buyer_user_id' => $request->buyer_type === 'registered' ? $request->buyer_user_id : null,
+            'buyer_name' => $request->buyer_name,
+            'buyer_contact' => $request->buyer_contact,
+            'seller_user_id' => $request->seller_type === 'registered' ? $request->seller_user_id : null,
+            'seller_name' => $request->seller_name,
+            'seller_contact' => $request->seller_contact,
+            'seller_bank_name' => $request->seller_bank_name,
+            'seller_account_number' => $request->seller_account_number,
+            'seller_account_holder' => $request->seller_account_holder,
+            'title' => $request->title,
+            'description' => $request->description,
+            'amount' => $amount,
+            'fee_amount' => $feeCalc['fee_amount'],
+            'fee_payer' => $request->fee_payer,
+            'unique_code' => $uniqueCode,
+            'total_buyer_pay' => $totalBuyerPay,
+            'total_seller_receive' => $feeCalc['total_seller_receive'],
+            'inspection_hours' => (int)$request->inspection_hours,
+            'status' => EscrowTransaction::STATUS_WAITING_DEPOSIT,
+            'public_token' => $publicToken,
+        ]);
+
+        $transaction->logTimeline(
+            'admin',
+            Auth::id(),
+            'created_by_admin',
+            __('Ruang Rekber dibuat langsung oleh Admin (:admin) untuk transaksi antara :buyer dan :seller.', [
+                'admin' => Auth::user()->display_name,
+                'buyer' => $transaction->buyer_name,
+                'seller' => $transaction->seller_name,
+            ])
+        );
+
+        return redirect()->route('admin.escrow.show', $transaction->transaction_code)
+            ->with('success', __('Ruang rekber baru berhasil diinisiasi oleh Admin.'));
+    }
+
+    /**
+     * Tampilan form edit transaksi rekber oleh Admin.
+     */
+    public function edit(string $code)
+    {
+        $transaction = EscrowTransaction::where('transaction_code', $code)->firstOrFail();
+        $users = User::orderBy('full_name')->get();
+        $feePercent = (float)(BotSetting::where('key', 'escrow.fee_percent')->value('value') ?? 1.5);
+
+        return view('admin.escrow.edit', compact('transaction', 'users', 'feePercent'));
+    }
+
+    /**
+     * Simpan pembaruan data transaksi rekber oleh Admin.
+     */
+    public function update(Request $request, string $code)
+    {
+        $transaction = EscrowTransaction::where('transaction_code', $code)->firstOrFail();
+
+        $request->validate([
+            'title' => 'required|string|max:150',
+            'description' => 'nullable|string|max:2000',
+            'amount' => 'required|numeric|min:10000',
+            'fee_payer' => 'required|in:buyer,seller,split',
+            'inspection_hours' => 'required|integer|min:1|max:168',
+            'buyer_name' => 'required|string|max:100',
+            'buyer_contact' => 'required|string|max:100',
+            'seller_name' => 'required|string|max:100',
+            'seller_contact' => 'required|string|max:100',
+            'seller_bank_name' => 'nullable|string|max:50',
+            'seller_account_number' => 'nullable|string|max:50',
+            'seller_account_holder' => 'nullable|string|max:100',
+            'status' => 'required|in:waiting_deposit,deposit_submitted,funds_held,delivered,waiting_payout,completed,disputed,refunded,cancelled',
+            'admin_notes' => 'nullable|string|max:1000',
+        ]);
+
+        $oldStatus = $transaction->status;
+        $amount = (float)$request->amount;
+        $feeCalc = EscrowController::calculateFee($amount, $request->fee_payer);
+        $uniqueCode = $transaction->unique_code ?: rand(1, 250);
+        $totalBuyerPay = $feeCalc['total_buyer_pay'] + $uniqueCode;
+
+        $transaction->update([
+            'title' => $request->title,
+            'description' => $request->description,
+            'amount' => $amount,
+            'fee_amount' => $feeCalc['fee_amount'],
+            'fee_payer' => $request->fee_payer,
+            'unique_code' => $uniqueCode,
+            'total_buyer_pay' => $totalBuyerPay,
+            'total_seller_receive' => $feeCalc['total_seller_receive'],
+            'inspection_hours' => (int)$request->inspection_hours,
+            'buyer_name' => $request->buyer_name,
+            'buyer_contact' => $request->buyer_contact,
+            'seller_name' => $request->seller_name,
+            'seller_contact' => $request->seller_contact,
+            'seller_bank_name' => $request->seller_bank_name,
+            'seller_account_number' => $request->seller_account_number,
+            'seller_account_holder' => $request->seller_account_holder,
+            'status' => $request->status,
+            'admin_notes' => $request->admin_notes,
+        ]);
+
+        $statusChangedNote = ($oldStatus !== $request->status) ? " Status diubah dari '{$oldStatus}' menjadi '{$request->status}'." : "";
+
+        $transaction->logTimeline(
+            'admin',
+            Auth::id(),
+            'updated_by_admin',
+            __('Admin (:admin) telah memperbarui rincian transaksi rekber.:notes', [
+                'admin' => Auth::user()->display_name,
+                'notes' => $statusChangedNote,
+            ])
+        );
+
+        return redirect()->route('admin.escrow.show', $transaction->transaction_code)
+            ->with('success', __('Rincian transaksi rekber berhasil diperbarui.'));
+    }
+
+    /**
+     * Hapus permanen room rekber beserta berkas lampirannya oleh Admin.
+     */
+    public function destroy(string $code)
+    {
+        $transaction = EscrowTransaction::where('transaction_code', $code)->firstOrFail();
+
+        // Hapus file deposit proof jika ada
+        if ($transaction->deposit_proof) {
+            Storage::disk('public')->delete($transaction->deposit_proof);
+        }
+
+        // Hapus file payout proof jika ada
+        if ($transaction->payout_proof) {
+            Storage::disk('public')->delete($transaction->payout_proof);
+        }
+
+        // Hapus file lampiran chat jika ada
+        foreach ($transaction->messages as $msg) {
+            if ($msg->attachment_path) {
+                Storage::disk('public')->delete($msg->attachment_path);
+            }
+        }
+
+        // Hapus relasi database
+        $transaction->messages()->delete();
+        $transaction->timelines()->delete();
+        $transaction->delete();
+
+        return redirect()->route('admin.escrow.index')
+            ->with('success', __('Transaksi rekber :code dan seluruh data terkait berhasil dihapus.', ['code' => $code]));
     }
 
     /**

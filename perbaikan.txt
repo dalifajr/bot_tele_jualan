@@ -1,10 +1,8 @@
 RENCANA PERBAIKAN DAN PENGEMBANGAN WEBITE JUALAN:
 
-fitur rekber seharusnya memanfaatkan fungsi QRIS untuk metode pembayaran. namun tetap jadikan opsi rekening bank sebagai pembayaran rekber. kemudian pisahkan elemen ruang obrolan menjadi tombol ber-ikon pesan berbentuk bundar floating pada sudut kanan bawah.
+perbaiki layout chat, tombol chat floating.
 
-Illuminate\Database\QueryException
-vendor/laravel/framework/src/Illuminate/Database/Connection.php:841
-SQLSTATE[HY000]: General error: 1364 Field 'updated_at' doesn't have a default value (Connection: mysql, Host: 127.0.0.1, Port: 3306, Database: bot_jualan, SQL: insert into `bot_settings` (`key`, `value`) values (escrow.fee_percent, 1.5)) perbaiki, untuk biaya minimum hilangkan saja. kita pakai persentase saja.
+kemudian admin dapat melakukan operasi crud pada room rekber.
 
 catat untuk kamu;
 - lakukan brainstroming sebelum melakukan eksekusi, tak lupa pula lakukan analisa kritik dan saran.

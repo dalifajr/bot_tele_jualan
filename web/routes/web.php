@@ -62,6 +62,7 @@ Route::post('/logout', [TelegramAuthController::class, 'logout'])->name('logout'
 
 // Public Escrow Room (Accessible by external seller/buyer via token link)
 Route::get('/rekber/room/{token}', [\App\Http\Controllers\EscrowController::class, 'showPublic'])->name('escrow.public.show');
+Route::get('/rekber/room/{token}/messages', [\App\Http\Controllers\EscrowController::class, 'getMessagesPublic'])->name('escrow.public.messages');
 Route::post('/rekber/room/{token}/deposit', [\App\Http\Controllers\EscrowController::class, 'uploadDepositPublic'])->name('escrow.public.deposit');
 Route::post('/rekber/room/{token}/deliver', [\App\Http\Controllers\EscrowController::class, 'uploadDeliveryPublic'])->name('escrow.public.deliver');
 Route::post('/rekber/room/{token}/confirm', [\App\Http\Controllers\EscrowController::class, 'confirmCompletePublic'])->name('escrow.public.confirm');
@@ -81,6 +82,7 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         Route::get('/create', [\App\Http\Controllers\EscrowController::class, 'create'])->name('create');
         Route::post('/', [\App\Http\Controllers\EscrowController::class, 'store'])->name('store');
         Route::get('/{code}', [\App\Http\Controllers\EscrowController::class, 'show'])->name('show');
+        Route::get('/{code}/messages', [\App\Http\Controllers\EscrowController::class, 'getMessages'])->name('messages');
         Route::post('/{code}/deposit', [\App\Http\Controllers\EscrowController::class, 'uploadDeposit'])->name('upload-deposit');
         Route::post('/{code}/deliver', [\App\Http\Controllers\EscrowController::class, 'uploadDelivery'])->name('upload-delivery');
         Route::post('/{code}/confirm', [\App\Http\Controllers\EscrowController::class, 'confirmComplete'])->name('confirm-complete');
@@ -289,7 +291,12 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         // Escrow Management (Rekber Admin Panel)
         Route::prefix('rekber')->name('escrow.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\EscrowAdminController::class, 'index'])->name('index');
+            Route::get('/create', [\App\Http\Controllers\Admin\EscrowAdminController::class, 'create'])->name('create');
+            Route::post('/', [\App\Http\Controllers\Admin\EscrowAdminController::class, 'store'])->name('store');
             Route::get('/{code}', [\App\Http\Controllers\Admin\EscrowAdminController::class, 'show'])->name('show');
+            Route::get('/{code}/edit', [\App\Http\Controllers\Admin\EscrowAdminController::class, 'edit'])->name('edit');
+            Route::put('/{code}', [\App\Http\Controllers\Admin\EscrowAdminController::class, 'update'])->name('update');
+            Route::delete('/{code}', [\App\Http\Controllers\Admin\EscrowAdminController::class, 'destroy'])->name('destroy');
             Route::post('/{code}/verify-deposit', [\App\Http\Controllers\Admin\EscrowAdminController::class, 'verifyDeposit'])->name('verify-deposit');
             Route::post('/{code}/payout', [\App\Http\Controllers\Admin\EscrowAdminController::class, 'processPayout'])->name('payout');
             Route::post('/{code}/resolve-dispute', [\App\Http\Controllers\Admin\EscrowAdminController::class, 'resolveDispute'])->name('resolve-dispute');

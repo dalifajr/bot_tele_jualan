@@ -18,11 +18,20 @@
         </div>
         <h4 class="fw-bold text-dark mb-1">{{ $transaction->title }}</h4>
         <p class="text-muted small mb-0">{{ $transaction->description ?: __('Tidak ada deskripsi tambahan.') }}</p>
-    </div>
-    <div class="col-12 col-lg-4 text-lg-end d-flex align-items-center justify-content-lg-end gap-2">
-        <a href="{{ route('escrow.public.show', $transaction->public_token) }}" target="_blank" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
-            <i class="fas fa-external-link-alt me-1"></i> {{ __('Pratinjau Ruang Publik') }}
+    <div class="col-12 col-lg-5 text-lg-end d-flex align-items-center justify-content-lg-end gap-2 flex-wrap">
+        <a href="{{ route('admin.escrow.edit', $transaction->transaction_code) }}" class="btn btn-sm btn-outline-warning rounded-pill px-3 fw-semibold">
+            <i class="fas fa-edit me-1"></i> {{ __('Edit Transaksi') }}
         </a>
+        <a href="{{ route('escrow.public.show', $transaction->public_token) }}" target="_blank" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
+            <i class="fas fa-external-link-alt me-1"></i> {{ __('Pratinjau Publik') }}
+        </a>
+        <form action="{{ route('admin.escrow.destroy', $transaction->transaction_code) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus transaksi rekber ini secara permanen?')">
+            @csrf
+            @method('DELETE')
+            <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3">
+                <i class="fas fa-trash-alt me-1"></i> {{ __('Hapus') }}
+            </button>
+        </form>
     </div>
 </div>
 

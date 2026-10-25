@@ -15,72 +15,146 @@
 @endphp
 
 <style>
-    /* Floating Action Button (FAB) Chat Rekber */
-    .escrow-chat-fab {
+    /* Floating Action Button (FAB) Chat Rekber Modern */
+    .escrow-chat-fab-container {
         position: fixed;
-        bottom: 28px;
-        right: 28px;
+        bottom: 24px;
+        right: 24px;
         z-index: 1045;
-        width: 60px;
-        height: 60px;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+    }
+    .escrow-chat-fab {
+        width: 62px;
+        height: 62px;
         border-radius: 50% !important;
-        background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
-        border: 2px solid rgba(255, 255, 255, 0.4);
-        box-shadow: 0 10px 25px -4px rgba(13, 110, 253, 0.5), 0 4px 10px rgba(0, 0, 0, 0.1);
+        background: linear-gradient(135deg, #0d6efd 0%, #004ecc 100%);
+        border: 2px solid rgba(255, 255, 255, 0.6);
+        box-shadow: 0 10px 25px -4px rgba(13, 110, 253, 0.5), 0 4px 12px rgba(0, 0, 0, 0.12);
         display: flex;
         align-items: center;
         justify-content: center;
         color: #ffffff;
         cursor: pointer;
+        position: relative;
         transition: all 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
     .escrow-chat-fab:hover {
-        transform: translateY(-4px) scale(1.08);
-        box-shadow: 0 14px 28px -3px rgba(13, 110, 253, 0.6), 0 6px 14px rgba(0, 0, 0, 0.15);
+        transform: translateY(-4px) scale(1.06);
+        box-shadow: 0 16px 32px -4px rgba(13, 110, 253, 0.65), 0 6px 16px rgba(0, 0, 0, 0.18);
         color: #ffffff;
     }
     .escrow-chat-fab:active {
-        transform: scale(0.94);
+        transform: scale(0.92);
+    }
+    .escrow-chat-fab .fab-badge {
+        position: absolute;
+        top: -3px;
+        right: -3px;
+        min-width: 22px;
+        height: 22px;
+        padding: 0 6px;
+        border-radius: 11px;
+        background-color: #dc3545;
+        color: #ffffff;
+        font-size: 0.72rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid #ffffff;
+        box-shadow: 0 2px 6px rgba(220, 53, 69, 0.4);
+    }
+    .escrow-chat-fab .fab-pulse {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        border: 2px solid #0d6efd;
+        opacity: 0.8;
+        animation: escrowPulse 2.4s infinite cubic-bezier(0.24, 0, 0.38, 1);
+        pointer-events: none;
+    }
+    @keyframes escrowPulse {
+        0% { transform: scale(1); opacity: 0.8; }
+        70% { transform: scale(1.35); opacity: 0; }
+        100% { transform: scale(1.35); opacity: 0; }
     }
     @media (max-width: 768px) {
+        .escrow-chat-fab-container {
+            bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+            right: 16px;
+        }
         .escrow-chat-fab {
-            bottom: calc(20px + env(safe-area-inset-bottom, 0px));
-            right: 20px;
             width: 56px;
             height: 56px;
         }
     }
 
-    /* Chat bubble styles */
+    /* Modern Chat Bubble & Stream */
+    .chat-bubble-wrapper {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 12px;
+        width: 100%;
+    }
+    .chat-bubble-wrapper.is-me {
+        flex-direction: row-reverse;
+    }
+    .chat-avatar {
+        width: 32px;
+        height: 32px;
+        min-width: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 0.72rem;
+    }
     .chat-bubble {
         max-width: 82%;
         padding: 10px 14px;
         border-radius: 16px;
         position: relative;
         font-size: 0.88rem;
-        line-height: 1.4;
+        line-height: 1.45;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
     }
     .chat-bubble-me {
-        background: #e7f1ff;
-        color: #0b409c;
+        background: #0d6efd;
+        color: #ffffff;
         border-bottom-right-radius: 4px;
         align-self: flex-end;
-        border: 1px solid rgba(13, 110, 253, 0.2);
+    }
+    .chat-bubble-me a {
+        color: #ffffff !important;
+        text-decoration: underline;
     }
     .chat-bubble-other {
         background: #ffffff;
-        color: #212529;
+        color: #1e293b;
         border-bottom-left-radius: 4px;
-        align-self: flex-start;
-        border: 1px solid #dee2e6;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+        border: 1px solid #e2e8f0;
     }
     .chat-bubble-admin {
-        background: #fff8e6;
-        color: #7c4a00;
-        border: 1px solid #ffd166;
+        background: #fffdf5;
+        color: #78350f;
+        border: 1px solid #fde68a;
         border-bottom-left-radius: 4px;
-        align-self: flex-start;
+        box-shadow: 0 2px 8px rgba(245, 158, 11, 0.08);
+    }
+    .chat-attachment-img {
+        max-width: 100%;
+        max-height: 180px;
+        object-fit: cover;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: transform 0.2s ease;
+    }
+    .chat-attachment-img:hover {
+        transform: scale(1.02);
     }
 
     /* Payment Nav Pills */
@@ -630,73 +704,111 @@
 </div>
 
 {{-- FLOATING ACTION BUTTON (FAB) BUNDAR UNTUK CHAT RUANG REKBER --}}
-<button type="button" 
-        class="escrow-chat-fab" 
-        data-bs-toggle="offcanvas" 
-        data-bs-target="#escrowChatDrawer" 
-        aria-controls="escrowChatDrawer" 
-        title="{{ __('Buka Obrolan Ruang Rekber') }}">
-    <i class="fas fa-comment-dots fs-4"></i>
-    @if($totalMessages > 0)
-        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-light shadow-sm" style="font-size: 0.72rem;">
+<div class="escrow-chat-fab-container">
+    <button type="button" 
+            class="escrow-chat-fab" 
+            data-bs-toggle="offcanvas" 
+            data-bs-target="#escrowChatDrawer" 
+            aria-controls="escrowChatDrawer" 
+            title="{{ __('Buka Obrolan Ruang Rekber') }}">
+        <span class="fab-pulse"></span>
+        <i class="fas fa-comment-dots fs-4"></i>
+        <span class="fab-badge" id="chatFabBadge" style="{{ $totalMessages > 0 ? '' : 'display: none;' }}">
             {{ $totalMessages }}
         </span>
-    @endif
-</button>
+    </button>
+</div>
 
 {{-- OFFCANVAS / DRAWER OBROLAN RUANG REKBER --}}
 <div class="offcanvas offcanvas-end border-0 shadow-lg" tabindex="-1" id="escrowChatDrawer" aria-labelledby="escrowChatDrawerLabel" style="width: 440px; max-width: 100vw;">
-    <div class="offcanvas-header border-bottom bg-light py-3">
+    <div class="offcanvas-header border-bottom bg-light py-2.5 px-3">
         <div class="d-flex align-items-center gap-2">
-            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
-                <i class="fas fa-comments"></i>
+            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center shadow-sm" style="width: 38px; height: 38px;">
+                <i class="fas fa-comments fs-6"></i>
             </div>
             <div>
-                <h6 class="offcanvas-title fw-bold text-dark mb-0" id="escrowChatDrawerLabel">{{ __('Obrolan Ruang Rekber') }}</h6>
-                <small class="text-muted font-monospace" style="font-size: 0.75rem;">{{ $transaction->transaction_code }}</small>
+                <h6 class="offcanvas-title fw-bold text-dark mb-0 fs-6" id="escrowChatDrawerLabel">{{ __('Obrolan Ruang Rekber') }}</h6>
+                <div class="d-flex align-items-center gap-1.5 mt-0.5">
+                    <span class="badge bg-{{ $transaction->status_badge }} rounded-pill px-2 py-0.5" id="drawerStatusBadge" style="font-size: 0.65rem;">
+                        {{ $transaction->status_label }}
+                    </span>
+                    <span class="text-muted font-monospace" style="font-size: 0.72rem;">{{ $transaction->transaction_code }}</span>
+                </div>
             </div>
         </div>
-        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        <div class="d-flex align-items-center gap-1">
+            <button type="button" class="btn btn-sm btn-light rounded-circle text-muted" id="btnRefreshChat" onclick="manualRefreshChat()" title="{{ __('Segarkan Obrolan') }}" style="width: 32px; height: 32px;">
+                <i class="fas fa-rotate"></i>
+            </button>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
     </div>
 
     <div class="offcanvas-body d-flex flex-column p-3 bg-light" style="overflow-y: hidden;">
         {{-- Area Pesan Chat (Scrollable) --}}
-        <div class="flex-grow-1 overflow-y-auto pe-1 mb-3 d-flex flex-column gap-2.5" id="chatMessagesContainer">
+        <div class="flex-grow-1 overflow-y-auto pe-1 mb-3 d-flex flex-column" id="chatMessagesContainer">
             @forelse($transaction->messages as $msg)
                 @php
                     $isMyMsg = false;
                     if ($currentUser) {
                         $isMyMsg = ($msg->sender_id === $currentUser->id);
                     } else {
-                        // Public token view: cek apakah pengirim sesuai creator role partner
                         $isMyMsg = ($msg->sender_role === ($transaction->creator_role === 'buyer' ? 'seller' : 'buyer'));
                     }
                     $isAdminMsg = ($msg->sender_role === 'admin');
+
+                    $isImage = false;
+                    $attachmentUrl = null;
+                    if ($msg->attachment_path) {
+                        $attachmentUrl = \Illuminate\Support\Facades\Storage::url($msg->attachment_path);
+                        $ext = strtolower(pathinfo($msg->attachment_path, PATHINFO_EXTENSION));
+                        $isImage = in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif']);
+                    }
                 @endphp
 
-                <div class="d-flex flex-column {{ $isMyMsg ? 'align-items-end' : 'align-items-start' }}">
-                    <div class="small text-muted mb-1 px-1" style="font-size: 0.7rem;">
-                        <strong class="{{ $isAdminMsg ? 'text-danger' : ($isMyMsg ? 'text-primary' : 'text-dark') }}">{{ $msg->sender_name }}</strong>
-                        <span class="badge {{ $isAdminMsg ? 'bg-danger-subtle text-danger' : ($isMyMsg ? 'bg-primary-subtle text-primary' : 'bg-secondary-subtle text-secondary') }} ms-1" style="font-size: 0.62rem;">
-                            {{ strtoupper($msg->sender_role) }}
-                        </span>
+                <div class="chat-bubble-wrapper {{ $isMyMsg ? 'is-me' : '' }}" data-msg-id="{{ $msg->id }}">
+                    <div class="chat-avatar {{ $isAdminMsg ? 'bg-warning text-dark' : ($isMyMsg ? 'bg-primary text-white' : 'bg-secondary-subtle text-secondary') }}" title="{{ $msg->sender_name }} ({{ strtoupper($msg->sender_role) }})">
+                        @if($isAdminMsg)
+                            <i class="fas fa-shield-halved"></i>
+                        @else
+                            {{ strtoupper(substr($msg->sender_name, 0, 1)) }}
+                        @endif
                     </div>
 
                     <div class="chat-bubble {{ $isMyMsg ? 'chat-bubble-me' : ($isAdminMsg ? 'chat-bubble-admin' : 'chat-bubble-other') }}">
-                        <p class="mb-1 text-break">{{ $msg->message }}</p>
+                        <div class="d-flex align-items-center justify-content-between gap-2 mb-1" style="font-size: 0.7rem;">
+                            <strong class="{{ $isMyMsg ? 'text-white' : ($isAdminMsg ? 'text-warning-emphasis' : 'text-primary') }}">
+                                {{ $msg->sender_name }}
+                            </strong>
+                            <span class="badge {{ $isMyMsg ? 'bg-white bg-opacity-25 text-white' : ($isAdminMsg ? 'bg-warning-subtle text-dark' : 'bg-light text-secondary') }}" style="font-size: 0.6rem;">
+                                {{ strtoupper($msg->sender_role) }}
+                            </span>
+                        </div>
+
+                        <p class="mb-1 text-break" style="white-space: pre-wrap;">{{ $msg->message }}</p>
+
                         @if($msg->attachment_path)
-                            <a href="{{ \Illuminate\Support\Facades\Storage::url($msg->attachment_path) }}" target="_blank" class="small text-decoration-none d-inline-flex align-items-center gap-1 mt-1 p-1.5 rounded bg-white bg-opacity-75 border">
-                                <i class="fas fa-paperclip"></i>
-                                <span>{{ __('Lampiran File') }}</span>
-                            </a>
+                            <div class="mt-1.5">
+                                @if($isImage)
+                                    <a href="{{ $attachmentUrl }}" target="_blank" class="d-inline-block">
+                                        <img src="{{ $attachmentUrl }}" alt="Attachment" class="chat-attachment-img shadow-sm border">
+                                    </a>
+                                @else
+                                    <a href="{{ $attachmentUrl }}" target="_blank" class="small {{ $isMyMsg ? 'text-white' : 'text-primary' }} text-decoration-none d-inline-flex align-items-center gap-1.5 p-1.5 rounded {{ $isMyMsg ? 'bg-white bg-opacity-25' : 'bg-light border' }}">
+                                        <i class="fas fa-file-arrow-down"></i>
+                                        <span>{{ __('Unduh Lampiran File') }}</span>
+                                    </a>
+                                @endif
+                            </div>
                         @endif
-                        <div class="text-end text-muted mt-1" style="font-size: 0.65rem;">
+
+                        <div class="text-end {{ $isMyMsg ? 'text-white-50' : 'text-muted' }} mt-1" style="font-size: 0.65rem;">
                             {{ $msg->created_at->format('H:i') }}
                         </div>
                     </div>
                 </div>
             @empty
-                <div class="text-center py-5 text-muted my-auto">
+                <div class="text-center py-5 text-muted my-auto" id="emptyChatPlaceholder">
                     <div class="rounded-circle bg-white border p-3 d-inline-flex mb-2 shadow-sm">
                         <i class="far fa-comments fs-3 text-primary opacity-50"></i>
                     </div>
@@ -708,21 +820,26 @@
             @endforelse
         </div>
 
-        {{-- Form Kirim Pesan --}}
-        <div class="bg-white rounded-3 p-2.5 shadow-sm border mt-auto">
+        {{-- Form Kirim Pesan AJAX --}}
+        <div class="bg-white rounded-3 p-2.5 shadow-sm border mt-auto position-relative">
             <form action="{{ $isPublicView ? route('escrow.public.message', $transaction->public_token) : route('escrow.send-message', $transaction->transaction_code) }}" method="POST" enctype="multipart/form-data" id="escrowChatForm">
                 @csrf
-                <div class="input-group mb-2">
+                <div class="input-group mb-1.5">
                     <input type="text" name="message" id="chatInputMessage" class="form-control border-0 rounded-start-pill bg-light px-3" placeholder="{{ __('Tulis pesan Anda...') }}" required autocomplete="off">
-                    <button type="submit" class="btn btn-primary rounded-end-pill px-3.5 shadow-sm">
-                        <i class="fas fa-paper-plane"></i>
+                    <button type="submit" class="btn btn-primary rounded-end-pill px-3.5 shadow-sm" id="btnSubmitChat">
+                        <i class="fas fa-paper-plane" id="chatSendIcon"></i>
                     </button>
                 </div>
                 <div class="d-flex align-items-center justify-content-between px-1">
-                    <label class="btn btn-xs btn-outline-secondary rounded-pill px-2.5 py-1 small cursor-pointer mb-0" style="font-size: 0.72rem;">
-                        <i class="fas fa-paperclip me-1"></i> <span id="fileAttachmentLabel">{{ __('Lampiran') }}</span>
-                        <input type="file" name="attachment" id="chatAttachmentInput" class="d-none" accept="image/*,application/pdf" onchange="updateAttachmentLabel(this)">
-                    </label>
+                    <div class="d-flex align-items-center gap-2">
+                        <label class="btn btn-xs btn-outline-secondary rounded-pill px-2.5 py-1 small cursor-pointer mb-0" style="font-size: 0.72rem;">
+                            <i class="fas fa-paperclip me-1"></i> <span id="fileAttachmentLabel">{{ __('Lampiran') }}</span>
+                            <input type="file" name="attachment" id="chatAttachmentInput" class="d-none" accept="image/*,application/pdf" onchange="updateAttachmentLabel(this)">
+                        </label>
+                        <button type="button" class="btn btn-xs btn-link text-muted p-0 d-none" id="btnClearAttachment" onclick="clearAttachment()" style="font-size: 0.72rem;">
+                            <i class="fas fa-times-circle text-danger"></i>
+                        </button>
+                    </div>
                     <span class="text-muted" style="font-size: 0.7rem;"><i class="fas fa-lock me-1 text-success"></i>{{ __('Diawasi Admin') }}</span>
                 </div>
             </form>
@@ -840,25 +957,203 @@
 
     function updateAttachmentLabel(input) {
         const label = document.getElementById('fileAttachmentLabel');
+        const clearBtn = document.getElementById('btnClearAttachment');
         if (input.files && input.files.length > 0) {
-            label.textContent = input.files[0].name.substring(0, 15) + '...';
+            label.textContent = input.files[0].name.substring(0, 14) + '...';
+            if (clearBtn) clearBtn.classList.remove('d-none');
         } else {
             label.textContent = 'Lampiran';
+            if (clearBtn) clearBtn.classList.add('d-none');
         }
     }
 
-    // Auto-scroll chat drawer to bottom on open
+    function clearAttachment() {
+        const input = document.getElementById('chatAttachmentInput');
+        const label = document.getElementById('fileAttachmentLabel');
+        const clearBtn = document.getElementById('btnClearAttachment');
+        if (input) input.value = '';
+        if (label) label.textContent = 'Lampiran';
+        if (clearBtn) clearBtn.classList.add('d-none');
+    }
+
+    let chatPollingInterval = null;
+    let isSubmittingChat = false;
+    const messagesApiUrl = "{{ $isPublicView ? route('escrow.public.messages', $transaction->public_token) : route('escrow.messages', $transaction->transaction_code) }}";
+
+    function getHighestMessageId() {
+        const items = document.querySelectorAll('#chatMessagesContainer .chat-bubble-wrapper[data-msg-id]');
+        let maxId = 0;
+        items.forEach(el => {
+            const id = parseInt(el.getAttribute('data-msg-id'), 10);
+            if (id > maxId) maxId = id;
+        });
+        return maxId;
+    }
+
+    function createBubbleHtml(msg) {
+        const avatarBg = msg.is_admin ? 'bg-warning text-dark' : (msg.is_mine ? 'bg-primary text-white' : 'bg-secondary-subtle text-secondary');
+        const avatarIcon = msg.is_admin ? '<i class="fas fa-shield-halved"></i>' : (msg.sender_name ? msg.sender_name.charAt(0).toUpperCase() : '?');
+        const bubbleClass = msg.is_mine ? 'chat-bubble-me' : (msg.is_admin ? 'chat-bubble-admin' : 'chat-bubble-other');
+        const nameClass = msg.is_mine ? 'text-white' : (msg.is_admin ? 'text-warning-emphasis' : 'text-primary');
+        const badgeClass = msg.is_mine ? 'bg-white bg-opacity-25 text-white' : (msg.is_admin ? 'bg-warning-subtle text-dark' : 'bg-light text-secondary');
+        const timeClass = msg.is_mine ? 'text-white-50' : 'text-muted';
+
+        let attachmentHtml = '';
+        if (msg.attachment_url) {
+            if (msg.is_image) {
+                attachmentHtml = `<div class="mt-1.5"><a href="${msg.attachment_url}" target="_blank" class="d-inline-block"><img src="${msg.attachment_url}" alt="Attachment" class="chat-attachment-img shadow-sm border"></a></div>`;
+            } else {
+                const linkClass = msg.is_mine ? 'text-white bg-white bg-opacity-25' : 'text-primary bg-light border';
+                attachmentHtml = `<div class="mt-1.5"><a href="${msg.attachment_url}" target="_blank" class="small ${linkClass} text-decoration-none d-inline-flex align-items-center gap-1.5 p-1.5 rounded"><i class="fas fa-file-arrow-down"></i><span>Unduh Lampiran File</span></a></div>`;
+            }
+        }
+
+        return `
+            <div class="chat-bubble-wrapper ${msg.is_mine ? 'is-me' : ''}" data-msg-id="${msg.id}">
+                <div class="chat-avatar ${avatarBg}" title="${msg.sender_name} (${(msg.sender_role || '').toUpperCase()})">
+                    ${avatarIcon}
+                </div>
+                <div class="chat-bubble ${bubbleClass}">
+                    <div class="d-flex align-items-center justify-content-between gap-2 mb-1" style="font-size: 0.7rem;">
+                        <strong class="${nameClass}">${msg.sender_name}</strong>
+                        <span class="badge ${badgeClass}" style="font-size: 0.6rem;">${(msg.sender_role || '').toUpperCase()}</span>
+                    </div>
+                    <p class="mb-1 text-break" style="white-space: pre-wrap;">${msg.message}</p>
+                    ${attachmentHtml}
+                    <div class="text-end ${timeClass} mt-1" style="font-size: 0.65rem;">
+                        ${msg.time}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    function appendMessageToContainer(msg) {
+        const container = document.getElementById('chatMessagesContainer');
+        const emptyPlaceholder = document.getElementById('emptyChatPlaceholder');
+        if (emptyPlaceholder) emptyPlaceholder.remove();
+
+        // Hindari duplikasi jika sudah ada di DOM
+        if (container.querySelector(`[data-msg-id="${msg.id}"]`)) return;
+
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = createBubbleHtml(msg).trim();
+        container.appendChild(wrapper.firstChild);
+        container.scrollTop = container.scrollHeight;
+    }
+
+    function updateBadgeCount(total) {
+        const badge = document.getElementById('chatFabBadge');
+        if (badge) {
+            badge.textContent = total;
+            badge.style.display = total > 0 ? '' : 'none';
+        }
+    }
+
+    function fetchNewMessages(silent = true) {
+        const lastId = getHighestMessageId();
+        fetch(`${messagesApiUrl}?after_id=${lastId}`, {
+            headers: { 'Accept': 'application/json' }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success && data.messages && data.messages.length > 0) {
+                data.messages.forEach(msg => appendMessageToContainer(msg));
+                if (data.total_messages !== undefined) {
+                    updateBadgeCount(data.total_messages);
+                }
+            }
+            if (data.status_label && document.getElementById('drawerStatusBadge')) {
+                document.getElementById('drawerStatusBadge').textContent = data.status_label;
+                document.getElementById('drawerStatusBadge').className = `badge bg-${data.status_badge} rounded-pill px-2 py-0.5`;
+            }
+        })
+        .catch(err => {
+            if (!silent) console.error('Fetch chat error:', err);
+        });
+    }
+
+    function manualRefreshChat() {
+        const btn = document.getElementById('btnRefreshChat');
+        if (btn) btn.querySelector('i').classList.add('fa-spin');
+        fetchNewMessages(false);
+        setTimeout(() => {
+            if (btn) btn.querySelector('i').classList.remove('fa-spin');
+        }, 600);
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         const chatDrawer = document.getElementById('escrowChatDrawer');
         const msgContainer = document.getElementById('chatMessagesContainer');
         const chatInput = document.getElementById('chatInputMessage');
+        const chatForm = document.getElementById('escrowChatForm');
+        const btnSubmit = document.getElementById('btnSubmitChat');
+        const sendIcon = document.getElementById('chatSendIcon');
 
         if (chatDrawer && msgContainer) {
             chatDrawer.addEventListener('shown.bs.offcanvas', function () {
                 msgContainer.scrollTop = msgContainer.scrollHeight;
-                if (chatInput) {
-                    chatInput.focus();
+                if (chatInput) chatInput.focus();
+                fetchNewMessages();
+                if (!chatPollingInterval) {
+                    chatPollingInterval = setInterval(() => fetchNewMessages(true), 4000);
                 }
+            });
+
+            chatDrawer.addEventListener('hidden.bs.offcanvas', function () {
+                if (chatPollingInterval) {
+                    clearInterval(chatPollingInterval);
+                    chatPollingInterval = null;
+                }
+            });
+        }
+
+        if (chatForm) {
+            chatForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                if (isSubmittingChat) return;
+
+                const messageText = chatInput.value.trim();
+                if (!messageText) return;
+
+                isSubmittingChat = true;
+                if (btnSubmit) btnSubmit.disabled = true;
+                if (sendIcon) sendIcon.className = 'fas fa-spinner fa-spin';
+
+                const formData = new FormData(chatForm);
+
+                fetch(chatForm.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(res => {
+                    if (!res.ok) throw new Error('Gagal mengirim pesan');
+                    return res.json();
+                })
+                .then(data => {
+                    if (data.success && data.message) {
+                        appendMessageToContainer(data.message);
+                        chatInput.value = '';
+                        clearAttachment();
+                        if (data.total_messages !== undefined) {
+                            updateBadgeCount(data.total_messages);
+                        }
+                    }
+                })
+                .catch(err => {
+                    alert('Gagal mengirim pesan obrolan. Silakan coba kembali.');
+                    console.error(err);
+                })
+                .finally(() => {
+                    isSubmittingChat = false;
+                    if (btnSubmit) btnSubmit.disabled = false;
+                    if (sendIcon) sendIcon.className = 'fas fa-paper-plane';
+                    if (chatInput) chatInput.focus();
+                });
             });
         }
     });
