@@ -1,8 +1,6 @@
 RENCANA PERBAIKAN DAN PENGEMBANGAN WEBITE JUALAN:
 
-website saya ini ada fitur untuk custom checkout, jadi ketika ada stok barang belum ready, maka admin bisa langsung melakukan checkout secara langsung pada menu stok akun.
-
-saya ingin, agar saat admin melakukan checkout pada menu stok akun, admin dapat mengassign pesanan tersebut ke customer tertentu sehingga tagihan, pesanan, riwayat pesanan serta detail pesanan dapat tampil di akun customer tersebut. namun ini sifatnya opsional saja.
+coba perbaiki 
 
 catat untuk kamu;
 - lakukan brainstroming sebelum melakukan eksekusi, tak lupa pula lakukan analisa kritik dan saran.

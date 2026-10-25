@@ -6,12 +6,94 @@
 @push('styles')
 <style>
     @media (max-width: 767.98px) {
+        /* Pepetkan container fluid di mobile ke header dzulfikrialifajri store dan tepi layar */
+        .main-content > .container-fluid.position-relative.px-4,
+        .main-content > .container-fluid {
+            padding: 0 !important;
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            margin: 0 !important;
+        }
+
+        .main-content {
+            margin-left: 0 !important;
+            padding: 0 !important;
+            min-height: auto !important;
+        }
+
+        /* Sembunyikan background gradient dekoratif agar flush */
+        .main-background {
+            display: none !important;
+        }
+
+        /* Pastikan body padding-bottom pas dengan tinggi navbar bawah */
+        body {
+            padding-bottom: calc(62px + env(safe-area-inset-bottom, 0px)) !important;
+            overflow-y: hidden;
+        }
+
+        /* Pepetkan card chat ke header atas dan navbar bawah tanpa border radius */
         .chat-viewport-card {
-            height: calc(100vh - var(--total-header-height) - 82px) !important;
-            min-height: calc(100vh - var(--total-header-height) - 82px) !important;
-            border-radius: 12px !important;
+            border-radius: 0 !important;
+            border: none !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+            width: 100% !important;
+            height: calc(100vh - var(--total-header-height) - 62px - env(safe-area-inset-bottom, 0px)) !important;
+            height: calc(100dvh - var(--total-header-height) - 62px - env(safe-area-inset-bottom, 0px)) !important;
+            min-height: calc(100vh - var(--total-header-height) - 62px - env(safe-area-inset-bottom, 0px)) !important;
+            min-height: calc(100dvh - var(--total-header-height) - 62px - env(safe-area-inset-bottom, 0px)) !important;
+            max-height: calc(100vh - var(--total-header-height) - 62px - env(safe-area-inset-bottom, 0px)) !important;
+            max-height: calc(100dvh - var(--total-header-height) - 62px - env(safe-area-inset-bottom, 0px)) !important;
+        }
+
+        /* Header Obrolan Saya & Header Chat Box dipepetkan ke header fixed toko */
+        .chat-contacts-header,
+        .chat-box-header {
+            border-top: none !important;
+            padding: 10px 14px !important;
+        }
+
+        .chat-contacts-header h5 {
+            font-size: 1.05rem !important;
+        }
+
+        /* Area riwayat pesan di mobile */
+        #chatHistory {
+            padding: 12px 14px !important;
+        }
+
+        /* Kolom Chat (input bar) dipepetkan ke navbar bawah */
+        .chat-form-footer {
+            padding: 8px 12px !important;
+            border-bottom: none !important;
+            background-color: var(--bs-body-bg) !important;
+        }
+
+        .chat-form-footer form {
             margin-bottom: 0 !important;
         }
+
+        .chat-form-footer input#messageInput {
+            height: 42px !important;
+            font-size: 0.88rem !important;
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+        }
+
+        .chat-form-footer button#sendBtn,
+        .chat-form-footer button[onclick*="attachmentInput"] {
+            width: 42px !important;
+            height: 42px !important;
+            min-width: 42px !important;
+        }
+    }
+
+    [data-bs-theme="dark"] .chat-box-header,
+    [data-bs-theme="dark"] .chat-form-footer {
+        background-color: var(--bs-body-bg) !important;
     }
 </style>
 @endpush
@@ -21,7 +103,7 @@
     <div class="row g-0 h-100">
         {{-- Left Contacts List --}}
         <div class="col-md-4 border-end d-flex flex-column h-100 {{ $selectedContact ? 'd-none d-md-flex' : '' }}" style="background-color: var(--bs-body-bg);">
-            <div class="p-3 border-bottom d-flex align-items-center justify-content-between">
+            <div class="p-3 border-bottom d-flex align-items-center justify-content-between chat-contacts-header">
                 <h5 class="fw-bold mb-0"><i class="fas fa-comments text-primary me-2"></i>{{ __('Obrolan Saya') }}</h5>
                 @if(in_array(Auth::user()->role, ['admin', 'seller']))
                     <button class="btn btn-sm btn-primary rounded-pill px-3" style="font-size: 0.8rem;" data-bs-toggle="modal" data-bs-target="#startChatModal">
@@ -105,7 +187,7 @@
         <div class="col-md-8 d-flex flex-column h-100 bg-body-tertiary {{ !$selectedContact ? 'd-none d-md-flex' : '' }}">
             @if($selectedContact)
                 {{-- Chat Box Header --}}
-                <div class="p-3 bg-white border-bottom d-flex align-items-center gap-3">
+                <div class="p-3 bg-white border-bottom d-flex align-items-center gap-3 chat-box-header">
                     <a href="{{ route('chat.index', ['view' => 'list']) }}" class="btn btn-light d-md-none rounded-circle d-flex align-items-center justify-content-center p-0" style="width: 40px; height: 40px; min-width: 40px;">
                         <i class="fas fa-arrow-left text-dark"></i>
                     </a>
@@ -143,7 +225,7 @@
                 </div>
 
                 {{-- Chat Form --}}
-                <div class="p-3 bg-white border-top position-relative">
+                <div class="p-3 bg-white border-top position-relative chat-form-footer">
                     <div id="uploadProgressContainer" class="progress position-absolute top-0 start-0 w-100 d-none" style="height: 4px; border-radius: 0;">
                         <div id="uploadProgressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-primary" role="progressbar" style="width: 0%;"></div>
                     </div>
@@ -268,6 +350,12 @@
         const scrollToBottom = () => {
             chatHistory.scrollTop = chatHistory.scrollHeight;
         };
+
+        if (messageInput) {
+            messageInput.addEventListener('focus', function() {
+                setTimeout(scrollToBottom, 300);
+            });
+        }
 
         const renderAttachment = (path, type) => {
             if (!path) return '';
