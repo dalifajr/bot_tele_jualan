@@ -40,6 +40,7 @@ class EscrowTransaction extends Model
         'amount',
         'fee_amount',
         'fee_payer',
+        'unique_code',
         'total_buyer_pay',
         'total_seller_receive',
         'deposit_proof',

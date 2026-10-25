@@ -20,7 +20,7 @@ from app.bot.services.catalog_service import (
     promote_awaiting_stocks,
 )
 from app.common.config import get_settings
-from app.db.models import Order, OrderItem, Payment, Product, StockUnit, User, HeldFund, BotSetting
+from app.db.models import Order, OrderItem, Payment, Product, StockUnit, User, HeldFund, BotSetting, EscrowTransaction, EscrowTimeline
 
 settings = get_settings()
 STOCK_STATUS_RESERVED_CHECKOUT = "reserved_checkout"
@@ -972,6 +972,16 @@ def reconcile_payment(
         reference=reference,
     )
     if payment is None:
+        # Coba cek apakah uang masuk adalah deposit rekber (EscrowTransaction)
+        escrow_result = _resolve_and_reconcile_escrow(
+            session=session,
+            amount=amount,
+            source_app=source_app,
+            reference=reference,
+            raw_payload=raw_payload,
+        )
+        if escrow_result is not None:
+            return escrow_result
         return ReconcileResult(match_status, match_message, None, None)
 
     order = payment.order
@@ -1175,6 +1185,84 @@ def reconcile_payment(
         checkout_message_id=order.checkout_message_id,
         admin_notification=_build_admin_order_notification(session, order, status_override="delivered"),
     )
+
+
+def _resolve_and_reconcile_escrow(
+    session: Session,
+    amount: int,
+    source_app: str,
+    reference: str | None = None,
+    raw_payload: dict | None = None,
+) -> ReconcileResult | None:
+    escrow = None
+    if reference:
+        escrow = session.scalar(
+            select(EscrowTransaction).where(
+                EscrowTransaction.transaction_code == reference,
+                EscrowTransaction.status.in_(["waiting_deposit", "deposit_submitted"]),
+            )
+        )
+        if escrow and int(escrow.total_buyer_pay) != amount:
+            escrow = None
+
+    if escrow is None:
+        candidates = list(
+            session.scalars(
+                select(EscrowTransaction).where(
+                    EscrowTransaction.status.in_(["waiting_deposit", "deposit_submitted"]),
+                    EscrowTransaction.total_buyer_pay == amount,
+                )
+            ).all()
+        )
+        if len(candidates) == 1:
+            escrow = candidates[0]
+        elif len(candidates) > 1:
+            return ReconcileResult("ambiguous", "Nominal rekber cocok ke beberapa transaksi aktif.", None, None)
+
+    if escrow is None:
+        return None
+
+    # Verifikasi deposit rekber secara otomatis
+    now = _utcnow()
+    escrow.status = "funds_held"
+    escrow.deposit_verified_at = now
+    escrow.admin_notes = f"Diverifikasi otomatis oleh Android Listener ({source_app}). Nominal: Rp {amount:,}"
+    session.add(escrow)
+
+    # Catat timeline rekber
+    timeline = EscrowTimeline(
+        escrow_transaction_id=escrow.id,
+        actor_type="system",
+        actor_id=None,
+        action="funds_verified_auto",
+        description=(
+            f"Dana deposit sebesar Rp {amount:,} telah berhasil dideteksi dan diverifikasi secara "
+            f"OTOMATIS oleh Android Listener ({source_app}). Dana resmi diamankan dalam rekening perantara. "
+            f"Penjual diinstruksikan menyerahkan barang/akun."
+        ),
+        created_at=now,
+    )
+    session.add(timeline)
+
+    # Ambil customer / buyer telegram ID jika ada untuk notifikasi sukses
+    buyer = session.get(User, escrow.buyer_user_id) if escrow.buyer_user_id else None
+    buyer_chat_id = buyer.telegram_id if buyer else None
+
+    delivery_text = (
+        f"✅ <b>Pembayaran Deposit Rekber Berhasil!</b>\n\n"
+        f"Kode Transaksi: <code>{escrow.transaction_code}</code>\n"
+        f"Nominal: <b>Rp {amount:,}</b>\n\n"
+        f"Dana Anda telah aman di rekening perantara Dzulfikrialifajri Store. "
+        f"Penjual ({escrow.seller_name}) telah diberi instruksi untuk segera menyerahkan data akun/barang di ruang rekber."
+    )
+
+    return ReconcileResult(
+        status="paid",
+        message=f"Deposit rekber {escrow.transaction_code} berhasil diverifikasi otomatis oleh Android Listener",
+        customer_chat_id=buyer_chat_id,
+        delivery_message=delivery_text if buyer_chat_id else None,
+    )
+
 
 
 def set_checkout_message_ref(session: Session, order_ref: str, chat_id: int, message_id: int) -> None:

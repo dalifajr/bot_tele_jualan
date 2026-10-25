@@ -123,6 +123,10 @@ class EscrowController extends Controller
             $buyerContact = $validated['partner_contact'];
         }
 
+        // Generate kode unik 1-250 agar nominal pembayaran unik dan dapat dideteksi otomatis oleh Android Listener
+        $uniqueCode = rand(1, 250);
+        $totalBuyerPay = $feeCalc['total_buyer_pay'] + $uniqueCode;
+
         $transaction = EscrowTransaction::create([
             'creator_id' => $user->id,
             'creator_role' => $validated['creator_role'],
@@ -140,7 +144,8 @@ class EscrowController extends Controller
             'amount' => $amount,
             'fee_amount' => $feeCalc['fee_amount'],
             'fee_payer' => $validated['fee_payer'],
-            'total_buyer_pay' => $feeCalc['total_buyer_pay'],
+            'unique_code' => $uniqueCode,
+            'total_buyer_pay' => $totalBuyerPay,
             'total_seller_receive' => $feeCalc['total_seller_receive'],
             'inspection_hours' => $validated['inspection_hours'] ?? 24,
             'status' => EscrowTransaction::STATUS_WAITING_DEPOSIT,

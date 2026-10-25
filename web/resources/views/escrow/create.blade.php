@@ -140,6 +140,9 @@
                             <span class="small text-muted">{{ __('Total Bersih yang Diterima Penjual:') }}</span>
                             <span class="fw-bold text-success" id="displayTotalSeller">Rp 50.000</span>
                         </div>
+                        <div class="mt-2 pt-2 border-top small text-muted" style="font-size: 0.75rem;">
+                            <i class="fas fa-bolt text-warning me-1"></i> {{ __('* Nominal pembayaran pembeli akan disematkan kode unik acak (Rp 1 - Rp 250) agar mutasi QRIS/Bank terdeteksi otomatis oleh Android Listener.') }}
+                        </div>
                     </div>
 
                     {{-- Optional Seller Bank Target --}}

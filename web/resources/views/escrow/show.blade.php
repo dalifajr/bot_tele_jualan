@@ -222,6 +222,9 @@
                         <div class="p-3 bg-primary-subtle rounded-3 border border-primary-subtle h-100">
                             <small class="text-primary d-block mb-1 fw-semibold">{{ __('Total Bayar (Pembeli)') }}</small>
                             <strong class="text-primary fs-5">Rp {{ number_format($transaction->total_buyer_pay, 0, ',', '.') }}</strong>
+                            @if($transaction->unique_code > 0)
+                                <div class="text-muted" style="font-size: 0.72rem;">{{ __('(Termasuk kode unik +:code)', ['code' => $transaction->unique_code]) }}</div>
+                            @endif
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
@@ -275,7 +278,7 @@
                                 <div class="text-center py-2">
                                     <div class="mb-2">
                                         <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1.5 fw-semibold">
-                                            <i class="fas fa-check-circle me-1"></i> {{ __('QRIS Dinamis Terisi Nominal Otomatis') }}
+                                            <i class="fas fa-bolt me-1"></i> {{ __('QRIS Dinamis • Verifikasi Otomatis Android Listener') }}
                                         </span>
                                     </div>
                                     <h6 class="fw-bold text-dark mb-3">{{ __('Scan Kode QRIS di Bawah Ini:') }}</h6>
@@ -287,6 +290,12 @@
                                     <div class="mb-3">
                                         <div class="small text-muted mb-1">{{ __('Total Nominal Tagihan Rekber:') }}</div>
                                         <div class="fs-4 fw-bold text-primary font-monospace">Rp {{ number_format($transaction->total_buyer_pay, 0, ',', '.') }}</div>
+                                        @if($transaction->unique_code > 0)
+                                            <div class="d-inline-flex align-items-center gap-1.5 badge bg-warning-subtle text-dark border border-warning-subtle rounded-pill px-3 py-1 mt-1">
+                                                <i class="fas fa-magic text-warning"></i>
+                                                <span>{{ __('Termasuk kode unik :code untuk verifikasi otomatis instan', ['code' => $transaction->unique_code]) }}</span>
+                                            </div>
+                                        @endif
                                     </div>
 
                                     <div class="d-flex justify-content-center gap-2 flex-wrap mb-3">
@@ -299,12 +308,13 @@
                                     </div>
 
                                     <div class="alert alert-light border small text-start mb-0 mx-auto" style="max-width: 520px;">
-                                        <strong><i class="fas fa-info-circle text-primary me-1"></i> {{ __('Cara Pembayaran via QRIS:') }}</strong>
+                                        <strong><i class="fas fa-info-circle text-primary me-1"></i> {{ __('Cara Pembayaran & Pendeteksian Otomatis:') }}</strong>
                                         <ol class="mb-0 ps-3 mt-1 text-muted">
                                             <li>{{ __('Buka aplikasi m-Banking (BCA, Mandiri, BRI, BNI, Seabank, dll) atau e-Wallet (GoPay, OVO, Dana, ShopeePay).') }}</li>
                                             <li>{{ __('Pilih menu Scan / QRIS, lalu scan kode QR di atas (atau unggah gambar QR).') }}</li>
-                                            <li>{{ __('Nominal otomatis terkunci Rp :amount. Pastikan nama merchant sesuai.', ['amount' => number_format($transaction->total_buyer_pay, 0, ',', '.')]) }}</li>
-                                            <li>{{ __('Selesaikan pembayaran dan simpan tangkapan layar bukti transaksi.') }}</li>
+                                            <li>{{ __('Nominal otomatis terkunci tepat Rp :amount (termasuk kode unik). Pastikan nama merchant sesuai.', ['amount' => number_format($transaction->total_buyer_pay, 0, ',', '.')]) }}</li>
+                                            <li><strong>{{ __('Pendeteksian Otomatis:') }}</strong> {{ __('Aplikasi Android Listener toko akan mendeteksi mutasi uang masuk secara otomatis dalam hitungan detik dan mengubah status transaksi menjadi "Dana Diamankan".') }}</li>
+                                            <li>{{ __('Sebagai cadangan, Anda tetap dapat mengunggah bukti transfer di bawah jika diperlukan.') }}</li>
                                         </ol>
                                     </div>
                                 </div>
@@ -340,7 +350,14 @@
                         <div class="tab-pane fade" id="bank-method" role="tabpanel" aria-labelledby="bank-tab">
                             <div class="p-3 bg-white rounded-3 border">
                                 <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <span class="text-muted small fw-semibold">{{ __('Nominal yang Harus Ditransfer:') }}</span>
+                                    <div>
+                                        <span class="text-muted small fw-semibold">{{ __('Nominal yang Harus Ditransfer:') }}</span>
+                                        @if($transaction->unique_code > 0)
+                                            <div class="text-danger small" style="font-size: 0.72rem;">
+                                                <i class="fas fa-exclamation-circle me-1"></i>{{ __('Wajib transfer tepat hingga 3 digit terakhir agar terverifikasi otomatis oleh Android Listener') }}
+                                            </div>
+                                        @endif
+                                    </div>
                                     <div class="d-flex align-items-center gap-2">
                                         <span class="fs-5 fw-bold text-primary font-monospace">Rp {{ number_format($transaction->total_buyer_pay, 0, ',', '.') }}</span>
                                         <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill px-2 py-0.5" style="font-size: 0.72rem;" onclick="copyText('{{ $transaction->total_buyer_pay }}', 'Nominal berhasil disalin!')">

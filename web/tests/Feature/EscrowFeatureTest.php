@@ -288,7 +288,7 @@ class EscrowFeatureTest extends TestCase
         // Verifikasi tab pembayaran QRIS dan Bank
         $response->assertSee('QRIS (Otomatis &amp; Instan)', false);
         $response->assertSee('Transfer Rekening Bank');
-        $response->assertSee('QRIS Dinamis Terisi Nominal Otomatis');
+        $response->assertSee('QRIS Dinamis • Verifikasi Otomatis Android Listener');
         $response->assertSee('Unduh Kode QR');
         $response->assertSee('qrcode.min.js');
 
@@ -339,5 +339,142 @@ class EscrowFeatureTest extends TestCase
         $createPage->assertStatus(200);
         $createPage->assertDontSee('min Rp');
         $createPage->assertSee('Biaya Admin Rekber (2.5%):');
+    }
+
+    public function test_escrow_creation_attaches_unique_code_to_total_buyer_pay()
+    {
+        $response = $this->actingAs($this->buyer)->post(route('escrow.store'), [
+            'creator_role' => 'buyer',
+            'partner_name' => 'Seller Game',
+            'partner_contact' => '@seller_game',
+            'title' => 'Akun Valorant Radiant',
+            'amount' => 100000,
+            'fee_payer' => 'buyer',
+        ]);
+
+        $response->assertRedirect();
+        $trx = EscrowTransaction::where('title', 'Akun Valorant Radiant')->first();
+        $this->assertNotNull($trx);
+        $this->assertGreaterThanOrEqual(1, $trx->unique_code);
+        $this->assertLessThanOrEqual(250, $trx->unique_code);
+
+        // total_buyer_pay harus sama dengan nilai barang + fee + unique_code
+        $expectedTotal = 100000 + $trx->fee_amount + $trx->unique_code;
+        $this->assertEquals($expectedTotal, $trx->total_buyer_pay);
+    }
+
+    public function test_android_listener_reconciles_escrow_deposit_automatically()
+    {
+        $secret = 'test-listener-secret-12345';
+        \App\Models\BotSetting::updateOrCreate(
+            ['key' => 'listener_shared_secret'],
+            ['value' => $secret]
+        );
+
+        $uniqueCode = 177;
+        $amount = 100000;
+        $feeAmount = 5000;
+        $totalBuyerPay = $amount + $feeAmount + $uniqueCode; // 105177
+
+        $trx = EscrowTransaction::forceCreate([
+            'transaction_code' => 'RKB-AUTO-LISTENER',
+            'creator_id' => $this->buyer->id,
+            'creator_role' => 'buyer',
+            'buyer_user_id' => $this->buyer->id,
+            'buyer_name' => 'Buyer Escrow',
+            'buyer_contact' => '@buyer_tele',
+            'seller_name' => 'Penjual Luar',
+            'seller_contact' => '@penjual_luar',
+            'title' => 'Transaksi Otomatis Listener',
+            'amount' => $amount,
+            'fee_amount' => $feeAmount,
+            'fee_payer' => 'buyer',
+            'unique_code' => $uniqueCode,
+            'total_buyer_pay' => $totalBuyerPay,
+            'total_seller_receive' => $amount,
+            'status' => EscrowTransaction::STATUS_WAITING_DEPOSIT,
+            'public_token' => 'token-auto-listener-test',
+        ]);
+
+        // 1. Uji penolakan signature invalid (401)
+        $invalidResponse = $this->postJson('/listener/payment', [
+            'amount' => $totalBuyerPay,
+            'source_app' => 'bca_mobile',
+        ], [
+            'X-Signature' => 'invalid-signature',
+            'X-Timestamp' => (string)time(),
+        ]);
+        $invalidResponse->assertStatus(401);
+
+        // 2. Kirim payload valid dengan signature HMAC SHA-256 yang sah
+        $timestamp = (string)time();
+        $payload = [
+            'amount' => $totalBuyerPay,
+            'source_app' => 'bca_mobile',
+            'reference' => null, // Mutasi perbankan push notif seringkali tanpa ref, mengandalkan nominal unik
+            'raw_text' => 'Transfer Masuk Rp ' . number_format($totalBuyerPay, 0, ',', '.') . ' dari REK 123456',
+        ];
+        $rawJson = json_encode($payload);
+        $signature = hash_hmac('sha256', $timestamp . '.' . $rawJson, $secret);
+
+        $idempotencyKey = 'test-event-uuid-998877';
+
+        $validResponse = $this->call(
+            'POST',
+            '/listener/payment',
+            [],
+            [],
+            [],
+            [
+                'CONTENT_TYPE' => 'application/json',
+                'HTTP_X_SIGNATURE' => $signature,
+                'HTTP_X_TIMESTAMP' => $timestamp,
+                'HTTP_X_IDEMPOTENCY_KEY' => $idempotencyKey,
+            ],
+            $rawJson
+        );
+
+        $validResponse->assertStatus(200);
+        $validResponse->assertJson([
+            'status' => 'paid',
+            'matched_type' => 'escrow',
+            'transaction_code' => 'RKB-AUTO-LISTENER',
+            'amount' => $totalBuyerPay,
+        ]);
+
+        // Verifikasi database EscrowTransaction
+        $trx->refresh();
+        $this->assertEquals(EscrowTransaction::STATUS_FUNDS_HELD, $trx->status);
+        $this->assertNotNull($trx->deposit_verified_at);
+        $this->assertStringContainsString('Android Listener (bca_mobile)', $trx->admin_notes);
+
+        // Verifikasi pencatatan timeline otomatis
+        $this->assertDatabaseHas('escrow_timelines', [
+            'escrow_transaction_id' => $trx->id,
+            'action' => 'funds_verified_auto',
+        ]);
+
+        // 3. Uji Idempotent Replay (mengirim kembali event yang sama)
+        $replayResponse = $this->call(
+            'POST',
+            '/listener/payment',
+            [],
+            [],
+            [],
+            [
+                'CONTENT_TYPE' => 'application/json',
+                'HTTP_X_SIGNATURE' => $signature,
+                'HTTP_X_TIMESTAMP' => $timestamp,
+                'HTTP_X_IDEMPOTENCY_KEY' => $idempotencyKey,
+            ],
+            $rawJson
+        );
+
+        $replayResponse->assertStatus(200);
+        $replayResponse->assertJson([
+            'status' => 'paid',
+            'matched_type' => 'escrow',
+            'idempotent_replay' => true,
+        ]);
     }
 }

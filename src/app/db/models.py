@@ -336,3 +336,43 @@ class SellerBankAccount(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
+
+class EscrowTransaction(Base):
+    __tablename__ = "escrow_transactions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    transaction_code: Mapped[str] = mapped_column(String(32), unique=True, index=True)
+    creator_id: Mapped[int] = mapped_column(Integer, index=True)
+    creator_role: Mapped[str] = mapped_column(String(20), default="buyer")
+    buyer_user_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
+    buyer_name: Mapped[str] = mapped_column(String(255))
+    buyer_contact: Mapped[str] = mapped_column(String(255))
+    seller_user_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
+    seller_name: Mapped[str] = mapped_column(String(255))
+    seller_contact: Mapped[str] = mapped_column(String(255))
+    amount: Mapped[float] = mapped_column(Numeric(14, 2))
+    fee_amount: Mapped[float] = mapped_column(Numeric(14, 2), default=0)
+    fee_payer: Mapped[str] = mapped_column(String(20), default="buyer")
+    unique_code: Mapped[int] = mapped_column(Integer, default=0)
+    total_buyer_pay: Mapped[float] = mapped_column(Numeric(14, 2), index=True)
+    total_seller_receive: Mapped[float] = mapped_column(Numeric(14, 2))
+    deposit_verified_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    status: Mapped[str] = mapped_column(String(30), default="waiting_deposit", index=True)
+    public_token: Mapped[str] = mapped_column(String(64), unique=True)
+    admin_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class EscrowTimeline(Base):
+    __tablename__ = "escrow_timelines"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    escrow_transaction_id: Mapped[int] = mapped_column(ForeignKey("escrow_transactions.id", ondelete="CASCADE"), index=True)
+    actor_type: Mapped[str] = mapped_column(String(20))
+    actor_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    action: Mapped[str] = mapped_column(String(50))
+    description: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+

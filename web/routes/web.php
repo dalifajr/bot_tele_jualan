@@ -26,6 +26,10 @@ Route::get('/sellers/{user}', [\App\Http\Controllers\SellerProfileController::cl
 
 Route::post('/api/payment/midtrans/callback', [\App\Http\Controllers\MidtransController::class, 'callback'])->name('payment.midtrans.callback');
 
+// Android Listener Endpoints (Deteksi Uang Masuk Mutasi Otomatis via QRIS / Bank)
+Route::post('/listener/payment', [\App\Http\Controllers\PaymentListenerController::class, 'handlePayment'])->name('listener.payment');
+Route::post('/listener/test-connection', [\App\Http\Controllers\PaymentListenerController::class, 'testConnection'])->name('listener.test-connection');
+
 Route::get('/admin/broadcast/run-bg/{jobId}', [\App\Http\Controllers\AdminController::class, 'runBroadcastBackground'])->name('admin.broadcast.run-bg');
 
 /*
