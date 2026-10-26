@@ -98,6 +98,8 @@ public class Main {
             if (matcher.find()) {
                 int physicalW = Integer.parseInt(matcher.group(1));
                 int physicalH = Integer.parseInt(matcher.group(2));
+                DeviceConfig.physicalWidth = physicalW;
+                DeviceConfig.physicalHeight = physicalH;
 
                 // Pertahankan rasio aspek untuk target streaming
                 if (physicalW > 0 && physicalH > 0) {
@@ -189,6 +191,12 @@ public class Main {
         String actionStr = extractJsonValue(json, "action");
         float x = Float.parseFloat(extractJsonValue(json, "x"));
         float y = Float.parseFloat(extractJsonValue(json, "y"));
+
+        // Normalisasi koordinat Web (0.0 - 1.0) ke koordinat fisik layar asli HP
+        if (x <= 1.0f && y <= 1.0f && DeviceConfig.physicalWidth > 0 && DeviceConfig.physicalHeight > 0) {
+            x = x * DeviceConfig.physicalWidth;
+            y = y * DeviceConfig.physicalHeight;
+        }
 
         int action = MotionEvent.ACTION_MOVE;
         if ("down".equalsIgnoreCase(actionStr)) action = MotionEvent.ACTION_DOWN;

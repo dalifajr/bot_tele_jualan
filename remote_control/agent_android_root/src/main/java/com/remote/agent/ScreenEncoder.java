@@ -80,13 +80,13 @@ public class ScreenEncoder implements Runnable {
             hardwareSuccess = bindDisplayToSurface(inputSurface);
 
             if (hardwareSuccess) {
-                System.out.println("[ScreenEncoder] Hardware H.264 Encoder Aktif (" + width + "x" + height + " @ " + frameRate + "fps)");
+                System.out.println("[ScreenEncoder] Mencoba Hardware H.264 Encoder (" + width + "x" + height + " @ " + frameRate + "fps)...");
                 MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
-                long framesProduced = 0;
-                long startTime = System.currentTimeMillis();
+                long startCheckTime = System.currentTimeMillis();
+                int realFramesCount = 0;
 
                 while (isRunning && !Thread.currentThread().isInterrupted()) {
-                    int outputIndex = codec.dequeueOutputBuffer(bufferInfo, 15000); // 15ms timeout
+                    int outputIndex = codec.dequeueOutputBuffer(bufferInfo, 20000); // 20ms timeout
 
                     if (outputIndex >= 0) {
                         ByteBuffer outputBuffer;
@@ -109,12 +109,12 @@ public class ScreenEncoder implements Runnable {
                             if (isConfig) {
                                 // Simpan SPS/PPS untuk dikirim ke controller baru
                                 spsPpsHeader = Arrays.copyOf(outData, outData.length);
-                                System.out.println("[ScreenEncoder] SPS/PPS Codec Config Header tersimpan (" + spsPpsHeader.length + " bytes)");
+                                System.out.println("[ScreenEncoder] SPS/PPS Codec Config tersimpan (" + spsPpsHeader.length + " bytes)");
                                 if (callback != null) {
                                     callback.onVideoFrame(outData, 0, outData.length, true);
                                 }
                             } else {
-                                framesProduced++;
+                                realFramesCount++;
                                 if (isKeyFrame && spsPpsHeader != null && !containsSps(outData)) {
                                     // Gabungkan SPS/PPS di depan Keyframe agar decoder instan menginisiasi
                                     byte[] combined = new byte[spsPpsHeader.length + outData.length];
@@ -135,12 +135,13 @@ public class ScreenEncoder implements Runnable {
                     } else if (outputIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
                         MediaFormat newFormat = codec.getOutputFormat();
                         System.out.println("[ScreenEncoder] Output format berubah: " + newFormat);
-                    }
-
-                    // Failsafe: Jika dalam 3 detik tidak ada frame yang dihasilkan, beralih ke Native Streamer
-                    if (framesProduced == 0 && (System.currentTimeMillis() - startTime) > 3000) {
-                        System.err.println("[ScreenEncoder] Warning: Hardware encoder idle (0 frames). Beralih ke Native Screenrecord...");
-                        break;
+                    } else {
+                        // Jika dalam 1.5 detik SurfaceControl tidak menghasilkan frame gambar nyata (layar hitam)
+                        if (realFramesCount == 0 && (System.currentTimeMillis() - startCheckTime > 1500)) {
+                            System.out.println("[ScreenEncoder] SurfaceControl tidak mengirim buffer layer fisik (Android 14+ layer restriction).");
+                            System.out.println("[ScreenEncoder] Mengalihkan otomatis ke Native High-Performance Screenrecord Engine...");
+                            break;
+                        }
                     }
                 }
             }
@@ -150,34 +151,48 @@ public class ScreenEncoder implements Runnable {
             releaseResources();
         }
 
-        // Jika hardware encoding tidak menghasilkan frame atau di-block Android 14/15, gunakan native fallback
+        // Beralih ke Native Screenrecord Streamer jika hardware tidak mengirim frame atau terhenti
         if (isRunning && !Thread.currentThread().isInterrupted()) {
             runNativeScreenrecordFallback();
         }
     }
 
     /**
-     * Fallback menggunakan native binary /system/bin/screenrecord
-     * 100% kompatibel di semua versi Android (Pixel 7 Android 14/17, Xiaomi, Samsung).
+     * Fallback menggunakan native binary /system/bin/screenrecord (100% didukung di seluruh Android OS)
      */
     private void runNativeScreenrecordFallback() {
-        System.out.println("[ScreenEncoder] Mengaktifkan Native Screenrecord Streamer...");
-        try {
-            String cmd = String.format("screenrecord --output-format=h264 --size %dx%d --bit-rate %d --time-limit 0 -", width, height, bitRate);
-            nativeProcess = Runtime.getRuntime().exec(cmd);
-            InputStream in = nativeProcess.getInputStream();
-            byte[] buffer = new byte[16384];
-            int read;
+        System.out.println("[ScreenEncoder] Mengaktifkan Native Screenrecord Streamer Engine...");
+        byte[] buffer = new byte[8192];
 
-            while (isRunning && (read = in.read(buffer)) != -1) {
-                if (read > 0 && callback != null) {
-                    byte[] chunk = new byte[read];
-                    System.arraycopy(buffer, 0, chunk, 0, read);
-                    callback.onVideoFrame(chunk, 0, read, false);
+        while (isRunning && !Thread.currentThread().isInterrupted()) {
+            Process process = null;
+            try {
+                String cmd = String.format("/system/bin/screenrecord --output-format=h264 --size %dx%d --bit-rate %d --time-limit 180 -", width, height, bitRate);
+                process = Runtime.getRuntime().exec(cmd);
+                nativeProcess = process;
+                InputStream in = process.getInputStream();
+                int read;
+
+                while (isRunning && (read = in.read(buffer)) != -1) {
+                    if (read > 0 && callback != null) {
+                        byte[] chunk = new byte[read];
+                        System.arraycopy(buffer, 0, chunk, 0, read);
+                        callback.onVideoFrame(chunk, 0, read, false);
+                    }
                 }
+            } catch (Exception e) {
+                System.err.println("[ScreenEncoder] Native screenrecord error: " + e.getMessage());
+                try {
+                    Thread.sleep(500);
+                } catch (Exception ignored) {}
+            } finally {
+                if (process != null) {
+                    try {
+                        process.destroy();
+                    } catch (Exception ignored) {}
+                }
+                nativeProcess = null;
             }
-        } catch (Exception e) {
-            System.err.println("[ScreenEncoder] Native screenrecord error: " + e.getMessage());
         }
     }
 
@@ -190,8 +205,11 @@ public class ScreenEncoder implements Runnable {
 
         try {
             format.setInteger(MediaFormat.KEY_BITRATE_MODE, 1); // VBR
-            format.setInteger(MediaFormat.KEY_LATENCY, 0);       // Ultra-low latency
-        } catch (Exception ignored) {}
+            format.setInteger(MediaFormat.KEY_LATENCY, 0);       // Ultra-low latency (0ms queue)
+            format.setInteger(MediaFormat.KEY_PRIORITY, 0);      // Realtime priority
+            // Repeat frame setiap 100ms agar saat layar idle video decoder client tidak freeze
+            format.setLong("repeat-previous-frame-after", 100000L);
+        } catch (Throwable ignored) {}
 
         codec = MediaCodec.createEncoderByType(MediaFormat.MIMETYPE_VIDEO_AVC);
         codec.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
@@ -214,6 +232,10 @@ public class ScreenEncoder implements Runnable {
                 return false;
             }
 
+            int physW = DeviceConfig.physicalWidth > 0 ? DeviceConfig.physicalWidth : width;
+            int physH = DeviceConfig.physicalHeight > 0 ? DeviceConfig.physicalHeight : height;
+            int layerStack = getPhysicalDisplayLayerStack();
+
             // 1. Coba pendekatan Modern Android 10 - 15+ (SurfaceControl.Transaction)
             try {
                 Class<?> transactionClass = Class.forName("android.view.SurfaceControl$Transaction");
@@ -223,15 +245,15 @@ public class ScreenEncoder implements Runnable {
                 setDisplaySurface.invoke(transaction, virtualDisplay, surface);
 
                 Method setDisplayProjection = transactionClass.getMethod("setDisplayProjection", IBinder.class, int.class, Rect.class, Rect.class);
-                setDisplayProjection.invoke(transaction, virtualDisplay, 0, new Rect(0, 0, width, height), new Rect(0, 0, width, height));
+                setDisplayProjection.invoke(transaction, virtualDisplay, 0, new Rect(0, 0, physW, physH), new Rect(0, 0, width, height));
 
                 Method setDisplayLayerStack = transactionClass.getMethod("setDisplayLayerStack", IBinder.class, int.class);
-                setDisplayLayerStack.invoke(transaction, virtualDisplay, 0);
+                setDisplayLayerStack.invoke(transaction, virtualDisplay, layerStack);
 
                 Method apply = transactionClass.getMethod("apply");
                 apply.invoke(transaction);
 
-                System.out.println("[ScreenEncoder] Virtual Display berhasil dikaitkan via SurfaceControl.Transaction (Android 10+).");
+                System.out.println("[ScreenEncoder] Virtual Display terikat: " + physW + "x" + physH + " -> " + width + "x" + height + " (LayerStack " + layerStack + ")");
                 return true;
             } catch (Throwable tModern) {
                 // 2. Fallback ke pendekatan Legacy Android 5 - 9 (SurfaceControl.openTransaction)
@@ -244,18 +266,70 @@ public class ScreenEncoder implements Runnable {
                 openTransaction.invoke(null);
                 try {
                     setDisplaySurface.invoke(null, virtualDisplay, surface);
-                    setDisplayProjection.invoke(null, virtualDisplay, 0, new Rect(0, 0, width, height), new Rect(0, 0, width, height));
-                    setDisplayLayerStack.invoke(null, virtualDisplay, 0);
+                    setDisplayProjection.invoke(null, virtualDisplay, 0, new Rect(0, 0, physW, physH), new Rect(0, 0, width, height));
+                    setDisplayLayerStack.invoke(null, virtualDisplay, layerStack);
                 } finally {
                     closeTransaction.invoke(null);
                 }
-                System.out.println("[ScreenEncoder] Virtual Display berhasil dikaitkan via SurfaceControl.openTransaction (Legacy).");
+                System.out.println("[ScreenEncoder] Virtual Display terikat (Legacy Mode).");
                 return true;
             }
         } catch (Throwable t) {
             System.err.println("[ScreenEncoder] SurfaceControl display bind gagal: " + t.getMessage());
             return false;
         }
+    }
+
+    private int getPhysicalDisplayLayerStack() {
+        // 1. Coba deteksi via DisplayManagerGlobal (Android 4.2 - Android 15/17)
+        try {
+            Class<?> dmgClass = Class.forName("android.hardware.display.DisplayManagerGlobal");
+            Method getInstance = dmgClass.getMethod("getInstance");
+            Object dmg = getInstance.invoke(null);
+            Method getDisplayInfo = dmgClass.getMethod("getDisplayInfo", int.class);
+            Object displayInfo = getDisplayInfo.invoke(dmg, 0); // 0 = main physical display
+            if (displayInfo != null) {
+                java.lang.reflect.Field layerStackField = displayInfo.getClass().getField("layerStack");
+                int ls = layerStackField.getInt(displayInfo);
+                System.out.println("[ScreenEncoder] LayerStack terdeteksi via DisplayManagerGlobal: " + ls);
+                return ls;
+            }
+        } catch (Throwable ignored) {}
+
+        // 2. Fallback via SurfaceControl internal tokens
+        try {
+            Class<?> surfaceControlClass = Class.forName("android.view.SurfaceControl");
+            IBinder token = null;
+
+            try {
+                Method getPhysicalDisplayIds = surfaceControlClass.getMethod("getPhysicalDisplayIds");
+                long[] ids = (long[]) getPhysicalDisplayIds.invoke(null);
+                if (ids != null && ids.length > 0) {
+                    Method getPhysicalDisplayToken = surfaceControlClass.getMethod("getPhysicalDisplayToken", long.class);
+                    token = (IBinder) getPhysicalDisplayToken.invoke(null, ids[0]);
+                }
+            } catch (Throwable ignored) {}
+
+            if (token == null) {
+                try {
+                    Method getInternalDisplayToken = surfaceControlClass.getMethod("getInternalDisplayToken");
+                    token = (IBinder) getInternalDisplayToken.invoke(null);
+                } catch (Throwable ignored) {}
+            }
+
+            if (token != null) {
+                try {
+                    Class<?> displayInfoClass = Class.forName("android.view.SurfaceControl$DisplayInfo");
+                    Method getDisplayInfo = surfaceControlClass.getMethod("getDisplayInfo", IBinder.class);
+                    Object info = getDisplayInfo.invoke(null, token);
+                    if (info != null) {
+                        java.lang.reflect.Field f = displayInfoClass.getField("layerStack");
+                        return f.getInt(info);
+                    }
+                } catch (Throwable ignored) {}
+            }
+        } catch (Throwable ignored) {}
+        return 0;
     }
 
     private boolean containsSps(byte[] data) {

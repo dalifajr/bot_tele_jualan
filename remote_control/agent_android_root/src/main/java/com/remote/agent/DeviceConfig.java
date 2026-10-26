@@ -12,12 +12,14 @@ public class DeviceConfig {
     public static String deviceToken = "SECRET_REMOTE_TOKEN_2026";
     public static String deviceName = "Android Rooted Device";
     
-    // Pengaturan Video Streaming (Default: 720p 30 FPS untuk hemat bandwidth & baterai)
+    // Resolusi Fisik Asli & Target Stream
+    public static int physicalWidth = 1080;
+    public static int physicalHeight = 2400;
     public static int targetWidth = 720;
-    public static int targetHeight = 1280;
+    public static int targetHeight = 1600;
     public static int frameRate = 30;
-    public static int bitRate = 1800000; // 1.8 Mbps
-    public static int iFrameInterval = 2; // Keyframe setiap 2 detik
+    public static int bitRate = 2000000; // 2.0 Mbps untuk kejernihan maksimal
+    public static int iFrameInterval = 1; // Keyframe setiap 1 detik untuk inisiasi instan
 
     // Status Kontrol
     public static volatile boolean isStreaming = false;

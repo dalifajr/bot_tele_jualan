@@ -126,8 +126,8 @@ class SessionManager:
         if not session or not session.controllers:
             return
 
-        # Deteksi dan simpan NAL Unit SPS/PPS (Codec Config)
-        if len(frame_data) < 200 and (b'\x00\x00\x00\x01\x67' in frame_data or b'\x00\x00\x01\x67' in frame_data):
+        # Deteksi dan simpan NAL Unit SPS/PPS (Codec Config) untuk inisiasi instan controller baru
+        if b'\x00\x00\x00\x01\x67' in frame_data or b'\x00\x00\x01\x67' in frame_data:
             session.cached_header = frame_data
 
         # Broadcast video frame ke seluruh controller aktif secara paralel

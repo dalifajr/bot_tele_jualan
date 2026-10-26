@@ -67,11 +67,12 @@ if errorlevel 1 (
 echo [INFO] Kompilasi javac berhasil tanpa error!
 
 echo [4/4] Mengonversi .class ke Dalvik Executable (classes.dex) via D8...
-call "%D8_BAT%" --output "%JAR_OUT%" "%OUT_DIR%\com\remote\agent\*.class" >nul 2>&1
-if not exist "%JAR_OUT%" (
-    REM Fallback command line
-    call "%D8_BAT%" --output "%JAR_OUT%" "%OUT_DIR%\com\remote\agent\DeviceConfig.class" "%OUT_DIR%\com\remote\agent\InputDispatcher.class" "%OUT_DIR%\com\remote\agent\ScreenEncoder.class" "%OUT_DIR%\com\remote\agent\ScreenEncoder$FrameCallback.class" "%OUT_DIR%\com\remote\agent\AgentWebSocketClient.class" "%OUT_DIR%\com\remote\agent\AgentWebSocketClient$MessageListener.class" "%OUT_DIR%\com\remote\agent\ShellExecutor.class" "%OUT_DIR%\com\remote\agent\ShellExecutor$OutputCallback.class" "%OUT_DIR%\com\remote\agent\Main.class"
+set "CLASS_FILES="
+for %%F in ("%OUT_DIR%\com\remote\agent\*.class") do (
+    set "CLASS_FILES=!CLASS_FILES! "%%F""
 )
+call "%D8_BAT%" --output "%JAR_OUT%" !CLASS_FILES!
+
 
 if exist "%JAR_OUT%" (
     echo.

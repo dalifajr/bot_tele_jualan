@@ -36,15 +36,22 @@ public class InputDispatcher {
             Method asInterfaceMethod = stubClass.getMethod("asInterface", IBinder.class);
             inputManagerInstance = asInterfaceMethod.invoke(null, binder);
 
-            // Cari method injectInputEvent(InputEvent, int)
+            // Cari method injectInputEvent baik dengan 2 parameter (Android <= 13) maupun 3 parameter (Android 14/15/17)
             Method[] methods = inputManagerInstance.getClass().getMethods();
             for (Method method : methods) {
                 if (method.getName().equals("injectInputEvent")) {
                     Class<?>[] params = method.getParameterTypes();
                     if (params.length == 2 && InputEvent.class.isAssignableFrom(params[0]) && params[1] == int.class) {
                         injectInputEventMethod = method;
+                        injectMethodParamCount = 2;
                         isReflectionReady = true;
-                        System.out.println("[InputDispatcher] Internal IInputManager API siap digunakan.");
+                        System.out.println("[InputDispatcher] Internal IInputManager API (2-param) siap digunakan.");
+                        break;
+                    } else if (params.length == 3 && InputEvent.class.isAssignableFrom(params[0]) && params[1] == int.class && params[2] == int.class) {
+                        injectInputEventMethod = method;
+                        injectMethodParamCount = 3;
+                        isReflectionReady = true;
+                        System.out.println("[InputDispatcher] Internal IInputManager API (3-param, Android 14+) siap digunakan.");
                         break;
                     }
                 }
@@ -55,6 +62,8 @@ public class InputDispatcher {
             isReflectionReady = false;
         }
     }
+
+    private int injectMethodParamCount = 2;
 
     /**
      * Menyuntikkan Event Sentuhan Layar (Touch Event)
@@ -99,7 +108,11 @@ public class InputDispatcher {
                         0
                 );
 
-                injectInputEventMethod.invoke(inputManagerInstance, event, 0); // 0 = INJECT_INPUT_EVENT_MODE_ASYNC
+                if (injectMethodParamCount == 3) {
+                    injectInputEventMethod.invoke(inputManagerInstance, event, 0, 0); // 0 = ASYNC, 0 = display 0 (main)
+                } else {
+                    injectInputEventMethod.invoke(inputManagerInstance, event, 0); // 0 = ASYNC
+                }
                 event.recycle();
                 return;
             } catch (Throwable t) {
@@ -124,8 +137,13 @@ public class InputDispatcher {
                 KeyEvent downEvent = new KeyEvent(now, now, KeyEvent.ACTION_DOWN, keyCode, 0);
                 KeyEvent upEvent = new KeyEvent(now, now, KeyEvent.ACTION_UP, keyCode, 0);
 
-                injectInputEventMethod.invoke(inputManagerInstance, downEvent, 0);
-                injectInputEventMethod.invoke(inputManagerInstance, upEvent, 0);
+                if (injectMethodParamCount == 3) {
+                    injectInputEventMethod.invoke(inputManagerInstance, downEvent, 0, 0);
+                    injectInputEventMethod.invoke(inputManagerInstance, upEvent, 0, 0);
+                } else {
+                    injectInputEventMethod.invoke(inputManagerInstance, downEvent, 0);
+                    injectInputEventMethod.invoke(inputManagerInstance, upEvent, 0);
+                }
                 return;
             } catch (Throwable t) {
                 System.err.println("[InputDispatcher] Reflection key error: " + t.getMessage());
