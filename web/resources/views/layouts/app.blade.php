@@ -813,6 +813,11 @@
                             <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.7rem;">{{ $adminEscrowCount }}</span>
                         @endif
                     </a>
+                    <a href="{{ route('admin.remote-control.index') }}" class="menu-item {{ request()->routeIs('admin.remote-control*') ? 'active' : '' }}">
+                        <div class="menu-icon-box"><i class="fas fa-mobile-screen-button text-primary"></i></div>
+                        <span class="menu-label-text">{{ __('Remote Control HP') }}</span>
+                        <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.65rem;">ROOT</span>
+                    </a>
                 </div>
             </div>
 

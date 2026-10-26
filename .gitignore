@@ -1,23 +1,94 @@
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.venv/
+# ====================================================================
+# Git Ignore - Bot Tele Jualan & Remote Control Architecture
+# ====================================================================
+
+# 1. Environment & Credentials
 .env
-*.db
-*.sqlite3
-*.log
-data/
-ops/backups/*.tar.gz
-.vscode/
+.env.*
+!.env.example
+*.pem
+*.key
+*.cert
+*.crt
 github_accounts.txt
+user_role.txt
+*.db
+*.sqlite
+*.sqlite3
+bot_jualan.db
+
+# 2. Python & Virtual Environments
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+venv/
+ENV/
+*.log
+
+# 3. Android SDK, Java & Flutter Build Artifacts
+*.jar
+*.dex
+*.apk
+*.aab
+build/
+bin/
+gen/
+classes.dex
+.gradle/
+local.properties
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+remote_control/**/build/
+remote_control/**/.dart_tool/
+remote_control/agent_android_root/build/
+
+# 4. Arsip & Cadangan (Backups)
+*.zip
+*.tar.gz
+*.tgz
+*.rar
+remote_control.zip
+backup_snapshot_*.zip
+ops/backups/*.tar.gz
+data/
+
+# 5. Dokumen Internal & Catatan Audit
+perbaikan.txt
+audit_report.md
+project.md
+api documentation.txt
+doc.md
+*.docx
+*.pdf
+
+# 6. Temporary Browser & HTML Dumps
 github.html
 profile.html
 search.html
+gmailchecklive.html
 login.css
 login.html
 login.js
-android_listener
+dashboard.css
+dashboard.html
+dashboard.js
+profile.css
+SIMAK - Mahasiswa_files/
+
+# 7. IDE & Tooling
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.DS_Store
+Thumbs.db
+
+# 8. External / Sub-projects
+android_listener/
 vpnxray-main/
-gmailchecklive.html
+
 perbaikan.txt

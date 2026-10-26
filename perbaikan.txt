@@ -1,8 +1,10 @@
-RENCANA PERBAIKAN DAN PENGEMBANGAN WEBITE JUALAN:
+RENCANA PERBAIKAN DAN PENGEMBANGAN:
 
-perbaiki layout chat, tombol chat floating.
+tolong pindahkan project aplikasi android ke folder remote_control di workspace ini. kemudian periksa dan siapkan sdk flutter dan android sdk pada komputer ini. jika belum silakan pasang dan tempatkan pada folder Android di drive D. lalu lakukan build terhadap aplikasinya.
 
-kemudian admin dapat melakukan operasi crud pada room rekber.
+saya ingin agar server remote control berjalan pada vps website saya. dan bisa saya kontrol melalui user admin pada web jualan.
+
+lalu masukan dokumen, file penting kedalam gitignore agar tidak ikut dipush ke github.
 
 catat untuk kamu;
 - lakukan brainstroming sebelum melakukan eksekusi, tak lupa pula lakukan analisa kritik dan saran.

@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CYBERCONTROL :: Android Root Remote Gateway</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <!-- JMuxer H.264 MSE Video Demuxer & Decoder -->
+    <script src="jmuxer.min.js"></script>
+</head>
+<body>
+    <div class="cyber-app">
+        <!-- TOP HEADER BAR -->
+        <header class="cyber-header">
+            <div class="brand">
+                <div class="brand-icon">
+                    <span class="pulsing-core"></span>
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="5" y="2" width="14" height="20" rx="3"></rect>
+                        <line x1="12" y1="18" x2="12.01" y2="18"></line>
+                    </svg>
+                </div>
+                <div class="brand-text">
+                    <h1>CYBERCONTROL <span class="badge-root">ROOT LEVEL</span></h1>
+                    <p class="subtitle">Android Hardware-Accelerated Remote Gateway</p>
+                </div>
+            </div>
+
+            <!-- SERVER & AUTH CONFIG -->
+            <div class="header-controls">
+                <div class="input-group">
+                    <span class="input-label">ADMIN KEY:</span>
+                    <input type="password" id="authKeyInput" value="ADMIN_SECRET_PASS_2026" placeholder="Masukkan token rahasia">
+                </div>
+                <button id="btnRefreshDevices" class="btn-secondary" title="Muat ulang daftar perangkat">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M23 4v6h-6"></path>
+                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                    </svg>
+                    Refresh
+                </button>
+                <div class="connection-status">
+                    <span id="statusIndicator" class="status-dot offline"></span>
+                    <span id="statusText">Terputus</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- MAIN WORKSPACE -->
+        <main class="cyber-workspace">
+            <!-- SIDEBAR: DEVICE SELECTOR -->
+            <aside class="sidebar-devices">
+                <div class="sidebar-title">
+                    <h3>Perangkat Online (<span id="deviceCount">0</span>)</h3>
+                </div>
+                <div id="deviceListContainer" class="device-list">
+                    <div class="empty-state">
+                        <div class="spinner-small"></div>
+                        <p>Memindai perangkat aktif...</p>
+                    </div>
+                </div>
+
+                <!-- REALTIME TELEMETRY WIDGET -->
+                <div class="telemetry-card">
+                    <h4>Telemetri Sesi</h4>
+                    <div class="metric-row">
+                        <span>Status Video:</span>
+                        <span id="valStreamStatus" class="highlight-val">Idle</span>
+                    </div>
+                    <div class="metric-row">
+                        <span>Resolusi:</span>
+                        <span id="valResolution" class="highlight-val">-</span>
+                    </div>
+                    <div class="metric-row">
+                        <span>Estimasi FPS:</span>
+                        <span id="valFps" class="highlight-val">0 fps</span>
+                    </div>
+                    <div class="metric-row">
+                        <span>Latensi Frame:</span>
+                        <span id="valLatency" class="highlight-val">&lt; 15 ms</span>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- CENTER STAGE: PHONE DISPLAY & NAV BAR -->
+            <section class="device-stage">
+                <div class="phone-frame-wrapper">
+                    <div class="phone-chassis" id="phoneChassis">
+                        <!-- Speaker / Camera Notch -->
+                        <div class="phone-notch">
+                            <span class="camera-lens"></span>
+                            <span class="speaker-grill"></span>
+                        </div>
+
+                        <!-- Screen Content Area -->
+                        <div class="screen-viewport" id="screenViewport">
+                            <video id="player" autoplay muted playsinline></video>
+                            <canvas id="touchOverlay"></canvas>
+                            
+                            <!-- Placeholder saat belum terkoneksi -->
+                            <div class="screen-placeholder" id="screenPlaceholder">
+                                <div class="placeholder-icon">
+                                    <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5">
+                                        <rect x="5" y="2" width="14" height="20" rx="2"></rect>
+                                        <circle cx="12" cy="18" r="1"></circle>
+                                    </svg>
+                                </div>
+                                <h3 id="placeholderTitle">Pilih Perangkat</h3>
+                                <p id="placeholderSubtitle">Pilih salah satu perangkat Android dari daftar untuk memulai live feed & kontrol 0ms.</p>
+                                <button id="btnConnectCurrent" class="btn-primary" style="display: none;">Mulai Kontrol Sesi</button>
+                            </div>
+                        </div>
+
+                        <!-- Virtual Android Navigation Keys Bar -->
+                        <div class="virtual-navbar">
+                            <button id="btnKeyBack" class="nav-key" title="Back (Kembali)">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="15 18 9 12 15 6"></polyline>
+                                </svg>
+                            </button>
+                            <button id="btnKeyHome" class="nav-key" title="Home (Beranda)">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="7"></circle>
+                                </svg>
+                            </button>
+                            <button id="btnKeyRecents" class="nav-key" title="Recent Apps (Aplikasi Terakhir)">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="6" y="6" width="12" height="12" rx="2"></rect>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- QUICK HARDWARE CONTROL PILL -->
+                <div class="hardware-toolbar">
+                    <button id="btnPower" class="tool-btn" title="Tombol Power (Layar On/Off)">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
+                            <line x1="12" y1="2" x2="12" y2="12"></line>
+                        </svg>
+                        Power
+                    </button>
+                    <button id="btnVolDown" class="tool-btn" title="Volume Turun">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                            <line x1="16" y1="12" x2="22" y2="12"></line>
+                        </svg>
+                        Vol -
+                    </button>
+                    <button id="btnVolUp" class="tool-btn" title="Volume Naik">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                            <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+                        </svg>
+                        Vol +
+                    </button>
+                    <button id="btnNotification" class="tool-btn" title="Tarik Panel Notifikasi">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                        </svg>
+                        Notifikasi
+                    </button>
+                    <button id="btnWakeScreen" class="tool-btn" title="Bangunkan Layar">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                        </svg>
+                        Wake
+                    </button>
+                </div>
+            </section>
+
+            <!-- RIGHT PANEL: INTERACTIVE TERMINAL & TOOLS -->
+            <aside class="right-console">
+                <div class="tabs-nav">
+                    <button class="tab-btn active" data-tab="tabTerminal">Root Terminal</button>
+                    <button class="tab-btn" data-tab="tabShortcuts">Aksi Cepat</button>
+                    <button class="tab-btn" data-tab="tabInfo">Info Device</button>
+                </div>
+
+                <!-- TAB 1: ROOT TERMINAL SHELL -->
+                <div id="tabTerminal" class="tab-content active">
+                    <div class="terminal-container">
+                        <div class="terminal-header">
+                            <div class="terminal-dots">
+                                <span class="dot red"></span>
+                                <span class="dot yellow"></span>
+                                <span class="dot green"></span>
+                            </div>
+                            <span class="terminal-title">Android Root Shell (UID: 0)</span>
+                            <button id="btnClearTerminal" class="btn-mini" title="Bersihkan Layar">Clear</button>
+                        </div>
+                        <div id="terminalLog" class="terminal-body">
+                            <div class="term-line sys-msg">Android Root Shell Terhubung. Siap menerima instruksi.</div>
+                        </div>
+                        <form id="terminalForm" class="terminal-input-bar">
+                            <span class="prompt-symbol">root@android:#</span>
+                            <input type="text" id="terminalInput" placeholder="Ketik perintah shell (misal: ps -A, df -h, getprop)..." autocomplete="off">
+                            <button type="submit" class="btn-send">Kirim</button>
+                        </form>
+                    </div>
+
+                    <!-- Preset Shell Buttons -->
+                    <div class="preset-commands">
+                        <span class="preset-label">Shortcut Perintah:</span>
+                        <button class="preset-btn" data-cmd="getprop ro.product.model; getprop ro.build.version.release">Model & OS</button>
+                        <button class="preset-btn" data-cmd="dumpsys battery | grep level">Cek Baterai</button>
+                        <button class="preset-btn" data-cmd="df -h /data">Sisa Storage</button>
+                        <button class="preset-btn" data-cmd="top -n 1 -m 5">Top Proses</button>
+                        <button class="preset-btn" data-cmd="logcat -d -t 30">30 Logcat</button>
+                    </div>
+                </div>
+
+                <!-- TAB 2: SHORTCUTS & ACTIONS -->
+                <div id="tabShortcuts" class="tab-content">
+                    <div class="shortcut-section">
+                        <h4>Input Teks ke HP</h4>
+                        <p class="section-desc">Kirim teks langsung ke aplikasi yang sedang terbuka di layar.</p>
+                        <div class="action-form">
+                            <input type="text" id="textToInject" placeholder="Teks yang ingin diketik di Android...">
+                            <button id="btnSendText" class="btn-action">Kirim Teks (Input Text)</button>
+                        </div>
+                    </div>
+
+                    <div class="shortcut-section">
+                        <h4>Buka URL / Deep Link Browser</h4>
+                        <div class="action-form">
+                            <input type="text" id="urlToOpen" placeholder="https://google.com atau am start uri...">
+                            <button id="btnOpenUrl" class="btn-action">Buka di Browser Android</button>
+                        </div>
+                    </div>
+
+                    <div class="shortcut-section">
+                        <h4>Kontrol Daya Perangkat</h4>
+                        <div class="power-buttons-grid">
+                            <button id="btnRebootNormal" class="btn-danger">Reboot Normal</button>
+                            <button id="btnRebootRecovery" class="btn-warning">Reboot Recovery</button>
+                            <button id="btnRebootBootloader" class="btn-warning">Reboot Fastboot</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 3: DEVICE TELEMETRY DETAIL -->
+                <div id="tabInfo" class="tab-content">
+                    <div class="info-card">
+                        <h4>Identitas Perangkat</h4>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <span class="label">Device ID</span>
+                                <span id="infoDeviceId" class="val">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="label">Model Android</span>
+                                <span id="infoDeviceName" class="val">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="label">Resolusi Layar</span>
+                                <span id="infoResolution" class="val">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="label">Uptime</span>
+                                <span id="infoUptime" class="val">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <!-- Script Pengendali Utama -->
+    <script src="app.js"></script>
+</body>
+</html>

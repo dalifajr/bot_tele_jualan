@@ -1,0 +1,19 @@
+[Unit]
+Description=Android Remote Control Relay Gateway Daemon
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/var/www/remote_control/server_relay
+Environment="RELAY_HOST=127.0.0.1"
+Environment="RELAY_PORT=8080"
+Environment="DEVICE_AUTH_TOKEN=SECRET_REMOTE_TOKEN_2026"
+Environment="ADMIN_SECRET_KEY=ADMIN_SECRET_PASS_2026"
+ExecStart=/usr/bin/python3 -m uvicorn server:app --host 127.0.0.1 --port 8080
+Restart=always
+RestartSec=5
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target
