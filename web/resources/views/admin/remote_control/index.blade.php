@@ -398,25 +398,42 @@
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
+            </div>
             <div class="modal-body px-4 py-3">
-                <p class="small text-muted mb-3">{{ __('Jalankan perintah berikut di aplikasi Termux atau adb shell root pada perangkat Android target:') }}</p>
+                <p class="small text-muted mb-3">{{ __('Unduh binary terbaru atau jalankan perintah otomatis berikut di terminal root (MT Manager / Termux / adb shell):') }}</p>
 
-                <div class="mb-3">
-                    <label class="form-label fw-bold small text-dark">{{ __('1. Command Cepat (Menggunakan start_daemon.sh):') }}</label>
-                    <div class="position-relative">
-                        <pre class="bg-dark text-success p-3 rounded-3 small font-monospace m-0" id="cmdDaemon">sh /data/local/tmp/remote_control/start_daemon.sh wss://{{ request()->getHost() }}/ws/device ANDROID_01 {{ $deviceAuthToken }}</pre>
-                        <button class="btn btn-sm btn-outline-light position-absolute top-0 end-0 m-2" onclick="copyText('cmdDaemon')">
-                            <i class="fas fa-copy"></i> Salin
-                        </button>
-                    </div>
+                <!-- Tombol Download Cepat -->
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    <a href="/downloads/remote_agent.jar" class="btn btn-sm btn-outline-primary rounded-pill px-3" download>
+                        <i class="fas fa-file-arrow-down me-1"></i> remote_agent.jar
+                    </a>
+                    <a href="/downloads/run_agent.sh" class="btn btn-sm btn-outline-info rounded-pill px-3" download>
+                        <i class="fas fa-terminal me-1"></i> run_agent.sh
+                    </a>
+                    <a href="/downloads/remote_controller.apk" class="btn btn-sm btn-outline-success rounded-pill px-3" download>
+                        <i class="fas fa-mobile-screen-button me-1"></i> Controller APK Android
+                    </a>
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label fw-bold small text-dark">{{ __('2. Command Eksekusi Mandiri (app_process langsung):') }}</label>
+                    <label class="form-label fw-bold small text-dark">{{ __('1. Perintah Update & Jalankan Otomatis di HP Target (Direkomendasikan):') }}</label>
+                    <div class="position-relative">
+                        <pre class="bg-dark text-success p-3 rounded-3 small font-monospace m-0" id="cmdCurlAuto">su -c "curl -k -o /data/local/tmp/remote_agent.jar https://{{ request()->getHost() }}/downloads/remote_agent.jar && curl -k -o /data/local/tmp/run_agent.sh https://{{ request()->getHost() }}/downloads/run_agent.sh && chmod 755 /data/local/tmp/remote_agent.jar /data/local/tmp/run_agent.sh && sh /data/local/tmp/run_agent.sh"</pre>
+                        <button class="btn btn-sm btn-outline-light position-absolute top-0 end-0 m-2" onclick="copyText('cmdCurlAuto')">
+                            <i class="fas fa-copy"></i> Salin
+                        </button>
+                    </div>
+                    <small class="text-muted d-block mt-1">Perintah di atas otomatis mengunduh binary terbaru, mengatur SELinux ke Permissive (mencegah error 137 Killed), dan menyalakan daemon.</small>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold small text-dark">{{ __('2. Eksekusi Manual (Jika file sudah ada di /data/local/tmp/):') }}</label>
                     <div class="position-relative">
                         <pre class="bg-dark text-info p-3 rounded-3 small font-monospace m-0" id="cmdAppProcess">su
-export CLASSPATH=/data/local/tmp/remote_control/remote_agent.jar
-nohup app_process /data/local/tmp/remote_control com.remote.agent.Main --url wss://{{ request()->getHost() }}/ws/device --id ANDROID_01 --token {{ $deviceAuthToken }} > /data/local/tmp/remote_control/agent.log 2>&1 &</pre>
+setenforce 0
+pkill -9 -f com.remote.agent.Main 2>/dev/null
+export CLASSPATH=/data/local/tmp/remote_agent.jar
+exec app_process / com.remote.agent.Main --url wss://{{ request()->getHost() }}/ws/device --id ANDROID_01 --token {{ $deviceAuthToken }}</pre>
                         <button class="btn btn-sm btn-outline-light position-absolute top-0 end-0 m-2" onclick="copyText('cmdAppProcess')">
                             <i class="fas fa-copy"></i> Salin
                         </button>
@@ -424,7 +441,7 @@ nohup app_process /data/local/tmp/remote_control com.remote.agent.Main --url wss
                 </div>
 
                 <div class="alert alert-info rounded-3 small mb-0">
-                    <i class="fas fa-info-circle me-1"></i> <strong>Catatan:</strong> Jika Anda menerima pesan <code>Handshake ditolak server: HTTP/1.1 404 Not Found</code>, pastikan service di VPS sudah diaktifkan dan Nginx telah me-reload konfigurasi <code>/ws/</code> melalui modal Installer VPS.
+                    <i class="fas fa-info-circle me-1"></i> <strong>Catatan Android 14+ (Pixel 7):</strong> Pastikan menjalankan <code>setenforce 0</code> sebelum menjalankan app_process agar SELinux tidak mematikan koneksi dengan status <code>Killed (error 137)</code>.
                 </div>
             </div>
             <div class="modal-footer border-0 px-4 pb-4">
@@ -579,11 +596,15 @@ nohup app_process /data/local/tmp/remote_control com.remote.agent.Main --url wss
                 : (window.location.port ? window.location.host : window.location.hostname + ':{{ $relayPort }}');
             const wsUrl = `${protocol}//${wsHost}/ws/controller?device_id=${device.device_id}&token=${adminSecretKey}`;
 
+            let framesCount = 0;
+            let lastFpsUpdate = performance.now();
+            let pingInterval = null;
+
             try {
                 jmuxer = new JMuxer({
                     node: 'remoteVideoPlayer',
                     mode: 'video',
-                    flushingTime: 0,
+                    flushingTime: 30,
                     clearBuffer: true,
                     fps: 30,
                     debug: false
@@ -597,10 +618,33 @@ nohup app_process /data/local/tmp/remote_control com.remote.agent.Main --url wss
                 document.getElementById('activeDot').className = 'device-badge-dot bg-success';
                 document.getElementById('screenOverlayPlaceholder').style.display = 'none';
                 appendLog('[Berhasil] Terhubung ke sesi Android ' + device.device_name, 'text-success');
+
+                // Minta device memulai transmisi video
+                send({ type: 'start_stream' });
+
+                // Heartbeat keep-alive setiap 5 detik
+                if (pingInterval) clearInterval(pingInterval);
+                pingInterval = setInterval(() => {
+                    send({ type: 'ping' });
+                }, 5000);
             };
 
             ws.onmessage = function(event) {
                 if (event.data instanceof ArrayBuffer) {
+                    framesCount++;
+                    const now = performance.now();
+                    if (now - lastFpsUpdate >= 1000) {
+                        const currentFps = Math.round((framesCount * 1000) / (now - lastFpsUpdate));
+                        const fpsBadgeEl = document.getElementById('fpsBadge');
+                        if (fpsBadgeEl) fpsBadgeEl.textContent = currentFps + ' FPS';
+                        framesCount = 0;
+                        lastFpsUpdate = now;
+                    }
+
+                    if (videoEl && videoEl.paused) {
+                        videoEl.play().catch(() => {});
+                    }
+
                     if (jmuxer) {
                         jmuxer.feed({ video: new Uint8Array(event.data) });
                     }
@@ -617,8 +661,10 @@ nohup app_process /data/local/tmp/remote_control com.remote.agent.Main --url wss
             };
 
             ws.onclose = function() {
+                if (pingInterval) clearInterval(pingInterval);
                 document.getElementById('activeDot').className = 'device-badge-dot bg-danger';
                 document.getElementById('screenOverlayPlaceholder').style.display = 'flex';
+                document.getElementById('fpsBadge').textContent = '0 FPS';
                 appendLog('[Peringatan] Koneksi terputus dari perangkat.', 'text-danger');
             };
         };

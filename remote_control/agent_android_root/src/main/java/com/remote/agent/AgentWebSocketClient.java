@@ -42,10 +42,13 @@ public class AgentWebSocketClient {
             port = isSecure ? 443 : 80;
         }
 
+        System.out.println("[Agent] Membuka socket ke " + host + ":" + port + " (Secure: " + isSecure + ")...");
+
         if (isSecure) {
-            socket = SSLSocketFactory.getDefault().createSocket(host, port);
+            socket = createInsecureSslSocket(host, port);
         } else {
-            socket = new Socket(host, port);
+            socket = new Socket();
+            socket.connect(new java.net.InetSocketAddress(host, port), 10000);
         }
 
         socket.setTcpNoDelay(true); // Prioritaskan latensi ultra-rendah
@@ -54,6 +57,7 @@ public class AgentWebSocketClient {
         out = socket.getOutputStream();
         in = new BufferedInputStream(socket.getInputStream());
 
+        System.out.println("[Agent] Mengirim handshake WebSocket RFC 6455...");
         doHandshake(host, port);
         isConnected = true;
 
@@ -62,6 +66,38 @@ public class AgentWebSocketClient {
         }
 
         startReaderThread();
+    }
+
+    /**
+     * Membuat SSLSocket mandiri tanpa menyentuh Android KeyStore / keystore2 daemon
+     * Mencegah SIGKILL (Error 137) dari SELinux pada Android 14/15/17 (Pixel 7).
+     */
+    private Socket createInsecureSslSocket(String host, int port) throws Exception {
+        javax.net.ssl.TrustManager[] trustAll = new javax.net.ssl.TrustManager[]{
+            new javax.net.ssl.X509TrustManager() {
+                public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+                    return new java.security.cert.X509Certificate[0];
+                }
+                public void checkClientTrusted(java.security.cert.X509Certificate[] certs, String authType) {}
+                public void checkServerTrusted(java.security.cert.X509Certificate[] certs, String authType) {}
+            }
+        };
+
+        javax.net.ssl.SSLContext sc = javax.net.ssl.SSLContext.getInstance("TLS");
+        sc.init(null, trustAll, new SecureRandom());
+
+        javax.net.ssl.SSLSocketFactory factory = sc.getSocketFactory();
+        javax.net.ssl.SSLSocket sslSocket = (javax.net.ssl.SSLSocket) factory.createSocket();
+        
+        // Atur Server Name Indication (SNI) agar lolos Cloudflare / reverse proxy
+        try {
+            java.lang.reflect.Method setHostMethod = sslSocket.getClass().getMethod("setHostname", String.class);
+            setHostMethod.invoke(sslSocket, host);
+        } catch (Throwable ignored) {}
+
+        sslSocket.connect(new java.net.InetSocketAddress(host, port), 10000);
+        sslSocket.startHandshake();
+        return sslSocket;
     }
 
     private void doHandshake(String host, int port) throws Exception {

@@ -14,7 +14,7 @@ class DeviceListScreen extends StatefulWidget {
 
 class _DeviceListScreenState extends State<DeviceListScreen> {
   final TextEditingController _hostController = TextEditingController(text: AppConstants.defaultRelayHost);
-  final TextEditingController _portController = TextEditingController(text: AppConstants.defaultRelayPort.toString());
+  final TextEditingController _portController = TextEditingController(text: '443');
   final TextEditingController _tokenController = TextEditingController(text: AppConstants.defaultAdminKey);
 
   List<DeviceSession> _devices = [];
@@ -33,16 +33,22 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
       _errorMessage = null;
     });
 
-    final rawHost = _hostController.text.trim();
+    String rawHost = _hostController.text.trim();
+    // Bersihkan dari protocol atau path /ws/device jika user tidak sengaja memasukkannya
+    rawHost = rawHost.replaceAll(RegExp(r'^(https?|wss?)://'), '');
+    if (rawHost.contains('/')) rawHost = rawHost.split('/').first;
+    if (rawHost.contains(':')) rawHost = rawHost.split(':').first;
+
     final port = int.tryParse(_portController.text.trim()) ?? 8099;
-    final isHttps = rawHost.startsWith('https://') || port == 443;
-    final cleanHost = rawHost.replaceAll('https://', '').replaceAll('http://', '');
+    final isDomain = rawHost.contains('.') && !RegExp(r'^\d+\.\d+\.\d+\.\d+$').hasMatch(rawHost);
+    final isHttps = isDomain || port == 443 || _hostController.text.trim().startsWith('https://');
+    
     final url = isHttps 
-        ? Uri.parse('https://$cleanHost/api/devices')
-        : Uri.parse('http://$cleanHost:$port/api/devices');
+        ? Uri.parse('https://$rawHost/api/devices')
+        : Uri.parse('http://$rawHost:$port/api/devices');
 
     try {
-      final res = await http.get(url).timeout(const Duration(seconds: 4));
+      final res = await http.get(url).timeout(const Duration(seconds: 5));
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
         final list = (data['devices'] as List<dynamic>? ?? [])
@@ -55,20 +61,24 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
         });
       } else {
         setState(() {
-          _errorMessage = 'Server merespon dengan kode: ${res.statusCode}';
+          _errorMessage = 'Server merespon dengan kode: ${res.statusCode}\nURL: $url';
           _isLoading = false;
         });
       }
     } catch (e) {
       setState(() {
-        _errorMessage = 'Gagal menghubungi server relay ($host:$port)';
+        _errorMessage = 'Gagal menghubungi server relay ($url)\nDetail: $e';
         _isLoading = false;
       });
     }
   }
 
   void _navigateToControl(DeviceSession device) {
-    final host = _hostController.text.trim();
+    String rawHost = _hostController.text.trim();
+    rawHost = rawHost.replaceAll(RegExp(r'^(https?|wss?)://'), '');
+    if (rawHost.contains('/')) rawHost = rawHost.split('/').first;
+    if (rawHost.contains(':')) rawHost = rawHost.split(':').first;
+
     final port = int.tryParse(_portController.text.trim()) ?? 8099;
     final token = _tokenController.text.trim();
 
@@ -77,7 +87,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
       MaterialPageRoute(
         builder: (ctx) => RemoteControlScreen(
           device: device,
-          host: host,
+          host: rawHost,
           port: port,
           token: token,
         ),
@@ -133,7 +143,11 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
                         controller: _hostController,
                         style: const TextStyle(color: Colors.white, fontSize: 13),
                         decoration: const InputDecoration(
-                          labelText: 'Host / IP Server',
+                          labelText: 'Host / Domain VPS',
+                          hintText: 'belajaridn.id',
+                          hintStyle: TextStyle(color: Colors.white30, fontSize: 11),
+                          helperText: 'Cukup nama domain (tanpa /ws/...)',
+                          helperStyle: TextStyle(color: Color(0xFF06B6D4), fontSize: 10),
                           labelStyle: TextStyle(color: Colors.white60, fontSize: 11),
                           isDense: true,
                           border: OutlineInputBorder(),

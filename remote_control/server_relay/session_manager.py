@@ -19,6 +19,7 @@ class DeviceSession:
         self.connected_at = time.time()
         self.last_seen = time.time()
         self.controllers: Set[WebSocket] = set()
+        self.cached_header: Optional[bytes] = None  # Cache SPS/PPS untuk inisiasi decoder instan
 
     def to_dict(self):
         return {
@@ -82,14 +83,20 @@ class SessionManager:
             session.controllers.add(ctrl_ws)
             self.controller_to_device[ctrl_ws] = device_id
 
-            # Jika ini controller pertama, minta device untuk mulai streaming video
-            if not session.is_streaming:
-                session.is_streaming = True
+            # Kirim sinyal start_stream ke device
+            session.is_streaming = True
+            try:
+                await session.ws.send_text(json.dumps({"type": "start_stream"}))
+                print(f"[SessionManager] Mengirim start_stream ke device {device_id}")
+            except Exception as e:
+                print(f"[SessionManager] Gagal mengirim start_stream: {e}")
+
+            # Jika sudah ada header SPS/PPS dari stream sebelumnya, kirimkan langsung ke controller baru
+            if session.cached_header:
                 try:
-                    await session.ws.send_text(json.dumps({"type": "start_stream"}))
-                    print(f"[SessionManager] Mengirim start_stream ke device {device_id}")
-                except Exception as e:
-                    print(f"[SessionManager] Gagal mengirim start_stream: {e}")
+                    await ctrl_ws.send_bytes(session.cached_header)
+                except Exception:
+                    pass
 
             print(f"[SessionManager] Controller terhubung ke {device_id}. Total controller: {len(session.controllers)}")
             return session
@@ -119,6 +126,10 @@ class SessionManager:
         if not session or not session.controllers:
             return
 
+        # Deteksi dan simpan NAL Unit SPS/PPS (Codec Config)
+        if len(frame_data) < 200 and (b'\x00\x00\x00\x01\x67' in frame_data or b'\x00\x00\x01\x67' in frame_data):
+            session.cached_header = frame_data
+
         # Broadcast video frame ke seluruh controller aktif secara paralel
         tasks = []
         for ctrl in list(session.controllers):
@@ -127,6 +138,15 @@ class SessionManager:
             await asyncio.gather(*tasks, return_exceptions=True)
 
     async def forward_control_to_device(self, ctrl_ws: WebSocket, message: str):
+        # Tangani heartbeat ping dari controller tanpa meneruskannya ke device
+        try:
+            parsed = json.loads(message)
+            if parsed.get("type") == "ping":
+                await ctrl_ws.send_text(json.dumps({"type": "pong", "time": time.time()}))
+                return
+        except Exception:
+            pass
+
         device_id = self.controller_to_device.get(ctrl_ws)
         if not device_id:
             return

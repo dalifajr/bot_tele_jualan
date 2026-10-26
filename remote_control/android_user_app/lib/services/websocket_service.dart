@@ -26,7 +26,16 @@ class ControllerWebSocketService {
   }) async {
     disconnect();
 
-    final uri = Uri.parse('ws://$host:$port/ws/controller?device_id=$deviceId&token=$token');
+    String cleanHost = host.replaceAll(RegExp(r'^(https?|wss?)://'), '');
+    if (cleanHost.contains('/')) cleanHost = cleanHost.split('/').first;
+    if (cleanHost.contains(':')) cleanHost = cleanHost.split(':').first;
+
+    final isDomain = cleanHost.contains('.') && !RegExp(r'^\d+\.\d+\.\d+\.\d+$').hasMatch(cleanHost);
+    final isSecure = isDomain || port == 443;
+    final wsScheme = isSecure ? 'wss://' : 'ws://';
+    final hostAndPort = isSecure ? cleanHost : '$cleanHost:$port';
+
+    final uri = Uri.parse('$wsScheme$hostAndPort/ws/controller?device_id=$deviceId&token=$token');
     
     try {
       _channel = WebSocketChannel.connect(uri);
