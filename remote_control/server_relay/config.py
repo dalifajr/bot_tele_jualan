@@ -4,8 +4,8 @@ Konfigurasi Relay & Gateway Server Remote Control
 import os
 
 class ServerConfig:
-    HOST = os.getenv("RELAY_HOST", "0.0.0.0")
-    PORT = int(os.getenv("RELAY_PORT", 8080))
+    HOST = os.getenv("RELAY_HOST", "127.0.0.1")
+    PORT = int(os.getenv("RELAY_PORT", 8099))
     
     # Token Keamanan Autentikasi
     DEVICE_AUTH_TOKEN = os.getenv("DEVICE_AUTH_TOKEN", "SECRET_REMOTE_TOKEN_2026")

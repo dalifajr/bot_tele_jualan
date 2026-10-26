@@ -77,12 +77,16 @@ sh /data/local/tmp/remote_agent.jar
 ```bash
 su
 export CLASSPATH=/data/local/tmp/remote_control/remote_agent.jar
-app_process /data/local/tmp/remote_control com.remote.agent.Main --url ws://IP_SERVER_VPS:8080/ws/device --id ANDROID_01
+app_process /data/local/tmp/remote_control com.remote.agent.Main --url wss://namadomain.com/ws/device --id ANDROID_01
 ```
 
 ### B. Menjalankan di Background
 ```bash
-sh /data/local/tmp/remote_control/start_daemon.sh ws://IP_SERVER_VPS:8080/ws/device ANDROID_01
+# Menghubungkan lewat domain web jualan (Port 443 SSL Nginx):
+sh /data/local/tmp/remote_control/start_daemon.sh wss://namadomain.com/ws/device ANDROID_01
+
+# Atau jika menggunakan IP dan port direct internal:
+sh /data/local/tmp/remote_control/start_daemon.sh ws://IP_SERVER_VPS:8099/ws/device ANDROID_01
 ```
 
 ### C. Auto-Start Otomatis Saat HP Booting (Magisk / KernelSU / APatch)

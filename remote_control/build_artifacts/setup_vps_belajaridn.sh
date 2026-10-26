@@ -32,7 +32,7 @@ After=network.target
 Type=simple
 User=root
 WorkingDirectory=/var/www/remote_control
-ExecStart=/var/www/remote_control/venv/bin/python3 -m uvicorn server:app --host 127.0.0.1 --port 8080
+ExecStart=/var/www/remote_control/venv/bin/python3 -m uvicorn server:app --host 127.0.0.1 --port 8099
 Restart=always
 RestartSec=3
 LimitNOFILE=65535
@@ -50,6 +50,7 @@ sudo systemctl status remote_control --no-pager
 
 echo ""
 echo "=============================================================================="
-echo " Relay Gateway BERHASIL AKTIF di 127.0.0.1:8080 VPS!                           "
+echo " Relay Gateway BERHASIL AKTIF di 127.0.0.1:8099 VPS!                           "
+echo " Terisolasi di loopback internal, bebas dari tabrakan port 8080 Xray/Bot!     "
 echo " Pastikan blok Nginx untuk /ws/ dan /api/devices sudah ada di belajaridn.id   "
 echo "=============================================================================="

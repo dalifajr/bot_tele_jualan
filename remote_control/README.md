@@ -106,14 +106,12 @@ Jalankan file batch:
 cd d:\bot_tele_jualan\remote_control\server_relay
 run_server.bat
 ```
-Server akan aktif di `http://0.0.0.0:8080/`.
+Server akan aktif di `http://127.0.0.1:8099/` (aman & terisolasi dari port 8080 Xray/Bot).
 
 ### Langkah 2: Buka Web Admin Dashboard
 Buka browser pada:
-```
-http://localhost:8080/
-```
-Dashboard akan memindai perangkat Android online secara otomatis.
+- **Melalui Web Jualan (Produksi VPS)**: Buka menu Admin -> `https://namadomain.com/admin/remote-control` (Otomatis lewat Nginx WSS port 443).
+- **Pengujian Mandiri Lokal**: Buka `http://localhost:8099/`
 
 ### Langkah 3: Pasang & Jalankan Daemon di HP Android Target (Root)
 1. Sambungkan HP Android dengan USB Debugging aktif:

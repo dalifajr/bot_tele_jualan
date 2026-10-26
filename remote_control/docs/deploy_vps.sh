@@ -29,6 +29,7 @@ sudo systemctl status remote_control --no-pager
 
 echo ""
 echo "============================================================"
-echo " Relay Gateway Server Berhasil Berjalan di port 8080 VPS!   "
+echo " Relay Gateway Server Berhasil Berjalan di 127.0.0.1:8099 VPS!"
+echo " Aman tanpa konflik dengan Xray, Nginx, maupun API Bot 8080."
 echo " Tambahkan konfigurasi nginx_remote_control.conf ke Nginx. "
 echo "============================================================"

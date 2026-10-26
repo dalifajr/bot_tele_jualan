@@ -282,6 +282,10 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         // Remote Control Android Root Gateway
         Route::get('/remote-control', [\App\Http\Controllers\Admin\RemoteControlController::class, 'index'])->name('remote-control.index');
         Route::get('/remote-control/devices', [\App\Http\Controllers\Admin\RemoteControlController::class, 'getDevices'])->name('remote-control.devices');
+        Route::get('/remote-control/service-status', [\App\Http\Controllers\Admin\RemoteControlController::class, 'serviceStatus'])->name('remote-control.service-status');
+        Route::post('/remote-control/settings', [\App\Http\Controllers\Admin\RemoteControlController::class, 'updateSettings'])->name('remote-control.settings.update');
+        Route::post('/remote-control/install-service', [\App\Http\Controllers\Admin\RemoteControlController::class, 'installService'])->name('remote-control.install-service');
+        Route::post('/remote-control/restart-service', [\App\Http\Controllers\Admin\RemoteControlController::class, 'restartService'])->name('remote-control.restart-service');
 
         // Admin Payouts / Withdrawals
         Route::get('/withdrawals', [\App\Http\Controllers\AdminController::class, 'withdrawals'])->name('withdrawals.index');

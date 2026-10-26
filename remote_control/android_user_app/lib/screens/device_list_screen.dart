@@ -33,9 +33,13 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
       _errorMessage = null;
     });
 
-    final host = _hostController.text.trim();
-    final port = int.tryParse(_portController.text.trim()) ?? 8080;
-    final url = Uri.parse('http://$host:$port/api/devices');
+    final rawHost = _hostController.text.trim();
+    final port = int.tryParse(_portController.text.trim()) ?? 8099;
+    final isHttps = rawHost.startsWith('https://') || port == 443;
+    final cleanHost = rawHost.replaceAll('https://', '').replaceAll('http://', '');
+    final url = isHttps 
+        ? Uri.parse('https://$cleanHost/api/devices')
+        : Uri.parse('http://$cleanHost:$port/api/devices');
 
     try {
       final res = await http.get(url).timeout(const Duration(seconds: 4));
@@ -65,7 +69,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
 
   void _navigateToControl(DeviceSession device) {
     final host = _hostController.text.trim();
-    final port = int.tryParse(_portController.text.trim()) ?? 8080;
+    final port = int.tryParse(_portController.text.trim()) ?? 8099;
     final token = _tokenController.text.trim();
 
     Navigator.push(

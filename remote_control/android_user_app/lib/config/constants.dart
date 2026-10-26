@@ -1,9 +1,9 @@
 class AppConstants {
   static const String appTitle = 'CyberControl Remote';
   
-  // Default Gateway Server
-  static const String defaultRelayHost = '192.168.1.100'; // Ganti dengan IP host server relay
-  static const int defaultRelayPort = 8080;
+  // Default Gateway Server (Port 8099 terisolasi atau port 443 jika lewat domain Nginx WSS)
+  static const String defaultRelayHost = 'belajaridn.id';
+  static const int defaultRelayPort = 8099;
   static const String defaultAdminKey = 'ADMIN_SECRET_PASS_2026';
   
   // Android Key Codes

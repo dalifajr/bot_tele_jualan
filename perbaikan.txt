@@ -1,10 +1,10 @@
 RENCANA PERBAIKAN DAN PENGEMBANGAN:
 
-tolong pindahkan project aplikasi android ke folder remote_control di workspace ini. kemudian periksa dan siapkan sdk flutter dan android sdk pada komputer ini. jika belum silakan pasang dan tempatkan pada folder Android di drive D. lalu lakukan build terhadap aplikasinya.
+script untuk dijalankan pada target device android error seperti pada gambar, kemungkinan service belum diterapkan pada vps. silahkan periksa.
 
-saya ingin agar server remote control berjalan pada vps website saya. dan bisa saya kontrol melalui user admin pada web jualan.
+saya juga ingin agar password auth dapat dikonfigurasi pada menu remote control di website jualan.
 
-lalu masukan dokumen, file penting kedalam gitignore agar tidak ikut dipush ke github.
+selanjutnya buatlah installer untuk memasang service remote control pada vps melalui panel control jualan di vps. tambahkan deteksi apakah service remote control sudah terpasang atau belum pada vps untuk ditampilkan pada website jualan.
 
 catat untuk kamu;
 - lakukan brainstroming sebelum melakukan eksekusi, tak lupa pula lakukan analisa kritik dan saran.
