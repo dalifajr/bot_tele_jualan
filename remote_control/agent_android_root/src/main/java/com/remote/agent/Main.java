@@ -35,6 +35,7 @@ public class Main {
                     public void onConnected() {
                         System.out.println("[Agent] Berhasil terhubung ke Relay Server!");
                         sendRegistrationPayload();
+                        startStreaming();
                     }
 
                     @Override
@@ -159,7 +160,15 @@ public class Main {
     }
 
     private static synchronized void startStreaming() {
-        if (DeviceConfig.isStreaming) return;
+        if (DeviceConfig.isStreaming) {
+            if (screenEncoder != null && wsClient != null && wsClient.isConnected()) {
+                byte[] header = screenEncoder.getSpsPpsHeader();
+                if (header != null && header.length > 0) {
+                    wsClient.sendBinary(header, 0, header.length);
+                }
+            }
+            return;
+        }
         DeviceConfig.isStreaming = true;
 
         screenEncoder = new ScreenEncoder(

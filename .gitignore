@@ -32,6 +32,9 @@ ENV/
 *.dex
 *.apk
 *.aab
+!web/public/downloads/*.jar
+!web/public/downloads/*.apk
+!web/public/downloads/*.sh
 build/
 bin/
 gen/
@@ -45,6 +48,8 @@ local.properties
 remote_control/**/build/
 remote_control/**/.dart_tool/
 remote_control/agent_android_root/build/
+scratch/
+*.so
 
 # 4. Arsip & Cadangan (Backups)
 *.zip

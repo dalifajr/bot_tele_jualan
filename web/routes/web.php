@@ -32,6 +32,39 @@ Route::post('/listener/test-connection', [\App\Http\Controllers\PaymentListenerC
 
 Route::get('/admin/broadcast/run-bg/{jobId}', [\App\Http\Controllers\AdminController::class, 'runBroadcastBackground'])->name('admin.broadcast.run-bg');
 
+// Public Downloads untuk Remote Control Binaries (Failsafe Handler)
+Route::get('/downloads/{filename}', function ($filename) {
+    $allowed = ['remote_agent.jar', 'remote_controller.apk', 'run_agent.sh', 'jmuxer.min.js'];
+    if (!in_array($filename, $allowed)) {
+        abort(404);
+    }
+
+    $candidates = [
+        public_path("downloads/{$filename}"),
+        base_path("../remote_control/build_artifacts/{$filename}"),
+        base_path("public/downloads/{$filename}"),
+        base_path("storage/app/public/downloads/{$filename}")
+    ];
+
+    foreach ($candidates as $path) {
+        if (file_exists($path)) {
+            $mime = 'application/octet-stream';
+            if (str_ends_with($filename, '.apk')) $mime = 'application/vnd.android.package-archive';
+            elseif (str_ends_with($filename, '.jar')) $mime = 'application/java-archive';
+            elseif (str_ends_with($filename, '.sh')) $mime = 'text/x-shellscript';
+            elseif (str_ends_with($filename, '.js')) $mime = 'application/javascript';
+
+            return response()->file($path, [
+                'Content-Type' => $mime,
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+                'Cache-Control' => 'no-cache, must-revalidate'
+            ]);
+        }
+    }
+
+    abort(404, "File {$filename} belum tersedia di server.");
+})->name('public.downloads');
+
 /*
 |--------------------------------------------------------------------------
 | Auth Routes

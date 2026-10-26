@@ -610,10 +610,13 @@ exec app_process / com.remote.agent.Main --url wss://{{ request()->getHost() }}/
                 jmuxer = new JMuxer({
                     node: 'remoteVideoPlayer',
                     mode: 'video',
-                    flushingTime: 0, // Zero buffering delay
+                    flushingTime: 10,
                     clearBuffer: true,
                     fps: 30,
-                    debug: false
+                    debug: true,
+                    onError: function(err) {
+                        console.warn('[JMuxer Warning]', err);
+                    }
                 });
             } catch(e) {}
 
@@ -651,17 +654,8 @@ exec app_process / com.remote.agent.Main --url wss://{{ request()->getHost() }}/
                         jmuxer.feed({ video: new Uint8Array(event.data) });
                     }
 
-                    if (videoEl) {
-                        if (videoEl.paused) {
-                            videoEl.play().catch(() => {});
-                        }
-                        // Anti-delay buffer: Paksa currentTime selalu berada di live edge buffer
-                        if (videoEl.buffered && videoEl.buffered.length > 0) {
-                            const bufferEnd = videoEl.buffered.end(videoEl.buffered.length - 1);
-                            if (bufferEnd - videoEl.currentTime > 0.15) {
-                                videoEl.currentTime = bufferEnd;
-                            }
-                        }
+                    if (videoEl && videoEl.paused) {
+                        videoEl.play().catch(() => {});
                     }
                 } else if (typeof event.data === 'string') {
                     try {

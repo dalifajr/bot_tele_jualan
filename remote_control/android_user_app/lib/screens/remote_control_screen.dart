@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:webview_flutter_android/webview_flutter_android.dart';
 import '../models/device_session.dart';
 import '../config/constants.dart';
 
@@ -74,7 +75,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
         jmuxer = new JMuxer({
           node: 'player',
           mode: 'video',
-          flushingTime: 0,
+          flushingTime: 10,
           clearBuffer: true,
           fps: 30,
           debug: false
@@ -121,12 +122,8 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
         if (!jmuxer) initMuxer();
         if (jmuxer) {
           jmuxer.feed({ video: new Uint8Array(event.data) });
-          if (player.paused) player.play().catch(() => {});
-          if (player.buffered && player.buffered.length > 0) {
-            const end = player.buffered.end(player.buffered.length - 1);
-            if (end - player.currentTime > 0.1) {
-              player.currentTime = end;
-            }
+          if (player.paused) {
+            player.play().catch(() => {});
           }
         }
       } else if (typeof event.data === 'string') {
@@ -163,7 +160,11 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
     sendPayload({ type: 'touch', action: action, x: x, y: y });
   }
 
-  touchArea.addEventListener('pointerdown', (e) => { e.preventDefault(); sendTouch('down', e); });
+  touchArea.addEventListener('pointerdown', (e) => {
+    if (player.paused) player.play().catch(() => {});
+    e.preventDefault();
+    sendTouch('down', e);
+  });
   touchArea.addEventListener('pointermove', (e) => { e.preventDefault(); sendTouch('move', e); });
   touchArea.addEventListener('pointerup', (e) => { e.preventDefault(); sendTouch('up', e); });
   touchArea.addEventListener('pointercancel', (e) => { e.preventDefault(); sendTouch('up', e); });
@@ -174,10 +175,15 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
 
     _webViewController = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(Colors.black)
-      ..addJavaScriptChannel('FlutterBridge', onMessageReceived: (JavaScriptMessage msg) {
-        // Output shell atau event dari HP target
-      })
+      ..setBackgroundColor(Colors.black);
+
+    if (_webViewController.platform is AndroidWebViewController) {
+      (_webViewController.platform as AndroidWebViewController)
+          .setMediaPlaybackRequiresUserGesture(false);
+    }
+
+    _webViewController
+      ..addJavaScriptChannel('FlutterBridge', onMessageReceived: (JavaScriptMessage msg) {})
       ..loadHtmlString(htmlContent, baseUrl: 'https://$cleanHost');
 
     setState(() {

@@ -73,88 +73,12 @@ public class ScreenEncoder implements Runnable {
 
     @Override
     public void run() {
-        boolean hardwareSuccess = false;
+        System.out.println("[ScreenEncoder] Mengaktifkan Native Screenrecord Streamer Engine (720x1600 @ 2Mbps)...");
+        runNativeScreenrecordFallback();
+    }
 
-        try {
-            initCodec();
-            hardwareSuccess = bindDisplayToSurface(inputSurface);
-
-            if (hardwareSuccess) {
-                System.out.println("[ScreenEncoder] Mencoba Hardware H.264 Encoder (" + width + "x" + height + " @ " + frameRate + "fps)...");
-                MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
-                long startCheckTime = System.currentTimeMillis();
-                int realFramesCount = 0;
-
-                while (isRunning && !Thread.currentThread().isInterrupted()) {
-                    int outputIndex = codec.dequeueOutputBuffer(bufferInfo, 20000); // 20ms timeout
-
-                    if (outputIndex >= 0) {
-                        ByteBuffer outputBuffer;
-                        try {
-                            outputBuffer = codec.getOutputBuffer(outputIndex);
-                        } catch (NoSuchMethodError e) {
-                            outputBuffer = codec.getOutputBuffers()[outputIndex];
-                        }
-
-                        if (outputBuffer != null && bufferInfo.size > 0) {
-                            outputBuffer.position(bufferInfo.offset);
-                            outputBuffer.limit(bufferInfo.offset + bufferInfo.size);
-
-                            byte[] outData = new byte[bufferInfo.size];
-                            outputBuffer.get(outData);
-
-                            boolean isConfig = (bufferInfo.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0;
-                            boolean isKeyFrame = (bufferInfo.flags & MediaCodec.BUFFER_FLAG_KEY_FRAME) != 0;
-
-                            if (isConfig) {
-                                // Simpan SPS/PPS untuk dikirim ke controller baru
-                                spsPpsHeader = Arrays.copyOf(outData, outData.length);
-                                System.out.println("[ScreenEncoder] SPS/PPS Codec Config tersimpan (" + spsPpsHeader.length + " bytes)");
-                                if (callback != null) {
-                                    callback.onVideoFrame(outData, 0, outData.length, true);
-                                }
-                            } else {
-                                realFramesCount++;
-                                if (isKeyFrame && spsPpsHeader != null && !containsSps(outData)) {
-                                    // Gabungkan SPS/PPS di depan Keyframe agar decoder instan menginisiasi
-                                    byte[] combined = new byte[spsPpsHeader.length + outData.length];
-                                    System.arraycopy(spsPpsHeader, 0, combined, 0, spsPpsHeader.length);
-                                    System.arraycopy(outData, 0, combined, spsPpsHeader.length, outData.length);
-                                    if (callback != null) {
-                                        callback.onVideoFrame(combined, 0, combined.length, true);
-                                    }
-                                } else {
-                                    if (callback != null) {
-                                        callback.onVideoFrame(outData, 0, outData.length, isKeyFrame);
-                                    }
-                                }
-                            }
-                        }
-
-                        codec.releaseOutputBuffer(outputIndex, false);
-                    } else if (outputIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
-                        MediaFormat newFormat = codec.getOutputFormat();
-                        System.out.println("[ScreenEncoder] Output format berubah: " + newFormat);
-                    } else {
-                        // Jika dalam 1.5 detik SurfaceControl tidak menghasilkan frame gambar nyata (layar hitam)
-                        if (realFramesCount == 0 && (System.currentTimeMillis() - startCheckTime > 1500)) {
-                            System.out.println("[ScreenEncoder] SurfaceControl tidak mengirim buffer layer fisik (Android 14+ layer restriction).");
-                            System.out.println("[ScreenEncoder] Mengalihkan otomatis ke Native High-Performance Screenrecord Engine...");
-                            break;
-                        }
-                    }
-                }
-            }
-        } catch (Throwable t) {
-            System.err.println("[ScreenEncoder] Hardware encoder mengalami kendala: " + t.getMessage());
-        } finally {
-            releaseResources();
-        }
-
-        // Beralih ke Native Screenrecord Streamer jika hardware tidak mengirim frame atau terhenti
-        if (isRunning && !Thread.currentThread().isInterrupted()) {
-            runNativeScreenrecordFallback();
-        }
+    public synchronized byte[] getSpsPpsHeader() {
+        return spsPpsHeader;
     }
 
     /**
@@ -162,21 +86,51 @@ public class ScreenEncoder implements Runnable {
      */
     private void runNativeScreenrecordFallback() {
         System.out.println("[ScreenEncoder] Mengaktifkan Native Screenrecord Streamer Engine...");
-        byte[] buffer = new byte[8192];
+        byte[] buffer = new byte[16384];
 
         while (isRunning && !Thread.currentThread().isInterrupted()) {
             Process process = null;
             try {
-                String cmd = String.format("/system/bin/screenrecord --output-format=h264 --size %dx%d --bit-rate %d --time-limit 180 -", width, height, bitRate);
+                String[] cmd = new String[] {
+                    "/system/bin/screenrecord",
+                    "--output-format=h264",
+                    "--size", width + "x" + height,
+                    "--bit-rate", String.valueOf(bitRate),
+                    "--time-limit", "180",
+                    "-"
+                };
                 process = Runtime.getRuntime().exec(cmd);
                 nativeProcess = process;
+
+                // Drain stderr di daemon thread agar tidak blocking/deadlock
+                final Process currentProc = process;
+                Thread errDrainer = new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            InputStream err = currentProc.getErrorStream();
+                            byte[] errBuf = new byte[512];
+                            while (err.read(errBuf) != -1) {}
+                        } catch (Exception ignored) {}
+                    }
+                });
+                errDrainer.setDaemon(true);
+                errDrainer.start();
+
                 InputStream in = process.getInputStream();
                 int read;
+                boolean isHeaderCached = false;
 
                 while (isRunning && (read = in.read(buffer)) != -1) {
                     if (read > 0 && callback != null) {
                         byte[] chunk = new byte[read];
                         System.arraycopy(buffer, 0, chunk, 0, read);
+
+                        if (!isHeaderCached && spsPpsHeader == null) {
+                            spsPpsHeader = chunk;
+                            isHeaderCached = true;
+                        }
+
                         callback.onVideoFrame(chunk, 0, read, false);
                     }
                 }
@@ -194,6 +148,7 @@ public class ScreenEncoder implements Runnable {
                 nativeProcess = null;
             }
         }
+        System.out.println("[ScreenEncoder] Native Screenrecord Streamer selesai.");
     }
 
     private void initCodec() throws Exception {

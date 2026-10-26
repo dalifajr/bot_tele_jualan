@@ -27,6 +27,8 @@ public class AgentWebSocketClient {
     private InputStream in;
     private volatile boolean isConnected = false;
     private Thread readThread;
+    private final java.util.Random random = new java.util.Random();
+    private final byte[] maskBytes = new byte[4];
 
     public AgentWebSocketClient(String url, MessageListener listener) throws Exception {
         this.serverUri = new URI(url);
@@ -245,8 +247,7 @@ public class AgentWebSocketClient {
 
     private void sendFrame(int opcode, byte[] data, int offset, int length) throws IOException {
         // Client wajib menerapkan MASKING pada frame keluar sesuai RFC 6455
-        byte[] mask = new byte[4];
-        new SecureRandom().nextBytes(mask);
+        random.nextBytes(maskBytes);
 
         out.write(0x80 | (opcode & 0x0F)); // FIN = 1
 
@@ -263,11 +264,11 @@ public class AgentWebSocketClient {
             }
         }
 
-        out.write(mask);
+        out.write(maskBytes);
 
         byte[] maskedData = new byte[length];
         for (int i = 0; i < length; i++) {
-            maskedData[i] = (byte) (data[offset + i] ^ mask[i % 4]);
+            maskedData[i] = (byte) (data[offset + i] ^ maskBytes[i % 4]);
         }
         out.write(maskedData);
         out.flush();
