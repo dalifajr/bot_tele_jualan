@@ -4,8 +4,8 @@ package com.remote.agent;
  * Konfigurasi Operasional Agent Android Root
  */
 public class DeviceConfig {
-    // Alamat WebSocket Relay Server (Disesuaikan dengan domain/IP server VPS)
-    public static String serverWsUrl = "ws://127.0.0.1:8080/ws/device";
+    // Alamat WebSocket Relay Server (Default domain produksi Helm: belajaridn.id)
+    public static String serverWsUrl = "wss://belajaridn.id/ws/device";
     
     // Kredensial & Identitas Perangkat
     public static String deviceId = "ANDROID_TARGET_01";

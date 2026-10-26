@@ -341,8 +341,12 @@
             }
 
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            // Gunakan path websocket relay
-            const wsUrl = `${protocol}//${window.location.hostname}:8080/ws/controller?device_id=${device.device_id}&token=${adminSecretKey}`;
+            // Pada produksi HTTPS (misal belajaridn.id), WebSocket dialihkan lewat Nginx port 443 (/ws/...)
+            // Pada mode development lokal HTTP, gunakan port 8080 jika tidak ada reverse proxy
+            const wsHost = window.location.protocol === 'https:' 
+                ? window.location.host 
+                : (window.location.port ? window.location.host : window.location.hostname + ':8080');
+            const wsUrl = `${protocol}//${wsHost}/ws/controller?device_id=${device.device_id}&token=${adminSecretKey}`;
 
             try {
                 jmuxer = new JMuxer({

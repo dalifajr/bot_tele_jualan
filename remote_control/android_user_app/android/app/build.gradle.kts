@@ -24,25 +24,20 @@ android {
         // flag during build.
         versionCode = flutter.versionCode
         versionName = flutter.versionName
-    }
-
-    buildTypes {
-        release {
-            signingConfig = signingConfigs.getByName("debug")
+        ndk {
+            abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a", "x86_64"))
         }
     }
 
     packaging {
         jniLibs {
-            keepDebugSymbols.add("**/*.so")
+            excludes += "**/libVkLayer_khronos_validation.so"
         }
     }
-}
 
-gradle.taskGraph.whenReady {
-    allTasks.forEach { task ->
-        if (task.name.contains("strip", ignoreCase = true)) {
-            task.enabled = false
+    buildTypes {
+        release {
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
 }
