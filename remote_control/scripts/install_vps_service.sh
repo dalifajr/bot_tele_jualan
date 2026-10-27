@@ -136,7 +136,19 @@ for conf in /etc/nginx/sites-available/jualan-web-* /etc/nginx/conf.d/*.conf /et
 ' "$conf"
             NGINX_UPDATED=1
         fi
-    fi
+    # 5.1. Bersihkan blok proxy /listener/ lama agar ditangani oleh PaymentListenerController Laravel
+    python3 -c "
+import glob, re
+targets = glob.glob('/etc/nginx/sites-available/*') + glob.glob('/etc/nginx/sites-enabled/*') + glob.glob('/etc/nginx/conf.d/*')
+for p in set(targets):
+    try:
+        with open(p, 'r') as f: c = f.read()
+        if 'location /listener/' in c or 'location /listener ' in c:
+            c_new = re.sub(r'#?[^\n]*\n?\s*location\s+/listener/?\s*\{[^}]*\}', '', c)
+            with open(p, 'w') as f: f.write(c_new)
+            print(f'[CLEANUP] Menghapus blok proxy /listener/ dari {p} -> Diarahkan ke Laravel')
+    except Exception: pass
+" 2>/dev/null || true
 done
 
 if [ "$NGINX_UPDATED" -eq 1 ]; then
