@@ -352,19 +352,41 @@ class TelegramService
 
         $apiUrl = "https://api.telegram.org/bot{$botToken}/sendMessage";
         try {
-            // Delete original checkout message if possible to prevent double QRIS scanning
-            if ($order->checkout_chat_id && $order->checkout_message_id) {
+            // Delete original checkout QRIS message if possible to prevent double scanning
+            $chatIdToDelete = $order->checkout_chat_id ?: $customerTelegramId;
+            if ($chatIdToDelete && $order->checkout_message_id) {
                 $deleteUrl = "https://api.telegram.org/bot{$botToken}/deleteMessage";
-                Http::post($deleteUrl, [
-                    'chat_id' => $order->checkout_chat_id,
+                $delResp = Http::post($deleteUrl, [
+                    'chat_id' => $chatIdToDelete,
                     'message_id' => $order->checkout_message_id,
                 ]);
+
+                // Jika pesan tidak bisa dihapus (misal batasan bot), edit caption foto QRIS agar tulisan QRIS hilang
+                if (!$delResp->successful()) {
+                    $captionUrl = "https://api.telegram.org/bot{$botToken}/editMessageCaption";
+                    Http::post($captionUrl, [
+                        'chat_id' => $chatIdToDelete,
+                        'message_id' => $order->checkout_message_id,
+                        'caption' => "✅ <b>PEMBAYARAN DITERIMA & LUNAS</b>\n\nPesanan <code>{$order->order_ref}</code> telah diverifikasi. Detail akun pesanan Anda telah dikirimkan pada pesan di bawah ini.",
+                        'parse_mode' => 'HTML',
+                    ]);
+                }
             }
+
+            $keyboard = [
+                'inline_keyboard' => [
+                    [
+                        ['text' => '🏠 /start Menu Utama', 'callback_data' => 'back:main']
+                    ]
+                ]
+            ];
 
             Http::post($apiUrl, [
                 'chat_id' => $customerTelegramId,
                 'text' => $text,
                 'parse_mode' => 'HTML',
+                'reply_markup' => json_encode($keyboard),
+                'disable_web_page_preview' => true,
             ]);
         } catch (\Exception $e) {
             Log::error("Gagal mengirim delivery message ke {$customerTelegramId}: " . $e->getMessage());

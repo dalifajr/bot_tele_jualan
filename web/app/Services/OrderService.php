@@ -74,10 +74,10 @@ class OrderService
     /**
      * Confirm payment for an order and assign stock.
      */
-    public function confirmPayment(Order $order, $adminId): bool
+    public function confirmPayment(Order $order, $adminId = null): bool
     {
-        if ($order->status !== 'pending_payment') {
-            throw new Exception("Hanya pesanan pending yang dapat dikonfirmasi.");
+        if ($order->status !== 'pending_payment' && $order->status !== 'paid') {
+            throw new Exception("Hanya pesanan pending atau paid yang dapat dikonfirmasi/diselesaikan.");
         }
 
         try {
@@ -85,25 +85,23 @@ class OrderService
 
             // 1. Update Order
             $order->status = 'delivered';
-            $order->paid_at = now();
+            $order->paid_at = $order->paid_at ?? now();
             $order->delivered_at = now();
             $order->save();
 
             // 2. Update Payment
+            $sourceAppStr = is_string($adminId) ? $adminId : ($adminId ? 'WEB_ADMIN:' . $adminId : 'AUTO_PAYMENT');
             $payment = $order->payment;
-            if ($payment && $payment->status === 'pending') {
+            if ($payment) {
                 $payment->status = 'paid';
-                $payment->matched_at = now();
-                $payment->source_app = 'WEB_ADMIN:' . $adminId;
-                $payment->received_amount = $payment->expected_amount;
+                $payment->matched_at = $payment->matched_at ?? now();
+                $payment->source_app = $payment->source_app ?: $sourceAppStr;
+                $payment->received_amount = $payment->received_amount ?: $payment->expected_amount;
                 $payment->save();
             }
 
             // 3. Consume Stock
-            $reservedStock = StockUnit::where('sold_order_id', $order->id)
-                ->where('stock_status', 'reserved_checkout')
-                ->where('is_sold', false)
-                ->get();
+            $reservedStock = StockUnit::where('sold_order_id', $order->id)->get();
 
             foreach ($reservedStock as $unit) {
                 $unit->stock_status = 'ready';
@@ -196,12 +194,13 @@ class OrderService
             \App\Services\TelegramService::updateAdminOrderMessage($order);
 
             // 6. Audit Log
+            $actorId = is_numeric($adminId) ? (int)$adminId : null;
             DB::table('audit_logs')->insert([
                 'action' => 'payment_confirmed',
-                'actor_id' => $adminId,
+                'actor_id' => $actorId,
                 'entity_type' => 'payment',
                 'entity_id' => $payment->id ?? 0,
-                'detail' => \App\Models\AuditLog::maskSensitiveData("amount={$payment->expected_amount}; source_app=WEB_ADMIN:{$adminId}"),
+                'detail' => \App\Models\AuditLog::maskSensitiveData("order_ref={$order->order_ref}; amount={$order->total_amount}; source_app={$sourceAppStr}"),
                 'created_at' => now(),
             ]);
 

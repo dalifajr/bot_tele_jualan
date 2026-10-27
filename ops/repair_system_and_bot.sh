@@ -97,8 +97,12 @@ if [[ -f "${WEB_DIR}/artisan" ]]; then
     php artisan cache:clear || true
     php artisan route:clear || true
     php artisan view:clear || true
+
+    echo -e "${CYAN}[RECOVERY] Menyelesaikan pesanan berstatus paid yang tertahan...${NC}"
+    php artisan orders:deliver-paid || true
+
     cd "${PROJECT_DIR}"
-    echo -e "${GREEN}[OK] Cache Laravel berhasil dibersihkan.${NC}"
+    echo -e "${GREEN}[OK] Cache Laravel dibersihkan dan pesanan tertahan dipulihkan.${NC}"
 fi
 
 # 6. Pastikan Rute Nginx Tidak Membajak /listener/

@@ -243,7 +243,10 @@ class PaymentListenerController extends Controller
         // 2. CEK ORDER KATALOG TOKO BIASA (ORDERS & PAYMENTS)
         // =========================================================================
         $paymentQuery = Payment::with(['order.customer', 'order.items.product'])
-            ->where('status', 'pending');
+            ->whereIn('status', ['pending', 'paid'])
+            ->whereHas('order', function ($q) {
+                $q->whereIn('status', ['pending_payment', 'paid']);
+            });
 
         $payment = null;
         if (!empty($reference)) {
@@ -271,30 +274,28 @@ class PaymentListenerController extends Controller
         if ($payment) {
             $order = $payment->order;
             if ($order) {
-                // Update pembayaran order biasa
+                // Update log pembayaran
                 $payment->update([
                     'status' => 'paid',
                     'received_amount' => $amount,
-                    'source_app' => $sourceApp,
+                    'source_app' => 'ANDROID_LISTENER:' . $sourceApp,
                     'payload_json' => json_encode($request->all()),
                     'matched_at' => now(),
                 ]);
 
-                $order->update([
-                    'status' => 'paid',
-                    'paid_at' => now(),
-                ]);
-
-                // Kirim notifikasi delivery jika customer ada
-                if ($order->customer && $order->customer->telegram_id) {
-                    try {
-                        TelegramService::sendMessage(
-                            $order->customer->telegram_id,
-                            "✅ <b>Pembayaran Pesanan Berhasil!</b>\n\nOrder Ref: <code>{$order->order_ref}</code>\nTotal: Rp " . number_format($amount, 0, ',', '.') . "\n\nPesanan Anda telah terverifikasi otomatis. Silakan cek detail produk pada dashboard."
-                        );
-                    } catch (\Throwable $e) {
-                        Log::warning("Order delivery Telegram notification failed: " . $e->getMessage());
-                    }
+                // Eksekusi siklus hidup pemenuhan pesanan lengkap via OrderService:
+                // 1. Ubah status order -> 'delivered' (Selesai di panel admin & pelanggan)
+                // 2. Tandai unit stok akun digital -> is_sold = true
+                // 3. Masukkan komisi hasil penjualan ke wallet seller
+                // 4. Generate akun VPN otomatis jika produk VPN
+                // 5. HAPUS pesan foto QRIS pembayaran dari chat Telegram pelanggan
+                // 6. KIRIM data akun & kredensial pesanan ke Telegram pelanggan
+                // 7. Update pesan status pesanan di grup/chat admin
+                try {
+                    $orderService = app(\App\Services\OrderService::class);
+                    $orderService->confirmPayment($order, 'ANDROID_LISTENER:' . $sourceApp);
+                } catch (\Throwable $e) {
+                    Log::error("[PaymentListener] Gagal memproses confirmPayment pada order {$order->order_ref}: " . $e->getMessage());
                 }
 
                 $responsePayload = [
@@ -302,7 +303,7 @@ class PaymentListenerController extends Controller
                     'matched_type' => 'order',
                     'order_ref' => $order->order_ref,
                     'amount' => $amount,
-                    'message' => 'Pembayaran order berhasil diverifikasi otomatis oleh Android Listener',
+                    'message' => 'Pembayaran order berhasil diverifikasi otomatis oleh Android Listener dan pesanan telah dikirimkan',
                 ];
 
                 if (!empty($idempotencyKey)) {

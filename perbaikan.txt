@@ -1,6 +1,6 @@
 RENCANA PERBAIKAN DAN PENGEMBANGAN:
 
-pesan error berubah menjadi 401 signature tidak valid. padahal saya sudah memasukan secret key dengan benar. kemudian service bot telegram juga ikut mati karena perubahan kemarin mengenai remote control.
+cek lagi pada web jualan, pesanan yang sudah dibayar, pada bot masih menampilkan pesan qris buayar, bukan menghapus qris dan mengirimkan pesanan yang sudah dibayar tersebut. dan pada website, di menu kelola pesanan, status pesanan berstatus dibayar, bukan selesai seperti biasa.
 
 catat untuk kamu;
 - lakukan brainstroming sebelum melakukan eksekusi, tak lupa pula lakukan analisa kritik dan saran.
@@ -13,24 +13,27 @@ catat untuk kamu;
 ================================================================================
 STATUS PENYELESAIAN (SELESAI & TERUJI):
 ================================================================================
-1. [SELESAI] Akar Masalah 1: Error 401 "Signature Tidak Valid"
-   - Analisis: env('LISTENER_SHARED_SECRET') bernilai null di controller saat config:cache aktif di VPS,
-     serta config services.php belum didaftarkan sehingga fallback selalu ke 'change-me'.
+1. [SELESAI] Akar Masalah 1: Status Pesanan Tertahan di "Dibayar" (Bukan "Selesai")
+   - Analisis: PaymentListenerController sebelumnya hanya melakukan update manual `$order->status = 'paid'`,
+     tanpa memanggil OrderService::confirmPayment(). Akibatnya, status tidak pernah bergeser ke 'delivered' (Selesai),
+     dan stok unit tidak pernah ditandai is_sold = true.
    - Solusi: 
-     a) Daftarkan config listener di web/config/services.php.
-     b) Multi-tier secret discovery + sanitasi quotes/whitespace di PaymentListenerController.php.
-     c) Buat UI modern di Dashboard Web Admin (Konfigurasi Sistem -> Payment & QRIS) untuk melihat & mengubah secret key.
-   - Hasil Pengujian: Tests\Feature\PaymentListenerTest PASS 100% (3 passed, 5 assertions).
+     a) Di OrderService::confirmPayment(), perbolehkan konfirmasi untuk order berstatus 'pending_payment' maupun 'paid'.
+     b) Di PaymentListenerController, delegasikan seluruh siklus hidup penyelesaian ke OrderService::confirmPayment().
+     c) Status pesanan otomatis menjadi 'delivered' (Selesai), stok terkonsumsi, dan komisi masuk ke seller.
+   - Hasil Pengujian: Tests\Feature\PaymentListenerTest PASS (5 passed, 19 assertions).
 
-2. [SELESAI] Akar Masalah 2: Service Bot Telegram (jualan-bot.service) Crash/Mati
-   - Analisis: File src/app/db/models.py baris 353 memakai Numeric(14, 2) untuk model EscrowTransaction
-     tetapi lupa mengimpor Numeric dari sqlalchemy. Menyebabkan NameError fatal saat bot dijalankan.
-   - Solusi: Impor Numeric di src/app/db/models.py baris 5.
-   - Hasil Pengujian: ops/test_disable_bot_commands.py PASS 100% (7/7 scenario passed),
-     modul app.run_bot dan app.run_api berhasil diimpor tanpa kesalahan.
+2. [SELESAI] Akar Masalah 2: Pesan QRIS Tidak Dihapus & Akun Belum Terkirim ke Telegram Customer
+   - Analisis: Karena TelegramService::notifyCustomerOrderDelivered() tidak pernah dipanggil oleh controller listener,
+     pesan checkout QRIS (checkout_message_id) tidak terhapus dan detail akun (raw_text) tidak pernah terkirim.
+   - Solusi: 
+     a) Panggil notifyCustomerOrderDelivered() via confirmPayment().
+     b) Tingkatkan reliabilitas TelegramService: jika deleteMessage gagal, lakukan fallback editMessageCaption
+        menjadi konfirmasi lunas sehingga gambar QRIS tidak membingungkan pelanggan.
+     c) Kirim data akun pesanan (<pre>raw_text</pre>) dengan inline button kembali ke menu utama.
 
-3. [SELESAI] Tooling Pemulihan & Eksekusi di VPS
-   - Dibuat skrip ops/repair_system_and_bot.sh dan perintah 'jualan repair'.
-   - Commit ef775aa telah berhasil di-push ke branch main (GitHub).
-   - Eksekusi di VPS: git pull origin main && sudo bash ops/repair_system_and_bot.sh
+3. [SELESAI] Tooling Pemulihan Otomatis untuk Pesanan yang Tertahan
+   - Dibuat Artisan Command: `php artisan orders:deliver-paid` (DeliverPendingPaidOrdersCommand.php).
+   - Diintegrasikan ke skrip `ops/repair_system_and_bot.sh` sehingga pesanan Helm yang sempat tertahan dengan
+     status 'paid' akan langsung otomatis dipulihkan menjadi 'delivered' dan datanya langsung dikirimkan ke Telegram!
 ================================================================================
