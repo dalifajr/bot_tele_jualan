@@ -4771,9 +4771,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
                         except Exception as exc:
                             logging.warning(f"Gagal hapus pesan checkout lama: {exc}")
 
-                    keyboard_rows: list[list[InlineKeyboardButton]] = [
-                        [InlineKeyboardButton("🏠 /start Menu Utama", callback_data="back:main")]
-                    ]
+                    keyboard_rows: list[list[InlineKeyboardButton]] = []
                     admin_id = get_primary_admin_id(settings.role_file_path)
                     if admin_id is not None:
                         keyboard_rows.append(
@@ -4783,7 +4781,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
                         chat_id=reconcile_result.customer_chat_id,
                         text=reconcile_result.delivery_message,
                         parse_mode=ParseMode.HTML,
-                        reply_markup=InlineKeyboardMarkup(keyboard_rows),
+                        reply_markup=InlineKeyboardMarkup(keyboard_rows) if keyboard_rows else None,
                         disable_web_page_preview=True,
                     )
 

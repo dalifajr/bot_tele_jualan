@@ -222,15 +222,13 @@ async def payment_listener(
                         except Exception as exc:
                             logger.warning("Gagal hapus pesan checkout lama: %s", exc)
 
-                    keyboard_rows: list[list[InlineKeyboardButton]] = [
-                        [InlineKeyboardButton("🏠 /start Menu Utama", callback_data="back:main")]
-                    ]
+                    keyboard_rows: list[list[InlineKeyboardButton]] = []
                     admin_id = get_primary_admin_id(settings.role_file_path)
                     if admin_id is not None:
                         keyboard_rows.append(
                             [InlineKeyboardButton("💬 Hubungi Admin", url=f"tg://user?id={admin_id}")]
                         )
-                    reply_markup = InlineKeyboardMarkup(keyboard_rows)
+                    reply_markup = InlineKeyboardMarkup(keyboard_rows) if keyboard_rows else None
 
                     await bot.send_message(
                         chat_id=customer_chat_id,

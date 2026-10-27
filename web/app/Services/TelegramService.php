@@ -373,19 +373,10 @@ class TelegramService
                 }
             }
 
-            $keyboard = [
-                'inline_keyboard' => [
-                    [
-                        ['text' => '🏠 /start Menu Utama', 'callback_data' => 'back:main']
-                    ]
-                ]
-            ];
-
             Http::post($apiUrl, [
                 'chat_id' => $customerTelegramId,
                 'text' => $text,
                 'parse_mode' => 'HTML',
-                'reply_markup' => json_encode($keyboard),
                 'disable_web_page_preview' => true,
             ]);
         } catch (\Exception $e) {
