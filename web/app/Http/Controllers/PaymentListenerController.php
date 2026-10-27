@@ -15,14 +15,54 @@ use Illuminate\Support\Facades\Log;
 class PaymentListenerController extends Controller
 {
     /**
+     * Bersihkan nilai secret dari karakter whitespace dan tanda kutip pembungkus.
+     */
+    protected function cleanSecret(?string $val): ?string
+    {
+        if ($val === null) {
+            return null;
+        }
+        $cleaned = trim($val, " \t\n\r\0\x0B\"'");
+        return $cleaned !== '' ? $cleaned : null;
+    }
+
+    /**
      * Dapatkan shared secret yang dikonfigurasi untuk Android Listener.
+     * Prioritas: Database BotSetting > config() > web/.env > root .env > 'change-me'
      */
     protected function getSharedSecret(): string
     {
-        return config('services.listener.secret')
-            ?: env('LISTENER_SHARED_SECRET')
-            ?: BotSetting::where('key', 'listener_shared_secret')->value('value')
-            ?: 'change-me';
+        // 1. Cek dari BotSetting (Pengaturan Admin Panel di Database)
+        $dbSecret = $this->cleanSecret(BotSetting::where('key', 'listener_shared_secret')->value('value'));
+        if (!empty($dbSecret)) {
+            return $dbSecret;
+        }
+
+        // 2. Cek dari config services Laravel
+        $configSecret = $this->cleanSecret(config('services.listener.secret'));
+        if (!empty($configSecret)) {
+            return $configSecret;
+        }
+
+        // 3. Cek dari env Laravel (web/.env)
+        $envSecret = $this->cleanSecret(env('LISTENER_SHARED_SECRET'));
+        if (!empty($envSecret)) {
+            return $envSecret;
+        }
+
+        // 4. Failsafe: Baca langsung dari file root .env (../../.env) jika di web/.env tidak ada
+        $rootEnvPath = base_path('../.env');
+        if (file_exists($rootEnvPath)) {
+            $rootEnv = @file_get_contents($rootEnvPath);
+            if ($rootEnv && preg_match('/^LISTENER_SHARED_SECRET=(.*)$/m', $rootEnv, $matches)) {
+                $parsed = $this->cleanSecret($matches[1]);
+                if (!empty($parsed)) {
+                    return $parsed;
+                }
+            }
+        }
+
+        return 'change-me';
     }
 
     /**
@@ -30,8 +70,8 @@ class PaymentListenerController extends Controller
      */
     protected function verifySignature(Request $request): ?\Illuminate\Http\JsonResponse
     {
-        $signature = $request->header('X-Signature', '');
-        $timestamp = $request->header('X-Timestamp', '');
+        $signature = trim((string)$request->header('X-Signature', ''));
+        $timestamp = trim((string)$request->header('X-Timestamp', ''));
         $rawBody = $request->getContent();
 
         if (empty($signature) || empty($timestamp)) {
@@ -53,6 +93,20 @@ class PaymentListenerController extends Controller
         $expected = hash_hmac('sha256', $message, $secret);
 
         if (!hash_equals($expected, $signature)) {
+            // Cek juga fallback jika secret di payload cocok (Legacy JSON payload secret)
+            $payload = json_decode($rawBody, true);
+            if (!empty($payload['secret']) && hash_equals($secret, (string)$payload['secret'])) {
+                return null;
+            }
+
+            Log::warning("[PaymentListener] Signature mismatch", [
+                'received_sig' => $signature,
+                'expected_sig' => $expected,
+                'timestamp' => $timestamp,
+                'secret_len' => strlen($secret),
+                'client_ip' => $request->ip()
+            ]);
+
             return response()->json(['detail' => 'Signature tidak valid'], 401);
         }
 

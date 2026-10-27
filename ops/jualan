@@ -112,6 +112,7 @@ Commands:
                Enable bot customer ordering commands back to normal
   bot-commands-status
                Show current migration status and website prerequisites check
+  repair       Diagnose and repair bot service, permissions & cache
   uninstall    Stop/disable services and remove alias
 EOF
 }
@@ -677,6 +678,7 @@ case "${cmd}" in
   disable-bot-commands) disable_bot_commands_cmd ;;
   enable-bot-commands) enable_bot_commands_cmd ;;
   bot-commands-status) status_bot_commands_cmd ;;
+  repair) sudo bash "${PROJECT_DIR}/ops/repair_system_and_bot.sh" ;;
   "") menu ;;
   *) print_usage; exit 1 ;;
 esac

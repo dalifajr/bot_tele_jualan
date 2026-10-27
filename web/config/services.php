@@ -45,4 +45,8 @@ return [
         'bot_username' => env('TELEGRAM_BOT_USERNAME'),
     ],
 
+    'listener' => [
+        'secret' => env('LISTENER_SHARED_SECRET', 'change-me'),
+    ],
+
 ];

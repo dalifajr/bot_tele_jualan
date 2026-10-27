@@ -405,6 +405,60 @@
                     </div>
                 </div>
 
+                {{-- CARD: ANDROID LISTENER NOTIFIKASI MUTASI --}}
+                <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
+                    <div class="card-body p-4">
+                        <form action="{{ route('admin.settings.update') }}" method="POST">
+                            @csrf
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <h5 class="fw-bold mb-1 text-primary"><i class="fas fa-mobile-screen-button me-2"></i>{{ __('Konfigurasi Android Listener (Auto-Reconcile)') }}</h5>
+                                    <p class="text-muted small mb-0">{{ __('Aplikasi HP Android Listener membaca notifikasi uang masuk (BCA, Mandiri, BRI, QRIS, e-Wallet) dan memverifikasi pembayaran secara instan.') }}</p>
+                                </div>
+                                <span class="badge bg-success-subtle text-success px-3 py-1.5 rounded-pill fw-semibold border border-success-subtle">
+                                    <i class="fas fa-bolt me-1"></i> {{ __('VERIFIKASI OTOMATIS') }}
+                                </span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small text-muted">{{ __('ENDPOINT URL (MASUKKAN KE APLIKASI ANDROID)') }}</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-end-0"><i class="fas fa-link text-primary"></i></span>
+                                    <input type="text" id="listenerEndpointUrl" class="form-control bg-light font-monospace small" value="{{ url('/listener/payment') }}" readonly>
+                                    <button type="button" class="btn btn-outline-secondary px-3" onclick="copyListenerValue('listenerEndpointUrl', 'URL Endpoint')">
+                                        <i class="fas fa-copy me-1"></i> {{ __('Salin') }}
+                                    </button>
+                                </div>
+                                <div class="form-text small">{{ __('Pastikan endpoint ini diisi pada kolom Target URL di aplikasi Android Listener.') }}</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small text-muted">{{ __('SHARED SECRET KEY (HMAC SHA-256 SIGNATURE)') }}</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-end-0"><i class="fas fa-key text-warning"></i></span>
+                                    <input type="password" id="listenerSharedSecretInput" name="settings[listener_shared_secret]" class="form-control font-monospace" value="{{ $settings['listener_shared_secret'] ?? env('LISTENER_SHARED_SECRET', 'change-me') }}" placeholder="Masukkan Secret Key..." required>
+                                    <button type="button" class="btn btn-outline-secondary" onclick="toggleSecretVisibility('listenerSharedSecretInput', 'eyeIconSecret')">
+                                        <i class="fas fa-eye" id="eyeIconSecret"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-primary px-3" onclick="copyListenerValue('listenerSharedSecretInput', 'Secret Key')">
+                                        <i class="fas fa-copy me-1"></i> {{ __('Salin') }}
+                                    </button>
+                                </div>
+                                <div class="form-text small">{!! __('Kunci rahasia bersama ini digunakan untuk memvalidasi header <code>X-Signature</code> (HMAC SHA-256). Masukkan nilai yang sama persis di aplikasi Android Listener.') !!}</div>
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center mt-4 pt-2 border-top">
+                                <div class="small text-muted">
+                                    <i class="fas fa-shield-halved text-success me-1"></i> {{ __('Mendukung proteksi anti-replay (X-Timestamp) & idempotent duplicate check.') }}
+                                </div>
+                                <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm">
+                                    <i class="fas fa-save me-1"></i> {{ __('Simpan Kunci Listener') }}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
                 <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
                     <div class="card-body p-4">
                         <form action="{{ route('admin.settings.update') }}" method="POST">
@@ -526,5 +580,36 @@
             switchSettingsTab(hash);
         }
     });
+
+    function copyListenerValue(elementId, label) {
+        const input = document.getElementById(elementId);
+        if (!input) return;
+        const text = input.value;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert(label + ' berhasil disalin ke clipboard!');
+            });
+        } else {
+            input.select();
+            document.execCommand('copy');
+            alert(label + ' berhasil disalin ke clipboard!');
+        }
+    }
+
+    function toggleSecretVisibility(inputId, iconId) {
+        const input = document.getElementById(inputId);
+        const icon = document.getElementById(iconId);
+        if (!input || !icon) return;
+
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            input.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    }
 </script>
 @endpush
