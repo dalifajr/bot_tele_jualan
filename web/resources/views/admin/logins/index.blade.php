@@ -7,7 +7,99 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h4 class="fw-bold mb-1">{{ __('Daftar Percobaan Login') }}</h4>
-        <p class="text-muted mb-0">{{ __('Riwayat autentikasi masuk ke web admin.') }}</p>
+        <p class="text-muted mb-0">{{ __('Riwayat autentikasi masuk, diagram analitik keamanan, dan pengelolaan pemblokiran') }}</p>
+    </div>
+</div>
+
+{{-- KPI Metric Cards Keamanan --}}
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-body p-3 p-md-4 d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px; font-size: 1.25rem;">
+                    <i class="fas fa-sign-in-alt"></i>
+                </div>
+                <div class="overflow-hidden">
+                    <span class="text-muted small fw-bold text-uppercase d-block text-truncate" style="font-size: 0.72rem;">{{ __('Total Percobaan') }}</span>
+                    <h4 class="fw-bold mb-0 text-body">{{ number_format($totalLoginAttempts ?? 0, 0, ',', '.') }}</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-body p-3 p-md-4 d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-success-subtle text-success d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px; font-size: 1.25rem;">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="overflow-hidden">
+                    <span class="text-muted small fw-bold text-uppercase d-block text-truncate" style="font-size: 0.72rem;">{{ __('Login Berhasil') }}</span>
+                    <h4 class="fw-bold mb-0 text-success">{{ number_format($successLoginCount ?? 0, 0, ',', '.') }}</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-body p-3 p-md-4 d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-danger-subtle text-danger d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px; font-size: 1.25rem;">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="overflow-hidden">
+                    <span class="text-muted small fw-bold text-uppercase d-block text-truncate" style="font-size: 0.72rem;">{{ __('Login Gagal / Ditolak') }}</span>
+                    <h4 class="fw-bold mb-0 text-danger">{{ number_format($failedLoginCount ?? 0, 0, ',', '.') }}</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-body p-3 p-md-4 d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-info-subtle text-info d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px; font-size: 1.25rem;">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <div class="overflow-hidden">
+                    <span class="text-muted small fw-bold text-uppercase d-block text-truncate" style="font-size: 0.72rem;">{{ __('Tingkat Keberhasilan') }}</span>
+                    <h4 class="fw-bold mb-0 text-body">{{ $successRate ?? 0 }}%</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Analytics Charts Row --}}
+<div class="row g-3 mb-4">
+    <!-- Chart: Login Trend -->
+    <div class="col-12 col-lg-7">
+        <div class="card border-0 shadow-sm h-100 rounded-4">
+            <div class="card-header bg-transparent border-0 pt-3 pb-0 px-4">
+                <h5 class="fw-bold mb-1 text-body"><i class="fas fa-chart-line text-primary me-2"></i>{{ __('Tren Percobaan Login (7 Hari Terakhir)') }}</h5>
+                <span class="text-muted small">{{ __('Perbandingan frekuensi login berhasil vs gagal') }}</span>
+            </div>
+            <div class="card-body px-3 pb-2 pt-2">
+                <div id="loginTrendChart" style="min-height: 280px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart: Device Distribution -->
+    <div class="col-12 col-lg-5">
+        <div class="card border-0 shadow-sm h-100 rounded-4">
+            <div class="card-header bg-transparent border-0 pt-3 pb-0 px-4">
+                <h5 class="fw-bold mb-1 text-body"><i class="fas fa-laptop text-info me-2"></i>{{ __('Distribusi Perangkat Pengguna') }}</h5>
+                <span class="text-muted small">{{ __('Persentase platform perangkat yang mengakses sistem') }}</span>
+            </div>
+            <div class="card-body d-flex align-items-center justify-content-center p-3">
+                @if(!empty($deviceData) && array_sum($deviceData) > 0)
+                    <div id="deviceDistChart" style="min-height: 280px; width: 100%;"></div>
+                @else
+                    <div class="text-center py-4 text-muted">
+                        <i class="fas fa-info-circle fa-2x mb-2 text-secondary opacity-50"></i>
+                        <p class="small mb-0">{{ __('Belum ada data perangkat yang tercatat.') }}</p>
+                    </div>
+                @endif
+            </div>
+        </div>
     </div>
 </div>
 
@@ -456,5 +548,110 @@
             }
         });
     }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    // 1. Login Trend Multi-Area Chart (Berhasil vs Gagal)
+    const loginTrendOptions = {
+        series: [
+            {
+                name: "{{ __('Login Berhasil') }}",
+                data: @json($loginSuccessTrend ?? [])
+            },
+            {
+                name: "{{ __('Login Gagal') }}",
+                data: @json($loginFailedTrend ?? [])
+            }
+        ],
+        chart: {
+            type: 'area',
+            height: 280,
+            toolbar: { show: false },
+            zoom: { enabled: false },
+            fontFamily: 'inherit'
+        },
+        colors: ['#198754', '#dc3545'],
+        dataLabels: { enabled: false },
+        stroke: { curve: 'smooth', width: [3, 3] },
+        fill: {
+            type: 'gradient',
+            gradient: {
+                shadeIntensity: 1,
+                opacityFrom: 0.45,
+                opacityTo: 0.05,
+                stops: [20, 100]
+            }
+        },
+        xaxis: {
+            categories: @json($loginTrendLabels ?? []),
+            axisBorder: { show: false },
+            axisTicks: { show: false }
+        },
+        yaxis: {
+            labels: {
+                formatter: function (val) {
+                    return Math.round(val);
+                }
+            },
+            min: 0
+        },
+        legend: {
+            position: 'top',
+            horizontalAlign: 'right'
+        },
+        tooltip: {
+            theme: 'dark'
+        }
+    };
+    const loginTrendChart = new ApexCharts(document.querySelector("#loginTrendChart"), loginTrendOptions);
+    loginTrendChart.render();
+
+    // 2. Device Distribution Donut Chart
+    @if(!empty($deviceData) && array_sum($deviceData) > 0)
+    const deviceDistOptions = {
+        series: @json($deviceData ?? []),
+        labels: @json($deviceLabels ?? []),
+        chart: {
+            type: 'donut',
+            height: 280,
+            fontFamily: 'inherit'
+        },
+        colors: ['#0d6efd', '#20c997', '#ffc107', '#0dcaf0', '#6c757d'],
+        legend: {
+            position: 'bottom',
+            fontSize: '12px'
+        },
+        dataLabels: {
+            enabled: true,
+            formatter: function (val) {
+                return Math.round(val) + "%";
+            }
+        },
+        plotOptions: {
+            pie: {
+                donut: {
+                    size: '65%',
+                    labels: {
+                        show: true,
+                        total: {
+                            show: true,
+                            label: "{{ __('Total Akses') }}",
+                            formatter: function (w) {
+                                return w.globals.seriesTotals.reduce((a, b) => a + b, 0);
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        tooltip: {
+            theme: 'dark'
+        }
+    };
+    const deviceDistChart = new ApexCharts(document.querySelector("#deviceDistChart"), deviceDistOptions);
+    deviceDistChart.render();
+    @endif
+});
 </script>
 @endpush

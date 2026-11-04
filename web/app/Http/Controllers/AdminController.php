@@ -2148,8 +2148,65 @@ class AdminController extends Controller
     {
         $loginTokens = \App\Models\TelegramLoginToken::orderBy('created_at', 'desc')->paginate(15, ['*'], 'tg_page');
         $loginLogs = \App\Models\LoginLog::orderBy('created_at', 'desc')->paginate(15, ['*'], 'log_page');
-        
-        return view('admin.logins.index', compact('loginTokens', 'loginLogs'));
+
+        // --- Analitik Data Percobaan Login & Keamanan ---
+        $totalLoginAttempts = \App\Models\LoginLog::count();
+        $successLoginCount = \App\Models\LoginLog::where('is_successful', true)->count();
+        $failedLoginCount = \App\Models\LoginLog::where('is_successful', false)->count();
+        $successRate = $totalLoginAttempts > 0 ? round(($successLoginCount / $totalLoginAttempts) * 100, 1) : 0;
+
+        // 1. Tren Harian (7 Hari Terakhir: Berhasil vs Gagal)
+        $loginTrendLabels = [];
+        $loginSuccessTrend = [];
+        $loginFailedTrend = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $date = now()->subDays($i);
+            $dateStr = $date->format('Y-m-d');
+            $loginTrendLabels[] = $date->translatedFormat('d M');
+            $loginSuccessTrend[] = \App\Models\LoginLog::whereDate('created_at', $dateStr)->where('is_successful', true)->count();
+            $loginFailedTrend[] = \App\Models\LoginLog::whereDate('created_at', $dateStr)->where('is_successful', false)->count();
+        }
+
+        // 2. Distribusi Tipe Perangkat (Desktop, Mobile, Tablet, dll)
+        $deviceGroups = \App\Models\LoginLog::select('device_type', \Illuminate\Support\Facades\DB::raw('count(*) as count'))
+            ->groupBy('device_type')
+            ->orderByDesc('count')
+            ->get();
+        $deviceLabels = [];
+        $deviceData = [];
+        foreach ($deviceGroups as $dg) {
+            $deviceLabels[] = $dg->device_type ?: 'Unknown';
+            $deviceData[] = (int) $dg->count;
+        }
+
+        // 3. Distribusi Browser Terpopuler
+        $browserGroups = \App\Models\LoginLog::select('browser', \Illuminate\Support\Facades\DB::raw('count(*) as count'))
+            ->groupBy('browser')
+            ->orderByDesc('count')
+            ->limit(5)
+            ->get();
+        $browserLabels = [];
+        $browserData = [];
+        foreach ($browserGroups as $bg) {
+            $browserLabels[] = $bg->browser ?: 'Lainnya';
+            $browserData[] = (int) $bg->count;
+        }
+
+        return view('admin.logins.index', compact(
+            'loginTokens',
+            'loginLogs',
+            'totalLoginAttempts',
+            'successLoginCount',
+            'failedLoginCount',
+            'successRate',
+            'loginTrendLabels',
+            'loginSuccessTrend',
+            'loginFailedTrend',
+            'deviceLabels',
+            'deviceData',
+            'browserLabels',
+            'browserData'
+        ));
     }
 
     public function blockIp(Request $request)
@@ -3094,7 +3151,83 @@ class AdminController extends Controller
 
         $logs = $query->paginate(20);
 
-        return view('admin.audit_logs.index', compact('logs'));
+        // --- Analitik Data Audit Logs (Menyesuaikan Filter Aktif Jika Ada) ---
+        $analyticsQuery = \App\Models\AuditLog::query();
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $analyticsQuery->where(function($q) use ($search) {
+                $q->where('action', 'like', "%{$search}%")
+                  ->orWhere('detail', 'like', "%{$search}%")
+                  ->orWhereHas('actor', function($aq) use ($search) {
+                      $aq->where('username', 'like', "%{$search}%")
+                         ->orWhere('full_name', 'like', "%{$search}%");
+                  });
+            });
+        }
+        if ($request->filled('start_date')) {
+            $analyticsQuery->whereDate('created_at', '>=', $request->start_date);
+        }
+        if ($request->filled('end_date')) {
+            $analyticsQuery->whereDate('created_at', '<=', $request->end_date);
+        }
+
+        $totalAuditCount = (clone $analyticsQuery)->count();
+        $weekAuditCount = \App\Models\AuditLog::where('created_at', '>=', now()->subDays(7))->count();
+        $topActionRecord = (clone $analyticsQuery)->select('action', \Illuminate\Support\Facades\DB::raw('count(*) as total'))
+            ->groupBy('action')
+            ->orderByDesc('total')
+            ->first();
+        $topActionName = $topActionRecord ? $topActionRecord->action : '-';
+        $topActionCount = $topActionRecord ? $topActionRecord->total : 0;
+        
+        $actorAuditCount = (clone $analyticsQuery)->whereNotNull('actor_id')->count();
+        $systemAuditCount = (clone $analyticsQuery)->whereNull('actor_id')->count();
+
+        // 1. Tren Harian (7 Hari Terakhir)
+        $auditTrendLabels = [];
+        $auditTrendData = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $date = now()->subDays($i);
+            $dateStr = $date->format('Y-m-d');
+            $auditTrendLabels[] = $date->translatedFormat('d M');
+            $auditTrendData[] = \App\Models\AuditLog::whereDate('created_at', $dateStr)->count();
+        }
+
+        // 2. Distribusi Kategori Aksi Terbanyak (Top 5 Actions + Lainnya)
+        $actionGroups = (clone $analyticsQuery)->select('action', \Illuminate\Support\Facades\DB::raw('count(*) as count'))
+            ->groupBy('action')
+            ->orderByDesc('count')
+            ->limit(5)
+            ->get();
+        
+        $actionDistributionLabels = [];
+        $actionDistributionData = [];
+        $sumTopActions = 0;
+        foreach ($actionGroups as $ag) {
+            $actionDistributionLabels[] = $ag->action;
+            $actionDistributionData[] = (int) $ag->count;
+            $sumTopActions += $ag->count;
+        }
+
+        $otherActionsCount = max(0, $totalAuditCount - $sumTopActions);
+        if ($otherActionsCount > 0) {
+            $actionDistributionLabels[] = 'Lainnya';
+            $actionDistributionData[] = $otherActionsCount;
+        }
+
+        return view('admin.audit_logs.index', compact(
+            'logs',
+            'totalAuditCount',
+            'weekAuditCount',
+            'topActionName',
+            'topActionCount',
+            'actorAuditCount',
+            'systemAuditCount',
+            'auditTrendLabels',
+            'auditTrendData',
+            'actionDistributionLabels',
+            'actionDistributionData'
+        ));
     }
 
     // ==========================================
