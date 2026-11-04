@@ -50,6 +50,7 @@ class ReconcileResult:
     checkout_chat_id: int | None = None
     checkout_message_id: int | None = None
     admin_notification: AdminOrderNotification | None = None
+    order_id: int | None = None
 
 
 @dataclass
@@ -843,37 +844,36 @@ def _recommend_upsell_products(
 def _build_delivery_message(
     order: Order,
     units: list[StockUnit],
-    recommendations: list[Product],
+    recommendations: list[Product] | None = None,
     vpn_texts: list[str] = None
 ) -> str:
     parts = [
         "✅ <b>Pembayaran Berhasil Dikonfirmasi</b>",
         f"Order Ref: <code>{html.escape(order.order_ref)}</code>",
-        "",
-        "🔐 <b>Detail Akun Pesanan</b>",
     ]
 
-    for idx, unit in enumerate(units, start=1):
-        parts.append(f"\n<b>Akun {idx}</b>")
-        parts.append(f"<pre>{html.escape(unit.raw_text)}</pre>")
-
-    if vpn_texts:
-        for idx, text in enumerate(vpn_texts, start=1):
-            parts.append(f"\n<b>Akun VPN {idx}</b>")
-            parts.append(f"<pre>{html.escape(text)}</pre>")
-
-    if recommendations:
+    # Render each product ordered
+    if getattr(order, "items", None):
+        for item in order.items:
+            product_name = item.product.name if hasattr(item, "product") and item.product else "Produk"
+            price_str = _format_rupiah(item.unit_price)
+            parts.append(f"Produk: {html.escape(product_name)}")
+            parts.append(f"Harga: {price_str}")
+            parts.append(f"Qty: {item.quantity}")
+            parts.append("")
+    elif units:
+        first_product = units[0].product if hasattr(units[0], "product") else None
+        prod_name = first_product.name if first_product else "Produk"
+        price_val = first_product.price if first_product else order.subtotal
+        parts.append(f"Produk: {html.escape(prod_name)}")
+        parts.append(f"Harga: {_format_rupiah(price_val)}")
+        parts.append(f"Qty: {len(units)}")
         parts.append("")
-        parts.append("🎯 <b>Rekomendasi Selanjutnya</b>")
-        for product in recommendations:
-            parts.append(
-                f"• {html.escape(product.name)} - {_format_rupiah(product.price)} "
-                f"(<code>/buy {product.id} 1</code>)"
-            )
 
+    parts.append("Nilai Pesanan:")
+    parts.append(_format_rupiah(order.total_amount))
     parts.append("")
-    parts.append("📌 Simpan data akun ini dengan aman.")
-    parts.append("📲 Ketik /start kapan saja untuk kembali ke menu utama.")
+    parts.append("Silakan cek pesanan dengan klik tombol dibawah:")
 
     return "\n".join(parts)
 
@@ -1184,6 +1184,7 @@ def reconcile_payment(
         checkout_chat_id=order.checkout_chat_id,
         checkout_message_id=order.checkout_message_id,
         admin_notification=_build_admin_order_notification(session, order, status_override="delivered"),
+        order_id=order.id,
     )
 
 

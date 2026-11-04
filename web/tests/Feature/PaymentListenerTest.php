@@ -191,10 +191,22 @@ class PaymentListenerTest extends TestCase
                    $request['message_id'] == 777;
         });
 
-        // Verifikasi bahwa pesan delivery berisi kredensial akun dikirim ke pembeli
-        Http::assertSent(function ($request) {
-            return str_contains($request->url(), 'sendMessage') &&
-                   str_contains($request['text'], 'user@spotify.com:rahasia123');
+        // Verifikasi bahwa pesan delivery sesuai format baru (mencantumkan produk, harga, qty, nilai pesanan, dan tombol Mini App)
+        Http::assertSent(function ($request) use ($order) {
+            if (!str_contains($request->url(), 'sendMessage')) {
+                return false;
+            }
+            $text = $request['text'] ?? '';
+            $hasProduct = str_contains($text, 'Akun Premium Spotify');
+            $hasPrice = str_contains($text, 'Rp 50.000');
+            $hasQty = str_contains($text, 'Qty: 1');
+            $hasTotal = str_contains($text, 'Rp 50.123');
+            
+            $markup = json_decode($request['reply_markup'] ?? '{}', true);
+            $btnUrl = $markup['inline_keyboard'][0][0]['url'] ?? $markup['inline_keyboard'][0][0]['web_app']['url'] ?? '';
+            $hasButton = str_contains($btnUrl, '/orders/' . $order->id);
+
+            return $hasProduct && $hasPrice && $hasQty && $hasTotal && $hasButton;
         });
     }
 

@@ -89,10 +89,11 @@ chmod o+x "${PROJECT_DIR}" 2>/dev/null || true
 
 echo -e "${GREEN}[OK] Hak akses database dan storage berhasil diperbaiki.${NC}"
 
-# 5. Membersihkan Cache Laravel agar Secret Key Baru Aktif
-echo -e "\n${YELLOW}[4/6] Membersihkan konfigurasi & cache Laravel...${NC}"
+# 5. Membersihkan Cache Laravel agar Secret Key Baru Aktif & Menjalankan Migrasi
+echo -e "\n${YELLOW}[4/6] Menjalankan migrasi database & membersihkan cache Laravel...${NC}"
 if [[ -f "${WEB_DIR}/artisan" ]]; then
     cd "${WEB_DIR}"
+    php artisan migrate --force || true
     php artisan config:clear || true
     php artisan cache:clear || true
     php artisan route:clear || true
@@ -102,7 +103,7 @@ if [[ -f "${WEB_DIR}/artisan" ]]; then
     php artisan orders:deliver-paid || true
 
     cd "${PROJECT_DIR}"
-    echo -e "${GREEN}[OK] Cache Laravel dibersihkan dan pesanan tertahan dipulihkan.${NC}"
+    echo -e "${GREEN}[OK] Database termigrasi, cache dibersihkan, dan pesanan tertahan dipulihkan.${NC}"
 fi
 
 # 6. Pastikan Rute Nginx Tidak Membajak /listener/

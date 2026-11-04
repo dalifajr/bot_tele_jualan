@@ -4772,6 +4772,17 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
                             logging.warning(f"Gagal hapus pesan checkout lama: {exc}")
 
                     keyboard_rows: list[list[InlineKeyboardButton]] = []
+                    website_domain = (settings.website_domain or "").strip()
+                    if website_domain:
+                        if not website_domain.startswith(("http://", "https://")):
+                            website_domain = f"https://{website_domain}"
+                        website_domain = website_domain.rstrip("/")
+                        target_url = f"{website_domain}/orders/{reconcile_result.order_id}" if reconcile_result.order_id else f"{website_domain}/orders"
+                        if target_url.startswith("https://"):
+                            keyboard_rows.append([InlineKeyboardButton("📱 Cek Detail Pesanan", web_app=WebAppInfo(url=target_url))])
+                        else:
+                            keyboard_rows.append([InlineKeyboardButton("📱 Cek Detail Pesanan", url=target_url)])
+
                     admin_id = get_primary_admin_id(settings.role_file_path)
                     if admin_id is not None:
                         keyboard_rows.append(

@@ -328,27 +328,56 @@ class TelegramService
         $customerTelegramId = $order->customer->telegram_id ?? null;
         if (!$customerTelegramId) return;
 
+        $order->loadMissing('items.product');
+
         $text = "✅ <b>Pembayaran Berhasil Dikonfirmasi</b>\n"
-              . "Order Ref: <code>{$order->order_ref}</code>\n\n"
-              . "🔐 <b>Detail Akun Pesanan</b>\n";
+              . "Order Ref: <code>{$order->order_ref}</code>\n";
 
-        $idx = 1;
-        foreach ($reservedStock as $unit) {
-            $text .= "\n<b>Akun {$idx}</b>\n";
-            $text .= "<pre>" . htmlspecialchars($unit->raw_text) . "</pre>\n";
-            $idx++;
-        }
-
-        if (!empty($vpnConfigs)) {
-            foreach ($vpnConfigs as $vpnIdx => $config) {
-                $num = $vpnIdx + 1;
-                $text .= "\n<b>Akun VPN {$num}</b>\n";
-                $text .= "<pre>" . htmlspecialchars($config) . "</pre>\n";
+        if ($order->items && $order->items->isNotEmpty()) {
+            foreach ($order->items as $item) {
+                $prodName = $item->product->name ?? 'Produk';
+                $priceFormatted = 'Rp ' . number_format($item->unit_price, 0, ',', '.');
+                $text .= "Produk: " . htmlspecialchars($prodName) . "\n"
+                      . "Harga: {$priceFormatted}\n"
+                      . "Qty: {$item->quantity}\n\n";
             }
+        } elseif (!empty($reservedStock) && count($reservedStock) > 0) {
+            $firstProduct = $reservedStock[0]->product ?? null;
+            $prodName = $firstProduct->name ?? 'Produk';
+            $priceFormatted = 'Rp ' . number_format($firstProduct->price ?? $order->subtotal, 0, ',', '.');
+            $text .= "Produk: " . htmlspecialchars($prodName) . "\n"
+                  . "Harga: {$priceFormatted}\n"
+                  . "Qty: " . count($reservedStock) . "\n\n";
+        } else {
+            $text .= "\n";
         }
 
-        $text .= "\n📌 Simpan data akun ini dengan aman.\n"
-               . "📲 Ketik /start kapan saja untuk kembali ke menu utama.";
+        $totalFormatted = 'Rp ' . number_format($order->total_amount, 0, ',', '.');
+        $text .= "Nilai Pesanan:\n{$totalFormatted}\n\n"
+              . "Silakan cek pesanan dengan klik tombol dibawah:";
+
+        // Build Mini App URL
+        $baseDomain = config('telegram.domain') ?: config('app.url');
+        if (!empty($baseDomain)) {
+            if (!str_starts_with($baseDomain, 'http://') && !str_starts_with($baseDomain, 'https://')) {
+                $baseDomain = 'https://' . $baseDomain;
+            }
+        } else {
+            $baseDomain = url('/');
+        }
+        $baseDomain = rtrim($baseDomain, '/');
+        $orderDetailUrl = "{$baseDomain}/orders/{$order->id}";
+
+        $isHttps = str_starts_with($orderDetailUrl, 'https://');
+        $orderBtn = $isHttps
+            ? ['text' => '📱 Cek Detail Pesanan', 'web_app' => ['url' => $orderDetailUrl]]
+            : ['text' => '📱 Cek Detail Pesanan', 'url' => $orderDetailUrl];
+
+        $replyMarkup = [
+            'inline_keyboard' => [
+                [$orderBtn],
+            ],
+        ];
 
         $apiUrl = "https://api.telegram.org/bot{$botToken}/sendMessage";
         try {
@@ -367,7 +396,7 @@ class TelegramService
                     Http::post($captionUrl, [
                         'chat_id' => $chatIdToDelete,
                         'message_id' => $order->checkout_message_id,
-                        'caption' => "✅ <b>PEMBAYARAN DITERIMA & LUNAS</b>\n\nPesanan <code>{$order->order_ref}</code> telah diverifikasi. Detail akun pesanan Anda telah dikirimkan pada pesan di bawah ini.",
+                        'caption' => "✅ <b>PEMBAYARAN DITERIMA & LUNAS</b>\n\nPesanan <code>{$order->order_ref}</code> telah diverifikasi. Silakan cek detail pesanan Anda melalui tombol di bawah ini.",
                         'parse_mode' => 'HTML',
                     ]);
                 }
@@ -378,6 +407,7 @@ class TelegramService
                 'text' => $text,
                 'parse_mode' => 'HTML',
                 'disable_web_page_preview' => true,
+                'reply_markup' => json_encode($replyMarkup),
             ]);
         } catch (\Exception $e) {
             Log::error("Gagal mengirim delivery message ke {$customerTelegramId}: " . $e->getMessage());
