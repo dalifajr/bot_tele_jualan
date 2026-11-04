@@ -333,6 +333,30 @@ class CartController extends Controller
 
             $reservedIds = [];
 
+            // Calculate proportional discount per cart item if coupon used
+            $itemDiscounts = [];
+            $remainingDiscount = $discount;
+            if ($discount > 0 && isset($eligibleSubtotal) && $eligibleSubtotal > 0) {
+                $eligibleItems = [];
+                foreach ($cartItems as $item) {
+                    if ($coupon && $coupon->appliesToProduct($item->product)) {
+                        $eligibleItems[] = $item;
+                    }
+                }
+                $eligibleCount = count($eligibleItems);
+                foreach ($eligibleItems as $idx => $item) {
+                    if ($idx === $eligibleCount - 1) {
+                        $itemDiscounts[$item->id] = max(0, $remainingDiscount);
+                    } else {
+                        $itemSubtotal = $item->product->price * $item->quantity;
+                        $calcDiscount = (int) round(($itemSubtotal / $eligibleSubtotal) * $discount);
+                        $calcDiscount = min($calcDiscount, $remainingDiscount);
+                        $itemDiscounts[$item->id] = $calcDiscount;
+                        $remainingDiscount -= $calcDiscount;
+                    }
+                }
+            }
+
             // 4. Create OrderItems & Reserve Stock
             foreach ($cartItems as $item) {
                 OrderItem::create([
@@ -340,6 +364,7 @@ class CartController extends Controller
                     'product_id' => $item->product_id,
                     'quantity' => $item->quantity,
                     'unit_price' => $item->product->price,
+                    'discount_amount' => $itemDiscounts[$item->id] ?? 0,
                 ]);
 
                 // Reserve FIFO stock units

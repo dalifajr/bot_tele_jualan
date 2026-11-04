@@ -221,6 +221,7 @@ class CheckoutController extends Controller
                 'product_id' => $product->id,
                 'quantity' => $quantity,
                 'unit_price' => $product->price,
+                'discount_amount' => $discount,
                 'vpn_username' => $vpnUsername,
                 'vpn_password' => $product->is_vpn ? $request->vpn_password : null,
             ]);

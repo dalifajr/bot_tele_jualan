@@ -130,6 +130,12 @@
                         @if($product->warranty_days > 0)
                             <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill px-2 py-0.5"><i class="fas fa-shield-alt me-1"></i>{{ $product->warranty_days }}H</span>
                         @endif
+
+                        @if($product->platform_fee_percent !== null)
+                            <span class="badge bg-secondary-subtle text-dark border rounded-pill px-2 py-0.5" title="{{ __('Komisi Platform Produk ini: :fee%', ['fee' => $product->platform_fee_percent]) }}">
+                                <i class="fas fa-percentage me-1 text-primary"></i>{{ $product->platform_fee_percent }}%
+                            </span>
+                        @endif
                     </div>
 
                     <p class="text-muted mb-2" style="font-size: 0.78rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.2em;" title="{{ $product->description }}">
@@ -215,9 +221,19 @@
                                 <label class="form-label text-muted small fw-bold">{{ __('Nama Produk') }}</label>
                                 <input type="text" name="name" class="form-control" required placeholder="{{ __('Contoh: Netflix Premium 1 Bulan') }}">
                             </div>
-                            <div class="mb-3">
-                                <label class="form-label text-muted small fw-bold">Harga (Rp)</label>
-                                <input type="number" name="price" class="form-control" required placeholder="{{ __('Contoh: 35000') }}">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label text-muted small fw-bold">Harga (Rp)</label>
+                                    <input type="number" name="price" class="form-control" required placeholder="{{ __('Contoh: 35000') }}">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label text-muted small fw-bold">{{ __('Komisi Platform (%)') }}</label>
+                                    <div class="input-group">
+                                        <input type="number" name="platform_fee_percent" class="form-control" placeholder="{{ __('Opsional (cth: 10)') }}" min="0" max="100">
+                                        <span class="input-group-text bg-light text-muted">%</span>
+                                    </div>
+                                    <div class="form-text small" style="font-size: 0.72rem;">{{ __('Berlaku jika seller menggunakan skema per-produk.') }}</div>
+                                </div>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label text-muted small fw-bold">{{ __('Deskripsi') }}</label>
@@ -308,9 +324,19 @@
                                 <label class="form-label text-muted small fw-bold">{{ __('Nama Produk') }}</label>
                                 <input type="text" name="name" class="form-control" value="{{ $product->name }}" required>
                             </div>
-                            <div class="mb-3">
-                                <label class="form-label text-muted small fw-bold">Harga (Rp)</label>
-                                <input type="number" name="price" class="form-control" value="{{ $product->price }}" required>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label text-muted small fw-bold">Harga (Rp)</label>
+                                    <input type="number" name="price" class="form-control" value="{{ $product->price }}" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label text-muted small fw-bold">{{ __('Komisi Platform (%)') }}</label>
+                                    <div class="input-group">
+                                        <input type="number" name="platform_fee_percent" class="form-control" value="{{ $product->platform_fee_percent }}" placeholder="{{ __('Ikuti seller') }}" min="0" max="100">
+                                        <span class="input-group-text bg-light text-muted">%</span>
+                                    </div>
+                                    <div class="form-text small" style="font-size: 0.72rem;">{{ __('Berlaku jika seller menggunakan skema per-produk.') }}</div>
+                                </div>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label text-muted small fw-bold">{{ __('Deskripsi') }}</label>

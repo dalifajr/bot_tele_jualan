@@ -245,8 +245,32 @@
                                 <input type="number" name="wallet_balance" class="form-control" value="{{ $user->wallet_balance ?? 0 }}" min="0">
                             </div>
                         </div>
+
+                        <div class="mb-3 p-3 bg-light rounded-3 border">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <label class="form-check-label fw-bold text-dark mb-0" for="user_comm_per_prod_{{ $user->id }}">
+                                        {{ __('Skema Komisi Khusus Per-Produk') }}
+                                    </label>
+                                    <div class="text-muted small" style="font-size: 0.75rem;">
+                                        {{ __('Aktifkan jika potongan komisi diatur per-produk di Katalog Admin.') }}
+                                    </div>
+                                </div>
+                                <div class="form-check form-switch ms-3">
+                                    <input class="form-check-input" type="checkbox" role="switch" name="commission_per_product" id="user_comm_per_prod_{{ $user->id }}" value="1" {{ !empty($user->commission_per_product) ? 'checked' : '' }} onchange="toggleUserCommissionScheme({{ $user->id }})">
+                                </div>
+                            </div>
+                            <div id="user_per_prod_alert_{{ $user->id }}" class="{{ !empty($user->commission_per_product) ? '' : 'd-none' }} mt-2">
+                                <div class="badge bg-primary-subtle text-primary border border-primary-subtle small fw-normal d-block text-start p-2" style="white-space: normal; line-height: 1.4;">
+                                    <i class="fas fa-info-circle me-1"></i> {{ __('Mode Per-Produk Aktif: Potongan komisi dihitung sesuai setelan masing-masing produk di Katalog Admin (input Fee % di bawah menjadi nilai cadangan jika produk belum disetel).') }}
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="mb-3">
-                            <label class="form-label text-muted small fw-bold">Persentase Potongan Platform (Fee %)</label>
+                            <label class="form-label text-muted small fw-bold" id="user_seller_fee_label_{{ $user->id }}">
+                                {{ !empty($user->commission_per_product) ? __('Fee Default Platform (Cadangan %)') : __('Persentase Potongan Platform (Fee %)') }}
+                            </label>
                             <div class="input-group">
                                 <input type="number" name="platform_fee_percent" class="form-control" value="{{ $user->platform_fee_percent ?? 10 }}" min="0" max="100">
                                 <span class="input-group-text bg-light text-muted">%</span>
@@ -334,6 +358,21 @@ function toggleSellerFields(userId) {
         for (var i = 0; i < inputs.length; i++) {
             inputs[i].disabled = true;
         }
+    }
+}
+
+function toggleUserCommissionScheme(userId) {
+    var switchInput = document.getElementById('user_comm_per_prod_' + userId);
+    var alertBox = document.getElementById('user_per_prod_alert_' + userId);
+    var label = document.getElementById('user_seller_fee_label_' + userId);
+    if (!switchInput) return;
+
+    if (switchInput.checked) {
+        if (alertBox) alertBox.classList.remove('d-none');
+        if (label) label.innerText = "{{ __('Fee Default Platform (Cadangan %)') }}";
+    } else {
+        if (alertBox) alertBox.classList.add('d-none');
+        if (label) label.innerText = "{{ __('Persentase Potongan Platform (Fee %)') }}";
     }
 }
 

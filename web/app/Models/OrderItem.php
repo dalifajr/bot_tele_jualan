@@ -15,8 +15,15 @@ class OrderItem extends Model
         'product_id',
         'quantity',
         'unit_price',
+        'discount_amount',
         'vpn_username',
         'vpn_password',
+    ];
+
+    protected $casts = [
+        'quantity' => 'integer',
+        'unit_price' => 'integer',
+        'discount_amount' => 'integer',
     ];
 
     public function order()

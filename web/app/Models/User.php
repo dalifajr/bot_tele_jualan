@@ -25,6 +25,7 @@ class User extends Authenticatable
         'dismiss_set_password_prompt',
         'has_custom_password',
         'avatar',
+        'commission_per_product',
     ];
 
     protected $hidden = [
@@ -41,6 +42,7 @@ class User extends Authenticatable
         'last_seen_at' => 'datetime',
         'dismiss_set_password_prompt' => 'boolean',
         'has_custom_password' => 'boolean',
+        'commission_per_product' => 'boolean',
     ];
 
     protected static function booted()

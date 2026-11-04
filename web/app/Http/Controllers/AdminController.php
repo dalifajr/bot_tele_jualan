@@ -1042,6 +1042,7 @@ class AdminController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
+            'platform_fee_percent' => 'nullable|integer|between:0,100',
             'warranty_days' => 'required_if:enable_warranty,1|nullable|integer|min:1',
             'vpn_protocol' => 'required_if:is_vpn,1|nullable|string',
             'vpn_duration_days' => 'required_if:is_vpn,1|nullable|integer|min:1',
@@ -1049,6 +1050,7 @@ class AdminController extends Controller
         ]);
         $data = $request->only(['name', 'description', 'price', 'vpn_protocol', 'vpn_duration_days']);
         $data['description'] = $data['description'] ?? '';
+        $data['platform_fee_percent'] = $request->filled('platform_fee_percent') ? (int)$request->platform_fee_percent : null;
         $data['is_suspended'] = false;
         $data['is_vpn'] = $request->has('is_vpn');
         $data['warranty_days'] = $request->has('enable_warranty') ? $request->warranty_days : 0;
@@ -1068,6 +1070,7 @@ class AdminController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
+            'platform_fee_percent' => 'nullable|integer|between:0,100',
             'is_suspended' => 'boolean',
             'warranty_days' => $request->has('enable_warranty') ? 'required|integer|min:1' : 'nullable',
             'vpn_protocol' => $request->has('is_vpn') ? 'required|string' : 'nullable',
@@ -1076,6 +1079,7 @@ class AdminController extends Controller
         ]);
         $data = $request->only(['name', 'description', 'price', 'vpn_protocol', 'vpn_duration_days']);
         $data['description'] = $data['description'] ?? '';
+        $data['platform_fee_percent'] = $request->filled('platform_fee_percent') ? (int)$request->platform_fee_percent : null;
         $data['is_suspended'] = $request->has('is_suspended');
         $data['is_vpn'] = $request->has('is_vpn');
         $data['warranty_days'] = $request->has('enable_warranty') ? $request->warranty_days : 0;
@@ -1978,6 +1982,7 @@ class AdminController extends Controller
             'role' => 'required|in:admin,customer,seller',
             'wallet_balance' => 'required|integer|min:0',
             'platform_fee_percent' => 'required|integer|between:0,100',
+            'commission_per_product' => 'nullable|boolean',
             'seller_save_hours' => 'required|integer|min:0',
             'allowed_tools' => 'nullable|array',
             'allowed_tools.*' => 'string|in:github_checker,gmail_checker,2fa_generator,rekber',
@@ -1987,6 +1992,7 @@ class AdminController extends Controller
         $user->role = $request->role;
         $user->wallet_balance = $request->wallet_balance;
         $user->platform_fee_percent = $request->platform_fee_percent;
+        $user->commission_per_product = $request->boolean('commission_per_product');
         $user->seller_save_hours = $request->seller_save_hours;
         $user->allowed_tools = in_array($request->role, ['seller', 'customer']) ? ($request->allowed_tools ?? []) : null;
         $user->save();
@@ -1997,11 +2003,11 @@ class AdminController extends Controller
             'actor_id' => \Illuminate\Support\Facades\Auth::id(),
             'entity_type' => 'user',
             'entity_id' => $user->id,
-            'detail' => "Updated user: {$user->username}; role: {$oldRole}->{$request->role}; balance: {$request->wallet_balance}",
+            'detail' => "Updated user: {$user->username}; role: {$oldRole}->{$request->role}; balance: {$request->wallet_balance}; comm_per_product: " . ($user->commission_per_product ? 'yes' : 'no'),
             'created_at' => now(),
         ]);
 
-        return redirect()->route('admin.users.index')
+        return redirect()->back()
             ->with('success', __('Informasi pengguna berhasil diperbarui.'));
     }
 

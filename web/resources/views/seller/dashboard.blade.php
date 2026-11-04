@@ -81,7 +81,7 @@
                             <span class="badge bg-white text-primary rounded-pill px-2 px-md-3 py-1 mb-2 small fw-bold text-uppercase shadow-sm" style="font-size: 0.68rem;">{{ __('Saldo Dompet') }}</span>
                             <h3 class="fw-bold mb-2 text-white h4 h2-md">Rp {{ number_format($user->wallet_balance, 0, ',', '.') }}</h3>
                             <div class="d-flex align-items-center justify-content-between pt-2 border-top border-white border-opacity-25" style="font-size: 0.75rem;">
-                                <span class="text-white-50">{{ __('Komisi:') }} <strong>{{ $user->platform_fee_percent }}%</strong></span>
+                                <span class="text-white-50">{{ __('Komisi:') }} <strong>{{ !empty($user->commission_per_product) ? __('Per-Produk') : ($user->platform_fee_percent . '%') }}</strong></span>
                                 <a href="{{ route('seller.finance.index') }}" class="btn btn-light btn-xs btn-sm-sm rounded-pill px-2 px-md-3 fw-bold text-primary shadow-sm" style="font-size: 0.72rem;">{{ __('Tarik') }}</a>
                             </div>
                         </div>

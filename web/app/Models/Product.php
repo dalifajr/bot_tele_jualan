@@ -18,6 +18,7 @@ class Product extends Model
         'is_suspended',
         'creator_id',
         'warranty_days',
+        'platform_fee_percent',
         'is_vpn',
         'vpn_protocol',
         'vpn_duration_days',
@@ -25,6 +26,7 @@ class Product extends Model
 
     protected $casts = [
         'price' => 'integer',
+        'platform_fee_percent' => 'integer',
         'is_suspended' => 'boolean',
         'warranty_days' => 'integer',
         'is_vpn' => 'boolean',

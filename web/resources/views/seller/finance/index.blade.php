@@ -44,7 +44,7 @@
                 <div class="position-relative" style="z-index: 1;">
                     <p class="small text-white-50 fw-bold mb-2">{{ __('SALDO DOMPET SAYA') }}</p>
                     <h2 class="fw-bold mb-1">Rp {{ number_format($user->wallet_balance, 0, ',', '.') }}</h2>
-                    <div class="small text-white-50 mt-1">{{ __('Potongan Platform:') }} <strong>{{ $user->platform_fee_percent }}%</strong> {{ __('per penjualan') }}</div>
+                    <div class="small text-white-50 mt-1">{{ __('Potongan Platform:') }} <strong>{{ !empty($user->commission_per_product) ? __('Per-Produk (Sesuai Katalog)') : ($user->platform_fee_percent . '% per penjualan') }}</strong></div>
                 </div>
             </div>
         </div>

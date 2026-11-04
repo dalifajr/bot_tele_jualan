@@ -110,6 +110,29 @@ class OrderService
             }
 
             // 4. Process Seller Commissions
+            $order->loadMissing('items.product');
+
+            // Build map of discount per unit for each product
+            $unitDiscounts = [];
+            foreach ($order->items as $orderItem) {
+                $itemDiscount = (int) ($orderItem->discount_amount ?? 0);
+                if ($itemDiscount <= 0 && ($order->discount_amount ?? 0) > 0 && ($order->subtotal ?? 0) > 0) {
+                    // Fallback proportional calculation for orders without item-level discount recorded
+                    $itemTotal = $orderItem->unit_price * $orderItem->quantity;
+                    $itemDiscount = (int) round(($itemTotal / $order->subtotal) * $order->discount_amount);
+                }
+
+                $qty = max(1, $orderItem->quantity);
+                $baseUnitDiscount = (int) floor($itemDiscount / $qty);
+                $remainder = $itemDiscount - ($baseUnitDiscount * $qty);
+
+                $discountsArray = array_fill(0, $qty, $baseUnitDiscount);
+                for ($i = 0; $i < $remainder; $i++) {
+                    $discountsArray[$i] += 1;
+                }
+                $unitDiscounts[$orderItem->product_id] = $discountsArray;
+            }
+
             $sellerSales = [];
             foreach ($reservedStock as $unit) {
                 if ($unit->seller_id) {
@@ -117,18 +140,41 @@ class OrderService
                 }
             }
 
+            // Also check VPN items if created by seller
+            $sellerVpnItems = [];
+            foreach ($order->items as $item) {
+                if ($item->product && $item->product->is_vpn && $item->product->creator_id) {
+                    $sellerVpnItems[$item->product->creator_id][] = $item;
+                }
+            }
+
             foreach ($sellerSales as $sellerId => $units) {
                 $seller = User::find($sellerId);
                 if ($seller) {
-                    $feePercent = $seller->platform_fee_percent ?? 10;
                     $totalWalletAdded = 0;
 
                     foreach ($units as $unit) {
                         $product = $unit->product;
                         if (!$product) continue;
-                        $price = $product->price;
-                        $feeAmount = (int)($price * $feePercent / 100);
-                        $netEarnings = $price - $feeAmount;
+
+                        $rawPrice = $product->price;
+                        $unitDiscount = 0;
+                        if (isset($unitDiscounts[$product->id]) && count($unitDiscounts[$product->id]) > 0) {
+                            $unitDiscount = array_shift($unitDiscounts[$product->id]);
+                        }
+
+                        // Apply coupon discount to product price first
+                        $priceAfterCoupon = max(0, $rawPrice - $unitDiscount);
+
+                        // Determine platform fee percent: per-product or per-seller
+                        if ($seller->commission_per_product) {
+                            $feePercent = $product->platform_fee_percent ?? $seller->platform_fee_percent ?? 10;
+                        } else {
+                            $feePercent = $seller->platform_fee_percent ?? 10;
+                        }
+
+                        $feeAmount = (int) round(($priceAfterCoupon * $feePercent) / 100);
+                        $netEarnings = max(0, $priceAfterCoupon - $feeAmount);
 
                         $warrantyDays = $product->warranty_days ?? 0;
                         if ($warrantyDays > 0) {
@@ -145,6 +191,55 @@ class OrderService
                             ]);
                         } else {
                             $totalWalletAdded += $netEarnings;
+                        }
+                    }
+
+                    if ($totalWalletAdded > 0) {
+                        $seller->wallet_balance = ($seller->wallet_balance ?? 0) + $totalWalletAdded;
+                        $seller->save();
+                    }
+                }
+            }
+
+            // Process seller VPN commissions (if any)
+            foreach ($sellerVpnItems as $sellerId => $items) {
+                $seller = User::find($sellerId);
+                if ($seller) {
+                    $totalWalletAdded = 0;
+                    foreach ($items as $item) {
+                        $product = $item->product;
+                        for ($i = 0; $i < $item->quantity; $i++) {
+                            $rawPrice = $product->price;
+                            $unitDiscount = 0;
+                            if (isset($unitDiscounts[$product->id]) && count($unitDiscounts[$product->id]) > 0) {
+                                $unitDiscount = array_shift($unitDiscounts[$product->id]);
+                            }
+
+                            $priceAfterCoupon = max(0, $rawPrice - $unitDiscount);
+                            if ($seller->commission_per_product) {
+                                $feePercent = $product->platform_fee_percent ?? $seller->platform_fee_percent ?? 10;
+                            } else {
+                                $feePercent = $seller->platform_fee_percent ?? 10;
+                            }
+
+                            $feeAmount = (int) round(($priceAfterCoupon * $feePercent) / 100);
+                            $netEarnings = max(0, $priceAfterCoupon - $feeAmount);
+
+                            $warrantyDays = $product->warranty_days ?? 0;
+                            if ($warrantyDays > 0) {
+                                DB::table('held_funds')->insert([
+                                    'seller_id' => $sellerId,
+                                    'order_id' => $order->id,
+                                    'product_id' => $product->id,
+                                    'amount' => $netEarnings,
+                                    'status' => 'held',
+                                    'release_at' => now()->addDays($warrantyDays),
+                                    'created_at' => now(),
+                                    'updated_at' => now()
+                                ]);
+                            } else {
+                                $totalWalletAdded += $netEarnings;
+                            }
                         }
                     }
 
