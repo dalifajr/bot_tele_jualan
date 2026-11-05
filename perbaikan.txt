@@ -1,6 +1,7 @@
 RENCANA PERBAIKAN DAN PENGEMBANGAN:
 
-saya ingin ada diagram analitik pada menu log audit dan percobaan login pada role admin. silakan olah data yang tersedia untuk dijadikan diagram informasi supaya mudah dibaca dan mempermudah admin dalam mengambil keputusan.
+perbaiki error 404 not found pada tombol cek detail pesanan pada pesan Pembayaran berhasil dikonfirmasi di bot telegram setelah user customer melunasi tagihan pesanan.
+
 
 catat untuk kamu;
 - lakukan brainstroming sebelum melakukan eksekusi, tak lupa pula lakukan analisa kritik dan saran.
