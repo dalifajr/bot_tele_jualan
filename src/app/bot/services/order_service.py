@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import hmac
 import html
 import json
 import logging
@@ -51,6 +53,30 @@ class ReconcileResult:
     checkout_message_id: int | None = None
     admin_notification: AdminOrderNotification | None = None
     order_id: int | None = None
+    order_ref: str | None = None
+
+
+def build_order_detail_url(
+    website_domain: str,
+    bot_token: str,
+    order_id: int | None,
+    order_ref: str | None = None,
+) -> str:
+    domain = (website_domain or "").strip().strip('"\' ')
+    if not domain.startswith(("http://", "https://")):
+        domain = f"https://{domain}"
+    domain = domain.rstrip("/")
+    if not order_id:
+        return f"{domain}/orders"
+    secret = (bot_token or "").strip()
+    if secret and order_ref:
+        token = hmac.new(
+            secret.encode("utf-8"),
+            f"order_access:{order_id}:{order_ref}".encode("utf-8"),
+            hashlib.sha256,
+        ).hexdigest()[:24]
+        return f"{domain}/orders/{order_id}?token={token}"
+    return f"{domain}/orders/{order_id}"
 
 
 @dataclass
@@ -1185,6 +1211,7 @@ def reconcile_payment(
         checkout_message_id=order.checkout_message_id,
         admin_notification=_build_admin_order_notification(session, order, status_override="delivered"),
         order_id=order.id,
+        order_ref=order.order_ref,
     )
 
 

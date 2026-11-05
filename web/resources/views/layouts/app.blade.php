@@ -54,7 +54,7 @@
                     .then(res => res.json())
                     .then(data => {
                         if (data.success) {
-                            window.location.href = '/dashboard';
+                            window.location.reload();
                         }
                     }).catch(err => console.error("WebApp Login Error:", err));
                 }

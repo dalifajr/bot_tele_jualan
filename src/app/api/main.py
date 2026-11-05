@@ -225,10 +225,13 @@ async def payment_listener(
                     keyboard_rows: list[list[InlineKeyboardButton]] = []
                     website_domain = (settings.website_domain or "").strip()
                     if website_domain:
-                        if not website_domain.startswith(("http://", "https://")):
-                            website_domain = f"https://{website_domain}"
-                        website_domain = website_domain.rstrip("/")
-                        target_url = f"{website_domain}/orders/{reconcile_result.order_id}" if reconcile_result.order_id else f"{website_domain}/orders"
+                        from app.bot.services.order_service import build_order_detail_url
+                        target_url = build_order_detail_url(
+                            website_domain=website_domain,
+                            bot_token=settings.bot_token,
+                            order_id=reconcile_result.order_id,
+                            order_ref=reconcile_result.order_ref,
+                        )
                         if target_url.startswith("https://"):
                             keyboard_rows.append([InlineKeyboardButton("📱 Cek Detail Pesanan", web_app=WebAppInfo(url=target_url))])
                         else:

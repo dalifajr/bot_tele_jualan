@@ -10,6 +10,49 @@ use Illuminate\Support\Facades\Log;
 class TelegramService
 {
     /**
+     * Resolve base domain untuk tombol Mini App Telegram secara konsisten.
+     */
+    public static function resolveBaseDomain(): string
+    {
+        $candidates = [
+            config('telegram.domain'),
+            config('app.url'),
+        ];
+
+        $rootEnvPath = base_path('../.env');
+        if (file_exists($rootEnvPath)) {
+            $envContent = @file_get_contents($rootEnvPath) ?: '';
+            if (preg_match('/^WEBSITE_DOMAIN=(.+)$/m', $envContent, $matches)) {
+                $candidates[] = trim($matches[1], " \t\n\r\0\x0B\"'");
+            }
+        }
+
+        // Prioritaskan domain publik (bukan localhost/127.0.0.1)
+        foreach ($candidates as $candidate) {
+            $clean = trim((string) $candidate, " \t\n\r\0\x0B\"'/");
+            if (!empty($clean) && !str_contains($clean, 'localhost') && !str_contains($clean, '127.0.0.1')) {
+                if (!str_starts_with($clean, 'http://') && !str_starts_with($clean, 'https://')) {
+                    $clean = 'https://' . $clean;
+                }
+                return rtrim($clean, '/');
+            }
+        }
+
+        // Fallback ke kandidat pertama yang tidak kosong
+        foreach ($candidates as $candidate) {
+            $clean = trim((string) $candidate, " \t\n\r\0\x0B\"'/");
+            if (!empty($clean)) {
+                if (!str_starts_with($clean, 'http://') && !str_starts_with($clean, 'https://')) {
+                    $clean = 'https://' . $clean;
+                }
+                return rtrim($clean, '/');
+            }
+        }
+
+        return rtrim(url('/'), '/');
+    }
+
+    /**
      * Kirim notifikasi pesanan baru ke semua admin yang memiliki telegram_id.
      */
     public static function notifyAdminNewOrder(Order $order)
@@ -356,17 +399,10 @@ class TelegramService
         $text .= "Nilai Pesanan:\n{$totalFormatted}\n\n"
               . "Silakan cek pesanan dengan klik tombol dibawah:";
 
-        // Build Mini App URL
-        $baseDomain = config('telegram.domain') ?: config('app.url');
-        if (!empty($baseDomain)) {
-            if (!str_starts_with($baseDomain, 'http://') && !str_starts_with($baseDomain, 'https://')) {
-                $baseDomain = 'https://' . $baseDomain;
-            }
-        } else {
-            $baseDomain = url('/');
-        }
-        $baseDomain = rtrim($baseDomain, '/');
-        $orderDetailUrl = "{$baseDomain}/orders/{$order->id}";
+        // Build Mini App URL with deterministic access token
+        $baseDomain = self::resolveBaseDomain();
+        $accessToken = $order->generateTelegramAccessToken();
+        $orderDetailUrl = "{$baseDomain}/orders/{$order->id}?token={$accessToken}";
 
         $isHttps = str_starts_with($orderDetailUrl, 'https://');
         $orderBtn = $isHttps

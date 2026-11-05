@@ -255,11 +255,16 @@ class TelegramAuthController extends Controller
         
         $this->recordLoginLog($request, $user->username, true, 'Telegram Browser');
         
+        $intendedUrl = $request->session()->pull('url.intended', route('dashboard'));
+
         $rememberDays = (int) config('telegram.remember_me_days', 30);
         config(['session.lifetime' => $rememberDays * 24 * 60]);
         $request->session()->regenerate();
         $request->session()->flash('show_telegram_welcome_modal', true);
 
-        return response()->json(['success' => true]);
+        return response()->json([
+            'success' => true,
+            'redirect_url' => $intendedUrl,
+        ]);
     }
 }

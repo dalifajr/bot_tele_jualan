@@ -154,7 +154,21 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
     Route::post('/orders/{id}/cancel', [\App\Http\Controllers\OrderController::class, 'cancel'])->name('orders.cancel');
     Route::post('/orders/{id}/complaint', [\App\Http\Controllers\OrderController::class, 'submitComplaint'])->name('orders.complaint');
     Route::get('/orders/{id}/status', function ($id) {
-        $order = \App\Models\Order::where('customer_id', \Illuminate\Support\Facades\Auth::id())->findOrFail($id);
+        $user = \Illuminate\Support\Facades\Auth::user();
+        $order = \App\Models\Order::with('customer')->where(function ($q) use ($id) {
+            $q->where('id', $id)->orWhere('order_ref', $id);
+        })->firstOrFail();
+
+        $isOwner = $user && (int) $order->customer_id === (int) $user->id;
+        $isAdmin = $user && $user->role === 'admin';
+        $isSameTelegram = $user && !empty($user->telegram_id) && (
+            (string) $user->telegram_id === (string) $order->checkout_chat_id ||
+            (string) $user->telegram_id === (string) optional($order->customer)->telegram_id
+        );
+
+        if (!$isOwner && !$isAdmin && !$isSameTelegram) {
+            abort(404);
+        }
         
         if ($order->status === 'pending_payment' && $order->expires_at && $order->expires_at->isPast()) {
             try {

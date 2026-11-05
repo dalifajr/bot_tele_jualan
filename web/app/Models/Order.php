@@ -155,4 +155,38 @@ class Order extends Model
             default => 'secondary',
         };
     }
+
+    /**
+     * Generate deterministic HMAC token for direct Telegram Mini App order access.
+     */
+    public function generateTelegramAccessToken(): string
+    {
+        $secret = trim((string) (config('services.telegram.bot_token') ?: config('telegram.bot_token') ?: ''));
+        if (empty($secret)) {
+            $rootEnvPath = base_path('../.env');
+            if (file_exists($rootEnvPath)) {
+                $envContent = @file_get_contents($rootEnvPath) ?: '';
+                if (preg_match('/^BOT_TOKEN=(.+)$/m', $envContent, $matches)) {
+                    $secret = trim($matches[1], " \t\n\r\0\x0B\"'");
+                }
+            }
+        }
+        if (empty($secret)) {
+            $secret = (string) config('app.key');
+        }
+
+        return substr(hash_hmac('sha256', "order_access:{$this->id}:{$this->order_ref}", $secret), 0, 24);
+    }
+
+    /**
+     * Verify deterministic HMAC token for Telegram order detail access.
+     */
+    public function verifyTelegramAccessToken(?string $token): bool
+    {
+        if (empty($token)) {
+            return false;
+        }
+
+        return hash_equals($this->generateTelegramAccessToken(), trim((string) $token));
+    }
 }

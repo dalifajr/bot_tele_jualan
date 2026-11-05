@@ -48,18 +48,52 @@ class OrderController extends Controller
         return view('orders.index', compact('orders', 'status', 'search'));
     }
 
-    public function show($id)
+    protected function findAuthorizedOrder(Request $request, $id, array $with = []): Order
     {
-        $order = Order::where('customer_id', Auth::id())
-            ->with(['items.product', 'stockUnits', 'complaintCase', 'vpnAccounts'])
-            ->findOrFail($id);
+        $order = Order::with(array_unique(array_merge($with, ['customer', 'items.product'])))
+            ->where(function ($q) use ($id) {
+                $q->where('id', $id)->orWhere('order_ref', $id);
+            })
+            ->firstOrFail();
+
+        $user = Auth::user();
+        if (!$user) {
+            abort(404);
+        }
+
+        $isOwner = (int) $order->customer_id === (int) $user->id;
+        $isAdmin = $user->role === 'admin';
+        $hasValidToken = $order->verifyTelegramAccessToken($request->query('token'));
+        $isSameTelegramUser = !empty($user->telegram_id) && (
+            (string) $user->telegram_id === (string) $order->checkout_chat_id ||
+            (string) $user->telegram_id === (string) optional($order->customer)->telegram_id
+        );
+        $isSellerOfOrder = $user->role === 'seller' && $order->items->contains(function ($item) use ($user) {
+            return optional($item->product)->creator_id && (int) $item->product->creator_id === (int) $user->id;
+        });
+
+        if (!$isOwner && !$isAdmin && !$hasValidToken && !$isSameTelegramUser && !$isSellerOfOrder) {
+            abort(404);
+        }
+
+        return $order;
+    }
+
+    public function show(Request $request, $id)
+    {
+        $order = $this->findAuthorizedOrder($request, $id, [
+            'items.product',
+            'stockUnits',
+            'complaintCase',
+            'vpnAccounts',
+        ]);
 
         return view('orders.show', compact('order'));
     }
 
-    public function cancel($id, \App\Services\OrderService $orderService)
+    public function cancel(Request $request, $id, \App\Services\OrderService $orderService)
     {
-        $order = Order::where('customer_id', Auth::id())->findOrFail($id);
+        $order = $this->findAuthorizedOrder($request, $id);
 
         try {
             $orderService->cancelOrder($order, 'cancelled_by_customer', Auth::id());
@@ -71,9 +105,7 @@ class OrderController extends Controller
 
     public function submitComplaint(Request $request, $id)
     {
-        $order = Order::where('customer_id', Auth::id())
-            ->with(['complaintCase'])
-            ->findOrFail($id);
+        $order = $this->findAuthorizedOrder($request, $id, ['complaintCase']);
 
         if ($order->status !== 'delivered') {
             return redirect()->back()->with('error', __('Komplain hanya dapat diajukan untuk pesanan yang sudah selesai (delivered).'));

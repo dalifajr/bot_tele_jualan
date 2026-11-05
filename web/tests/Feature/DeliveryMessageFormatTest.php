@@ -76,8 +76,9 @@ class DeliveryMessageFormatTest extends TestCase
 
             $markup = json_decode($request['reply_markup'], true);
             $btn = $markup['inline_keyboard'][0][0];
+            $expectedToken = $order->generateTelegramAccessToken();
             $this->assertEquals('📱 Cek Detail Pesanan', $btn['text']);
-            $this->assertEquals("https://toko.example.com/orders/{$order->id}", $btn['web_app']['url']);
+            $this->assertEquals("https://toko.example.com/orders/{$order->id}?token={$expectedToken}", $btn['web_app']['url']);
 
             return true;
         });
@@ -146,9 +147,114 @@ class DeliveryMessageFormatTest extends TestCase
 
             $markup = json_decode($request['reply_markup'], true);
             $btn = $markup['inline_keyboard'][0][0];
-            $this->assertEquals("https://toko.example.com/orders/{$order->id}", $btn['web_app']['url']);
+            $expectedToken = $order->generateTelegramAccessToken();
+            $this->assertEquals("https://toko.example.com/orders/{$order->id}?token={$expectedToken}", $btn['web_app']['url']);
 
             return true;
         });
+    }
+
+    public function test_clicking_order_detail_button_with_token_auto_authenticates_guest_and_avoids_404()
+    {
+        $customer = User::forceCreate([
+            'telegram_id' => 777666,
+            'username' => 'web_buyer',
+            'email' => 'web_buyer@example.com',
+            'password' => bcrypt('password'),
+            'role' => 'customer',
+        ]);
+
+        $product = Product::create([
+            'name' => 'Spotify Family 1 Bulan',
+            'price' => 20000,
+        ]);
+
+        $order = Order::create([
+            'order_ref' => 'ORD-TOKEN-100',
+            'customer_id' => $customer->id,
+            'subtotal' => 20000,
+            'unique_code' => 77,
+            'total_amount' => 20077,
+            'status' => 'delivered',
+        ]);
+
+        $stock = StockUnit::forceCreate([
+            'product_id' => $product->id,
+            'raw_text' => 'spotify_user@mail.com | pass123',
+            'is_sold' => true,
+            'sold_order_id' => $order->id,
+        ]);
+
+        OrderItem::create([
+            'order_id' => $order->id,
+            'product_id' => $product->id,
+            'quantity' => 1,
+            'unit_price' => 20000,
+            'stock_unit_id' => $stock->id,
+        ]);
+
+        $token = $order->generateTelegramAccessToken();
+
+        // 1. Akses sebagai Guest (seperti baru membuka WebView Telegram)
+        $response = $this->get("/orders/{$order->id}?token={$token}");
+        $response->assertStatus(200);
+        $response->assertSee('ORD-TOKEN-100');
+        $response->assertSee('Spotify Family 1 Bulan');
+        $response->assertSee('spotify_user@mail.com | pass123');
+        $this->assertAuthenticatedAs($customer);
+    }
+
+    public function test_clicking_order_detail_button_with_token_switches_mismatched_customer_session_and_supports_order_ref()
+    {
+        $realBuyer = User::forceCreate([
+            'telegram_id' => null, // Checkout via browser web tanpa link Telegram
+            'username' => 'browser_buyer',
+            'email' => 'browser_buyer@example.com',
+            'password' => bcrypt('password'),
+            'role' => 'customer',
+        ]);
+
+        $oldWebviewAccount = User::forceCreate([
+            'telegram_id' => 555444,
+            'username' => 'tg_555444',
+            'email' => 'tg_555444@telegram.local',
+            'password' => bcrypt('password'),
+            'role' => 'customer',
+        ]);
+
+        $product = Product::create([
+            'name' => 'ChatGPT Plus 1 Bulan',
+            'price' => 45000,
+        ]);
+
+        $order = Order::create([
+            'order_ref' => 'ORD-BROWSER-777',
+            'customer_id' => $realBuyer->id,
+            'checkout_chat_id' => 555444,
+            'subtotal' => 45000,
+            'unique_code' => 12,
+            'total_amount' => 45012,
+            'status' => 'delivered',
+        ]);
+
+        OrderItem::create([
+            'order_id' => $order->id,
+            'product_id' => $product->id,
+            'quantity' => 1,
+            'unit_price' => 45000,
+        ]);
+
+        $token = $order->generateTelegramAccessToken();
+
+        // Simulasikan WebView Telegram masih nyangkut session akun tg_555444
+        // dan mengakses baik via ID maupun via order_ref
+        $responseById = $this->actingAs($oldWebviewAccount)->get("/orders/{$order->id}?token={$token}");
+        $responseById->assertStatus(200);
+        $responseById->assertSee('ORD-BROWSER-777');
+        $this->assertAuthenticatedAs($realBuyer);
+
+        $responseByRef = $this->actingAs($realBuyer)->get("/orders/{$order->order_ref}");
+        $responseByRef->assertStatus(200);
+        $responseByRef->assertSee('ORD-BROWSER-777');
     }
 }

@@ -52,7 +52,7 @@ if [[ ! -f "${ENV_FILE}" ]]; then
     fi
 fi
 
-# Pastikan BOT_TOKEN tidak kosong
+# Pastikan BOT_TOKEN tidak kosong dan tersinkronisasi antara root .env dan web/.env
 BOT_TOKEN_VAL=$(grep -E "^BOT_TOKEN=" "${ENV_FILE}" | cut -d'=' -f2- | tr -d '"' | tr -d "'" | tr -d ' ' || true)
 if [[ -z "${BOT_TOKEN_VAL}" && -f "${WEB_ENV_FILE}" ]]; then
     # Coba ambil dari TELEGRAM_BOT_TOKEN di web/.env
@@ -60,6 +60,28 @@ if [[ -z "${BOT_TOKEN_VAL}" && -f "${WEB_ENV_FILE}" ]]; then
     if [[ -n "${TELE_TOKEN_VAL}" ]]; then
         echo -e "${GREEN}[FIX] Menyalin BOT_TOKEN dari web/.env ke root .env...${NC}"
         sed -i "s|^BOT_TOKEN=.*|BOT_TOKEN=\"${TELE_TOKEN_VAL}\"|" "${ENV_FILE}"
+        BOT_TOKEN_VAL="${TELE_TOKEN_VAL}"
+    fi
+fi
+
+if [[ -n "${BOT_TOKEN_VAL}" && -f "${WEB_ENV_FILE}" ]]; then
+    if grep -qE "^TELEGRAM_BOT_TOKEN=" "${WEB_ENV_FILE}"; then
+        sed -i "s|^TELEGRAM_BOT_TOKEN=.*|TELEGRAM_BOT_TOKEN=\"${BOT_TOKEN_VAL}\"|" "${WEB_ENV_FILE}"
+    else
+        echo "TELEGRAM_BOT_TOKEN=\"${BOT_TOKEN_VAL}\"" >> "${WEB_ENV_FILE}"
+    fi
+fi
+
+# Sinkronisasi WEBSITE_DOMAIN dan APP_URL agar tombol Cek Detail Pesanan tidak mengarah ke domain kosong/localhost
+DOMAIN_VAL=$(grep -E "^WEBSITE_DOMAIN=" "${ENV_FILE}" | cut -d'=' -f2- | tr -d '"' | tr -d "'" | tr -d ' ' || true)
+if [[ -n "${DOMAIN_VAL}" && -f "${WEB_ENV_FILE}" ]]; then
+    if grep -qE "^WEBSITE_DOMAIN=" "${WEB_ENV_FILE}"; then
+        sed -i "s|^WEBSITE_DOMAIN=.*|WEBSITE_DOMAIN=\"${DOMAIN_VAL}\"|" "${WEB_ENV_FILE}"
+    else
+        echo "WEBSITE_DOMAIN=\"${DOMAIN_VAL}\"" >> "${WEB_ENV_FILE}"
+    fi
+    if grep -qE "^APP_URL=http://localhost" "${WEB_ENV_FILE}"; then
+        sed -i "s|^APP_URL=.*|APP_URL=\"${DOMAIN_VAL}\"|" "${WEB_ENV_FILE}"
     fi
 fi
 

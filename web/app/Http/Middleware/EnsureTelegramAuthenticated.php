@@ -15,8 +15,27 @@ class EnsureTelegramAuthenticated
      */
     public function handle(Request $request, Closure $next): Response
     {
+        // Auto-authenticate atau sinkronisasi sesi ketika membuka detail pesanan dari tombol Bot Telegram
+        if ($request->routeIs('orders.show') && $request->filled('token')) {
+            $orderParam = $request->route('id');
+            $order = \App\Models\Order::with('customer')
+                ->where(function ($q) use ($orderParam) {
+                    $q->where('id', $orderParam)->orWhere('order_ref', $orderParam);
+                })
+                ->first();
+
+            if ($order && $order->verifyTelegramAccessToken($request->query('token'))) {
+                $customer = $order->customer;
+                if ($customer && !$customer->is_suspended) {
+                    if (!Auth::check() || (Auth::id() !== $customer->id && Auth::user()->role !== 'admin')) {
+                        Auth::login($customer, true);
+                    }
+                }
+            }
+        }
+
         if (!Auth::check()) {
-            return redirect()->route('login')->with('error', 'Silakan login terlebih dahulu.');
+            return redirect()->guest(route('login'))->with('error', 'Silakan login terlebih dahulu.');
         }
 
         $user = Auth::user();
