@@ -90,7 +90,48 @@ class AdminAnalyticsChartsTest extends TestCase
 
         // Chart container & donut script ter-render
         $response->assertSee('id="actionDistributionChart"', false);
+        $response->assertSee('id="entityDistributionChart"', false);
         $response->assertSee('PRODUCT_UPDATE');
+        $response->assertSee('Hasil Analisis & Kesimpulan Log Audit');
+        $response->assertViewHas('automationRate', 50.0);
+        $response->assertViewHas('humanRate', 50.0);
+        $response->assertViewHas('criticalAuditCount', 1);
+        $response->assertViewHas('auditAnalysisInsights');
+        $response->assertViewHas('topActors');
+    }
+
+    public function test_audit_logs_can_filter_by_actor_type_and_entity_type(): void
+    {
+        AuditLog::create([
+            'action' => 'ORDER_DELIVERED',
+            'entity_type' => 'order',
+            'entity_id' => 10,
+            'detail' => 'Auto delivery',
+            'actor_id' => null,
+            'created_at' => now(),
+        ]);
+
+        AuditLog::create([
+            'action' => 'ADMIN_DELETE_PRODUCT',
+            'entity_type' => 'product',
+            'entity_id' => 5,
+            'detail' => 'Manual delete',
+            'actor_id' => $this->admin->id,
+            'created_at' => now(),
+        ]);
+
+        // Filter hanya system/bot
+        $resSystem = $this->actingAs($this->admin)->get(route('admin.audit-logs.index', ['actor_type' => 'system']));
+        $resSystem->assertStatus(200);
+        $resSystem->assertViewHas('totalAuditCount', 1);
+        $resSystem->assertSee('ORDER_DELIVERED');
+        $resSystem->assertDontSee('ADMIN_DELETE_PRODUCT');
+
+        // Filter hanya entity_type = product
+        $resEntity = $this->actingAs($this->admin)->get(route('admin.audit-logs.index', ['entity_type' => 'product']));
+        $resEntity->assertStatus(200);
+        $resEntity->assertViewHas('totalAuditCount', 1);
+        $resEntity->assertSee('ADMIN_DELETE_PRODUCT');
     }
 
     public function test_logins_analytics_empty_state_renders_safely(): void
@@ -109,10 +150,14 @@ class AdminAnalyticsChartsTest extends TestCase
         $response->assertViewHas('deviceData');
         $response->assertViewHas('browserLabels');
         $response->assertViewHas('browserData');
+        $response->assertViewHas('securityScore', 100);
+        $response->assertViewHas('loginAnalysisInsights');
 
         $response->assertSee('Tren Percobaan Login (7 Hari Terakhir)');
         $response->assertSee('Distribusi Perangkat Pengguna');
+        $response->assertSee('Hasil Analisis Keamanan & Evaluasi Risiko Login');
         $response->assertSee('id="loginTrendChart"', false);
+        $response->assertSee('id="loginHourlyChart"', false);
     }
 
     public function test_logins_analytics_aggregates_security_metrics_correctly(): void
@@ -120,46 +165,63 @@ class AdminAnalyticsChartsTest extends TestCase
         // 2 login sukses dari Desktop (Chrome)
         LoginLog::create([
             'user_id' => $this->admin->id,
+            'username_or_email' => 'admin_tester',
             'ip_address' => '127.0.0.1',
             'device_type' => 'Desktop',
             'browser' => 'Chrome',
-            'platform' => 'Windows',
+            'location' => 'Jakarta, ID',
             'is_successful' => true,
             'created_at' => now(),
         ]);
         LoginLog::create([
             'user_id' => $this->admin->id,
+            'username_or_email' => 'admin_tester',
             'ip_address' => '127.0.0.1',
             'device_type' => 'Desktop',
             'browser' => 'Chrome',
-            'platform' => 'Windows',
+            'location' => 'Jakarta, ID',
             'is_successful' => true,
             'created_at' => now(),
         ]);
 
-        // 1 login gagal dari Mobile (Safari)
-        LoginLog::create([
-            'user_id' => null,
-            'ip_address' => '192.168.1.100',
-            'device_type' => 'Mobile',
-            'browser' => 'Safari',
-            'platform' => 'iOS',
-            'is_successful' => false,
-            'failure_reason' => 'Invalid credentials',
-            'created_at' => now(),
-        ]);
+        // 3 login gagal dari Mobile (Safari) oleh IP yang sama untuk menguji deteksi anomali/brute-force
+        for ($i = 0; $i < 3; $i++) {
+            LoginLog::create([
+                'user_id' => null,
+                'username_or_email' => 'target_victim@example.com',
+                'ip_address' => '192.168.1.100',
+                'device_type' => 'Mobile',
+                'browser' => 'Safari',
+                'location' => 'Singapore, SG',
+                'is_successful' => false,
+                'created_at' => now(),
+            ]);
+        }
 
         $response = $this->actingAs($this->admin)->get(route('admin.logins.index'));
 
         $response->assertStatus(200);
-        $response->assertViewHas('totalLoginAttempts', 3);
+        $response->assertViewHas('totalLoginAttempts', 5);
         $response->assertViewHas('successLoginCount', 2);
-        $response->assertViewHas('failedLoginCount', 1);
-        $response->assertViewHas('successRate', 66.7);
+        $response->assertViewHas('failedLoginCount', 3);
+        $response->assertViewHas('successRate', 40.0);
+        $response->assertViewHas('uniqueIpCount', 2);
+        $response->assertViewHas('uniqueFailedIpCount', 1);
 
-        // Chart container & donut script ter-render
+        // Chart container & script ter-render
         $response->assertSee('id="deviceDistChart"', false);
+        $response->assertSee('id="browserDistChart"', false);
+        $response->assertSee('id="loginHourlyChart"', false);
         $response->assertSee('Desktop');
         $response->assertSee('Mobile');
+        $response->assertSee('192.168.1.100');
+        $response->assertSee('target_victim@example.');
+        $response->assertSee('Deteksi Percobaan Gagal Berulang per IP');
+
+        // Uji filter status = failed
+        $resFailed = $this->actingAs($this->admin)->get(route('admin.logins.index', ['status' => 'failed']));
+        $resFailed->assertStatus(200);
+        $resFailed->assertViewHas('totalLoginAttempts', 3);
+        $resFailed->assertViewHas('failedLoginCount', 3);
     }
 }

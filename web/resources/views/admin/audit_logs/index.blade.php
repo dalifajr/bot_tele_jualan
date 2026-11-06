@@ -22,6 +22,7 @@
                 <div class="overflow-hidden">
                     <span class="text-muted small fw-bold text-uppercase d-block text-truncate" style="font-size: 0.72rem;">{{ __('Total Log Audit') }}</span>
                     <h4 class="fw-bold mb-0 text-body">{{ number_format($totalAuditCount ?? 0, 0, ',', '.') }}</h4>
+                    <small class="text-muted" style="font-size: 0.7rem;">{{ __('Hari ini:') }} <span class="fw-semibold text-primary">{{ number_format($todayAuditCount ?? 0, 0, ',', '.') }}</span> ({{ __('Kemarin:') }} {{ number_format($yesterdayAuditCount ?? 0, 0, ',', '.') }})</small>
                 </div>
             </div>
         </div>
@@ -35,6 +36,7 @@
                 <div class="overflow-hidden">
                     <span class="text-muted small fw-bold text-uppercase d-block text-truncate" style="font-size: 0.72rem;">{{ __('Aktivitas 7 Hari') }}</span>
                     <h4 class="fw-bold mb-0 text-body">{{ number_format($weekAuditCount ?? 0, 0, ',', '.') }}</h4>
+                    <small class="text-muted" style="font-size: 0.7rem;">{{ __('Rata-rata:') }} <span class="fw-semibold">{{ $dailyAverageAudit ?? 0 }}</span> {{ __('log/hari') }}</small>
                 </div>
             </div>
         </div>
@@ -50,7 +52,7 @@
                     <h5 class="fw-bold mb-0 text-truncate text-body" style="font-size: 1rem;" title="{{ $topActionName ?? '-' }}">
                         {{ $topActionName ?? '-' }}
                     </h5>
-                    <small class="text-muted" style="font-size: 0.7rem;">{{ number_format($topActionCount ?? 0, 0, ',', '.') }} {{ __('kejadian') }}</small>
+                    <small class="text-muted" style="font-size: 0.7rem;">{{ number_format($topActionCount ?? 0, 0, ',', '.') }} {{ __('kejadian') }} · <span class="text-danger fw-semibold">{{ $criticalAuditCount ?? 0 }} {{ __('kritis') }}</span></small>
                 </div>
             </div>
         </div>
@@ -66,7 +68,80 @@
                     <h5 class="fw-bold mb-0 text-body" style="font-size: 1rem;">
                         {{ $actorAuditCount ?? 0 }} <span class="text-muted fw-normal" style="font-size: 0.8rem;">/ {{ $systemAuditCount ?? 0 }} bot</span>
                     </h5>
+                    <small class="text-muted" style="font-size: 0.7rem;">{{ __('Otomatisasi:') }} <span class="fw-semibold text-success">{{ $automationRate ?? 0 }}%</span></small>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Panel Hasil Analisis & Kesimpulan Audit + Top Pelaku --}}
+<div class="row g-3 mb-4">
+    <div class="col-12 col-lg-7">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-header bg-transparent border-0 pt-3 pb-0 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div>
+                    <h5 class="fw-bold mb-1 text-body"><i class="fas fa-microscope text-primary me-2"></i>{{ __('Hasil Analisis & Kesimpulan Log Audit') }}</h5>
+                    <span class="text-muted small">{{ __('Ringkasan intelijen operasional dan evaluasi jejak sistem otomatis') }}</span>
+                </div>
+                <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-1.5 small">
+                    <i class="fas fa-sync-alt me-1"></i>{{ __('Analisis Real-Time') }}
+                </span>
+            </div>
+            <div class="card-body px-4 pt-3 pb-3">
+                <div class="d-flex flex-column gap-3">
+                    @foreach(($auditAnalysisInsights ?? []) as $insight)
+                        <div class="d-flex align-items-start gap-3 p-3 rounded-3 bg-light border-start border-4 border-{{ $insight['color'] ?? 'primary' }}">
+                            <div class="rounded-circle bg-{{ $insight['color'] ?? 'primary' }}-subtle text-{{ $insight['color'] ?? 'primary' }} d-flex align-items-center justify-content-center flex-shrink-0 mt-1" style="width: 36px; height: 36px;">
+                                <i class="fas {{ $insight['icon'] ?? 'fa-info-circle' }}"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-1 text-body" style="font-size: 0.9rem;">{{ $insight['title'] }}</h6>
+                                <p class="text-muted small mb-0" style="line-height: 1.45;">{{ $insight['desc'] }}</p>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-5">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-header bg-transparent border-0 pt-3 pb-0 px-4">
+                <h5 class="fw-bold mb-1 text-body"><i class="fas fa-users-cog text-warning me-2"></i>{{ __('Pelaku (Actor) Paling Aktif') }}</h5>
+                <span class="text-muted small">{{ __('Kontribusi eksekusi perubahan berdasarkan akun pengguna') }}</span>
+            </div>
+            <div class="card-body px-4 pt-3 pb-3">
+                @if(isset($topActors) && count($topActors) > 0)
+                    <div class="d-flex flex-column gap-2">
+                        @foreach($topActors as $actorRow)
+                            <div class="p-2 rounded-3 bg-light d-flex align-items-center justify-content-between gap-2">
+                                <div class="d-flex align-items-center gap-2 overflow-hidden">
+                                    <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center fw-bold flex-shrink-0" style="width: 34px; height: 34px; font-size: 0.8rem;">
+                                        {{ strtoupper(substr($actorRow->actor_username ?? 'U', 0, 1)) }}
+                                    </div>
+                                    <div class="overflow-hidden">
+                                        <div class="fw-bold text-body text-truncate" style="font-size: 0.85rem;">{{ $actorRow->actor_name }}</div>
+                                        <div class="text-muted" style="font-size: 0.72rem;">
+                                            <span class="badge bg-secondary-subtle text-secondary rounded-pill px-2 py-0">{{ strtoupper($actorRow->actor_role) }}</span>
+                                            <span class="ms-1">@ {{ $actorRow->actor_username }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-end flex-shrink-0">
+                                    <span class="fw-bold text-primary d-block" style="font-size: 0.9rem;">{{ number_format($actorRow->total_actions, 0, ',', '.') }} {{ __('aksi') }}</span>
+                                    <small class="text-muted" style="font-size: 0.7rem;">{{ $actorRow->share_percent }}% {{ __('dari total') }}</small>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <div class="text-center py-4 text-muted">
+                        <i class="fas fa-user-clock fa-2x mb-2 text-secondary opacity-50"></i>
+                        <p class="small mb-0">{{ __('Belum ada data pelaku pengguna manual yang tercatat.') }}</p>
+                    </div>
+                @endif
             </div>
         </div>
     </div>
@@ -74,13 +149,13 @@
 
 {{-- Analytics Charts Row --}}
 <div class="row g-3 mb-4">
-    <!-- Chart: Activity Trend -->
-    <div class="col-12 col-lg-8">
+    <!-- Chart: Activity Trend (Total vs Manual vs System/Bot) -->
+    <div class="col-12 col-lg-5">
         <div class="card border-0 shadow-sm h-100 rounded-4">
             <div class="card-header bg-transparent border-0 pt-3 pb-0 px-4 d-flex justify-content-between align-items-center">
                 <div>
                     <h5 class="fw-bold mb-1 text-body"><i class="fas fa-chart-area text-primary me-2"></i>{{ __('Tren Aktivitas Sistem (7 Hari Terakhir)') }}</h5>
-                    <span class="text-muted small">{{ __('Frekuensi eksekusi log audit per hari') }}</span>
+                    <span class="text-muted small">{{ __('Perbandingan total log, aksi manual user, dan otomatisasi bot') }}</span>
                 </div>
             </div>
             <div class="card-body px-3 pb-2 pt-2">
@@ -108,31 +183,68 @@
             </div>
         </div>
     </div>
+
+    <!-- Chart: Entity Distribution -->
+    <div class="col-12 col-lg-3">
+        <div class="card border-0 shadow-sm h-100 rounded-4">
+            <div class="card-header bg-transparent border-0 pt-3 pb-0 px-4">
+                <h5 class="fw-bold mb-1 text-body"><i class="fas fa-cubes text-info me-2"></i>{{ __('Distribusi Objek Entitas') }}</h5>
+                <span class="text-muted small">{{ __('Modul sistem yang paling sering berubah') }}</span>
+            </div>
+            <div class="card-body d-flex align-items-center justify-content-center p-3">
+                @if(!empty($entityDistributionData) && array_sum($entityDistributionData) > 0)
+                    <div id="entityDistributionChart" style="min-height: 280px; width: 100%;"></div>
+                @else
+                    <div class="text-center py-4 text-muted">
+                        <i class="fas fa-layer-group fa-2x mb-2 text-secondary opacity-50"></i>
+                        <p class="small mb-0">{{ __('Belum ada data entitas.') }}</p>
+                    </div>
+                @endif
+            </div>
+        </div>
+    </div>
 </div>
 
 {{-- Filter Card --}}
 <div class="card border-0 shadow-sm mb-4 rounded-4">
     <div class="card-body p-3">
         <form action="{{ route('admin.audit-logs.index') }}" method="GET" class="row g-3 align-items-end">
-            <div class="col-lg-5 col-md-12">
+            <div class="col-lg-3 col-md-6">
                 <label class="form-label text-secondary small fw-bold mb-1">{{ __('Cari Kata Kunci') }}</label>
                 <div class="input-group">
                     <span class="input-group-text bg-light border-0"><i class="fas fa-search text-muted"></i></span>
-                    <input type="text" name="search" class="form-control bg-light border-0" placeholder="{{ __('Cari berdasarkan aksi, detail, atau nama pelaku...') }}" value="{{ request('search') }}">
+                    <input type="text" name="search" class="form-control bg-light border-0" placeholder="{{ __('Aksi, detail, atau pelaku...') }}" value="{{ request('search') }}">
                 </div>
             </div>
-            <div class="col-lg-3 col-md-6 col-sm-6">
+            <div class="col-lg-2 col-md-3 col-sm-6">
+                <label class="form-label text-secondary small fw-bold mb-1">{{ __('Tipe Pelaku') }}</label>
+                <select name="actor_type" class="form-select bg-light border-0">
+                    <option value="">{{ __('Semua Pelaku') }}</option>
+                    <option value="user" {{ request('actor_type') === 'user' ? 'selected' : '' }}>{{ __('User / Admin') }}</option>
+                    <option value="system" {{ request('actor_type') === 'system' ? 'selected' : '' }}>{{ __('System / Bot') }}</option>
+                </select>
+            </div>
+            <div class="col-lg-2 col-md-3 col-sm-6">
+                <label class="form-label text-secondary small fw-bold mb-1">{{ __('Objek Entitas') }}</label>
+                <select name="entity_type" class="form-select bg-light border-0">
+                    <option value="">{{ __('Semua Entitas') }}</option>
+                    @foreach(($availableEntityTypes ?? []) as $et)
+                        <option value="{{ $et }}" {{ request('entity_type') === $et ? 'selected' : '' }}>{{ strtoupper($et) }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6">
                 <label class="form-label text-secondary small fw-bold mb-1">{{ __('Tanggal Mulai') }}</label>
                 <input type="date" name="start_date" class="form-control bg-light border-0" value="{{ request('start_date') }}">
             </div>
-            <div class="col-lg-3 col-md-6 col-sm-6">
+            <div class="col-lg-2 col-md-4 col-sm-6">
                 <label class="form-label text-secondary small fw-bold mb-1">{{ __('Tanggal Selesai') }}</label>
                 <input type="date" name="end_date" class="form-control bg-light border-0" value="{{ request('end_date') }}">
             </div>
-            <div class="col-lg-1 col-md-12">
+            <div class="col-lg-1 col-md-4">
                 <div class="d-flex gap-2">
                     <button type="submit" class="btn btn-primary w-100 rounded-pill" title="{{ __('Terapkan Filter') }}"><i class="fas fa-filter"></i></button>
-                    @if(request()->filled('search') || request()->filled('start_date') || request()->filled('end_date'))
+                    @if(request()->filled('search') || request()->filled('actor_type') || request()->filled('entity_type') || request()->filled('start_date') || request()->filled('end_date'))
                         <a href="{{ route('admin.audit-logs.index') }}" class="btn btn-light rounded-pill text-muted px-3" title="{{ __('Reset Filter') }}"><i class="fas fa-undo"></i></a>
                     @endif
                 </div>
@@ -149,9 +261,10 @@
             <table class="table table-hover align-middle mb-0">
                 <thead>
                     <tr class="text-secondary small border-bottom bg-light">
-                        <th class="px-4 py-3 border-0" style="width: 180px;">{{ __('Waktu') }}</th>
-                        <th class="py-3 border-0" style="width: 180px;">{{ __('Pelaku (Actor)') }}</th>
+                        <th class="px-4 py-3 border-0" style="width: 170px;">{{ __('Waktu') }}</th>
+                        <th class="py-3 border-0" style="width: 190px;">{{ __('Pelaku (Actor)') }}</th>
                         <th class="py-3 border-0" style="width: 180px;">{{ __('Aksi') }}</th>
+                        <th class="py-3 border-0" style="width: 140px;">{{ __('Objek Entitas') }}</th>
                         <th class="py-3 border-0">{{ __('Detail Perubahan') }}</th>
                     </tr>
                 </thead>
@@ -183,6 +296,15 @@
                             <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-1.5 fw-semibold" style="font-size: 0.75rem;">{{ $log->action }}</span>
                         </td>
                         <td>
+                            @if(!empty($log->entity_type))
+                                <span class="badge bg-info-subtle text-info border border-info-subtle rounded-pill px-2 py-1 font-monospace" style="font-size: 0.7rem;">
+                                    {{ strtoupper($log->entity_type) }}{{ $log->entity_id ? ' #' . $log->entity_id : '' }}
+                                </span>
+                            @else
+                                <span class="text-muted small">-</span>
+                            @endif
+                        </td>
+                        <td>
                             <div class="text-muted text-wrap font-monospace" style="max-width: 500px; font-size: 0.8rem;">
                                 {{ $log->detail }}
                             </div>
@@ -212,12 +334,22 @@
 <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-    // 1. Audit Trend Area Chart
+    // 1. Audit Trend Multi-Series Area Chart
     const trendOptions = {
-        series: [{
-            name: "{{ __('Jumlah Aktivitas') }}",
-            data: @json($auditTrendData ?? [])
-        }],
+        series: [
+            {
+                name: "{{ __('Total Aktivitas') }}",
+                data: @json($auditTrendData ?? [])
+            },
+            {
+                name: "{{ __('Pelaku (User/Admin)') }}",
+                data: @json($auditActorTrendData ?? [])
+            },
+            {
+                name: "{{ __('Sistem / Bot') }}",
+                data: @json($auditSystemTrendData ?? [])
+            }
+        ],
         chart: {
             type: 'area',
             height: 280,
@@ -226,13 +358,13 @@ document.addEventListener("DOMContentLoaded", function () {
             fontFamily: 'inherit'
         },
         dataLabels: { enabled: false },
-        stroke: { curve: 'smooth', width: 3 },
-        colors: ['#0d6efd'],
+        stroke: { curve: 'smooth', width: [3, 2, 2], dashArray: [0, 0, 4] },
+        colors: ['#0d6efd', '#20c997', '#6c757d'],
         fill: {
             type: 'gradient',
             gradient: {
                 shadeIntensity: 1,
-                opacityFrom: 0.45,
+                opacityFrom: 0.4,
                 opacityTo: 0.05,
                 stops: [20, 100]
             }
@@ -249,6 +381,10 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
             },
             min: 0
+        },
+        legend: {
+            position: 'top',
+            horizontalAlign: 'right'
         },
         tooltip: {
             theme: 'dark',
@@ -306,6 +442,51 @@ document.addEventListener("DOMContentLoaded", function () {
     };
     const actionDistChart = new ApexCharts(document.querySelector("#actionDistributionChart"), actionDistOptions);
     actionDistChart.render();
+    @endif
+
+    // 3. Entity Distribution Horizontal Bar Chart
+    @if(!empty($entityDistributionData) && array_sum($entityDistributionData) > 0)
+    const entityDistOptions = {
+        series: [{
+            name: "{{ __('Jumlah Log') }}",
+            data: @json($entityDistributionData ?? [])
+        }],
+        chart: {
+            type: 'bar',
+            height: 280,
+            toolbar: { show: false },
+            fontFamily: 'inherit'
+        },
+        plotOptions: {
+            bar: {
+                borderRadius: 6,
+                horizontal: true,
+                distributed: true,
+                barHeight: '60%'
+            }
+        },
+        colors: ['#0dcaf0', '#0d6efd', '#20c997', '#ffc107', '#6f42c1', '#fd7e14'],
+        dataLabels: {
+            enabled: true,
+            formatter: function (val) {
+                return val;
+            }
+        },
+        xaxis: {
+            categories: @json($entityDistributionLabels ?? []),
+            labels: {
+                formatter: function (val) {
+                    return Math.round(val);
+                }
+            }
+        },
+        legend: { show: false },
+        tooltip: {
+            theme: 'dark'
+        }
+    };
+    const entityDistChart = new ApexCharts(document.querySelector("#entityDistributionChart"), entityDistOptions);
+    entityDistChart.render();
     @endif
 });
 </script>

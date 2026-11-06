@@ -2144,16 +2144,67 @@ class AdminController extends Controller
     // ==========================================
     // NOTIFICATION: LOGINS
     // ==========================================
-    public function logins()
+    public function logins(Request $request)
     {
         $loginTokens = \App\Models\TelegramLoginToken::orderBy('created_at', 'desc')->paginate(15, ['*'], 'tg_page');
-        $loginLogs = \App\Models\LoginLog::orderBy('created_at', 'desc')->paginate(15, ['*'], 'log_page');
 
-        // --- Analitik Data Percobaan Login & Keamanan ---
-        $totalLoginAttempts = \App\Models\LoginLog::count();
-        $successLoginCount = \App\Models\LoginLog::where('is_successful', true)->count();
-        $failedLoginCount = \App\Models\LoginLog::where('is_successful', false)->count();
+        $logsQuery = \App\Models\LoginLog::with('user')->orderBy('created_at', 'desc');
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $logsQuery->where(function ($q) use ($search) {
+                $q->where('username_or_email', 'like', "%{$search}%")
+                  ->orWhere('ip_address', 'like', "%{$search}%")
+                  ->orWhere('location', 'like', "%{$search}%")
+                  ->orWhere('browser', 'like', "%{$search}%")
+                  ->orWhere('device_type', 'like', "%{$search}%");
+            });
+        }
+        if ($request->filled('status')) {
+            if ($request->status === 'success') {
+                $logsQuery->where('is_successful', true);
+            } elseif ($request->status === 'failed') {
+                $logsQuery->where('is_successful', false);
+            }
+        }
+        if ($request->filled('device_type')) {
+            $logsQuery->where('device_type', $request->device_type);
+        }
+
+        $loginLogs = $logsQuery->paginate(15, ['*'], 'log_page')->withQueryString();
+
+        // --- Analitik Data Percobaan Login & Keamanan (Menyesuaikan Filter jika aktif) ---
+        $analyticsBase = \App\Models\LoginLog::query();
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $analyticsBase->where(function ($q) use ($search) {
+                $q->where('username_or_email', 'like', "%{$search}%")
+                  ->orWhere('ip_address', 'like', "%{$search}%")
+                  ->orWhere('location', 'like', "%{$search}%")
+                  ->orWhere('browser', 'like', "%{$search}%")
+                  ->orWhere('device_type', 'like', "%{$search}%");
+            });
+        }
+        if ($request->filled('status')) {
+            if ($request->status === 'success') {
+                $analyticsBase->where('is_successful', true);
+            } elseif ($request->status === 'failed') {
+                $analyticsBase->where('is_successful', false);
+            }
+        }
+        if ($request->filled('device_type')) {
+            $analyticsBase->where('device_type', $request->device_type);
+        }
+
+        $totalLoginAttempts = (clone $analyticsBase)->count();
+        $successLoginCount = (clone $analyticsBase)->where('is_successful', true)->count();
+        $failedLoginCount = (clone $analyticsBase)->where('is_successful', false)->count();
         $successRate = $totalLoginAttempts > 0 ? round(($successLoginCount / $totalLoginAttempts) * 100, 1) : 0;
+        $failureRate = $totalLoginAttempts > 0 ? round(($failedLoginCount / $totalLoginAttempts) * 100, 1) : 0;
+
+        $uniqueIpCount = (clone $analyticsBase)->whereNotNull('ip_address')->distinct('ip_address')->count('ip_address');
+        $uniqueFailedIpCount = (clone $analyticsBase)->where('is_successful', false)->whereNotNull('ip_address')->distinct('ip_address')->count('ip_address');
+        $todayLoginCount = (clone $analyticsBase)->whereDate('created_at', now()->toDateString())->count();
+        $todayFailedCount = (clone $analyticsBase)->whereDate('created_at', now()->toDateString())->where('is_successful', false)->count();
 
         // 1. Tren Harian (7 Hari Terakhir: Berhasil vs Gagal)
         $loginTrendLabels = [];
@@ -2163,12 +2214,12 @@ class AdminController extends Controller
             $date = now()->subDays($i);
             $dateStr = $date->format('Y-m-d');
             $loginTrendLabels[] = $date->translatedFormat('d M');
-            $loginSuccessTrend[] = \App\Models\LoginLog::whereDate('created_at', $dateStr)->where('is_successful', true)->count();
-            $loginFailedTrend[] = \App\Models\LoginLog::whereDate('created_at', $dateStr)->where('is_successful', false)->count();
+            $loginSuccessTrend[] = (clone $analyticsBase)->whereDate('created_at', $dateStr)->where('is_successful', true)->count();
+            $loginFailedTrend[] = (clone $analyticsBase)->whereDate('created_at', $dateStr)->where('is_successful', false)->count();
         }
 
         // 2. Distribusi Tipe Perangkat (Desktop, Mobile, Tablet, dll)
-        $deviceGroups = \App\Models\LoginLog::select('device_type', \Illuminate\Support\Facades\DB::raw('count(*) as count'))
+        $deviceGroups = (clone $analyticsBase)->select('device_type', \Illuminate\Support\Facades\DB::raw('count(*) as count'))
             ->groupBy('device_type')
             ->orderByDesc('count')
             ->get();
@@ -2180,7 +2231,7 @@ class AdminController extends Controller
         }
 
         // 3. Distribusi Browser Terpopuler
-        $browserGroups = \App\Models\LoginLog::select('browser', \Illuminate\Support\Facades\DB::raw('count(*) as count'))
+        $browserGroups = (clone $analyticsBase)->select('browser', \Illuminate\Support\Facades\DB::raw('count(*) as count'))
             ->groupBy('browser')
             ->orderByDesc('count')
             ->limit(5)
@@ -2192,6 +2243,169 @@ class AdminController extends Controller
             $browserData[] = (int) $bg->count;
         }
 
+        // 4. Distribusi Lokasi Teratas (Top 5 Locations)
+        $locationGroups = (clone $analyticsBase)->select('location', \Illuminate\Support\Facades\DB::raw('count(*) as count'))
+            ->groupBy('location')
+            ->orderByDesc('count')
+            ->limit(5)
+            ->get();
+        $locationLabels = [];
+        $locationData = [];
+        foreach ($locationGroups as $lg) {
+            $locationLabels[] = $lg->location ?: 'Unknown';
+            $locationData[] = (int) $lg->count;
+        }
+
+        // 5. Pola Waktu Akses (Distribusi Jam 00:00 - 23:00 dalam 6 Rentang Waktu Operasional)
+        $timeSlots = [
+            '00:00-03:59' => [0, 3],
+            '04:00-07:59' => [4, 7],
+            '08:00-11:59' => [8, 11],
+            '12:00-15:59' => [12, 15],
+            '16:00-19:59' => [16, 19],
+            '20:00-23:59' => [20, 23],
+        ];
+        $hourlySlotLabels = array_keys($timeSlots);
+        $hourlySuccessSlotData = array_fill(0, 6, 0);
+        $hourlyFailedSlotData = array_fill(0, 6, 0);
+
+        $recentLogsForTime = (clone $analyticsBase)->select('created_at', 'is_successful')->limit(1000)->get();
+        foreach ($recentLogsForTime as $rl) {
+            if (!$rl->created_at) continue;
+            $hour = (int) \Carbon\Carbon::parse($rl->created_at)->format('H');
+            $slotIndex = min(5, intdiv($hour, 4));
+            if ($rl->is_successful) {
+                $hourlySuccessSlotData[$slotIndex]++;
+            } else {
+                $hourlyFailedSlotData[$slotIndex]++;
+            }
+        }
+
+        $peakSlotIndex = 0;
+        $maxSlotTotal = 0;
+        for ($idx = 0; $idx < 6; $idx++) {
+            $slotSum = $hourlySuccessSlotData[$idx] + $hourlyFailedSlotData[$idx];
+            if ($slotSum > $maxSlotTotal) {
+                $maxSlotTotal = $slotSum;
+                $peakSlotIndex = $idx;
+            }
+        }
+        $peakTimeWindow = $maxSlotTotal > 0 ? $hourlySlotLabels[$peakSlotIndex] : '-';
+
+        // 6. Top IP Address dengan Kegagalan Terbanyak (Deteksi Brute-Force / Anomali)
+        $topFailedIpsRaw = (clone $analyticsBase)
+            ->where('is_successful', false)
+            ->whereNotNull('ip_address')
+            ->select(
+                'ip_address',
+                \Illuminate\Support\Facades\DB::raw('count(*) as failed_count'),
+                \Illuminate\Support\Facades\DB::raw('MAX(location) as last_location'),
+                \Illuminate\Support\Facades\DB::raw('MAX(created_at) as last_attempt_at')
+            )
+            ->groupBy('ip_address')
+            ->orderByDesc('failed_count')
+            ->limit(5)
+            ->get();
+
+        $topFailedIps = $topFailedIpsRaw->map(function ($item) {
+            $item->is_blocked = \Illuminate\Support\Facades\Cache::has('blocked_ip:' . $item->ip_address);
+            $item->risk_badge = $item->failed_count >= 5 ? 'Tinggi' : ($item->failed_count >= 3 ? 'Sedang' : 'Rendah');
+            return $item;
+        });
+
+        // 7. Top Akun / Username yang Paling Sering Gagal Login (Target Serangan)
+        $topTargetedAccounts = (clone $analyticsBase)
+            ->where('is_successful', false)
+            ->whereNotNull('username_or_email')
+            ->where('username_or_email', '!=', '')
+            ->select(
+                'username_or_email',
+                \Illuminate\Support\Facades\DB::raw('count(*) as failed_count'),
+                \Illuminate\Support\Facades\DB::raw('count(distinct ip_address) as unique_ips')
+            )
+            ->groupBy('username_or_email')
+            ->orderByDesc('failed_count')
+            ->limit(5)
+            ->get();
+
+        // 8. Statistik Token Login Telegram
+        $tgTotalTokens = \App\Models\TelegramLoginToken::count();
+        $tgUsedTokens = \App\Models\TelegramLoginToken::where('status', 'used')->count();
+        $tgPendingTokens = \App\Models\TelegramLoginToken::where('status', 'pending')->count();
+        $tgConversionRate = $tgTotalTokens > 0 ? round(($tgUsedTokens / $tgTotalTokens) * 100, 1) : 0;
+
+        // 9. Skor Kesehatan Keamanan & Hasil Analisis Otomatis (Security Intelligence)
+        $maxIpFailures = $topFailedIps->first()->failed_count ?? 0;
+        $securityScore = 100;
+        if ($failureRate > 50) {
+            $securityScore -= 35;
+        } elseif ($failureRate > 25) {
+            $securityScore -= 18;
+        } elseif ($failureRate > 10) {
+            $securityScore -= 8;
+        }
+        if ($maxIpFailures >= 10) {
+            $securityScore -= 30;
+        } elseif ($maxIpFailures >= 5) {
+            $securityScore -= 15;
+        }
+        $securityScore = max(10, min(100, $securityScore));
+
+        if ($securityScore >= 80) {
+            $securityStatus = 'Aman & Terkendali';
+            $securityBadgeColor = 'success';
+        } elseif ($securityScore >= 55) {
+            $securityStatus = 'Waspada (Anomali Terdeteksi)';
+            $securityBadgeColor = 'warning';
+        } else {
+            $securityStatus = 'Risiko Tinggi (Indikasi Brute-Force)';
+            $securityBadgeColor = 'danger';
+        }
+
+        $dominantDevice = !empty($deviceLabels) ? $deviceLabels[0] : 'Belum ada data';
+        $dominantBrowser = !empty($browserLabels) ? $browserLabels[0] : 'Belum ada data';
+
+        $loginAnalysisInsights = [];
+        if ($totalLoginAttempts === 0) {
+            $loginAnalysisInsights[] = [
+                'icon' => 'fa-info-circle',
+                'color' => 'secondary',
+                'title' => 'Belum Ada Aktivitas Login',
+                'desc' => 'Sistem belum mencatat riwayat autentikasi pada filter saat ini.'
+            ];
+        } else {
+            $loginAnalysisInsights[] = [
+                'icon' => $failureRate > 30 ? 'fa-exclamation-triangle' : 'fa-shield-alt',
+                'color' => $failureRate > 30 ? 'danger' : 'success',
+                'title' => 'Rasio Keberhasilan & Kegagalan Autentikasi',
+                'desc' => "Dari {$totalLoginAttempts} percobaan login ({$uniqueIpCount} IP unik), sebesar {$successRate}% berhasil dan {$failureRate}% gagal ({$failedLoginCount} kejadian dari {$uniqueFailedIpCount} IP)."
+            ];
+
+            if ($maxIpFailures >= 3) {
+                $topBadIp = $topFailedIps->first();
+                $loginAnalysisInsights[] = [
+                    'icon' => 'fa-user-secret',
+                    'color' => 'warning',
+                    'title' => 'Deteksi Percobaan Gagal Berulang per IP',
+                    'desc' => "IP {$topBadIp->ip_address} (" . ($topBadIp->last_location ?: 'Unknown') . ") tercatat gagal login sebanyak {$topBadIp->failed_count} kali. " . ($topBadIp->is_blocked ? 'IP ini sudah dalam status diblokir.' : 'Disarankan untuk meninjau atau memblokir IP & perangkat tersebut.')
+                ];
+            } else {
+                $loginAnalysisInsights[] = [
+                    'icon' => 'fa-check-double',
+                    'color' => 'info',
+                    'title' => 'Tidak Ditemukan Serangan Brute-Force Aktif',
+                    'desc' => 'Tidak ada alamat IP tunggal yang melampaui ambang batas kegagalan berulang (≥ 3 kali gagal).'
+                ];
+            }
+
+            $loginAnalysisInsights[] = [
+                'icon' => 'fa-laptop-code',
+                'color' => 'primary',
+                'title' => 'Profil Perangkat & Jam Puncak Akses',
+                'desc' => "Mayoritas pengguna mengakses melalui perangkat {$dominantDevice} dengan peramban {$dominantBrowser}. Waktu aktivitas tertinggi berada pada rentang pukul {$peakTimeWindow}."
+            ];
+        }
+
         return view('admin.logins.index', compact(
             'loginTokens',
             'loginLogs',
@@ -2199,13 +2413,34 @@ class AdminController extends Controller
             'successLoginCount',
             'failedLoginCount',
             'successRate',
+            'failureRate',
+            'uniqueIpCount',
+            'uniqueFailedIpCount',
+            'todayLoginCount',
+            'todayFailedCount',
             'loginTrendLabels',
             'loginSuccessTrend',
             'loginFailedTrend',
             'deviceLabels',
             'deviceData',
             'browserLabels',
-            'browserData'
+            'browserData',
+            'locationLabels',
+            'locationData',
+            'hourlySlotLabels',
+            'hourlySuccessSlotData',
+            'hourlyFailedSlotData',
+            'peakTimeWindow',
+            'topFailedIps',
+            'topTargetedAccounts',
+            'tgTotalTokens',
+            'tgUsedTokens',
+            'tgPendingTokens',
+            'tgConversionRate',
+            'securityScore',
+            'securityStatus',
+            'securityBadgeColor',
+            'loginAnalysisInsights'
         ));
     }
 
@@ -3134,11 +3369,24 @@ class AdminController extends Controller
             $query->where(function($q) use ($search) {
                 $q->where('action', 'like', "%{$search}%")
                   ->orWhere('detail', 'like', "%{$search}%")
+                  ->orWhere('entity_type', 'like', "%{$search}%")
                   ->orWhereHas('actor', function($aq) use ($search) {
                       $aq->where('username', 'like', "%{$search}%")
                          ->orWhere('full_name', 'like', "%{$search}%");
                   });
             });
+        }
+
+        if ($request->filled('actor_type')) {
+            if ($request->actor_type === 'user') {
+                $query->whereNotNull('actor_id');
+            } elseif ($request->actor_type === 'system') {
+                $query->whereNull('actor_id');
+            }
+        }
+
+        if ($request->filled('entity_type')) {
+            $query->where('entity_type', $request->entity_type);
         }
 
         if ($request->filled('start_date')) {
@@ -3149,7 +3397,7 @@ class AdminController extends Controller
             $query->whereDate('created_at', '<=', $request->end_date);
         }
 
-        $logs = $query->paginate(20);
+        $logs = $query->paginate(20)->withQueryString();
 
         // --- Analitik Data Audit Logs (Menyesuaikan Filter Aktif Jika Ada) ---
         $analyticsQuery = \App\Models\AuditLog::query();
@@ -3158,11 +3406,22 @@ class AdminController extends Controller
             $analyticsQuery->where(function($q) use ($search) {
                 $q->where('action', 'like', "%{$search}%")
                   ->orWhere('detail', 'like', "%{$search}%")
+                  ->orWhere('entity_type', 'like', "%{$search}%")
                   ->orWhereHas('actor', function($aq) use ($search) {
                       $aq->where('username', 'like', "%{$search}%")
                          ->orWhere('full_name', 'like', "%{$search}%");
                   });
             });
+        }
+        if ($request->filled('actor_type')) {
+            if ($request->actor_type === 'user') {
+                $analyticsQuery->whereNotNull('actor_id');
+            } elseif ($request->actor_type === 'system') {
+                $analyticsQuery->whereNull('actor_id');
+            }
+        }
+        if ($request->filled('entity_type')) {
+            $analyticsQuery->where('entity_type', $request->entity_type);
         }
         if ($request->filled('start_date')) {
             $analyticsQuery->whereDate('created_at', '>=', $request->start_date);
@@ -3173,6 +3432,10 @@ class AdminController extends Controller
 
         $totalAuditCount = (clone $analyticsQuery)->count();
         $weekAuditCount = \App\Models\AuditLog::where('created_at', '>=', now()->subDays(7))->count();
+        $todayAuditCount = (clone $analyticsQuery)->whereDate('created_at', now()->toDateString())->count();
+        $yesterdayAuditCount = (clone $analyticsQuery)->whereDate('created_at', now()->subDay()->toDateString())->count();
+        $dailyAverageAudit = round($weekAuditCount / 7, 1);
+
         $topActionRecord = (clone $analyticsQuery)->select('action', \Illuminate\Support\Facades\DB::raw('count(*) as total'))
             ->groupBy('action')
             ->orderByDesc('total')
@@ -3182,15 +3445,35 @@ class AdminController extends Controller
         
         $actorAuditCount = (clone $analyticsQuery)->whereNotNull('actor_id')->count();
         $systemAuditCount = (clone $analyticsQuery)->whereNull('actor_id')->count();
+        $automationRate = $totalAuditCount > 0 ? round(($systemAuditCount / $totalAuditCount) * 100, 1) : 0;
+        $humanRate = $totalAuditCount > 0 ? round(($actorAuditCount / $totalAuditCount) * 100, 1) : 0;
 
-        // 1. Tren Harian (7 Hari Terakhir)
+        // Deteksi Aksi Kritis / Sensitif (Delete, Suspend, Refund, Takeover, Impersonate, Replace, Cancel)
+        $criticalAuditCount = (clone $analyticsQuery)->where(function ($q) {
+            $q->where('action', 'like', '%delete%')
+              ->orWhere('action', 'like', '%suspend%')
+              ->orWhere('action', 'like', '%refund%')
+              ->orWhere('action', 'like', '%takeover%')
+              ->orWhere('action', 'like', '%impersonate%')
+              ->orWhere('action', 'like', '%replace%')
+              ->orWhere('action', 'like', '%cancel%')
+              ->orWhere('action', 'like', '%reject%');
+        })->count();
+
+        // 1. Tren Harian (7 Hari Terakhir: Total, Pelaku Manual, dan Otomatis Sistem/Bot)
         $auditTrendLabels = [];
         $auditTrendData = [];
+        $auditActorTrendData = [];
+        $auditSystemTrendData = [];
         for ($i = 6; $i >= 0; $i--) {
             $date = now()->subDays($i);
             $dateStr = $date->format('Y-m-d');
             $auditTrendLabels[] = $date->translatedFormat('d M');
-            $auditTrendData[] = \App\Models\AuditLog::whereDate('created_at', $dateStr)->count();
+            $dayActor = (clone $analyticsQuery)->whereDate('created_at', $dateStr)->whereNotNull('actor_id')->count();
+            $daySystem = (clone $analyticsQuery)->whereDate('created_at', $dateStr)->whereNull('actor_id')->count();
+            $auditActorTrendData[] = $dayActor;
+            $auditSystemTrendData[] = $daySystem;
+            $auditTrendData[] = $dayActor + $daySystem;
         }
 
         // 2. Distribusi Kategori Aksi Terbanyak (Top 5 Actions + Lainnya)
@@ -3215,18 +3498,118 @@ class AdminController extends Controller
             $actionDistributionData[] = $otherActionsCount;
         }
 
+        // 3. Distribusi Tipe Entitas yang Dimodifikasi (Entity Type Breakdown)
+        $entityGroups = (clone $analyticsQuery)
+            ->select(
+                \Illuminate\Support\Facades\DB::raw("COALESCE(NULLIF(entity_type, ''), 'system') as entity_label"),
+                \Illuminate\Support\Facades\DB::raw('count(*) as count')
+            )
+            ->groupBy('entity_label')
+            ->orderByDesc('count')
+            ->limit(6)
+            ->get();
+
+        $entityDistributionLabels = [];
+        $entityDistributionData = [];
+        foreach ($entityGroups as $eg) {
+            $entityDistributionLabels[] = strtoupper($eg->entity_label);
+            $entityDistributionData[] = (int) $eg->count;
+        }
+
+        // Daftar pilihan entity_type untuk dropdown filter
+        $availableEntityTypes = \App\Models\AuditLog::whereNotNull('entity_type')
+            ->where('entity_type', '!=', '')
+            ->distinct()
+            ->pluck('entity_type')
+            ->toArray();
+
+        // 4. Top Pelaku (Actors) Paling Aktif
+        $topActorsRaw = (clone $analyticsQuery)
+            ->whereNotNull('actor_id')
+            ->select('actor_id', \Illuminate\Support\Facades\DB::raw('count(*) as total_actions'), \Illuminate\Support\Facades\DB::raw('MAX(created_at) as last_active_at'))
+            ->groupBy('actor_id')
+            ->orderByDesc('total_actions')
+            ->limit(5)
+            ->get();
+
+        $actorUserMap = \App\Models\User::whereIn('id', $topActorsRaw->pluck('actor_id'))->get()->keyBy('id');
+        $topActors = $topActorsRaw->map(function ($row) use ($actorUserMap, $totalAuditCount) {
+            $u = $actorUserMap->get($row->actor_id);
+            $row->actor_name = $u ? ($u->full_name ?? $u->username) : "User #{$row->actor_id}";
+            $row->actor_username = $u ? $u->username : '-';
+            $row->actor_role = $u ? $u->role : 'unknown';
+            $row->share_percent = $totalAuditCount > 0 ? round(($row->total_actions / $totalAuditCount) * 100, 1) : 0;
+            return $row;
+        });
+
+        // 5. Hasil Analisis & Kesimpulan Otomatis Log Audit (Audit Intelligence)
+        $dominantEntity = !empty($entityDistributionLabels) ? $entityDistributionLabels[0] : '-';
+        $auditAnalysisInsights = [];
+
+        if ($totalAuditCount === 0) {
+            $auditAnalysisInsights[] = [
+                'icon' => 'fa-info-circle',
+                'color' => 'secondary',
+                'title' => 'Belum Ada Catatan Audit',
+                'desc' => 'Tidak ditemukan rekaman jejak audit yang cocok dengan kriteria pencarian saat ini.'
+            ];
+        } else {
+            $auditAnalysisInsights[] = [
+                'icon' => 'fa-robot',
+                'color' => 'primary',
+                'title' => 'Keseimbangan Otomatisasi vs Intervensi Manual',
+                'desc' => "Sebesar {$automationRate}% aktivitas ({$systemAuditCount} log) dijalankan otomatis oleh Sistem/Bot, sedangkan {$humanRate}% ({$actorAuditCount} log) merupakan tindakan langsung oleh Admin/User."
+            ];
+
+            $auditAnalysisInsights[] = [
+                'icon' => 'fa-layer-group',
+                'color' => 'info',
+                'title' => 'Konsentrasi Aktivitas & Entitas Dominan',
+                'desc' => "Aksi yang paling sering terjadi adalah \"{$topActionName}\" ({$topActionCount} kejadian), dengan objek perubahan terbanyak pada entitas {$dominantEntity}. Rata-rata beban aktivitas 7 hari terakhir adalah {$dailyAverageAudit} log/hari."
+            ];
+
+            if ($criticalAuditCount > 0) {
+                $auditAnalysisInsights[] = [
+                    'icon' => 'fa-shield-virus',
+                    'color' => 'warning',
+                    'title' => 'Pemantauan Aksi Kritis & Sensitif',
+                    'desc' => "Tercatat {$criticalAuditCount} aksi berdampak tinggi (penghapusan, penangguhan akun, refund, penggantian stok, atau impersonasi) yang perlu ditinjau berkala untuk kepatuhan operasional."
+                ];
+            } else {
+                $auditAnalysisInsights[] = [
+                    'icon' => 'fa-check-circle',
+                    'color' => 'success',
+                    'title' => 'Operasional Stabil Tanpa Aksi Destruktif',
+                    'desc' => 'Tidak tercatat aksi penghapusan, penangguhan akun, atau refund pada periode data yang sedang ditampilkan.'
+                ];
+            }
+        }
+
         return view('admin.audit_logs.index', compact(
             'logs',
             'totalAuditCount',
             'weekAuditCount',
+            'todayAuditCount',
+            'yesterdayAuditCount',
+            'dailyAverageAudit',
             'topActionName',
             'topActionCount',
             'actorAuditCount',
             'systemAuditCount',
+            'automationRate',
+            'humanRate',
+            'criticalAuditCount',
             'auditTrendLabels',
             'auditTrendData',
+            'auditActorTrendData',
+            'auditSystemTrendData',
             'actionDistributionLabels',
-            'actionDistributionData'
+            'actionDistributionData',
+            'entityDistributionLabels',
+            'entityDistributionData',
+            'availableEntityTypes',
+            'topActors',
+            'auditAnalysisInsights'
         ));
     }
 
