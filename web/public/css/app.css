@@ -1,118 +1,213 @@
 /*
- * Jualan Web — Flat Material You (Material Design 3 & Google Cloud Console)
+ * Jualan Web — Google Cloud Console (cm-gm2 / cm-cm3) & Flat Material You
  * =========================================================================
- * Typography: Outfit / Inter (Google Standard Proportions)
- * Philosophy: Pure Tonal Surface, Hairline Outline (1px), Flat Elevation,
- *             Zero Heavy Shadows, High-Contrast Accessible Palette.
+ * Typography: Google Sans / Plus Jakarta Sans (Display/Title), Roboto (13px/20px Body & UI), Roboto Mono (Code)
+ * Philosophy: Pure White Canvas (#ffffff), 1px Hairline Dividers (rgba(0,0,0,.12) / #dadce0),
+ *             Crisp 8px Outlined Cards, 4px Compact Technical Buttons & Badges, Zero Heavy Shadows.
  */
 
-/* === CORE VARIABLES & MATERIAL YOU DESIGN TOKENS === */
+/* === CORE VARIABLES & GOOGLE CLOUD MATERIAL (cm-gm2 / cm-cm3) DESIGN TOKENS === */
 :root {
-    --header-height: 58px;
+    --header-height: 48px;
     --banner-height: 0px;
     --total-header-height: calc(var(--header-height) + var(--banner-height));
-    --sidebar-width: 260px;
+    --sidebar-width: 256px;
 
-    /* Material 3 / Google Blue (M3 Primary & Tonal Range) */
-    --primary-h: 218;
-    --primary-s: 90%;
-    --primary-l: 43%;
+    /* Official Google Cloud Console (cm-gm2 / cm-cm3) Color Tokens */
+    --cm-sys-color-primary: #3367d6;
+    --cm-sys-color-on-primary: #ffffff;
+    --cm-sys-color-primary-on-container: #1967d2;
+    --cm-sys-color-container-primary: #e8f0fe;
+    --cm-sys-color-surface: #ffffff;
+    --cm-sys-color-surface-variant: #fafafa;
+    --cm-sys-color-container: #fafafa;
+    --cm-sys-color-container-high: #f1f3f4;
+    --cm-sys-color-placeholder: #e8eaed;
+    --cm-sys-color-on-surface: #202124;
+    --cm-sys-color-on-surface-variant: rgba(0, 0, 0, 0.66);
+    --cm-sys-color-outline: #80868b;
+    --cm-sys-color-hairline: #dadce0;
 
-    --primary-color: #0b57d0;       /* M3 Google Blue Primary */
-    --primary-hover: #0842a0;       /* M3 Primary Hover State */
-    --primary-active: #041e49;      /* M3 Primary Active State */
-    --primary-light: #d3e3fd;      /* M3 Primary Container */
-    --primary-rgb: 11, 87, 208;
+    /* Official Google Cloud Console Status Tokens */
+    --cm-sys-color-status-success: #0b8043;
+    --cm-sys-color-status-success-container: #e2f3eb;
+    --cm-sys-color-status-warning: #dc6d00;
+    --cm-sys-color-status-warning-container: #fef6e0;
+    --cm-sys-color-status-error: #d50000;
+    --cm-sys-color-status-error-container: #fbe9e7;
+    --cm-sys-color-status-neutral: #80868b;
+    --cm-sys-color-status-neutral-container: #f1f3f4;
+
+    /* Official Google Cloud Console Typography Scale Tokens */
+    --cm-sys-type-display-small: 400 36px/44px "Google Sans", "Plus Jakarta Sans", "Roboto", sans-serif;
+    --cm-sys-type-headline-small: 400 24px/32px "Google Sans", "Plus Jakarta Sans", "Roboto", sans-serif;
+    --cm-sys-type-title-large: 400 20px/28px "Google Sans", "Plus Jakarta Sans", "Roboto", sans-serif;
+    --cm-sys-type-title-medium: 500 16px/24px "Google Sans", "Plus Jakarta Sans", "Roboto", sans-serif;
+    --cm-sys-type-title-small: 400 18px/24px "Google Sans", "Plus Jakarta Sans", "Roboto", sans-serif;
+    --cm-sys-type-label-large: 500 14px/20px "Roboto", sans-serif;
+    --cm-sys-type-label-medium: 500 13px/20px "Roboto", sans-serif;
+    --cm-sys-type-label-small: 500 12px/16px "Roboto", sans-serif;
+    --cm-sys-type-body-large: 400 14px/20px "Roboto", sans-serif;
+    --cm-sys-type-body-medium: 400 13px/20px "Roboto", sans-serif;
+    --cm-sys-type-body-small: 400 12px/16px "Roboto", sans-serif;
+    --cm-sys-type-code: 400 12px/16px "Roboto Mono", monospace;
+
+    /* Application Token Mappings -> Cloud Material */
+    --primary-h: 221;
+    --primary-s: 67%;
+    --primary-l: 52%;
+
+    --primary-color: #3367d6;       /* GCP Primary (#3367d6) */
+    --primary-hover: #174ea6;       /* GCP Hover State (#174ea6) */
+    --primary-active: #1c3aa9;      /* GCP Active State (#1c3aa9) */
+    --primary-light: #e8f0fe;       /* GCP Primary Container (#e8f0fe) */
+    --primary-rgb: 51, 103, 214;
 
     --on-primary: #ffffff;
-    --primary-container: #d3e3fd;
-    --on-primary-container: #041e49;
-    --secondary-container: #dbe2f9;
-    --on-secondary-container: #141b2c;
+    --primary-container: #e8f0fe;
+    --on-primary-container: #1967d2;
+    --secondary-container: #f1f3f4;
+    --on-secondary-container: #202124;
 
-    /* Flat Material You Surfaces (Google Cloud / Workspace Canvas) */
+    /* Pure White Canvas & Hairline Tonal Surfaces (Google Cloud Console Light) */
     --surface-bg: #ffffff;
     --surface-container-lowest: #ffffff;
-    --surface-container-low: #f8fafd;
-    --surface-container: #f0f4f9;       /* GCP / Workspace Light Surface Canvas */
-    --surface-container-high: #e9eef6;
-    --surface-container-highest: #e1e3e1;
+    --surface-container-low: #fafafa;
+    --surface-container: #ffffff;       /* GCP Pure White Main Canvas */
+    --surface-container-high: #f1f3f4;
+    --surface-container-highest: #e8eaed;
 
-    --outline-color: #dadce0;           /* Google 1px Hairline Outline */
-    --outline-variant: #e0e2ec;
-    --on-surface: #1f1f1f;
-    --on-surface-variant: #444746;
+    --outline-color: #dadce0;           /* 1px Hairline (rgba(0,0,0,.12)) */
+    --outline-variant: #bdc1c6;
+    --on-surface: #202124;
+    --on-surface-variant: #5f6368;
 
     /* Legacy Glassmorphism Variables Mapped to Flat Solid Values */
     --glass-bg: #ffffff;
     --glass-border: #dadce0;
     --glass-blur: 0px;
 
-    /* Flat Elevation System (Zero Heavy Blur Shadows) */
+    /* Flat Elevation System */
     --card-shadow: none;
-    --card-shadow-hover: 0 1px 3px 0 rgba(60, 64, 67, 0.15), 0 4px 8px 3px rgba(60, 64, 67, 0.08);
+    --card-shadow-hover: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
 
-    /* Corner Radius Design System Tokens (Material 3 Shape Scale) */
+    /* Google Cloud Console Geometric Corner Radius Scale */
     --radius-xs: 4px;
-    --radius-sm: 8px;
-    --radius-md: 12px;
-    --radius-lg: 16px;
-    --radius-xl: 24px;
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 8px;
+    --radius-xl: 8px;
     --radius-pill: 9999px;
 }
 
 [data-bs-theme="dark"] {
-    /* M3 Dark Google Blue */
-    --primary-h: 218;
-    --primary-s: 92%;
-    --primary-l: 82%;
+    /* Official Google Cloud Console Dark Theme Tokens */
+    --cm-sys-color-primary: #8ab4f8;
+    --cm-sys-color-on-primary: #202124;
+    --cm-sys-color-primary-on-container: #aecbfa;
+    --cm-sys-color-container-primary: #27354e;
+    --cm-sys-color-surface: #1f1f1f;
+    --cm-sys-color-surface-variant: #28292c;
+    --cm-sys-color-container: #28292c;
+    --cm-sys-color-container-high: #303134;
+    --cm-sys-color-placeholder: #3c4043;
+    --cm-sys-color-on-surface: #e8eaed;
+    --cm-sys-color-on-surface-variant: #9aa0a6;
+    --cm-sys-color-outline: #80868b;
+    --cm-sys-color-hairline: #3c4043;
 
-    --primary-color: #a8c7fa;       /* M3 Dark Blue Primary */
-    --primary-hover: #c2e7ff;       /* M3 Dark Blue Hover */
-    --primary-active: #d3e3fd;
-    --primary-light: #0842a0;       /* M3 Dark Container */
-    --primary-rgb: 168, 199, 250;
+    --cm-sys-color-status-success: #81c995;
+    --cm-sys-color-status-success-container: #1e3a28;
+    --cm-sys-color-status-warning: #fdd663;
+    --cm-sys-color-status-warning-container: #3e3015;
+    --cm-sys-color-status-error: #f28b82;
+    --cm-sys-color-status-error-container: #442220;
+    --cm-sys-color-status-neutral: #9aa0a6;
+    --cm-sys-color-status-neutral-container: #303134;
 
-    --on-primary: #041e49;
-    --primary-container: #0842a0;
-    --on-primary-container: #d3e3fd;
-    --secondary-container: #3f4759;
-    --on-secondary-container: #dbe2f9;
+    /* Application Token Mappings -> Cloud Material Dark */
+    --primary-h: 217;
+    --primary-s: 89%;
+    --primary-l: 76%;
 
-    /* Flat Material You Dark Surfaces (Google Cloud Dark Console) */
-    --surface-bg: #1e1f20;           /* Surface Card */
-    --surface-container-lowest: #0e0e0e;
-    --surface-container-low: #191a1b;
-    --surface-container: #131314;   /* GCP Dark Console Canvas */
-    --surface-container-high: #282a2c;
-    --surface-container-highest: #333537;
+    --primary-color: #8ab4f8;       /* GCP Dark Blue Primary */
+    --primary-hover: #aecbfa;       /* GCP Dark Blue Hover */
+    --primary-active: #d2e3fc;
+    --primary-light: #27354e;       /* GCP Dark Container */
+    --primary-rgb: 138, 180, 248;
+
+    --on-primary: #202124;
+    --primary-container: #27354e;
+    --on-primary-container: #aecbfa;
+    --secondary-container: #303134;
+    --on-secondary-container: #e8eaed;
+
+    /* Flat Dark Surfaces (Google Cloud Dark Console #1f1f1f) */
+    --surface-bg: #1f1f1f;
+    --surface-container-lowest: #171717;
+    --surface-container-low: #28292c;
+    --surface-container: #1f1f1f;   /* GCP Dark Console Canvas */
+    --surface-container-high: #303134;
+    --surface-container-highest: #3c4043;
 
     --outline-color: #3c4043;       /* Google 1px Hairline Outline Dark */
-    --outline-variant: #444746;
-    --on-surface: #e3e3e3;
-    --on-surface-variant: #c4c7c5;
+    --outline-variant: #5f6368;
+    --on-surface: #e8eaed;
+    --on-surface-variant: #9aa0a6;
 
     /* Legacy Glassmorphism Variables Mapped to Flat Dark Solid */
-    --glass-bg: #1e1f20;
+    --glass-bg: #1f1f1f;
     --glass-border: #3c4043;
     --glass-blur: 0px;
 
     --card-shadow: none;
-    --card-shadow-hover: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 4px 12px 2px rgba(0, 0, 0, 0.3);
+    --card-shadow-hover: 0 1px 3px 0 rgba(0, 0, 0, 0.5), 0 4px 8px 3px rgba(0, 0, 0, 0.35);
 }
 
-/* === BASE TYPOGRAPHY & SURFACES === */
-* {
-    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    letter-spacing: 0.01em;
-}
-
+/* === BASE TYPOGRAPHY & SURFACES (GOOGLE CLOUD CONSOLE 13PX/20PX DENSITY) === */
 body {
-    font-size: 0.9rem;
+    font-family: "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 0.8125rem; /* 13px — Google Cloud Console body-medium */
+    line-height: 1.25rem; /* 20px — Google Cloud Console body-medium */
+    letter-spacing: 0.01em;
     overflow-x: hidden;
-    background-color: var(--surface-container) !important;
-    color: var(--on-surface) !important;
-    transition: background-color 0.25s ease, color 0.25s ease;
+    background-color: var(--cm-sys-color-surface) !important;
+    color: var(--cm-sys-color-on-surface) !important;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6,
+.h1, .h2, .h3, .h4, .h5, .h6,
+.navbar-brand,
+.cfc-heading-tag {
+    font-family: "Google Sans", "Plus Jakarta Sans", "Roboto", -apple-system, BlinkMacSystemFont, sans-serif;
+    letter-spacing: 0;
+    color: var(--cm-sys-color-on-surface);
+}
+
+/* Enforce Cloud Console crisp heading proportions */
+h1, .h1 { font-size: 1.5rem; line-height: 2rem; font-weight: 400; }
+h2, .h2 { font-size: 1.25rem; line-height: 1.75rem; font-weight: 400; }
+h3, .h3 { font-size: 1.125rem; line-height: 1.5rem; font-weight: 400; }
+h4, .h4 { font-size: 1rem; line-height: 1.5rem; font-weight: 500; }
+h5, .h5 { font-size: 0.9375rem; line-height: 1.25rem; font-weight: 500; }
+h6, .h6 { font-size: 0.875rem; line-height: 1.25rem; font-weight: 500; }
+
+code, pre, kbd, samp, .font-monospace {
+    font-family: "Roboto Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+    font-size: 0.75rem; /* 12px */
+    line-height: 1rem;  /* 16px */
+}
+
+a {
+    color: var(--cm-sys-color-primary);
+    text-decoration: none;
+}
+
+a:hover {
+    color: var(--primary-hover);
 }
 
 /* === NAVIGATION (MATERIAL 3 TOP APP BAR & 1PX HAIRLINE) === */
@@ -347,15 +442,15 @@ body {
     display: none !important;
 }
 
-/* === CARD GLOBAL (FLAT MATERIAL 3 / GOOGLE CLOUD) === */
+/* === CARD GLOBAL (GOOGLE CLOUD CONSOLE 8PX OUTLINED CARD) === */
 .card {
-    background: var(--surface-bg) !important;
+    background: var(--cm-sys-color-surface) !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
-    border: 1px solid var(--outline-color) !important;
-    border-radius: var(--radius-lg, 16px) !important;
+    border: 1px solid var(--cm-sys-color-hairline) !important;
+    border-radius: 8px !important;
     box-shadow: none !important;
-    transition: border-color 0.2s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s cubic-bezier(0.2, 0, 0, 1), background-color 0.2s ease;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 
 /* Static cards stay stable without jerky jumping */
@@ -365,91 +460,170 @@ body {
 }
 
 .card-header {
-    border-radius: var(--radius-lg, 16px) var(--radius-lg, 16px) 0 0 !important;
+    border-radius: 8px 8px 0 0 !important;
     background-color: transparent !important;
-    border-bottom: 1px solid var(--outline-color) !important;
-    padding: 1rem 1.25rem !important;
+    border-bottom: 1px solid var(--cm-sys-color-hairline) !important;
+    padding: 0.75rem 1rem !important;
+    font: var(--cm-sys-type-title-medium);
+}
+
+.card-body {
+    padding: 1rem 1.25rem;
 }
 
 .card-footer {
-    border-radius: 0 0 var(--radius-lg, 16px) var(--radius-lg, 16px) !important;
+    border-radius: 0 0 8px 8px !important;
     background-color: transparent !important;
-    border-top: 1px solid var(--outline-color) !important;
-    padding: 0.875rem 1.25rem !important;
+    border-top: 1px solid var(--cm-sys-color-hairline) !important;
+    padding: 0.75rem 1rem !important;
 }
 
-/* === STAT CARDS (FLAT KPI WIDGETS) === */
+/* === STAT CARDS (GOOGLE CLOUD CONSOLE SUMMARY WIDGETS) === */
 .stat-card {
-    background: var(--surface-bg) !important;
-    border-radius: var(--radius-lg, 16px) !important;
-    padding: 1.25rem 1.5rem !important;
+    background: var(--cm-sys-color-surface) !important;
+    border-radius: 8px !important;
+    padding: 1rem 1.25rem !important;
     box-shadow: none !important;
-    border: 1px solid var(--outline-color) !important;
-    transition: border-color 0.2s ease;
+    border: 1px solid var(--cm-sys-color-hairline) !important;
+    transition: border-color 0.15s ease;
 }
 
 .stat-card:hover {
     transform: none !important;
-    border-color: rgba(var(--primary-rgb), 0.4) !important;
+    border-color: var(--cm-sys-color-primary) !important;
     box-shadow: none !important;
 }
 
 .stat-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: var(--radius-md, 12px);
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.15rem;
-    margin-bottom: 0.875rem;
-    background: rgba(var(--primary-rgb), 0.08);
-    color: var(--primary-color);
-    transition: background-color 0.2s ease;
+    font-size: 1rem;
+    margin-bottom: 0.65rem;
+    background: var(--cm-sys-color-container-primary);
+    color: var(--cm-sys-color-primary-on-container);
+    transition: background-color 0.15s ease;
 }
 
 .stat-card:hover .stat-icon {
     transform: none;
-    background: rgba(var(--primary-rgb), 0.14);
 }
 
 .stat-label {
-    font-size: 0.72rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--on-surface-variant);
+    font: var(--cm-sys-type-label-small);
+    color: var(--cm-sys-color-on-surface-variant);
     margin-bottom: 0.25rem;
 }
 
 .stat-value {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--on-surface);
+    font: var(--cm-sys-type-headline-small);
+    font-weight: 500;
+    color: var(--cm-sys-color-on-surface);
 }
 
-/* === GCP / MATERIAL 3 CONSOLE HEADER & DATA-DENSE COMPONENTS (STAGE 4) === */
+/* === GOOGLE CLOUD CONSOLE ACTION BAR, PANELS & METRIC CARDS === */
+.cfc-action-bar {
+    min-height: 49px;
+    background-color: var(--cm-sys-color-surface);
+    border-bottom: 1px solid var(--cm-sys-color-hairline);
+    padding: 6px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.cfc-action-bar-title {
+    font: var(--cm-sys-type-title-small);
+    color: var(--cm-sys-color-on-surface);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.cfc-action-bar-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.cfc-action-bar-actions .btn {
+    height: 32px;
+    padding: 0 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font: var(--cm-sys-type-label-medium);
+}
+
+.sd-dashboard-filter-bar {
+    min-height: 42px;
+    background-color: var(--cm-sys-color-surface);
+    border-bottom: 1px solid var(--cm-sys-color-hairline);
+    padding: 6px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.sd-dashboard-filter-label {
+    font: var(--cm-sys-type-label-medium);
+    color: var(--cm-sys-color-on-surface);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-right: 4px;
+    white-space: nowrap;
+}
+
+.cfc-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 28px;
+    padding: 0 10px;
+    border-radius: 8px !important;
+    font: var(--cm-sys-type-label-small);
+    background-color: var(--cm-sys-color-container-primary);
+    color: var(--cm-sys-color-primary-on-container);
+    border: none;
+    text-decoration: none;
+}
+
+.cfc-chip-outlined {
+    background-color: var(--cm-sys-color-surface);
+    color: var(--cm-sys-color-on-surface-variant);
+    border: 1px solid var(--cm-sys-color-hairline);
+}
+
 .m3-console-header {
-    background: var(--surface-bg);
-    border: 1px solid var(--outline-color);
-    border-radius: var(--radius-lg, 16px);
-    padding: 1.5rem;
+    background: var(--cm-sys-color-surface);
+    border: 1px solid var(--cm-sys-color-hairline);
+    border-radius: 8px !important;
+    padding: 1rem 1.25rem;
     box-shadow: none !important;
 }
 
 .m3-console-filter-bar {
-    background: var(--surface-container-low);
-    border: 1px solid var(--outline-color);
-    border-radius: var(--radius-md, 12px);
-    padding: 0.875rem 1rem;
+    background: var(--cm-sys-color-container);
+    border: 1px solid var(--cm-sys-color-hairline);
+    border-radius: 8px !important;
+    padding: 0.65rem 1rem;
 }
 
 .m3-metric-card {
-    background: var(--surface-bg) !important;
-    border: 1px solid var(--outline-color) !important;
-    border-radius: var(--radius-md, 12px) !important;
+    background: var(--cm-sys-color-surface) !important;
+    border: 1px solid var(--cm-sys-color-hairline) !important;
+    border-radius: 8px !important;
     box-shadow: none !important;
-    transition: border-color 0.15s cubic-bezier(0.2, 0, 0, 1), background-color 0.15s cubic-bezier(0.2, 0, 0, 1);
+    transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 
 .m3-metric-card:hover {
@@ -459,52 +633,51 @@ body {
 }
 
 a .m3-metric-card:hover {
-    border-color: var(--primary-color) !important;
-    background: var(--surface-container-low) !important;
+    border-color: var(--cm-sys-color-primary) !important;
+    background: var(--cm-sys-color-container) !important;
 }
 
 .m3-metric-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: var(--radius-md, 12px);
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.15rem;
+    font-size: 1rem;
     flex-shrink: 0;
 }
 
 .m3-tonal-item {
-    background: var(--surface-container-low) !important;
-    border: 1px solid var(--outline-color);
-    border-radius: var(--radius-md, 12px);
+    background: var(--cm-sys-color-container) !important;
+    border: 1px solid var(--cm-sys-color-hairline);
+    border-radius: 8px !important;
     transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 
 .m3-tonal-item:hover {
-    background: var(--surface-container-high) !important;
+    background: var(--cm-sys-color-container-high) !important;
 }
 
-/* Material 3 Segmented / Pill Tabs */
+/* Google Cloud Console Segmented / Tab Links */
 .nav-pills .nav-link {
-    color: var(--on-surface-variant) !important;
-    background: var(--surface-bg);
-    border: 1px solid var(--outline-color);
-    border-radius: var(--radius-pill, 9999px) !important;
-    font-size: 0.85rem;
-    font-weight: 600;
-    padding: 0.5rem 1.25rem;
+    color: var(--cm-sys-color-on-surface-variant) !important;
+    background: var(--cm-sys-color-surface);
+    border: 1px solid var(--cm-sys-color-hairline);
+    border-radius: 4px !important;
+    font: var(--cm-sys-type-label-medium);
+    padding: 0.35rem 0.85rem;
     transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
 .nav-pills .nav-link:hover:not(.active) {
-    background: var(--surface-container-low);
-    color: var(--on-surface) !important;
+    background: var(--cm-sys-color-container-high);
+    color: var(--cm-sys-color-on-surface) !important;
 }
 
 .nav-pills .nav-link.active {
-    background: var(--primary-container) !important;
-    color: var(--on-primary-container) !important;
+    background: var(--cm-sys-color-container-primary) !important;
+    color: var(--cm-sys-color-primary-on-container) !important;
     border-color: rgba(var(--primary-rgb), 0.35) !important;
     box-shadow: none !important;
 }
@@ -513,161 +686,209 @@ a .m3-metric-card:hover {
 .quick-action-btn {
     display: flex;
     align-items: center;
-    gap: 14px;
-    padding: 12px 16px;
-    border-radius: var(--radius-md, 12px);
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: 8px;
     text-decoration: none;
-    color: var(--on-surface);
-    border: 1px solid var(--outline-color);
-    background: var(--surface-bg);
-    transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+    color: var(--cm-sys-color-on-surface);
+    border: 1px solid var(--cm-sys-color-hairline);
+    background: var(--cm-sys-color-surface);
+    transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 
 .quick-action-btn:hover {
-    background: rgba(var(--primary-rgb), 0.05);
-    border-color: var(--primary-color);
-    color: var(--primary-color);
+    background: var(--cm-sys-color-container);
+    border-color: var(--cm-sys-color-primary);
+    color: var(--cm-sys-color-primary);
     transform: none;
 }
 
 .qa-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: var(--radius-sm, 8px);
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1rem;
+    font-size: 0.95rem;
     flex-shrink: 0;
-    background: rgba(var(--primary-rgb), 0.08);
-    color: var(--primary-color);
+    background: var(--cm-sys-color-container-primary);
+    color: var(--cm-sys-color-primary-on-container);
 }
 
-/* === BUTTONS (MATERIAL 3 / GCP FLAT ELEVATION) === */
+/* === BUTTONS (GOOGLE CLOUD CONSOLE sdui-button 4PX TECHNICAL GEOMETRY) === */
 .btn {
-    font-weight: 500;
-    font-size: 0.875rem;
-    letter-spacing: 0.02em;
-    border-radius: var(--radius-pill, 9999px);
-    transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+    font: var(--cm-sys-type-label-medium);
+    letter-spacing: 0.15px;
+    border-radius: 4px !important;
+    padding: 0.3125rem 0.75rem;
+    min-height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
     box-shadow: none !important;
 }
 
-.btn-primary {
-    background-color: var(--primary-color) !important;
-    border-color: var(--primary-color) !important;
-    color: var(--on-primary) !important;
+.btn-sm {
+    font: var(--cm-sys-type-label-small);
+    min-height: 28px;
+    padding: 0.2rem 0.6rem;
 }
 
-.btn-primary:hover {
+.btn-lg {
+    font: var(--cm-sys-type-label-large);
+    min-height: 38px;
+    padding: 0.45rem 1rem;
+}
+
+.btn-primary {
+    background-color: var(--cm-sys-color-primary) !important;
+    border-color: var(--cm-sys-color-primary) !important;
+    color: var(--cm-sys-color-on-primary) !important;
+}
+
+.btn-primary:hover,
+.btn-primary:focus-visible {
     background-color: var(--primary-hover) !important;
     border-color: var(--primary-hover) !important;
-    color: var(--on-primary) !important;
-    box-shadow: 0 1px 3px 0 rgba(60, 64, 67, 0.3) !important;
+    color: var(--cm-sys-color-on-primary) !important;
+    box-shadow: rgba(60, 64, 67, 0.3) 0px 1px 2px 0px, rgba(60, 64, 67, 0.15) 0px 2px 6px 2px !important;
     transform: none !important;
 }
 
 .btn-primary:active {
-    transform: scale(0.98) !important;
+    transform: none !important;
     background-color: var(--primary-active) !important;
 }
 
 [data-bs-theme="dark"] .btn-primary {
-    color: #041e49 !important;
-    font-weight: 600;
+    color: #202124 !important;
+    font-weight: 500;
 }
 
 .btn-outline-primary {
-    border-color: var(--outline-color) !important;
-    color: var(--primary-color) !important;
+    border-color: #5784cb !important;
+    color: var(--cm-sys-color-primary) !important;
     background: transparent !important;
 }
 
+[data-bs-theme="dark"] .btn-outline-primary {
+    border-color: #708cb2 !important;
+}
+
 .btn-outline-primary:hover {
-    background: rgba(var(--primary-rgb), 0.08) !important;
-    border-color: var(--primary-color) !important;
-    color: var(--primary-color) !important;
+    background: rgba(var(--primary-rgb), 0.06) !important;
+    border-color: var(--primary-hover) !important;
+    color: var(--primary-hover) !important;
+}
+
+.btn-outline-secondary {
+    border-color: var(--cm-sys-color-hairline) !important;
+    color: var(--cm-sys-color-on-surface-variant) !important;
+    background: transparent !important;
+}
+
+.btn-outline-secondary:hover {
+    background: var(--cm-sys-color-container-high) !important;
+    color: var(--cm-sys-color-on-surface) !important;
 }
 
 .btn-light {
-    background-color: var(--surface-container-high) !important;
-    border-color: var(--outline-color) !important;
-    color: var(--on-surface) !important;
+    background-color: var(--cm-sys-color-surface) !important;
+    border-color: var(--cm-sys-color-hairline) !important;
+    color: var(--cm-sys-color-on-surface) !important;
 }
 
 .btn-light:hover {
-    background-color: var(--surface-container-highest) !important;
-    border-color: var(--outline-color) !important;
-    color: var(--on-surface) !important;
+    background-color: var(--cm-sys-color-container-high) !important;
+    border-color: var(--cm-sys-color-outline) !important;
+    color: var(--cm-sys-color-on-surface) !important;
 }
 
 .btn-danger {
-    background-color: #ba1a1a !important;
-    border-color: #ba1a1a !important;
+    background-color: var(--cm-sys-color-status-error) !important;
+    border-color: var(--cm-sys-color-status-error) !important;
     color: #ffffff !important;
 }
 .btn-danger:hover {
-    background-color: #93000a !important;
-    border-color: #93000a !important;
+    background-color: #a50e0e !important;
+    border-color: #a50e0e !important;
 }
 
 .btn-success {
-    background-color: #146c2e !important;
-    border-color: #146c2e !important;
+    background-color: var(--cm-sys-color-status-success) !important;
+    border-color: var(--cm-sys-color-status-success) !important;
     color: #ffffff !important;
 }
 .btn-success:hover {
-    background-color: #0d5320 !important;
-    border-color: #0d5320 !important;
+    background-color: #0d652d !important;
+    border-color: #0d652d !important;
 }
 
 .btn-warning {
-    background-color: #f9ab00 !important;
-    border-color: #f9ab00 !important;
-    color: #202124 !important;
+    background-color: var(--cm-sys-color-status-warning) !important;
+    border-color: var(--cm-sys-color-status-warning) !important;
+    color: #ffffff !important;
 }
 
-/* === FORM CONTROLS (MATERIAL 3 OUTLINED FIELD) === */
+/* === FORM CONTROLS (GOOGLE CLOUD CONSOLE 4PX OUTLINED FIELD) === */
 .form-control,
 .form-select {
-    border: 1px solid var(--outline-color) !important;
-    border-radius: var(--radius-sm, 8px) !important;
-    background-color: var(--surface-bg) !important;
-    color: var(--on-surface) !important;
-    padding: 0.55rem 0.875rem !important;
-    font-size: 0.875rem !important;
+    border: 1px solid var(--cm-sys-color-outline) !important;
+    border-radius: 4px !important;
+    background-color: var(--cm-sys-color-surface) !important;
+    color: var(--cm-sys-color-on-surface) !important;
+    padding: 0.375rem 0.75rem !important;
+    min-height: 36px;
+    font: var(--cm-sys-type-body-medium) !important;
     box-shadow: none !important;
     transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
 }
 
-.form-control:focus,
-.form-select:focus {
-    border-color: var(--primary-color) !important;
-    border-width: 1.5px !important;
-    box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.14) !important;
-    outline: none !important;
-    background-color: var(--surface-bg) !important;
-    color: var(--on-surface) !important;
+.form-control-sm,
+.form-select-sm {
+    min-height: 30px;
+    padding: 0.2rem 0.6rem !important;
+    font: var(--cm-sys-type-body-small) !important;
 }
 
-/* Views utilizing bg-light inputs conform to Material surface high */
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--cm-sys-color-primary) !important;
+    box-shadow: inset 0 0 0 1px var(--cm-sys-color-primary) !important;
+    outline: none !important;
+    background-color: var(--cm-sys-color-surface) !important;
+    color: var(--cm-sys-color-on-surface) !important;
+}
+
+/* Views utilizing bg-light inputs conform to Cloud Material surface */
 .form-control.bg-light,
 .form-select.bg-light {
-    background-color: var(--surface-container-high) !important;
-    border: 1px solid var(--outline-color) !important;
+    background-color: var(--cm-sys-color-surface) !important;
+    border: 1px solid var(--cm-sys-color-hairline) !important;
 }
 
 .form-control.bg-light:focus,
 .form-select.bg-light:focus {
-    background-color: var(--surface-bg) !important;
+    background-color: var(--cm-sys-color-surface) !important;
+    border-color: var(--cm-sys-color-primary) !important;
 }
 
 .input-group-text {
-    background-color: var(--surface-container-high) !important;
-    border: 1px solid var(--outline-color) !important;
-    border-radius: var(--radius-sm, 8px) !important;
-    color: var(--on-surface-variant) !important;
-    font-size: 0.875rem !important;
+    background-color: var(--cm-sys-color-container) !important;
+    border: 1px solid var(--cm-sys-color-outline) !important;
+    border-radius: 4px !important;
+    color: var(--cm-sys-color-on-surface-variant) !important;
+    font: var(--cm-sys-type-body-medium) !important;
+    padding: 0.375rem 0.75rem !important;
+}
+
+.form-label {
+    font: var(--cm-sys-type-label-small);
+    color: var(--cm-sys-color-on-surface-variant);
+    margin-bottom: 0.3rem;
 }
 
 .form-check-input {
@@ -1131,174 +1352,185 @@ a .m3-metric-card:hover {
     background: rgba(15, 17, 23, 0.65);
 }
 
-/* === TABLE STYLES (GOOGLE CLOUD DATA TABLE FLAT) === */
+/* === TABLE STYLES (GOOGLE CLOUD CONSOLE DATA TABLE) === */
 .table {
-    font-size: 0.85rem;
-    color: var(--on-surface) !important;
-    border-color: var(--outline-color) !important;
+    font: var(--cm-sys-type-body-medium);
+    color: var(--cm-sys-color-on-surface) !important;
+    border-color: var(--cm-sys-color-hairline) !important;
     margin-bottom: 0;
 }
 
 .table > :not(caption) > * > * {
-    padding: 0.85rem 1rem !important;
-    border-bottom: 1px solid var(--outline-color) !important;
+    padding: 0.55rem 1rem !important;
+    border-bottom: 1px solid var(--cm-sys-color-hairline) !important;
     background-color: transparent !important;
-    color: var(--on-surface) !important;
+    color: var(--cm-sys-color-on-surface) !important;
+    vertical-align: middle;
 }
 
 .table th {
-    font-weight: 600 !important;
-    font-size: 0.72rem !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.06em !important;
-    color: var(--on-surface-variant) !important;
-    background-color: var(--surface-container-high) !important;
-    border-bottom: 1px solid var(--outline-color) !important;
+    font: var(--cm-sys-type-label-small) !important;
+    text-transform: none !important;
+    letter-spacing: 0.01em !important;
+    color: var(--cm-sys-color-on-surface-variant) !important;
+    background-color: var(--cm-sys-color-container) !important;
+    border-bottom: 1px solid var(--cm-sys-color-hairline) !important;
     border-top: none !important;
+    white-space: nowrap;
 }
 
 .table tbody tr {
-    transition: background-color 0.15s ease;
+    transition: background-color 0.1s ease;
 }
 
 .table tbody tr:hover {
     background-color: rgba(var(--primary-rgb), 0.04) !important;
 }
 
-/* === BADGE & CHIP STYLES (MATERIAL 3 TONAL PILLS) === */
+/* === BADGE & CHIP STYLES (GOOGLE CLOUD CONSOLE cfc-badge 4PX) === */
 .badge {
-    font-weight: 500 !important;
-    font-size: 0.72rem !important;
-    letter-spacing: 0.02em;
-    padding: 0.3rem 0.65rem !important;
-    border-radius: var(--radius-sm, 8px) !important;
+    font: 500 0.6875rem/1rem "Roboto", sans-serif !important;
+    letter-spacing: 0.01em;
+    padding: 0.15rem 0.45rem !important;
+    border-radius: 4px !important;
     box-shadow: none !important;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
 }
 
-.badge.rounded-pill {
-    border-radius: var(--radius-pill, 9999px) !important;
+/* Preserve circular counter badge on Top Bar icons */
+.m3-icon-btn .badge.rounded-pill,
+.mobile-nav-badge {
+    border-radius: 9999px !important;
 }
 
-/* Light Mode Material Tonal Badges */
+/* Google Cloud Console Official Tonal Status Badges (Light & Dark Adaptive via CSS Variables) */
 .badge.bg-primary-subtle,
 .bg-primary-subtle {
-    background-color: rgba(var(--primary-rgb), 0.12) !important;
-    color: var(--primary-color) !important;
-    border: 1px solid rgba(var(--primary-rgb), 0.24) !important;
+    background-color: var(--cm-sys-color-container-primary) !important;
+    color: var(--cm-sys-color-primary-on-container) !important;
+    border: 1px solid rgba(var(--primary-rgb), 0.2) !important;
 }
 
 .badge.bg-success-subtle,
 .bg-success-subtle {
-    background-color: rgba(20, 108, 46, 0.12) !important;
-    color: #146c2e !important;
-    border: 1px solid rgba(20, 108, 46, 0.25) !important;
+    background-color: var(--cm-sys-color-status-success-container) !important;
+    color: var(--cm-sys-color-status-success) !important;
+    border: 1px solid rgba(11, 128, 67, 0.2) !important;
 }
 
 .badge.bg-danger-subtle,
 .bg-danger-subtle {
-    background-color: rgba(186, 26, 26, 0.12) !important;
-    color: #ba1a1a !important;
-    border: 1px solid rgba(186, 26, 26, 0.25) !important;
+    background-color: var(--cm-sys-color-status-error-container) !important;
+    color: var(--cm-sys-color-status-error) !important;
+    border: 1px solid rgba(213, 0, 0, 0.2) !important;
 }
 
 .badge.bg-warning-subtle,
 .bg-warning-subtle {
-    background-color: rgba(249, 171, 0, 0.15) !important;
-    color: #7a5400 !important;
-    border: 1px solid rgba(249, 171, 0, 0.35) !important;
+    background-color: var(--cm-sys-color-status-warning-container) !important;
+    color: var(--cm-sys-color-status-warning) !important;
+    border: 1px solid rgba(220, 109, 0, 0.25) !important;
 }
 
 .badge.bg-info-subtle,
 .bg-info-subtle {
-    background-color: rgba(0, 108, 156, 0.12) !important;
-    color: #006c9c !important;
-    border: 1px solid rgba(0, 108, 156, 0.25) !important;
+    background-color: var(--cm-sys-color-container-primary) !important;
+    color: var(--cm-sys-color-primary-on-container) !important;
+    border: 1px solid rgba(var(--primary-rgb), 0.2) !important;
 }
 
 .badge.bg-secondary-subtle,
 .bg-secondary-subtle {
-    background-color: var(--surface-container-high) !important;
-    color: var(--on-surface-variant) !important;
-    border: 1px solid var(--outline-color) !important;
+    background-color: var(--cm-sys-color-status-neutral-container) !important;
+    color: var(--cm-sys-color-on-surface-variant) !important;
+    border: 1px solid var(--cm-sys-color-hairline) !important;
 }
 
-/* === DROPDOWN MENUS (MATERIAL 3 SURFACE ELEVATION) === */
+/* === DROPDOWN MENUS (GOOGLE CLOUD CONSOLE OVERLAY 4PX) === */
 .dropdown-menu {
-    background-color: var(--surface-bg) !important;
-    border: 1px solid var(--outline-color) !important;
-    border-radius: var(--radius-md, 12px) !important;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12) !important;
-    padding: 6px !important;
+    background-color: var(--cm-sys-color-surface) !important;
+    border: 1px solid var(--cm-sys-color-hairline) !important;
+    border-radius: 4px !important;
+    box-shadow: 0 1px 8px 0 rgba(0, 0, 0, 0.2), 0 3px 4px 0 rgba(0, 0, 0, 0.14), 0 3px 3px -2px rgba(0, 0, 0, 0.12) !important;
+    padding: 4px 0 !important;
 }
 
 .dropdown-item {
-    border-radius: var(--radius-sm, 8px) !important;
-    padding: 8px 14px !important;
-    font-size: 0.85rem !important;
-    color: var(--on-surface) !important;
-    transition: background-color 0.15s ease, color 0.15s ease;
+    border-radius: 0 !important;
+    padding: 6px 16px !important;
+    font: var(--cm-sys-type-body-medium) !important;
+    color: var(--cm-sys-color-on-surface) !important;
+    transition: background-color 0.1s ease, color 0.1s ease;
 }
 
 .dropdown-item:hover,
 .dropdown-item:focus {
-    background-color: rgba(var(--primary-rgb), 0.08) !important;
-    color: var(--primary-color) !important;
+    background-color: rgba(var(--primary-rgb), 0.06) !important;
+    color: var(--cm-sys-color-primary) !important;
 }
 
-/* === ALERTS (MATERIAL 3 TONAL CONTAINERS) === */
+/* === ALERTS (GOOGLE CLOUD CONSOLE MESSAGE BAR 4PX) === */
 .alert {
-    border-radius: var(--radius-md, 12px) !important;
-    border: 1px solid var(--outline-color) !important;
+    border-radius: 4px !important;
+    border: 1px solid var(--cm-sys-color-hairline) !important;
     box-shadow: none !important;
-    font-size: 0.875rem;
+    font: var(--cm-sys-type-body-medium);
+    padding: 0.65rem 1rem;
 }
 
-/* === MODALS (MATERIAL 3 SURFACE DIALOG) === */
+/* === MODALS (GOOGLE CLOUD CONSOLE DIALOG 8PX) === */
 .modal-content {
-    background-color: var(--surface-bg) !important;
-    border: 1px solid var(--outline-color) !important;
-    border-radius: var(--radius-xl, 24px) !important;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2) !important;
+    background-color: var(--cm-sys-color-surface) !important;
+    border: 1px solid var(--cm-sys-color-hairline) !important;
+    border-radius: 8px !important;
+    box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 2px 6px 2px rgba(60, 64, 67, 0.15) !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
-    color: var(--on-surface) !important;
+    color: var(--cm-sys-color-on-surface) !important;
 }
 
 .modal-header {
-    border-bottom: 1px solid var(--outline-color) !important;
-    padding: 1.25rem 1.5rem !important;
-    background-color: transparent !important;
-}
-
-.modal-footer {
-    border-top: 1px solid var(--outline-color) !important;
+    border-bottom: 1px solid var(--cm-sys-color-hairline) !important;
     padding: 1rem 1.5rem !important;
     background-color: transparent !important;
 }
 
+.modal-title {
+    font: var(--cm-sys-type-title-small) !important;
+}
+
+.modal-footer {
+    border-top: 1px solid var(--cm-sys-color-hairline) !important;
+    padding: 0.75rem 1.5rem !important;
+    background-color: transparent !important;
+}
+
 .modal-backdrop {
-    background-color: rgba(0, 0, 0, 0.45) !important;
+    background-color: rgba(0, 0, 0, 0.32) !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
 }
 
-/* SweetAlert2 Dialog (Material 3 Surface Dialog) */
+/* SweetAlert2 Dialog (Google Cloud Console Dialog) */
 .swal2-popup:not(.swal2-toast) {
-    border-radius: var(--radius-xl, 24px) !important;
-    border: 1px solid var(--outline-color) !important;
-    background: var(--surface-bg) !important;
-    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.22) !important;
-    color: var(--on-surface) !important;
-    padding: 1.75rem !important;
+    border-radius: 8px !important;
+    border: 1px solid var(--cm-sys-color-hairline) !important;
+    background: var(--cm-sys-color-surface) !important;
+    box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 2px 6px 2px rgba(60, 64, 67, 0.15) !important;
+    color: var(--cm-sys-color-on-surface) !important;
+    padding: 1.5rem !important;
 }
 
 .swal2-popup:not(.swal2-toast) .swal2-title {
-    color: var(--on-surface) !important;
-    font-weight: 600 !important;
+    color: var(--cm-sys-color-on-surface) !important;
+    font: var(--cm-sys-type-title-large) !important;
 }
 
 .swal2-popup:not(.swal2-toast) .swal2-html-container {
-    color: var(--on-surface-variant) !important;
+    color: var(--cm-sys-color-on-surface-variant) !important;
+    font: var(--cm-sys-type-body-medium) !important;
 }
 
 /* === SMOOTH SCROLLBAR === */
@@ -1542,59 +1774,59 @@ a .m3-metric-card:hover {
     overflow-x: auto !important;
 }
 
-/* === DARK MODE BADGE & ALERT CONTRAST HARDENING (MATERIAL 3 & WCAG AA COMPLIANCE) === */
+/* === DARK MODE BADGE & ALERT CONTRAST HARDENING (GOOGLE CLOUD CONSOLE DARK COMPLIANCE) === */
 [data-bs-theme="dark"] .badge.bg-primary-subtle,
 [data-bs-theme="dark"] .bg-primary-subtle {
-    background-color: rgba(168, 199, 250, 0.16) !important;
-    color: #a8c7fa !important;
-    border: 1px solid rgba(168, 199, 250, 0.3) !important;
+    background-color: var(--cm-sys-color-container-primary) !important;
+    color: var(--cm-sys-color-primary-on-container) !important;
+    border: 1px solid rgba(138, 180, 248, 0.3) !important;
 }
 
 [data-bs-theme="dark"] .badge.bg-warning-subtle,
 [data-bs-theme="dark"] .bg-warning-subtle {
-    background-color: rgba(255, 218, 106, 0.16) !important;
-    color: #ffda6a !important;
-    border: 1px solid rgba(255, 218, 106, 0.3) !important;
+    background-color: var(--cm-sys-color-status-warning-container) !important;
+    color: var(--cm-sys-color-status-warning) !important;
+    border: 1px solid rgba(253, 214, 99, 0.3) !important;
 }
 
 [data-bs-theme="dark"] .badge.bg-info-subtle,
 [data-bs-theme="dark"] .bg-info-subtle {
-    background-color: rgba(110, 223, 246, 0.16) !important;
-    color: #6edff6 !important;
-    border: 1px solid rgba(110, 223, 246, 0.3) !important;
+    background-color: var(--cm-sys-color-container-primary) !important;
+    color: var(--cm-sys-color-primary-on-container) !important;
+    border: 1px solid rgba(138, 180, 248, 0.3) !important;
 }
 
 [data-bs-theme="dark"] .badge.bg-success-subtle,
 [data-bs-theme="dark"] .bg-success-subtle {
-    background-color: rgba(117, 183, 152, 0.18) !important;
-    color: #75b798 !important;
-    border: 1px solid rgba(117, 183, 152, 0.3) !important;
+    background-color: var(--cm-sys-color-status-success-container) !important;
+    color: var(--cm-sys-color-status-success) !important;
+    border: 1px solid rgba(129, 201, 149, 0.3) !important;
 }
 
 [data-bs-theme="dark"] .badge.bg-danger-subtle,
 [data-bs-theme="dark"] .bg-danger-subtle {
-    background-color: rgba(234, 134, 143, 0.18) !important;
-    color: #ea868f !important;
-    border: 1px solid rgba(234, 134, 143, 0.3) !important;
+    background-color: var(--cm-sys-color-status-error-container) !important;
+    color: var(--cm-sys-color-status-error) !important;
+    border: 1px solid rgba(242, 139, 130, 0.3) !important;
 }
 
 [data-bs-theme="dark"] .badge.bg-secondary-subtle,
 [data-bs-theme="dark"] .bg-secondary-subtle {
-    background-color: var(--surface-container-high) !important;
-    color: #c5d0dc !important;
-    border: 1px solid var(--outline-color) !important;
+    background-color: var(--cm-sys-color-status-neutral-container) !important;
+    color: var(--cm-sys-color-on-surface-variant) !important;
+    border: 1px solid var(--cm-sys-color-hairline) !important;
 }
 
 [data-bs-theme="dark"] .alert-info-subtle {
-    background-color: rgba(110, 223, 246, 0.12) !important;
-    color: #b6effb !important;
-    border: 1px solid rgba(110, 223, 246, 0.25) !important;
+    background-color: var(--cm-sys-color-container-primary) !important;
+    color: var(--cm-sys-color-primary-on-container) !important;
+    border: 1px solid rgba(138, 180, 248, 0.25) !important;
 }
 
 [data-bs-theme="dark"] .alert-warning-subtle {
-    background-color: rgba(255, 218, 106, 0.12) !important;
-    color: #ffe69c !important;
-    border: 1px solid rgba(255, 218, 106, 0.25) !important;
+    background-color: var(--cm-sys-color-status-warning-container) !important;
+    color: var(--cm-sys-color-status-warning) !important;
+    border: 1px solid rgba(253, 214, 99, 0.25) !important;
 }
 
 /* === SKELETON LOADING SHIMMER ANIMATION === */
@@ -1602,7 +1834,7 @@ a .m3-metric-card:hover {
     background: linear-gradient(90deg, #e9ecef 25%, #f8f9fa 50%, #e9ecef 75%);
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
-    border-radius: var(--radius-sm, 8px);
+    border-radius: 4px;
 }
 
 [data-bs-theme="dark"] .skeleton-loader {
@@ -1628,11 +1860,11 @@ a .m3-metric-card:hover {
         left: 0 !important;
         right: 0 !important;
         z-index: 1035 !important;
-        background: var(--surface-bg) !important;
+        background: var(--cm-sys-color-surface) !important;
         backdrop-filter: none !important;
         -webkit-backdrop-filter: none !important;
-        border-top: 1px solid var(--outline-color) !important;
-        box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08) !important;
+        border-top: 1px solid var(--cm-sys-color-hairline) !important;
+        box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08) !important;
         padding: 10px 16px !important;
     }
 
@@ -1643,7 +1875,7 @@ a .m3-metric-card:hover {
 
     /* Product card 2-column mobile optimization */
     .product-card {
-        border-radius: 14px !important;
+        border-radius: 8px !important;
     }
     .product-card .product-icon-wrapper {
         height: 95px !important;
@@ -1663,46 +1895,46 @@ a .m3-metric-card:hover {
     }
     .product-card .product-badge .badge {
         font-size: 0.65rem !important;
-        padding: 0.2rem 0.5rem !important;
+        padding: 0.15rem 0.45rem !important;
     }
 
     /* Touch Stepper Button (Min 38px for Ergonomics) */
     .stepper-touch-btn {
-        width: 38px !important;
-        height: 38px !important;
+        width: 36px !important;
+        height: 36px !important;
         display: inline-flex !important;
         align-items: center !important;
         justify-content: center !important;
-        font-size: 1rem !important;
-        border-radius: 10px !important;
+        font-size: 0.95rem !important;
+        border-radius: 4px !important;
     }
 
     /* Mobile Transaction/Activity Card */
     .mobile-activity-card {
-        border-radius: 14px;
-        background: var(--surface-bg);
-        border: 1px solid var(--outline-color);
+        border-radius: 8px;
+        background: var(--cm-sys-color-surface);
+        border: 1px solid var(--cm-sys-color-hairline);
         padding: 12px 14px;
-        margin-bottom: 10px;
+        margin-bottom: 8px;
         transition: background-color 0.15s ease, border-color 0.15s ease;
     }
     .mobile-activity-card:active {
         transform: none;
         background: rgba(var(--primary-rgb), 0.04);
-        border-color: var(--primary-color);
+        border-color: var(--cm-sys-color-primary);
     }
 }
 
 /* Clickable Product Card Feedback */
 .clickable-product-card {
     cursor: pointer;
-    transition: border-color 0.2s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s cubic-bezier(0.2, 0, 0, 1);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
     -webkit-tap-highlight-color: transparent;
 }
 .clickable-product-card:hover {
     transform: none;
-    border-color: var(--primary-color) !important;
-    box-shadow: 0 4px 16px rgba(var(--primary-rgb), 0.12) !important;
+    border-color: var(--cm-sys-color-primary) !important;
+    box-shadow: 0 1px 3px 0 rgba(60, 64, 67, 0.2) !important;
 }
 .clickable-product-card:active {
     transform: scale(0.99);
@@ -1722,7 +1954,7 @@ a .m3-metric-card:hover {
 @keyframes contentReveal {
     0% {
         opacity: 0;
-        transform: translateY(6px);
+        transform: translateY(4px);
     }
     100% {
         opacity: 1;
@@ -1732,34 +1964,31 @@ a .m3-metric-card:hover {
 
 .main-content,
 main.flex-grow-1 {
-    animation: contentReveal 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: contentReveal 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 /* ==========================================================================
-   Modern SweetAlert2 Toast Notification Styles (Material 3 Surface Elevation)
+   Modern SweetAlert2 Toast Notification Styles (Google Cloud Snackbar 4px)
    ========================================================================== */
 .swal2-container.swal2-top-end .swal2-popup.swal2-toast,
 .swal2-popup.swal2-toast {
-    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
-    border-radius: var(--radius-md, 12px) !important;
-    padding: 12px 18px !important;
-    background: var(--surface-bg) !important;
+    font-family: "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+    border-radius: 4px !important;
+    padding: 10px 16px !important;
+    background: var(--cm-sys-color-surface) !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
-    border: 1px solid var(--outline-color) !important;
-    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.12) !important;
-    color: var(--on-surface) !important;
-    font-size: 0.9rem !important;
+    border: 1px solid var(--cm-sys-color-hairline) !important;
+    box-shadow: 0 1px 8px 0 rgba(0, 0, 0, 0.2), 0 3px 4px 0 rgba(0, 0, 0, 0.14) !important;
+    color: var(--cm-sys-color-on-surface) !important;
+    font-size: 0.8125rem !important;
 }
 
 /* Spring entrance animation for toast */
 @keyframes toastSlideInDown {
     0% {
         opacity: 0;
-        transform: translateY(-16px) scale(0.96);
-    }
-    65% {
-        transform: translateY(2px) scale(1.01);
+        transform: translateY(-12px) scale(0.98);
     }
     100% {
         opacity: 1;
@@ -1768,22 +1997,22 @@ main.flex-grow-1 {
 }
 
 .swal2-toast.swal2-show {
-    animation: toastSlideInDown 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    animation: toastSlideInDown 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 .swal2-popup.swal2-toast .swal2-title {
-    font-family: 'Outfit', sans-serif !important;
-    font-weight: 600 !important;
-    font-size: 0.92rem !important;
-    color: var(--on-surface) !important;
+    font-family: "Roboto", sans-serif !important;
+    font-weight: 500 !important;
+    font-size: 0.8125rem !important;
+    color: var(--cm-sys-color-on-surface) !important;
     margin: 0 !important;
     padding: 0 0.5rem 0 0 !important;
 }
 
 .swal2-popup.swal2-toast .swal2-html-container {
-    font-size: 0.85rem !important;
-    color: var(--on-surface-variant) !important;
-    margin: 4px 0 0 0 !important;
+    font-size: 0.75rem !important;
+    color: var(--cm-sys-color-on-surface-variant) !important;
+    margin: 2px 0 0 0 !important;
 }
 
 /* Toast Icons Modern Styling */
