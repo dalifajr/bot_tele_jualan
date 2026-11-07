@@ -12,7 +12,7 @@ body {
   background-color: var(--bs-body-bg);
   position: relative;
   overflow-x: hidden;
-  font-family: 'Outfit', sans-serif;
+  font-family: "Aptos", "Aptos Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
 }
 
 /* Background Ambient Glow */

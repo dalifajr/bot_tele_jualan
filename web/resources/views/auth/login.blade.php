@@ -18,10 +18,79 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ __('Login / Daftar') }} — {{ config('app.name', 'Dzulfikrialifajri Store') }}</title>
     
-    {{-- Google Fonts: Outfit --}}
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    {{-- Aptos Font System Setup (Full Aptos Family) --}}
+    <style>
+        @font-face {
+            font-family: 'Aptos';
+            src: local('Aptos'), local('Aptos-Regular');
+            font-weight: 400;
+            font-style: normal;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'Aptos';
+            src: local('Aptos-Light'), local('Aptos Light');
+            font-weight: 300;
+            font-style: normal;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'Aptos';
+            src: local('Aptos-Medium'), local('Aptos Medium');
+            font-weight: 500;
+            font-style: normal;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'Aptos';
+            src: local('Aptos-SemiBold'), local('Aptos SemiBold');
+            font-weight: 600;
+            font-style: normal;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'Aptos';
+            src: local('Aptos-Bold'), local('Aptos Bold');
+            font-weight: 700;
+            font-style: normal;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'Aptos Display';
+            src: local('Aptos Display'), local('Aptos-Display'), local('AptosDisplay-Regular');
+            font-weight: 400;
+            font-style: normal;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'Aptos Display';
+            src: local('Aptos Display-Medium'), local('Aptos Display Medium');
+            font-weight: 500;
+            font-style: normal;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'Aptos Display';
+            src: local('Aptos Display-Bold'), local('Aptos Display Bold');
+            font-weight: 700;
+            font-style: normal;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'Aptos Mono';
+            src: local('Aptos Mono'), local('Aptos-Mono'), local('AptosMono-Regular');
+            font-weight: 400;
+            font-style: normal;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'Aptos Mono';
+            src: local('Aptos Mono-Bold'), local('Aptos Mono Bold');
+            font-weight: 700;
+            font-style: normal;
+            font-display: swap;
+        }
+    </style>
     
     {{-- Bootstrap 5.3 --}}
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">

@@ -1,10 +1,82 @@
 /*
  * Jualan Web — Google Cloud Console (cm-gm2 / cm-cm3) & Flat Material You
  * =========================================================================
- * Typography: Google Sans / Plus Jakarta Sans (Display/Title), Roboto (13px/20px Body & UI), Roboto Mono (Code)
+ * Typography: Aptos Family (Aptos Display for Titles/Headings, Aptos for UI/Body, Aptos Mono for Code/Monospace)
  * Philosophy: Pure White Canvas (#ffffff), 1px Hairline Dividers (rgba(0,0,0,.12) / #dadce0),
  *             Crisp 8px Outlined Cards, 4px Compact Technical Buttons & Badges, Zero Heavy Shadows.
  */
+
+/* === APTOS FONT FAMILY DECLARATIONS === */
+@font-face {
+    font-family: 'Aptos';
+    src: local('Aptos'), local('Aptos-Regular');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Aptos';
+    src: local('Aptos-Light'), local('Aptos Light');
+    font-weight: 300;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Aptos';
+    src: local('Aptos-Medium'), local('Aptos Medium');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Aptos';
+    src: local('Aptos-SemiBold'), local('Aptos SemiBold');
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Aptos';
+    src: local('Aptos-Bold'), local('Aptos Bold');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Aptos Display';
+    src: local('Aptos Display'), local('Aptos-Display'), local('AptosDisplay-Regular');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Aptos Display';
+    src: local('Aptos Display-Medium'), local('Aptos Display Medium');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Aptos Display';
+    src: local('Aptos Display-Bold'), local('Aptos Display Bold');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Aptos Mono';
+    src: local('Aptos Mono'), local('Aptos-Mono'), local('AptosMono-Regular');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Aptos Mono';
+    src: local('Aptos Mono-Bold'), local('Aptos Mono Bold');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
 
 /* === CORE VARIABLES & GOOGLE CLOUD MATERIAL (cm-gm2 / cm-cm3) DESIGN TOKENS === */
 :root {
@@ -12,6 +84,15 @@
     --banner-height: 0px;
     --total-header-height: calc(var(--header-height) + var(--banner-height));
     --sidebar-width: 256px;
+
+    /* Aptos Family Typography Tokens */
+    --font-aptos-sans: "Aptos", "Aptos Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-aptos-display: "Aptos Display", "Aptos", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --font-aptos-mono: "Aptos Mono", "Roboto Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+    --bs-font-sans-serif: var(--font-aptos-sans);
+    --bs-body-font-family: var(--font-aptos-sans);
+    --bs-font-monospace: var(--font-aptos-mono);
 
     /* Official Google Cloud Console (cm-gm2 / cm-cm3) Color Tokens */
     --cm-sys-color-primary: #3367d6;
@@ -38,19 +119,19 @@
     --cm-sys-color-status-neutral: #80868b;
     --cm-sys-color-status-neutral-container: #f1f3f4;
 
-    /* Official Google Cloud Console Typography Scale Tokens (Aptos / Modern Sans Primary) */
-    --cm-sys-type-display-small: 400 36px/44px "Aptos", "Google Sans", "Plus Jakarta Sans", "Roboto", sans-serif;
-    --cm-sys-type-headline-small: 400 24px/32px "Aptos", "Google Sans", "Plus Jakarta Sans", "Roboto", sans-serif;
-    --cm-sys-type-title-large: 400 20px/28px "Aptos", "Google Sans", "Plus Jakarta Sans", "Roboto", sans-serif;
-    --cm-sys-type-title-medium: 500 16px/24px "Aptos", "Google Sans", "Plus Jakarta Sans", "Roboto", sans-serif;
-    --cm-sys-type-title-small: 400 18px/24px "Aptos", "Google Sans", "Plus Jakarta Sans", "Roboto", sans-serif;
-    --cm-sys-type-label-large: 500 14px/20px "Aptos", "Roboto", sans-serif;
-    --cm-sys-type-label-medium: 500 13px/20px "Aptos", "Roboto", sans-serif;
-    --cm-sys-type-label-small: 500 12px/16px "Aptos", "Roboto", sans-serif;
-    --cm-sys-type-body-large: 400 14px/20px "Aptos", "Roboto", sans-serif;
-    --cm-sys-type-body-medium: 400 13px/20px "Aptos", "Roboto", sans-serif;
-    --cm-sys-type-body-small: 400 12px/16px "Aptos", "Roboto", sans-serif;
-    --cm-sys-type-code: 400 12px/16px "Roboto Mono", monospace;
+    /* Official Google Cloud Console Typography Scale Tokens (Strict Aptos Family) */
+    --cm-sys-type-display-small: 400 36px/44px var(--font-aptos-display);
+    --cm-sys-type-headline-small: 400 24px/32px var(--font-aptos-display);
+    --cm-sys-type-title-large: 400 20px/28px var(--font-aptos-display);
+    --cm-sys-type-title-medium: 500 16px/24px var(--font-aptos-display);
+    --cm-sys-type-title-small: 400 18px/24px var(--font-aptos-display);
+    --cm-sys-type-label-large: 500 14px/20px var(--font-aptos-sans);
+    --cm-sys-type-label-medium: 500 13px/20px var(--font-aptos-sans);
+    --cm-sys-type-label-small: 500 12px/16px var(--font-aptos-sans);
+    --cm-sys-type-body-large: 400 14px/20px var(--font-aptos-sans);
+    --cm-sys-type-body-medium: 400 13px/20px var(--font-aptos-sans);
+    --cm-sys-type-body-small: 400 12px/16px var(--font-aptos-sans);
+    --cm-sys-type-code: 400 12px/16px var(--font-aptos-mono);
 
     /* Application Token Mappings -> Cloud Material */
     --primary-h: 221;
@@ -192,9 +273,15 @@ html.theme-transitioning .m3-console-header {
     transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease !important;
 }
 
-/* === BASE TYPOGRAPHY & SURFACES (GOOGLE CLOUD CONSOLE 13PX/20PX DENSITY WITH APTOS) === */
+/* === UNIVERSAL APTOS FAMILY ENFORCEMENT ON ALL SYSTEM ELEMENTS === */
+*,
+*::before,
+*::after {
+    font-family: var(--font-aptos-sans);
+}
+
 body {
-    font-family: "Aptos", "Plus Jakarta Sans", "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-family: var(--font-aptos-sans) !important;
     font-size: 0.8125rem; /* 13px — Google Cloud Console body-medium */
     line-height: 1.25rem; /* 20px — Google Cloud Console body-medium */
     letter-spacing: 0.01em;
@@ -205,13 +292,54 @@ body {
     -moz-osx-font-smoothing: grayscale;
 }
 
+/* Enforce Aptos Display on all Title & Heading Elements */
 h1, h2, h3, h4, h5, h6,
 .h1, .h2, .h3, .h4, .h5, .h6,
 .navbar-brand,
-.cfc-heading-tag {
-    font-family: "Aptos", "Google Sans", "Plus Jakarta Sans", "Roboto", -apple-system, BlinkMacSystemFont, sans-serif;
+.cfc-heading-tag,
+.card-header,
+.modal-title,
+.offcanvas-title {
+    font-family: var(--font-aptos-display) !important;
     letter-spacing: 0;
     color: var(--cm-sys-color-on-surface);
+}
+
+/* Enforce Aptos Sans on all UI Components, Controls and Typography */
+button,
+input,
+optgroup,
+select,
+textarea,
+.table,
+.table th,
+.table td,
+.card,
+.card-body,
+.card-footer,
+.badge,
+.nav,
+.nav-pills,
+.nav-link,
+.btn,
+.dropdown-menu,
+.dropdown-item,
+.modal,
+.modal-body,
+.modal-footer,
+.form-control,
+.form-select,
+.form-label,
+.form-text,
+.input-group-text,
+.alert,
+p,
+span,
+label,
+li,
+td,
+th {
+    font-family: var(--font-aptos-sans) !important;
 }
 
 /* Enforce Cloud Console crisp heading proportions */
@@ -223,7 +351,7 @@ h5, .h5 { font-size: 0.9375rem; line-height: 1.25rem; font-weight: 500; }
 h6, .h6 { font-size: 0.875rem; line-height: 1.25rem; font-weight: 500; }
 
 code, pre, kbd, samp, .font-monospace {
-    font-family: "Roboto Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+    font-family: var(--font-aptos-mono) !important;
     font-size: 0.75rem; /* 12px */
     line-height: 1rem;  /* 16px */
 }
@@ -336,7 +464,7 @@ a:hover {
 }
 
 .pcc-search-kbd {
-    font-family: "Roboto Mono", monospace;
+    font-family: var(--font-aptos-mono);
     font-size: 0.6875rem;
     line-height: 1;
     padding: 2px 5px;
@@ -1748,7 +1876,7 @@ a .m3-metric-card:hover {
 
 /* === BADGE & CHIP STYLES (GOOGLE CLOUD CONSOLE cfc-badge 4PX) === */
 .badge {
-    font: 500 0.6875rem/1rem "Roboto", sans-serif !important;
+    font: 500 0.6875rem/1rem var(--font-aptos-sans) !important;
     letter-spacing: 0.01em;
     padding: 0.15rem 0.45rem !important;
     border-radius: 4px !important;
@@ -2339,7 +2467,7 @@ main.flex-grow-1 {
    ========================================================================== */
 .swal2-container.swal2-top-end .swal2-popup.swal2-toast,
 .swal2-popup.swal2-toast {
-    font-family: "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+    font-family: var(--font-aptos-sans) !important;
     border-radius: 4px !important;
     padding: 10px 16px !important;
     background: var(--cm-sys-color-surface) !important;
@@ -2368,7 +2496,7 @@ main.flex-grow-1 {
 }
 
 .swal2-popup.swal2-toast .swal2-title {
-    font-family: "Roboto", sans-serif !important;
+    font-family: var(--font-aptos-display) !important;
     font-weight: 500 !important;
     font-size: 0.8125rem !important;
     color: var(--cm-sys-color-on-surface) !important;
