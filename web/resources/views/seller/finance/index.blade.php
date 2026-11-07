@@ -36,7 +36,7 @@
     {{-- Wallet Balance & Withdrawal Form --}}
     <div class="col-12 col-lg-5">
         {{-- Wallet Balance Card --}}
-        <div class="card border-0 shadow-sm text-white mb-4 overflow-hidden seller-stat-card-gradient seller-stat-card-finance-wallet" style="border-radius: 8px; background: linear-gradient(135deg, #065f46 0%, #059669 50%, #10b981 100%) !important;">
+        <div class="card border-0 shadow-sm text-white mb-4 overflow-hidden seller-stat-card-gradient seller-stat-card-finance-wallet" style="background: linear-gradient(135deg, #065f46 0%, #059669 50%, #10b981 100%) !important;">
             <div class="card-body p-4 position-relative">
                 <div class="position-absolute end-0 bottom-0 text-white" style="font-size: 8rem; transform: translate(20px, 20px); opacity: 0.12; pointer-events: none; z-index: 0;">
                     <i class="fas fa-wallet"></i>
@@ -50,7 +50,7 @@
         </div>
 
         {{-- Held Balance Card --}}
-        <div class="card border-0 shadow-sm text-white mb-4 overflow-hidden seller-stat-card-gradient seller-stat-card-finance-held" style="border-radius: 8px; background: linear-gradient(135deg, #b45309 0%, #d97706 50%, #f59e0b 100%) !important;">
+        <div class="card border-0 shadow-sm text-white mb-4 overflow-hidden seller-stat-card-gradient seller-stat-card-finance-held" style="background: linear-gradient(135deg, #b45309 0%, #d97706 50%, #f59e0b 100%) !important;">
             <div class="card-body p-4 position-relative">
                 <div class="position-absolute end-0 bottom-0 text-white" style="font-size: 8rem; transform: translate(20px, 20px); opacity: 0.15; pointer-events: none; z-index: 0;">
                     <i class="fas fa-lock"></i>
@@ -64,7 +64,7 @@
         </div>
 
         {{-- Withdrawal Form Card --}}
-        <div class="card border-0 shadow-sm p-4" style="border-radius: 8px;">
+        <div class="card border-0 shadow-sm p-4">
             <h5 class="fw-bold mb-3"><i class="fas fa-money-bill-wave text-primary me-2"></i>{{ __('Tarik Saldo (Withdrawal)') }}</h5>
             
             <form action="{{ route('seller.finance.withdraw') }}" method="POST">
@@ -72,14 +72,14 @@
                 <div class="mb-3">
                     <label class="form-label text-muted small fw-bold">{{ __('Nominal Penarikan (Rp)') }}</label>
                     <div class="input-group">
-                        <span class="input-group-text" style="background-color: var(--cm-sys-color-container); border-color: var(--cm-sys-color-hairline);">Rp</span>
+                        <span class="input-group-text">Rp</span>
                         <input type="number" name="amount" class="form-control" placeholder="100000" min="10000" max="{{ $user->wallet_balance }}" required>
                     </div>
                     <div class="form-text small">{{ __('Minimal penarikan Rp 10.000. Maksimal sesuai saldo Anda.') }}</div>
                 </div>
 
                 @if($bankAccounts->isEmpty())
-                <div class="alert alert-warning small p-3 mb-3" style="border-radius: 6px;">
+                <div class="alert alert-warning small p-3 mb-3 rounded-3">
                     <i class="fas fa-exclamation-triangle me-2"></i>
                     {{ __('Anda belum menyimpan rekening bank. Silakan simpan rekening bank terlebih dahulu di menu') }} <strong><a href="{{ route('seller.bank-accounts.index') }}">{{ __('Konfigurasi Rekening') }}</a></strong>.
                 </div>
@@ -95,7 +95,7 @@
                 </div>
                 @endif
 
-                <button type="submit" class="btn btn-primary w-100 py-2.5 fw-bold" style="border-radius: 4px;" {{ $user->wallet_balance < 10000 || $bankAccounts->isEmpty() ? 'disabled' : '' }}>
+                <button type="submit" class="btn btn-primary rounded-pill w-100 py-2.5 fw-bold" {{ $user->wallet_balance < 10000 || $bankAccounts->isEmpty() ? 'disabled' : '' }}>
                     <i class="fas fa-paper-plane me-1"></i> {{ __('Ajukan Penarikan Dana') }}
                 </button>
                 @if($user->wallet_balance < 10000)
@@ -109,7 +109,7 @@
 
     {{-- Withdrawal History --}}
     <div class="col-12 col-lg-7">
-        <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 8px;">
+        <div class="card border-0 shadow-sm overflow-hidden">
             <div class="card-header border-0 bg-transparent px-4 py-3 border-bottom d-flex justify-content-between align-items-center">
                 <h5 class="fw-bold m-0 text-body"><i class="fas fa-history text-primary me-2"></i>{{ __('Riwayat Pengajuan Penarikan') }}</h5>
             </div>

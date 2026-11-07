@@ -486,172 +486,102 @@ a:hover {
     color: var(--primary-hover);
 }
 
-/* === NAVIGATION (GOOGLE CLOUD CONSOLE 48PX PLATFORM BAR & 1PX HAIRLINE) === */
+/* === NAVIGATION (FLAT MATERIAL YOU ANDROID 17 / M3 TOP APP BAR) === */
 .navbar {
     height: var(--header-height);
     min-height: var(--header-height);
     max-height: var(--header-height);
     top: var(--banner-height) !important;
-    background: var(--cm-sys-color-surface) !important;
+    background: var(--surface-container-lowest) !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
-    border-bottom: 1px solid var(--cm-sys-color-hairline) !important;
+    border-bottom: 1px solid var(--outline-variant) !important;
     padding-top: 0 !important;
     padding-bottom: 0 !important;
     display: flex;
     align-items: center;
     box-sizing: border-box;
     box-shadow: none !important;
-    transition: background-color 0.15s ease, border-bottom 0.15s ease, top 0.15s ease;
+    transition: background-color 0.2s cubic-bezier(0.2, 0, 0, 1), border-bottom 0.2s cubic-bezier(0.2, 0, 0, 1), top 0.15s ease;
 }
 
 .navbar-brand-icon {
-    width: 28px;
-    height: 28px;
-    border-radius: 6px;
-    background: var(--cm-sys-color-container-primary);
-    color: var(--cm-sys-color-primary);
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-sm);
+    background: var(--primary-container);
+    color: var(--primary);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.85rem;
+    font-size: 1rem;
     flex-shrink: 0;
+    transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 [data-bs-theme="dark"] .navbar-brand-icon {
-    background: var(--cm-sys-color-container-primary);
-    color: var(--cm-sys-color-primary);
+    background: var(--primary-container);
+    color: var(--primary);
 }
 
-/* Google Cloud Console Project / Workspace Picker Button in Platform Bar */
-.pcc-project-picker {
-    height: 30px;
-    padding: 0 10px;
-    border: 1px solid var(--cm-sys-color-hairline) !important;
-    border-radius: 4px !important;
-    background-color: var(--cm-sys-color-surface) !important;
-    color: var(--cm-sys-color-on-surface) !important;
-    font: var(--cm-sys-type-label-small) !important;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    text-decoration: none;
-    cursor: pointer;
-    transition: background-color 0.15s ease, border-color 0.15s ease;
-}
-
-.pcc-project-picker:hover,
-.pcc-project-picker:focus {
-    background-color: var(--cm-sys-color-container-high) !important;
-    border-color: var(--cm-sys-color-outline) !important;
-    color: var(--cm-sys-color-on-surface) !important;
-}
-
-/* Google Cloud Console Central Search / Command Bar */
-.pcc-search-bar {
-    max-width: 440px;
-    width: 100%;
-    height: 32px;
-    background-color: var(--cm-sys-color-container-high);
-    border: 1px solid transparent;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    padding: 0 10px;
-    gap: 8px;
-    transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.pcc-search-bar:focus-within {
-    background-color: var(--cm-sys-color-surface);
-    border-color: var(--cm-sys-color-primary);
-    box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
-}
-
-.pcc-search-input {
-    border: none !important;
-    background: transparent !important;
-    outline: none !important;
-    box-shadow: none !important;
-    width: 100%;
-    height: 100%;
-    padding: 0 !important;
-    font: var(--cm-sys-type-body-medium) !important;
-    color: var(--cm-sys-color-on-surface) !important;
-}
-
-.pcc-search-input::placeholder {
-    color: var(--cm-sys-color-on-surface-variant);
-}
-
-.pcc-search-kbd {
-    font-family: var(--font-aptos-mono);
-    font-size: 0.6875rem;
-    line-height: 1;
-    padding: 2px 5px;
-    border-radius: 3px;
-    background-color: var(--cm-sys-color-surface);
-    border: 1px solid var(--cm-sys-color-hairline);
-    color: var(--cm-sys-color-on-surface-variant);
-    white-space: nowrap;
-}
-
-/* Google Cloud Console Circular Action Icon Button in Top Platform Bar */
+/* Material 3 Circular / Full Pill Action Icon Button in Top App Bar */
 .m3-icon-btn {
-    width: 34px;
-    height: 34px;
-    border-radius: 50% !important;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-pill) !important;
     display: inline-flex;
     align-items: center !important;
     justify-content: center !important;
-    color: var(--cm-sys-color-on-surface-variant) !important;
+    color: var(--on-surface-variant) !important;
     background: transparent !important;
     border: none !important;
     padding: 0 !important;
     position: relative;
-    transition: background-color 0.15s ease, color 0.15s ease;
+    transition: background-color 0.15s cubic-bezier(0.2, 0, 0, 1), color 0.15s ease, transform 0.1s ease;
     text-decoration: none !important;
 }
 
 .m3-icon-btn:hover,
 .m3-icon-btn:focus {
-    background-color: var(--cm-sys-color-container-high) !important;
-    color: var(--cm-sys-color-on-surface) !important;
+    background-color: var(--surface-container-high) !important;
+    color: var(--on-surface) !important;
 }
 
 .m3-icon-btn:active {
-    background-color: var(--cm-sys-color-placeholder) !important;
-    transform: scale(0.96);
+    background-color: var(--surface-container-highest) !important;
+    transform: scale(0.94);
 }
 
 /* Mobile Nav Handle Button in Navbar */
 .mobile-nav-handle {
-    border: 1px solid var(--cm-sys-color-hairline) !important;
-    background: var(--cm-sys-color-container) !important;
-    color: var(--cm-sys-color-primary) !important;
-    border-radius: 4px !important;
-    padding: 5px 12px !important;
-    font: var(--cm-sys-type-label-small) !important;
+    border: 1px solid var(--outline-variant) !important;
+    background: var(--surface-container) !important;
+    color: var(--primary) !important;
+    border-radius: var(--radius-pill) !important;
+    padding: 6px 14px !important;
+    font-family: var(--font-google-sans) !important;
+    font-size: 0.8125rem !important;
+    font-weight: 600 !important;
     display: inline-flex !important;
     align-items: center !important;
     gap: 6px !important;
     cursor: pointer;
     box-shadow: none !important;
-    transition: background-color 0.15s ease;
+    transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .mobile-nav-handle:hover, .mobile-nav-handle:focus {
-    background: var(--cm-sys-color-container-primary) !important;
-    color: var(--cm-sys-color-primary-on-container) !important;
+    background: var(--secondary-container) !important;
+    color: var(--on-secondary-container) !important;
 }
 
-/* === SIDEBAR (GOOGLE CLOUD CONSOLE 256PX NAVIGATION DRAWER) === */
+/* === SIDEBAR (ANDROID 17 / M3 EXPRESSIVE 256PX NAVIGATION DRAWER) === */
 .sidebar {
     width: var(--sidebar-width);
-    background: var(--cm-sys-color-surface);
+    background: var(--surface-container-low);
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
-    border-right: 1px solid var(--cm-sys-color-hairline);
+    border-right: 1px solid var(--outline-variant);
     position: fixed;
     top: var(--total-header-height) !important;
     height: calc(100vh - var(--total-header-height)) !important;
@@ -663,19 +593,21 @@ a:hover {
     overscroll-behavior: contain;
     flex-shrink: 0;
     box-sizing: border-box;
-    transition: transform 0.25s cubic-bezier(0.2, 0, 0, 1), width 0.2s ease, background-color 0.15s ease, border-right 0.15s ease, top 0.15s ease;
+    transition: transform 0.25s cubic-bezier(0.2, 0, 0, 1), width 0.2s ease, background-color 0.2s cubic-bezier(0.2, 0, 0, 1), border-right 0.2s cubic-bezier(0.2, 0, 0, 1), top 0.15s ease;
 }
 
 .sidebar-header {
     flex-shrink: 0;
-    padding: 0.65rem 1rem;
-    border-bottom: 1px solid var(--cm-sys-color-hairline);
-    background: var(--cm-sys-color-surface);
+    padding: 0.75rem 1rem;
+    margin: 8px 10px 4px 10px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--outline-variant);
+    background: var(--surface-container-lowest);
 }
 
 .menu-group {
-    padding: 0.35rem 0;
-    border-bottom: 1px solid var(--cm-sys-color-hairline);
+    padding: 0.35rem 0.5rem;
+    border-bottom: 1px solid var(--outline-variant);
 }
 
 .menu-group:last-child {
@@ -683,23 +615,25 @@ a:hover {
 }
 
 .menu-header {
-    padding: 0.5rem 1.25rem 0.25rem;
-    font: var(--cm-sys-type-label-small);
-    text-transform: none;
-    letter-spacing: 0.01em;
-    color: var(--cm-sys-color-on-surface-variant) !important;
+    padding: 0.5rem 1rem 0.25rem;
+    font-family: var(--font-google-sans);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--on-surface-variant) !important;
 }
 
 .menu-header i {
-    color: var(--cm-sys-color-on-surface-variant) !important;
-    opacity: 0.8;
+    color: var(--on-surface-variant) !important;
+    opacity: 0.85;
     font-size: 0.75rem;
 }
 
 .menu-items-grid {
     display: flex;
     flex-direction: column;
-    gap: 0;
+    gap: 2px;
 }
 
 .menu-icon-box {
@@ -708,20 +642,24 @@ a:hover {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     flex-shrink: 0;
 }
 
-/* Unify sidebar icons to Google Cloud Console monochromatic tone when inactive */
+/* Sidebar monochromatic icons when inactive in Desktop Drawer */
 .sidebar .menu-item:not(.active) .menu-icon-box i {
-    color: var(--cm-sys-color-on-surface-variant) !important;
-    opacity: 0.85;
+    color: var(--on-surface-variant) !important;
+    opacity: 0.9;
     transition: color 0.15s ease, opacity 0.15s ease;
 }
 
-.sidebar .menu-item:hover .menu-icon-box i,
+.sidebar .menu-item:hover .menu-icon-box i {
+    color: var(--on-surface) !important;
+    opacity: 1;
+}
+
 .sidebar .menu-item.active .menu-icon-box i {
-    color: var(--cm-sys-color-primary-on-container) !important;
+    color: var(--on-secondary-container) !important;
     opacity: 1;
 }
 
@@ -732,41 +670,43 @@ a:hover {
     white-space: nowrap;
 }
 
-/* Google Cloud Console Navigation Row (a.cfc-console-nav-flyout-header) */
+/* Material 3 Expressive Drawer Item (Full Pill shape in Desktop Drawer) */
 .menu-item {
     display: flex;
     align-items: center;
-    gap: 14px;
-    height: 38px;
-    margin: 0;
-    padding: 0 1rem 0 1.25rem;
-    border-radius: 0;
-    border-left: 4px solid transparent !important;
-    color: var(--cm-sys-color-on-surface);
+    gap: 12px;
+    height: 42px;
+    margin: 2px 4px;
+    padding: 0 16px;
+    border-radius: var(--radius-pill) !important;
+    border-left: none !important;
+    color: var(--on-surface-variant);
     text-decoration: none;
-    font: var(--cm-sys-type-body-medium);
-    transition: background-color 0.1s ease, color 0.1s ease, border-color 0.1s ease;
+    font-family: var(--font-google-sans);
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: background-color 0.15s cubic-bezier(0.2, 0, 0, 1), color 0.15s cubic-bezier(0.2, 0, 0, 1);
 }
 
 .menu-item:hover {
-    background: rgba(0, 0, 0, 0.04);
-    color: var(--cm-sys-color-on-surface);
+    background-color: var(--surface-container-high) !important;
+    color: var(--on-surface) !important;
     transform: none;
 }
 
 [data-bs-theme="dark"] .menu-item:hover {
-    background: rgba(255, 255, 255, 0.04);
+    background-color: var(--surface-container-high) !important;
 }
 
 .menu-item.active {
-    background-color: var(--cm-sys-color-container-primary) !important;
-    color: var(--cm-sys-color-primary-on-container) !important;
-    border-left: 4px solid var(--cm-sys-color-primary) !important;
-    font-weight: 500;
+    background-color: var(--secondary-container) !important;
+    color: var(--on-secondary-container) !important;
+    font-weight: 600;
+    border-left: none !important;
 }
 
 .menu-item i {
-    width: 18px;
+    width: 20px;
     text-align: center;
 }
 
@@ -818,7 +758,7 @@ a:hover {
 .card.seller-stat-card-gradient {
     border: 1px solid rgba(255, 255, 255, 0.15) !important;
     color: #ffffff !important;
-    border-radius: 8px !important;
+    border-radius: var(--radius-md) !important;
 }
 
 .card.seller-stat-card-wallet {
@@ -850,6 +790,7 @@ a:hover {
 
 .seller-stat-card-gradient .badge.bg-white {
     background-color: #ffffff !important;
+    border-radius: var(--radius-xs) !important;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2) !important;
     border: none !important;
 }
@@ -860,6 +801,7 @@ a:hover {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15) !important;
     color: #1e3c72 !important;
     font-weight: 600 !important;
+    border-radius: var(--radius-pill) !important;
 }
 
 .seller-stat-card-gradient.seller-stat-card-held .btn-light,
@@ -874,9 +816,9 @@ a:hover {
 }
 
 .card-header {
-    border-radius: 8px 8px 0 0 !important;
+    border-radius: var(--radius-md) var(--radius-md) 0 0 !important;
     background-color: transparent !important;
-    border-bottom: 1px solid var(--cm-sys-color-hairline) !important;
+    border-bottom: 1px solid var(--outline-variant) !important;
     padding: 0.75rem 1rem !important;
     font: var(--cm-sys-type-title-medium);
 }
@@ -886,39 +828,39 @@ a:hover {
 }
 
 .card-footer {
-    border-radius: 0 0 8px 8px !important;
+    border-radius: 0 0 var(--radius-md) var(--radius-md) !important;
     background-color: transparent !important;
-    border-top: 1px solid var(--cm-sys-color-hairline) !important;
+    border-top: 1px solid var(--outline-variant) !important;
     padding: 0.75rem 1rem !important;
 }
 
-/* === STAT CARDS (GOOGLE CLOUD CONSOLE SUMMARY WIDGETS) === */
+/* === STAT CARDS (FLAT MATERIAL 3 SUMMARY WIDGETS) === */
 .stat-card {
-    background: var(--cm-sys-color-surface) !important;
-    border-radius: 8px !important;
+    background: var(--surface-container-lowest) !important;
+    border-radius: var(--radius-md) !important;
     padding: 1rem 1.25rem !important;
     box-shadow: none !important;
-    border: 1px solid var(--cm-sys-color-hairline) !important;
-    transition: border-color 0.15s ease;
+    border: 1px solid var(--outline-variant) !important;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 
 .stat-card:hover {
     transform: none !important;
-    border-color: var(--cm-sys-color-primary) !important;
+    border-color: var(--primary) !important;
     box-shadow: none !important;
 }
 
 .stat-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 6px;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-sm);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1rem;
+    font-size: 1.05rem;
     margin-bottom: 0.65rem;
-    background: var(--cm-sys-color-container-primary);
-    color: var(--cm-sys-color-primary-on-container);
+    background: var(--primary-container);
+    color: var(--primary);
     transition: background-color 0.15s ease;
 }
 
@@ -1018,59 +960,61 @@ a:hover {
 }
 
 .m3-console-header {
-    background: var(--cm-sys-color-surface);
-    border: 1px solid var(--cm-sys-color-hairline);
-    border-radius: 8px !important;
-    padding: 1rem 1.25rem;
+    background: var(--surface-container-low);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--radius-lg) !important;
+    padding: 1.25rem 1.5rem;
     box-shadow: none !important;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
 .m3-console-filter-bar {
-    background: var(--cm-sys-color-container);
-    border: 1px solid var(--cm-sys-color-hairline);
-    border-radius: 8px !important;
-    padding: 0.65rem 1rem;
+    background: var(--surface-container-low);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--radius-md) !important;
+    padding: 0.75rem 1rem;
 }
 
 .m3-metric-card {
-    background: var(--cm-sys-color-surface) !important;
-    border: 1px solid var(--cm-sys-color-hairline) !important;
-    border-radius: 8px !important;
+    background: var(--surface-container-lowest) !important;
+    border: 1px solid var(--outline-variant) !important;
+    border-radius: var(--radius-md) !important;
     box-shadow: none !important;
     transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 
 .m3-metric-card:hover {
-    border-color: var(--outline-variant) !important;
+    border-color: var(--primary) !important;
+    background: var(--surface-container-low) !important;
     transform: none !important;
     box-shadow: none !important;
 }
 
 a .m3-metric-card:hover {
-    border-color: var(--cm-sys-color-primary) !important;
-    background: var(--cm-sys-color-container) !important;
+    border-color: var(--primary) !important;
+    background: var(--surface-container-low) !important;
 }
 
 .m3-metric-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 6px;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-sm);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 1rem;
+    font-size: 1.05rem;
     flex-shrink: 0;
 }
 
 .m3-tonal-item {
-    background: var(--cm-sys-color-container) !important;
-    border: 1px solid var(--cm-sys-color-hairline);
-    border-radius: 8px !important;
+    background: var(--surface-container-low) !important;
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--radius-md) !important;
     transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 
 .m3-tonal-item:hover {
-    background: var(--cm-sys-color-container-high) !important;
+    background: var(--surface-container) !important;
 }
 
 /* Material Design 3 / BeerCSS Component Architecture (Concentric Radii & Tonal Surfaces) */
@@ -1359,25 +1303,20 @@ ul.nav-pills,
     overflow: hidden;
     background: var(--surface-container-lowest) !important;
     box-shadow: none !important;
-    transition: border-color 0.2s ease, transform 0.2s ease;
+    transition: border-color 0.2s cubic-bezier(0.2, 0, 0, 1), transform 0.2s cubic-bezier(0.2, 0, 0, 1);
 }
 
 .product-card:hover {
     border-color: var(--primary) !important;
-    transform: translateY(-2px);
+    transform: none !important;
+    box-shadow: 0 2px 8px rgba(11, 87, 208, 0.1) !important;
 }
 
 .product-badge {
     position: absolute;
-    top: 12px;
-    left: 12px;
+    top: 10px;
+    left: 10px;
     z-index: 10;
-}
-
-.product-card:hover {
-    transform: none !important;
-    border-color: var(--primary-color) !important;
-    box-shadow: 0 4px 16px rgba(var(--primary-rgb), 0.1) !important;
 }
 
 .product-card .product-icon-wrapper {
@@ -1392,13 +1331,13 @@ ul.nav-pills,
 
 .product-card .product-icon-wrapper i {
     font-size: 2.75rem;
-    color: var(--primary-color);
-    opacity: 0.7;
+    color: var(--primary);
+    opacity: 0.85;
     transition: transform 0.2s ease;
 }
 
 .product-card:hover .product-icon-wrapper i {
-    transform: scale(1.08);
+    transform: scale(1.06);
 }
 
 .product-card:hover .product-icon-wrapper img {
@@ -1408,7 +1347,7 @@ ul.nav-pills,
 .product-price {
     font-size: 1.15rem;
     font-weight: 700;
-    color: var(--primary-color);
+    color: var(--primary);
 }
 
 /* === ORDER STATUS TIMELINE === */
@@ -1535,10 +1474,11 @@ ul.nav-pills,
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        padding: 6px 4px;
+        padding: 4px 0;
         color: var(--on-surface-variant);
         text-decoration: none;
-        font-size: 0.7rem;
+        font-family: var(--font-google-sans) !important;
+        font-size: 0.6875rem;
         font-weight: 500;
         line-height: 1.2;
         background: transparent;
@@ -1551,18 +1491,18 @@ ul.nav-pills,
 
     .mobile-nav-item i {
         font-size: 1.1rem;
-        margin-bottom: 4px;
+        margin-bottom: 3px;
         width: 52px;
-        height: 28px;
+        height: 30px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        border-radius: 6px;
+        border-radius: 14px;
         transition: background-color 0.2s cubic-bezier(0.2, 0, 0, 1), color 0.2s cubic-bezier(0.2, 0, 0, 1);
     }
 
     .mobile-nav-item:hover:not(.active) i {
-        background: var(--surface-container-low);
+        background: var(--surface-container-high);
         color: var(--on-surface);
     }
 
@@ -1571,16 +1511,16 @@ ul.nav-pills,
     }
 
     .mobile-nav-item.active {
-        color: var(--on-surface) !important;
+        color: var(--on-secondary-container) !important;
         font-weight: 700;
     }
 
     .mobile-nav-item.active i {
         transform: none;
-        background: var(--primary-container) !important;
-        color: var(--on-primary-container) !important;
+        background: var(--secondary-container) !important;
+        color: var(--on-secondary-container) !important;
         padding: 0;
-        border-radius: 6px;
+        border-radius: 14px;
     }
 
     .mobile-nav-badge {
@@ -1589,11 +1529,13 @@ ul.nav-pills,
         right: calc(50% - 22px);
         font-size: 0.62rem;
         padding: 0.15rem 0.38rem;
-        border-radius: 999px;
+        border-radius: var(--radius-pill);
+        background: var(--error) !important;
+        color: var(--on-error) !important;
         line-height: 1;
     }
 
-    /* === BOTTOM SHEET CARD (SIDEBAR ON MOBILE — FLAT MATERIAL 3 SHEET) === */
+    /* === BOTTOM SHEET CARD (SIDEBAR ON MOBILE — FLAT MATERIAL 3 EXPRESSIVE SHEET) === */
     .sidebar {
         position: fixed !important;
         top: auto !important;
@@ -1604,15 +1546,15 @@ ul.nav-pills,
         max-width: 100% !important;
         height: auto !important;
         max-height: 84vh !important;
-        border-radius: 8px 8px 0 0 !important;
-        border-top: 1px solid var(--outline-color) !important;
+        border-radius: var(--radius-xl) var(--radius-xl) 0 0 !important;
+        border-top: 1px solid var(--outline-variant) !important;
         border-right: none !important;
         border-left: none !important;
         border-bottom: none !important;
-        background: var(--surface-bg) !important;
+        background: var(--surface-container-low) !important;
         backdrop-filter: none !important;
         -webkit-backdrop-filter: none !important;
-        box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.18) !important;
+        box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.14) !important;
         transform: translateY(105%) !important;
         transition: transform 0.3s cubic-bezier(0.2, 0, 0, 1);
         z-index: 1060 !important;
@@ -1652,28 +1594,32 @@ ul.nav-pills,
     .sheet-handle-bar {
         width: 36px;
         height: 4px;
-        border-radius: 2px;
-        background-color: var(--on-surface-variant);
-        opacity: 0.4;
+        border-radius: var(--radius-pill);
+        background-color: var(--outline-variant);
+        opacity: 0.8;
         transition: opacity 0.2s ease, background-color 0.2s ease;
     }
 
     .sheet-handle-area:hover .sheet-handle-bar,
     .sheet-handle-area:active .sheet-handle-bar {
-        opacity: 0.85;
-        background-color: var(--primary-color);
+        opacity: 1;
+        background-color: var(--primary);
     }
 
     /* Mobile Card Grid Layout for Menu Lainnya (Bottom Sheet) - 4 Columns Compact Super-App Grid */
     .menu-group {
         padding: 0.4rem 0.65rem !important;
+        border-bottom: 1px solid var(--outline-variant) !important;
     }
 
     .menu-header {
         padding: 0.35rem 0.25rem 0.35rem !important;
-        font-size: 0.7rem !important;
-        font-weight: 600 !important;
-        letter-spacing: 0.04em !important;
+        font-family: var(--font-google-sans) !important;
+        font-size: 0.6875rem !important;
+        font-weight: 700 !important;
+        letter-spacing: 0.05em !important;
+        text-transform: uppercase !important;
+        color: var(--on-surface-variant) !important;
     }
 
     .menu-items-grid {
@@ -1694,13 +1640,13 @@ ul.nav-pills,
         justify-content: flex-start !important;
         text-align: center !important;
         height: auto !important;
-        min-height: 72px !important;
+        min-height: 74px !important;
         margin: 0 !important;
         padding: 8px 3px 6px !important;
-        border-radius: 6px !important;
-        background: var(--surface-container-low) !important;
-        border: 1px solid var(--outline-color) !important;
-        border-left: 1px solid var(--outline-color) !important;
+        border-radius: var(--radius-sm) !important;
+        background: var(--surface-container-lowest) !important;
+        border: 1px solid var(--outline-variant) !important;
+        border-left: 1px solid var(--outline-variant) !important;
         position: relative !important;
         transform: none !important;
         text-decoration: none !important;
@@ -1718,6 +1664,7 @@ ul.nav-pills,
         min-height: 48px !important;
         padding: 8px 12px !important;
         gap: 10px !important;
+        border-radius: var(--radius-sm) !important;
     }
 
     .menu-item:only-child .menu-icon-box {
@@ -1741,18 +1688,18 @@ ul.nav-pills,
 
     /* Highlight Active state: clean container with outline, icon crystal clear and never covered */
     .menu-item.active {
-        background: var(--primary-container) !important;
-        border: 1px solid var(--primary-color) !important;
-        border-left: 1px solid var(--primary-color) !important;
+        background: var(--secondary-container) !important;
+        border: 1.5px solid var(--primary) !important;
+        border-left: 1.5px solid var(--primary) !important;
         box-shadow: none !important;
     }
 
     .menu-item .menu-icon-box {
-        width: 36px !important;
-        height: 36px !important;
-        border-radius: 6px !important;
-        background: var(--surface-bg) !important;
-        border: 1px solid var(--outline-color) !important;
+        width: 38px !important;
+        height: 38px !important;
+        border-radius: 10px !important;
+        background: var(--surface-container-low) !important;
+        border: 1px solid var(--outline-variant) !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
@@ -1764,19 +1711,20 @@ ul.nav-pills,
     }
 
     .menu-item.active .menu-icon-box {
-        background: var(--surface-bg) !important;
-        border: 1.5px solid var(--primary-color) !important;
-        box-shadow: 0 0 0 1px var(--primary-color) !important;
+        background: var(--surface-container-lowest) !important;
+        border: 1.5px solid var(--primary) !important;
+        box-shadow: 0 1px 3px rgba(11, 87, 208, 0.2) !important;
     }
 
     .sidebar .menu-item.active .menu-icon-box i,
     .menu-item.active .menu-icon-box i {
-        color: var(--primary-color) !important;
+        color: var(--primary) !important;
         opacity: 1 !important;
         font-size: 1rem !important;
     }
 
     .menu-item .menu-label-text {
+        font-family: var(--font-google-sans) !important;
         font-size: 0.6875rem !important; /* 11px compact */
         font-weight: 500 !important;
         line-height: 1.2 !important;
@@ -1797,7 +1745,7 @@ ul.nav-pills,
     }
 
     .menu-item.active .menu-label-text {
-        color: var(--on-primary-container) !important;
+        color: var(--on-secondary-container) !important;
         font-weight: 700 !important;
     }
 
@@ -1807,7 +1755,7 @@ ul.nav-pills,
         right: 2px !important;
         font-size: 0.58rem !important;
         padding: 0.1rem 0.35rem !important;
-        border-radius: 4px !important;
+        border-radius: var(--radius-xs) !important;
     }
 }
 
@@ -1822,15 +1770,15 @@ ul.nav-pills,
 
 /* Sidebar Telegram Support Card (Flat Material 3 Surface Container) */
 .sidebar-help-card {
-    background: var(--surface-container-low);
-    border: 1px solid var(--outline-color) !important;
-    border-radius: 6px !important;
+    background: var(--surface-container-lowest);
+    border: 1px solid var(--outline-variant) !important;
+    border-radius: var(--radius-md) !important;
     transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
 .sidebar-help-card:hover {
-    background: var(--surface-container-high);
-    border-color: var(--primary-color) !important;
+    background: var(--surface-container-low);
+    border-color: var(--primary) !important;
     transform: none;
 }
 
@@ -2596,7 +2544,7 @@ ul.nav-pills,
 
     /* Product card 2-column mobile optimization */
     .product-card {
-        border-radius: 8px !important;
+        border-radius: var(--radius-md) !important;
     }
     .product-card .product-icon-wrapper {
         height: 95px !important;
@@ -2621,28 +2569,28 @@ ul.nav-pills,
 
     /* Touch Stepper Button (Min 38px for Ergonomics) */
     .stepper-touch-btn {
-        width: 36px !important;
-        height: 36px !important;
+        width: 38px !important;
+        height: 38px !important;
         display: inline-flex !important;
         align-items: center !important;
         justify-content: center !important;
         font-size: 0.95rem !important;
-        border-radius: 4px !important;
+        border-radius: var(--radius-sm) !important;
     }
 
-    /* Mobile Transaction/Activity Card */
+    /* Mobile Transaction/Activity Card (Flat M3 Squircle Surface) */
     .mobile-activity-card {
-        border-radius: 8px;
-        background: var(--cm-sys-color-surface);
-        border: 1px solid var(--cm-sys-color-hairline);
+        border-radius: var(--radius-sm);
+        background: var(--surface-container-lowest);
+        border: 1px solid var(--outline-variant);
         padding: 12px 14px;
         margin-bottom: 8px;
         transition: background-color 0.15s ease, border-color 0.15s ease;
     }
     .mobile-activity-card:active {
         transform: none;
-        background: rgba(var(--primary-rgb), 0.04);
-        border-color: var(--cm-sys-color-primary);
+        background: var(--surface-container-low);
+        border-color: var(--primary);
     }
 }
 

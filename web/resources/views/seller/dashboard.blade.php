@@ -13,19 +13,22 @@
         box-shadow: 0 14px 28px rgba(0, 0, 0, 0.1) !important;
     }
     .hero-seller-banner {
-        background: linear-gradient(135deg, #0d47a1 0%, #1565c0 50%, #1e88e5 100%);
-        min-height: 220px;
-        border-radius: 8px;
+        background: var(--primary-container);
+        color: var(--on-primary-container);
+        min-height: 200px;
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--outline-variant);
+        transition: background-color 0.2s ease, border-color 0.2s ease;
     }
     .hero-pattern {
         position: absolute;
         top: 0; right: 0; bottom: 0; left: 0;
-        opacity: 0.12;
-        background-image: radial-gradient(#ffffff 1.5px, transparent 1.5px);
-        background-size: 22px 22px;
+        opacity: 0.08;
+        background-image: radial-gradient(var(--on-primary-container) 1.5px, transparent 1.5px);
+        background-size: 20px 20px;
     }
     .floating-stats-container {
-        margin-top: -55px;
+        margin-top: -48px;
     }
     @media (max-width: 767.98px) {
         .floating-stats-container {
@@ -36,20 +39,20 @@
 @endpush
 
 @section('content')
-<!-- Hero Section (Gradient & Abstract Pattern) -->
+<!-- Hero Section (Flat Material You Tonal Surface) -->
 <div class="position-relative mb-5">
-    <div class="hero-seller-banner p-4 p-md-5 text-white shadow-sm overflow-hidden position-relative">
+    <div class="hero-seller-banner p-4 p-md-5 overflow-hidden position-relative">
         <div class="hero-pattern"></div>
         
         <div class="position-relative z-1 d-flex flex-column flex-md-row justify-content-between align-items-start gap-3">
             <div class="flex-grow-1">
-                <span class="badge bg-white text-primary rounded-pill px-3 py-2 mb-2 text-uppercase tracking-wider fw-bold shadow-sm" style="font-size: 0.75rem; letter-spacing: 0.5px;">
-                    <i class="fas fa-store me-1 text-warning"></i> {{ __('Seller Portal') }}
+                <span class="badge bg-white text-primary rounded-pill px-3 py-1.5 mb-2 text-uppercase tracking-wider fw-bold shadow-sm" style="font-size: 0.75rem; letter-spacing: 0.5px;">
+                    <i class="fas fa-store me-1 text-primary"></i> {{ __('Seller Portal') }}
                 </span>
-                <h1 class="fw-bold mb-2 text-white fs-2 fs-md-1">
+                <h1 class="fw-bold mb-2 fs-2 fs-md-1" style="color: var(--on-primary-container);">
                     {{ __('Selamat Datang,') }} {{ $user->full_name ?? $user->username }} 👋
                 </h1>
-                <p class="mb-0 fs-6 opacity-85 fw-light text-white">
+                <p class="mb-0 fs-6 opacity-85 fw-normal" style="color: var(--on-primary-container);">
                     {{ __('Kelola produk Anda, kelola stok akun, dan pantau penghasilan penjualan Anda secara langsung.') }}
                 </p>
             </div>
@@ -72,17 +75,17 @@
         <div class="row g-2 g-md-3">
             <!-- 1. Wallet Balance Card -->
             <div class="col-6 col-lg-3">
-                <div class="card border-0 shadow-sm h-100 text-white overflow-hidden lift-hover seller-stat-card-gradient seller-stat-card-wallet" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important; border-radius: 8px;">
+                <div class="card border-0 shadow-sm h-100 text-white overflow-hidden lift-hover seller-stat-card-gradient seller-stat-card-wallet" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important;">
                     <div class="card-body p-3 p-md-4 position-relative">
                         <div class="position-absolute end-0 bottom-0 text-white d-none d-md-block" style="font-size: 7rem; transform: translate(15px, 15px); opacity: 0.12; pointer-events: none;">
                             <i class="fas fa-wallet"></i>
                         </div>
                         <div class="position-relative z-1">
-                            <span class="badge bg-white text-primary px-2 px-md-3 py-1 mb-2 small fw-bold text-uppercase shadow-sm" style="font-size: 0.68rem; border-radius: 4px;">{{ __('Saldo Dompet') }}</span>
+                            <span class="badge bg-white text-primary px-2 px-md-3 py-1 mb-2 small fw-bold text-uppercase shadow-sm" style="font-size: 0.68rem; border-radius: var(--radius-xs);">{{ __('Saldo Dompet') }}</span>
                             <h3 class="fw-bold mb-2 text-white h4 h2-md">Rp {{ number_format($user->wallet_balance, 0, ',', '.') }}</h3>
                             <div class="d-flex align-items-center justify-content-between pt-2 border-top border-white border-opacity-25" style="font-size: 0.75rem;">
                                 <span class="text-white-50" style="color: rgba(255, 255, 255, 0.85) !important;">{{ __('Komisi:') }} <strong class="text-white">{{ !empty($user->commission_per_product) ? __('Per-Produk') : ($user->platform_fee_percent . '%') }}</strong></span>
-                                <a href="{{ route('seller.finance.index') }}" class="btn btn-light btn-xs btn-sm-sm px-2 px-md-3 fw-bold text-primary shadow-sm" style="font-size: 0.72rem; border-radius: 4px;">{{ __('Tarik') }}</a>
+                                <a href="{{ route('seller.finance.index') }}" class="btn btn-light btn-xs btn-sm-sm rounded-pill px-2.5 px-md-3 fw-bold text-primary shadow-sm" style="font-size: 0.72rem;">{{ __('Tarik') }}</a>
                             </div>
                         </div>
                     </div>
@@ -91,17 +94,17 @@
 
             <!-- 2. Held Balance Card -->
             <div class="col-6 col-lg-3">
-                <div class="card border-0 shadow-sm h-100 text-white overflow-hidden lift-hover seller-stat-card-gradient seller-stat-card-held" style="background: linear-gradient(135deg, #b45309 0%, #d97706 50%, #f59e0b 100%) !important; border-radius: 8px;">
+                <div class="card border-0 shadow-sm h-100 text-white overflow-hidden lift-hover seller-stat-card-gradient seller-stat-card-held" style="background: linear-gradient(135deg, #b45309 0%, #d97706 50%, #f59e0b 100%) !important;">
                     <div class="card-body p-3 p-md-4 position-relative">
                         <div class="position-absolute end-0 bottom-0 text-white d-none d-md-block" style="font-size: 7rem; transform: translate(15px, 15px); opacity: 0.15; pointer-events: none;">
                             <i class="fas fa-lock"></i>
                         </div>
                         <div class="position-relative z-1">
-                            <span class="badge bg-white text-warning-emphasis px-2 px-md-3 py-1 mb-2 small fw-bold text-uppercase shadow-sm" style="font-size: 0.68rem; border-radius: 4px; color: #b45309 !important;">{{ __('Tertahan') }}</span>
+                            <span class="badge bg-white text-warning-emphasis px-2 px-md-3 py-1 mb-2 small fw-bold text-uppercase shadow-sm" style="font-size: 0.68rem; border-radius: var(--radius-xs); color: #b45309 !important;">{{ __('Tertahan') }}</span>
                             <h3 class="fw-bold mb-2 text-white h4 h2-md">Rp {{ number_format($heldBalance, 0, ',', '.') }}</h3>
                             <div class="d-flex align-items-center justify-content-between pt-2 border-top border-white border-opacity-25" style="font-size: 0.75rem;">
                                 <span class="text-white-50" style="color: rgba(255, 255, 255, 0.85) !important;">{{ __('Garansi') }}</span>
-                                <a href="{{ route('seller.finance.index') }}" class="btn btn-light btn-xs btn-sm-sm px-2 px-md-3 fw-bold shadow-sm" style="font-size: 0.72rem; border-radius: 4px; color: #b45309 !important;">{{ __('Rincian') }}</a>
+                                <a href="{{ route('seller.finance.index') }}" class="btn btn-light btn-xs btn-sm-sm rounded-pill px-2.5 px-md-3 fw-bold shadow-sm" style="font-size: 0.72rem; color: #b45309 !important;">{{ __('Rincian') }}</a>
                             </div>
                         </div>
                     </div>
@@ -110,11 +113,11 @@
 
             <!-- 3. Monthly Earnings Card -->
             <div class="col-6 col-lg-3">
-                <div class="card border-0 shadow-sm h-100 lift-hover overflow-hidden" style="border-radius: 8px;">
+                <div class="card border-0 shadow-sm h-100 lift-hover overflow-hidden">
                     <div class="card-body p-3 p-md-4">
                         <div class="d-flex justify-content-between align-items-center mb-1 mb-md-2">
-                            <span class="badge bg-success-subtle text-success px-2 px-md-3 py-1 small fw-bold text-uppercase" style="font-size: 0.68rem; border-radius: 4px;">{{ __('Pendapatan') }}</span>
-                            <select onchange="let params = new URLSearchParams(window.location.search); params.set('earnings_days', this.value); window.location.href = window.location.pathname + '?' + params.toString();" class="form-select form-select-sm py-0 px-2 fw-medium" style="width: auto; font-size: 0.68rem; border-radius: 4px; cursor: pointer; border: 1px solid var(--cm-sys-color-hairline) !important; background-color: var(--cm-sys-color-container) !important;">
+                            <span class="badge bg-success-subtle text-success px-2 px-md-3 py-1 small fw-bold text-uppercase" style="font-size: 0.68rem; border-radius: var(--radius-xs);">{{ __('Pendapatan') }}</span>
+                            <select onchange="let params = new URLSearchParams(window.location.search); params.set('earnings_days', this.value); window.location.href = window.location.pathname + '?' + params.toString();" class="form-select form-select-sm py-0 px-2 fw-medium rounded-pill" style="width: auto; font-size: 0.68rem; cursor: pointer; border: 1px solid var(--outline-variant) !important; background-color: var(--surface-container) !important;">
                                 <option value="all" {{ $earningsDays == 'all' ? 'selected' : '' }}>{{ __('Semua') }}</option>
                                 <option value="7" {{ $earningsDays == '7' ? 'selected' : '' }}>{{ __('7 Hari') }}</option>
                                 <option value="30" {{ $earningsDays == '30' ? 'selected' : '' }}>{{ __('30 Hari') }}</option>
@@ -133,18 +136,18 @@
 
             <!-- 4. Active Stock & Review Card -->
             <div class="col-6 col-lg-3">
-                <div class="card border-0 shadow-sm h-100 lift-hover overflow-hidden" style="border-radius: 8px;">
+                <div class="card border-0 shadow-sm h-100 lift-hover overflow-hidden">
                     <div class="card-body p-3 p-md-4">
                         <div class="d-flex justify-content-between align-items-center mb-1 mb-md-2">
-                            <span class="badge bg-info-subtle text-info px-2 px-md-3 py-1 small fw-bold text-uppercase" style="font-size: 0.68rem; border-radius: 4px;">{{ __('Stok & Rating') }}</span>
-                            <span class="badge bg-warning-subtle text-warning-emphasis px-2 py-1 fw-bold" style="font-size: 0.68rem; border-radius: 4px;">
+                            <span class="badge bg-info-subtle text-info px-2 px-md-3 py-1 small fw-bold text-uppercase" style="font-size: 0.68rem; border-radius: var(--radius-xs);">{{ __('Stok & Rating') }}</span>
+                            <span class="badge bg-warning-subtle text-warning-emphasis px-2 py-1 fw-bold" style="font-size: 0.68rem; border-radius: var(--radius-xs);">
                                 <i class="fas fa-star me-1 text-warning"></i>{{ $avgRating ? number_format($avgRating, 1) : '0.0' }}
                             </span>
                         </div>
                         <h3 class="fw-bold text-info mb-2 h4 h2-md">{{ $readyStockCount }} <span class="fs-6 text-muted fw-normal">{{ __('ready') }}</span></h3>
                         <div class="d-flex gap-1 mb-1" style="font-size: 0.68rem;">
-                            <span class="badge bg-warning-subtle text-warning-emphasis px-2 py-1" style="border-radius: 4px;">{{ $savedStockCount }} {{ __('karantina') }}</span>
-                            <span class="badge bg-secondary-subtle text-secondary px-2 py-1" style="border-radius: 4px;">{{ $soldStockCount }} {{ __('terjual') }}</span>
+                            <span class="badge bg-warning-subtle text-warning-emphasis px-2 py-1" style="border-radius: var(--radius-xs);">{{ $savedStockCount }} {{ __('karantina') }}</span>
+                            <span class="badge bg-secondary-subtle text-secondary px-2 py-1" style="border-radius: var(--radius-xs);">{{ $soldStockCount }} {{ __('terjual') }}</span>
                         </div>
                     </div>
                 </div>

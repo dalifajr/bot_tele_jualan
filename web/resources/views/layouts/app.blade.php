@@ -661,12 +661,12 @@
         @auth
         <form action="{{ route('logout') }}" method="POST" class="m-0 d-none d-lg-block">
             @csrf
-            <button type="submit" class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1.5 px-2.5" aria-label="{{ __('Logout') }}">
+            <button type="submit" class="btn btn-sm btn-outline-secondary rounded-pill d-flex align-items-center gap-1.5 px-3" aria-label="{{ __('Logout') }}">
                 <i class="fas fa-sign-out-alt text-danger" style="font-size: 0.78rem;"></i> <span class="d-none d-sm-inline">{{ __('Logout') }}</span>
             </button>
         </form>
         @else
-        <a href="{{ route('login') }}" class="btn btn-sm btn-primary px-3 d-none d-lg-flex align-items-center gap-1.5">
+        <a href="{{ route('login') }}" class="btn btn-sm btn-primary rounded-pill px-3 d-none d-lg-flex align-items-center gap-1.5">
             <i class="fas fa-sign-in-alt"></i> <span>{{ __('Masuk') }}</span>
         </a>
         @endauth
@@ -678,13 +678,13 @@
     {{-- Sidebar (Desktop Column / Mobile Card Sheet) --}}
     <div id="sidebar" class="sidebar" style="z-index: 1040; overflow-y: auto; overscroll-behavior: contain;">
         {{-- Mobile Bottom Sheet Grab Handle & Header (Mobile Only) --}}
-        <div class="sheet-header-mobile d-lg-none sticky-top bg-body pt-2 pb-1 border-bottom" style="border-top-left-radius: 8px; border-top-right-radius: 8px; z-index: 10;">
+        <div class="sheet-header-mobile d-lg-none sticky-top bg-body pt-2 pb-1 border-bottom" style="border-top-left-radius: var(--radius-xl); border-top-right-radius: var(--radius-xl); z-index: 10;">
             <div class="sheet-handle-area" id="sheetHandleArea" title="{{ __('Geser ke bawah untuk menutup') }}">
                 <div class="sheet-handle-bar"></div>
             </div>
             <div class="d-flex align-items-center justify-content-between px-3 pb-2 pt-1">
                 <a href="{{ route('dashboard') }}" class="d-flex align-items-center gap-2 text-decoration-none">
-                    <span class="navbar-brand-icon" style="width: 32px; height: 32px; font-size: 0.95rem;">
+                    <span class="navbar-brand-icon" style="width: 32px; height: 32px; font-size: 0.95rem; border-radius: 10px;">
                         <i class="fas fa-cloud"></i>
                     </span>
                     <div class="d-flex flex-column text-start" style="line-height: 1.15;">
@@ -692,7 +692,7 @@
                         <small class="text-secondary" style="font-size: 0.72rem; font-weight: 500;">{{ __('Menu & Layanan Lainnya') }}</small>
                     </div>
                 </a>
-                <button type="button" class="btn btn-sm btn-icon btn-light rounded-1 text-secondary" id="sidebarCloseBtn" aria-label="{{ __('Tutup') }}" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; padding: 0;">
+                <button type="button" class="btn btn-sm btn-icon btn-light rounded-pill text-secondary" id="sidebarCloseBtn" aria-label="{{ __('Tutup') }}" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; padding: 0;">
                     <i class="fas fa-times" style="font-size: 0.9rem;"></i>
                 </button>
             </div>
@@ -714,14 +714,14 @@
             <div class="ms-auto d-lg-none">
                 <form action="{{ route('logout') }}" method="POST" class="m-0">
                     @csrf
-                    <button type="submit" class="btn btn-sm btn-outline-danger rounded-1 px-3 py-1 d-flex align-items-center gap-1.5" aria-label="{{ __('Logout') }}" title="{{ __('Logout') }}">
+                    <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3 py-1 d-flex align-items-center gap-1.5" aria-label="{{ __('Logout') }}" title="{{ __('Logout') }}">
                         <i class="fas fa-sign-out-alt"></i> <span style="font-size: 0.78rem;" class="fw-semibold">{{ __('Logout') }}</span>
                     </button>
                 </form>
             </div>
         </div>
         @else
-        <div class="sidebar-header d-flex align-items-center gap-3 bg-body-tertiary rounded-2 p-3 m-2 border">
+        <div class="sidebar-header d-flex align-items-center gap-3 bg-body-tertiary rounded-3 p-3 m-2 border">
             <div class="user-avatar rounded-circle d-flex align-items-center justify-content-center fw-bold text-white bg-secondary" style="width: 40px; height: 40px; flex-shrink: 0;">
                 <i class="fas fa-user"></i>
             </div>
@@ -730,7 +730,7 @@
                 <small class="text-muted" style="font-size: 0.75rem;">{{ __('Belum masuk akun') }}</small>
             </div>
             <div class="ms-auto">
-                <a href="{{ route('login') }}" class="btn btn-sm btn-primary rounded-1 px-3 py-1 fw-bold" style="font-size: 0.78rem;">
+                <a href="{{ route('login') }}" class="btn btn-sm btn-primary rounded-pill px-3 py-1 fw-bold" style="font-size: 0.78rem;">
                     {{ __('Login') }}
                 </a>
             </div>

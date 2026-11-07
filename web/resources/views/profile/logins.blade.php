@@ -11,7 +11,7 @@
                 <h4 class="fw-bold mb-1"><i class="fas fa-shield-alt text-primary me-2"></i>{{ __('Riwayat Percobaan Login') }}</h4>
                 <p class="text-muted small mb-0">{{ __('Catatan masuk ke akun Anda berdasarkan alamat IP dan perangkat.') }}</p>
             </div>
-            <a href="{{ route('profile') }}" class="btn btn-outline-secondary btn-sm px-3 fw-semibold">
+            <a href="{{ route('profile') }}" class="btn btn-outline-secondary btn-sm rounded-pill px-3 fw-semibold">
                 <i class="fas fa-arrow-left me-1"></i>{{ __('Kembali ke Profil') }}
             </a>
         </div>
@@ -36,9 +36,9 @@
                                 <td class="px-4 text-secondary small">{{ $log->created_at->format('d M Y H:i') }}</td>
                                 <td>
                                     @if($log->is_successful)
-                                        <span class="badge bg-success-subtle text-success"><i class="fas fa-check-circle me-1"></i>{{ __('Berhasil') }}</span>
+                                        <span class="badge bg-success-subtle text-success rounded-pill px-2.5 py-1"><i class="fas fa-check-circle me-1"></i>{{ __('Berhasil') }}</span>
                                     @else
-                                        <span class="badge bg-danger-subtle text-danger"><i class="fas fa-times-circle me-1"></i>{{ __('Gagal') }}</span>
+                                        <span class="badge bg-danger-subtle text-danger rounded-pill px-2.5 py-1"><i class="fas fa-times-circle me-1"></i>{{ __('Gagal') }}</span>
                                     @endif
                                 </td>
                                 <td>
@@ -51,14 +51,14 @@
                                 </td>
                                 <td class="text-end pe-4">
                                     @if(\Illuminate\Support\Facades\Cache::has('blocked_ip:' . $log->ip_address))
-                                        <button type="button" class="btn btn-sm btn-outline-success px-3 fw-semibold" onclick="requestUnblockIp(event, '{{ $log->ip_address }}', '{{ $log->location ?? 'Unknown' }}', '{{ $log->device_type }}', '{{ $log->browser ?? '-' }}')">
+                                        <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-3 fw-semibold" onclick="requestUnblockIp(event, '{{ $log->ip_address }}', '{{ $log->location ?? 'Unknown' }}', '{{ $log->device_type }}', '{{ $log->browser ?? '-' }}')">
                                             <i class="fas fa-unlock me-1"></i>{{ __('Buka Blokir') }}
                                         </button>
                                     @else
                                         <form action="{{ route('profile.logins.block-ip') }}" method="POST" class="d-inline" onsubmit="confirmBlockIp(event, this)">
                                             @csrf
                                             <input type="hidden" name="ip_address" value="{{ $log->ip_address }}">
-                                            <button type="submit" class="btn btn-sm btn-outline-danger px-3 fw-semibold">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-semibold">
                                                 <i class="fas fa-ban me-1"></i>{{ __('Blokir') }}
                                             </button>
                                         </form>

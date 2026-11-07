@@ -6,20 +6,22 @@
 @push('styles')
 <style>
     .hero-profile-banner {
-        background: linear-gradient(135deg, #0d47a1 0%, #1565c0 50%, #1e88e5 100%);
-        min-height: 170px;
-        border-radius: 8px;
-        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: var(--primary-container);
+        color: var(--on-primary-container);
+        min-height: 160px;
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--outline-variant);
+        transition: background-color 0.2s ease, border-color 0.2s ease;
     }
     .hero-pattern {
         position: absolute;
         top: 0; right: 0; bottom: 0; left: 0;
-        opacity: 0.12;
-        background-image: radial-gradient(#ffffff 1.5px, transparent 1.5px);
-        background-size: 22px 22px;
+        opacity: 0.08;
+        background-image: radial-gradient(var(--on-primary-container) 1.5px, transparent 1.5px);
+        background-size: 20px 20px;
     }
     .floating-profile-container {
-        margin-top: -48px;
+        margin-top: -44px;
     }
     .avatar-wrapper {
         position: relative;
@@ -29,15 +31,15 @@
         width: 104px;
         height: 104px;
         border-radius: 50%;
-        border: 3px solid var(--cm-sys-color-surface, #ffffff);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+        border: 4px solid var(--surface-container-lowest);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
         display: flex;
         align-items: center;
         justify-content: center;
         font-size: 2.4rem;
         font-weight: 700;
-        color: #ffffff;
-        background: linear-gradient(135deg, #0d47a1 0%, #1976d2 100%);
+        color: var(--on-primary);
+        background: var(--primary);
         margin: 0 auto;
     }
     
@@ -63,6 +65,7 @@
         align-items: center;
         justify-content: center;
         padding: 0.45rem 1rem;
+        border-radius: var(--radius-pill) !important;
     }
 
     @media (min-width: 768px) {
@@ -79,9 +82,9 @@
             border-width: 3px;
         }
         .hero-profile-banner {
-            min-height: 130px;
+            min-height: 125px;
             padding: 1.25rem !important;
-            border-radius: 8px;
+            border-radius: var(--radius-md);
         }
         .floating-profile-container {
             margin-top: -24px;
@@ -91,15 +94,15 @@
 @endpush
 
 @section('content')
-<!-- Hero Section (Gradient & Radial Pattern) -->
+<!-- Hero Section (Flat Material You Tonal Surface) -->
 <div class="position-relative mb-4">
-    <div class="hero-profile-banner p-4 text-white overflow-hidden position-relative">
+    <div class="hero-profile-banner p-4 overflow-hidden position-relative">
         <div class="hero-pattern"></div>
         <div class="position-relative z-1">
-            <h1 class="fw-bold mb-1 text-white h3">
+            <h1 class="fw-bold mb-1 h3" style="color: var(--on-primary-container);">
                 {{ __('Profil Saya') }}
             </h1>
-            <p class="mb-0 small opacity-85 text-white">
+            <p class="mb-0 small opacity-85" style="color: var(--on-primary-container);">
                 {{ __('Kelola data akun, keamanan kata sandi, dan integrasi Telegram Bot Anda') }}
             </p>
         </div>
@@ -109,13 +112,13 @@
     <div class="container-fluid px-0 floating-profile-container">
         <!-- Alert Flash Notifications -->
         @if(session('success'))
-            <div class="alert alert-success alert-dismissible fade show rounded-2 mb-3" role="alert">
+            <div class="alert alert-success alert-dismissible fade show rounded-3 mb-3" role="alert">
                 <i class="fas fa-check-circle me-2"></i>{{ session('success') }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         @endif
         @if($errors->any())
-            <div class="alert alert-danger alert-dismissible fade show rounded-2 mb-3" role="alert">
+            <div class="alert alert-danger alert-dismissible fade show rounded-3 mb-3" role="alert">
                 <i class="fas fa-exclamation-circle me-2"></i>{{ __('Terdapat kesalahan pada inputan Anda:') }}
                 <ul class="mb-0 ps-3 mt-1 small">
                     @foreach($errors->all() as $err)
@@ -164,7 +167,7 @@
                         @endif
                     </div>
 
-                    <div class="bg-body-tertiary rounded-2 p-3 mb-3 border text-start">
+                    <div class="bg-body-tertiary rounded-3 p-3 mb-3 border text-start">
                         <div class="d-flex justify-content-between align-items-center mb-1.5">
                             <span class="small text-muted fw-semibold">{{ __('Telegram Link:') }}</span>
                             @if(Auth::user()->telegram_id)
@@ -181,7 +184,7 @@
                     <div class="mt-auto pt-2">
                         <form action="{{ route('logout') }}" method="POST">
                             @csrf
-                            <button type="submit" class="btn btn-outline-danger w-100 fw-semibold py-2">
+                            <button type="submit" class="btn btn-outline-danger rounded-pill w-100 fw-semibold py-2">
                                 <i class="fas fa-sign-out-alt me-1.5"></i>{{ __('Keluar dari Akun') }}
                             </button>
                         </form>
@@ -228,20 +231,20 @@
                                         <h6 class="fw-bold text-primary mb-0">
                                             <i class="fas fa-id-card me-2"></i>{{ __('Informasi Akun') }}
                                         </h6>
-                                        <button type="button" id="btn-toggle-edit-profile" class="btn btn-primary btn-sm px-3 fw-semibold">
+                                        <button type="button" id="btn-toggle-edit-profile" class="btn btn-primary btn-sm rounded-pill px-3 fw-semibold">
                                             <i class="fas fa-user-edit me-1"></i> {{ __('Edit Profil') }}
                                         </button>
                                     </div>
                                     
                                     <div class="row g-3">
                                         <div class="col-md-6">
-                                            <div class="p-3 bg-body-tertiary rounded-2 border">
+                                            <div class="p-3 bg-body-tertiary rounded-3 border">
                                                 <div class="small text-muted fw-semibold mb-1"><i class="fas fa-user me-1.5 text-primary"></i>{{ __('Nama Lengkap') }}</div>
                                                 <div class="fw-semibold text-body">{{ Auth::user()->full_name }}</div>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
-                                            <div class="p-3 bg-body-tertiary rounded-2 border">
+                                            <div class="p-3 bg-body-tertiary rounded-3 border">
                                                 <div class="d-flex justify-content-between align-items-center mb-1">
                                                     <div class="small text-muted fw-semibold"><i class="fas fa-at me-1.5 text-primary"></i>{{ __('Username') }}</div>
                                                     <span class="badge bg-secondary-subtle text-secondary" style="font-size: 0.68rem;">
@@ -252,13 +255,13 @@
                                             </div>
                                         </div>
                                         <div class="col-md-6">
-                                            <div class="p-3 bg-body-tertiary rounded-2 border">
+                                            <div class="p-3 bg-body-tertiary rounded-3 border">
                                                 <div class="small text-muted fw-semibold mb-1"><i class="fas fa-envelope me-1.5 text-primary"></i>{{ __('Alamat Email') }}</div>
                                                 <div class="fw-semibold text-body">{{ Auth::user()->email ?: '-' }}</div>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
-                                            <div class="p-3 bg-body-tertiary rounded-2 border">
+                                            <div class="p-3 bg-body-tertiary rounded-3 border">
                                                 <div class="small text-muted fw-semibold mb-1"><i class="fab fa-telegram me-1.5 text-primary"></i>{{ __('Telegram ID') }}</div>
                                                 <div class="fw-semibold text-body d-flex align-items-center gap-2">
                                                     <span>{{ Auth::user()->telegram_id ?: '-' }}</span>
@@ -360,7 +363,7 @@
                                 </h6>
                                 <form action="{{ route('profile.2fa.toggle') }}" method="POST">
                                     @csrf
-                                    <div class="p-3 bg-body-tertiary rounded-2 border d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3">
+                                    <div class="p-3 bg-body-tertiary rounded-3 border d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3">
                                         <div>
                                             <div class="fw-semibold text-body mb-1">
                                                 {{ __('Status OTP Telegram:') }} 
@@ -372,7 +375,7 @@
                                                 {{ __('Kirim kode OTP keamanan via Telegram setiap kali terjadi aktivitas login baru.') }}
                                             </small>
                                         </div>
-                                        <button type="submit" class="btn btn-sm {{ Auth::user()->two_factor_enabled ? 'btn-outline-danger' : 'btn-success' }} px-3 fw-semibold text-nowrap">
+                                        <button type="submit" class="btn btn-sm rounded-pill {{ Auth::user()->two_factor_enabled ? 'btn-outline-danger' : 'btn-success' }} px-3 fw-semibold text-nowrap">
                                             {{ Auth::user()->two_factor_enabled ? __('Nonaktifkan 2FA') : __('Aktifkan 2FA') }}
                                         </button>
                                     </div>
@@ -389,7 +392,7 @@
                                 </p>
 
                                 @if(Auth::user()->telegram_id)
-                                    <div class="p-3 bg-success-subtle rounded-2 mb-3">
+                                    <div class="p-3 bg-success-subtle rounded-3 mb-3">
                                         <div class="d-flex align-items-center gap-3">
                                             <i class="fab fa-telegram fa-2x text-success"></i>
                                             <div>
@@ -400,12 +403,12 @@
                                     </div>
                                     <form action="{{ route('profile.telegram.unlink') }}" method="POST">
                                         @csrf
-                                        <button type="button" class="btn btn-outline-danger px-4 fw-semibold" onclick="confirmAction(event, 'Apakah Anda yakin ingin melepas kaitan akun Telegram Anda?')">
+                                        <button type="button" class="btn btn-outline-danger rounded-pill px-4 fw-semibold" onclick="confirmAction(event, 'Apakah Anda yakin ingin melepas kaitan akun Telegram Anda?')">
                                             <i class="fas fa-unlink me-1"></i> {{ __('Lepas Kaitan Telegram') }}
                                         </button>
                                     </form>
                                 @else
-                                    <div class="p-3 bg-warning-subtle rounded-2 mb-3">
+                                    <div class="p-3 bg-warning-subtle rounded-3 mb-3">
                                         <div class="d-flex align-items-center gap-3">
                                             <i class="fas fa-exclamation-triangle fa-2x text-warning"></i>
                                             <div>
@@ -416,7 +419,7 @@
                                     </div>
                                     <form action="{{ route('profile.telegram.link') }}" method="POST">
                                         @csrf
-                                        <button type="submit" class="btn btn-primary px-4 fw-semibold">
+                                        <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold">
                                             <i class="fab fa-telegram me-1"></i> {{ __('Tautkan Akun Telegram Sekarang') }}
                                         </button>
                                     </form>
@@ -430,25 +433,25 @@
                                 </h6>
                                 <div class="row g-3 mb-3">
                                     <div class="col-sm-6">
-                                        <div class="p-3 bg-body-tertiary rounded-2 border">
+                                        <div class="p-3 bg-body-tertiary rounded-3 border">
                                             <small class="text-muted d-block fw-semibold mb-1">{{ __('IP Pendaftaran:') }}</small>
                                             <strong class="text-body">{{ Auth::user()->registration_ip ?: 'Tidak tercatat' }}</strong>
                                         </div>
                                     </div>
                                     <div class="col-sm-6">
-                                        <div class="p-3 bg-body-tertiary rounded-2 border">
+                                        <div class="p-3 bg-body-tertiary rounded-3 border">
                                             <small class="text-muted d-block fw-semibold mb-1">{{ __('Negara Asal (IP Terakhir):') }}</small>
                                             <strong class="text-primary">{{ Auth::user()->last_login_country ?: 'Indonesia (Lokal)' }}</strong>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div class="d-flex justify-content-between align-items-center p-3 bg-body-tertiary rounded-2 border">
+                                <div class="d-flex justify-content-between align-items-center p-3 bg-body-tertiary rounded-3 border">
                                     <div>
                                         <div class="fw-semibold text-body mb-1">{{ __('Riwayat Login Sesi') }}</div>
                                         <small class="text-muted">{{ __('Lihat daftar perangkat dan log percobaan masuk ke akun Anda.') }}</small>
                                     </div>
-                                    <a href="{{ route('profile.logins') }}" class="btn btn-sm btn-outline-primary px-3 fw-semibold text-nowrap">
+                                    <a href="{{ route('profile.logins') }}" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-semibold text-nowrap">
                                         <i class="fas fa-history me-1"></i> {{ __('Lihat Log Sesi') }}
                                     </a>
                                 </div>
