@@ -1,7 +1,6 @@
 RENCANA PERBAIKAN DAN PENGEMBANGAN:
 
-perbaiki error 404 not found pada tombol cek detail pesanan pada pesan Pembayaran berhasil dikonfirmasi di bot telegram setelah user customer melunasi tagihan pesanan.
-
+saya ingin berganti gaya tampilan website saya, menjadi flat material you design. contohnya seperti yang diterapkan pada aplikasi website google cloud platform, dan aplikasi google lain. apakah bisa? bagian mana saja yang harus diubah mulai dari yang paling mudah ke yang paling kompleks.
 
 catat untuk kamu;
 - lakukan brainstroming sebelum melakukan eksekusi, tak lupa pula lakukan analisa kritik dan saran.
