@@ -109,23 +109,23 @@
     </div>
 </div>
 
-<div class="card border-0 shadow-sm overflow-hidden mb-4" style="border-radius: 16px;">
-    <div class="card-header bg-white border-bottom-0 pt-4 pb-0 px-4">
-        <ul class="nav nav-tabs border-bottom-0" style="margin-bottom: -1px;">
+<div class="card border-0 shadow-sm overflow-hidden mb-4" style="border-radius: var(--radius-md); background: var(--surface-container-low); border: 1px solid var(--outline-variant) !important;">
+    <div class="card-header bg-transparent border-bottom-0 pt-2.5 pb-0 px-3 px-md-4">
+        <ul class="nav nav-tabs m3-subnav-tabs border-bottom-0" role="tablist">
             <li class="nav-item">
-                <a class="nav-link {{ request('status') === null && !request('product_id') && !request('search') ? 'active border-primary border-bottom-0 text-primary fw-bold' : 'text-muted' }}" href="{{ request()->fullUrlWithQuery(['status' => null]) }}">{{ __('Semua') }}</a>
+                <a class="nav-link {{ request('status') === null && !request('product_id') && !request('search') ? 'active' : '' }}" href="{{ request()->fullUrlWithQuery(['status' => null]) }}">{{ __('Semua') }}</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link {{ request('status') === 'ready' ? 'active border-primary border-bottom-0 text-primary fw-bold' : 'text-muted' }}" href="{{ request()->fullUrlWithQuery(['status' => 'ready']) }}">{{ __('Ready') }}</a>
+                <a class="nav-link {{ request('status') === 'ready' ? 'active' : '' }}" href="{{ request()->fullUrlWithQuery(['status' => 'ready']) }}">{{ __('Ready') }}</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link {{ request('status') === 'awaiting_benefits' ? 'active border-primary border-bottom-0 text-primary fw-bold' : 'text-muted' }}" href="{{ request()->fullUrlWithQuery(['status' => 'awaiting_benefits']) }}">{{ __('Awaiting Benefits') }}</a>
+                <a class="nav-link {{ request('status') === 'awaiting_benefits' ? 'active' : '' }}" href="{{ request()->fullUrlWithQuery(['status' => 'awaiting_benefits']) }}">{{ __('Awaiting Benefits') }}</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link {{ request('status') === 'saved_for_verification' ? 'active border-primary border-bottom-0 text-primary fw-bold' : 'text-muted' }}" href="{{ request()->fullUrlWithQuery(['status' => 'saved_for_verification']) }}">{{ __('Simpan Akun') }}</a>
+                <a class="nav-link {{ request('status') === 'saved_for_verification' ? 'active' : '' }}" href="{{ request()->fullUrlWithQuery(['status' => 'saved_for_verification']) }}">{{ __('Simpan Akun') }}</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link {{ request('status') === 'terjual' ? 'active border-primary border-bottom-0 text-primary fw-bold' : 'text-muted' }}" href="{{ request()->fullUrlWithQuery(['status' => 'terjual']) }}">{{ __('Terjual') }}</a>
+                <a class="nav-link {{ request('status') === 'terjual' ? 'active' : '' }}" href="{{ request()->fullUrlWithQuery(['status' => 'terjual']) }}">{{ __('Terjual') }}</a>
             </li>
         </ul>
     </div>

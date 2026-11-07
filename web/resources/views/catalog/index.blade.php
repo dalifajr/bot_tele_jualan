@@ -5,29 +5,29 @@
 @section('meta_description', 'Lihat semua produk digital yang tersedia untuk dibeli')
 
 @section('content')
-<!-- Google Cloud Console Filter Bar & Category Chips -->
-<div class="card mb-3 overflow-hidden">
-    <div class="sd-dashboard-filter-bar border-bottom-0 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2.5 p-2.5 px-md-3">
-        {{-- Horizontal Scroll Category Filter Chips (Cloud Console .cfc-chip) --}}
-        <div class="category-chips-wrapper d-flex gap-2 overflow-x-auto text-nowrap" style="-webkit-overflow-scrolling: touch; scrollbar-width: none;">
-            <button type="button" class="btn btn-sm btn-primary cfc-chip category-filter-chip active" data-filter="all">
-                <i class="fas fa-th-large"></i> {{ __('Semua') }}
+<!-- Flat Material You Filter Bar & Horizontal Scroll Category Chips -->
+<div class="card mb-3 border-0 shadow-sm overflow-hidden" style="border-radius: var(--radius-md); background: var(--surface-container-low); border: 1px solid var(--outline-variant) !important;">
+    <div class="sd-dashboard-filter-bar border-0 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2.5 p-2.5 px-md-3">
+        {{-- Horizontal Scroll Category Filter Chips --}}
+        <div class="category-chips-wrapper" role="tablist" aria-label="{{ __('Kategori Produk') }}">
+            <button type="button" class="category-filter-chip btn-primary active" data-filter="all">
+                <i class="fas fa-th-large"></i> <span>{{ __('Semua') }}</span>
             </button>
-            <button type="button" class="btn btn-sm btn-outline-secondary cfc-chip category-filter-chip" data-filter="ready">
-                <i class="fas fa-check-circle text-success"></i> {{ __('Ready Stok') }}
+            <button type="button" class="category-filter-chip btn-outline-secondary" data-filter="ready">
+                <i class="fas fa-check-circle text-success"></i> <span>{{ __('Ready Stok') }}</span>
             </button>
-            <button type="button" class="btn btn-sm btn-outline-secondary cfc-chip category-filter-chip" data-filter="account">
-                <i class="fas fa-user-shield text-info"></i> {{ __('Akun Digital') }}
+            <button type="button" class="category-filter-chip btn-outline-secondary" data-filter="account">
+                <i class="fas fa-user-shield text-info"></i> <span>{{ __('Akun Digital') }}</span>
             </button>
-            <button type="button" class="btn btn-sm btn-outline-secondary cfc-chip category-filter-chip" data-filter="vpn">
-                <i class="fas fa-network-wired text-warning"></i> {{ __('VPN / SSH') }}
+            <button type="button" class="category-filter-chip btn-outline-secondary" data-filter="vpn">
+                <i class="fas fa-network-wired text-warning"></i> <span>{{ __('VPN / SSH') }}</span>
             </button>
         </div>
 
-        <div class="d-flex align-items-center gap-2" style="max-width: 340px; width: 100%;">
-            <div class="input-group input-group-sm">
-                <span class="input-group-text ps-2.5"><i class="fas fa-filter text-muted"></i></span>
-                <input type="text" id="catalogSearchInput" class="form-control pe-3" placeholder="{{ __('Cari nama produk...') }}">
+        <div class="d-flex align-items-center w-100 w-md-auto ms-md-auto" style="max-width: 340px;">
+            <div class="input-group input-group-sm w-100">
+                <span class="input-group-text bg-transparent border-end-0 ps-3" style="border-color: var(--outline-variant); color: var(--on-surface-variant);"><i class="fas fa-search" style="font-size: 0.78rem;"></i></span>
+                <input type="text" id="catalogSearchInput" class="form-control border-start-0 pe-3" placeholder="{{ __('Cari nama produk...') }}" style="border-color: var(--outline-variant); background: transparent;">
             </div>
         </div>
     </div>

@@ -567,7 +567,7 @@
                title="{{ __('Notifikasi') }}">
                 <i class="fas fa-bell" style="font-size: 0.95rem;"></i>
                 @if($totalUnreadCount > 0)
-                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.62rem;">
+                <span class="m3-badge-count">
                     {{ $totalUnreadCount > 99 ? '99+' : $totalUnreadCount }}
                 </span>
                 @endif
@@ -579,7 +579,7 @@
             <button class="btn btn-link link-body-emphasis m3-icon-btn position-relative" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="{{ __('Notifikasi') }}" data-pex="xrpax4o-0">
                 <i class="fas fa-bell" style="font-size: 0.95rem;" data-pex="xrpax4o-1"></i>
                 @if($totalUnreadCount > 0)
-                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.62rem;" data-pex="xrpax4o-2">
+                <span class="m3-badge-count" data-pex="xrpax4o-2">
                     {{ $totalUnreadCount > 99 ? '99+' : $totalUnreadCount }}
                 </span>
                 @endif
@@ -646,7 +646,7 @@
             @php
                 $cartCount = Auth::check() ? \App\Models\CartItem::where('user_id', Auth::id())->sum('quantity') : 0;
             @endphp
-            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger {{ $cartCount > 0 ? '' : 'd-none' }}" style="font-size: 0.62rem;" id="cart-badge-count">
+            <span class="m3-badge-count {{ $cartCount > 0 ? '' : 'd-none' }}" id="cart-badge-count">
                 {{ $cartCount > 99 ? '99+' : $cartCount }}
             </span>
         </a>
