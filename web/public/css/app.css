@@ -1209,12 +1209,12 @@ a .m3-metric-card:hover {
     .mobile-nav-item i {
         font-size: 1.1rem;
         margin-bottom: 4px;
-        width: 56px;
+        width: 52px;
         height: 28px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        border-radius: var(--radius-pill, 9999px);
+        border-radius: 6px;
         transition: background-color 0.2s cubic-bezier(0.2, 0, 0, 1), color 0.2s cubic-bezier(0.2, 0, 0, 1);
     }
 
@@ -1237,7 +1237,7 @@ a .m3-metric-card:hover {
         background: var(--primary-container) !important;
         color: var(--on-primary-container) !important;
         padding: 0;
-        border-radius: var(--radius-pill, 9999px);
+        border-radius: 6px;
     }
 
     .mobile-nav-badge {
@@ -1261,7 +1261,7 @@ a .m3-metric-card:hover {
         max-width: 100% !important;
         height: auto !important;
         max-height: 84vh !important;
-        border-radius: 24px 24px 0 0 !important;
+        border-radius: 8px 8px 0 0 !important;
         border-top: 1px solid var(--outline-color) !important;
         border-right: none !important;
         border-left: none !important;
@@ -1289,7 +1289,7 @@ a .m3-metric-card:hover {
         margin-left: 0 !important;
     }
 
-    /* Pull/Swipe Handle Area at Top of Bottom Sheet (M3 Drag Handle 32x4px) */
+    /* Pull/Swipe Handle Area at Top of Bottom Sheet */
     .sheet-handle-area {
         width: 100%;
         padding: 12px 0 6px;
@@ -1309,7 +1309,7 @@ a .m3-metric-card:hover {
     .sheet-handle-bar {
         width: 36px;
         height: 4px;
-        border-radius: 999px;
+        border-radius: 2px;
         background-color: var(--on-surface-variant);
         opacity: 0.4;
         transition: opacity 0.2s ease, background-color 0.2s ease;
@@ -1321,22 +1321,22 @@ a .m3-metric-card:hover {
         background-color: var(--primary-color);
     }
 
-    /* Mobile Card Grid Layout for Menu Lainnya (Bottom Sheet) - 3 Columns Flat M3 Tonal */
+    /* Mobile Card Grid Layout for Menu Lainnya (Bottom Sheet) - 4 Columns Compact Super-App Grid */
     .menu-group {
-        padding: 0.45rem 0.85rem !important;
+        padding: 0.4rem 0.65rem !important;
     }
 
     .menu-header {
-        padding: 0.45rem 0.25rem 0.45rem !important;
-        font-size: 0.72rem !important;
+        padding: 0.35rem 0.25rem 0.35rem !important;
+        font-size: 0.7rem !important;
         font-weight: 600 !important;
         letter-spacing: 0.04em !important;
     }
 
     .menu-items-grid {
         display: grid !important;
-        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-        gap: 10px !important;
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        gap: 8px 6px !important;
     }
 
     /* Single item group (e.g. Home) displays as a full-width clean row */
@@ -1348,13 +1348,13 @@ a .m3-metric-card:hover {
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
-        justify-content: center !important;
+        justify-content: flex-start !important;
         text-align: center !important;
         height: auto !important;
-        min-height: 84px !important;
+        min-height: 72px !important;
         margin: 0 !important;
-        padding: 12px 8px !important;
-        border-radius: var(--radius-md, 12px) !important;
+        padding: 8px 3px 6px !important;
+        border-radius: 6px !important;
         background: var(--surface-container-low) !important;
         border: 1px solid var(--outline-color) !important;
         border-left: 1px solid var(--outline-color) !important;
@@ -1372,9 +1372,9 @@ a .m3-metric-card:hover {
         justify-content: flex-start !important;
         align-items: center !important;
         text-align: left !important;
-        min-height: 52px !important;
-        padding: 10px 14px !important;
-        gap: 12px !important;
+        min-height: 48px !important;
+        padding: 8px 12px !important;
+        gap: 10px !important;
     }
 
     .menu-item:only-child .menu-icon-box {
@@ -1383,7 +1383,7 @@ a .m3-metric-card:hover {
 
     .menu-item:only-child .menu-label-text {
         text-align: left !important;
-        font-size: 0.85rem !important;
+        font-size: 0.8125rem !important;
         font-weight: 600 !important;
         width: auto !important;
     }
@@ -1396,48 +1396,52 @@ a .m3-metric-card:hover {
         box-shadow: none !important;
     }
 
+    /* Highlight Active state: clean container with outline, icon crystal clear and never covered */
     .menu-item.active {
         background: var(--primary-container) !important;
-        border: 1px solid rgba(var(--primary-rgb), 0.35) !important;
-        border-left: 1px solid rgba(var(--primary-rgb), 0.35) !important;
+        border: 1px solid var(--primary-color) !important;
+        border-left: 1px solid var(--primary-color) !important;
         box-shadow: none !important;
     }
 
     .menu-item .menu-icon-box {
         width: 36px !important;
         height: 36px !important;
-        border-radius: 10px !important;
+        border-radius: 6px !important;
         background: var(--surface-bg) !important;
         border: 1px solid var(--outline-color) !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        font-size: 1.05rem !important;
-        margin-bottom: 6px !important;
+        font-size: 0.95rem !important;
+        margin-bottom: 5px !important;
         box-shadow: none !important;
         flex-shrink: 0 !important;
         transition: background-color 0.15s ease !important;
     }
 
     .menu-item.active .menu-icon-box {
-        background: var(--primary-color) !important;
-        border-color: var(--primary-color) !important;
-        box-shadow: none !important;
+        background: var(--surface-bg) !important;
+        border: 1.5px solid var(--primary-color) !important;
+        box-shadow: 0 0 0 1px var(--primary-color) !important;
     }
 
+    .sidebar .menu-item.active .menu-icon-box i,
     .menu-item.active .menu-icon-box i {
-        color: #ffffff !important;
+        color: var(--primary-color) !important;
+        opacity: 1 !important;
+        font-size: 1rem !important;
     }
 
     .menu-item .menu-label-text {
-        font-size: 0.8125rem !important;
-        font-weight: 600 !important;
-        line-height: 1.35 !important;
+        font-size: 0.6875rem !important; /* 11px compact */
+        font-weight: 500 !important;
+        line-height: 1.2 !important;
         color: var(--on-surface) !important;
         text-align: center !important;
         display: block !important;
         white-space: normal !important;
-        word-break: normal !important;
+        word-break: break-word !important;
         overflow: visible !important;
         text-overflow: unset !important;
         max-height: none !important;
@@ -1446,7 +1450,7 @@ a .m3-metric-card:hover {
         flex-grow: 0 !important;
         width: 100% !important;
         margin: 0 !important;
-        padding: 0 2px !important;
+        padding: 0 1px !important;
     }
 
     .menu-item.active .menu-label-text {
@@ -1456,11 +1460,11 @@ a .m3-metric-card:hover {
 
     .menu-item .badge {
         position: absolute !important;
-        top: 6px !important;
-        right: 8px !important;
-        font-size: 0.65rem !important;
-        padding: 0.2rem 0.45rem !important;
-        border-radius: 999px !important;
+        top: 2px !important;
+        right: 2px !important;
+        font-size: 0.58rem !important;
+        padding: 0.1rem 0.35rem !important;
+        border-radius: 4px !important;
     }
 }
 
@@ -1477,7 +1481,7 @@ a .m3-metric-card:hover {
 .sidebar-help-card {
     background: var(--surface-container-low);
     border: 1px solid var(--outline-color) !important;
-    border-radius: var(--radius-md, 12px) !important;
+    border-radius: 6px !important;
     transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
@@ -1487,13 +1491,144 @@ a .m3-metric-card:hover {
     transform: none;
 }
 
-/* === DARK MODE ADJUSTMENTS === */
+/* === COMPREHENSIVE DARK MODE ADJUSTMENTS & TEXT VISIBILITY GUARDS === */
 [data-bs-theme="dark"] .main-background {
     opacity: 0.05;
 }
 
 [data-bs-theme="dark"] .page-loader {
     background: rgba(15, 17, 23, 0.65);
+}
+
+[data-bs-theme="dark"] .text-dark,
+[data-bs-theme="dark"] .text-black,
+[data-bs-theme="dark"] .link-dark {
+    color: var(--cm-sys-color-on-surface, #e8eaed) !important;
+}
+
+[data-bs-theme="dark"] .text-muted,
+[data-bs-theme="dark"] .text-secondary {
+    color: var(--cm-sys-color-on-surface-variant, #9aa0a6) !important;
+}
+
+[data-bs-theme="dark"] .text-body {
+    color: var(--cm-sys-color-on-surface, #e8eaed) !important;
+}
+
+[data-bs-theme="dark"] .bg-light,
+[data-bs-theme="dark"] .bg-light-subtle {
+    background-color: var(--cm-sys-color-container, #28292c) !important;
+    color: var(--cm-sys-color-on-surface, #e8eaed) !important;
+}
+
+[data-bs-theme="dark"] .bg-white {
+    background-color: var(--cm-sys-color-surface, #1f1f1f) !important;
+    color: var(--cm-sys-color-on-surface, #e8eaed) !important;
+}
+
+[data-bs-theme="dark"] .border-light {
+    border-color: var(--cm-sys-color-hairline, #3c4043) !important;
+}
+
+[data-bs-theme="dark"] .card {
+    background-color: var(--cm-sys-color-surface, #1f1f1f) !important;
+    border-color: var(--cm-sys-color-hairline, #3c4043) !important;
+    color: var(--cm-sys-color-on-surface, #e8eaed) !important;
+}
+
+[data-bs-theme="dark"] .modal-content {
+    background-color: var(--cm-sys-color-surface, #1f1f1f) !important;
+    border: 1px solid var(--cm-sys-color-hairline, #3c4043) !important;
+    color: var(--cm-sys-color-on-surface, #e8eaed) !important;
+}
+
+[data-bs-theme="dark"] .modal-header,
+[data-bs-theme="dark"] .modal-footer {
+    border-color: var(--cm-sys-color-hairline, #3c4043) !important;
+    background-color: transparent !important;
+}
+
+[data-bs-theme="dark"] .dropdown-menu {
+    background-color: var(--cm-sys-color-container, #28292c) !important;
+    border: 1px solid var(--cm-sys-color-hairline, #3c4043) !important;
+    color: var(--cm-sys-color-on-surface, #e8eaed) !important;
+}
+
+[data-bs-theme="dark"] .dropdown-item {
+    color: var(--cm-sys-color-on-surface, #e8eaed) !important;
+}
+
+[data-bs-theme="dark"] .dropdown-item:hover,
+[data-bs-theme="dark"] .dropdown-item:focus {
+    background-color: var(--cm-sys-color-container-high, #303134) !important;
+    color: #ffffff !important;
+}
+
+[data-bs-theme="dark"] .form-control,
+[data-bs-theme="dark"] .form-select {
+    background-color: var(--cm-sys-color-container, #28292c) !important;
+    border-color: var(--cm-sys-color-hairline, #3c4043) !important;
+    color: var(--cm-sys-color-on-surface, #e8eaed) !important;
+}
+
+[data-bs-theme="dark"] .form-control:focus,
+[data-bs-theme="dark"] .form-select:focus {
+    background-color: var(--cm-sys-color-container, #28292c) !important;
+    border-color: var(--cm-sys-color-primary, #8ab4f8) !important;
+    color: #ffffff !important;
+}
+
+[data-bs-theme="dark"] .input-group-text {
+    background-color: var(--cm-sys-color-container-high, #303134) !important;
+    border-color: var(--cm-sys-color-hairline, #3c4043) !important;
+    color: var(--cm-sys-color-on-surface, #e8eaed) !important;
+}
+
+[data-bs-theme="dark"] .menu-item {
+    background: var(--cm-sys-color-container, #28292c) !important;
+    border-color: var(--cm-sys-color-hairline, #3c4043) !important;
+}
+
+[data-bs-theme="dark"] .menu-item:hover,
+[data-bs-theme="dark"] .menu-item:active {
+    background: var(--cm-sys-color-container-high, #303134) !important;
+    border-color: var(--cm-sys-color-outline, #80868b) !important;
+}
+
+[data-bs-theme="dark"] .menu-item .menu-icon-box {
+    background: var(--cm-sys-color-surface, #1f1f1f) !important;
+    border-color: var(--cm-sys-color-hairline, #3c4043) !important;
+}
+
+[data-bs-theme="dark"] .menu-item.active {
+    background: var(--cm-sys-color-container-primary, #27354e) !important;
+    border-color: var(--cm-sys-color-primary, #8ab4f8) !important;
+}
+
+[data-bs-theme="dark"] .menu-item.active .menu-icon-box {
+    background: var(--cm-sys-color-surface, #1f1f1f) !important;
+    border-color: var(--cm-sys-color-primary, #8ab4f8) !important;
+    box-shadow: 0 0 0 1px var(--cm-sys-color-primary, #8ab4f8) !important;
+}
+
+[data-bs-theme="dark"] .sidebar-header {
+    background-color: var(--cm-sys-color-container, #28292c) !important;
+    border-color: var(--cm-sys-color-hairline, #3c4043) !important;
+}
+
+[data-bs-theme="dark"] .sheet-header-mobile {
+    background-color: var(--cm-sys-color-surface, #1f1f1f) !important;
+    border-bottom-color: var(--cm-sys-color-hairline, #3c4043) !important;
+}
+
+[data-bs-theme="dark"] .quick-action-btn {
+    background: var(--cm-sys-color-surface, #1f1f1f) !important;
+    border-color: var(--cm-sys-color-hairline, #3c4043) !important;
+}
+
+[data-bs-theme="dark"] .quick-action-btn:hover {
+    background: var(--cm-sys-color-container, #28292c) !important;
+    border-color: var(--cm-sys-color-primary, #8ab4f8) !important;
 }
 
 /* === TABLE STYLES (GOOGLE CLOUD CONSOLE DATA TABLE) === */

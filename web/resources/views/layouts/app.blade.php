@@ -660,7 +660,7 @@
     {{-- Sidebar (Desktop Column / Mobile Card Sheet) --}}
     <div id="sidebar" class="sidebar" style="z-index: 1040; overflow-y: auto; overscroll-behavior: contain;">
         {{-- Mobile Bottom Sheet Grab Handle & Header (Mobile Only) --}}
-        <div class="sheet-header-mobile d-lg-none sticky-top bg-body pt-2 pb-1 border-bottom" style="border-top-left-radius: 24px; border-top-right-radius: 24px; z-index: 10;">
+        <div class="sheet-header-mobile d-lg-none sticky-top bg-body pt-2 pb-1 border-bottom" style="border-top-left-radius: 8px; border-top-right-radius: 8px; z-index: 10;">
             <div class="sheet-handle-area" id="sheetHandleArea" title="{{ __('Geser ke bawah untuk menutup') }}">
                 <div class="sheet-handle-bar"></div>
             </div>
@@ -674,7 +674,7 @@
                         <small class="text-secondary" style="font-size: 0.72rem; font-weight: 500;">{{ __('Menu & Layanan Lainnya') }}</small>
                     </div>
                 </a>
-                <button type="button" class="btn btn-sm btn-icon btn-light rounded-circle text-secondary" id="sidebarCloseBtn" aria-label="{{ __('Tutup') }}" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; padding: 0;">
+                <button type="button" class="btn btn-sm btn-icon btn-light rounded-1 text-secondary" id="sidebarCloseBtn" aria-label="{{ __('Tutup') }}" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; padding: 0;">
                     <i class="fas fa-times" style="font-size: 0.9rem;"></i>
                 </button>
             </div>
@@ -696,14 +696,14 @@
             <div class="ms-auto d-lg-none">
                 <form action="{{ route('logout') }}" method="POST" class="m-0">
                     @csrf
-                    <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3 py-1 d-flex align-items-center gap-1.5" aria-label="{{ __('Logout') }}" title="{{ __('Logout') }}">
+                    <button type="submit" class="btn btn-sm btn-outline-danger rounded-1 px-3 py-1 d-flex align-items-center gap-1.5" aria-label="{{ __('Logout') }}" title="{{ __('Logout') }}">
                         <i class="fas fa-sign-out-alt"></i> <span style="font-size: 0.78rem;" class="fw-semibold">{{ __('Logout') }}</span>
                     </button>
                 </form>
             </div>
         </div>
         @else
-        <div class="sidebar-header d-flex align-items-center gap-3 bg-light rounded-4 p-3 m-3 border">
+        <div class="sidebar-header d-flex align-items-center gap-3 bg-body-tertiary rounded-2 p-3 m-2 border">
             <div class="user-avatar rounded-circle d-flex align-items-center justify-content-center fw-bold text-white bg-secondary" style="width: 40px; height: 40px; flex-shrink: 0;">
                 <i class="fas fa-user"></i>
             </div>
@@ -712,7 +712,7 @@
                 <small class="text-muted" style="font-size: 0.75rem;">{{ __('Belum masuk akun') }}</small>
             </div>
             <div class="ms-auto">
-                <a href="{{ route('login') }}" class="btn btn-sm btn-primary rounded-pill px-3 py-1 fw-bold" style="font-size: 0.78rem;">
+                <a href="{{ route('login') }}" class="btn btn-sm btn-primary rounded-1 px-3 py-1 fw-bold" style="font-size: 0.78rem;">
                     {{ __('Login') }}
                 </a>
             </div>
@@ -874,7 +874,7 @@
                 <div class="menu-header text-success"><i class="fas fa-tools me-1"></i> {{ __('Tool') }}</div>
                 <div class="menu-items-grid">
                     <a href="{{ route('admin.tools.github-checker') }}" class="menu-item {{ request()->routeIs('admin.tools.github-checker*') ? 'active' : '' }}">
-                        <div class="menu-icon-box"><i class="fab fa-github text-dark"></i></div>
+                        <div class="menu-icon-box"><i class="fab fa-github text-body"></i></div>
                         <span class="menu-label-text">{{ __('GitHub Live Checker') }}</span>
                     </a>
                     <a href="{{ route('admin.tools.gmail-checker') }}" class="menu-item {{ request()->routeIs('admin.tools.gmail-checker*') ? 'active' : '' }}">
@@ -964,7 +964,7 @@
                 <div class="menu-items-grid">
                     @if(is_array(Auth::user()->allowed_tools) && in_array('github_checker', Auth::user()->allowed_tools))
                     <a href="{{ route('admin.tools.github-checker') }}" class="menu-item {{ request()->routeIs('admin.tools.github-checker*') ? 'active' : '' }}">
-                        <div class="menu-icon-box"><i class="fab fa-github text-dark"></i></div>
+                        <div class="menu-icon-box"><i class="fab fa-github text-body"></i></div>
                         <span class="menu-label-text">{{ __('GitHub Live Checker') }}</span>
                     </a>
                     @endif
@@ -1498,7 +1498,7 @@
 {{-- Guest Authentication Modal --}}
 <div class="modal fade" id="guestAuthModal" tabindex="-1" aria-labelledby="guestAuthModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+        <div class="modal-content border-0 shadow-lg rounded-2 overflow-hidden">
             <div class="modal-header border-0 pb-0 pt-4 px-4 position-relative">
                 <button type="button" class="btn-close position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
@@ -1508,12 +1508,12 @@
                         <i class="fas fa-user-lock"></i>
                     </div>
                 </div>
-                <h4 class="modal-title fw-bold text-dark mb-2" id="guestAuthModalLabel">{{ __('Masuk untuk Melanjutkan') }}</h4>
+                <h4 class="modal-title fw-bold text-body mb-2" id="guestAuthModalLabel">{{ __('Masuk untuk Melanjutkan') }}</h4>
                 <p class="text-muted small mb-4 px-2" id="guestAuthModalDesc">
                     {{ __('Fitur ini memerlukan akun. Nikmati riwayat transaksi yang tersimpan rapi, notifikasi pesanan real-time, serta kemudahan klaim garansi.') }}
                 </p>
 
-                <div class="bg-light rounded-3 p-3 mb-4 text-start border border-dashed">
+                <div class="bg-body-tertiary rounded-2 p-3 mb-4 text-start border border-dashed">
                     <div class="d-flex align-items-center mb-2">
                         <i class="fas fa-check-circle text-success me-2"></i>
                         <span class="small fw-semibold text-secondary">{{ __('Riwayat belanja & serial key tersimpan aman') }}</span>

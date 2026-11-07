@@ -144,23 +144,23 @@
                 <h5 class="fw-bold mb-0 text-body">
                     <i class="fas fa-history text-primary me-2"></i>{{ __('Pesanan Terbaru') }}
                 </h5>
-                <a href="{{ route('orders.index') }}" @guest data-guest-modal="true" data-feature-name="riwayat pesanan" @endguest class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-semibold">
+                <a href="{{ route('orders.index') }}" @guest data-guest-modal="true" data-feature-name="riwayat pesanan" @endguest class="btn btn-sm btn-outline-primary rounded-1 px-3 fw-semibold">
                     {{ __('Lihat Semua') }} <i class="fas fa-arrow-right ms-1 small"></i>
                 </a>
             </div>
             <div class="card-body p-0">
                 @guest
                     <div class="text-center py-5 px-3">
-                        <div class="bg-primary-subtle text-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 72px; height: 72px;">
+                        <div class="bg-primary-subtle text-primary rounded-2 d-inline-flex align-items-center justify-content-center mb-3" style="width: 72px; height: 72px;">
                             <i class="fas fa-user-lock" style="font-size: 1.85rem;"></i>
                         </div>
                         <h6 class="fw-bold text-body mb-1">{{ __('Masuk untuk Melihat Riwayat Transaksi') }}</h6>
                         <p class="text-muted small mb-3 mx-auto" style="max-width: 420px;">{{ __('Masuk atau buat akun baru untuk melihat status pesanan, mengakses lisensi dan akun digital Anda, serta mendapatkan bantuan garansi.') }}</p>
                         <div class="d-flex justify-content-center gap-2">
-                            <a href="{{ route('login') }}" class="btn btn-primary rounded-pill px-4 fw-bold">
+                            <a href="{{ route('login') }}" class="btn btn-primary rounded-1 px-4 fw-bold">
                                 <i class="fas fa-sign-in-alt me-1"></i> {{ __('Masuk Akun') }}
                             </a>
-                            <a href="{{ route('catalog.index') }}" class="btn btn-outline-primary rounded-pill px-4 fw-bold">
+                            <a href="{{ route('catalog.index') }}" class="btn btn-outline-primary rounded-1 px-4 fw-bold">
                                 <i class="fas fa-shopping-bag me-1"></i> {{ __('Lihat Katalog') }}
                             </a>
                         </div>
@@ -204,7 +204,7 @@
                                             ];
                                             [$label, $color] = $statusMap[$order->status] ?? [$order->status, 'secondary'];
                                         @endphp
-                                        <span class="badge bg-{{ $color }}-subtle text-{{ $color }} rounded-pill px-3 py-1 fw-bold">
+                                        <span class="badge bg-{{ $color }}-subtle text-{{ $color }} rounded-1 px-2.5 py-1 fw-bold">
                                             {{ $label }}
                                         </span>
                                     </td>
@@ -234,7 +234,7 @@
                                 <div class="mobile-activity-card">
                                     <div class="d-flex justify-content-between align-items-center mb-1">
                                         <span class="fw-bold text-primary font-monospace" style="font-size: 0.85rem;">{{ $order->reference }}</span>
-                                        <span class="badge bg-{{ $color }}-subtle text-{{ $color }} rounded-pill px-2.5 py-1" style="font-size: 0.68rem;">
+                                        <span class="badge bg-{{ $color }}-subtle text-{{ $color }} rounded-1 px-2 py-0.5" style="font-size: 0.68rem;">
                                             {{ $label }}
                                         </span>
                                     </div>
@@ -251,12 +251,12 @@
                     </div>
                 @else
                     <div class="text-center py-5 px-3">
-                        <div class="m3-tonal-item rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
-                            <i class="fas fa-box-open text-muted" style="font-size: 2.25rem;"></i>
+                        <div class="m3-tonal-item rounded-2 d-inline-flex align-items-center justify-content-center mb-3" style="width: 72px; height: 72px;">
+                            <i class="fas fa-box-open text-muted" style="font-size: 2rem;"></i>
                         </div>
                         <h6 class="fw-bold text-body mb-1">{{ __('Belum Ada Pesanan') }}</h6>
                         <p class="text-muted small mb-3">{{ __('Anda belum pernah melakukan pemesanan produk digital.') }}</p>
-                        <a href="{{ route('catalog.index') }}" class="btn btn-primary rounded-pill px-4 fw-bold">
+                        <a href="{{ route('catalog.index') }}" class="btn btn-primary rounded-1 px-4 fw-bold">
                             <i class="fas fa-store me-2"></i>{{ __('Mulai Belanja') }}
                         </a>
                     </div>
