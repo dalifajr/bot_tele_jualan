@@ -210,52 +210,125 @@ a:hover {
     color: var(--primary-hover);
 }
 
-/* === NAVIGATION (MATERIAL 3 TOP APP BAR & 1PX HAIRLINE) === */
+/* === NAVIGATION (GOOGLE CLOUD CONSOLE 48PX PLATFORM BAR & 1PX HAIRLINE) === */
 .navbar {
     height: var(--header-height);
     min-height: var(--header-height);
     max-height: var(--header-height);
     top: var(--banner-height) !important;
-    background: var(--surface-bg) !important;
+    background: var(--cm-sys-color-surface) !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
-    border-bottom: 1px solid var(--outline-color) !important;
+    border-bottom: 1px solid var(--cm-sys-color-hairline) !important;
     padding-top: 0 !important;
     padding-bottom: 0 !important;
     display: flex;
     align-items: center;
     box-sizing: border-box;
     box-shadow: none !important;
-    transition: background-color 0.2s ease, border-bottom 0.2s ease, top 0.2s ease;
+    transition: background-color 0.15s ease, border-bottom 0.15s ease, top 0.15s ease;
 }
 
 .navbar-brand-icon {
-    width: 34px;
-    height: 34px;
-    border-radius: 10px;
-    background: var(--primary-container);
-    color: var(--primary-color);
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: var(--cm-sys-color-container-primary);
+    color: var(--cm-sys-color-primary);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 1rem;
+    font-size: 0.85rem;
     flex-shrink: 0;
 }
 
 [data-bs-theme="dark"] .navbar-brand-icon {
-    background: rgba(var(--primary-rgb), 0.16);
-    color: var(--primary-color);
+    background: var(--cm-sys-color-container-primary);
+    color: var(--cm-sys-color-primary);
 }
 
-/* Material 3 Circular Action Icon Button in Top App Bar */
+/* Google Cloud Console Project / Workspace Picker Button in Platform Bar */
+.pcc-project-picker {
+    height: 30px;
+    padding: 0 10px;
+    border: 1px solid var(--cm-sys-color-hairline) !important;
+    border-radius: 4px !important;
+    background-color: var(--cm-sys-color-surface) !important;
+    color: var(--cm-sys-color-on-surface) !important;
+    font: var(--cm-sys-type-label-small) !important;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.pcc-project-picker:hover,
+.pcc-project-picker:focus {
+    background-color: var(--cm-sys-color-container-high) !important;
+    border-color: var(--cm-sys-color-outline) !important;
+    color: var(--cm-sys-color-on-surface) !important;
+}
+
+/* Google Cloud Console Central Search / Command Bar */
+.pcc-search-bar {
+    max-width: 440px;
+    width: 100%;
+    height: 32px;
+    background-color: var(--cm-sys-color-container-high);
+    border: 1px solid transparent;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    gap: 8px;
+    transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.pcc-search-bar:focus-within {
+    background-color: var(--cm-sys-color-surface);
+    border-color: var(--cm-sys-color-primary);
+    box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+}
+
+.pcc-search-input {
+    border: none !important;
+    background: transparent !important;
+    outline: none !important;
+    box-shadow: none !important;
+    width: 100%;
+    height: 100%;
+    padding: 0 !important;
+    font: var(--cm-sys-type-body-medium) !important;
+    color: var(--cm-sys-color-on-surface) !important;
+}
+
+.pcc-search-input::placeholder {
+    color: var(--cm-sys-color-on-surface-variant);
+}
+
+.pcc-search-kbd {
+    font-family: "Roboto Mono", monospace;
+    font-size: 0.6875rem;
+    line-height: 1;
+    padding: 2px 5px;
+    border-radius: 3px;
+    background-color: var(--cm-sys-color-surface);
+    border: 1px solid var(--cm-sys-color-hairline);
+    color: var(--cm-sys-color-on-surface-variant);
+    white-space: nowrap;
+}
+
+/* Google Cloud Console Circular Action Icon Button in Top Platform Bar */
 .m3-icon-btn {
-    width: 38px;
-    height: 38px;
+    width: 34px;
+    height: 34px;
     border-radius: 50% !important;
     display: inline-flex;
     align-items: center !important;
     justify-content: center !important;
-    color: var(--on-surface-variant) !important;
+    color: var(--cm-sys-color-on-surface-variant) !important;
     background: transparent !important;
     border: none !important;
     padding: 0 !important;
@@ -266,49 +339,43 @@ a:hover {
 
 .m3-icon-btn:hover,
 .m3-icon-btn:focus {
-    background-color: var(--surface-container-high) !important;
-    color: var(--on-surface) !important;
+    background-color: var(--cm-sys-color-container-high) !important;
+    color: var(--cm-sys-color-on-surface) !important;
 }
 
 .m3-icon-btn:active {
-    background-color: var(--surface-container-highest) !important;
-    transform: scale(0.95);
+    background-color: var(--cm-sys-color-placeholder) !important;
+    transform: scale(0.96);
 }
 
 /* Mobile Nav Handle Button in Navbar */
 .mobile-nav-handle {
-    border: 1px solid var(--outline-color) !important;
-    background: var(--surface-container-low) !important;
-    color: var(--primary-color) !important;
-    border-radius: var(--radius-pill) !important;
-    padding: 6px 14px !important;
-    font-size: 0.85rem !important;
-    font-weight: 600 !important;
-    line-height: 1 !important;
+    border: 1px solid var(--cm-sys-color-hairline) !important;
+    background: var(--cm-sys-color-container) !important;
+    color: var(--cm-sys-color-primary) !important;
+    border-radius: 4px !important;
+    padding: 5px 12px !important;
+    font: var(--cm-sys-type-label-small) !important;
     display: inline-flex !important;
     align-items: center !important;
     gap: 6px !important;
     cursor: pointer;
     box-shadow: none !important;
-    transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+    transition: background-color 0.15s ease;
 }
 
 .mobile-nav-handle:hover, .mobile-nav-handle:focus {
-    background: var(--primary-container) !important;
-    color: var(--on-primary-container) !important;
+    background: var(--cm-sys-color-container-primary) !important;
+    color: var(--cm-sys-color-primary-on-container) !important;
 }
 
-.mobile-nav-handle:active {
-    transform: scale(0.97);
-}
-
-/* === SIDEBAR (MATERIAL 3 NAVIGATION DRAWER & PILL INDICATOR) === */
+/* === SIDEBAR (GOOGLE CLOUD CONSOLE 256PX NAVIGATION DRAWER) === */
 .sidebar {
     width: var(--sidebar-width);
-    background: var(--surface-bg);
+    background: var(--cm-sys-color-surface);
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
-    border-right: 1px solid var(--outline-color);
+    border-right: 1px solid var(--cm-sys-color-hairline);
     position: fixed;
     top: var(--total-header-height) !important;
     height: calc(100vh - var(--total-header-height)) !important;
@@ -320,39 +387,43 @@ a:hover {
     overscroll-behavior: contain;
     flex-shrink: 0;
     box-sizing: border-box;
-    transition: transform 0.3s cubic-bezier(0.2, 0, 0, 1), background-color 0.2s ease, border-right 0.2s ease, top 0.2s ease;
+    transition: transform 0.25s cubic-bezier(0.2, 0, 0, 1), width 0.2s ease, background-color 0.15s ease, border-right 0.15s ease, top 0.15s ease;
 }
 
 .sidebar-header {
     flex-shrink: 0;
-    padding: 1rem 1.15rem;
-    border-bottom: 1px solid var(--outline-color);
-    background: var(--surface-container-low);
+    padding: 0.65rem 1rem;
+    border-bottom: 1px solid var(--cm-sys-color-hairline);
+    background: var(--cm-sys-color-surface);
 }
 
 .menu-group {
-    padding: 0.4rem 0;
+    padding: 0.35rem 0;
+    border-bottom: 1px solid var(--cm-sys-color-hairline);
+}
+
+.menu-group:last-child {
+    border-bottom: none;
 }
 
 .menu-header {
-    padding: 0.6rem 1.5rem 0.3rem;
-    font-size: 0.68rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--on-surface-variant) !important;
-    opacity: 0.85;
+    padding: 0.5rem 1.25rem 0.25rem;
+    font: var(--cm-sys-type-label-small);
+    text-transform: none;
+    letter-spacing: 0.01em;
+    color: var(--cm-sys-color-on-surface-variant) !important;
 }
 
 .menu-header i {
-    color: var(--on-surface-variant) !important;
-    opacity: 0.75;
+    color: var(--cm-sys-color-on-surface-variant) !important;
+    opacity: 0.8;
+    font-size: 0.75rem;
 }
 
 .menu-items-grid {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 0;
 }
 
 .menu-icon-box {
@@ -361,55 +432,61 @@ a:hover {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     flex-shrink: 0;
 }
 
-/* Unify sidebar icons to Google Material monochromatic tone when inactive */
+/* Unify sidebar icons to Google Cloud Console monochromatic tone when inactive */
 .sidebar .menu-item:not(.active) .menu-icon-box i {
-    color: var(--on-surface-variant) !important;
-    transition: color 0.15s ease;
+    color: var(--cm-sys-color-on-surface-variant) !important;
+    opacity: 0.85;
+    transition: color 0.15s ease, opacity 0.15s ease;
 }
 
 .sidebar .menu-item:hover .menu-icon-box i,
 .sidebar .menu-item.active .menu-icon-box i {
-    color: var(--primary-color) !important;
-}
-
-[data-bs-theme="dark"] .sidebar .menu-item.active .menu-icon-box i {
-    color: var(--on-primary-container) !important;
+    color: var(--cm-sys-color-primary-on-container) !important;
+    opacity: 1;
 }
 
 .menu-label-text {
     flex-grow: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-/* Material 3 Pill-Shaped Navigation Item (Desktop) */
+/* Google Cloud Console Navigation Row (a.cfc-console-nav-flyout-header) */
 .menu-item {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin: 0 10px;
-    padding: 0.55rem 1rem;
-    border-radius: var(--radius-pill, 9999px);
-    color: var(--on-surface-variant);
+    gap: 14px;
+    height: 38px;
+    margin: 0;
+    padding: 0 1rem 0 1.25rem;
+    border-radius: 0;
+    border-left: 4px solid transparent !important;
+    color: var(--cm-sys-color-on-surface);
     text-decoration: none;
-    font-size: 0.85rem;
-    font-weight: 500;
-    transition: background-color 0.15s cubic-bezier(0.2, 0, 0, 1), color 0.15s ease;
-    border-left: none !important;
+    font: var(--cm-sys-type-body-medium);
+    transition: background-color 0.1s ease, color 0.1s ease, border-color 0.1s ease;
 }
 
 .menu-item:hover {
-    background: var(--surface-container-high);
-    color: var(--on-surface);
+    background: rgba(0, 0, 0, 0.04);
+    color: var(--cm-sys-color-on-surface);
     transform: none;
 }
 
+[data-bs-theme="dark"] .menu-item:hover {
+    background: rgba(255, 255, 255, 0.04);
+}
+
 .menu-item.active {
-    background: var(--primary-container);
-    color: var(--on-primary-container);
-    font-weight: 600;
+    background-color: var(--cm-sys-color-container-primary) !important;
+    color: var(--cm-sys-color-primary-on-container) !important;
+    border-left: 4px solid var(--cm-sys-color-primary) !important;
+    font-weight: 500;
 }
 
 .menu-item i {
@@ -417,11 +494,12 @@ a:hover {
     text-align: center;
 }
 
-/* === APP LAYOUT (ZERO GAP) === */
+/* === APP LAYOUT (ZERO GAP & PURE WHITE CANVAS) === */
 .app-container {
     padding-top: var(--total-header-height) !important;
     min-height: 100vh;
     box-sizing: border-box;
+    background-color: var(--cm-sys-color-surface);
 }
 
 .main-content {
@@ -429,11 +507,13 @@ a:hover {
     margin-top: 0 !important;
     flex: 1;
     min-height: calc(100vh - var(--total-header-height));
+    background-color: var(--cm-sys-color-surface);
     overflow: hidden;
+    transition: margin-left 0.2s ease;
 }
 
 .container-fluid.position-relative.px-4 {
-    padding-top: 1.5rem !important;
+    padding-top: 1.25rem !important;
     padding-bottom: 1.5rem !important;
 }
 
@@ -1628,22 +1708,30 @@ a .m3-metric-card:hover {
     transition: width 0.2s ease, opacity 0.2s ease 0.2s;
 }
 
-/* === SIDEBAR COLLAPSE (DESKTOP) === */
+/* === SIDEBAR COLLAPSE (GOOGLE CLOUD CONSOLE 64PX RAIL MODE DESKTOP) === */
 @media (min-width: 992px) {
     .app-container.sidebar-collapsed .sidebar {
-        width: 70px;
+        width: 64px;
     }
-    .app-container.sidebar-collapsed .sidebar .menu-item span,
+    .app-container.sidebar-collapsed .sidebar .menu-item .menu-label-text,
+    .app-container.sidebar-collapsed .sidebar .menu-item .badge,
     .app-container.sidebar-collapsed .sidebar .menu-header,
-    .app-container.sidebar-collapsed .sidebar .sidebar-header .d-flex {
+    .app-container.sidebar-collapsed .sidebar .sidebar-header .d-flex,
+    .app-container.sidebar-collapsed .sidebar .sidebar-help-card,
+    .app-container.sidebar-collapsed .sidebar .menu-group:has(.sidebar-help-card),
+    .app-container.sidebar-collapsed .sidebar .menu-group:last-child {
         display: none !important;
+    }
+    .app-container.sidebar-collapsed .sidebar .menu-item {
+        justify-content: center;
+        padding: 0 !important;
     }
     .app-container.sidebar-collapsed .sidebar .sidebar-header {
         justify-content: center;
-        padding: 1.25rem 0;
+        padding: 0.65rem 0;
     }
     .app-container.sidebar-collapsed .main-content {
-        margin-left: 70px;
+        margin-left: 64px;
     }
 }
 

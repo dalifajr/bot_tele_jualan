@@ -485,19 +485,75 @@
 </style>
 @endif
 
-<nav class="navbar navbar-expand fixed-top px-3 px-md-4 bg-body border-bottom" style="z-index: 1030;">
-    <div class="d-flex align-items-center gap-2 gap-sm-3">
-        <div class="navbar-brand d-flex align-items-center gap-2.5 m-0" style="font-size: 1.02rem;">
+<nav class="navbar navbar-expand fixed-top px-2 px-md-3 bg-body border-bottom pcc-platform-bar" style="z-index: 1030;">
+    <div class="d-flex align-items-center gap-2">
+        @unless($hideSidebar)
+        <button type="button" class="m3-icon-btn d-none d-lg-inline-flex" id="cfcNavCollapseBtn" title="{{ __('Sembunyikan/Tampilkan Navigasi') }}" aria-label="{{ __('Toggle Navigation Drawer') }}">
+            <i class="fas fa-bars" style="font-size: 0.95rem;"></i>
+        </button>
+        @endunless
+        <a href="{{ route('dashboard') }}" class="navbar-brand d-flex align-items-center gap-2 m-0 text-decoration-none" style="font-size: 0.98rem;">
             <span class="navbar-brand-icon">
-                <i class="fas fa-shopping-bag"></i>
+                <i class="fas fa-cloud"></i>
             </span>
-            <span class="fw-semibold" style="color: var(--on-surface); letter-spacing: -0.01em;">
+            <span class="fw-medium" style="color: var(--cm-sys-color-on-surface); letter-spacing: 0;">
                 {{ config('app.name', 'Dzulfikrialifajri Store') }}
-                <span class="fw-normal d-none d-sm-inline" style="font-size: 0.84rem; color: var(--on-surface-variant);">| @yield('page_subtitle', 'Dashboard')</span>
             </span>
+        </a>
+
+        {{-- Google Cloud Console Project / Workspace Context Picker --}}
+        @unless($hideSidebar)
+        <div class="dropdown d-none d-sm-block ms-1">
+            @php
+                $workspaceLabel = 'Storefront';
+                $workspaceIcon = 'fa-layer-group';
+                if (Auth::check() && Auth::user()->role === 'admin') {
+                    $workspaceLabel = 'Admin Console';
+                    $workspaceIcon = 'fa-shield-halved';
+                } elseif (Auth::check() && Auth::user()->role === 'seller') {
+                    $workspaceLabel = 'Seller Workspace';
+                    $workspaceIcon = 'fa-store';
+                }
+            @endphp
+            <button type="button" class="pcc-project-picker" data-bs-toggle="dropdown" aria-expanded="false" title="{{ __('Pilih Workspace / Navigasi Cepat') }}">
+                <i class="fas {{ $workspaceIcon }} text-primary" style="font-size: 0.72rem;"></i>
+                <span class="text-truncate" style="max-width: 140px;">{{ $workspaceLabel }}</span>
+                <i class="fas fa-caret-down opacity-75" style="font-size: 0.7rem;"></i>
+            </button>
+            <ul class="dropdown-menu mt-1" style="min-width: 220px;">
+                <li class="px-3 py-1.5 border-bottom" style="background: var(--cm-sys-color-container);">
+                    <div class="text-secondary" style="font: var(--cm-sys-type-label-small);">{{ __('Workspace Aktif') }}</div>
+                    <div class="fw-medium text-truncate" style="font: var(--cm-sys-type-body-medium); color: var(--cm-sys-color-on-surface);">{{ $workspaceLabel }}</div>
+                </li>
+                <li><a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('dashboard') }}"><i class="fas fa-home text-secondary" style="width: 16px;"></i> {{ __('Home Overview') }}</a></li>
+                <li><a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('catalog.index') }}"><i class="fas fa-store text-secondary" style="width: 16px;"></i> {{ __('Katalog Produk') }}</a></li>
+                @auth
+                <li><a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('orders.index') }}"><i class="fas fa-receipt text-secondary" style="width: 16px;"></i> {{ __('Riwayat Pesanan') }}</a></li>
+                @if(Auth::user()->role === 'admin')
+                <li><hr class="dropdown-divider my-1"></li>
+                <li><a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('admin.dashboard') }}"><i class="fas fa-chart-line text-primary" style="width: 16px;"></i> {{ __('Dashboard Admin') }}</a></li>
+                <li><a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('admin.audit-logs.index') }}"><i class="fas fa-clock-rotate-left text-primary" style="width: 16px;"></i> {{ __('Log Audit') }}</a></li>
+                <li><a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('admin.logins.index') }}"><i class="fas fa-right-to-bracket text-primary" style="width: 16px;"></i> {{ __('Percobaan Login') }}</a></li>
+                @elseif(Auth::user()->role === 'seller')
+                <li><hr class="dropdown-divider my-1"></li>
+                <li><a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('seller.dashboard') }}"><i class="fas fa-chart-pie text-primary" style="width: 16px;"></i> {{ __('Dashboard Seller') }}</a></li>
+                @endif
+                @endauth
+            </ul>
         </div>
+        @endunless
     </div>
-    <div class="ms-auto d-flex align-items-center gap-1 gap-sm-2">
+
+    {{-- Google Cloud Console Central Search / Command Bar (Desktop) --}}
+    @unless($hideSidebar)
+    <form action="{{ route('catalog.index') }}" method="GET" class="pcc-search-bar d-none d-md-flex mx-auto my-0">
+        <i class="fas fa-search" style="font-size: 0.78rem; color: var(--cm-sys-color-on-surface-variant);"></i>
+        <input type="text" name="search" id="pccGlobalSearchInput" value="{{ request('search') }}" class="pcc-search-input" placeholder="{{ __('Cari produk, layanan, atau resource...') }}" autocomplete="off">
+        <span class="pcc-search-kbd">Ctrl+/</span>
+    </form>
+    @endunless
+
+    <div class="ms-auto d-flex align-items-center gap-1">
         @unless($hideSidebar)
         {{-- Notification Bell (All Authenticated Users) --}}
         @php
@@ -510,9 +566,9 @@
                @guest data-guest-modal="true" data-feature-name="notifikasi" @endguest 
                class="btn btn-link link-body-emphasis m3-icon-btn position-relative" 
                title="{{ __('Notifikasi') }}">
-                <i class="fas fa-bell fs-5"></i>
+                <i class="fas fa-bell" style="font-size: 0.95rem;"></i>
                 @if($totalUnreadCount > 0)
-                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.65rem;">
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.62rem;">
                     {{ $totalUnreadCount > 99 ? '99+' : $totalUnreadCount }}
                 </span>
                 @endif
@@ -522,61 +578,61 @@
         {{-- Notification Dropdown for Desktop (>= 768px): Popover --}}
         <div class="dropdown d-none d-md-block">
             <button class="btn btn-link link-body-emphasis m3-icon-btn position-relative" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="{{ __('Notifikasi') }}" data-pex="xrpax4o-0">
-                <i class="fas fa-bell fs-5" data-pex="xrpax4o-1"></i>
+                <i class="fas fa-bell" style="font-size: 0.95rem;" data-pex="xrpax4o-1"></i>
                 @if($totalUnreadCount > 0)
-                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.65rem;" data-pex="xrpax4o-2">
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.62rem;" data-pex="xrpax4o-2">
                     {{ $totalUnreadCount > 99 ? '99+' : $totalUnreadCount }}
                 </span>
                 @endif
             </button>
-            <ul class="dropdown-menu dropdown-menu-end mt-2 p-0" style="width: 350px; border-radius: 12px; z-index: 1050; overflow: hidden;">
-                <li class="px-3 py-2.5 border-bottom d-flex justify-content-between align-items-center" style="background: var(--surface-container-low);">
-                    <h6 class="m-0 fw-bold text-primary" data-pex="9c28hsh-7">{{ __('Notifikasi') }}</h6>
+            <ul class="dropdown-menu dropdown-menu-end mt-2 p-0" style="width: 340px; z-index: 1050; overflow: hidden;">
+                <li class="px-3 py-2 border-bottom d-flex justify-content-between align-items-center" style="background: var(--cm-sys-color-container);">
+                    <h6 class="m-0 fw-medium text-primary" style="font: var(--cm-sys-type-label-medium);" data-pex="9c28hsh-7">{{ __('Notifikasi') }}</h6>
                     @if($totalUnreadCount > 0)
-                    <span class="badge bg-primary rounded-pill">{{ $totalUnreadCount }} {{ __('Baru') }}</span>
+                    <span class="badge bg-primary-subtle">{{ $totalUnreadCount }} {{ __('Baru') }}</span>
                     @endif
                 </li>
                 
-                <div class="notification-list" style="max-height: 400px; overflow-y: auto;">
+                <div class="notification-list" style="max-height: 380px; overflow-y: auto;">
                     @forelse($unreadNotifications as $notification)
                     <li>
-                        <a class="dropdown-item py-3 px-3 d-flex align-items-start gap-3 border-bottom" href="{{ $notification->data['url'] ?? '#' }}" style="white-space: normal; border-radius: 0 !important;" onclick="markSingleNotificationAsRead('{{ $notification->id }}')">
+                        <a class="dropdown-item py-2.5 px-3 d-flex align-items-start gap-2.5 border-bottom" href="{{ $notification->data['url'] ?? '#' }}" style="white-space: normal; border-radius: 0 !important;" onclick="markSingleNotificationAsRead('{{ $notification->id }}')">
                             <div class="mt-1">
-                                <i class="{{ $notification->data['icon'] ?? 'fas fa-bell text-secondary' }} fs-5"></i>
+                                <i class="{{ $notification->data['icon'] ?? 'fas fa-bell text-secondary' }}" style="font-size: 0.95rem;"></i>
                             </div>
                             <div class="flex-grow-1">
-                                <div class="fw-bold mb-1" style="font-size: 0.9rem; color: var(--on-surface);" data-pex="9c28hsh-21">{{ $notification->data['title'] ?? __('Notifikasi') }}</div>
-                                <div class="text-muted small" style="line-height: 1.4;" data-pex="9c28hsh-22">{{ $notification->data['message'] ?? '' }}</div>
+                                <div class="fw-medium mb-0.5" style="font: var(--cm-sys-type-label-medium); color: var(--cm-sys-color-on-surface);" data-pex="9c28hsh-21">{{ $notification->data['title'] ?? __('Notifikasi') }}</div>
+                                <div class="text-muted" style="font: var(--cm-sys-type-body-small);" data-pex="9c28hsh-22">{{ $notification->data['message'] ?? '' }}</div>
                                 
                                 @if(($notification->data['type'] ?? '') === 'login_gagal' && isset($notification->data['ip_address']))
                                 <div class="mt-2" onclick="event.stopPropagation(); event.preventDefault();">
                                     <form action="{{ route('profile.logins.block-ip') }}" method="POST" class="d-inline">
                                         @csrf
                                         <input type="hidden" name="ip_address" value="{{ $notification->data['ip_address'] }}">
-                                        <button type="submit" class="btn btn-sm btn-danger rounded-pill" style="font-size: 0.75rem;">
+                                        <button type="submit" class="btn btn-sm btn-danger" style="font-size: 0.72rem;">
                                             <i class="fas fa-ban me-1"></i>Bukan Saya (Blokir)
                                         </button>
                                     </form>
                                 </div>
                                 @endif
 
-                                <div class="text-muted mt-1" style="font-size: 0.75rem;" data-pex="9c28hsh-23"><i class="far fa-clock me-1"></i>{{ $notification->created_at->diffForHumans() }}</div>
+                                <div class="text-muted mt-1" style="font-size: 0.7rem;" data-pex="9c28hsh-23"><i class="far fa-clock me-1"></i>{{ $notification->created_at->diffForHumans() }}</div>
                             </div>
                         </a>
                     </li>
                     @empty
                     <li>
                         <div class="dropdown-item py-4 text-center text-muted" style="border-radius: 0 !important;">
-                            <i class="fas fa-check-circle fs-3 mb-2 text-success"></i><br>
+                            <i class="fas fa-check-circle fs-4 mb-1.5 text-success"></i><br>
                             <small>{{ __('Tidak ada notifikasi baru.') }}</small>
                         </div>
                     </li>
                     @endforelse
                 </div>
                 
-                <li class="d-flex justify-content-between px-3 py-2 border-top" style="background: var(--surface-container-low);">
+                <li class="d-flex justify-content-between px-3 py-2 border-top" style="background: var(--cm-sys-color-container);">
                     <a href="javascript:void(0)" class="text-decoration-none small text-muted hover-primary" onclick="markAllNotificationsRead()"><i class="fas fa-check-double me-1"></i>{{ __('Tandai Dibaca') }}</a>
-                    <a href="{{ route('notifications.index') }}" class="text-decoration-none small fw-bold text-primary"><i class="fas fa-list me-1"></i>{{ __('Lihat Semua') }}</a>
+                    <a href="{{ route('notifications.index') }}" class="text-decoration-none small fw-medium text-primary"><i class="fas fa-list me-1"></i>{{ __('Lihat Semua') }}</a>
                 </li>
             </ul>
         </div>
@@ -587,11 +643,11 @@
            class="btn btn-link link-body-emphasis m3-icon-btn position-relative" 
            title="{{ __('Keranjang Belanja') }}" 
            id="headerCartBtn">
-            <i class="fas fa-shopping-cart fs-5"></i>
+            <i class="fas fa-shopping-cart" style="font-size: 0.95rem;"></i>
             @php
                 $cartCount = Auth::check() ? \App\Models\CartItem::where('user_id', Auth::id())->sum('quantity') : 0;
             @endphp
-            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger {{ $cartCount > 0 ? '' : 'd-none' }}" style="font-size: 0.65rem;" id="cart-badge-count">
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger {{ $cartCount > 0 ? '' : 'd-none' }}" style="font-size: 0.62rem;" id="cart-badge-count">
                 {{ $cartCount > 99 ? '99+' : $cartCount }}
             </span>
         </a>
@@ -599,19 +655,19 @@
 
         {{-- Theme Toggle --}}
         <button class="btn btn-link link-body-emphasis m3-icon-btn me-1" id="themeToggle" title="{{ __('Toggle Theme') }}" aria-label="{{ __('Ganti Tema') }}">
-            <i class="fas fa-moon fs-5" id="themeIcon"></i>
+            <i class="fas fa-moon" style="font-size: 0.95rem;" id="themeIcon"></i>
         </button>
 
         {{-- Logout or Login Button (Desktop Only) --}}
         @auth
         <form action="{{ route('logout') }}" method="POST" class="m-0 d-none d-lg-block">
             @csrf
-            <button type="submit" class="btn btn-sm btn-outline-danger d-flex align-items-center gap-2 rounded-pill px-3" aria-label="{{ __('Logout') }}">
-                <i class="fas fa-sign-out-alt"></i> <span class="d-none d-sm-inline">{{ __('Logout') }}</span>
+            <button type="submit" class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1.5 px-2.5" aria-label="{{ __('Logout') }}">
+                <i class="fas fa-sign-out-alt text-danger" style="font-size: 0.78rem;"></i> <span class="d-none d-sm-inline">{{ __('Logout') }}</span>
             </button>
         </form>
         @else
-        <a href="{{ route('login') }}" class="btn btn-sm btn-primary rounded-pill px-3 d-none d-lg-flex align-items-center gap-1.5 fw-bold">
+        <a href="{{ route('login') }}" class="btn btn-sm btn-primary px-3 d-none d-lg-flex align-items-center gap-1.5">
             <i class="fas fa-sign-in-alt"></i> <span>{{ __('Masuk') }}</span>
         </a>
         @endauth
@@ -986,6 +1042,37 @@
     {{-- Main Content --}}
     <main class="main-content position-relative" @if($hideSidebar) style="margin-left: 0 !important;" @endif>
         <div class="main-background"></div>
+
+        @unless($hideSidebar || View::hasSection('no_action_bar'))
+        {{-- Google Cloud Console Page Action Bar (cfc-action-bar) --}}
+        <div class="cfc-action-bar">
+            <div class="d-flex align-items-center gap-2 min-w-0">
+                <h1 class="cfc-action-bar-title text-truncate">
+                    @yield('title', 'Dashboard')
+                </h1>
+                @if(View::hasSection('page_subtitle'))
+                <span class="badge bg-secondary-subtle d-none d-sm-inline-flex">
+                    @yield('page_subtitle')
+                </span>
+                @endif
+            </div>
+            <div class="cfc-action-bar-actions">
+                @yield('action_bar_buttons')
+                <a href="{{ route('catalog.index') }}" class="btn btn-sm btn-link text-decoration-none d-none d-md-inline-flex" style="color: var(--cm-sys-color-primary);">
+                    <i class="fas fa-store"></i> <span>{{ __('Katalog') }}</span>
+                </a>
+                @auth
+                <a href="{{ route('orders.index') }}" class="btn btn-sm btn-link text-decoration-none d-none d-md-inline-flex" style="color: var(--cm-sys-color-primary);">
+                    <i class="fas fa-receipt"></i> <span>{{ __('Pesanan') }}</span>
+                </a>
+                @endauth
+                <button type="button" onclick="window.location.reload();" class="btn btn-sm btn-link text-decoration-none" style="color: var(--cm-sys-color-primary);" title="{{ __('Muat Ulang Halaman') }}">
+                    <i class="fas fa-rotate-right"></i> <span class="d-none d-sm-inline">{{ __('Refresh') }}</span>
+                </button>
+            </div>
+        </div>
+        @endunless
+
         <div class="container-fluid position-relative px-4 pb-4 pt-4">
             {{-- Flash Messages --}}
             @if(session('success'))
@@ -1186,6 +1273,35 @@
             });
         });
     }
+
+    // Google Cloud Console Desktop Navigation Drawer Collapse & Global Search (Ctrl+/)
+    document.addEventListener('DOMContentLoaded', function () {
+        const appContainer = document.querySelector('.app-container');
+        const collapseBtn = document.getElementById('cfcNavCollapseBtn');
+
+        if (appContainer && localStorage.getItem('cfc_sidebar_collapsed') === '1') {
+            appContainer.classList.add('sidebar-collapsed');
+        }
+
+        if (collapseBtn && appContainer) {
+            collapseBtn.addEventListener('click', function () {
+                appContainer.classList.toggle('sidebar-collapsed');
+                const isCollapsed = appContainer.classList.contains('sidebar-collapsed');
+                localStorage.setItem('cfc_sidebar_collapsed', isCollapsed ? '1' : '0');
+            });
+        }
+
+        document.addEventListener('keydown', function (e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === '/') {
+                const searchInput = document.getElementById('pccGlobalSearchInput');
+                if (searchInput) {
+                    e.preventDefault();
+                    searchInput.focus();
+                    searchInput.select();
+                }
+            }
+        });
+    });
 </script>
 
 @stack('scripts')
