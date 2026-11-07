@@ -1,6 +1,7 @@
 /* ==========================================
    JUALAN DIGITAL - AUTHENTICATION DESIGN SYSTEM
-   Google Sans Typography & Unified Geometric Radii (8px / 6px)
+   Flat Material You (Android 17 / BeerCSS M3 Architecture)
+   Concentric Radii (24px Outer Card / 12px Inputs / Full Pill Tabs & Buttons)
    ========================================== */
 
 body {
@@ -9,11 +10,16 @@ body {
   align-items: center;
   justify-content: center;
   padding: 1.5rem 1rem;
-  background-color: var(--cm-sys-color-surface, #ffffff);
-  color: var(--cm-sys-color-on-surface, #202124);
+  background-color: var(--surface, #f8fafd);
+  color: var(--on-surface, #191c20);
   position: relative;
   overflow-x: hidden;
-  font-family: var(--font-google-sans, "Google Sans", "Google Sans Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif) !important;
+  font-family: var(--font-google-sans, "Google Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif) !important;
+}
+
+[data-bs-theme="dark"] body {
+  background-color: var(--surface, #111318) !important;
+  color: var(--on-surface, #e2e2e9) !important;
 }
 
 /* Font Awesome Protection in Auth */
@@ -33,16 +39,16 @@ body {
   font-weight: 900 !important;
 }
 
-/* Background Ambient Subtle Glow */
+/* Material You Ambient Tonal Spotlights */
 body::before {
   content: '';
   position: fixed;
   top: -150px;
   left: -150px;
-  width: 500px;
-  height: 500px;
+  width: 550px;
+  height: 550px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(51, 103, 214, 0.08) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(11, 87, 208, 0.08) 0%, transparent 70%);
   pointer-events: none;
   z-index: 0;
 }
@@ -52,68 +58,83 @@ body::after {
   position: fixed;
   bottom: -150px;
   right: -150px;
-  width: 500px;
-  height: 500px;
+  width: 550px;
+  height: 550px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(13, 202, 240, 0.06) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(0, 99, 155, 0.07) 0%, transparent 70%);
   pointer-events: none;
   z-index: 0;
 }
 
-/* Theme Toggle Button Position (8px Geometric Box) */
+/* Theme Toggle Button (Circular M3 Action) */
 .auth-theme-toggle {
   position: fixed;
   top: 1.25rem;
   right: 1.25rem;
   z-index: 1050;
-  background: var(--cm-sys-color-surface, #ffffff);
-  border: 1px solid var(--cm-sys-color-hairline, #dadce0);
-  border-radius: 8px !important;
-  width: 40px;
-  height: 40px;
+  background: var(--surface-container-lowest, #ffffff);
+  border: 1px solid var(--outline-variant, #dce0e9);
+  border-radius: 9999px !important;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.15);
+  box-shadow: none;
   transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
 .auth-theme-toggle:hover {
-  background: var(--cm-sys-color-container-high, #f1f3f4);
-  border-color: var(--cm-sys-color-primary, #3367d6);
+  background: var(--surface-container, #eceef4);
+  border-color: var(--primary, #0b57d0);
 }
 
-/* Login Card Wrapper (Unified 8px Card Geometry) */
+[data-bs-theme="dark"] .auth-theme-toggle {
+  background: var(--surface-container-lowest, #191c20);
+  border-color: var(--outline-variant, #33363f);
+}
+
+/* Login Card Wrapper (Flat Material You 24px Card) */
 .login-wrapper {
   width: 100%;
-  max-width: 940px;
-  border-radius: 8px !important;
-  border: 1px solid var(--cm-sys-color-hairline, #dadce0);
-  background: var(--cm-sys-color-surface, #ffffff);
-  box-shadow: 0 1px 3px 0 rgba(60, 64, 67, 0.12), 0 4px 12px 0 rgba(60, 64, 67, 0.06);
+  max-width: 960px;
+  border-radius: var(--radius-xl, 24px) !important;
+  border: 1px solid var(--outline-variant, #dce0e9);
+  background: var(--surface-container-lowest, #ffffff);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
   position: relative;
   z-index: 10;
   display: flex;
   overflow: hidden;
 }
 
+[data-bs-theme="dark"] .login-wrapper {
+  background: var(--surface-container-lowest, #191c20);
+  border-color: var(--outline-variant, #33363f);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
 /* Left Section: Form */
 .login-section {
-  flex: 1 1 500px;
-  padding: 2.25rem 2.25rem;
+  flex: 1 1 520px;
+  padding: 2.75rem 2.5rem;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  background: var(--cm-sys-color-surface, #ffffff);
+  background: var(--surface-container-lowest, #ffffff);
   z-index: 2;
 }
 
-/* Right Section: Info & Showcase */
+[data-bs-theme="dark"] .login-section {
+  background: var(--surface-container-lowest, #191c20);
+}
+
+/* Right Section: Info & Showcase (Flat Tonal Surface) */
 .info-section {
   flex: 1 1 400px;
-  padding: 2.25rem 2rem;
-  background: var(--cm-sys-color-container, #fafafa);
-  border-left: 1px solid var(--cm-sys-color-hairline, #dadce0);
+  padding: 2.75rem 2.25rem;
+  background: var(--surface-container-low, #f2f5fa);
+  border-left: 1px solid var(--outline-variant, #dce0e9);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -121,49 +142,123 @@ body::after {
 }
 
 [data-bs-theme="dark"] .info-section {
-  background: var(--cm-sys-color-container, #28292c);
+  background: var(--surface-container-low, #1d2024);
+  border-left-color: var(--outline-variant, #33363f);
 }
 
-/* Card inside Info Section (Concentric 8px Radius) */
+/* Card inside Info Section (Concentric 16px Radius) */
 .glass-card {
-  background: var(--cm-sys-color-surface, #ffffff);
-  border: 1px solid var(--cm-sys-color-hairline, #dadce0);
-  border-radius: 8px !important;
-  padding: 1.5rem;
+  background: var(--surface-container-lowest, #ffffff);
+  border: 1px solid var(--outline-variant, #dce0e9);
+  border-radius: var(--radius-md, 16px) !important;
+  padding: 1.75rem;
   box-shadow: none;
+}
+
+[data-bs-theme="dark"] .glass-card {
+  background: var(--surface-container-lowest, #191c20);
+  border-color: var(--outline-variant, #33363f);
 }
 
 .glass-header {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-weight: 600;
-  font-size: 0.95rem;
+  gap: 0.6rem;
+  font-weight: 700;
+  font-size: 1rem;
   margin-bottom: 1rem;
-  color: var(--cm-sys-color-on-surface, #202124);
+  color: var(--primary, #0b57d0);
 }
 
-/* Form Controls & Seamless Input Group in Auth (6px Radius) */
+[data-bs-theme="dark"] .glass-header {
+  color: var(--primary, #a8c7fa);
+}
+
+/* Form Controls & Seamless Input Group in Auth (12px Squircle Radius) */
 .login-section .form-control,
 .login-section .form-select {
-  border-radius: 6px !important;
-  padding: 0.55rem 0.85rem !important;
-  font-size: 0.875rem !important;
-  min-height: 40px;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  border-radius: var(--radius-sm, 12px) !important;
+  padding: 0.6rem 0.95rem !important;
+  font-size: 0.9rem !important;
+  min-height: 44px;
+  background-color: var(--surface-container-low, #f2f5fa) !important;
+  border: 1px solid var(--outline-variant, #dce0e9) !important;
+  color: var(--on-surface, #191c20) !important;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+[data-bs-theme="dark"] .login-section .form-control,
+[data-bs-theme="dark"] .login-section .form-select {
+  background-color: var(--surface-container-low, #1d2024) !important;
+  border-color: var(--outline-variant, #33363f) !important;
+  color: var(--on-surface, #e2e2e9) !important;
+}
+
+.login-section .form-control:focus,
+.login-section .form-select:focus {
+  border-color: var(--primary, #0b57d0) !important;
+  background-color: var(--surface-container-lowest, #ffffff) !important;
+  box-shadow: 0 0 0 1px var(--primary, #0b57d0) !important;
+}
+
+[data-bs-theme="dark"] .login-section .form-control:focus,
+[data-bs-theme="dark"] .login-section .form-select:focus {
+  border-color: var(--primary, #a8c7fa) !important;
+  background-color: var(--surface-container-lowest, #191c20) !important;
+  box-shadow: 0 0 0 1px var(--primary, #a8c7fa) !important;
 }
 
 .login-section .input-group .input-group-text {
-  border-radius: 6px 0 0 6px !important;
-  font-size: 0.875rem !important;
-  padding: 0.55rem 0.85rem !important;
-  min-height: 40px;
+  border-radius: var(--radius-sm, 12px) 0 0 var(--radius-sm, 12px) !important;
+  font-size: 0.9rem !important;
+  padding: 0.6rem 0.95rem !important;
+  min-height: 44px;
+  background-color: var(--surface-container, #eceef4) !important;
+  border: 1px solid var(--outline-variant, #dce0e9) !important;
   border-right: 0 !important;
+  color: var(--on-surface-variant, #44474e) !important;
+}
+
+[data-bs-theme="dark"] .login-section .input-group .input-group-text {
+  background-color: var(--surface-container, #23262b) !important;
+  border-color: var(--outline-variant, #33363f) !important;
+  color: var(--on-surface-variant, #c4c6d0) !important;
 }
 
 .login-section .input-group .form-control {
-  border-radius: 0 6px 6px 0 !important;
+  border-radius: 0 var(--radius-sm, 12px) var(--radius-sm, 12px) 0 !important;
   margin-left: 0 !important;
+}
+
+/* Material You Segmented Button Tab Bar in Auth (Concentric Full Pill) */
+.login-section ul.nav-pills {
+  border-radius: 9999px !important;
+  background-color: var(--surface-container, #eceef4) !important;
+  border: 1px solid var(--outline-variant, #dce0e9) !important;
+  padding: 4px !important;
+}
+
+[data-bs-theme="dark"] .login-section ul.nav-pills {
+  background-color: var(--surface-container, #23262b) !important;
+  border-color: var(--outline-variant, #33363f) !important;
+}
+
+.login-section .nav-pills .nav-link {
+  border-radius: 9999px !important;
+  padding: 0.5rem 1rem !important;
+  font-weight: 600 !important;
+  color: var(--on-surface-variant, #44474e) !important;
+}
+
+.login-section .nav-pills .nav-link.active {
+  background-color: var(--secondary-container, #c2e7ff) !important;
+  color: var(--on-secondary-container, #001d35) !important;
+  font-weight: 700 !important;
+}
+
+[data-bs-theme="dark"] .login-section .nav-pills .nav-link.active {
+  background-color: var(--secondary-container, #004a77) !important;
+  color: var(--on-secondary-container, #c2e7ff) !important;
 }
 
 /* Responsive adjustments */
@@ -171,10 +266,11 @@ body::after {
   .login-wrapper {
     max-width: 480px;
     flex-direction: column;
+    border-radius: var(--radius-lg, 20px) !important;
   }
 
   .login-section {
-    padding: 1.75rem 1.5rem;
+    padding: 2rem 1.5rem;
   }
 }
 

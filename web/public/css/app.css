@@ -1,9 +1,9 @@
 /*
- * Jualan Web — Google Cloud Console (cm-gm2 / cm-cm3) & Flat Material You
- * =========================================================================
- * Typography: Google Sans Family (Google Sans Display for Titles/Headings, Google Sans for UI/Body, Google Sans Mono for Code)
- * Philosophy: Pure White Canvas (#ffffff), 1px Hairline Dividers (rgba(0,0,0,.12) / #dadce0),
- *             Crisp 8px Outlined Cards, 6px Controls/Buttons, 4px Badges, Zero Heavy Shadows.
+ * Jualan Web — Flat Material You (Android 17 / M3 Expressive & BeerCSS Architecture)
+ * =================================================================================
+ * Dominant Primary: Google Android Blue (#0b57d0 / #a8c7fa)
+ * Typography: Google Sans (Display for Headlines/Titles, Sans for UI/Body, Mono for Codes)
+ * Hierarchy: Multi-layer Tonal Surfaces, Concentric Radii (24px/16px/12px/Pill), Zero Heavy Shadow.
  */
 
 /* === GOOGLE SANS FONT FAMILY DECLARATIONS === */
@@ -71,14 +71,14 @@
     font-display: swap;
 }
 
-/* === CORE VARIABLES & GOOGLE CLOUD MATERIAL (cm-gm2 / cm-cm3) DESIGN TOKENS === */
+/* === CORE VARIABLES & FLAT MATERIAL YOU (ANDROID 17 / BEERCSS M3) DESIGN TOKENS === */
 :root {
-    --header-height: 48px;
+    --header-height: 56px;
     --banner-height: 0px;
     --total-header-height: calc(var(--header-height) + var(--banner-height));
     --sidebar-width: 256px;
 
-    /* Google Sans Family Typography Tokens */
+    /* Typography Tokens */
     --font-google-sans: "Google Sans", "Google Sans Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     --font-google-sans-display: "Google Sans Display", "Google Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     --font-google-sans-mono: "Google Sans Mono", "Roboto Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
@@ -92,182 +92,218 @@
     --bs-body-font-family: var(--font-google-sans);
     --bs-font-monospace: var(--font-google-sans-mono);
 
-    /* Unified Bootstrap & System Border Radius Tokens */
-    --bs-border-radius-sm: 4px;
-    --bs-border-radius: 6px;
-    --bs-border-radius-lg: 8px;
-    --bs-border-radius-xl: 8px;
-    --bs-border-radius-xxl: 8px;
-    --bs-border-radius-2xl: 8px;
-    --bs-border-radius-pill: 8px;
+    /* Flat Material You Concentric Corner Radius Scale (Android 17) */
+    --radius-xs: 8px;       /* Badges, micro tags */
+    --radius-sm: 12px;      /* Inputs, squircle sub-buttons, nested inner blocks */
+    --radius-md: 16px;      /* Standard Cards, list panels, dialogs */
+    --radius-lg: 20px;      /* Large Cards, Hero banners */
+    --radius-xl: 28px;      /* Bottom Sheets, Floating Modals */
+    --radius-pill: 9999px;  /* Full Pill buttons, active nav indicators */
 
-    /* Official Google Cloud Console (cm-gm2 / cm-cm3) Color Tokens */
-    --cm-sys-color-primary: #3367d6;
-    --cm-sys-color-on-primary: #ffffff;
-    --cm-sys-color-primary-on-container: #1967d2;
-    --cm-sys-color-container-primary: #e8f0fe;
-    --cm-sys-color-surface: #ffffff;
-    --cm-sys-color-surface-variant: #fafafa;
-    --cm-sys-color-container: #fafafa;
-    --cm-sys-color-container-high: #f1f3f4;
-    --cm-sys-color-placeholder: #e8eaed;
-    --cm-sys-color-on-surface: #202124;
-    --cm-sys-color-on-surface-variant: rgba(0, 0, 0, 0.66);
-    --cm-sys-color-outline: #80868b;
-    --cm-sys-color-hairline: #dadce0;
+    /* Bootstrap Border Radius Mappings */
+    --bs-border-radius-sm: var(--radius-xs);
+    --bs-border-radius: var(--radius-sm);
+    --bs-border-radius-lg: var(--radius-md);
+    --bs-border-radius-xl: var(--radius-lg);
+    --bs-border-radius-xxl: var(--radius-xl);
+    --bs-border-radius-2xl: var(--radius-xl);
+    --bs-border-radius-pill: var(--radius-pill);
 
-    /* Official Google Cloud Console Status Tokens */
-    --cm-sys-color-status-success: #0b8043;
-    --cm-sys-color-status-success-container: #e2f3eb;
-    --cm-sys-color-status-warning: #dc6d00;
-    --cm-sys-color-status-warning-container: #fef6e0;
-    --cm-sys-color-status-error: #d50000;
-    --cm-sys-color-status-error-container: #fbe9e7;
-    --cm-sys-color-status-neutral: #80868b;
-    --cm-sys-color-status-neutral-container: #f1f3f4;
+    /* BeerCSS & M3 Design Tokens (Light Mode - Dominant Blue) */
+    --primary: #0b57d0;
+    --on-primary: #ffffff;
+    --primary-container: #d3e3fd;
+    --on-primary-container: #041e49;
 
-    /* Official Google Sans Typography Scale Tokens (Balanced & Proportional) */
+    --secondary: #00639b;
+    --on-secondary: #ffffff;
+    --secondary-container: #c2e7ff;
+    --on-secondary-container: #001d35;
+
+    --tertiary: #146c2e;
+    --on-tertiary: #ffffff;
+    --tertiary-container: #c4eed0;
+    --on-tertiary-container: #072711;
+
+    --error: #b3261e;
+    --on-error: #ffffff;
+    --error-container: #f9dedc;
+    --on-error-container: #410e0b;
+
+    /* Tonal Surfaces (Android 17 Flat Layering) */
+    --background: #f8fafd;
+    --on-background: #191c20;
+    --surface: #f8fafd;
+    --surface-dim: #d8dae0;
+    --surface-bright: #f8fafd;
+    --surface-container-lowest: #ffffff;
+    --surface-container-low: #f2f5fa;
+    --surface-container: #eceef4;
+    --surface-container-high: #e6e8ee;
+    --surface-container-highest: #e1e2e8;
+    --on-surface: #191c20;
+    --surface-variant: #e0e2ec;
+    --on-surface-variant: #44474e;
+
+    /* Outlines & Physics */
+    --outline: #74777f;
+    --outline-variant: #dce0e9;
+    --shadow: none;
+    --scrim: #000000;
+    --active: rgba(11, 87, 208, 0.12);
+    --overlay: rgba(0, 0, 0, 0.38);
+
+    /* Cloud Console / Legacy Variable Compatibility */
+    --cm-sys-color-primary: var(--primary);
+    --cm-sys-color-on-primary: var(--on-primary);
+    --cm-sys-color-primary-on-container: var(--on-primary-container);
+    --cm-sys-color-container-primary: var(--primary-container);
+    --cm-sys-color-surface: var(--surface-container-lowest);
+    --cm-sys-color-surface-variant: var(--surface-container-low);
+    --cm-sys-color-container: var(--surface-container-low);
+    --cm-sys-color-container-high: var(--surface-container);
+    --cm-sys-color-placeholder: var(--surface-container-high);
+    --cm-sys-color-on-surface: var(--on-surface);
+    --cm-sys-color-on-surface-variant: var(--on-surface-variant);
+    --cm-sys-color-outline: var(--outline);
+    --cm-sys-color-hairline: var(--outline-variant);
+
+    --cm-sys-color-status-success: var(--tertiary);
+    --cm-sys-color-status-success-container: var(--tertiary-container);
+    --cm-sys-color-status-warning: #b45309;
+    --cm-sys-color-status-warning-container: #ffdf9e;
+    --cm-sys-color-status-error: var(--error);
+    --cm-sys-color-status-error-container: var(--error-container);
+    --cm-sys-color-status-neutral: var(--outline);
+    --cm-sys-color-status-neutral-container: var(--surface-container);
+
+    --primary-color: var(--primary);
+    --primary-hover: #0842a0;
+    --primary-active: #041e49;
+    --primary-light: var(--primary-container);
+    --primary-rgb: 11, 87, 208;
+
+    --surface-bg: var(--surface);
+    --outline-color: var(--outline-variant);
+
+    --glass-bg: var(--surface-container-lowest);
+    --glass-border: var(--outline-variant);
+    --glass-blur: 0px;
+
+    --card-shadow: none;
+    --card-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.05);
+
+    /* Typography Scale Tokens */
     --cm-sys-type-display-small: 600 32px/40px var(--font-google-sans-display);
     --cm-sys-type-headline-small: 600 22px/30px var(--font-google-sans-display);
     --cm-sys-type-title-large: 600 19px/26px var(--font-google-sans-display);
     --cm-sys-type-title-medium: 600 15.5px/22px var(--font-google-sans-display);
     --cm-sys-type-title-small: 600 14px/20px var(--font-google-sans-display);
-    --cm-sys-type-label-large: 500 14.5px/20px var(--font-google-sans);
-    --cm-sys-type-label-medium: 500 13.5px/20px var(--font-google-sans);
-    --cm-sys-type-label-small: 500 12.5px/18px var(--font-google-sans);
+    --cm-sys-type-label-large: 600 14.5px/20px var(--font-google-sans);
+    --cm-sys-type-label-medium: 600 13.5px/20px var(--font-google-sans);
+    --cm-sys-type-label-small: 600 12px/16px var(--font-google-sans);
     --cm-sys-type-body-large: 400 15px/22px var(--font-google-sans);
     --cm-sys-type-body-medium: 400 14px/21px var(--font-google-sans);
     --cm-sys-type-body-small: 400 12.5px/18px var(--font-google-sans);
     --cm-sys-type-code: 400 12.5px/18px var(--font-google-sans-mono);
-
-    /* Application Token Mappings -> Cloud Material */
-    --primary-h: 221;
-    --primary-s: 67%;
-    --primary-l: 52%;
-
-    --primary-color: #3367d6;       /* GCP Primary (#3367d6) */
-    --primary-hover: #174ea6;       /* GCP Hover State (#174ea6) */
-    --primary-active: #1c3aa9;      /* GCP Active State (#1c3aa9) */
-    --primary-light: #e8f0fe;       /* GCP Primary Container (#e8f0fe) */
-    --primary-rgb: 51, 103, 214;
-
-    --on-primary: #ffffff;
-    --primary-container: #e8f0fe;
-    --on-primary-container: #1967d2;
-    --secondary-container: #f1f3f4;
-    --on-secondary-container: #202124;
-
-    /* Pure White Canvas & Hairline Tonal Surfaces (Google Cloud Console Light) */
-    --surface-bg: #ffffff;
-    --surface-container-lowest: #ffffff;
-    --surface-container-low: #fafafa;
-    --surface-container: #ffffff;       /* GCP Pure White Main Canvas */
-    --surface-container-high: #f1f3f4;
-    --surface-container-highest: #e8eaed;
-
-    --outline-color: #dadce0;           /* 1px Hairline (rgba(0,0,0,.12)) */
-    --outline-variant: #bdc1c6;
-    --on-surface: #202124;
-    --on-surface-variant: #5f6368;
-
-    /* Legacy Glassmorphism Variables Mapped to Flat Solid Values */
-    --glass-bg: #ffffff;
-    --glass-border: #dadce0;
-    --glass-blur: 0px;
-
-    /* Flat Elevation System */
-    --card-shadow: none;
-    --card-shadow-hover: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
-
-    /* Unified Geometric Corner Radius Scale */
-    --radius-xs: 4px;
-    --radius-sm: 6px;
-    --radius-md: 8px;
-    --radius-lg: 8px;
-    --radius-xl: 8px;
-    --radius-pill: 9999px;
 }
 
 [data-bs-theme="dark"] {
-    /* Official Google Cloud Console Dark Theme Tokens */
-    --cm-sys-color-primary: #8ab4f8;
-    --cm-sys-color-on-primary: #202124;
-    --cm-sys-color-primary-on-container: #aecbfa;
-    --cm-sys-color-container-primary: #27354e;
-    --cm-sys-color-surface: #1f1f1f;
-    --cm-sys-color-surface-variant: #28292c;
-    --cm-sys-color-container: #28292c;
-    --cm-sys-color-container-high: #303134;
-    --cm-sys-color-placeholder: #3c4043;
-    --cm-sys-color-on-surface: #e8eaed;
-    --cm-sys-color-on-surface-variant: #9aa0a6;
-    --cm-sys-color-outline: #80868b;
-    --cm-sys-color-hairline: #3c4043;
+    /* BeerCSS & M3 Design Tokens (Dark Mode - Dominant Blue) */
+    --primary: #a8c7fa;
+    --on-primary: #062e6f;
+    --primary-container: #0842a0;
+    --on-primary-container: #d3e3fd;
 
-    --cm-sys-color-status-success: #81c995;
-    --cm-sys-color-status-success-container: #1e3a28;
+    --secondary: #7fcfff;
+    --on-secondary: #003355;
+    --secondary-container: #004a77;
+    --on-secondary-container: #c2e7ff;
+
+    --tertiary: #6dd58c;
+    --on-tertiary: #0a3818;
+    --tertiary-container: #0f5223;
+    --on-tertiary-container: #c4eed0;
+
+    --error: #f2b8b5;
+    --on-error: #601410;
+    --error-container: #8c1d18;
+    --on-error-container: #f9dedc;
+
+    /* Tonal Surfaces Dark */
+    --background: #111318;
+    --on-background: #e2e2e9;
+    --surface: #111318;
+    --surface-dim: #111318;
+    --surface-bright: #37393e;
+    --surface-container-lowest: #191c20;
+    --surface-container-low: #1d2024;
+    --surface-container: #23262b;
+    --surface-container-high: #2c3036;
+    --surface-container-highest: #33353a;
+    --on-surface: #e2e2e9;
+    --surface-variant: #44474e;
+    --on-surface-variant: #c4c6d0;
+
+    --outline: #8e9099;
+    --outline-variant: #33363f;
+    --active: rgba(168, 199, 250, 0.14);
+
+    --cm-sys-color-primary: var(--primary);
+    --cm-sys-color-on-primary: var(--on-primary);
+    --cm-sys-color-primary-on-container: var(--on-primary-container);
+    --cm-sys-color-container-primary: var(--primary-container);
+    --cm-sys-color-surface: var(--surface-container-lowest);
+    --cm-sys-color-surface-variant: var(--surface-container-low);
+    --cm-sys-color-container: var(--surface-container-low);
+    --cm-sys-color-container-high: var(--surface-container);
+    --cm-sys-color-placeholder: var(--surface-container-high);
+    --cm-sys-color-on-surface: var(--on-surface);
+    --cm-sys-color-on-surface-variant: var(--on-surface-variant);
+    --cm-sys-color-outline: var(--outline);
+    --cm-sys-color-hairline: var(--outline-variant);
+
+    --cm-sys-color-status-success: var(--tertiary);
+    --cm-sys-color-status-success-container: var(--tertiary-container);
     --cm-sys-color-status-warning: #fdd663;
-    --cm-sys-color-status-warning-container: #3e3015;
-    --cm-sys-color-status-error: #f28b82;
-    --cm-sys-color-status-error-container: #442220;
-    --cm-sys-color-status-neutral: #9aa0a6;
-    --cm-sys-color-status-neutral-container: #303134;
+    --cm-sys-color-status-warning-container: #573e00;
+    --cm-sys-color-status-error: var(--error);
+    --cm-sys-color-status-error-container: var(--error-container);
+    --cm-sys-color-status-neutral: var(--outline);
+    --cm-sys-color-status-neutral-container: var(--surface-container);
 
-    /* Application Token Mappings -> Cloud Material Dark */
-    --primary-h: 217;
-    --primary-s: 89%;
-    --primary-l: 76%;
+    --primary-color: var(--primary);
+    --primary-hover: #c2e7ff;
+    --primary-active: #d3e3fd;
+    --primary-light: var(--primary-container);
+    --primary-rgb: 168, 199, 250;
 
-    --primary-color: #8ab4f8;       /* GCP Dark Blue Primary */
-    --primary-hover: #aecbfa;       /* GCP Dark Blue Hover */
-    --primary-active: #d2e3fc;
-    --primary-light: #27354e;       /* GCP Dark Container */
-    --primary-rgb: 138, 180, 248;
+    --surface-bg: var(--surface);
+    --outline-color: var(--outline-variant);
 
-    --on-primary: #202124;
-    --primary-container: #27354e;
-    --on-primary-container: #aecbfa;
-    --secondary-container: #303134;
-    --on-secondary-container: #e8eaed;
-
-    /* Flat Dark Surfaces (Google Cloud Dark Console #1f1f1f) */
-    --surface-bg: #1f1f1f;
-    --surface-container-lowest: #171717;
-    --surface-container-low: #28292c;
-    --surface-container: #1f1f1f;   /* GCP Dark Console Canvas */
-    --surface-container-high: #303134;
-    --surface-container-highest: #3c4043;
-
-    --outline-color: #3c4043;       /* Google 1px Hairline Outline Dark */
-    --outline-variant: #5f6368;
-    --on-surface: #e8eaed;
-    --on-surface-variant: #9aa0a6;
-
-    /* Legacy Glassmorphism Variables Mapped to Flat Dark Solid */
-    --glass-bg: #1f1f1f;
-    --glass-border: #3c4043;
-    --glass-blur: 0px;
+    --glass-bg: var(--surface-container-lowest);
+    --glass-border: var(--outline-variant);
 
     --card-shadow: none;
-    --card-shadow-hover: 0 1px 3px 0 rgba(0, 0, 0, 0.5), 0 4px 8px 3px rgba(0, 0, 0, 0.35);
+    --card-shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.35);
 }
 
 /* Anti-FOUC & Anti-Blink Color Scheme Enforcers (Zero White Flash on Page Switch) */
 html[data-bs-theme="dark"] {
     color-scheme: dark;
-    background-color: #1f1f1f !important;
+    background-color: #111318 !important;
 }
 html[data-bs-theme="dark"] body {
-    background-color: #1f1f1f !important;
-    color: #e8eaed !important;
+    background-color: #111318 !important;
+    color: #e2e2e9 !important;
 }
 html[data-bs-theme="light"] {
     color-scheme: light;
-    background-color: #ffffff !important;
+    background-color: #f8fafd !important;
 }
 html[data-bs-theme="light"] body {
-    background-color: #ffffff !important;
-    color: #202124 !important;
+    background-color: #f8fafd !important;
+    color: #191c20 !important;
 }
 
 /* Smooth transition only triggered upon manual theme toggle, never during page navigation */
@@ -1037,37 +1073,37 @@ a .m3-metric-card:hover {
     background: var(--cm-sys-color-container-high) !important;
 }
 
-/* Google Cloud Console Segmented / Tab Links (Concentric 8px Container / 6px Inner Tab) */
+/* Material Design 3 / BeerCSS Component Architecture (Concentric Radii & Tonal Surfaces) */
 ul.nav-pills,
 .nav-pills.rounded-pill,
 .nav-pills.card-header-pills {
-    border-radius: 8px !important;
-    background-color: var(--cm-sys-color-container) !important;
-    border: 1px solid var(--cm-sys-color-hairline) !important;
+    border-radius: var(--radius-pill) !important;
+    background-color: var(--surface-container) !important;
+    border: 1px solid var(--outline-variant) !important;
     padding: 4px !important;
 }
 
 .nav-pills .nav-link,
 .nav-pills .nav-link.rounded-pill {
-    color: var(--cm-sys-color-on-surface-variant) !important;
+    color: var(--on-surface-variant) !important;
     background: transparent;
     border: 1px solid transparent;
-    border-radius: 6px !important;
+    border-radius: var(--radius-pill) !important;
     font: var(--cm-sys-type-label-medium);
-    padding: 0.42rem 0.9rem;
+    padding: 0.45rem 1.15rem;
     transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
 .nav-pills .nav-link:hover:not(.active) {
-    background: var(--cm-sys-color-container-high);
-    color: var(--cm-sys-color-on-surface) !important;
+    background: var(--surface-container-high);
+    color: var(--on-surface) !important;
 }
 
 .nav-pills .nav-link.active {
-    background: var(--cm-sys-color-container-primary) !important;
-    color: var(--cm-sys-color-primary-on-container) !important;
-    border-color: rgba(var(--primary-rgb), 0.3) !important;
-    font-weight: 600 !important;
+    background: var(--secondary-container) !important;
+    color: var(--on-secondary-container) !important;
+    border-color: transparent !important;
+    font-weight: 700 !important;
     box-shadow: none !important;
 }
 
@@ -1076,76 +1112,83 @@ ul.nav-pills,
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 10px 14px;
-    border-radius: 8px;
+    padding: 12px 16px;
+    border-radius: var(--radius-md);
     text-decoration: none;
-    color: var(--cm-sys-color-on-surface);
-    border: 1px solid var(--cm-sys-color-hairline);
-    background: var(--cm-sys-color-surface);
+    color: var(--on-surface);
+    border: 1px solid var(--outline-variant);
+    background: var(--surface-container-lowest);
     transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 
 .quick-action-btn:hover {
-    background: var(--cm-sys-color-container);
-    border-color: var(--cm-sys-color-primary);
-    color: var(--cm-sys-color-primary);
+    background: var(--surface-container-low);
+    border-color: var(--primary);
+    color: var(--primary);
     transform: none;
 }
 
 .qa-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 6px;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-sm);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.95rem;
+    font-size: 1rem;
     flex-shrink: 0;
-    background: var(--cm-sys-color-container-primary);
-    color: var(--cm-sys-color-primary-on-container);
+    background: var(--primary-container);
+    color: var(--on-primary-container);
 }
 
-/* === BUTTONS (BALANCED 6PX GEOMETRY & PROPORTIONAL FONT) === */
+/* === BUTTONS (HYBRID FULL PILL & EXPRESSIVE SQUIRCLE M3) === */
 .btn {
     font: var(--cm-sys-type-label-medium);
     letter-spacing: 0.01em;
-    border-radius: 6px !important;
-    padding: 0.4rem 0.9rem;
-    min-height: 36px;
+    border-radius: var(--radius-pill) !important; /* Default Full Pill for Primary/Secondary Actions */
+    padding: 0.45rem 1.15rem;
+    min-height: 40px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+    gap: 8px;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
     box-shadow: none !important;
+    border: 1px solid transparent;
+}
+
+/* Expressive Squircle modifier for compact UI controls & toolbars */
+.btn-squircle,
+.btn-group > .btn,
+.data-table-action-btn {
+    border-radius: var(--radius-sm) !important;
 }
 
 .btn-sm {
     font: var(--cm-sys-type-label-small);
-    min-height: 31px;
-    padding: 0.25rem 0.7rem;
-    border-radius: 6px !important;
+    min-height: 32px;
+    padding: 0.25rem 0.8rem;
+    border-radius: var(--radius-pill) !important;
 }
 
 .btn-lg {
     font: var(--cm-sys-type-label-large);
-    min-height: 42px;
-    padding: 0.5rem 1.15rem;
-    border-radius: 6px !important;
+    min-height: 46px;
+    padding: 0.6rem 1.4rem;
+    border-radius: var(--radius-pill) !important;
 }
 
 .btn-primary {
-    background-color: var(--cm-sys-color-primary) !important;
-    border-color: var(--cm-sys-color-primary) !important;
-    color: var(--cm-sys-color-on-primary) !important;
+    background-color: var(--primary) !important;
+    border-color: var(--primary) !important;
+    color: var(--on-primary) !important;
 }
 
 .btn-primary:hover,
 .btn-primary:focus-visible {
     background-color: var(--primary-hover) !important;
     border-color: var(--primary-hover) !important;
-    color: var(--cm-sys-color-on-primary) !important;
-    box-shadow: rgba(60, 64, 67, 0.3) 0px 1px 2px 0px, rgba(60, 64, 67, 0.15) 0px 2px 6px 2px !important;
+    color: var(--on-primary) !important;
     transform: none !important;
 }
 
@@ -1154,131 +1197,128 @@ ul.nav-pills,
     background-color: var(--primary-active) !important;
 }
 
-[data-bs-theme="dark"] .btn-primary {
-    color: #202124 !important;
-    font-weight: 500;
+/* BeerCSS Tonal Button (Filled Tonal / Secondary Container) */
+.btn-tonal,
+.btn-secondary {
+    background-color: var(--secondary-container) !important;
+    border-color: transparent !important;
+    color: var(--on-secondary-container) !important;
+    font-weight: 600 !important;
+}
+
+.btn-tonal:hover,
+.btn-secondary:hover {
+    background-color: var(--surface-container-high) !important;
+    color: var(--on-surface) !important;
 }
 
 .btn-outline-primary {
-    border-color: #5784cb !important;
-    color: var(--cm-sys-color-primary) !important;
+    border-color: var(--primary) !important;
+    color: var(--primary) !important;
     background: transparent !important;
 }
 
-[data-bs-theme="dark"] .btn-outline-primary {
-    border-color: #708cb2 !important;
-}
-
 .btn-outline-primary:hover {
-    background: rgba(var(--primary-rgb), 0.06) !important;
-    border-color: var(--primary-hover) !important;
-    color: var(--primary-hover) !important;
+    background: var(--active) !important;
+    border-color: var(--primary) !important;
+    color: var(--primary) !important;
 }
 
 .btn-outline-secondary {
-    border-color: var(--cm-sys-color-hairline) !important;
-    color: var(--cm-sys-color-on-surface-variant) !important;
+    border-color: var(--outline-variant) !important;
+    color: var(--on-surface-variant) !important;
     background: transparent !important;
 }
 
 .btn-outline-secondary:hover {
-    background: var(--cm-sys-color-container-high) !important;
-    color: var(--cm-sys-color-on-surface) !important;
+    background: var(--surface-container-high) !important;
+    color: var(--on-surface) !important;
 }
 
 .btn-light {
-    background-color: var(--cm-sys-color-surface) !important;
-    border-color: var(--cm-sys-color-hairline) !important;
-    color: var(--cm-sys-color-on-surface) !important;
+    background-color: var(--surface-container-low) !important;
+    border-color: var(--outline-variant) !important;
+    color: var(--on-surface) !important;
 }
 
 .btn-light:hover {
-    background-color: var(--cm-sys-color-container-high) !important;
-    border-color: var(--cm-sys-color-outline) !important;
-    color: var(--cm-sys-color-on-surface) !important;
+    background-color: var(--surface-container-high) !important;
+    border-color: var(--outline) !important;
+    color: var(--on-surface) !important;
 }
 
 .btn-danger {
-    background-color: var(--cm-sys-color-status-error) !important;
-    border-color: var(--cm-sys-color-status-error) !important;
-    color: #ffffff !important;
+    background-color: var(--error) !important;
+    border-color: var(--error) !important;
+    color: var(--on-error) !important;
 }
 .btn-danger:hover {
-    background-color: #a50e0e !important;
-    border-color: #a50e0e !important;
+    opacity: 0.9;
 }
 
 .btn-success {
-    background-color: var(--cm-sys-color-status-success) !important;
-    border-color: var(--cm-sys-color-status-success) !important;
-    color: #ffffff !important;
+    background-color: var(--tertiary) !important;
+    border-color: var(--tertiary) !important;
+    color: var(--on-tertiary) !important;
 }
 .btn-success:hover {
-    background-color: #0d652d !important;
-    border-color: #0d652d !important;
+    opacity: 0.9;
 }
 
 .btn-warning {
-    background-color: var(--cm-sys-color-status-warning) !important;
-    border-color: var(--cm-sys-color-status-warning) !important;
+    background-color: #f59e0b !important;
+    border-color: #f59e0b !important;
     color: #ffffff !important;
 }
 
-/* === FORM CONTROLS (BALANCED 6PX OUTLINED FIELD & SEAMLESS INPUT-GROUP) === */
+/* === FORM CONTROLS (FLAT TONAL FIELDS 12PX EXPRESSIVE SQUIRCLE) === */
 .form-control,
 .form-select {
-    border: 1px solid var(--cm-sys-color-outline) !important;
-    border-radius: 6px !important;
-    background-color: var(--cm-sys-color-surface) !important;
-    color: var(--cm-sys-color-on-surface) !important;
-    padding: 0.42rem 0.8rem !important;
-    min-height: 38px;
+    border: 1px solid var(--outline-variant) !important;
+    border-radius: var(--radius-sm) !important;
+    background-color: var(--surface-container-low) !important;
+    color: var(--on-surface) !important;
+    padding: 0.5rem 0.9rem !important;
+    min-height: 42px;
     font: var(--cm-sys-type-body-medium) !important;
     box-shadow: none !important;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 
 .form-control-sm,
 .form-select-sm {
-    min-height: 32px;
-    padding: 0.25rem 0.65rem !important;
+    min-height: 34px;
+    padding: 0.3rem 0.75rem !important;
     font: var(--cm-sys-type-body-small) !important;
-    border-radius: 6px !important;
+    border-radius: var(--radius-sm) !important;
 }
 
 .form-control:focus,
 .form-select:focus {
-    border-color: var(--cm-sys-color-primary) !important;
-    box-shadow: inset 0 0 0 1px var(--cm-sys-color-primary) !important;
+    border-color: var(--primary) !important;
+    background-color: var(--surface-container-lowest) !important;
+    color: var(--on-surface) !important;
+    box-shadow: 0 0 0 1px var(--primary) !important;
     outline: none !important;
-    background-color: var(--cm-sys-color-surface) !important;
-    color: var(--cm-sys-color-on-surface) !important;
     z-index: 3;
 }
 
-/* Views utilizing bg-light inputs conform to Cloud Material surface */
 .form-control.bg-light,
 .form-select.bg-light {
-    background-color: var(--cm-sys-color-surface) !important;
-    border: 1px solid var(--cm-sys-color-hairline) !important;
-}
-
-.form-control.bg-light:focus,
-.form-select.bg-light:focus {
-    background-color: var(--cm-sys-color-surface) !important;
-    border-color: var(--cm-sys-color-primary) !important;
+    background-color: var(--surface-container-low) !important;
+    border: 1px solid var(--outline-variant) !important;
 }
 
 .input-group-text {
-    background-color: var(--cm-sys-color-container) !important;
-    border: 1px solid var(--cm-sys-color-outline) !important;
-    border-radius: 6px !important;
-    color: var(--cm-sys-color-on-surface-variant) !important;
+    background-color: var(--surface-container) !important;
+    border: 1px solid var(--outline-variant) !important;
+    border-radius: var(--radius-sm) !important;
+    color: var(--on-surface-variant) !important;
     font: var(--cm-sys-type-body-medium) !important;
-    padding: 0.42rem 0.8rem !important;
+    padding: 0.5rem 0.9rem !important;
 }
 
-/* Seamless Input Group Middle Seam Join (Fixes rounded corners colliding inside input-group) */
+/* Seamless Input Group Middle Seam Join */
 .input-group > :not(:first-child):not(.dropdown-menu):not(.valid-tooltip):not(.valid-feedback):not(.invalid-tooltip):not(.invalid-feedback) {
     margin-left: -1px !important;
     border-top-left-radius: 0 !important;
@@ -1292,34 +1332,39 @@ ul.nav-pills,
 
 .form-label {
     font: var(--cm-sys-type-label-small);
-    color: var(--cm-sys-color-on-surface-variant);
-    margin-bottom: 0.35rem;
+    color: var(--on-surface-variant);
+    margin-bottom: 0.4rem;
 }
 
 .form-check-input {
-    border: 2px solid var(--outline-color) !important;
+    border: 2px solid var(--outline) !important;
     border-radius: 4px !important;
-    background-color: var(--surface-bg) !important;
+    background-color: var(--surface-container-lowest) !important;
     box-shadow: none !important;
 }
 
 .form-check-input:checked {
-    background-color: var(--primary-color) !important;
-    border-color: var(--primary-color) !important;
+    background-color: var(--primary) !important;
+    border-color: var(--primary) !important;
 }
 
 .form-check-input:focus {
-    box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.16) !important;
+    box-shadow: 0 0 0 3px var(--active) !important;
 }
 
-/* === PRODUCT CARDS (FLAT OUTLINED SURFACE 8PX) === */
+/* === PRODUCT CARDS (FLAT TONAL SURFACE 16PX) === */
 .product-card {
-    border-radius: 8px !important;
-    border: 1px solid var(--outline-color) !important;
+    border-radius: var(--radius-md) !important;
+    border: 1px solid var(--outline-variant) !important;
     overflow: hidden;
-    background: var(--surface-bg) !important;
+    background: var(--surface-container-lowest) !important;
     box-shadow: none !important;
-    transition: border-color 0.2s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s cubic-bezier(0.2, 0, 0, 1);
+    transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.product-card:hover {
+    border-color: var(--primary) !important;
+    transform: translateY(-2px);
 }
 
 .product-badge {
@@ -1986,16 +2031,32 @@ ul.nav-pills,
     background-color: rgba(var(--primary-rgb), 0.04) !important;
 }
 
-/* === BADGE & CHIP STYLES (BALANCED 4PX GEOMETRY & PROPORTIONAL FONT) === */
-.badge {
-    font: 500 0.75rem/1.2 var(--font-google-sans) !important;
+/* === BADGE & CHIP STYLES (M3 CHIPS & 8PX SQUIRCLE BADGES) === */
+.badge,
+.chip {
+    font: 600 0.75rem/1.2 var(--font-google-sans) !important;
     letter-spacing: 0.01em;
-    padding: 0.2rem 0.52rem !important;
-    border-radius: 4px !important;
+    padding: 0.3rem 0.65rem !important;
+    border-radius: var(--radius-xs) !important;
     box-shadow: none !important;
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
+    border: 1px solid transparent;
+}
+
+/* Material Design 3 Tonal Chip Helper */
+.tonal-chip {
+    background: var(--secondary-container) !important;
+    color: var(--on-secondary-container) !important;
+    padding: 0.35rem 0.85rem !important;
+    border-radius: var(--radius-pill) !important;
+    font-size: 0.8125rem !important;
+    font-weight: 600 !important;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: none !important;
 }
 
 /* Preserve circular counter badge on Top Bar icons & avatars */
@@ -2005,156 +2066,184 @@ ul.nav-pills,
     border-radius: 9999px !important;
 }
 
-/* === SYSTEM-WIDE BORDER-RADIUS HARMONIZATION (NO MISMATCHED OVERSIZED RADII) === */
-.rounded-3,
-.rounded-4,
-.rounded-5 {
-    border-radius: 8px !important;
+/* === SYSTEM-WIDE BORDER-RADIUS HARMONIZATION (CONCENTRIC ANDROID 17 M3) === */
+.rounded-2 {
+    border-radius: var(--radius-sm) !important; /* 12px */
 }
 
-/* Inside a card (8px), nested containers/boxes use concentric 6px radius */
+.rounded-3 {
+    border-radius: var(--radius-md) !important; /* 16px */
+}
+
+.rounded-4,
+.rounded-5 {
+    border-radius: var(--radius-lg) !important; /* 20px */
+}
+
+/* Inside a card (16px - 20px), nested containers/boxes use concentric 12px squircle */
 .card .rounded-3,
 .card .rounded-4,
 .card .rounded-5,
 .modal-body .rounded-3,
 .modal-body .rounded-4 {
-    border-radius: 6px !important;
+    border-radius: var(--radius-sm) !important;
 }
 
-/* Normalize oversized .rounded-pill on buttons, inputs, and tab bars to clean 6px/8px */
-.btn.rounded-pill,
-.form-control.rounded-pill,
-.form-select.rounded-pill,
-.input-group.rounded-pill {
-    border-radius: 6px !important;
-}
-
-/* Google Cloud Console Official Tonal Status Badges (Light & Dark Adaptive via CSS Variables) */
+/* Material You Official Tonal Status Badges (Light & Dark Adaptive via M3 Tokens) */
 .badge.bg-primary-subtle,
 .bg-primary-subtle {
-    background-color: var(--cm-sys-color-container-primary) !important;
-    color: var(--cm-sys-color-primary-on-container) !important;
-    border: 1px solid rgba(var(--primary-rgb), 0.2) !important;
+    background-color: var(--primary-container) !important;
+    color: var(--on-primary-container) !important;
+    border: 1px solid transparent !important;
 }
 
 .badge.bg-success-subtle,
 .bg-success-subtle {
-    background-color: var(--cm-sys-color-status-success-container) !important;
-    color: var(--cm-sys-color-status-success) !important;
-    border: 1px solid rgba(11, 128, 67, 0.2) !important;
+    background-color: var(--tertiary-container) !important;
+    color: var(--on-tertiary-container) !important;
+    border: 1px solid transparent !important;
 }
 
 .badge.bg-danger-subtle,
 .bg-danger-subtle {
-    background-color: var(--cm-sys-color-status-error-container) !important;
-    color: var(--cm-sys-color-status-error) !important;
-    border: 1px solid rgba(213, 0, 0, 0.2) !important;
+    background-color: var(--error-container) !important;
+    color: var(--on-error-container) !important;
+    border: 1px solid transparent !important;
 }
 
 .badge.bg-warning-subtle,
 .bg-warning-subtle {
     background-color: var(--cm-sys-color-status-warning-container) !important;
     color: var(--cm-sys-color-status-warning) !important;
-    border: 1px solid rgba(220, 109, 0, 0.25) !important;
+    border: 1px solid transparent !important;
 }
 
 .badge.bg-info-subtle,
 .bg-info-subtle {
-    background-color: var(--cm-sys-color-container-primary) !important;
-    color: var(--cm-sys-color-primary-on-container) !important;
-    border: 1px solid rgba(var(--primary-rgb), 0.2) !important;
+    background-color: var(--secondary-container) !important;
+    color: var(--on-secondary-container) !important;
+    border: 1px solid transparent !important;
 }
 
 .badge.bg-secondary-subtle,
 .bg-secondary-subtle {
-    background-color: var(--cm-sys-color-status-neutral-container) !important;
-    color: var(--cm-sys-color-on-surface-variant) !important;
-    border: 1px solid var(--cm-sys-color-hairline) !important;
+    background-color: var(--surface-container-high) !important;
+    color: var(--on-surface-variant) !important;
+    border: 1px solid transparent !important;
 }
 
-/* === DROPDOWN MENUS (GOOGLE CLOUD CONSOLE OVERLAY 6PX) === */
+/* === DROPDOWN MENUS (M3 SURFACE CONTAINER 16PX) === */
 .dropdown-menu {
-    background-color: var(--cm-sys-color-surface) !important;
-    border: 1px solid var(--cm-sys-color-hairline) !important;
-    border-radius: 6px !important;
-    box-shadow: 0 1px 8px 0 rgba(0, 0, 0, 0.2), 0 3px 4px 0 rgba(0, 0, 0, 0.14), 0 3px 3px -2px rgba(0, 0, 0, 0.12) !important;
-    padding: 4px 0 !important;
+    background-color: var(--surface-container-lowest) !important;
+    border: 1px solid var(--outline-variant) !important;
+    border-radius: var(--radius-md) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08) !important;
+    padding: 6px !important;
 }
 
 .dropdown-item {
-    border-radius: 0 !important;
-    padding: 6px 16px !important;
+    border-radius: var(--radius-xs) !important;
+    padding: 8px 16px !important;
     font: var(--cm-sys-type-body-medium) !important;
-    color: var(--cm-sys-color-on-surface) !important;
+    color: var(--on-surface) !important;
     transition: background-color 0.1s ease, color 0.1s ease;
 }
 
 .dropdown-item:hover,
 .dropdown-item:focus {
-    background-color: rgba(var(--primary-rgb), 0.06) !important;
-    color: var(--cm-sys-color-primary) !important;
+    background-color: var(--surface-container) !important;
+    color: var(--primary) !important;
 }
 
-/* === ALERTS (BALANCED 6PX MESSAGE BAR) === */
+/* === ALERTS (FLAT TONAL 16PX M3 CONTAINER) === */
 .alert {
-    border-radius: 6px !important;
-    border: 1px solid var(--cm-sys-color-hairline) !important;
+    border-radius: var(--radius-md) !important;
+    border: 1px solid var(--outline-variant) !important;
     box-shadow: none !important;
     font: var(--cm-sys-type-body-medium);
-    padding: 0.7rem 1rem;
+    padding: 0.85rem 1.15rem;
 }
 
-/* === MODALS (GOOGLE CLOUD CONSOLE DIALOG 8PX) === */
+.alert-warning {
+    background-color: var(--cm-sys-color-status-warning-container) !important;
+    color: var(--cm-sys-color-status-warning) !important;
+    border-color: transparent !important;
+}
+
+.alert-danger {
+    background-color: var(--error-container) !important;
+    color: var(--on-error-container) !important;
+    border-color: transparent !important;
+}
+
+.alert-success {
+    background-color: var(--tertiary-container) !important;
+    color: var(--on-tertiary-container) !important;
+    border-color: transparent !important;
+}
+
+/* === MODALS (M3 DIALOG 24PX/28PX SQUIRCLE) === */
 .modal-content {
-    background-color: var(--cm-sys-color-surface) !important;
-    border: 1px solid var(--cm-sys-color-hairline) !important;
-    border-radius: 8px !important;
-    box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 2px 6px 2px rgba(60, 64, 67, 0.15) !important;
+    background-color: var(--surface-container-lowest) !important;
+    border: 1px solid var(--outline-variant) !important;
+    border-radius: var(--radius-xl) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12) !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
-    color: var(--cm-sys-color-on-surface) !important;
+    color: var(--on-surface) !important;
+    overflow: hidden;
 }
 
 .modal-header {
-    border-bottom: 1px solid var(--cm-sys-color-hairline) !important;
-    padding: 1rem 1.5rem !important;
+    border-bottom: 1px solid var(--outline-variant) !important;
+    padding: 1.25rem 1.5rem !important;
     background-color: transparent !important;
 }
 
 .modal-title {
-    font: var(--cm-sys-type-title-small) !important;
+    font: var(--cm-sys-type-title-medium) !important;
+    font-weight: 700 !important;
 }
 
 .modal-footer {
-    border-top: 1px solid var(--cm-sys-color-hairline) !important;
-    padding: 0.75rem 1.5rem !important;
+    border-top: 1px solid var(--outline-variant) !important;
+    padding: 1rem 1.5rem !important;
     background-color: transparent !important;
 }
 
 .modal-backdrop {
-    background-color: rgba(0, 0, 0, 0.32) !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
+    background-color: var(--overlay) !important;
+    backdrop-filter: blur(2px) !important;
+    -webkit-backdrop-filter: blur(2px) !important;
 }
 
-/* SweetAlert2 Dialog (Google Cloud Console Dialog) */
+/* SweetAlert2 Dialog (M3 Dialog) */
 .swal2-popup:not(.swal2-toast) {
-    border-radius: 8px !important;
-    border: 1px solid var(--cm-sys-color-hairline) !important;
-    background: var(--cm-sys-color-surface) !important;
-    box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 2px 6px 2px rgba(60, 64, 67, 0.15) !important;
-    color: var(--cm-sys-color-on-surface) !important;
-    padding: 1.5rem !important;
+    border-radius: var(--radius-xl) !important;
+    border: 1px solid var(--outline-variant) !important;
+    background: var(--surface-container-lowest) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15) !important;
+    color: var(--on-surface) !important;
+    padding: 1.75rem !important;
 }
 
 .swal2-popup:not(.swal2-toast) .swal2-title {
-    color: var(--cm-sys-color-on-surface) !important;
+    color: var(--on-surface) !important;
     font: var(--cm-sys-type-title-large) !important;
+    font-weight: 700 !important;
 }
 
 .swal2-popup:not(.swal2-toast) .swal2-html-container {
-    color: var(--cm-sys-color-on-surface-variant) !important;
+    color: var(--on-surface-variant) !important;
     font: var(--cm-sys-type-body-medium) !important;
+}
+
+/* === CARD SURFACE STANDARDIZATION (FLAT 16PX) === */
+.card {
+    border-radius: var(--radius-md) !important;
+    background-color: var(--surface-container-lowest) !important;
+    border: 1px solid var(--outline-variant) !important;
+    box-shadow: none !important;
 }
 
 /* === SMOOTH SCROLLBAR === */

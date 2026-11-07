@@ -113,19 +113,19 @@
   {{-- Loader Overlay: Skeleton Shimmer Form --}}
   <div id="pageLoader" class="fade-out">
     <div class="d-flex align-items-center justify-content-center h-100 p-4">
-      <div class="card border p-4 w-100" style="max-width: 420px; border-radius: 8px;">
+      <div class="card border p-4 w-100" style="max-width: 440px; border-radius: var(--radius-xl, 24px);">
         <div class="d-flex align-items-center gap-3 mb-4">
-          <div class="skeleton-shimmer rounded-circle" style="width: 44px; height: 44px;"></div>
+          <div class="skeleton-shimmer rounded-circle" style="width: 46px; height: 46px;"></div>
           <div class="w-50">
-            <div class="skeleton-shimmer mb-2" style="height: 18px; width: 100%; border-radius: 4px;"></div>
-            <div class="skeleton-shimmer" style="height: 12px; width: 60%; border-radius: 4px;"></div>
+            <div class="skeleton-shimmer mb-2" style="height: 18px; width: 100%; border-radius: 6px;"></div>
+            <div class="skeleton-shimmer" style="height: 12px; width: 60%; border-radius: 6px;"></div>
           </div>
         </div>
-        <div class="skeleton-shimmer mb-3" style="height: 40px; border-radius: 6px; width: 100%;"></div>
-        <div class="skeleton-shimmer mb-3" style="height: 40px; border-radius: 6px; width: 100%;"></div>
-        <div class="skeleton-shimmer mb-4" style="height: 40px; border-radius: 6px; width: 100%;"></div>
+        <div class="skeleton-shimmer mb-3" style="height: 44px; border-radius: var(--radius-sm, 12px); width: 100%;"></div>
+        <div class="skeleton-shimmer mb-3" style="height: 44px; border-radius: var(--radius-sm, 12px); width: 100%;"></div>
+        <div class="skeleton-shimmer mb-4" style="height: 44px; border-radius: 9999px; width: 100%;"></div>
         <div class="d-flex justify-content-center">
-          <div class="skeleton-shimmer" style="height: 14px; width: 50%; border-radius: 4px;"></div>
+          <div class="skeleton-shimmer" style="height: 14px; width: 50%; border-radius: 6px;"></div>
         </div>
       </div>
     </div>
@@ -136,7 +136,7 @@
     <div class="login-section">
       {{-- Logo & Brand Header --}}
       <div class="brand-header mb-4 d-flex align-items-center gap-3">
-        <div class="user-avatar d-flex align-items-center justify-content-center text-white bg-primary" style="width: 42px; height: 42px; font-size: 1.15rem; border-radius: 8px;">
+        <div class="user-avatar d-flex align-items-center justify-content-center text-white bg-primary shadow-sm" style="width: 46px; height: 46px; font-size: 1.25rem; border-radius: var(--radius-sm, 14px);">
           <i class="fas fa-shopping-bag"></i>
         </div>
         <div>
@@ -151,7 +151,7 @@
       </div>
 
       @if($maintenanceMode ?? false)
-      <div class="alert alert-warning py-2.5 px-3 small bg-warning bg-opacity-10 text-warning-emphasis rounded-2 mb-3">
+      <div class="alert alert-warning py-2.5 px-3 small bg-warning bg-opacity-10 text-warning-emphasis rounded-3 mb-3">
           <div class="d-flex align-items-start gap-2">
               <i class="fas fa-tools text-warning fs-6 mt-0.5 flex-shrink-0"></i>
               <div>
@@ -162,7 +162,7 @@
       </div>
       @endif
 
-      {{-- Auth Tabs Navigation (Concentric 8px Container / 6px Buttons) --}}
+      {{-- Auth Tabs Navigation (Concentric M3 Segmented Full Pill) --}}
       <ul class="nav nav-pills nav-fill mb-4" role="tablist">
           <li class="nav-item" role="presentation">
               <button class="nav-link active py-2 small fw-semibold" id="tab-btn-login" type="button" onclick="switchAuthTab('login')">
@@ -178,13 +178,13 @@
 
       {{-- Alerts Block --}}
       @if(session('error'))
-          <div class="alert alert-danger py-2 small bg-danger bg-opacity-10 text-danger rounded-2 mb-3"><i class="fas fa-exclamation-circle me-1"></i>{{ session('error') }}</div>
+          <div class="alert alert-danger py-2 small bg-danger bg-opacity-10 text-danger rounded-3 mb-3"><i class="fas fa-exclamation-circle me-1"></i>{{ session('error') }}</div>
       @endif
       @if(session('success'))
-          <div class="alert alert-success py-2 small bg-success bg-opacity-10 text-success rounded-2 mb-3"><i class="fas fa-check-circle me-1"></i>{{ session('success') }}</div>
+          <div class="alert alert-success py-2 small bg-success bg-opacity-10 text-success rounded-3 mb-3"><i class="fas fa-check-circle me-1"></i>{{ session('success') }}</div>
       @endif
       @if($errors->any())
-          <div class="alert alert-danger py-2 small bg-danger bg-opacity-10 text-danger rounded-2 mb-3">
+          <div class="alert alert-danger py-2 small bg-danger bg-opacity-10 text-danger rounded-3 mb-3">
               <ul class="mb-0 ps-3">
                   @foreach($errors->all() as $err)
                       <li>{{ $err }}</li>
@@ -212,14 +212,14 @@
                   <div class="mb-3">
                       <label class="form-label text-muted small fw-semibold">{{ __('Username atau Email') }}</label>
                       <div class="input-group">
-                          <span class="input-group-text text-muted"><i class="fas fa-user"></i></span>
+                          <span class="input-group-text"><i class="fas fa-user"></i></span>
                           <input type="text" name="login" class="form-control" placeholder="{{ __('Masukkan username atau email...') }}" value="{{ old('login') }}" required autofocus />
                       </div>
                   </div>
                   <div class="mb-3">
                       <label class="form-label text-muted small fw-semibold">{{ __('Password') }}</label>
                       <div class="input-group">
-                          <span class="input-group-text text-muted"><i class="fas fa-lock"></i></span>
+                          <span class="input-group-text"><i class="fas fa-lock"></i></span>
                           <input type="password" name="password" class="form-control" placeholder="{{ __('Masukkan password...') }}" required />
                       </div>
                   </div>
@@ -236,7 +236,7 @@
                       <div class="cf-turnstile" data-sitekey="{{ config('services.turnstile.site_key') }}" data-theme="light"></div>
                   </div>
 
-                  <button type="submit" class="btn btn-primary py-2 w-100 fw-semibold">
+                  <button type="submit" class="btn btn-primary py-2.5 w-100 fw-bold">
                       <span>{{ __('Masuk Sistem') }}</span>
                       <i class="fas fa-arrow-right ms-1"></i>
                   </button>
@@ -249,8 +249,8 @@
 
               <form action="{{ route('auth.telegram.request') }}" method="POST" class="d-grid">
                   @csrf
-                  <button type="submit" class="btn btn-outline-primary py-2 w-100 fw-semibold">
-                      <i class="fab fa-telegram text-info fs-5 me-1.5"></i>{{ __('Login dengan Telegram') }}
+                  <button type="submit" class="btn btn-tonal py-2.5 w-100 fw-bold">
+                      <i class="fab fa-telegram text-primary fs-5 me-1.5"></i>{{ __('Login dengan Telegram') }}
                   </button>
               </form>
           </div>
@@ -262,7 +262,7 @@
                   <div class="mb-3">
                       <label class="form-label text-muted small fw-semibold">{{ __('Nama Lengkap') }}</label>
                       <div class="input-group">
-                          <span class="input-group-text text-muted"><i class="fas fa-id-card"></i></span>
+                          <span class="input-group-text"><i class="fas fa-id-card"></i></span>
                           <input type="text" name="full_name" class="form-control" placeholder="{{ __('Nama Lengkap Anda') }}" value="{{ old('full_name') }}" required />
                       </div>
                   </div>
@@ -271,14 +271,14 @@
                       <div class="col-6">
                           <label class="form-label text-muted small fw-semibold">{{ __('Username') }}</label>
                           <div class="input-group">
-                              <span class="input-group-text text-muted"><i class="fas fa-user-circle"></i></span>
+                              <span class="input-group-text"><i class="fas fa-user-circle"></i></span>
                               <input type="text" name="username" class="form-control" placeholder="{{ __('Username') }}" value="{{ old('username') }}" required />
                           </div>
                       </div>
                       <div class="col-6">
                           <label class="form-label text-muted small fw-semibold">{{ __('Email') }}</label>
                           <div class="input-group">
-                              <span class="input-group-text text-muted"><i class="fas fa-envelope"></i></span>
+                              <span class="input-group-text"><i class="fas fa-envelope"></i></span>
                               <input type="email" name="email" class="form-control" placeholder="{{ __('Email') }}" value="{{ old('email') }}" />
                           </div>
                       </div>
@@ -287,7 +287,7 @@
                   <div class="mb-3">
                       <label class="form-label text-muted small fw-semibold">{{ __('ID Telegram (Opsional)') }}</label>
                       <div class="input-group">
-                          <span class="input-group-text text-muted"><i class="fab fa-telegram-plane"></i></span>
+                          <span class="input-group-text"><i class="fab fa-telegram-plane"></i></span>
                           <input type="number" name="telegram_id" id="telegram_id_reg" class="form-control" placeholder="123456789" value="{{ old('telegram_id') }}" />
                       </div>
                       <div id="telegram_id_feedback" class="text-secondary mt-1 ms-1" style="font-size: 0.75rem;">{{ __('Agar bisa otomatis login dengan Telegram nantinya.') }}</div>
@@ -297,14 +297,14 @@
                       <div class="col-6">
                           <label class="form-label text-muted small fw-semibold">{{ __('Kata Sandi') }}</label>
                           <div class="input-group">
-                              <span class="input-group-text text-muted"><i class="fas fa-key"></i></span>
+                              <span class="input-group-text"><i class="fas fa-key"></i></span>
                               <input type="password" name="password" class="form-control" placeholder="{{ __('Kata Sandi') }}" required />
                           </div>
                       </div>
                       <div class="col-6">
                           <label class="form-label text-muted small fw-semibold">{{ __('Ulangi Sandi') }}</label>
                           <div class="input-group">
-                              <span class="input-group-text text-muted"><i class="fas fa-lock"></i></span>
+                              <span class="input-group-text"><i class="fas fa-lock"></i></span>
                               <input type="password" name="password_confirmation" class="form-control" placeholder="{{ __('Ulangi Sandi') }}" required />
                           </div>
                       </div>
@@ -315,7 +315,7 @@
                       <div class="cf-turnstile" data-sitekey="{{ config('services.turnstile.site_key') }}" data-theme="light"></div>
                   </div>
 
-                  <button type="submit" id="btn-register" class="btn btn-primary py-2 w-100 fw-semibold">
+                  <button type="submit" id="btn-register" class="btn btn-primary py-2.5 w-100 fw-bold">
                       <span>{{ __('Daftar Sekarang') }}</span>
                       <i class="fas fa-user-plus ms-1"></i>
                   </button>
@@ -348,15 +348,15 @@
         </div>
 
         {{-- Kontak Admin Box --}}
-        <div class="small mb-4 p-3 rounded-2 border bg-body-tertiary">
+        <div class="small mb-4 p-3 rounded-2 border" style="background-color: var(--surface-container-low) !important; border-color: var(--outline-variant) !important;">
             <strong class="d-block mb-2 text-body">{{ __('Kontak Admin:') }}</strong>
             <a href="https://wa.me/6282269245660" target="_blank" class="text-body text-decoration-none mt-1 d-block"><i class="fab fa-whatsapp text-success me-1"></i> 082269245660 - WA</a>
-            <a href="https://t.me/dzulfikrialifajri" target="_blank" class="text-body text-decoration-none mt-1 d-block"><i class="fab fa-telegram text-info me-1"></i> @dzulfikrialifajri - Telegram</a>
+            <a href="https://t.me/dzulfikrialifajri" target="_blank" class="text-body text-decoration-none mt-1 d-block"><i class="fab fa-telegram text-primary me-1"></i> @dzulfikrialifajri - Telegram</a>
         </div>
 
         <div class="d-flex justify-content-between align-items-center">
-            <span class="badge bg-secondary-subtle text-secondary py-1.5 px-2.5 border" style="font-size: 0.75rem;">
-                <i class="fas fa-users me-1 text-info"></i> Pengunjung Hari Ini: {{ $todayVisitors ?? 0 }}
+            <span class="badge bg-secondary-subtle text-secondary py-1.5 px-3" style="font-size: 0.75rem;">
+                <i class="fas fa-users me-1 text-primary"></i> Pengunjung Hari Ini: {{ $todayVisitors ?? 0 }}
             </span>
         </div>
       </div>

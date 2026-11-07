@@ -1,8 +1,8 @@
 RENCANA PERBAIKAN DAN PENGEMBANGAN:
 
-saya ingin berganti gaya tampilan website saya, menjadi flat material you design. contohnya seperti yang diterapkan pada aplikasi website google cloud platform, dan aplikasi google lain. apakah bisa? bagian mana saja yang harus diubah mulai dari yang paling mudah ke yang paling kompleks. 
+saya ingin berganti gaya tampilan website saya, menjadi flat material you design android 17. apakah bisa? bagian mana saja yang harus diubah mulai dari yang paling mudah ke yang paling kompleks.
 
-gunakan file pada folder reference design untuk referensi desain.
+gunakan referensi desain dari https://github.com/beercss/beercss dan silakan install ke dalam skill kamu.
 
 catat untuk kamu;
 - lakukan brainstroming sebelum melakukan eksekusi, tak lupa pula lakukan analisa kritik dan saran.

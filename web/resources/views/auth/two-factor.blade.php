@@ -75,14 +75,14 @@
   {{-- Loader Overlay: Skeleton Shimmer --}}
   <div id="pageLoader" class="fade-out">
     <div class="d-flex align-items-center justify-content-center h-100 p-4">
-      <div class="card border p-4 w-100" style="max-width: 440px; border-radius: 8px;">
+      <div class="card border p-4 w-100" style="max-width: 440px; border-radius: var(--radius-xl, 24px);">
         <div class="text-center mb-4">
           <div class="skeleton-shimmer rounded-circle mx-auto mb-3" style="width: 48px; height: 48px;"></div>
-          <div class="skeleton-shimmer mb-2 mx-auto" style="height: 20px; width: 60%; border-radius: 4px;"></div>
-          <div class="skeleton-shimmer mx-auto" style="height: 14px; width: 80%; border-radius: 4px;"></div>
+          <div class="skeleton-shimmer mb-2 mx-auto" style="height: 20px; width: 60%; border-radius: 6px;"></div>
+          <div class="skeleton-shimmer mx-auto" style="height: 14px; width: 80%; border-radius: 6px;"></div>
         </div>
-        <div class="skeleton-shimmer mb-4" style="height: 44px; border-radius: 6px; width: 100%;"></div>
-        <div class="skeleton-shimmer mb-3" style="height: 40px; border-radius: 6px; width: 100%;"></div>
+        <div class="skeleton-shimmer mb-4" style="height: 44px; border-radius: var(--radius-sm, 12px); width: 100%;"></div>
+        <div class="skeleton-shimmer mb-3" style="height: 44px; border-radius: 9999px; width: 100%;"></div>
       </div>
     </div>
   </div>
@@ -92,7 +92,7 @@
       {{-- Logo & Brand --}}
       <div class="brand-header text-center mb-4">
         <div class="d-inline-flex align-items-center gap-3">
-          <div class="user-avatar d-flex align-items-center justify-content-center text-white bg-primary" style="width: 42px; height: 42px; font-size: 1.15rem; border-radius: 8px;">
+          <div class="user-avatar d-flex align-items-center justify-content-center text-white bg-primary shadow-sm" style="width: 46px; height: 46px; font-size: 1.25rem; border-radius: var(--radius-sm, 14px);">
             <i class="fas fa-shield-alt"></i>
           </div>
           <div class="text-start">
@@ -110,10 +110,10 @@
 
       {{-- Alerts Block --}}
       @if(session('error'))
-          <div class="alert alert-danger py-2 small bg-danger bg-opacity-10 text-danger rounded-2 mb-3"><i class="fas fa-exclamation-circle me-1"></i>{{ session('error') }}</div>
+          <div class="alert alert-danger py-2 small bg-danger bg-opacity-10 text-danger rounded-3 mb-3"><i class="fas fa-exclamation-circle me-1"></i>{{ session('error') }}</div>
       @endif
       @if($errors->any())
-          <div class="alert alert-danger py-2 small bg-danger bg-opacity-10 text-danger rounded-2 mb-3">
+          <div class="alert alert-danger py-2 small bg-danger bg-opacity-10 text-danger rounded-3 mb-3">
               <ul class="mb-0 ps-3">
                   @foreach($errors->all() as $err)
                       <li>{{ $err }}</li>
@@ -127,17 +127,17 @@
           <div class="mb-4 text-start">
               <label class="form-label text-muted small fw-semibold">{{ __('Kode Verifikasi 6-Digit') }}</label>
               <div class="input-group">
-                  <span class="input-group-text text-muted"><i class="fas fa-key"></i></span>
+                  <span class="input-group-text"><i class="fas fa-key"></i></span>
                   <input type="text" name="code" class="form-control text-center fw-bold fs-4 tracking-widest" placeholder="000000" maxlength="6" pattern="[0-9]{6}" required autofocus />
               </div>
           </div>
 
-          <button type="submit" class="btn btn-primary py-2 w-100 fw-semibold mb-2">
+          <button type="submit" class="btn btn-primary py-2.5 w-100 fw-bold mb-2">
               <span>{{ __('Verifikasi & Masuk') }}</span>
               <i class="fas fa-arrow-right ms-1"></i>
           </button>
           
-          <a href="{{ route('login') }}" class="btn btn-outline-secondary py-2 w-100 fw-semibold text-decoration-none">
+          <a href="{{ route('login') }}" class="btn btn-tonal py-2.5 w-100 fw-semibold text-decoration-none">
               <i class="fas fa-arrow-left me-1"></i> {{ __('Kembali ke Login') }}
           </a>
       </form>
