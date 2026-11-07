@@ -487,11 +487,6 @@
 
 <nav class="navbar navbar-expand fixed-top px-2 px-md-3 bg-body border-bottom pcc-platform-bar" style="z-index: 1030;">
     <div class="d-flex align-items-center gap-2">
-        @unless($hideSidebar)
-        <button type="button" class="m3-icon-btn d-none d-lg-inline-flex" id="cfcNavCollapseBtn" title="{{ __('Sembunyikan/Tampilkan Navigasi') }}" aria-label="{{ __('Toggle Navigation Drawer') }}">
-            <i class="fas fa-bars" style="font-size: 0.95rem;"></i>
-        </button>
-        @endunless
         <a href="{{ route('dashboard') }}" class="navbar-brand d-flex align-items-center gap-2 m-0 text-decoration-none" style="font-size: 0.98rem;">
             <span class="navbar-brand-icon">
                 <i class="fas fa-cloud"></i>
@@ -1042,36 +1037,6 @@
     {{-- Main Content --}}
     <main class="main-content position-relative" @if($hideSidebar) style="margin-left: 0 !important;" @endif>
         <div class="main-background"></div>
-
-        @unless($hideSidebar || View::hasSection('no_action_bar'))
-        {{-- Google Cloud Console Page Action Bar (cfc-action-bar) --}}
-        <div class="cfc-action-bar">
-            <div class="d-flex align-items-center gap-2 min-w-0">
-                <h1 class="cfc-action-bar-title text-truncate">
-                    @yield('title', 'Dashboard')
-                </h1>
-                @if(View::hasSection('page_subtitle'))
-                <span class="badge bg-secondary-subtle d-none d-sm-inline-flex">
-                    @yield('page_subtitle')
-                </span>
-                @endif
-            </div>
-            <div class="cfc-action-bar-actions">
-                @yield('action_bar_buttons')
-                <a href="{{ route('catalog.index') }}" class="btn btn-sm btn-link text-decoration-none d-none d-md-inline-flex" style="color: var(--cm-sys-color-primary);">
-                    <i class="fas fa-store"></i> <span>{{ __('Katalog') }}</span>
-                </a>
-                @auth
-                <a href="{{ route('orders.index') }}" class="btn btn-sm btn-link text-decoration-none d-none d-md-inline-flex" style="color: var(--cm-sys-color-primary);">
-                    <i class="fas fa-receipt"></i> <span>{{ __('Pesanan') }}</span>
-                </a>
-                @endauth
-                <button type="button" onclick="window.location.reload();" class="btn btn-sm btn-link text-decoration-none" style="color: var(--cm-sys-color-primary);" title="{{ __('Muat Ulang Halaman') }}">
-                    <i class="fas fa-rotate-right"></i> <span class="d-none d-sm-inline">{{ __('Refresh') }}</span>
-                </button>
-            </div>
-        </div>
-        @endunless
 
         <div class="container-fluid position-relative px-4 pb-4 pt-4">
             {{-- Flash Messages --}}
