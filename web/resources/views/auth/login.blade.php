@@ -18,75 +18,37 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ __('Login / Daftar') }} — {{ config('app.name', 'Dzulfikrialifajri Store') }}</title>
     
-    {{-- Aptos Font System Setup (Full Aptos Family) --}}
+    {{-- Google Sans Font System Setup --}}
     <style>
         @font-face {
-            font-family: 'Aptos';
-            src: local('Aptos'), local('Aptos-Regular');
+            font-family: 'Google Sans';
+            src: local('Google Sans Regular'), local('Google Sans'), local('Product Sans'),
+                 url('https://fonts.gstatic.com/s/googlesans/v58/4Ua_rENHsxJlGDuGo1OIlJfC6l_24rlCK1Yo_Iqcsih3SAyH6cAwhX9RFD48TE63OOYKtrwEIJllpyw.woff2') format('woff2');
             font-weight: 400;
             font-style: normal;
             font-display: swap;
         }
         @font-face {
-            font-family: 'Aptos';
-            src: local('Aptos-Light'), local('Aptos Light');
-            font-weight: 300;
+            font-family: 'Google Sans';
+            src: local('Google Sans Medium'), local('Google Sans-Medium'), local('Product Sans Medium'),
+                 url('https://fonts.gstatic.com/s/googlesans/v58/4UabrENHsxJlGDuGo1OIlLU94YtzCwY.woff2') format('woff2');
+            font-weight: 500 600;
             font-style: normal;
             font-display: swap;
         }
         @font-face {
-            font-family: 'Aptos';
-            src: local('Aptos-Medium'), local('Aptos Medium');
-            font-weight: 500;
-            font-style: normal;
-            font-display: swap;
-        }
-        @font-face {
-            font-family: 'Aptos';
-            src: local('Aptos-SemiBold'), local('Aptos SemiBold');
-            font-weight: 600;
-            font-style: normal;
-            font-display: swap;
-        }
-        @font-face {
-            font-family: 'Aptos';
-            src: local('Aptos-Bold'), local('Aptos Bold');
+            font-family: 'Google Sans';
+            src: local('Google Sans Bold'), local('Google Sans-Bold'), local('Product Sans Bold'),
+                 url('https://fonts.gstatic.com/s/googlesans/v58/4UabrENHsxJlGDuGo1OIlLV154tzCwY.woff2') format('woff2');
             font-weight: 700;
             font-style: normal;
             font-display: swap;
         }
         @font-face {
-            font-family: 'Aptos Display';
-            src: local('Aptos Display'), local('Aptos-Display'), local('AptosDisplay-Regular');
-            font-weight: 400;
-            font-style: normal;
-            font-display: swap;
-        }
-        @font-face {
-            font-family: 'Aptos Display';
-            src: local('Aptos Display-Medium'), local('Aptos Display Medium');
-            font-weight: 500;
-            font-style: normal;
-            font-display: swap;
-        }
-        @font-face {
-            font-family: 'Aptos Display';
-            src: local('Aptos Display-Bold'), local('Aptos Display Bold');
-            font-weight: 700;
-            font-style: normal;
-            font-display: swap;
-        }
-        @font-face {
-            font-family: 'Aptos Mono';
-            src: local('Aptos Mono'), local('Aptos-Mono'), local('AptosMono-Regular');
-            font-weight: 400;
-            font-style: normal;
-            font-display: swap;
-        }
-        @font-face {
-            font-family: 'Aptos Mono';
-            src: local('Aptos Mono-Bold'), local('Aptos Mono Bold');
-            font-weight: 700;
+            font-family: 'Google Sans Display';
+            src: local('Google Sans Display'), local('Google Sans'),
+                 url('https://fonts.gstatic.com/s/googlesans/v58/4UabrENHsxJlGDuGo1OIlLU94YtzCwY.woff2') format('woff2');
+            font-weight: 400 700;
             font-style: normal;
             font-display: swap;
         }
@@ -151,19 +113,19 @@
   {{-- Loader Overlay: Skeleton Shimmer Form --}}
   <div id="pageLoader" class="fade-out">
     <div class="d-flex align-items-center justify-content-center h-100 p-4">
-      <div class="card border-0 shadow-lg p-4 w-100" style="max-width: 420px; border-radius: 20px;">
+      <div class="card border p-4 w-100" style="max-width: 420px; border-radius: 8px;">
         <div class="d-flex align-items-center gap-3 mb-4">
-          <div class="skeleton-shimmer rounded-circle" style="width: 48px; height: 48px;"></div>
+          <div class="skeleton-shimmer rounded-circle" style="width: 44px; height: 44px;"></div>
           <div class="w-50">
-            <div class="skeleton-shimmer mb-2" style="height: 20px; width: 100%;"></div>
-            <div class="skeleton-shimmer" style="height: 12px; width: 60%;"></div>
+            <div class="skeleton-shimmer mb-2" style="height: 18px; width: 100%; border-radius: 4px;"></div>
+            <div class="skeleton-shimmer" style="height: 12px; width: 60%; border-radius: 4px;"></div>
           </div>
         </div>
-        <div class="skeleton-shimmer mb-3" style="height: 48px; border-radius: 12px; width: 100%;"></div>
-        <div class="skeleton-shimmer mb-3" style="height: 48px; border-radius: 12px; width: 100%;"></div>
-        <div class="skeleton-shimmer mb-4" style="height: 46px; border-radius: 24px; width: 100%;"></div>
+        <div class="skeleton-shimmer mb-3" style="height: 40px; border-radius: 6px; width: 100%;"></div>
+        <div class="skeleton-shimmer mb-3" style="height: 40px; border-radius: 6px; width: 100%;"></div>
+        <div class="skeleton-shimmer mb-4" style="height: 40px; border-radius: 6px; width: 100%;"></div>
         <div class="d-flex justify-content-center">
-          <div class="skeleton-shimmer" style="height: 14px; width: 50%;"></div>
+          <div class="skeleton-shimmer" style="height: 14px; width: 50%; border-radius: 4px;"></div>
         </div>
       </div>
     </div>
@@ -174,41 +136,41 @@
     <div class="login-section">
       {{-- Logo & Brand Header --}}
       <div class="brand-header mb-4 d-flex align-items-center gap-3">
-        <div class="user-avatar rounded-circle d-flex align-items-center justify-content-center text-white bg-primary shadow-sm" style="width: 44px; height: 44px; font-size: 1.2rem;">
+        <div class="user-avatar d-flex align-items-center justify-content-center text-white bg-primary" style="width: 42px; height: 42px; font-size: 1.15rem; border-radius: 8px;">
           <i class="fas fa-shopping-bag"></i>
         </div>
         <div>
-          <h4 class="fw-bold text-primary m-0" style="line-height: 1.1;">{{ config('app.name', 'Dzulfikrialifajri Store') }}</h4>
+          <h4 class="fw-bold text-primary m-0" style="line-height: 1.15;">{{ config('app.name', 'Dzulfikrialifajri Store') }}</h4>
           <span class="text-muted small">{{ __('Portal Autentikasi Pelanggan & Mitra') }}</span>
         </div>
       </div>
 
-      <div class="mb-4">
+      <div class="mb-3">
         <h3 class="h4 fw-bold text-body mb-1" id="auth-title">{{ __('Selamat Datang') }}</h3>
         <p class="small text-secondary mb-0" id="auth-subtitle">{{ __('Silakan masuk untuk mengakses portal Anda.') }}</p>
       </div>
 
       @if($maintenanceMode ?? false)
-      <div class="alert alert-warning py-3 px-3 small border-0 bg-warning bg-opacity-10 text-warning-emphasis rounded-4 mb-4">
+      <div class="alert alert-warning py-2.5 px-3 small bg-warning bg-opacity-10 text-warning-emphasis rounded-2 mb-3">
           <div class="d-flex align-items-start gap-2">
-              <i class="fas fa-tools text-warning fs-5 mt-0.5 flex-shrink-0"></i>
+              <i class="fas fa-tools text-warning fs-6 mt-0.5 flex-shrink-0"></i>
               <div>
-                  <strong class="d-block mb-1 text-dark">{{ __('Mode Pemeliharaan (Maintenance) Aktif') }}</strong>
-                  <span class="text-secondary" style="font-size: 0.8rem; line-height: 1.4;">{{ $maintenanceMessage ?? __('Website saat ini sedang dalam pemeliharaan sistem. Hanya Administrator yang dapat login.') }}</span>
+                  <strong class="d-block mb-1 text-body">{{ __('Mode Pemeliharaan (Maintenance) Aktif') }}</strong>
+                  <span class="text-secondary" style="font-size: 0.8125rem; line-height: 1.45;">{{ $maintenanceMessage ?? __('Website saat ini sedang dalam pemeliharaan sistem. Hanya Administrator yang dapat login.') }}</span>
               </div>
           </div>
       </div>
       @endif
 
-      {{-- Auth Tabs Navigation --}}
-      <ul class="nav nav-pills nav-fill bg-body-tertiary p-1 rounded-pill mb-4 border" role="tablist">
+      {{-- Auth Tabs Navigation (Concentric 8px Container / 6px Buttons) --}}
+      <ul class="nav nav-pills nav-fill mb-4" role="tablist">
           <li class="nav-item" role="presentation">
-              <button class="nav-link active rounded-pill py-2 small fw-bold" id="tab-btn-login" type="button" onclick="switchAuthTab('login')">
+              <button class="nav-link active py-2 small fw-semibold" id="tab-btn-login" type="button" onclick="switchAuthTab('login')">
                   <i class="fas fa-sign-in-alt me-1.5"></i>{{ __('Masuk') }}
               </button>
           </li>
           <li class="nav-item" role="presentation">
-              <button class="nav-link rounded-pill py-2 small fw-bold text-muted" id="tab-btn-register" type="button" onclick="switchAuthTab('register')">
+              <button class="nav-link py-2 small fw-semibold text-muted" id="tab-btn-register" type="button" onclick="switchAuthTab('register')">
                   <i class="fas fa-user-plus me-1.5"></i>{{ __('Daftar') }}
               </button>
           </li>
@@ -216,13 +178,13 @@
 
       {{-- Alerts Block --}}
       @if(session('error'))
-          <div class="alert alert-danger py-2 small border-0 bg-danger bg-opacity-10 text-danger rounded-3 mb-3"><i class="fas fa-exclamation-circle me-1"></i>{{ session('error') }}</div>
+          <div class="alert alert-danger py-2 small bg-danger bg-opacity-10 text-danger rounded-2 mb-3"><i class="fas fa-exclamation-circle me-1"></i>{{ session('error') }}</div>
       @endif
       @if(session('success'))
-          <div class="alert alert-success py-2 small border-0 bg-success bg-opacity-10 text-success rounded-3 mb-3"><i class="fas fa-check-circle me-1"></i>{{ session('success') }}</div>
+          <div class="alert alert-success py-2 small bg-success bg-opacity-10 text-success rounded-2 mb-3"><i class="fas fa-check-circle me-1"></i>{{ session('success') }}</div>
       @endif
       @if($errors->any())
-          <div class="alert alert-danger py-2 small border-0 bg-danger bg-opacity-10 text-danger rounded-3 mb-3">
+          <div class="alert alert-danger py-2 small bg-danger bg-opacity-10 text-danger rounded-2 mb-3">
               <ul class="mb-0 ps-3">
                   @foreach($errors->all() as $err)
                       <li>{{ $err }}</li>
@@ -248,17 +210,17 @@
               <form action="{{ route('login.post') }}" method="POST">
                   @csrf
                   <div class="mb-3">
-                      <label class="form-label text-muted small fw-bold">{{ __('Username atau Email') }}</label>
+                      <label class="form-label text-muted small fw-semibold">{{ __('Username atau Email') }}</label>
                       <div class="input-group">
-                          <span class="input-group-text bg-body-tertiary border-0 text-muted"><i class="fas fa-user"></i></span>
-                          <input type="text" name="login" class="form-control bg-body-tertiary border-0" placeholder="{{ __('Masukkan username atau email...') }}" value="{{ old('login') }}" required autofocus />
+                          <span class="input-group-text text-muted"><i class="fas fa-user"></i></span>
+                          <input type="text" name="login" class="form-control" placeholder="{{ __('Masukkan username atau email...') }}" value="{{ old('login') }}" required autofocus />
                       </div>
                   </div>
                   <div class="mb-3">
-                      <label class="form-label text-muted small fw-bold">{{ __('Password') }}</label>
+                      <label class="form-label text-muted small fw-semibold">{{ __('Password') }}</label>
                       <div class="input-group">
-                          <span class="input-group-text bg-body-tertiary border-0 text-muted"><i class="fas fa-lock"></i></span>
-                          <input type="password" name="password" class="form-control bg-body-tertiary border-0" placeholder="{{ __('Masukkan password...') }}" required />
+                          <span class="input-group-text text-muted"><i class="fas fa-lock"></i></span>
+                          <input type="password" name="password" class="form-control" placeholder="{{ __('Masukkan password...') }}" required />
                       </div>
                   </div>
 
@@ -274,7 +236,7 @@
                       <div class="cf-turnstile" data-sitekey="{{ config('services.turnstile.site_key') }}" data-theme="light"></div>
                   </div>
 
-                  <button type="submit" class="btn btn-primary rounded-pill py-2.5 w-100 fw-bold shadow-sm">
+                  <button type="submit" class="btn btn-primary py-2 w-100 fw-semibold">
                       <span>{{ __('Masuk Sistem') }}</span>
                       <i class="fas fa-arrow-right ms-1"></i>
                   </button>
@@ -282,13 +244,13 @@
 
               <div class="position-relative my-4 text-center">
                   <hr class="text-secondary opacity-25 m-0">
-                  <span class="position-absolute top-50 start-50 translate-middle bg-body px-3 small text-secondary fw-bold" style="font-size: 0.75rem;">{{ __('ATAU') }}</span>
+                  <span class="position-absolute top-50 start-50 translate-middle bg-body px-3 small text-secondary fw-semibold" style="font-size: 0.75rem;">{{ __('ATAU') }}</span>
               </div>
 
               <form action="{{ route('auth.telegram.request') }}" method="POST" class="d-grid">
                   @csrf
-                  <button type="submit" class="btn btn-outline-primary rounded-pill py-2.5 w-100 fw-bold">
-                      <i class="fab fa-telegram text-info fs-5 me-2"></i>{{ __('Login dengan Telegram') }}
+                  <button type="submit" class="btn btn-outline-primary py-2 w-100 fw-semibold">
+                      <i class="fab fa-telegram text-info fs-5 me-1.5"></i>{{ __('Login dengan Telegram') }}
                   </button>
               </form>
           </div>
@@ -298,52 +260,52 @@
               <form action="{{ route('register.post') }}" method="POST">
                   @csrf
                   <div class="mb-3">
-                      <label class="form-label text-muted small fw-bold">{{ __('Nama Lengkap') }}</label>
+                      <label class="form-label text-muted small fw-semibold">{{ __('Nama Lengkap') }}</label>
                       <div class="input-group">
-                          <span class="input-group-text bg-body-tertiary border-0 text-muted"><i class="fas fa-id-card"></i></span>
-                          <input type="text" name="full_name" class="form-control bg-body-tertiary border-0" placeholder="{{ __('Nama Lengkap Anda') }}" value="{{ old('full_name') }}" required />
+                          <span class="input-group-text text-muted"><i class="fas fa-id-card"></i></span>
+                          <input type="text" name="full_name" class="form-control" placeholder="{{ __('Nama Lengkap Anda') }}" value="{{ old('full_name') }}" required />
                       </div>
                   </div>
 
                   <div class="row g-2 mb-3">
                       <div class="col-6">
-                          <label class="form-label text-muted small fw-bold">{{ __('Username') }}</label>
+                          <label class="form-label text-muted small fw-semibold">{{ __('Username') }}</label>
                           <div class="input-group">
-                              <span class="input-group-text bg-body-tertiary border-0 text-muted"><i class="fas fa-user-circle"></i></span>
-                              <input type="text" name="username" class="form-control bg-body-tertiary border-0" placeholder="{{ __('Username') }}" value="{{ old('username') }}" required />
+                              <span class="input-group-text text-muted"><i class="fas fa-user-circle"></i></span>
+                              <input type="text" name="username" class="form-control" placeholder="{{ __('Username') }}" value="{{ old('username') }}" required />
                           </div>
                       </div>
                       <div class="col-6">
-                          <label class="form-label text-muted small fw-bold">{{ __('Email') }}</label>
+                          <label class="form-label text-muted small fw-semibold">{{ __('Email') }}</label>
                           <div class="input-group">
-                              <span class="input-group-text bg-body-tertiary border-0 text-muted"><i class="fas fa-envelope"></i></span>
-                              <input type="email" name="email" class="form-control bg-body-tertiary border-0" placeholder="{{ __('Email') }}" value="{{ old('email') }}" />
+                              <span class="input-group-text text-muted"><i class="fas fa-envelope"></i></span>
+                              <input type="email" name="email" class="form-control" placeholder="{{ __('Email') }}" value="{{ old('email') }}" />
                           </div>
                       </div>
                   </div>
 
                   <div class="mb-3">
-                      <label class="form-label text-muted small fw-bold">{{ __('ID Telegram (Opsional)') }}</label>
+                      <label class="form-label text-muted small fw-semibold">{{ __('ID Telegram (Opsional)') }}</label>
                       <div class="input-group">
-                          <span class="input-group-text bg-body-tertiary border-0 text-muted"><i class="fab fa-telegram-plane"></i></span>
-                          <input type="number" name="telegram_id" id="telegram_id_reg" class="form-control bg-body-tertiary border-0" placeholder="123456789" value="{{ old('telegram_id') }}" />
+                          <span class="input-group-text text-muted"><i class="fab fa-telegram-plane"></i></span>
+                          <input type="number" name="telegram_id" id="telegram_id_reg" class="form-control" placeholder="123456789" value="{{ old('telegram_id') }}" />
                       </div>
-                      <div id="telegram_id_feedback" class="text-secondary mt-1 ms-1" style="font-size: 0.72rem;">{{ __('Agar bisa otomatis login dengan Telegram nantinya.') }}</div>
+                      <div id="telegram_id_feedback" class="text-secondary mt-1 ms-1" style="font-size: 0.75rem;">{{ __('Agar bisa otomatis login dengan Telegram nantinya.') }}</div>
                   </div>
 
                   <div class="row g-2 mb-3">
                       <div class="col-6">
-                          <label class="form-label text-muted small fw-bold">{{ __('Kata Sandi') }}</label>
+                          <label class="form-label text-muted small fw-semibold">{{ __('Kata Sandi') }}</label>
                           <div class="input-group">
-                              <span class="input-group-text bg-body-tertiary border-0 text-muted"><i class="fas fa-key"></i></span>
-                              <input type="password" name="password" class="form-control bg-body-tertiary border-0" placeholder="{{ __('Kata Sandi') }}" required />
+                              <span class="input-group-text text-muted"><i class="fas fa-key"></i></span>
+                              <input type="password" name="password" class="form-control" placeholder="{{ __('Kata Sandi') }}" required />
                           </div>
                       </div>
                       <div class="col-6">
-                          <label class="form-label text-muted small fw-bold">{{ __('Ulangi Sandi') }}</label>
+                          <label class="form-label text-muted small fw-semibold">{{ __('Ulangi Sandi') }}</label>
                           <div class="input-group">
-                              <span class="input-group-text bg-body-tertiary border-0 text-muted"><i class="fas fa-lock"></i></span>
-                              <input type="password" name="password_confirmation" class="form-control bg-body-tertiary border-0" placeholder="{{ __('Ulangi Sandi') }}" required />
+                              <span class="input-group-text text-muted"><i class="fas fa-lock"></i></span>
+                              <input type="password" name="password_confirmation" class="form-control" placeholder="{{ __('Ulangi Sandi') }}" required />
                           </div>
                       </div>
                   </div>
@@ -353,7 +315,7 @@
                       <div class="cf-turnstile" data-sitekey="{{ config('services.turnstile.site_key') }}" data-theme="light"></div>
                   </div>
 
-                  <button type="submit" id="btn-register" class="btn btn-primary rounded-pill py-2.5 w-100 fw-bold shadow-sm">
+                  <button type="submit" id="btn-register" class="btn btn-primary py-2 w-100 fw-semibold">
                       <span>{{ __('Daftar Sekarang') }}</span>
                       <i class="fas fa-user-plus ms-1"></i>
                   </button>
@@ -366,7 +328,7 @@
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
           <div class="text-muted small">
             <span>© 2026</span>
-            <span class="fw-bold ms-1 text-secondary">{{ config('app.name', "dzulfikrialifajri's store") }}</span>
+            <span class="fw-semibold ms-1 text-secondary">{{ config('app.name', "dzulfikrialifajri's store") }}</span>
             <span class="ms-1 text-secondary">- {{ $companyName ?? 'PT BANGUN JAYA KASIH' }}</span>
           </div>
         </div>
@@ -386,14 +348,14 @@
         </div>
 
         {{-- Kontak Admin Box --}}
-        <div class="small mb-4 p-3 rounded-3 border bg-body bg-opacity-50 border-translucent">
+        <div class="small mb-4 p-3 rounded-2 border bg-body-tertiary">
             <strong class="d-block mb-2 text-body">{{ __('Kontak Admin:') }}</strong>
             <a href="https://wa.me/6282269245660" target="_blank" class="text-body text-decoration-none mt-1 d-block"><i class="fab fa-whatsapp text-success me-1"></i> 082269245660 - WA</a>
             <a href="https://t.me/dzulfikrialifajri" target="_blank" class="text-body text-decoration-none mt-1 d-block"><i class="fab fa-telegram text-info me-1"></i> @dzulfikrialifajri - Telegram</a>
         </div>
 
         <div class="d-flex justify-content-between align-items-center">
-            <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill py-2 px-3 border border-translucent" style="font-size: 0.72rem;">
+            <span class="badge bg-secondary-subtle text-secondary py-1.5 px-2.5 border" style="font-size: 0.75rem;">
                 <i class="fas fa-users me-1 text-info"></i> Pengunjung Hari Ini: {{ $todayVisitors ?? 0 }}
             </span>
         </div>

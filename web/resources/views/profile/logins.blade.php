@@ -4,25 +4,25 @@
 @section('page_subtitle', __('Akun'))
 
 @section('content')
-<div class="row g-4">
+<div class="row g-3">
     <div class="col-lg-10 mx-auto">
-        <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
             <div>
                 <h4 class="fw-bold mb-1"><i class="fas fa-shield-alt text-primary me-2"></i>{{ __('Riwayat Percobaan Login') }}</h4>
-                <p class="text-muted mb-0">{{ __('Catatan masuk ke akun Anda berdasarkan alamat IP dan perangkat.') }}</p>
+                <p class="text-muted small mb-0">{{ __('Catatan masuk ke akun Anda berdasarkan alamat IP dan perangkat.') }}</p>
             </div>
-            <a href="{{ route('profile') }}" class="btn btn-outline-secondary rounded-pill btn-sm px-3">
+            <a href="{{ route('profile') }}" class="btn btn-outline-secondary btn-sm px-3 fw-semibold">
                 <i class="fas fa-arrow-left me-1"></i>{{ __('Kembali ke Profil') }}
             </a>
         </div>
 
-        <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 16px;">
+        <div class="card overflow-hidden">
             <div class="card-body p-0">
                 @if($loginLogs->count() > 0)
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
                         <thead>
-                            <tr class="text-secondary small border-bottom bg-light">
+                            <tr class="text-secondary small border-bottom bg-body-tertiary">
                                 <th class="px-4 py-3 border-0">{{ __('Waktu') }}</th>
                                 <th class="py-3 border-0">{{ __('Status') }}</th>
                                 <th class="py-3 border-0">{{ __('IP & Lokasi') }}</th>
@@ -36,29 +36,29 @@
                                 <td class="px-4 text-secondary small">{{ $log->created_at->format('d M Y H:i') }}</td>
                                 <td>
                                     @if($log->is_successful)
-                                        <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill"><i class="fas fa-check-circle me-1"></i>{{ __('Berhasil') }}</span>
+                                        <span class="badge bg-success-subtle text-success"><i class="fas fa-check-circle me-1"></i>{{ __('Berhasil') }}</span>
                                     @else
-                                        <span class="badge bg-danger bg-opacity-10 text-danger px-3 py-2 rounded-pill"><i class="fas fa-times-circle me-1"></i>{{ __('Gagal') }}</span>
+                                        <span class="badge bg-danger-subtle text-danger"><i class="fas fa-times-circle me-1"></i>{{ __('Gagal') }}</span>
                                     @endif
                                 </td>
                                 <td>
-                                    <div class="fw-medium text-dark">{{ $log->ip_address }}</div>
+                                    <div class="fw-semibold text-body">{{ $log->ip_address }}</div>
                                     <div class="text-secondary small"><i class="fas fa-map-marker-alt text-danger me-1"></i>{{ $log->location ?? 'Unknown' }}</div>
                                 </td>
                                 <td>
-                                    <div class="text-dark small">{{ $log->device_type }}</div>
+                                    <div class="text-body small fw-medium">{{ $log->device_type }}</div>
                                     <div class="text-secondary small" title="{{ $log->user_agent }}"><i class="fab fa-chrome text-primary me-1"></i>{{ $log->browser ?? '-' }}</div>
                                 </td>
                                 <td class="text-end pe-4">
                                     @if(\Illuminate\Support\Facades\Cache::has('blocked_ip:' . $log->ip_address))
-                                        <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-3" onclick="requestUnblockIp(event, '{{ $log->ip_address }}', '{{ $log->location ?? 'Unknown' }}', '{{ $log->device_type }}', '{{ $log->browser ?? '-' }}')">
+                                        <button type="button" class="btn btn-sm btn-outline-success px-3 fw-semibold" onclick="requestUnblockIp(event, '{{ $log->ip_address }}', '{{ $log->location ?? 'Unknown' }}', '{{ $log->device_type }}', '{{ $log->browser ?? '-' }}')">
                                             <i class="fas fa-unlock me-1"></i>{{ __('Buka Blokir') }}
                                         </button>
                                     @else
                                         <form action="{{ route('profile.logins.block-ip') }}" method="POST" class="d-inline" onsubmit="confirmBlockIp(event, this)">
                                             @csrf
                                             <input type="hidden" name="ip_address" value="{{ $log->ip_address }}">
-                                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger px-3 fw-semibold">
                                                 <i class="fas fa-ban me-1"></i>{{ __('Blokir') }}
                                             </button>
                                         </form>

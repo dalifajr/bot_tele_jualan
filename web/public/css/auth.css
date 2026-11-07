@@ -1,6 +1,6 @@
 /* ==========================================
    JUALAN DIGITAL - AUTHENTICATION DESIGN SYSTEM
-   Universal Design Tokens & Glassmorphism
+   Google Sans Typography & Unified Geometric Radii (8px / 6px)
    ========================================== */
 
 body {
@@ -9,10 +9,11 @@ body {
   align-items: center;
   justify-content: center;
   padding: 1.5rem 1rem;
-  background-color: var(--bs-body-bg);
+  background-color: var(--cm-sys-color-surface, #ffffff);
+  color: var(--cm-sys-color-on-surface, #202124);
   position: relative;
   overflow-x: hidden;
-  font-family: "Aptos", "Aptos Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  font-family: var(--font-google-sans, "Google Sans", "Google Sans Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif) !important;
 }
 
 /* Font Awesome Protection in Auth */
@@ -32,7 +33,7 @@ body {
   font-weight: 900 !important;
 }
 
-/* Background Ambient Glow */
+/* Background Ambient Subtle Glow */
 body::before {
   content: '';
   position: fixed;
@@ -41,7 +42,7 @@ body::before {
   width: 500px;
   height: 500px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(13, 110, 253, 0.12) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(51, 103, 214, 0.08) 0%, transparent 70%);
   pointer-events: none;
   z-index: 0;
 }
@@ -54,46 +55,42 @@ body::after {
   width: 500px;
   height: 500px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(13, 202, 240, 0.1) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(13, 202, 240, 0.06) 0%, transparent 70%);
   pointer-events: none;
   z-index: 0;
 }
 
-/* Theme Toggle Button Position */
+/* Theme Toggle Button Position (8px Geometric Box) */
 .auth-theme-toggle {
   position: fixed;
   top: 1.25rem;
   right: 1.25rem;
   z-index: 1050;
-  background: var(--glass-bg);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--glass-border);
-  border-radius: 50%;
-  width: 44px;
-  height: 44px;
+  background: var(--cm-sys-color-surface, #ffffff);
+  border: 1px solid var(--cm-sys-color-hairline, #dadce0);
+  border-radius: 8px !important;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: var(--shadow-sm);
-  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.15);
+  transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
 .auth-theme-toggle:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  background: var(--cm-sys-color-container-high, #f1f3f4);
+  border-color: var(--cm-sys-color-primary, #3367d6);
 }
 
-/* Login Card Wrapper */
+/* Login Card Wrapper (Unified 8px Card Geometry) */
 .login-wrapper {
   width: 100%;
-  max-width: 960px;
-  border-radius: var(--radius-lg, 20px);
-  border: 1px solid var(--glass-border);
-  background: var(--glass-bg);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  box-shadow: var(--shadow-md);
+  max-width: 940px;
+  border-radius: 8px !important;
+  border: 1px solid var(--cm-sys-color-hairline, #dadce0);
+  background: var(--cm-sys-color-surface, #ffffff);
+  box-shadow: 0 1px 3px 0 rgba(60, 64, 67, 0.12), 0 4px 12px 0 rgba(60, 64, 67, 0.06);
   position: relative;
   z-index: 10;
   display: flex;
@@ -103,73 +100,81 @@ body::after {
 /* Left Section: Form */
 .login-section {
   flex: 1 1 500px;
-  padding: 2.5rem 2.25rem;
+  padding: 2.25rem 2.25rem;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  background: var(--bs-body-bg);
+  background: var(--cm-sys-color-surface, #ffffff);
   z-index: 2;
 }
 
 /* Right Section: Info & Showcase */
 .info-section {
   flex: 1 1 400px;
-  padding: 2.5rem 2.25rem;
-  background: linear-gradient(135deg, rgba(13, 110, 253, 0.05) 0%, rgba(13, 202, 240, 0.05) 100%);
-  border-left: 1px solid var(--glass-border);
+  padding: 2.25rem 2rem;
+  background: var(--cm-sys-color-container, #fafafa);
+  border-left: 1px solid var(--cm-sys-color-hairline, #dadce0);
   display: flex;
   flex-direction: column;
   justify-content: center;
   position: relative;
 }
 
-/* Glass Card inside Info Section */
+[data-bs-theme="dark"] .info-section {
+  background: var(--cm-sys-color-container, #28292c);
+}
+
+/* Card inside Info Section (Concentric 8px Radius) */
 .glass-card {
-  background: var(--glass-bg);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-md, 12px);
-  padding: 1.75rem;
-  box-shadow: var(--shadow-sm);
+  background: var(--cm-sys-color-surface, #ffffff);
+  border: 1px solid var(--cm-sys-color-hairline, #dadce0);
+  border-radius: 8px !important;
+  padding: 1.5rem;
+  box-shadow: none;
 }
 
 .glass-header {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-weight: 700;
-  font-size: 1rem;
+  font-weight: 600;
+  font-size: 0.95rem;
   margin-bottom: 1rem;
+  color: var(--cm-sys-color-on-surface, #202124);
 }
 
-/* Form Controls in Auth */
+/* Form Controls & Seamless Input Group in Auth (6px Radius) */
 .login-section .form-control,
 .login-section .form-select {
-  border-radius: var(--radius-sm, 8px);
-  padding: 0.65rem 0.9rem;
-  font-size: 0.95rem;
-  transition: all 0.2s ease;
+  border-radius: 6px !important;
+  padding: 0.55rem 0.85rem !important;
+  font-size: 0.875rem !important;
+  min-height: 40px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .login-section .input-group .input-group-text {
-  border-radius: var(--radius-sm, 8px) 0 0 var(--radius-sm, 8px);
-  font-size: 0.95rem;
+  border-radius: 6px 0 0 6px !important;
+  font-size: 0.875rem !important;
+  padding: 0.55rem 0.85rem !important;
+  min-height: 40px;
+  border-right: 0 !important;
 }
 
 .login-section .input-group .form-control {
-  border-radius: 0 var(--radius-sm, 8px) var(--radius-sm, 8px) 0;
+  border-radius: 0 6px 6px 0 !important;
+  margin-left: 0 !important;
 }
 
 /* Responsive adjustments */
 @media (max-width: 991.98px) {
   .login-wrapper {
-    max-width: 500px;
+    max-width: 480px;
     flex-direction: column;
   }
-  
+
   .login-section {
-    padding: 2rem 1.5rem;
+    padding: 1.75rem 1.5rem;
   }
 }
 
@@ -177,7 +182,7 @@ body::after {
   body {
     padding: 1rem 0.75rem;
   }
-  
+
   .login-section {
     padding: 1.5rem 1.25rem;
   }

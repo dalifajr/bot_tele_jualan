@@ -1,79 +1,72 @@
 /*
  * Jualan Web — Google Cloud Console (cm-gm2 / cm-cm3) & Flat Material You
  * =========================================================================
- * Typography: Aptos Family (Aptos Display for Titles/Headings, Aptos for UI/Body, Aptos Mono for Code/Monospace)
+ * Typography: Google Sans Family (Google Sans Display for Titles/Headings, Google Sans for UI/Body, Google Sans Mono for Code)
  * Philosophy: Pure White Canvas (#ffffff), 1px Hairline Dividers (rgba(0,0,0,.12) / #dadce0),
- *             Crisp 8px Outlined Cards, 4px Compact Technical Buttons & Badges, Zero Heavy Shadows.
+ *             Crisp 8px Outlined Cards, 6px Controls/Buttons, 4px Badges, Zero Heavy Shadows.
  */
 
-/* === APTOS FONT FAMILY DECLARATIONS === */
+/* === GOOGLE SANS FONT FAMILY DECLARATIONS === */
 @font-face {
-    font-family: 'Aptos';
-    src: local('Aptos'), local('Aptos-Regular');
+    font-family: 'Google Sans';
+    src: local('Google Sans Regular'), local('Google Sans'), local('Product Sans'),
+         url('https://fonts.gstatic.com/s/googlesans/v58/4Ua_rENHsxJlGDuGo1OIlJfC6l_24rlCK1Yo_Iqcsih3SAyH6cAwhX9RFD48TE63OOYKtrwEIJllpyw.woff2') format('woff2');
     font-weight: 400;
     font-style: normal;
     font-display: swap;
 }
 @font-face {
-    font-family: 'Aptos';
-    src: local('Aptos-Light'), local('Aptos Light');
-    font-weight: 300;
-    font-style: normal;
-    font-display: swap;
-}
-@font-face {
-    font-family: 'Aptos';
-    src: local('Aptos-Medium'), local('Aptos Medium');
+    font-family: 'Google Sans';
+    src: local('Google Sans Medium'), local('Google Sans-Medium'), local('Product Sans Medium'),
+         url('https://fonts.gstatic.com/s/googlesans/v58/4UabrENHsxJlGDuGo1OIlLU94YtzCwY.woff2') format('woff2');
     font-weight: 500;
     font-style: normal;
     font-display: swap;
 }
 @font-face {
-    font-family: 'Aptos';
-    src: local('Aptos-SemiBold'), local('Aptos SemiBold');
+    font-family: 'Google Sans';
+    src: local('Google Sans SemiBold'), local('Google Sans Medium'), local('Product Sans Bold'),
+         url('https://fonts.gstatic.com/s/googlesans/v58/4UabrENHsxJlGDuGo1OIlLU94YtzCwY.woff2') format('woff2');
     font-weight: 600;
     font-style: normal;
     font-display: swap;
 }
 @font-face {
-    font-family: 'Aptos';
-    src: local('Aptos-Bold'), local('Aptos Bold');
+    font-family: 'Google Sans';
+    src: local('Google Sans Bold'), local('Google Sans-Bold'), local('Product Sans Bold'),
+         url('https://fonts.gstatic.com/s/googlesans/v58/4UabrENHsxJlGDuGo1OIlLV154tzCwY.woff2') format('woff2');
     font-weight: 700;
     font-style: normal;
     font-display: swap;
 }
 @font-face {
-    font-family: 'Aptos Display';
-    src: local('Aptos Display'), local('Aptos-Display'), local('AptosDisplay-Regular');
+    font-family: 'Google Sans Display';
+    src: local('Google Sans Display Regular'), local('Google Sans Display'), local('Google Sans'),
+         url('https://fonts.gstatic.com/s/googlesans/v58/4Ua_rENHsxJlGDuGo1OIlJfC6l_24rlCK1Yo_Iqcsih3SAyH6cAwhX9RFD48TE63OOYKtrwEIJllpyw.woff2') format('woff2');
     font-weight: 400;
     font-style: normal;
     font-display: swap;
 }
 @font-face {
-    font-family: 'Aptos Display';
-    src: local('Aptos Display-Medium'), local('Aptos Display Medium');
+    font-family: 'Google Sans Display';
+    src: local('Google Sans Display Medium'), local('Google Sans Medium'),
+         url('https://fonts.gstatic.com/s/googlesans/v58/4UabrENHsxJlGDuGo1OIlLU94YtzCwY.woff2') format('woff2');
     font-weight: 500;
     font-style: normal;
     font-display: swap;
 }
 @font-face {
-    font-family: 'Aptos Display';
-    src: local('Aptos Display-Bold'), local('Aptos Display Bold');
-    font-weight: 700;
+    font-family: 'Google Sans Display';
+    src: local('Google Sans Display Bold'), local('Google Sans Bold'),
+         url('https://fonts.gstatic.com/s/googlesans/v58/4UabrENHsxJlGDuGo1OIlLV154tzCwY.woff2') format('woff2');
+    font-weight: 600 700;
     font-style: normal;
     font-display: swap;
 }
 @font-face {
-    font-family: 'Aptos Mono';
-    src: local('Aptos Mono'), local('Aptos-Mono'), local('AptosMono-Regular');
-    font-weight: 400;
-    font-style: normal;
-    font-display: swap;
-}
-@font-face {
-    font-family: 'Aptos Mono';
-    src: local('Aptos Mono-Bold'), local('Aptos Mono Bold');
-    font-weight: 700;
+    font-family: 'Google Sans Mono';
+    src: local('Google Sans Mono'), local('JetBrains Mono'), local('Roboto Mono');
+    font-weight: 400 700;
     font-style: normal;
     font-display: swap;
 }
@@ -85,14 +78,28 @@
     --total-header-height: calc(var(--header-height) + var(--banner-height));
     --sidebar-width: 256px;
 
-    /* Aptos Family Typography Tokens */
-    --font-aptos-sans: "Aptos", "Aptos Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    --font-aptos-display: "Aptos Display", "Aptos", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    --font-aptos-mono: "Aptos Mono", "Roboto Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    /* Google Sans Family Typography Tokens */
+    --font-google-sans: "Google Sans", "Google Sans Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-google-sans-display: "Google Sans Display", "Google Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-google-sans-mono: "Google Sans Mono", "Roboto Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
-    --bs-font-sans-serif: var(--font-aptos-sans);
-    --bs-body-font-family: var(--font-aptos-sans);
-    --bs-font-monospace: var(--font-aptos-mono);
+    /* Backward compatibility aliases */
+    --font-aptos-sans: var(--font-google-sans);
+    --font-aptos-display: var(--font-google-sans-display);
+    --font-aptos-mono: var(--font-google-sans-mono);
+
+    --bs-font-sans-serif: var(--font-google-sans);
+    --bs-body-font-family: var(--font-google-sans);
+    --bs-font-monospace: var(--font-google-sans-mono);
+
+    /* Unified Bootstrap & System Border Radius Tokens */
+    --bs-border-radius-sm: 4px;
+    --bs-border-radius: 6px;
+    --bs-border-radius-lg: 8px;
+    --bs-border-radius-xl: 8px;
+    --bs-border-radius-xxl: 8px;
+    --bs-border-radius-2xl: 8px;
+    --bs-border-radius-pill: 8px;
 
     /* Official Google Cloud Console (cm-gm2 / cm-cm3) Color Tokens */
     --cm-sys-color-primary: #3367d6;
@@ -119,19 +126,19 @@
     --cm-sys-color-status-neutral: #80868b;
     --cm-sys-color-status-neutral-container: #f1f3f4;
 
-    /* Official Google Cloud Console Typography Scale Tokens (Strict Aptos Family) */
-    --cm-sys-type-display-small: 400 36px/44px var(--font-aptos-display);
-    --cm-sys-type-headline-small: 400 24px/32px var(--font-aptos-display);
-    --cm-sys-type-title-large: 400 20px/28px var(--font-aptos-display);
-    --cm-sys-type-title-medium: 500 16px/24px var(--font-aptos-display);
-    --cm-sys-type-title-small: 400 18px/24px var(--font-aptos-display);
-    --cm-sys-type-label-large: 500 14px/20px var(--font-aptos-sans);
-    --cm-sys-type-label-medium: 500 13px/20px var(--font-aptos-sans);
-    --cm-sys-type-label-small: 500 12px/16px var(--font-aptos-sans);
-    --cm-sys-type-body-large: 400 14px/20px var(--font-aptos-sans);
-    --cm-sys-type-body-medium: 400 13px/20px var(--font-aptos-sans);
-    --cm-sys-type-body-small: 400 12px/16px var(--font-aptos-sans);
-    --cm-sys-type-code: 400 12px/16px var(--font-aptos-mono);
+    /* Official Google Sans Typography Scale Tokens (Balanced & Proportional) */
+    --cm-sys-type-display-small: 600 32px/40px var(--font-google-sans-display);
+    --cm-sys-type-headline-small: 600 22px/30px var(--font-google-sans-display);
+    --cm-sys-type-title-large: 600 19px/26px var(--font-google-sans-display);
+    --cm-sys-type-title-medium: 600 15.5px/22px var(--font-google-sans-display);
+    --cm-sys-type-title-small: 600 14px/20px var(--font-google-sans-display);
+    --cm-sys-type-label-large: 500 14.5px/20px var(--font-google-sans);
+    --cm-sys-type-label-medium: 500 13.5px/20px var(--font-google-sans);
+    --cm-sys-type-label-small: 500 12.5px/18px var(--font-google-sans);
+    --cm-sys-type-body-large: 400 15px/22px var(--font-google-sans);
+    --cm-sys-type-body-medium: 400 14px/21px var(--font-google-sans);
+    --cm-sys-type-body-small: 400 12.5px/18px var(--font-google-sans);
+    --cm-sys-type-code: 400 12.5px/18px var(--font-google-sans-mono);
 
     /* Application Token Mappings -> Cloud Material */
     --primary-h: 221;
@@ -172,9 +179,9 @@
     --card-shadow: none;
     --card-shadow-hover: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
 
-    /* Google Cloud Console Geometric Corner Radius Scale */
+    /* Unified Geometric Corner Radius Scale */
     --radius-xs: 4px;
-    --radius-sm: 4px;
+    --radius-sm: 6px;
     --radius-md: 8px;
     --radius-lg: 8px;
     --radius-xl: 8px;
@@ -273,13 +280,13 @@ html.theme-transitioning .m3-console-header {
     transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease !important;
 }
 
-/* === UNIVERSAL APTOS FAMILY ENFORCEMENT (SAFE TEXT INHERITANCE) === */
+/* === UNIVERSAL GOOGLE SANS FAMILY ENFORCEMENT & PROPORTIONAL TYPOGRAPHY === */
 html,
 body {
-    font-family: var(--font-aptos-sans) !important;
-    font-size: 0.8125rem; /* 13px — Google Cloud Console body-medium */
-    line-height: 1.25rem; /* 20px — Google Cloud Console body-medium */
-    letter-spacing: 0.01em;
+    font-family: var(--font-google-sans) !important;
+    font-size: 0.875rem; /* 14px — Crisp, readable & well-proportioned */
+    line-height: 1.5;    /* 21px */
+    letter-spacing: 0.005em;
     overflow-x: hidden;
     background-color: var(--cm-sys-color-surface) !important;
     color: var(--cm-sys-color-on-surface) !important;
@@ -287,7 +294,13 @@ body {
     -moz-osx-font-smoothing: grayscale;
 }
 
-/* Enforce Aptos Display on all Title & Heading Elements */
+small,
+.small {
+    font-size: 0.8125rem !important; /* 13px — Clear secondary text without being tiny */
+    line-height: 1.45;
+}
+
+/* Enforce Google Sans Display on all Title & Heading Elements */
 h1, h2, h3, h4, h5, h6,
 .h1, .h2, .h3, .h4, .h5, .h6,
 .navbar-brand,
@@ -295,12 +308,12 @@ h1, h2, h3, h4, h5, h6,
 .card-header,
 .modal-title,
 .offcanvas-title {
-    font-family: var(--font-aptos-display) !important;
-    letter-spacing: 0;
+    font-family: var(--font-google-sans-display) !important;
+    letter-spacing: -0.01em;
     color: var(--cm-sys-color-on-surface);
 }
 
-/* Enforce Aptos Sans on all UI Components, Controls and Typography without overriding icon fonts */
+/* Enforce Google Sans on all UI Components, Controls and Typography without overriding icon fonts */
 button:not(.fa):not([class*="fa-"]),
 input,
 optgroup,
@@ -334,7 +347,7 @@ label,
 li,
 td,
 th {
-    font-family: var(--font-aptos-sans);
+    font-family: var(--font-google-sans);
 }
 
 /* === CRITICAL FONT AWESOME ICON PROTECTION (PREVENTS FONT OVERRIDE) === */
@@ -407,18 +420,25 @@ th {
     display: inline-block;
 }
 
-/* Enforce Cloud Console crisp heading proportions */
-h1, .h1 { font-size: 1.5rem; line-height: 2rem; font-weight: 400; }
-h2, .h2 { font-size: 1.25rem; line-height: 1.75rem; font-weight: 400; }
-h3, .h3 { font-size: 1.125rem; line-height: 1.5rem; font-weight: 400; }
-h4, .h4 { font-size: 1rem; line-height: 1.5rem; font-weight: 500; }
-h5, .h5 { font-size: 0.9375rem; line-height: 1.25rem; font-weight: 500; }
-h6, .h6 { font-size: 0.875rem; line-height: 1.25rem; font-weight: 500; }
+/* Balanced Google Sans Heading & Utility Font-Size Scale */
+h1, .h1 { font-size: 1.625rem; line-height: 2.125rem; font-weight: 600; }  /* 26px */
+h2, .h2 { font-size: 1.375rem; line-height: 1.85rem;  font-weight: 600; }  /* 22px */
+h3, .h3 { font-size: 1.1875rem; line-height: 1.625rem; font-weight: 600; } /* 19px */
+h4, .h4 { font-size: 1.0625rem; line-height: 1.5rem;   font-weight: 600; } /* 17px */
+h5, .h5 { font-size: 0.96875rem; line-height: 1.4rem;  font-weight: 600; } /* 15.5px */
+h6, .h6 { font-size: 0.875rem; line-height: 1.3rem;    font-weight: 600; } /* 14px */
+
+.fs-1 { font-size: 1.875rem !important; }
+.fs-2 { font-size: 1.5rem !important; }
+.fs-3 { font-size: 1.25rem !important; }
+.fs-4 { font-size: 1.125rem !important; }
+.fs-5 { font-size: 1rem !important; }
+.fs-6 { font-size: 0.9375rem !important; } /* 15px — Never larger than card titles */
 
 code, pre, kbd, samp, .font-monospace {
-    font-family: var(--font-aptos-mono) !important;
-    font-size: 0.75rem; /* 12px */
-    line-height: 1rem;  /* 16px */
+    font-family: var(--font-google-sans-mono) !important;
+    font-size: 0.8125rem; /* 13px */
+    line-height: 1.25rem;
 }
 
 a {
@@ -1017,14 +1037,24 @@ a .m3-metric-card:hover {
     background: var(--cm-sys-color-container-high) !important;
 }
 
-/* Google Cloud Console Segmented / Tab Links */
-.nav-pills .nav-link {
+/* Google Cloud Console Segmented / Tab Links (Concentric 8px Container / 6px Inner Tab) */
+ul.nav-pills,
+.nav-pills.rounded-pill,
+.nav-pills.card-header-pills {
+    border-radius: 8px !important;
+    background-color: var(--cm-sys-color-container) !important;
+    border: 1px solid var(--cm-sys-color-hairline) !important;
+    padding: 4px !important;
+}
+
+.nav-pills .nav-link,
+.nav-pills .nav-link.rounded-pill {
     color: var(--cm-sys-color-on-surface-variant) !important;
-    background: var(--cm-sys-color-surface);
-    border: 1px solid var(--cm-sys-color-hairline);
-    border-radius: 4px !important;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 6px !important;
     font: var(--cm-sys-type-label-medium);
-    padding: 0.35rem 0.85rem;
+    padding: 0.42rem 0.9rem;
     transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
@@ -1036,7 +1066,8 @@ a .m3-metric-card:hover {
 .nav-pills .nav-link.active {
     background: var(--cm-sys-color-container-primary) !important;
     color: var(--cm-sys-color-primary-on-container) !important;
-    border-color: rgba(var(--primary-rgb), 0.35) !important;
+    border-color: rgba(var(--primary-rgb), 0.3) !important;
+    font-weight: 600 !important;
     box-shadow: none !important;
 }
 
@@ -1074,13 +1105,13 @@ a .m3-metric-card:hover {
     color: var(--cm-sys-color-primary-on-container);
 }
 
-/* === BUTTONS (GOOGLE CLOUD CONSOLE sdui-button 4PX TECHNICAL GEOMETRY) === */
+/* === BUTTONS (BALANCED 6PX GEOMETRY & PROPORTIONAL FONT) === */
 .btn {
     font: var(--cm-sys-type-label-medium);
-    letter-spacing: 0.15px;
-    border-radius: 4px !important;
-    padding: 0.3125rem 0.75rem;
-    min-height: 32px;
+    letter-spacing: 0.01em;
+    border-radius: 6px !important;
+    padding: 0.4rem 0.9rem;
+    min-height: 36px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -1091,14 +1122,16 @@ a .m3-metric-card:hover {
 
 .btn-sm {
     font: var(--cm-sys-type-label-small);
-    min-height: 28px;
-    padding: 0.2rem 0.6rem;
+    min-height: 31px;
+    padding: 0.25rem 0.7rem;
+    border-radius: 6px !important;
 }
 
 .btn-lg {
     font: var(--cm-sys-type-label-large);
-    min-height: 38px;
-    padding: 0.45rem 1rem;
+    min-height: 42px;
+    padding: 0.5rem 1.15rem;
+    border-radius: 6px !important;
 }
 
 .btn-primary {
@@ -1191,15 +1224,15 @@ a .m3-metric-card:hover {
     color: #ffffff !important;
 }
 
-/* === FORM CONTROLS (GOOGLE CLOUD CONSOLE 4PX OUTLINED FIELD) === */
+/* === FORM CONTROLS (BALANCED 6PX OUTLINED FIELD & SEAMLESS INPUT-GROUP) === */
 .form-control,
 .form-select {
     border: 1px solid var(--cm-sys-color-outline) !important;
-    border-radius: 4px !important;
+    border-radius: 6px !important;
     background-color: var(--cm-sys-color-surface) !important;
     color: var(--cm-sys-color-on-surface) !important;
-    padding: 0.375rem 0.75rem !important;
-    min-height: 36px;
+    padding: 0.42rem 0.8rem !important;
+    min-height: 38px;
     font: var(--cm-sys-type-body-medium) !important;
     box-shadow: none !important;
     transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
@@ -1207,9 +1240,10 @@ a .m3-metric-card:hover {
 
 .form-control-sm,
 .form-select-sm {
-    min-height: 30px;
-    padding: 0.2rem 0.6rem !important;
+    min-height: 32px;
+    padding: 0.25rem 0.65rem !important;
     font: var(--cm-sys-type-body-small) !important;
+    border-radius: 6px !important;
 }
 
 .form-control:focus,
@@ -1219,6 +1253,7 @@ a .m3-metric-card:hover {
     outline: none !important;
     background-color: var(--cm-sys-color-surface) !important;
     color: var(--cm-sys-color-on-surface) !important;
+    z-index: 3;
 }
 
 /* Views utilizing bg-light inputs conform to Cloud Material surface */
@@ -1237,16 +1272,28 @@ a .m3-metric-card:hover {
 .input-group-text {
     background-color: var(--cm-sys-color-container) !important;
     border: 1px solid var(--cm-sys-color-outline) !important;
-    border-radius: 4px !important;
+    border-radius: 6px !important;
     color: var(--cm-sys-color-on-surface-variant) !important;
     font: var(--cm-sys-type-body-medium) !important;
-    padding: 0.375rem 0.75rem !important;
+    padding: 0.42rem 0.8rem !important;
+}
+
+/* Seamless Input Group Middle Seam Join (Fixes rounded corners colliding inside input-group) */
+.input-group > :not(:first-child):not(.dropdown-menu):not(.valid-tooltip):not(.valid-feedback):not(.invalid-tooltip):not(.invalid-feedback) {
+    margin-left: -1px !important;
+    border-top-left-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
+}
+
+.input-group > :not(:last-child):not(.dropdown-toggle):not(.dropdown-menu):not(.form-floating) {
+    border-top-right-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
 }
 
 .form-label {
     font: var(--cm-sys-type-label-small);
     color: var(--cm-sys-color-on-surface-variant);
-    margin-bottom: 0.3rem;
+    margin-bottom: 0.35rem;
 }
 
 .form-check-input {
@@ -1265,9 +1312,9 @@ a .m3-metric-card:hover {
     box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.16) !important;
 }
 
-/* === PRODUCT CARDS (FLAT OUTLINED SURFACE) === */
+/* === PRODUCT CARDS (FLAT OUTLINED SURFACE 8PX) === */
 .product-card {
-    border-radius: var(--radius-lg, 16px) !important;
+    border-radius: 8px !important;
     border: 1px solid var(--outline-color) !important;
     overflow: hidden;
     background: var(--surface-bg) !important;
@@ -1939,11 +1986,11 @@ a .m3-metric-card:hover {
     background-color: rgba(var(--primary-rgb), 0.04) !important;
 }
 
-/* === BADGE & CHIP STYLES (GOOGLE CLOUD CONSOLE cfc-badge 4PX) === */
+/* === BADGE & CHIP STYLES (BALANCED 4PX GEOMETRY & PROPORTIONAL FONT) === */
 .badge {
-    font: 500 0.6875rem/1rem var(--font-aptos-sans) !important;
+    font: 500 0.75rem/1.2 var(--font-google-sans) !important;
     letter-spacing: 0.01em;
-    padding: 0.15rem 0.45rem !important;
+    padding: 0.2rem 0.52rem !important;
     border-radius: 4px !important;
     box-shadow: none !important;
     display: inline-flex;
@@ -1951,10 +1998,35 @@ a .m3-metric-card:hover {
     gap: 4px;
 }
 
-/* Preserve circular counter badge on Top Bar icons */
+/* Preserve circular counter badge on Top Bar icons & avatars */
 .m3-icon-btn .badge.rounded-pill,
-.mobile-nav-badge {
+.mobile-nav-badge,
+.rounded-circle {
     border-radius: 9999px !important;
+}
+
+/* === SYSTEM-WIDE BORDER-RADIUS HARMONIZATION (NO MISMATCHED OVERSIZED RADII) === */
+.rounded-3,
+.rounded-4,
+.rounded-5 {
+    border-radius: 8px !important;
+}
+
+/* Inside a card (8px), nested containers/boxes use concentric 6px radius */
+.card .rounded-3,
+.card .rounded-4,
+.card .rounded-5,
+.modal-body .rounded-3,
+.modal-body .rounded-4 {
+    border-radius: 6px !important;
+}
+
+/* Normalize oversized .rounded-pill on buttons, inputs, and tab bars to clean 6px/8px */
+.btn.rounded-pill,
+.form-control.rounded-pill,
+.form-select.rounded-pill,
+.input-group.rounded-pill {
+    border-radius: 6px !important;
 }
 
 /* Google Cloud Console Official Tonal Status Badges (Light & Dark Adaptive via CSS Variables) */
@@ -2000,11 +2072,11 @@ a .m3-metric-card:hover {
     border: 1px solid var(--cm-sys-color-hairline) !important;
 }
 
-/* === DROPDOWN MENUS (GOOGLE CLOUD CONSOLE OVERLAY 4PX) === */
+/* === DROPDOWN MENUS (GOOGLE CLOUD CONSOLE OVERLAY 6PX) === */
 .dropdown-menu {
     background-color: var(--cm-sys-color-surface) !important;
     border: 1px solid var(--cm-sys-color-hairline) !important;
-    border-radius: 4px !important;
+    border-radius: 6px !important;
     box-shadow: 0 1px 8px 0 rgba(0, 0, 0, 0.2), 0 3px 4px 0 rgba(0, 0, 0, 0.14), 0 3px 3px -2px rgba(0, 0, 0, 0.12) !important;
     padding: 4px 0 !important;
 }
@@ -2023,13 +2095,13 @@ a .m3-metric-card:hover {
     color: var(--cm-sys-color-primary) !important;
 }
 
-/* === ALERTS (GOOGLE CLOUD CONSOLE MESSAGE BAR 4PX) === */
+/* === ALERTS (BALANCED 6PX MESSAGE BAR) === */
 .alert {
-    border-radius: 4px !important;
+    border-radius: 6px !important;
     border: 1px solid var(--cm-sys-color-hairline) !important;
     box-shadow: none !important;
     font: var(--cm-sys-type-body-medium);
-    padding: 0.65rem 1rem;
+    padding: 0.7rem 1rem;
 }
 
 /* === MODALS (GOOGLE CLOUD CONSOLE DIALOG 8PX) === */
@@ -2102,11 +2174,11 @@ a .m3-metric-card:hover {
 /* === PROFILE PAGE === */
 .profile-header {
     background: linear-gradient(135deg, hsl(var(--primary-h), var(--primary-s), 40%) 0%, hsl(var(--primary-h), var(--primary-s), 50%) 50%, hsl(var(--primary-h), var(--primary-s), 60%) 100%);
-    border-radius: 20px;
-    padding: 2rem;
+    border-radius: 8px;
+    padding: 1.75rem;
     color: white;
     text-align: center;
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
 }
 
 .profile-avatar {

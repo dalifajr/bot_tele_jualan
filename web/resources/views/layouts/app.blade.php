@@ -34,75 +34,44 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Roboto+Mono:wght@400;500;600&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
 
-    {{-- Aptos Font System Setup (Full Aptos Family) --}}
+    {{-- Google Sans Font System Setup --}}
     <style>
         @font-face {
-            font-family: 'Aptos';
-            src: local('Aptos'), local('Aptos-Regular');
+            font-family: 'Google Sans';
+            src: local('Google Sans Regular'), local('Google Sans'), local('Product Sans'),
+                 url('https://fonts.gstatic.com/s/googlesans/v58/4Ua_rENHsxJlGDuGo1OIlJfC6l_24rlCK1Yo_Iqcsih3SAyH6cAwhX9RFD48TE63OOYKtrwEIJllpyw.woff2') format('woff2');
             font-weight: 400;
             font-style: normal;
             font-display: swap;
         }
         @font-face {
-            font-family: 'Aptos';
-            src: local('Aptos-Light'), local('Aptos Light');
-            font-weight: 300;
+            font-family: 'Google Sans';
+            src: local('Google Sans Medium'), local('Google Sans-Medium'), local('Product Sans Medium'),
+                 url('https://fonts.gstatic.com/s/googlesans/v58/4UabrENHsxJlGDuGo1OIlLU94YtzCwY.woff2') format('woff2');
+            font-weight: 500 600;
             font-style: normal;
             font-display: swap;
         }
         @font-face {
-            font-family: 'Aptos';
-            src: local('Aptos-Medium'), local('Aptos Medium');
-            font-weight: 500;
-            font-style: normal;
-            font-display: swap;
-        }
-        @font-face {
-            font-family: 'Aptos';
-            src: local('Aptos-SemiBold'), local('Aptos SemiBold');
-            font-weight: 600;
-            font-style: normal;
-            font-display: swap;
-        }
-        @font-face {
-            font-family: 'Aptos';
-            src: local('Aptos-Bold'), local('Aptos Bold');
+            font-family: 'Google Sans';
+            src: local('Google Sans Bold'), local('Google Sans-Bold'), local('Product Sans Bold'),
+                 url('https://fonts.gstatic.com/s/googlesans/v58/4UabrENHsxJlGDuGo1OIlLV154tzCwY.woff2') format('woff2');
             font-weight: 700;
             font-style: normal;
             font-display: swap;
         }
         @font-face {
-            font-family: 'Aptos Display';
-            src: local('Aptos Display'), local('Aptos-Display'), local('AptosDisplay-Regular');
-            font-weight: 400;
+            font-family: 'Google Sans Display';
+            src: local('Google Sans Display'), local('Google Sans'),
+                 url('https://fonts.gstatic.com/s/googlesans/v58/4UabrENHsxJlGDuGo1OIlLU94YtzCwY.woff2') format('woff2');
+            font-weight: 400 700;
             font-style: normal;
             font-display: swap;
         }
         @font-face {
-            font-family: 'Aptos Display';
-            src: local('Aptos Display-Medium'), local('Aptos Display Medium');
-            font-weight: 500;
-            font-style: normal;
-            font-display: swap;
-        }
-        @font-face {
-            font-family: 'Aptos Display';
-            src: local('Aptos Display-Bold'), local('Aptos Display Bold');
-            font-weight: 700;
-            font-style: normal;
-            font-display: swap;
-        }
-        @font-face {
-            font-family: 'Aptos Mono';
-            src: local('Aptos Mono'), local('Aptos-Mono'), local('AptosMono-Regular');
-            font-weight: 400;
-            font-style: normal;
-            font-display: swap;
-        }
-        @font-face {
-            font-family: 'Aptos Mono';
-            src: local('Aptos Mono-Bold'), local('Aptos Mono Bold');
-            font-weight: 700;
+            font-family: 'Google Sans Mono';
+            src: local('Google Sans Mono'), local('JetBrains Mono'), local('Roboto Mono');
+            font-weight: 400 700;
             font-style: normal;
             font-display: swap;
         }
@@ -305,27 +274,27 @@
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <div class="d-flex align-items-center gap-2">
                     <div class="skeleton-shimmer rounded-circle" style="width: 38px; height: 38px;"></div>
-                    <div class="skeleton-shimmer" style="height: 22px; width: 130px; border-radius: 8px;"></div>
+                    <div class="skeleton-shimmer" style="height: 22px; width: 130px; border-radius: 6px;"></div>
                 </div>
                 <div class="skeleton-shimmer rounded-circle" style="width: 38px; height: 38px;"></div>
             </div>
             <div class="row g-3 g-lg-4">
                 <div class="col-lg-7 col-xl-8">
-                    <div class="card border-0 shadow-sm overflow-hidden mb-3" style="border-radius: 20px;">
+                    <div class="card overflow-hidden mb-3" style="border-radius: 8px;">
                         <div class="skeleton-shimmer w-100" style="height: 230px; border-radius: 0;"></div>
                         <div class="card-body p-3 p-md-4">
                             <div class="d-flex justify-content-between align-items-center mb-3">
-                                <div class="skeleton-shimmer" style="height: 28px; width: 140px; border-radius: 8px;"></div>
-                                <div class="skeleton-shimmer rounded-pill" style="height: 24px; width: 90px;"></div>
+                                <div class="skeleton-shimmer" style="height: 28px; width: 140px; border-radius: 6px;"></div>
+                                <div class="skeleton-shimmer" style="height: 24px; width: 90px; border-radius: 4px;"></div>
                             </div>
                             <div class="skeleton-shimmer mb-2" style="height: 22px; width: 85%; border-radius: 6px;"></div>
                             <div class="skeleton-shimmer mb-3" style="height: 14px; width: 45%; border-radius: 4px;"></div>
                             <div class="row g-2 mb-4">
-                                <div class="col-4"><div class="skeleton-shimmer w-100 rounded-3" style="height: 58px;"></div></div>
-                                <div class="col-4"><div class="skeleton-shimmer w-100 rounded-3" style="height: 58px;"></div></div>
-                                <div class="col-4"><div class="skeleton-shimmer w-100 rounded-3" style="height: 58px;"></div></div>
+                                <div class="col-4"><div class="skeleton-shimmer w-100 rounded-2" style="height: 58px;"></div></div>
+                                <div class="col-4"><div class="skeleton-shimmer w-100 rounded-2" style="height: 58px;"></div></div>
+                                <div class="col-4"><div class="skeleton-shimmer w-100 rounded-2" style="height: 58px;"></div></div>
                             </div>
-                            <div class="p-3 rounded-4 border d-flex align-items-center justify-content-between mb-4">
+                            <div class="p-3 rounded-2 border d-flex align-items-center justify-content-between mb-4">
                                 <div class="d-flex align-items-center gap-3">
                                     <div class="skeleton-shimmer rounded-circle" style="width: 46px; height: 46px;"></div>
                                     <div>
@@ -339,11 +308,11 @@
                     </div>
                 </div>
                 <div class="col-lg-5 col-xl-4 d-none d-lg-block">
-                    <div class="card border-0 shadow-sm p-4" style="border-radius: 20px;">
+                    <div class="card p-4" style="border-radius: 8px;">
                         <div class="skeleton-shimmer mb-3" style="height: 20px; width: 130px;"></div>
-                        <div class="skeleton-shimmer mb-3" style="height: 48px; width: 100%; border-radius: 12px;"></div>
-                        <div class="skeleton-shimmer mb-2" style="height: 48px; width: 100%; border-radius: 24px;"></div>
-                        <div class="skeleton-shimmer" style="height: 48px; width: 100%; border-radius: 24px;"></div>
+                        <div class="skeleton-shimmer mb-3" style="height: 44px; width: 100%; border-radius: 6px;"></div>
+                        <div class="skeleton-shimmer mb-2" style="height: 40px; width: 100%; border-radius: 6px;"></div>
+                        <div class="skeleton-shimmer" style="height: 40px; width: 100%; border-radius: 6px;"></div>
                     </div>
                 </div>
             </div>
@@ -352,11 +321,11 @@
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <div class="d-flex align-items-center gap-2">
                     <div class="skeleton-shimmer rounded-circle" style="width: 38px; height: 38px;"></div>
-                    <div class="skeleton-shimmer" style="height: 22px; width: 120px; border-radius: 8px;"></div>
+                    <div class="skeleton-shimmer" style="height: 22px; width: 120px; border-radius: 6px;"></div>
                 </div>
                 <div class="skeleton-shimmer rounded-circle" style="width: 38px; height: 38px;"></div>
             </div>
-            <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+            <div class="card p-4 mb-4" style="border-radius: 8px;">
                 <div class="d-flex align-items-center gap-3 mb-3">
                     <div class="skeleton-shimmer rounded-circle" style="width: 64px; height: 64px;"></div>
                     <div>
@@ -365,16 +334,16 @@
                     </div>
                 </div>
                 <div class="row g-2 mt-2 pt-2 border-top">
-                    <div class="col-4"><div class="skeleton-shimmer w-100 rounded-3" style="height: 48px;"></div></div>
-                    <div class="col-4"><div class="skeleton-shimmer w-100 rounded-3" style="height: 48px;"></div></div>
-                    <div class="col-4"><div class="skeleton-shimmer w-100 rounded-3" style="height: 48px;"></div></div>
+                    <div class="col-4"><div class="skeleton-shimmer w-100 rounded-2" style="height: 48px;"></div></div>
+                    <div class="col-4"><div class="skeleton-shimmer w-100 rounded-2" style="height: 48px;"></div></div>
+                    <div class="col-4"><div class="skeleton-shimmer w-100 rounded-2" style="height: 48px;"></div></div>
                 </div>
             </div>
             <div class="row g-3 g-md-4">
                 @for($i = 0; $i < 4; $i++)
                 <div class="col-6 col-md-4 col-lg-3">
-                    <div class="card border-0 shadow-sm p-3 h-100" style="border-radius: 16px;">
-                        <div class="skeleton-shimmer w-100 mb-2.5" style="height: 120px; border-radius: 12px;"></div>
+                    <div class="card p-3 h-100" style="border-radius: 8px;">
+                        <div class="skeleton-shimmer w-100 mb-2.5" style="height: 120px; border-radius: 6px;"></div>
                         <div class="skeleton-shimmer mb-2" style="height: 16px; width: 80%;"></div>
                         <div class="skeleton-shimmer" style="height: 14px; width: 45%;"></div>
                     </div>
@@ -385,31 +354,31 @@
             {{-- Contextual Skeleton: Keranjang Belanja --}}
             <div class="d-flex align-items-center gap-2 mb-3">
                 <div class="skeleton-shimmer rounded-circle" style="width: 38px; height: 38px;"></div>
-                <div class="skeleton-shimmer" style="height: 22px; width: 150px; border-radius: 8px;"></div>
+                <div class="skeleton-shimmer" style="height: 22px; width: 150px; border-radius: 6px;"></div>
             </div>
             <div class="row g-3 g-lg-4">
                 <div class="col-lg-8">
                     @for($c = 0; $c < 3; $c++)
-                    <div class="card border-0 shadow-sm p-3 mb-2" style="border-radius: 16px;">
+                    <div class="card p-3 mb-2" style="border-radius: 8px;">
                         <div class="d-flex align-items-center justify-content-between">
                             <div class="d-flex align-items-center gap-3">
-                                <div class="skeleton-shimmer rounded-3" style="width: 50px; height: 50px;"></div>
+                                <div class="skeleton-shimmer rounded-2" style="width: 50px; height: 50px;"></div>
                                 <div>
                                     <div class="skeleton-shimmer mb-1.5" style="height: 16px; width: 140px;"></div>
                                     <div class="skeleton-shimmer" style="height: 13px; width: 75px;"></div>
                                 </div>
                             </div>
-                            <div class="skeleton-shimmer rounded-pill" style="height: 32px; width: 90px;"></div>
+                            <div class="skeleton-shimmer" style="height: 32px; width: 90px; border-radius: 6px;"></div>
                         </div>
                     </div>
                     @endfor
                 </div>
                 <div class="col-lg-4">
-                    <div class="card border-0 shadow-sm p-4" style="border-radius: 20px;">
+                    <div class="card p-4" style="border-radius: 8px;">
                         <div class="skeleton-shimmer mb-3" style="height: 20px; width: 130px;"></div>
                         <div class="skeleton-shimmer mb-2" style="height: 16px; width: 100%;"></div>
                         <div class="skeleton-shimmer mb-4" style="height: 16px; width: 70%;"></div>
-                        <div class="skeleton-shimmer rounded-pill" style="height: 44px; width: 100%;"></div>
+                        <div class="skeleton-shimmer" style="height: 40px; width: 100%; border-radius: 6px;"></div>
                     </div>
                 </div>
             </div>
@@ -418,23 +387,23 @@
             <div class="d-flex align-items-center justify-content-between mb-4 pb-2 border-bottom">
                 <div class="d-flex align-items-center gap-2">
                     <div class="skeleton-shimmer rounded-circle" style="width: 38px; height: 38px;"></div>
-                    <div class="skeleton-shimmer" style="height: 22px; width: 140px; border-radius: 8px;"></div>
+                    <div class="skeleton-shimmer" style="height: 22px; width: 140px; border-radius: 6px;"></div>
                 </div>
                 <div class="d-flex align-items-center gap-2">
-                    <div class="skeleton-shimmer rounded-pill" style="height: 32px; width: 90px;"></div>
+                    <div class="skeleton-shimmer" style="height: 32px; width: 90px; border-radius: 6px;"></div>
                     <div class="skeleton-shimmer rounded-circle" style="width: 32px; height: 32px;"></div>
                 </div>
             </div>
             <div class="row g-3 g-md-4">
                 @for($i = 0; $i < 4; $i++)
                 <div class="col-6 col-md-4 col-lg-3 {{ $i >= 2 ? 'd-none d-md-block' : '' }}">
-                    <div class="card border-0 shadow-sm p-3 h-100" style="border-radius: 16px;">
-                        <div class="skeleton-shimmer w-100 mb-3" style="height: 125px; border-radius: 12px;"></div>
+                    <div class="card p-3 h-100" style="border-radius: 8px;">
+                        <div class="skeleton-shimmer w-100 mb-3" style="height: 125px; border-radius: 6px;"></div>
                         <div class="skeleton-shimmer mb-2" style="height: 16px; width: 80%;"></div>
                         <div class="skeleton-shimmer mb-3" style="height: 12px; width: 50%;"></div>
                         <div class="d-flex justify-content-between align-items-center mt-auto pt-2 border-top">
                             <div class="skeleton-shimmer" style="height: 18px; width: 65px;"></div>
-                            <div class="skeleton-shimmer rounded-pill" style="height: 26px; width: 36px;"></div>
+                            <div class="skeleton-shimmer" style="height: 26px; width: 36px; border-radius: 6px;"></div>
                         </div>
                     </div>
                 </div>
@@ -443,16 +412,16 @@
             <div class="mt-4">
                 <div class="skeleton-shimmer mb-3" style="height: 18px; width: 160px; border-radius: 6px;"></div>
                 @for($j = 0; $j < 3; $j++)
-                <div class="card border-0 shadow-sm p-3 mb-2" style="border-radius: 14px;">
+                <div class="card p-3 mb-2" style="border-radius: 8px;">
                     <div class="d-flex align-items-center justify-content-between">
                         <div class="d-flex align-items-center gap-2.5 flex-grow-1">
-                            <div class="skeleton-shimmer rounded-3" style="width: 44px; height: 44px; flex-shrink: 0;"></div>
+                            <div class="skeleton-shimmer rounded-2" style="width: 44px; height: 44px; flex-shrink: 0;"></div>
                             <div class="w-75">
                                 <div class="skeleton-shimmer mb-1.5" style="height: 14px; width: 65%;"></div>
                                 <div class="skeleton-shimmer" style="height: 11px; width: 40%;"></div>
                             </div>
                         </div>
-                        <div class="skeleton-shimmer rounded-pill" style="height: 24px; width: 70px;"></div>
+                        <div class="skeleton-shimmer" style="height: 24px; width: 70px; border-radius: 4px;"></div>
                     </div>
                 </div>
                 @endfor
