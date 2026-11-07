@@ -187,6 +187,7 @@ backup_before_update() {
   tar \
     --exclude='.venv' \
     --exclude='ops/backups' \
+    --exclude='reference design' \
     -czf "${archive}" \
     .
 
@@ -255,6 +256,7 @@ update_website() {
   composer install --no-dev --optimize-autoloader --no-interaction 2>&1 || true
 
   php artisan config:clear 2>/dev/null || true
+  php artisan cache:clear 2>/dev/null || true
   php artisan view:clear 2>/dev/null || true
   php artisan route:clear 2>/dev/null || true
   php artisan migrate --force || echo "WARNING: Laravel migration failed."
@@ -387,6 +389,7 @@ rollback_update() {
 
   git reset --hard "${prev}"
   install_requirements
+  update_website
   restart_services
 
   echo "Rollback selesai ke commit ${prev}."

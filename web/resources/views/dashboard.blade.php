@@ -1,85 +1,89 @@
 @extends('layouts.app')
 
 @section('title', __('Dashboard'))
-@section('page_subtitle', __('Dashboard'))
+@section('page_subtitle', __('Cloud Overview'))
 @section('meta_description', 'Dashboard akun Anda — lihat ringkasan pesanan dan aktivitas terbaru')
 
+@section('action_bar_buttons')
+    @guest
+    <a href="{{ route('login') }}" class="cm-btn-outline">
+        <i class="fas fa-arrow-right-to-bracket"></i>
+        <span>{{ __('Login') }}</span>
+    </a>
+    @endguest
+@endsection
+
 @section('content')
-<!-- Flat Material 3 Customer Welcome Header -->
-<div class="m3-console-header mb-4">
+<!-- Google Cloud Console Welcome Header & Identity Bar -->
+<div class="m3-console-header mb-3">
     <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
         <div>
             @auth
-            <div class="d-inline-flex align-items-center gap-1.5 px-3 py-1 rounded-pill mb-2 fw-semibold" style="background: var(--primary-container); color: var(--on-primary-container); font-size: 0.72rem; letter-spacing: 0.04em; text-transform: uppercase;">
-                <i class="fas fa-sparkles"></i>
-                <span>{{ __('Selamat Datang Kembali') }}</span>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-primary-subtle text-primary">
+                    <i class="fas fa-terminal me-1"></i>{{ __('Selamat Datang Kembali') }}
+                </span>
+                <span class="badge bg-success-subtle text-success">
+                    <i class="fas fa-shield-alt me-1"></i>{{ __('Status Akun: Aktif') }}
+                </span>
+                <span class="badge bg-info-subtle text-info font-monospace">
+                    <i class="fab fa-telegram me-1"></i>{{ Auth::user()->telegram_id ? 'TG ID: ' . Auth::user()->telegram_id : 'Telegram: Belum Terhubung' }}
+                </span>
             </div>
-            <h1 class="h3 fw-bold mb-1" style="color: var(--on-surface);">
-                {{ Str::limit(Auth::user()->full_name ?? Auth::user()->username ?? 'Pelanggan Setia', 30) }} 👋
+            <h1 class="h4 fw-semibold mb-1" style="color: var(--cm-sys-color-on-surface);">
+                {{ Str::limit(Auth::user()->full_name ?? Auth::user()->username ?? 'Pelanggan Setia', 30) }}
             </h1>
-            <p class="mb-0 small" style="color: var(--on-surface-variant); max-width: 640px;">
+            <p class="mb-0 small" style="color: var(--cm-sys-color-on-surface-variant); max-width: 680px;">
                 {{ __('Kelola pesanan produk digital Anda, cek status transaksi terbaru, atau nikmati belanja instan dari katalog kami.') }}
             </p>
-            <div class="mt-3 d-flex align-items-center gap-2 flex-wrap">
-                <span class="badge bg-info-subtle text-info rounded-pill px-3 py-1.5">
-                    <i class="fab fa-telegram me-1"></i> {{ Auth::user()->telegram_id ? 'Telegram Connected: ' . Auth::user()->telegram_id : 'Telegram: Belum Terhubung' }}
-                </span>
-                <span class="badge bg-success-subtle text-success rounded-pill px-3 py-1.5">
-                    <i class="fas fa-shield-alt me-1"></i> {{ __('Status Akun: Aktif') }}
-                </span>
-            </div>
             @else
-            <div class="d-inline-flex align-items-center gap-1.5 px-3 py-1 rounded-pill mb-2 fw-semibold" style="background: var(--primary-container); color: var(--on-primary-container); font-size: 0.72rem; letter-spacing: 0.04em; text-transform: uppercase;">
-                <i class="fas fa-sparkles"></i>
-                <span>{{ __('Selamat Datang') }}</span>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-primary-subtle text-primary">
+                    <i class="fas fa-cloud me-1"></i>{{ __('Selamat Datang') }}
+                </span>
+                <span class="badge bg-secondary-subtle text-secondary">
+                    <i class="fas fa-shield-alt me-1"></i>{{ __('Akses: Tamu') }}
+                </span>
             </div>
-            <h1 class="h3 fw-bold mb-1" style="color: var(--on-surface);">
-                {{ __('Tamu (Guest)') }} 👋
+            <h1 class="h4 fw-semibold mb-1" style="color: var(--cm-sys-color-on-surface);">
+                {{ __('Tamu (Guest)') }}
             </h1>
-            <p class="mb-0 small" style="color: var(--on-surface-variant); max-width: 640px;">
+            <p class="mb-0 small" style="color: var(--cm-sys-color-on-surface-variant); max-width: 680px;">
                 {{ __('Jelajahi berbagai produk digital terbaik kami dengan harga bersahabat dan pengiriman otomatis instan.') }}
             </p>
-            <div class="mt-3 d-flex align-items-center gap-2 flex-wrap">
-                <a href="{{ route('login') }}" class="badge bg-primary-subtle text-primary text-decoration-none rounded-pill px-3 py-1.5 fw-bold">
-                    <i class="fas fa-sign-in-alt me-1"></i> {{ __('Masuk / Daftar Akun') }}
-                </a>
-                <span class="badge bg-secondary-subtle text-secondary rounded-pill px-3 py-1.5">
-                    <i class="fas fa-shield-alt me-1"></i> {{ __('Akses: Tamu') }}
-                </span>
-            </div>
             @endauth
         </div>
-        
+
         <div class="d-flex align-items-center gap-2 flex-wrap">
-            <a href="{{ route('catalog.index') }}" class="btn btn-primary fw-semibold rounded-pill px-4 py-2">
-                <i class="fas fa-shopping-bag me-2"></i>{{ __('Jelajahi Katalog') }}
+            <a href="{{ route('catalog.index') }}" class="btn btn-primary">
+                <i class="fas fa-shopping-bag me-1.5"></i>{{ __('Jelajahi Katalog') }}
             </a>
             @guest
-            <a href="{{ route('login') }}" class="btn btn-outline-primary fw-semibold rounded-pill px-3 py-2">
-                <i class="fas fa-arrow-right-to-bracket me-1"></i>{{ __('Login') }}
+            <a href="{{ route('login') }}" class="btn btn-outline-primary">
+                <i class="fas fa-sign-in-alt me-1.5"></i>{{ __('Masuk / Daftar Akun') }}
             </a>
             @endguest
         </div>
     </div>
 </div>
 
-<!-- Flat Material 3 Stats Cards (2x2 Grid on Mobile, 4x1 on Desktop - All Clickable) -->
+<!-- Google Cloud Console Resource Summary Metrics (4x1 Outlined Cards) -->
 <div class="row g-3 mb-4">
     <!-- Card 1: Total Orders -->
     <div class="col-6 col-xl-3">
         <a href="{{ Auth::check() ? route('orders.index') : route('login') }}" @guest data-guest-modal="true" data-feature-name="riwayat pesanan" @endguest class="text-decoration-none d-block h-100">
             <div class="card m3-metric-card h-100">
-                <div class="card-body p-3 p-md-4">
-                    <div class="d-flex justify-content-between align-items-center mb-2 mb-md-3">
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
                         <div class="m3-metric-icon bg-primary-subtle text-primary">
                             <i class="fas fa-shopping-cart"></i>
                         </div>
-                        <span class="badge bg-primary-subtle text-primary rounded-pill px-2.5 py-1 fw-bold" style="font-size: 0.7rem;">{{ __('Akun') }}</span>
+                        <span class="badge bg-primary-subtle text-primary">{{ __('Akun') }}</span>
                     </div>
-                    <div class="text-muted small fw-semibold text-uppercase mb-1" style="letter-spacing: 0.04em; font-size: 0.72rem;">{{ __('Total Pesanan') }}</div>
+                    <div class="text-muted small fw-medium mb-1" style="font-size: 0.75rem;">{{ __('Total Pesanan') }}</div>
                     <div class="d-flex align-items-baseline justify-content-between">
-                        <h3 class="h3 fw-bold text-body mb-0">{{ $totalOrders ?? 0 }}</h3>
-                        <i class="fas fa-chevron-right text-muted small opacity-50 d-none d-sm-inline"></i>
+                        <h3 class="h4 fw-bold text-body mb-0">{{ $totalOrders ?? 0 }}</h3>
+                        <i class="fas fa-arrow-right text-primary small opacity-75 d-none d-sm-inline"></i>
                     </div>
                 </div>
             </div>
@@ -90,17 +94,17 @@
     <div class="col-6 col-xl-3">
         <a href="{{ Auth::check() ? route('orders.index', ['status' => 'delivered']) : route('login') }}" @guest data-guest-modal="true" data-feature-name="pesanan selesai" @endguest class="text-decoration-none d-block h-100">
             <div class="card m3-metric-card h-100">
-                <div class="card-body p-3 p-md-4">
-                    <div class="d-flex justify-content-between align-items-center mb-2 mb-md-3">
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
                         <div class="m3-metric-icon bg-success-subtle text-success">
                             <i class="fas fa-check-circle"></i>
                         </div>
-                        <span class="badge bg-success-subtle text-success rounded-pill px-2.5 py-1 fw-bold" style="font-size: 0.7rem;">{{ __('Berhasil') }}</span>
+                        <span class="badge bg-success-subtle text-success">{{ __('Berhasil') }}</span>
                     </div>
-                    <div class="text-muted small fw-semibold text-uppercase mb-1" style="letter-spacing: 0.04em; font-size: 0.72rem;">{{ __('Selesai') }}</div>
+                    <div class="text-muted small fw-medium mb-1" style="font-size: 0.75rem;">{{ __('Selesai') }}</div>
                     <div class="d-flex align-items-baseline justify-content-between">
-                        <h3 class="h3 fw-bold text-body mb-0">{{ $completedOrders ?? 0 }}</h3>
-                        <i class="fas fa-chevron-right text-muted small opacity-50 d-none d-sm-inline"></i>
+                        <h3 class="h4 fw-bold text-body mb-0">{{ $completedOrders ?? 0 }}</h3>
+                        <i class="fas fa-arrow-right text-primary small opacity-75 d-none d-sm-inline"></i>
                     </div>
                 </div>
             </div>
@@ -111,17 +115,17 @@
     <div class="col-6 col-xl-3">
         <a href="{{ Auth::check() ? route('orders.index', ['status' => 'pending_payment']) : route('login') }}" @guest data-guest-modal="true" data-feature-name="pesanan menunggu" @endguest class="text-decoration-none d-block h-100">
             <div class="card m3-metric-card h-100">
-                <div class="card-body p-3 p-md-4">
-                    <div class="d-flex justify-content-between align-items-center mb-2 mb-md-3">
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
                         <div class="m3-metric-icon bg-warning-subtle text-warning-emphasis">
                             <i class="fas fa-clock"></i>
                         </div>
-                        <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill px-2.5 py-1 fw-bold" style="font-size: 0.7rem;">{{ __('Pending') }}</span>
+                        <span class="badge bg-warning-subtle text-warning-emphasis">{{ __('Pending') }}</span>
                     </div>
-                    <div class="text-muted small fw-semibold text-uppercase mb-1" style="letter-spacing: 0.04em; font-size: 0.72rem;">{{ __('Menunggu') }}</div>
+                    <div class="text-muted small fw-medium mb-1" style="font-size: 0.75rem;">{{ __('Menunggu') }}</div>
                     <div class="d-flex align-items-baseline justify-content-between">
-                        <h3 class="h3 fw-bold text-body mb-0">{{ $pendingOrders ?? 0 }}</h3>
-                        <i class="fas fa-chevron-right text-muted small opacity-50 d-none d-sm-inline"></i>
+                        <h3 class="h4 fw-bold text-body mb-0">{{ $pendingOrders ?? 0 }}</h3>
+                        <i class="fas fa-arrow-right text-primary small opacity-75 d-none d-sm-inline"></i>
                     </div>
                 </div>
             </div>
@@ -132,17 +136,17 @@
     <div class="col-6 col-xl-3">
         <a href="{{ Auth::check() ? route('orders.index', ['status' => 'delivered']) : route('login') }}" @guest data-guest-modal="true" data-feature-name="total belanja" @endguest class="text-decoration-none d-block h-100">
             <div class="card m3-metric-card h-100">
-                <div class="card-body p-3 p-md-4">
-                    <div class="d-flex justify-content-between align-items-center mb-2 mb-md-3">
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
                         <div class="m3-metric-icon bg-info-subtle text-info-emphasis">
                             <i class="fas fa-wallet"></i>
                         </div>
-                        <span class="badge bg-info-subtle text-info-emphasis rounded-pill px-2.5 py-1 fw-bold" style="font-size: 0.7rem;">{{ __('Total') }}</span>
+                        <span class="badge bg-info-subtle text-info-emphasis">{{ __('Total') }}</span>
                     </div>
-                    <div class="text-muted small fw-semibold text-uppercase mb-1" style="letter-spacing: 0.04em; font-size: 0.72rem;">{{ __('Total Belanja') }}</div>
+                    <div class="text-muted small fw-medium mb-1" style="font-size: 0.75rem;">{{ __('Total Belanja') }}</div>
                     <div class="d-flex align-items-baseline justify-content-between">
-                        <h3 class="h4 fw-bold text-body mb-0">Rp {{ number_format($totalSpent ?? 0, 0, ',', '.') }}</h3>
-                        <i class="fas fa-chevron-right text-muted small opacity-50 d-none d-sm-inline"></i>
+                        <h3 class="h5 fw-bold text-body mb-0">Rp {{ number_format($totalSpent ?? 0, 0, ',', '.') }}</h3>
+                        <i class="fas fa-arrow-right text-primary small opacity-75 d-none d-sm-inline"></i>
                     </div>
                 </div>
             </div>

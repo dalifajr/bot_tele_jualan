@@ -345,6 +345,10 @@ setup_laravel() {
   # agar aman dan tidak menabrak tabel 'users' yang dibuat oleh Python.
   log_step "Menjalankan migrasi database Laravel..."
   php artisan migrate --force
+  php artisan config:clear 2>/dev/null || true
+  php artisan cache:clear 2>/dev/null || true
+  php artisan view:clear 2>/dev/null || true
+  php artisan route:clear 2>/dev/null || true
 
   # Pastikan PHP-FPM mengizinkan upload file besar (100M)
   local fpm_php_ver

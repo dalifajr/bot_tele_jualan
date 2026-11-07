@@ -1,22 +1,17 @@
 @extends('layouts.app')
 
 @section('title', __('Keranjang Belanja'))
-@section('page_subtitle', __('Keranjang'))
+@section('page_subtitle', __('Kelola dan periksa produk pilihan Anda'))
+
+@section('action_bar_buttons')
+    <a href="{{ route('catalog.index') }}" class="cm-btn-outline">
+        <i class="fas fa-arrow-left"></i>
+        <span>{{ __('Kembali ke Katalog') }}</span>
+    </a>
+@endsection
 
 @section('content')
-<div class="d-flex align-items-center justify-content-between mb-3">
-    <div class="d-flex align-items-center gap-2">
-        <a href="{{ route('catalog.index') }}" class="btn btn-light rounded-circle border d-inline-flex align-items-center justify-content-center" style="width: 38px; height: 38px;" title="{{ __('Kembali ke Katalog') }}">
-            <i class="fas fa-arrow-left text-body"></i>
-        </a>
-        <div>
-            <h5 class="fw-bold m-0 text-body" style="font-size: 1.15rem;">{{ __('Keranjang Belanja') }}</h5>
-            <small class="text-muted" style="font-size: 0.75rem;">{{ __('Kelola dan periksa produk pilihan Anda') }}</small>
-        </div>
-    </div>
-</div>
-
-<div class="row g-4">
+<div class="row g-3 g-lg-4">
     <div class="col-lg-8">
         <div class="card mb-4">
             <div class="card-body p-4">

@@ -1,57 +1,56 @@
 @extends('layouts.app')
 
 @section('title', __('Katalog Produk'))
-@section('page_subtitle', __('Katalog'))
+@section('page_subtitle', __(':count produk tersedia', ['count' => $products->count()]))
 @section('meta_description', 'Lihat semua produk digital yang tersedia untuk dibeli')
 
 @section('content')
-<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
-    <div>
-        <h4 class="fw-bold mb-1 text-body">{{ __('Katalog Produk') }}</h4>
-        <p class="text-muted mb-0">{{ __(':count produk tersedia', ['count' => $products->count()]) }}</p>
-    </div>
-    <div class="d-flex align-items-center gap-2" style="max-width: 340px; width: 100%;">
-        <div class="input-group input-group-sm">
-            <span class="input-group-text ps-3"><i class="fas fa-search"></i></span>
-            <input type="text" id="catalogSearchInput" class="form-control pe-3" placeholder="{{ __('Cari nama produk...') }}">
+<!-- Google Cloud Console Filter Bar & Category Chips -->
+<div class="card mb-3 overflow-hidden">
+    <div class="sd-dashboard-filter-bar border-bottom-0 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2.5 p-2.5 px-md-3">
+        {{-- Horizontal Scroll Category Filter Chips (Cloud Console .cfc-chip) --}}
+        <div class="category-chips-wrapper d-flex gap-2 overflow-x-auto text-nowrap" style="-webkit-overflow-scrolling: touch; scrollbar-width: none;">
+            <button type="button" class="btn btn-sm btn-primary cfc-chip category-filter-chip active" data-filter="all">
+                <i class="fas fa-th-large"></i> {{ __('Semua') }}
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary cfc-chip category-filter-chip" data-filter="ready">
+                <i class="fas fa-check-circle text-success"></i> {{ __('Ready Stok') }}
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary cfc-chip category-filter-chip" data-filter="account">
+                <i class="fas fa-user-shield text-info"></i> {{ __('Akun Digital') }}
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary cfc-chip category-filter-chip" data-filter="vpn">
+                <i class="fas fa-network-wired text-warning"></i> {{ __('VPN / SSH') }}
+            </button>
+        </div>
+
+        <div class="d-flex align-items-center gap-2" style="max-width: 340px; width: 100%;">
+            <div class="input-group input-group-sm">
+                <span class="input-group-text ps-2.5"><i class="fas fa-filter text-muted"></i></span>
+                <input type="text" id="catalogSearchInput" class="form-control pe-3" placeholder="{{ __('Cari nama produk...') }}">
+            </div>
         </div>
     </div>
 </div>
 
-{{-- Horizontal Scroll Category Filter Chips (Material 3 Filter Chips) --}}
-<div class="category-chips-wrapper mb-3 pb-1 d-flex gap-2 overflow-x-auto text-nowrap" style="-webkit-overflow-scrolling: touch; scrollbar-width: none;">
-    <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 py-1.5 fw-semibold category-filter-chip active" data-filter="all">
-        <i class="fas fa-th-large me-1"></i> {{ __('Semua') }}
-    </button>
-    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1.5 fw-semibold category-filter-chip" data-filter="ready">
-        <i class="fas fa-check-circle text-success me-1"></i> {{ __('Ready Stok') }}
-    </button>
-    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1.5 fw-semibold category-filter-chip" data-filter="account">
-        <i class="fas fa-user-shield text-info me-1"></i> {{ __('Akun Digital') }}
-    </button>
-    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1.5 fw-semibold category-filter-chip" data-filter="vpn">
-        <i class="fas fa-network-wired text-warning me-1"></i> {{ __('VPN / SSH') }}
-    </button>
-</div>
-
 {{-- Skeleton Shimmer Grid Placeholder (Shows while loading / filter transitions) --}}
-<div class="row g-2 g-md-4 d-none" id="catalogSkeletonGrid">
+<div class="row g-2 g-md-3 d-none" id="catalogSkeletonGrid">
     @for($s = 0; $s < 6; $s++)
     <div class="col-6 col-lg-4 col-xl-3">
-        <div class="card product-card h-100 p-2 p-md-3" style="border-radius: 16px;">
-            <div class="skeleton-shimmer w-100 mb-2.5" style="height: 125px; border-radius: 12px;"></div>
+        <div class="card product-card h-100 p-2 p-md-3" style="border-radius: 8px;">
+            <div class="skeleton-shimmer w-100 mb-2.5" style="height: 125px; border-radius: 4px;"></div>
             <div class="skeleton-shimmer mb-1.5" style="height: 16px; width: 85%;"></div>
             <div class="skeleton-shimmer mb-3" style="height: 12px; width: 50%;"></div>
             <div class="d-flex justify-content-between align-items-center mt-auto pt-2 border-top">
                 <div class="skeleton-shimmer" style="height: 18px; width: 65px;"></div>
-                <div class="skeleton-shimmer rounded-pill" style="height: 26px; width: 36px;"></div>
+                <div class="skeleton-shimmer rounded-1" style="height: 26px; width: 36px;"></div>
             </div>
         </div>
     </div>
     @endfor
 </div>
 
-<div class="row g-2 g-md-4" id="catalogProductsRow">
+<div class="row g-2 g-md-3" id="catalogProductsRow">
     @forelse($products as $product)
     <div class="col-6 col-lg-4 col-xl-3 product-item-col" 
          data-name="{{ strtolower($product->name) }}" 

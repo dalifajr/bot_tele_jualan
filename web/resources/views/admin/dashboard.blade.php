@@ -1,43 +1,29 @@
 @extends('layouts.app')
 
 @section('title', __('Admin Dashboard'))
-@section('page_subtitle', __('Dashboard'))
+@section('page_subtitle', __('Ringkasan (:period)', ['period' => $periodLabel]))
+
+@section('action_bar_buttons')
+    <a href="{{ route('admin.products.index') }}" class="cm-btn-primary">
+        <i class="fas fa-plus"></i>
+        <span>{{ __('Kelola Produk') }}</span>
+    </a>
+    <a href="{{ route('admin.stock.index') }}" class="cm-btn-outline">
+        <i class="fas fa-cubes"></i>
+        <span>{{ __('Kelola Stok') }}</span>
+    </a>
+@endsection
 
 @section('content')
-<!-- Google Cloud / Material 3 Flat Console Header & Filter Bar -->
-<div class="m3-console-header mb-4">
-    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 pb-3 border-bottom" style="border-color: var(--outline-color) !important;">
-        <div>
-            <div class="d-inline-flex align-items-center gap-1.5 px-2.5 py-1 rounded-pill mb-2 fw-semibold" style="background: var(--primary-container); color: var(--on-primary-container); font-size: 0.72rem; letter-spacing: 0.04em; text-transform: uppercase;">
-                <i class="fas fa-user-shield"></i>
-                <span>{{ __('Admin Portal Overview') }}</span>
-            </div>
-            <h1 class="h4 fw-bold mb-1" style="color: var(--on-surface);">
-                {{ __('Admin Dashboard') }}
-            </h1>
-            <p class="mb-0 small" style="color: var(--on-surface-variant);">
-                {{ __('Ringkasan aktivitas toko Anda (:period)', ['period' => $periodLabel]) }}
-            </p>
-        </div>
-
-        <div class="d-flex align-items-center gap-2 flex-wrap">
-            <a href="{{ route('admin.products.index') }}" class="btn btn-primary rounded-pill px-4 py-2 fw-semibold">
-                <i class="fas fa-plus me-1.5"></i>{{ __('Kelola Produk') }}
-            </a>
-            <a href="{{ route('admin.stock.index') }}" class="btn btn-outline-primary rounded-pill px-4 py-2 fw-semibold">
-                <i class="fas fa-cubes me-1.5"></i>{{ __('Kelola Stok') }}
-            </a>
-        </div>
-    </div>
-
-    <!-- Filter Form Integrated in Flat Console Surface -->
-    <div class="pt-3">
-        <form action="{{ route('admin.dashboard') }}" method="GET" class="row g-2 g-md-3 align-items-center">
+<!-- Google Cloud Console Filter Bar Surface (.sd-dashboard-filter-bar) -->
+<div class="card mb-3 overflow-hidden">
+    <div class="sd-dashboard-filter-bar border-bottom-0">
+        <form action="{{ route('admin.dashboard') }}" method="GET" class="row g-2 align-items-center w-100 m-0">
             <div class="col-12 col-md-4">
                 <div class="input-group input-group-sm">
-                    <span class="input-group-text"><i class="fas fa-box"></i></span>
+                    <span class="input-group-text"><i class="fas fa-filter text-muted"></i></span>
                     <select name="product_id" class="form-select form-select-sm">
-                        <option value="">{{ __('Semua Produk') }}</option>
+                        <option value="">{{ __('Filter Produk: Semua Produk') }}</option>
                         @foreach($products as $p)
                             <option value="{{ $p->id }}" {{ $productId == $p->id ? 'selected' : '' }}>
                                 {{ $p->is_suspended ? '🔴' : '✅' }} {{ $p->name }}
@@ -48,22 +34,22 @@
             </div>
             <div class="col-12 col-md-4">
                 <div class="input-group input-group-sm">
-                    <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                    <span class="input-group-text"><i class="far fa-clock text-muted"></i></span>
                     <select name="period" class="form-select form-select-sm">
-                        <option value="24_hours" {{ $period == '24_hours' ? 'selected' : '' }}>{{ __('24 Jam Terakhir') }}</option>
-                        <option value="7_days" {{ $period == '7_days' ? 'selected' : '' }}>{{ __('7 Hari Terakhir') }}</option>
-                        <option value="30_days" {{ $period == '30_days' ? 'selected' : '' }}>{{ __('30 Hari Terakhir') }}</option>
-                        <option value="6_months" {{ $period == '6_months' ? 'selected' : '' }}>{{ __('6 Bulan Terakhir') }}</option>
-                        <option value="all_time" {{ $period == 'all_time' ? 'selected' : '' }}>{{ __('Sepanjang Waktu') }}</option>
+                        <option value="24_hours" {{ $period == '24_hours' ? 'selected' : '' }}>{{ __('Rentang: 24 Jam Terakhir') }}</option>
+                        <option value="7_days" {{ $period == '7_days' ? 'selected' : '' }}>{{ __('Rentang: 7 Hari Terakhir') }}</option>
+                        <option value="30_days" {{ $period == '30_days' ? 'selected' : '' }}>{{ __('Rentang: 30 Hari Terakhir') }}</option>
+                        <option value="6_months" {{ $period == '6_months' ? 'selected' : '' }}>{{ __('Rentang: 6 Bulan Terakhir') }}</option>
+                        <option value="all_time" {{ $period == 'all_time' ? 'selected' : '' }}>{{ __('Rentang: Sepanjang Waktu') }}</option>
                     </select>
                 </div>
             </div>
-            <div class="col-12 col-md-4 d-flex gap-2">
-                <button type="submit" class="btn btn-sm btn-primary rounded-pill px-3 flex-fill fw-semibold">
-                    <i class="fas fa-filter me-1"></i> {{ __('Filter') }}
+            <div class="col-12 col-md-4 d-flex gap-2 justify-content-md-end">
+                <button type="submit" class="btn btn-sm btn-primary px-3">
+                    <i class="fas fa-check me-1"></i> {{ __('Filter') }}
                 </button>
-                <a href="{{ route('admin.dashboard') }}" class="btn btn-sm btn-light rounded-pill px-3 flex-fill fw-semibold">
-                    <i class="fas fa-sync me-1"></i> {{ __('Reset') }}
+                <a href="{{ route('admin.dashboard') }}" class="btn btn-sm btn-light px-3">
+                    <i class="fas fa-sync-alt me-1"></i> {{ __('Reset') }}
                 </a>
             </div>
         </form>
@@ -360,7 +346,7 @@
             mode: isDark ? 'dark' : 'light'
         };
 
-        // 1. Sales Trend Line/Area Chart (Material 3 / GCP Palette)
+        // 1. Sales Trend Line/Area Chart (Google Cloud Console cm-gm2 Palette)
         const salesOptions = {
             series: [{
                 name: 'Pendapatan (Rp)',
@@ -375,21 +361,21 @@
                 fontFamily: 'inherit'
             },
             theme: chartTheme,
-            colors: [isDark ? '#a8c7fa' : '#0b57d0'],
+            colors: [isDark ? '#8ab4f8' : '#3367d6'],
             dataLabels: { enabled: false },
-            stroke: { curve: 'smooth', width: 2.5 },
+            stroke: { curve: 'smooth', width: 2 },
             fill: {
                 type: 'gradient',
                 gradient: {
                     shadeIntensity: 1,
-                    opacityFrom: 0.28,
+                    opacityFrom: 0.24,
                     opacityTo: 0.02,
                     stops: [0, 95, 100]
                 }
             },
             grid: {
-                borderColor: isDark ? '#30363d' : '#dadce0',
-                strokeDashArray: 4
+                borderColor: isDark ? '#3c4043' : '#dadce0',
+                strokeDashArray: 3
             },
             xaxis: {
                 categories: @json($chartLabels),
@@ -420,7 +406,7 @@
         const salesChart = new ApexCharts(document.querySelector("#salesChart"), salesOptions);
         salesChart.render();
 
-        // 2. Status Distribution Donut Chart (Material 3 Semantic Colors)
+        // 2. Status Distribution Donut Chart (Google Cloud Console Semantic Colors)
         const completionOptions = {
             series: [{{ $deliveredOrders }}, {{ $cancelledOrders }}],
             chart: {
@@ -430,13 +416,13 @@
                 fontFamily: 'inherit'
             },
             labels: ['Sukses', 'Batal/Expired'],
-            colors: [isDark ? '#75b798' : '#146c2e', isDark ? '#ea868f' : '#ba1a1a'],
+            colors: [isDark ? '#81c995' : '#0b8043', isDark ? '#f28b82' : '#d50000'],
             theme: chartTheme,
             legend: { show: false },
             dataLabels: { enabled: false },
             stroke: {
                 width: 2,
-                colors: [isDark ? '#161b22' : '#ffffff']
+                colors: [isDark ? '#28292c' : '#ffffff']
             },
             plotOptions: {
                 pie: {
@@ -450,7 +436,7 @@
                             },
                             value: {
                                 show: true,
-                                color: isDark ? '#e3e3e3' : '#1f1f1f',
+                                color: isDark ? '#e8eaed' : '#202124',
                                 formatter: function (val) {
                                     return val;
                                 }
@@ -480,8 +466,8 @@
 
                     salesChart.updateOptions({
                         theme: { mode: newTheme },
-                        colors: [isNewDark ? '#a8c7fa' : '#0b57d0'],
-                        grid: { borderColor: isNewDark ? '#30363d' : '#dadce0' },
+                        colors: [isNewDark ? '#8ab4f8' : '#3367d6'],
+                        grid: { borderColor: isNewDark ? '#3c4043' : '#dadce0' },
                         xaxis: { labels: { style: { colors: isNewDark ? '#9aa0a6' : '#5f6368' } } },
                         yaxis: { labels: { style: { colors: isNewDark ? '#9aa0a6' : '#5f6368' } } },
                         tooltip: { theme: isNewDark ? 'dark' : 'light' }
@@ -489,14 +475,14 @@
 
                     completionChart.updateOptions({
                         theme: { mode: newTheme },
-                        colors: [isNewDark ? '#75b798' : '#146c2e', isNewDark ? '#ea868f' : '#ba1a1a'],
-                        stroke: { colors: [isNewDark ? '#161b22' : '#ffffff'] },
+                        colors: [isNewDark ? '#81c995' : '#0b8043', isNewDark ? '#f28b82' : '#d50000'],
+                        stroke: { colors: [isNewDark ? '#28292c' : '#ffffff'] },
                         plotOptions: {
                             pie: {
                                 donut: {
                                     labels: {
                                         name: { color: isNewDark ? '#9aa0a6' : '#5f6368' },
-                                        value: { color: isNewDark ? '#e3e3e3' : '#1f1f1f' },
+                                        value: { color: isNewDark ? '#e8eaed' : '#202124' },
                                         total: { color: isNewDark ? '#9aa0a6' : '#5f6368' }
                                     }
                                 }

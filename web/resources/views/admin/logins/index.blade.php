@@ -1,17 +1,19 @@
 @extends('layouts.app')
 
 @section('title', __('Notifikasi Login Web'))
-@section('page_subtitle', __('Sistem Keamanan'))
+@section('page_subtitle', __('IAM & Security Command Center'))
+
+@section('action_bar_buttons')
+    @if(request()->filled('search') || request()->filled('status') || request()->filled('device_type'))
+        <a href="{{ route('admin.logins.index') }}" class="cm-btn-outline">
+            <i class="fas fa-undo"></i>
+            <span>{{ __('Reset Filter') }}</span>
+        </a>
+    @endif
+@endsection
 
 @section('content')
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h4 class="fw-bold mb-1">{{ __('Daftar Percobaan Login') }}</h4>
-        <p class="text-muted mb-0">{{ __('Riwayat autentikasi masuk, diagram analitik keamanan, dan pengelolaan pemblokiran') }}</p>
-    </div>
-</div>
-
-{{-- KPI Metric Cards Keamanan (Flat Material 3) --}}
+{{-- KPI Metric Cards Keamanan (Google Cloud Console Outlined Surfaces) --}}
 <div class="row g-3 mb-4">
     <div class="col-6 col-lg-3">
         <div class="card m3-metric-card h-100">
@@ -238,20 +240,20 @@
     </div>
 </div>
 
-{{-- Filter Pencarian Log Login (Flat Material 3 Outlined Controls) --}}
-<div class="card mb-4">
-    <div class="card-body p-3">
-        <form action="{{ route('admin.logins.index') }}" method="GET" class="row g-3 align-items-end">
+{{-- Filter Pencarian Log Login (Google Cloud Console Filter Bar Surface) --}}
+<div class="card mb-4 overflow-hidden">
+    <div class="sd-dashboard-filter-bar border-bottom-0 p-3">
+        <form action="{{ route('admin.logins.index') }}" method="GET" class="row g-2 align-items-end w-100 m-0">
             <div class="col-lg-5 col-md-12">
                 <label class="form-label text-secondary small fw-bold mb-1">{{ __('Cari User / IP / Lokasi / Browser') }}</label>
-                <div class="input-group">
-                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text"><i class="fas fa-filter text-muted"></i></span>
                     <input type="text" name="search" class="form-control" placeholder="{{ __('Ketik username, email, IP address, atau lokasi...') }}" value="{{ request('search') }}">
                 </div>
             </div>
             <div class="col-lg-3 col-md-6">
                 <label class="form-label text-secondary small fw-bold mb-1">{{ __('Status Autentikasi') }}</label>
-                <select name="status" class="form-select">
+                <select name="status" class="form-select form-select-sm">
                     <option value="">{{ __('Semua Status') }}</option>
                     <option value="success" {{ request('status') === 'success' ? 'selected' : '' }}>{{ __('Berhasil Login') }}</option>
                     <option value="failed" {{ request('status') === 'failed' ? 'selected' : '' }}>{{ __('Gagal / Ditolak') }}</option>
@@ -259,7 +261,7 @@
             </div>
             <div class="col-lg-3 col-md-6">
                 <label class="form-label text-secondary small fw-bold mb-1">{{ __('Tipe Perangkat') }}</label>
-                <select name="device_type" class="form-select">
+                <select name="device_type" class="form-select form-select-sm">
                     <option value="">{{ __('Semua Perangkat') }}</option>
                     @foreach(($deviceLabels ?? []) as $dl)
                         <option value="{{ $dl }}" {{ request('device_type') === $dl ? 'selected' : '' }}>{{ $dl }}</option>
@@ -268,9 +270,9 @@
             </div>
             <div class="col-lg-1 col-md-12">
                 <div class="d-flex gap-2">
-                    <button type="submit" class="btn btn-primary w-100 rounded-pill" title="{{ __('Terapkan Filter') }}"><i class="fas fa-filter"></i></button>
+                    <button type="submit" class="btn btn-sm btn-primary w-100" title="{{ __('Terapkan Filter') }}"><i class="fas fa-search"></i></button>
                     @if(request()->filled('search') || request()->filled('status') || request()->filled('device_type'))
-                        <a href="{{ route('admin.logins.index') }}" class="btn btn-light rounded-pill px-3" title="{{ __('Reset Filter') }}"><i class="fas fa-undo"></i></a>
+                        <a href="{{ route('admin.logins.index') }}" class="btn btn-sm btn-light px-2.5" title="{{ __('Reset Filter') }}"><i class="fas fa-undo"></i></a>
                     @endif
                 </div>
             </div>
@@ -729,7 +731,7 @@
 document.addEventListener("DOMContentLoaded", function () {
     const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
 
-    // 1. Login Trend Multi-Area Chart (Berhasil vs Gagal — Material 3 Semantic Palette)
+    // 1. Login Trend Multi-Area Chart (Berhasil vs Gagal — Google Cloud Console Semantic Palette)
     const loginTrendOptions = {
         series: [
             {
@@ -750,21 +752,21 @@ document.addEventListener("DOMContentLoaded", function () {
             fontFamily: 'inherit'
         },
         theme: { mode: isDark ? 'dark' : 'light' },
-        colors: ['#146c2e', '#ba1a1a'],
+        colors: [isDark ? '#81c995' : '#0b8043', isDark ? '#f28b82' : '#d50000'],
         dataLabels: { enabled: false },
-        stroke: { curve: 'smooth', width: [2.5, 2.5] },
+        stroke: { curve: 'smooth', width: [2, 2] },
         fill: {
             type: 'gradient',
             gradient: {
                 shadeIntensity: 1,
-                opacityFrom: 0.26,
+                opacityFrom: 0.24,
                 opacityTo: 0.02,
                 stops: [20, 100]
             }
         },
         grid: {
-            borderColor: isDark ? '#30363d' : '#dadce0',
-            strokeDashArray: 4
+            borderColor: isDark ? '#3c4043' : '#dadce0',
+            strokeDashArray: 3
         },
         xaxis: {
             categories: @json($loginTrendLabels ?? []),
@@ -811,17 +813,17 @@ document.addEventListener("DOMContentLoaded", function () {
             fontFamily: 'inherit'
         },
         theme: { mode: isDark ? 'dark' : 'light' },
-        colors: ['#146c2e', '#ba1a1a'],
+        colors: [isDark ? '#81c995' : '#0b8043', isDark ? '#f28b82' : '#d50000'],
         plotOptions: {
             bar: {
                 horizontal: false,
-                borderRadius: 5,
-                columnWidth: '55%'
+                borderRadius: 4,
+                columnWidth: '52%'
             }
         },
         grid: {
-            borderColor: isDark ? '#30363d' : '#dadce0',
-            strokeDashArray: 4
+            borderColor: isDark ? '#3c4043' : '#dadce0',
+            strokeDashArray: 3
         },
         dataLabels: { enabled: false },
         xaxis: {
@@ -860,10 +862,10 @@ document.addEventListener("DOMContentLoaded", function () {
             fontFamily: 'inherit'
         },
         theme: { mode: isDark ? 'dark' : 'light' },
-        colors: ['#0b57d0', '#146c2e', '#e37400', '#00639b', '#5f6368'],
+        colors: ['#3367d6', '#0b8043', '#dc6d00', '#12b5cb', '#5f6368'],
         stroke: {
             width: 2,
-            colors: [isDark ? '#161b22' : '#ffffff']
+            colors: [isDark ? '#28292c' : '#ffffff']
         },
         legend: {
             position: 'bottom',
@@ -917,16 +919,16 @@ document.addEventListener("DOMContentLoaded", function () {
         theme: { mode: isDark ? 'dark' : 'light' },
         plotOptions: {
             bar: {
-                borderRadius: 6,
+                borderRadius: 4,
                 horizontal: true,
                 distributed: true,
                 barHeight: '55%'
             }
         },
-        colors: ['#0b57d0', '#146c2e', '#e37400', '#6f42c1', '#00639b'],
+        colors: ['#3367d6', '#0b8043', '#dc6d00', '#9334e6', '#12b5cb'],
         grid: {
-            borderColor: isDark ? '#30363d' : '#dadce0',
-            strokeDashArray: 4
+            borderColor: isDark ? '#3c4043' : '#dadce0',
+            strokeDashArray: 3
         },
         dataLabels: {
             enabled: true,

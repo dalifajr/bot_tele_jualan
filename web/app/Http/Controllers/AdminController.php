@@ -2007,7 +2007,7 @@ class AdminController extends Controller
             'created_at' => now(),
         ]);
 
-        return redirect()->back()
+        return redirect()->back(302, [], route('admin.users.index'))
             ->with('success', __('Informasi pengguna berhasil diperbarui.'));
     }
 

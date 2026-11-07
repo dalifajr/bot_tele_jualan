@@ -1,75 +1,61 @@
 @extends('layouts.app')
 
 @section('title', __('Riwayat Pesanan'))
-@section('page_subtitle', __('Pesanan'))
+@section('page_subtitle', __('Daftar transaksi dan status pembelian Anda'))
+
+@section('action_bar_buttons')
+    <a href="{{ route('dashboard') }}" class="cm-btn-outline">
+        <i class="fas fa-arrow-left"></i>
+        <span>{{ __('Home') }}</span>
+    </a>
+@endsection
 
 @section('content')
-{{-- Header --}}
-<div class="d-flex align-items-center justify-content-between mb-3">
-    <div class="d-flex align-items-center gap-2">
-        <a href="{{ route('dashboard') }}" class="btn btn-light rounded-circle border d-inline-flex align-items-center justify-content-center" style="width: 38px; height: 38px;" title="{{ __('Kembali ke Home') }}">
-            <i class="fas fa-arrow-left text-body"></i>
-        </a>
-        <div>
-            <h5 class="fw-bold m-0 text-body" style="font-size: 1.15rem;">{{ __('Riwayat Pesanan') }}</h5>
-            <small class="text-muted" style="font-size: 0.75rem;">{{ __('Daftar transaksi dan status pembelian Anda') }}</small>
-        </div>
-    </div>
-    <a href="{{ route('catalog.index') }}" class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1.5 fw-semibold d-flex align-items-center gap-1.5" style="font-size: 0.8rem;">
-        <i class="fas fa-shopping-bag"></i>
-        <span>{{ __('Belanja') }}</span>
-    </a>
-</div>
+{{-- Orders List Container with Integrated Google Cloud Filter Bar --}}
+<div class="card overflow-hidden">
+    <div class="sd-dashboard-filter-bar flex-column align-items-stretch gap-2.5 p-2.5 px-md-3">
+        <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-2.5">
+            {{-- Simplified Filter Tabs (Google Cloud .cfc-chip) --}}
+            <div class="category-scroll-container m-0 p-0">
+                <a href="{{ route('orders.index', array_filter(['search' => request('search')])) }}"
+                   class="btn btn-sm cfc-chip text-nowrap flex-shrink-0 {{ is_null($status) ? 'btn-primary active' : 'btn-outline-secondary' }}">
+                    {{ __('Semua') }}
+                </a>
+                <a href="{{ route('orders.index', array_filter(['status' => 'pending_payment', 'search' => request('search')])) }}"
+                   class="btn btn-sm cfc-chip text-nowrap flex-shrink-0 {{ $status === 'pending_payment' ? 'btn-primary active' : 'btn-outline-secondary' }}">
+                    {{ __('Menunggu') }}
+                </a>
+                <a href="{{ route('orders.index', array_filter(['status' => 'delivered', 'search' => request('search')])) }}"
+                   class="btn btn-sm cfc-chip text-nowrap flex-shrink-0 {{ $status === 'delivered' ? 'btn-primary active' : 'btn-outline-secondary' }}">
+                    {{ __('Selesai') }}
+                </a>
+                <a href="{{ route('orders.index', array_filter(['status' => 'cancelled_expired', 'search' => request('search')])) }}"
+                   class="btn btn-sm cfc-chip text-nowrap flex-shrink-0 {{ $status === 'cancelled_expired' || in_array($status, ['cancelled', 'expired']) ? 'btn-primary active' : 'btn-outline-secondary' }}">
+                    {{ __('Dibatalkan & Kedaluwarsa') }}
+                </a>
+            </div>
 
-{{-- Search & Filter Controls (Flat Material 3 Outlined Controls) --}}
-<div class="card mb-3">
-    <div class="card-body p-2.5 p-md-3">
-        <form action="{{ route('orders.index') }}" method="GET" class="row g-2 align-items-center">
-            @if(request('status'))
-                <input type="hidden" name="status" value="{{ request('status') }}">
-            @endif
-            <div class="col">
-                <div class="input-group input-group-sm">
-                    <span class="input-group-text ps-3"><i class="fas fa-search"></i></span>
-                    <input type="text" name="search" class="form-control py-2" placeholder="{{ __('Cari nama produk, no. pesanan, atau nominal...') }}" value="{{ request('search') }}">
+            {{-- Search Form --}}
+            <form action="{{ route('orders.index') }}" method="GET" class="d-flex align-items-center gap-2 m-0" style="max-width: 420px; width: 100%;">
+                @if(request('status'))
+                    <input type="hidden" name="status" value="{{ request('status') }}">
+                @endif
+                <div class="input-group input-group-sm flex-grow-1">
+                    <span class="input-group-text ps-2.5"><i class="fas fa-filter text-muted"></i></span>
+                    <input type="text" name="search" class="form-control" placeholder="{{ __('Cari nama produk, no. pesanan, atau nominal...') }}" value="{{ request('search') }}">
                     @if(request('search'))
-                        <a href="{{ route('orders.index', request('status') ? ['status' => request('status')] : []) }}" class="btn btn-light px-2.5 text-muted d-flex align-items-center" title="{{ __('Hapus Pencarian') }}">
+                        <a href="{{ route('orders.index', request('status') ? ['status' => request('status')] : []) }}" class="btn btn-light px-2 text-muted d-flex align-items-center" title="{{ __('Hapus Pencarian') }}">
                             <i class="fas fa-times-circle"></i>
                         </a>
                     @endif
                 </div>
-            </div>
-            <div class="col-auto">
-                <button type="submit" class="btn btn-sm btn-primary rounded-pill px-3.5 py-1.5 fw-semibold">
+                <button type="submit" class="btn btn-sm btn-primary px-3 flex-shrink-0">
                     {{ __('Cari') }}
                 </button>
-            </div>
-        </form>
+            </form>
+        </div>
     </div>
-</div>
 
-{{-- Simplified Filter Tabs (Material 3 Filter Chips) --}}
-<div class="category-scroll-container mb-3">
-    <a href="{{ route('orders.index', array_filter(['search' => request('search')])) }}"
-       class="btn btn-sm rounded-pill px-3 py-1.5 fw-semibold text-nowrap flex-shrink-0 {{ is_null($status) ? 'btn-primary' : 'btn-outline-secondary' }}">
-        {{ __('Semua') }}
-    </a>
-    <a href="{{ route('orders.index', array_filter(['status' => 'pending_payment', 'search' => request('search')])) }}"
-       class="btn btn-sm rounded-pill px-3 py-1.5 fw-semibold text-nowrap flex-shrink-0 {{ $status === 'pending_payment' ? 'btn-primary' : 'btn-outline-secondary' }}">
-        {{ __('Menunggu') }}
-    </a>
-    <a href="{{ route('orders.index', array_filter(['status' => 'delivered', 'search' => request('search')])) }}"
-       class="btn btn-sm rounded-pill px-3 py-1.5 fw-semibold text-nowrap flex-shrink-0 {{ $status === 'delivered' ? 'btn-primary' : 'btn-outline-secondary' }}">
-        {{ __('Selesai') }}
-    </a>
-    <a href="{{ route('orders.index', array_filter(['status' => 'cancelled_expired', 'search' => request('search')])) }}"
-       class="btn btn-sm rounded-pill px-3 py-1.5 fw-semibold text-nowrap flex-shrink-0 {{ $status === 'cancelled_expired' || in_array($status, ['cancelled', 'expired']) ? 'btn-primary' : 'btn-outline-secondary' }}">
-        {{ __('Dibatalkan & Kedaluwarsa') }}
-    </a>
-</div>
-
-{{-- Orders List Container --}}
-<div class="card overflow-hidden">
     <div class="card-body p-0" id="ordersMainCardBody">
         {{-- Skeleton Shimmer Placeholder for Order Transitions --}}
         <div class="d-none" id="ordersSkeletonContainer">

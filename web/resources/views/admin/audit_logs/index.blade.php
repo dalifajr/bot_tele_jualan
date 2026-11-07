@@ -1,17 +1,19 @@
 @extends('layouts.app')
 
 @section('title', __('Log Audit Sistem'))
-@section('page_subtitle', __('Audit Logs & Analytics'))
+@section('page_subtitle', __('Logs Explorer & Operational Intelligence'))
+
+@section('action_bar_buttons')
+    @if(request()->filled('search') || request()->filled('actor_type') || request()->filled('entity_type') || request()->filled('start_date') || request()->filled('end_date'))
+        <a href="{{ route('admin.audit-logs.index') }}" class="cm-btn-outline">
+            <i class="fas fa-undo"></i>
+            <span>{{ __('Reset Filter') }}</span>
+        </a>
+    @endif
+@endsection
 
 @section('content')
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h1 class="h4 fw-bold mb-1 text-body">{{ __('Log Audit Sistem') }}</h1>
-        <p class="text-muted mb-0">{{ __('Pelacakan riwayat aktivitas administratif, perubahan sistem, dan diagram analitik') }}</p>
-    </div>
-</div>
-
-{{-- KPI Metric Cards (Flat Material 3) --}}
+{{-- KPI Metric Cards (Google Cloud Console Outlined Surfaces) --}}
 <div class="row g-3 mb-4">
     <div class="col-6 col-lg-3">
         <div class="card m3-metric-card h-100">
@@ -205,20 +207,20 @@
     </div>
 </div>
 
-{{-- Filter Card (Flat Material 3 Outlined Controls) --}}
-<div class="card mb-4">
-    <div class="card-body p-3">
-        <form action="{{ route('admin.audit-logs.index') }}" method="GET" class="row g-3 align-items-end">
+{{-- Google Cloud Logs Explorer: Integrated Filter Bar + Data Table Card --}}
+<div class="card overflow-hidden">
+    <div class="sd-dashboard-filter-bar p-3">
+        <form action="{{ route('admin.audit-logs.index') }}" method="GET" class="row g-2 align-items-end w-100 m-0">
             <div class="col-lg-3 col-md-6">
                 <label class="form-label text-secondary small fw-bold mb-1">{{ __('Cari Kata Kunci') }}</label>
-                <div class="input-group">
-                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text"><i class="fas fa-filter text-muted"></i></span>
                     <input type="text" name="search" class="form-control" placeholder="{{ __('Aksi, detail, atau pelaku...') }}" value="{{ request('search') }}">
                 </div>
             </div>
             <div class="col-lg-2 col-md-3 col-sm-6">
                 <label class="form-label text-secondary small fw-bold mb-1">{{ __('Tipe Pelaku') }}</label>
-                <select name="actor_type" class="form-select">
+                <select name="actor_type" class="form-select form-select-sm">
                     <option value="">{{ __('Semua Pelaku') }}</option>
                     <option value="user" {{ request('actor_type') === 'user' ? 'selected' : '' }}>{{ __('User / Admin') }}</option>
                     <option value="system" {{ request('actor_type') === 'system' ? 'selected' : '' }}>{{ __('System / Bot') }}</option>
@@ -226,7 +228,7 @@
             </div>
             <div class="col-lg-2 col-md-3 col-sm-6">
                 <label class="form-label text-secondary small fw-bold mb-1">{{ __('Objek Entitas') }}</label>
-                <select name="entity_type" class="form-select">
+                <select name="entity_type" class="form-select form-select-sm">
                     <option value="">{{ __('Semua Entitas') }}</option>
                     @foreach(($availableEntityTypes ?? []) as $et)
                         <option value="{{ $et }}" {{ request('entity_type') === $et ? 'selected' : '' }}>{{ strtoupper($et) }}</option>
@@ -235,26 +237,23 @@
             </div>
             <div class="col-lg-2 col-md-4 col-sm-6">
                 <label class="form-label text-secondary small fw-bold mb-1">{{ __('Tanggal Mulai') }}</label>
-                <input type="date" name="start_date" class="form-control" value="{{ request('start_date') }}">
+                <input type="date" name="start_date" class="form-control form-control-sm" value="{{ request('start_date') }}">
             </div>
             <div class="col-lg-2 col-md-4 col-sm-6">
                 <label class="form-label text-secondary small fw-bold mb-1">{{ __('Tanggal Selesai') }}</label>
-                <input type="date" name="end_date" class="form-control" value="{{ request('end_date') }}">
+                <input type="date" name="end_date" class="form-control form-control-sm" value="{{ request('end_date') }}">
             </div>
             <div class="col-lg-1 col-md-4">
                 <div class="d-flex gap-2">
-                    <button type="submit" class="btn btn-primary w-100 rounded-pill" title="{{ __('Terapkan Filter') }}"><i class="fas fa-filter"></i></button>
+                    <button type="submit" class="btn btn-sm btn-primary w-100" title="{{ __('Terapkan Filter') }}"><i class="fas fa-search"></i></button>
                     @if(request()->filled('search') || request()->filled('actor_type') || request()->filled('entity_type') || request()->filled('start_date') || request()->filled('end_date'))
-                        <a href="{{ route('admin.audit-logs.index') }}" class="btn btn-light rounded-pill px-3" title="{{ __('Reset Filter') }}"><i class="fas fa-undo"></i></a>
+                        <a href="{{ route('admin.audit-logs.index') }}" class="btn btn-sm btn-light px-2.5" title="{{ __('Reset Filter') }}"><i class="fas fa-undo"></i></a>
                     @endif
                 </div>
             </div>
         </form>
     </div>
-</div>
 
-{{-- Table Card (Google Cloud Data Table Flat) --}}
-<div class="card overflow-hidden">
     <div class="card-body p-0">
         @if($logs->count() > 0)
         <div class="table-responsive">
@@ -275,17 +274,17 @@
                         <td>
                             @if($log->actor)
                             <div class="d-flex align-items-center gap-2">
-                                <div class="avatar bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px; font-size: 0.8rem;">
+                                <div class="avatar bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 30px; height: 30px; font-size: 0.78rem;">
                                     {{ strtoupper(substr($log->actor->username ?? 'U', 0, 1)) }}
                                 </div>
                                 <div class="d-flex flex-column">
-                                    <span class="fw-bold text-body" style="font-size: 0.85rem;">{{ $log->actor->full_name ?? $log->actor->username }}</span>
+                                    <span class="fw-bold text-body" style="font-size: 0.8125rem;">{{ $log->actor->full_name ?? $log->actor->username }}</span>
                                     <span class="text-muted small">@if($log->actor->role === 'admin') Admin @elseif($log->actor->role === 'seller') Seller @else Customer @endif</span>
                                 </div>
                             </div>
                             @else
                             <div class="d-flex align-items-center gap-2 text-muted">
-                                <div class="avatar bg-secondary-subtle text-secondary rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px; font-size: 0.8rem;">
+                                <div class="avatar bg-secondary-subtle text-secondary rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 30px; height: 30px; font-size: 0.78rem;">
                                     S
                                 </div>
                                 <span class="small fw-semibold">{{ __('SYSTEM / BOT') }}</span>
@@ -293,11 +292,11 @@
                             @endif
                         </td>
                         <td>
-                            <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-1.5 fw-semibold" style="font-size: 0.75rem;">{{ $log->action }}</span>
+                            <span class="badge bg-primary-subtle text-primary">{{ $log->action }}</span>
                         </td>
                         <td>
                             @if(!empty($log->entity_type))
-                                <span class="badge bg-info-subtle text-info rounded-pill px-2.5 py-1 font-monospace" style="font-size: 0.7rem;">
+                                <span class="badge bg-info-subtle text-info font-monospace">
                                     {{ strtoupper($log->entity_type) }}{{ $log->entity_id ? ' #' . $log->entity_id : '' }}
                                 </span>
                             @else
@@ -305,7 +304,7 @@
                             @endif
                         </td>
                         <td>
-                            <div class="text-muted text-wrap font-monospace" style="max-width: 500px; font-size: 0.8rem;">
+                            <div class="text-muted text-wrap font-monospace" style="max-width: 500px; font-size: 0.78rem;">
                                 {{ $log->detail }}
                             </div>
                         </td>
@@ -336,7 +335,7 @@
 document.addEventListener("DOMContentLoaded", function () {
     const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
 
-    // 1. Audit Trend Multi-Series Area Chart (Material 3 / GCP Palette)
+    // 1. Audit Trend Multi-Series Area Chart (Google Cloud Console cm-gm2 Palette)
     const trendOptions = {
         series: [
             {
@@ -362,20 +361,20 @@ document.addEventListener("DOMContentLoaded", function () {
         },
         theme: { mode: isDark ? 'dark' : 'light' },
         dataLabels: { enabled: false },
-        stroke: { curve: 'smooth', width: [2.5, 2, 2], dashArray: [0, 0, 4] },
-        colors: ['#0b57d0', '#146c2e', '#5f6368'],
+        stroke: { curve: 'smooth', width: [2, 2, 2], dashArray: [0, 0, 4] },
+        colors: [isDark ? '#8ab4f8' : '#3367d6', isDark ? '#81c995' : '#0b8043', isDark ? '#9aa0a6' : '#5f6368'],
         fill: {
             type: 'gradient',
             gradient: {
                 shadeIntensity: 1,
-                opacityFrom: 0.25,
+                opacityFrom: 0.22,
                 opacityTo: 0.02,
                 stops: [20, 100]
             }
         },
         grid: {
-            borderColor: isDark ? '#30363d' : '#dadce0',
-            strokeDashArray: 4
+            borderColor: isDark ? '#3c4043' : '#dadce0',
+            strokeDashArray: 3
         },
         xaxis: {
             categories: @json($auditTrendLabels ?? []),
@@ -406,7 +405,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const trendChart = new ApexCharts(document.querySelector("#auditTrendChart"), trendOptions);
     trendChart.render();
 
-    // 2. Action Distribution Donut Chart
+    // 2. Action Distribution Donut Chart (Google Cloud Chart Tokens)
     @if(!empty($actionDistributionData) && array_sum($actionDistributionData) > 0)
     const actionDistOptions = {
         series: @json($actionDistributionData ?? []),
@@ -418,10 +417,10 @@ document.addEventListener("DOMContentLoaded", function () {
             fontFamily: 'inherit'
         },
         theme: { mode: isDark ? 'dark' : 'light' },
-        colors: ['#0b57d0', '#146c2e', '#e37400', '#00639b', '#6f42c1', '#5f6368'],
+        colors: ['#3367d6', '#0b8043', '#dc6d00', '#12b5cb', '#9334e6', '#5f6368'],
         stroke: {
             width: 2,
-            colors: [isDark ? '#161b22' : '#ffffff']
+            colors: [isDark ? '#28292c' : '#ffffff']
         },
         legend: {
             position: 'bottom',
@@ -458,7 +457,7 @@ document.addEventListener("DOMContentLoaded", function () {
     actionDistChart.render();
     @endif
 
-    // 3. Entity Distribution Horizontal Bar Chart
+    // 3. Entity Distribution Horizontal Bar Chart (Google Cloud Chart Tokens)
     @if(!empty($entityDistributionData) && array_sum($entityDistributionData) > 0)
     const entityDistOptions = {
         series: [{
@@ -475,16 +474,16 @@ document.addEventListener("DOMContentLoaded", function () {
         theme: { mode: isDark ? 'dark' : 'light' },
         plotOptions: {
             bar: {
-                borderRadius: 6,
+                borderRadius: 4,
                 horizontal: true,
                 distributed: true,
-                barHeight: '60%'
+                barHeight: '58%'
             }
         },
-        colors: ['#00639b', '#0b57d0', '#146c2e', '#e37400', '#6f42c1', '#ba1a1a'],
+        colors: ['#3367d6', '#12b5cb', '#0b8043', '#dc6d00', '#9334e6', '#d50000'],
         grid: {
-            borderColor: isDark ? '#30363d' : '#dadce0',
-            strokeDashArray: 4
+            borderColor: isDark ? '#3c4043' : '#dadce0',
+            strokeDashArray: 3
         },
         dataLabels: {
             enabled: true,
