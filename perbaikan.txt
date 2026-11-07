@@ -1,6 +1,10 @@
 RENCANA PERBAIKAN DAN PENGEMBANGAN:
 
-saya ingin berganti gaya tampilan website saya, menjadi flat material you design. contohnya seperti yang diterapkan pada aplikasi website google cloud platform, dan aplikasi google lain. apakah bisa? bagian mana saja yang harus diubah mulai dari yang paling mudah ke yang paling kompleks.
+saya kira, untuk saat ini masih kurang mencerminkan gaya desain flat material you ui android yang digunakan oleh google cloud. juga, perbaiki logo lonceng notifikasi, karena saat ini malah ada 2 lonceng notifikasi.
+
+kemudian, saya ingin kamu mempelajari referensi desain yang ada pada folder reference design untuk dijadikan acuan desain.
+
+folder dan seluruh file dalam folder referensi tidak boleh di push ke github.
 
 catat untuk kamu;
 - lakukan brainstroming sebelum melakukan eksekusi, tak lupa pula lakukan analisa kritik dan saran.

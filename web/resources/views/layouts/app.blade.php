@@ -505,17 +505,19 @@
             $totalUnreadCount = Auth::check() ? Auth::user()->unreadNotifications()->count() : 0;
         @endphp
         {{-- Notification Bell for Mobile (< 768px): Direct Link to Notifications Page (Poin 10) --}}
-        <a href="{{ Auth::check() ? route('notifications.index') : route('login') }}" 
-           @guest data-guest-modal="true" data-feature-name="notifikasi" @endguest 
-           class="btn btn-link link-body-emphasis m3-icon-btn position-relative d-md-none" 
-           title="{{ __('Notifikasi') }}">
-            <i class="fas fa-bell fs-5"></i>
-            @if($totalUnreadCount > 0)
-            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.65rem;">
-                {{ $totalUnreadCount > 99 ? '99+' : $totalUnreadCount }}
-            </span>
-            @endif
-        </a>
+        <div class="d-md-none">
+            <a href="{{ Auth::check() ? route('notifications.index') : route('login') }}" 
+               @guest data-guest-modal="true" data-feature-name="notifikasi" @endguest 
+               class="btn btn-link link-body-emphasis m3-icon-btn position-relative" 
+               title="{{ __('Notifikasi') }}">
+                <i class="fas fa-bell fs-5"></i>
+                @if($totalUnreadCount > 0)
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.65rem;">
+                    {{ $totalUnreadCount > 99 ? '99+' : $totalUnreadCount }}
+                </span>
+                @endif
+            </a>
+        </div>
 
         {{-- Notification Dropdown for Desktop (>= 768px): Popover --}}
         <div class="dropdown d-none d-md-block">
