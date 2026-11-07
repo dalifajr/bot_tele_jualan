@@ -1,8 +1,20 @@
 <!DOCTYPE html>
-<html lang="{{ app()->getLocale() }}" data-bs-theme="light">
+<html lang="{{ app()->getLocale() }}" data-bs-theme="{{ request()->cookie('jualan-theme', 'light') }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+        (function() {
+            try {
+                var savedTheme = localStorage.getItem('jualan-theme') || (document.cookie.match(/(?:^|; )jualan-theme=([^;]*)/) || [])[1] || 'light';
+                document.documentElement.setAttribute('data-bs-theme', savedTheme);
+                document.documentElement.style.colorScheme = savedTheme;
+                if (!document.cookie.includes('jualan-theme=' + savedTheme)) {
+                    document.cookie = "jualan-theme=" + savedTheme + ";path=/;max-age=31536000;SameSite=Lax";
+                }
+            } catch (e) {}
+        })();
+    </script>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="server-time" content="{{ time() }}">
     <title>@yield('title', 'Dashboard') — {{ config('app.name', 'Dzulfikrialifajri Store') }}</title>
@@ -10,7 +22,7 @@
 
     {{-- PWA Manifest & Mobile Meta Tags --}}
     <link rel="manifest" href="{{ asset('manifest.json') }}">
-    <meta name="theme-color" content="#3367d6">
+    <meta name="theme-color" content="{{ request()->cookie('jualan-theme') === 'dark' ? '#1f1f1f' : '#3367d6' }}" id="themeColorMeta">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -21,6 +33,31 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Roboto+Mono:wght@400;500;600&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
+    {{-- Aptos Font System Setup --}}
+    <style>
+        @font-face {
+            font-family: 'Aptos';
+            src: local('Aptos'), local('Aptos-Regular');
+            font-weight: 400;
+            font-style: normal;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'Aptos';
+            src: local('Aptos-Medium'), local('Aptos Medium');
+            font-weight: 500;
+            font-style: normal;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'Aptos';
+            src: local('Aptos-Bold'), local('Aptos Bold'), local('Aptos-SemiBold');
+            font-weight: 600 700;
+            font-style: normal;
+            font-display: swap;
+        }
+    </style>
 
     {{-- Bootstrap 5.3 --}}
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -495,58 +532,7 @@
                 {{ config('app.name', 'Dzulfikrialifajri Store') }}
             </span>
         </a>
-
-        {{-- Google Cloud Console Project / Workspace Context Picker --}}
-        @unless($hideSidebar)
-        <div class="dropdown d-none d-sm-block ms-1">
-            @php
-                $workspaceLabel = 'Storefront';
-                $workspaceIcon = 'fa-layer-group';
-                if (Auth::check() && Auth::user()->role === 'admin') {
-                    $workspaceLabel = 'Admin Console';
-                    $workspaceIcon = 'fa-shield-halved';
-                } elseif (Auth::check() && Auth::user()->role === 'seller') {
-                    $workspaceLabel = 'Seller Workspace';
-                    $workspaceIcon = 'fa-store';
-                }
-            @endphp
-            <button type="button" class="pcc-project-picker" data-bs-toggle="dropdown" aria-expanded="false" title="{{ __('Pilih Workspace / Navigasi Cepat') }}">
-                <i class="fas {{ $workspaceIcon }} text-primary" style="font-size: 0.72rem;"></i>
-                <span class="text-truncate" style="max-width: 140px;">{{ $workspaceLabel }}</span>
-                <i class="fas fa-caret-down opacity-75" style="font-size: 0.7rem;"></i>
-            </button>
-            <ul class="dropdown-menu mt-1" style="min-width: 220px;">
-                <li class="px-3 py-1.5 border-bottom" style="background: var(--cm-sys-color-container);">
-                    <div class="text-secondary" style="font: var(--cm-sys-type-label-small);">{{ __('Workspace Aktif') }}</div>
-                    <div class="fw-medium text-truncate" style="font: var(--cm-sys-type-body-medium); color: var(--cm-sys-color-on-surface);">{{ $workspaceLabel }}</div>
-                </li>
-                <li><a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('dashboard') }}"><i class="fas fa-home text-secondary" style="width: 16px;"></i> {{ __('Home Overview') }}</a></li>
-                <li><a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('catalog.index') }}"><i class="fas fa-store text-secondary" style="width: 16px;"></i> {{ __('Katalog Produk') }}</a></li>
-                @auth
-                <li><a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('orders.index') }}"><i class="fas fa-receipt text-secondary" style="width: 16px;"></i> {{ __('Riwayat Pesanan') }}</a></li>
-                @if(Auth::user()->role === 'admin')
-                <li><hr class="dropdown-divider my-1"></li>
-                <li><a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('admin.dashboard') }}"><i class="fas fa-chart-line text-primary" style="width: 16px;"></i> {{ __('Dashboard Admin') }}</a></li>
-                <li><a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('admin.audit-logs.index') }}"><i class="fas fa-clock-rotate-left text-primary" style="width: 16px;"></i> {{ __('Log Audit') }}</a></li>
-                <li><a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('admin.logins.index') }}"><i class="fas fa-right-to-bracket text-primary" style="width: 16px;"></i> {{ __('Percobaan Login') }}</a></li>
-                @elseif(Auth::user()->role === 'seller')
-                <li><hr class="dropdown-divider my-1"></li>
-                <li><a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('seller.dashboard') }}"><i class="fas fa-chart-pie text-primary" style="width: 16px;"></i> {{ __('Dashboard Seller') }}</a></li>
-                @endif
-                @endauth
-            </ul>
-        </div>
-        @endunless
     </div>
-
-    {{-- Google Cloud Console Central Search / Command Bar (Desktop) --}}
-    @unless($hideSidebar)
-    <form action="{{ route('catalog.index') }}" method="GET" class="pcc-search-bar d-none d-md-flex mx-auto my-0">
-        <i class="fas fa-search" style="font-size: 0.78rem; color: var(--cm-sys-color-on-surface-variant);"></i>
-        <input type="text" name="search" id="pccGlobalSearchInput" value="{{ request('search') }}" class="pcc-search-input" placeholder="{{ __('Cari produk, layanan, atau resource...') }}" autocomplete="off">
-        <span class="pcc-search-kbd">Ctrl+/</span>
-    </form>
-    @endunless
 
     <div class="ms-auto d-flex align-items-center gap-1">
         @unless($hideSidebar)
@@ -679,10 +665,15 @@
                 <div class="sheet-handle-bar"></div>
             </div>
             <div class="d-flex align-items-center justify-content-between px-3 pb-2 pt-1">
-                <div class="d-flex align-items-center gap-2">
-                    <i class="fas fa-bars-staggered text-primary"></i>
-                    <span class="fw-bold text-body" style="font-size: 0.95rem;">{{ __('Menu & Layanan Lainnya') }}</span>
-                </div>
+                <a href="{{ route('dashboard') }}" class="d-flex align-items-center gap-2 text-decoration-none">
+                    <span class="navbar-brand-icon" style="width: 32px; height: 32px; font-size: 0.95rem;">
+                        <i class="fas fa-cloud"></i>
+                    </span>
+                    <div class="d-flex flex-column text-start" style="line-height: 1.15;">
+                        <span class="fw-bold text-body" style="font-size: 0.92rem; letter-spacing: -0.01em;">{{ config('app.name', 'Dzulfikrialifajri Store') }}</span>
+                        <small class="text-secondary" style="font-size: 0.72rem; font-weight: 500;">{{ __('Menu & Layanan Lainnya') }}</small>
+                    </div>
+                </a>
                 <button type="button" class="btn btn-sm btn-icon btn-light rounded-circle text-secondary" id="sidebarCloseBtn" aria-label="{{ __('Tutup') }}" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; padding: 0;">
                     <i class="fas fa-times" style="font-size: 0.9rem;"></i>
                 </button>
@@ -1255,17 +1246,6 @@
                 localStorage.setItem('cfc_sidebar_collapsed', isCollapsed ? '1' : '0');
             });
         }
-
-        document.addEventListener('keydown', function (e) {
-            if ((e.ctrlKey || e.metaKey) && e.key === '/') {
-                const searchInput = document.getElementById('pccGlobalSearchInput');
-                if (searchInput) {
-                    e.preventDefault();
-                    searchInput.focus();
-                    searchInput.select();
-                }
-            }
-        });
     });
 </script>
 

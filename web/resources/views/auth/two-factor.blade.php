@@ -1,8 +1,20 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" data-bs-theme="{{ request()->cookie('jualan-theme', 'light') }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+        (function() {
+            try {
+                var savedTheme = localStorage.getItem('jualan-theme') || (document.cookie.match(/(?:^|; )jualan-theme=([^;]*)/) || [])[1] || 'light';
+                document.documentElement.setAttribute('data-bs-theme', savedTheme);
+                document.documentElement.style.colorScheme = savedTheme;
+                if (!document.cookie.includes('jualan-theme=' + savedTheme)) {
+                    document.cookie = "jualan-theme=" + savedTheme + ";path=/;max-age=31536000;SameSite=Lax";
+                }
+            } catch (e) {}
+        })();
+    </script>
     <title>Verifikasi Dua Langkah (2FA) — {{ config('app.name', 'Dzulfikrialifajri Store') }}</title>
     
     {{-- Google Fonts: Outfit --}}
@@ -19,12 +31,6 @@
     <link href="{{ asset('css/auth.css') }}?v={{ filemtime(public_path('css/auth.css')) }}" rel="stylesheet">
     
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script>
-        (function() {
-            const savedTheme = localStorage.getItem('jualan-theme') || 'light';
-            document.documentElement.setAttribute('data-bs-theme', savedTheme);
-        })();
-    </script>
 </head>
 <body style="cursor: default;">
 

@@ -1,8 +1,20 @@
 <!DOCTYPE html>
-<html lang="{{ app()->getLocale() }}">
+<html lang="{{ app()->getLocale() }}" data-bs-theme="{{ request()->cookie('jualan-theme', 'light') }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+        (function() {
+            try {
+                var savedTheme = localStorage.getItem('jualan-theme') || (document.cookie.match(/(?:^|; )jualan-theme=([^;]*)/) || [])[1] || 'light';
+                document.documentElement.setAttribute('data-bs-theme', savedTheme);
+                document.documentElement.style.colorScheme = savedTheme;
+                if (!document.cookie.includes('jualan-theme=' + savedTheme)) {
+                    document.cookie = "jualan-theme=" + savedTheme + ";path=/;max-age=31536000;SameSite=Lax";
+                }
+            } catch (e) {}
+        })();
+    </script>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ __('Login / Daftar') }} — {{ config('app.name', 'Dzulfikrialifajri Store') }}</title>
     
@@ -25,12 +37,6 @@
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
-        // Initialize theme early to avoid layout shift / flash of light theme
-        (function() {
-            const savedTheme = localStorage.getItem('jualan-theme') || 'light';
-            document.documentElement.setAttribute('data-bs-theme', savedTheme);
-        })();
-
         document.addEventListener('DOMContentLoaded', function() {
             if (window.Telegram && window.Telegram.WebApp) {
                 const tg = window.Telegram.WebApp;

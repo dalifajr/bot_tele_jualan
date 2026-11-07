@@ -19,34 +19,15 @@
     <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
         <div>
             @auth
-            <div class="d-flex align-items-center gap-2 mb-1">
-                <span class="badge bg-primary-subtle text-primary">
-                    <i class="fas fa-terminal me-1"></i>{{ __('Selamat Datang Kembali') }}
-                </span>
-                <span class="badge bg-success-subtle text-success">
-                    <i class="fas fa-shield-alt me-1"></i>{{ __('Status Akun: Aktif') }}
-                </span>
-                <span class="badge bg-info-subtle text-info font-monospace">
-                    <i class="fab fa-telegram me-1"></i>{{ Auth::user()->telegram_id ? 'TG ID: ' . Auth::user()->telegram_id : 'Telegram: Belum Terhubung' }}
-                </span>
-            </div>
             <h1 class="h4 fw-semibold mb-1" style="color: var(--cm-sys-color-on-surface);">
-                {{ Str::limit(Auth::user()->full_name ?? Auth::user()->username ?? 'Pelanggan Setia', 30) }}
+                {{ __('Halo') }}, {{ Auth::user()->username ?: (Auth::user()->full_name ?: 'User') }}
             </h1>
             <p class="mb-0 small" style="color: var(--cm-sys-color-on-surface-variant); max-width: 680px;">
                 {{ __('Kelola pesanan produk digital Anda, cek status transaksi terbaru, atau nikmati belanja instan dari katalog kami.') }}
             </p>
             @else
-            <div class="d-flex align-items-center gap-2 mb-1">
-                <span class="badge bg-primary-subtle text-primary">
-                    <i class="fas fa-cloud me-1"></i>{{ __('Selamat Datang') }}
-                </span>
-                <span class="badge bg-secondary-subtle text-secondary">
-                    <i class="fas fa-shield-alt me-1"></i>{{ __('Akses: Tamu') }}
-                </span>
-            </div>
             <h1 class="h4 fw-semibold mb-1" style="color: var(--cm-sys-color-on-surface);">
-                {{ __('Tamu (Guest)') }}
+                {{ __('Halo, Tamu') }}
             </h1>
             <p class="mb-0 small" style="color: var(--cm-sys-color-on-surface-variant); max-width: 680px;">
                 {{ __('Jelajahi berbagai produk digital terbaik kami dengan harga bersahabat dan pengiriman otomatis instan.') }}

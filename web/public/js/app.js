@@ -29,16 +29,28 @@ function initThemeToggle() {
     if (!toggle || !icon) return;
 
     // Load saved theme
-    const saved = localStorage.getItem('jualan-theme') || 'light';
+    const saved = localStorage.getItem('jualan-theme') || (document.cookie.match(/(?:^|; )jualan-theme=([^;]*)/) || [])[1] || 'light';
     html.setAttribute('data-bs-theme', saved);
+    html.style.colorScheme = saved;
     updateThemeIcon(icon, saved);
 
     toggle.addEventListener('click', () => {
         const current = html.getAttribute('data-bs-theme');
         const next = current === 'dark' ? 'light' : 'dark';
+
+        html.classList.add('theme-transitioning');
         html.setAttribute('data-bs-theme', next);
+        html.style.colorScheme = next;
         localStorage.setItem('jualan-theme', next);
+        document.cookie = "jualan-theme=" + next + ";path=/;max-age=31536000;SameSite=Lax";
+        
+        const themeColorMeta = document.getElementById('themeColorMeta');
+        if (themeColorMeta) {
+            themeColorMeta.setAttribute('content', next === 'dark' ? '#1f1f1f' : '#3367d6');
+        }
+
         updateThemeIcon(icon, next);
+        setTimeout(() => html.classList.remove('theme-transitioning'), 300);
     });
 }
 
