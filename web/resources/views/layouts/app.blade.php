@@ -485,14 +485,19 @@
 </style>
 @endif
 
-<nav class="navbar navbar-expand fixed-top shadow-sm px-3 px-md-4 bg-body border-bottom" style="z-index: 1030;">
+<nav class="navbar navbar-expand fixed-top px-3 px-md-4 bg-body border-bottom" style="z-index: 1030;">
     <div class="d-flex align-items-center gap-2 gap-sm-3">
-        <div class="navbar-brand d-flex align-items-center gap-2 text-primary fw-bold m-0" style="font-size: 1.05rem;">
-            <i class="fas fa-shopping-bag fs-5"></i>
-            <span class="fw-semibold">{{ config('app.name', 'Dzulfikrialifajri Store') }} <span class="fw-normal text-secondary d-none d-sm-inline" style="font-size: 0.85rem; opacity: 0.8;">| @yield('page_subtitle', 'Dashboard')</span></span>
+        <div class="navbar-brand d-flex align-items-center gap-2.5 m-0" style="font-size: 1.02rem;">
+            <span class="navbar-brand-icon">
+                <i class="fas fa-shopping-bag"></i>
+            </span>
+            <span class="fw-semibold" style="color: var(--on-surface); letter-spacing: -0.01em;">
+                {{ config('app.name', 'Dzulfikrialifajri Store') }}
+                <span class="fw-normal d-none d-sm-inline" style="font-size: 0.84rem; color: var(--on-surface-variant);">| @yield('page_subtitle', 'Dashboard')</span>
+            </span>
         </div>
     </div>
-    <div class="ms-auto d-flex align-items-center gap-3">
+    <div class="ms-auto d-flex align-items-center gap-1 gap-sm-2">
         @unless($hideSidebar)
         {{-- Notification Bell (All Authenticated Users) --}}
         @php
@@ -502,7 +507,7 @@
         {{-- Notification Bell for Mobile (< 768px): Direct Link to Notifications Page (Poin 10) --}}
         <a href="{{ Auth::check() ? route('notifications.index') : route('login') }}" 
            @guest data-guest-modal="true" data-feature-name="notifikasi" @endguest 
-           class="btn btn-link link-body-emphasis p-0 position-relative d-md-none" 
+           class="btn btn-link link-body-emphasis m3-icon-btn position-relative d-md-none" 
            title="{{ __('Notifikasi') }}">
             <i class="fas fa-bell fs-5"></i>
             @if($totalUnreadCount > 0)
@@ -514,7 +519,7 @@
 
         {{-- Notification Dropdown for Desktop (>= 768px): Popover --}}
         <div class="dropdown d-none d-md-block">
-            <button class="btn btn-link link-body-emphasis p-0 position-relative" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="{{ __('Notifikasi') }}" data-pex="xrpax4o-0">
+            <button class="btn btn-link link-body-emphasis m3-icon-btn position-relative" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="{{ __('Notifikasi') }}" data-pex="xrpax4o-0">
                 <i class="fas fa-bell fs-5" data-pex="xrpax4o-1"></i>
                 @if($totalUnreadCount > 0)
                 <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.65rem;" data-pex="xrpax4o-2">
@@ -522,8 +527,8 @@
                 </span>
                 @endif
             </button>
-            <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2 p-0" style="width: 350px; border-radius: 12px; z-index: 1050; overflow: hidden;">
-                <li class="bg-light px-3 py-2 border-bottom d-flex justify-content-between align-items-center">
+            <ul class="dropdown-menu dropdown-menu-end mt-2 p-0" style="width: 350px; border-radius: 12px; z-index: 1050; overflow: hidden;">
+                <li class="px-3 py-2.5 border-bottom d-flex justify-content-between align-items-center" style="background: var(--surface-container-low);">
                     <h6 class="m-0 fw-bold text-primary" data-pex="9c28hsh-7">{{ __('Notifikasi') }}</h6>
                     @if($totalUnreadCount > 0)
                     <span class="badge bg-primary rounded-pill">{{ $totalUnreadCount }} {{ __('Baru') }}</span>
@@ -533,12 +538,12 @@
                 <div class="notification-list" style="max-height: 400px; overflow-y: auto;">
                     @forelse($unreadNotifications as $notification)
                     <li>
-                        <a class="dropdown-item py-3 px-3 d-flex align-items-start gap-3 border-bottom" href="{{ $notification->data['url'] ?? '#' }}" style="white-space: normal;" onclick="markSingleNotificationAsRead('{{ $notification->id }}')">
+                        <a class="dropdown-item py-3 px-3 d-flex align-items-start gap-3 border-bottom" href="{{ $notification->data['url'] ?? '#' }}" style="white-space: normal; border-radius: 0 !important;" onclick="markSingleNotificationAsRead('{{ $notification->id }}')">
                             <div class="mt-1">
                                 <i class="{{ $notification->data['icon'] ?? 'fas fa-bell text-secondary' }} fs-5"></i>
                             </div>
                             <div class="flex-grow-1">
-                                <div class="fw-bold mb-1" style="font-size: 0.9rem; color: var(--bs-heading-color);" data-pex="9c28hsh-21">{{ $notification->data['title'] ?? __('Notifikasi') }}</div>
+                                <div class="fw-bold mb-1" style="font-size: 0.9rem; color: var(--on-surface);" data-pex="9c28hsh-21">{{ $notification->data['title'] ?? __('Notifikasi') }}</div>
                                 <div class="text-muted small" style="line-height: 1.4;" data-pex="9c28hsh-22">{{ $notification->data['message'] ?? '' }}</div>
                                 
                                 @if(($notification->data['type'] ?? '') === 'login_gagal' && isset($notification->data['ip_address']))
@@ -559,7 +564,7 @@
                     </li>
                     @empty
                     <li>
-                        <div class="dropdown-item py-4 text-center text-muted">
+                        <div class="dropdown-item py-4 text-center text-muted" style="border-radius: 0 !important;">
                             <i class="fas fa-check-circle fs-3 mb-2 text-success"></i><br>
                             <small>{{ __('Tidak ada notifikasi baru.') }}</small>
                         </div>
@@ -567,7 +572,7 @@
                     @endforelse
                 </div>
                 
-                <li class="d-flex justify-content-between px-3 py-2 bg-light border-top">
+                <li class="d-flex justify-content-between px-3 py-2 border-top" style="background: var(--surface-container-low);">
                     <a href="javascript:void(0)" class="text-decoration-none small text-muted hover-primary" onclick="markAllNotificationsRead()"><i class="fas fa-check-double me-1"></i>{{ __('Tandai Dibaca') }}</a>
                     <a href="{{ route('notifications.index') }}" class="text-decoration-none small fw-bold text-primary"><i class="fas fa-list me-1"></i>{{ __('Lihat Semua') }}</a>
                 </li>
@@ -577,7 +582,7 @@
         {{-- Shopping Cart Icon --}}
         <a href="{{ Auth::check() ? route('cart.index') : route('login') }}" 
            @guest data-guest-modal="true" data-feature-name="keranjang belanja" @endguest 
-           class="btn btn-link link-body-emphasis p-0 position-relative me-2" 
+           class="btn btn-link link-body-emphasis m3-icon-btn position-relative" 
            title="{{ __('Keranjang Belanja') }}" 
            id="headerCartBtn">
             <i class="fas fa-shopping-cart fs-5"></i>
@@ -591,7 +596,7 @@
         @endunless
 
         {{-- Theme Toggle --}}
-        <button class="btn btn-link link-body-emphasis p-0 me-2" id="themeToggle" title="{{ __('Toggle Theme') }}" aria-label="{{ __('Ganti Tema') }}">
+        <button class="btn btn-link link-body-emphasis m3-icon-btn me-1" id="themeToggle" title="{{ __('Toggle Theme') }}" aria-label="{{ __('Ganti Tema') }}">
             <i class="fas fa-moon fs-5" id="themeIcon"></i>
         </button>
 
@@ -604,7 +609,7 @@
             </button>
         </form>
         @else
-        <a href="{{ route('login') }}" class="btn btn-sm btn-primary rounded-pill px-3 d-none d-lg-flex align-items-center gap-1.5 shadow-sm fw-bold">
+        <a href="{{ route('login') }}" class="btn btn-sm btn-primary rounded-pill px-3 d-none d-lg-flex align-items-center gap-1.5 fw-bold">
             <i class="fas fa-sign-in-alt"></i> <span>{{ __('Masuk') }}</span>
         </a>
         @endauth

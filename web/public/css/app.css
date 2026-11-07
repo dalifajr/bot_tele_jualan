@@ -115,7 +115,7 @@ body {
     transition: background-color 0.25s ease, color 0.25s ease;
 }
 
-/* === NAVIGATION (FLAT SURFACE & 1PX OUTLINE) === */
+/* === NAVIGATION (MATERIAL 3 TOP APP BAR & 1PX HAIRLINE) === */
 .navbar {
     height: var(--header-height);
     min-height: var(--header-height);
@@ -131,13 +131,59 @@ body {
     align-items: center;
     box-sizing: border-box;
     box-shadow: none !important;
-    transition: background-color 0.25s ease, border-bottom 0.25s ease, top 0.25s ease;
+    transition: background-color 0.2s ease, border-bottom 0.2s ease, top 0.2s ease;
+}
+
+.navbar-brand-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: var(--primary-container);
+    color: var(--primary-color);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+[data-bs-theme="dark"] .navbar-brand-icon {
+    background: rgba(var(--primary-rgb), 0.16);
+    color: var(--primary-color);
+}
+
+/* Material 3 Circular Action Icon Button in Top App Bar */
+.m3-icon-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 50% !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: var(--on-surface-variant) !important;
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    position: relative;
+    transition: background-color 0.15s ease, color 0.15s ease;
+    text-decoration: none !important;
+}
+
+.m3-icon-btn:hover,
+.m3-icon-btn:focus {
+    background-color: var(--surface-container-high) !important;
+    color: var(--on-surface) !important;
+}
+
+.m3-icon-btn:active {
+    background-color: var(--surface-container-highest) !important;
+    transform: scale(0.95);
 }
 
 /* Mobile Nav Handle Button in Navbar */
 .mobile-nav-handle {
     border: 1px solid var(--outline-color) !important;
-    background: rgba(var(--primary-rgb), 0.08) !important;
+    background: var(--surface-container-low) !important;
     color: var(--primary-color) !important;
     border-radius: var(--radius-pill) !important;
     padding: 6px 14px !important;
@@ -153,15 +199,15 @@ body {
 }
 
 .mobile-nav-handle:hover, .mobile-nav-handle:focus {
-    background: rgba(var(--primary-rgb), 0.14) !important;
-    color: var(--primary-color) !important;
+    background: var(--primary-container) !important;
+    color: var(--on-primary-container) !important;
 }
 
 .mobile-nav-handle:active {
     transform: scale(0.97);
 }
 
-/* === SIDEBAR (FLAT MATERIAL YOU SURFACE & ZERO GAP) === */
+/* === SIDEBAR (MATERIAL 3 NAVIGATION DRAWER & PILL INDICATOR) === */
 .sidebar {
     width: var(--sidebar-width);
     background: var(--surface-bg);
@@ -179,32 +225,39 @@ body {
     overscroll-behavior: contain;
     flex-shrink: 0;
     box-sizing: border-box;
-    transition: transform 0.3s cubic-bezier(0.2, 0, 0, 1), background-color 0.25s ease, border-right 0.25s ease, top 0.25s ease;
+    transition: transform 0.3s cubic-bezier(0.2, 0, 0, 1), background-color 0.2s ease, border-right 0.2s ease, top 0.2s ease;
 }
 
 .sidebar-header {
     flex-shrink: 0;
-    padding: 1.25rem 1rem;
+    padding: 1rem 1.15rem;
     border-bottom: 1px solid var(--outline-color);
+    background: var(--surface-container-low);
 }
 
 .menu-group {
-    padding: 0.5rem 0;
+    padding: 0.4rem 0;
 }
 
 .menu-header {
-    padding: 0.5rem 1.25rem 0.25rem;
+    padding: 0.6rem 1.5rem 0.3rem;
     font-size: 0.68rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: var(--on-surface-variant);
-    opacity: 0.8;
+    color: var(--on-surface-variant) !important;
+    opacity: 0.85;
+}
+
+.menu-header i {
+    color: var(--on-surface-variant) !important;
+    opacity: 0.75;
 }
 
 .menu-items-grid {
     display: flex;
     flex-direction: column;
+    gap: 2px;
 }
 
 .menu-icon-box {
@@ -217,34 +270,51 @@ body {
     flex-shrink: 0;
 }
 
+/* Unify sidebar icons to Google Material monochromatic tone when inactive */
+.sidebar .menu-item:not(.active) .menu-icon-box i {
+    color: var(--on-surface-variant) !important;
+    transition: color 0.15s ease;
+}
+
+.sidebar .menu-item:hover .menu-icon-box i,
+.sidebar .menu-item.active .menu-icon-box i {
+    color: var(--primary-color) !important;
+}
+
+[data-bs-theme="dark"] .sidebar .menu-item.active .menu-icon-box i {
+    color: var(--on-primary-container) !important;
+}
+
 .menu-label-text {
     flex-grow: 1;
 }
 
+/* Material 3 Pill-Shaped Navigation Item (Desktop) */
 .menu-item {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 0.6rem 1.25rem;
+    margin: 0 10px;
+    padding: 0.55rem 1rem;
+    border-radius: var(--radius-pill, 9999px);
     color: var(--on-surface-variant);
     text-decoration: none;
     font-size: 0.85rem;
     font-weight: 500;
-    transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
-    border-left: 3px solid transparent;
+    transition: background-color 0.15s cubic-bezier(0.2, 0, 0, 1), color 0.15s ease;
+    border-left: none !important;
 }
 
 .menu-item:hover {
-    background: rgba(var(--primary-rgb), 0.06);
-    color: var(--primary-color);
-    border-left-color: var(--primary-color);
+    background: var(--surface-container-high);
+    color: var(--on-surface);
+    transform: none;
 }
 
 .menu-item.active {
-    background: rgba(var(--primary-rgb), 0.12);
-    color: var(--primary-color);
+    background: var(--primary-container);
+    color: var(--on-primary-container);
     font-weight: 600;
-    border-left-color: var(--primary-color);
 }
 
 .menu-item i {
@@ -661,17 +731,17 @@ body {
     to { transform: rotate(360deg); }
 }
 
-/* === SIDEBAR OVERLAY (mobile) === */
+/* === SIDEBAR OVERLAY (mobile — Flat Material 3 Scrim) === */
 .sidebar-overlay {
     display: none;
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(10, 15, 29, 0.5);
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     z-index: 1045;
     opacity: 0;
-    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: opacity 0.25s cubic-bezier(0.2, 0, 0, 1);
 }
 
 .sidebar-overlay.show {
@@ -679,7 +749,7 @@ body {
     opacity: 1;
 }
 
-/* === MOBILE BOTTOM NAVIGATION BAR & BOTTOM SHEET CARD === */
+/* === MOBILE BOTTOM NAVIGATION BAR & BOTTOM SHEET CARD (MATERIAL 3 ANDROID 14) === */
 .mobile-bottom-nav {
     display: none;
 }
@@ -694,17 +764,17 @@ body {
         bottom: 0;
         left: 0;
         right: 0;
-        height: calc(62px + env(safe-area-inset-bottom));
+        height: calc(64px + env(safe-area-inset-bottom));
         padding-bottom: env(safe-area-inset-bottom);
-        background: var(--glass-bg) !important;
-        backdrop-filter: blur(var(--glass-blur)) !important;
-        -webkit-backdrop-filter: blur(var(--glass-blur)) !important;
-        border-top: 1px solid var(--glass-border) !important;
+        background: var(--surface-bg) !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        border-top: 1px solid var(--outline-color) !important;
         z-index: 1040;
         display: flex;
         align-items: stretch;
         justify-content: space-around;
-        box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.08);
+        box-shadow: none !important;
     }
 
     .mobile-nav-item {
@@ -714,51 +784,64 @@ body {
         align-items: center;
         justify-content: center;
         padding: 6px 4px;
-        color: var(--bs-secondary-color);
+        color: var(--on-surface-variant);
         text-decoration: none;
-        font-size: 0.68rem;
+        font-size: 0.7rem;
         font-weight: 500;
         line-height: 1.2;
         background: transparent;
         border: none;
         position: relative;
         cursor: pointer;
-        transition: color 0.2s ease, transform 0.15s ease;
+        transition: color 0.15s cubic-bezier(0.2, 0, 0, 1);
+        -webkit-tap-highlight-color: transparent;
     }
 
     .mobile-nav-item i {
-        font-size: 1.18rem;
-        margin-bottom: 3px;
-        transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        font-size: 1.1rem;
+        margin-bottom: 4px;
+        width: 56px;
+        height: 28px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: var(--radius-pill, 9999px);
+        transition: background-color 0.2s cubic-bezier(0.2, 0, 0, 1), color 0.2s cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    .mobile-nav-item:hover:not(.active) i {
+        background: var(--surface-container-low);
+        color: var(--on-surface);
     }
 
     .mobile-nav-item:active {
-        transform: scale(0.92);
+        transform: none;
     }
 
     .mobile-nav-item.active {
-        color: var(--primary-color) !important;
+        color: var(--on-surface) !important;
         font-weight: 700;
     }
 
     .mobile-nav-item.active i {
-        transform: translateY(-1px);
-        background: var(--bs-primary-bg-subtle, rgba(13, 110, 253, 0.12));
-        padding: 2px 10px;
-        border-radius: 12px;
+        transform: none;
+        background: var(--primary-container) !important;
+        color: var(--on-primary-container) !important;
+        padding: 0;
+        border-radius: var(--radius-pill, 9999px);
     }
 
     .mobile-nav-badge {
         position: absolute;
         top: 4px;
-        right: calc(50% - 18px);
-        font-size: 0.65rem;
-        padding: 0.15rem 0.35rem;
+        right: calc(50% - 22px);
+        font-size: 0.62rem;
+        padding: 0.15rem 0.38rem;
         border-radius: 999px;
         line-height: 1;
     }
 
-    /* === BOTTOM SHEET CARD (SIDEBAR ON MOBILE) === */
+    /* === BOTTOM SHEET CARD (SIDEBAR ON MOBILE — FLAT MATERIAL 3 SHEET) === */
     .sidebar {
         position: fixed !important;
         top: auto !important;
@@ -770,16 +853,16 @@ body {
         height: auto !important;
         max-height: 84vh !important;
         border-radius: 24px 24px 0 0 !important;
-        border-top: 1px solid var(--glass-border) !important;
+        border-top: 1px solid var(--outline-color) !important;
         border-right: none !important;
         border-left: none !important;
         border-bottom: none !important;
-        background: var(--glass-bg) !important;
-        backdrop-filter: blur(24px) !important;
-        -webkit-backdrop-filter: blur(24px) !important;
-        box-shadow: 0 -12px 48px rgba(0, 0, 0, 0.3) !important;
+        background: var(--surface-bg) !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.18) !important;
         transform: translateY(105%) !important;
-        transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        transition: transform 0.3s cubic-bezier(0.2, 0, 0, 1);
         z-index: 1060 !important;
         display: flex;
         flex-direction: column;
@@ -797,10 +880,10 @@ body {
         margin-left: 0 !important;
     }
 
-    /* Pull/Swipe Handle Area at Top of Bottom Sheet */
+    /* Pull/Swipe Handle Area at Top of Bottom Sheet (M3 Drag Handle 32x4px) */
     .sheet-handle-area {
         width: 100%;
-        padding: 10px 0 6px;
+        padding: 12px 0 6px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -815,28 +898,27 @@ body {
     }
 
     .sheet-handle-bar {
-        width: 48px;
-        height: 5px;
+        width: 36px;
+        height: 4px;
         border-radius: 999px;
-        background-color: var(--bs-secondary-color);
-        opacity: 0.35;
-        transition: all 0.2s ease;
+        background-color: var(--on-surface-variant);
+        opacity: 0.4;
+        transition: opacity 0.2s ease, background-color 0.2s ease;
     }
 
     .sheet-handle-area:hover .sheet-handle-bar,
     .sheet-handle-area:active .sheet-handle-bar {
-        opacity: 0.8;
-        width: 58px;
+        opacity: 0.85;
         background-color: var(--primary-color);
     }
 
-    /* Mobile Card Grid Layout for Menu Lainnya (Bottom Sheet) - 3 Columns Minimalist */
+    /* Mobile Card Grid Layout for Menu Lainnya (Bottom Sheet) - 3 Columns Flat M3 Tonal */
     .menu-group {
-        padding: 0.4rem 0.75rem !important;
+        padding: 0.45rem 0.85rem !important;
     }
 
     .menu-header {
-        padding: 0.4rem 0.2rem 0.5rem !important;
+        padding: 0.4rem 0.25rem 0.45rem !important;
         font-size: 0.68rem !important;
         letter-spacing: 0.06em !important;
     }
@@ -853,53 +935,55 @@ body {
         align-items: center !important;
         justify-content: center !important;
         text-align: center !important;
-        min-height: 72px !important;
-        padding: 8px 4px !important;
-        border-radius: 14px !important;
-        background: rgba(var(--primary-rgb), 0.03) !important;
-        border: 1px solid var(--glass-border) !important;
-        border-left: 1px solid var(--glass-border) !important;
+        min-height: 74px !important;
+        margin: 0 !important;
+        padding: 8px 6px !important;
+        border-radius: var(--radius-md, 12px) !important;
+        background: var(--surface-container-low) !important;
+        border: 1px solid var(--outline-color) !important;
+        border-left: 1px solid var(--outline-color) !important;
         position: relative !important;
         transform: none !important;
         text-decoration: none !important;
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02) !important;
-        transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease !important;
+        box-shadow: none !important;
+        transition: background-color 0.15s ease, border-color 0.15s ease !important;
     }
 
     .menu-item:hover,
     .menu-item:active {
-        background: rgba(var(--primary-rgb), 0.08) !important;
-        border-color: rgba(var(--primary-rgb), 0.25) !important;
-        transform: scale(0.96) !important;
-        box-shadow: 0 3px 10px rgba(var(--primary-rgb), 0.1) !important;
+        background: var(--surface-container-high) !important;
+        border-color: var(--outline-variant) !important;
+        transform: none !important;
+        box-shadow: none !important;
     }
 
     .menu-item.active {
-        background: rgba(var(--primary-rgb), 0.12) !important;
-        border: 1px solid var(--primary-color) !important;
-        border-left: 1px solid var(--primary-color) !important;
-        box-shadow: 0 3px 12px rgba(var(--primary-rgb), 0.18) !important;
+        background: var(--primary-container) !important;
+        border: 1px solid rgba(var(--primary-rgb), 0.35) !important;
+        border-left: 1px solid rgba(var(--primary-rgb), 0.35) !important;
+        box-shadow: none !important;
     }
 
     .menu-item .menu-icon-box {
         width: 32px !important;
         height: 32px !important;
-        border-radius: 10px !important;
-        background: var(--bs-body-bg) !important;
-        border: 1px solid var(--glass-border) !important;
+        border-radius: 8px !important;
+        background: var(--surface-bg) !important;
+        border: 1px solid var(--outline-color) !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        font-size: 1rem !important;
-        margin-bottom: 4px !important;
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04) !important;
+        font-size: 0.95rem !important;
+        margin-bottom: 5px !important;
+        box-shadow: none !important;
         flex-shrink: 0 !important;
-        transition: transform 0.15s ease, background 0.15s ease !important;
+        transition: background-color 0.15s ease !important;
     }
 
     .menu-item.active .menu-icon-box {
         background: var(--primary-color) !important;
-        box-shadow: 0 2px 6px rgba(var(--primary-rgb), 0.3) !important;
+        border-color: var(--primary-color) !important;
+        box-shadow: none !important;
     }
 
     .menu-item.active .menu-icon-box i {
@@ -910,7 +994,7 @@ body {
         font-size: 0.72rem !important;
         font-weight: 600 !important;
         line-height: 1.15 !important;
-        color: var(--bs-body-color) !important;
+        color: var(--on-surface) !important;
         text-align: center !important;
         display: -webkit-box !important;
         -webkit-line-clamp: 2 !important;
@@ -920,7 +1004,7 @@ body {
     }
 
     .menu-item.active .menu-label-text {
-        color: var(--primary-color) !important;
+        color: var(--on-primary-container) !important;
         font-weight: 700 !important;
     }
 
@@ -943,17 +1027,18 @@ body {
     }
 }
 
-/* Sidebar Telegram Support Card */
+/* Sidebar Telegram Support Card (Flat Material 3 Surface Container) */
 .sidebar-help-card {
-    background: rgba(var(--primary-rgb), 0.05);
-    border: 1px solid rgba(var(--primary-rgb), 0.15) !important;
-    transition: all 0.25s ease;
+    background: var(--surface-container-low);
+    border: 1px solid var(--outline-color) !important;
+    border-radius: var(--radius-md, 12px) !important;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
 .sidebar-help-card:hover {
-    background: rgba(var(--primary-rgb), 0.08);
-    border-color: rgba(var(--primary-rgb), 0.25) !important;
-    transform: translateY(-2px);
+    background: var(--surface-container-high);
+    border-color: var(--primary-color) !important;
+    transform: none;
 }
 
 /* === DARK MODE ADJUSTMENTS === */
