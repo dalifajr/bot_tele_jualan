@@ -21,12 +21,12 @@
 {{-- Sub Navigation Tabs --}}
 <ul class="nav nav-pills mb-4 gap-2">
     <li class="nav-item">
-        <a class="nav-link text-secondary rounded-pill px-4 bg-light" href="{{ route('seller.finance.index') }}">
+        <a class="nav-link px-3 py-2 fw-medium" href="{{ route('seller.finance.index') }}">
             <i class="fas fa-wallet me-2"></i>{{ __('Dompet & Penarikan') }}
         </a>
     </li>
     <li class="nav-item">
-        <a class="nav-link active rounded-pill px-4" href="{{ route('seller.bank-accounts.index') }}">
+        <a class="nav-link active px-3 py-2 fw-medium" href="{{ route('seller.bank-accounts.index') }}">
             <i class="fas fa-university me-2"></i>{{ __('Konfigurasi Rekening') }}
         </a>
     </li>
@@ -35,8 +35,8 @@
 <div class="row g-4">
     {{-- Form Simpan Rekening Baru --}}
     <div class="col-12 col-md-5">
-        <div class="card border-0 shadow-sm p-4" style="border-radius: 20px;">
-            <h5 class="fw-bold mb-3"><i class="fas fa-plus-circle text-primary me-2"></i>{{ __('Tambah Rekening Payout') }}</h5>
+        <div class="card border-0 shadow-sm p-4" style="border-radius: 8px;">
+            <h5 class="fw-bold mb-3 text-body"><i class="fas fa-plus-circle text-primary me-2"></i>{{ __('Tambah Rekening Payout') }}</h5>
             
             <form action="{{ route('seller.bank-accounts.store') }}" method="POST">
                 @csrf
@@ -51,11 +51,11 @@
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label text-muted small fw-bold">Nama Pemilik Rekening (Sesuai Bank)</label>
+                    <label class="form-label text-muted small fw-bold">{{ __('Nama Pemilik Rekening (Sesuai Bank)') }}</label>
                     <input type="text" name="account_holder" class="form-control" placeholder="{{ __('Contoh: Dzulfikri Alifajri') }}" required>
                 </div>
 
-                <button type="submit" class="btn btn-primary rounded-pill w-100 py-2.5 fw-bold">
+                <button type="submit" class="btn btn-primary w-100 py-2.5 fw-bold" style="border-radius: 4px;">
                     <i class="fas fa-save me-1"></i> {{ __('Simpan Rekening') }}
                 </button>
             </form>
@@ -64,9 +64,9 @@
 
     {{-- Daftar Rekening Tersimpan --}}
     <div class="col-12 col-md-7">
-        <div class="card border-0 shadow-sm overflow-hidden mb-4" style="border-radius: 20px;">
-            <div class="card-header border-0 bg-white px-4 py-3 border-bottom d-flex justify-content-between align-items-center">
-                <h5 class="fw-bold m-0"><i class="fas fa-university text-primary me-2"></i>{{ __('Daftar Rekening Tersimpan') }}</h5>
+        <div class="card border-0 shadow-sm overflow-hidden mb-4" style="border-radius: 8px;">
+            <div class="card-header border-0 bg-transparent px-4 py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold m-0 text-body"><i class="fas fa-university text-primary me-2"></i>{{ __('Daftar Rekening Tersimpan') }}</h5>
             </div>
             <div class="card-body p-0">
                 @if($bankAccounts->count() > 0)
@@ -83,14 +83,14 @@
                         <tbody>
                             @foreach($bankAccounts as $acc)
                             <tr>
-                                <td class="px-4 fw-bold text-dark">{{ strtoupper($acc->bank_name) }}</td>
+                                <td class="px-4 fw-bold text-body">{{ strtoupper($acc->bank_name) }}</td>
                                 <td><code>{{ $acc->account_number }}</code></td>
-                                <td class="fw-medium">{{ $acc->account_holder }}</td>
+                                <td class="fw-medium text-body">{{ $acc->account_holder }}</td>
                                 <td class="text-end px-4">
                                     <form action="{{ route('seller.bank-accounts.destroy', $acc->id) }}" method="POST" class="d-inline">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="button" class="btn btn-sm btn-outline-danger rounded-circle p-2" title="{{ __('Hapus Rekening') }}" onclick="confirmAction(event, 'Yakin ingin menghapus rekening bank payout ini?')">
+                                        <button type="button" class="btn btn-sm btn-outline-danger p-2" style="border-radius: 4px;" title="{{ __('Hapus Rekening') }}" onclick="confirmAction(event, 'Yakin ingin menghapus rekening bank payout ini?')">
                                             <i class="fas fa-trash fa-fw"></i>
                                         </button>
                                     </form>

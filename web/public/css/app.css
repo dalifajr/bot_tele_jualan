@@ -551,13 +551,71 @@ a:hover {
 
 /* === CARD GLOBAL (GOOGLE CLOUD CONSOLE 8PX OUTLINED CARD) === */
 .card {
-    background: var(--cm-sys-color-surface) !important;
+    background-color: var(--cm-sys-color-surface);
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
     border: 1px solid var(--cm-sys-color-hairline) !important;
     border-radius: 8px !important;
     box-shadow: none !important;
     transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+/* Enforce surface background ONLY on cards without custom background styles or color variants */
+.card:not([style*="background"]):not([style*="background-color"]):not(.bg-primary):not(.bg-secondary):not(.bg-success):not(.bg-danger):not(.bg-warning):not(.bg-info):not(.bg-dark):not(.bg-gradient):not(.seller-stat-card-gradient) {
+    background: var(--cm-sys-color-surface) !important;
+}
+
+/* Seller Dashboard & Finance Gradient Cards - Preserved with optimal contrast in both Light & Dark modes */
+.card.seller-stat-card-gradient {
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    color: #ffffff !important;
+    border-radius: 8px !important;
+}
+
+.card.seller-stat-card-wallet {
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important;
+}
+
+.card.seller-stat-card-held {
+    background: linear-gradient(135deg, #b45309 0%, #d97706 50%, #f59e0b 100%) !important;
+}
+
+.card.seller-stat-card-finance-wallet {
+    background: linear-gradient(135deg, #065f46 0%, #059669 50%, #10b981 100%) !important;
+}
+
+.card.seller-stat-card-finance-held {
+    background: linear-gradient(135deg, #b45309 0%, #d97706 50%, #f59e0b 100%) !important;
+}
+
+.seller-stat-card-gradient h1,
+.seller-stat-card-gradient h2,
+.seller-stat-card-gradient h3,
+.seller-stat-card-gradient h4 {
+    color: #ffffff !important;
+}
+
+.seller-stat-card-gradient .text-white-50 {
+    color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.seller-stat-card-gradient .badge.bg-white {
+    background-color: #ffffff !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2) !important;
+    border: none !important;
+}
+
+.seller-stat-card-gradient .btn-light {
+    background-color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.5) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15) !important;
+    color: #1e3c72 !important;
+    font-weight: 600 !important;
+}
+
+.seller-stat-card-gradient.seller-stat-card-held .btn-light,
+.seller-stat-card-gradient.seller-stat-card-finance-held .btn-light {
+    color: #b45309 !important;
 }
 
 /* Static cards stay stable without jerky jumping */
@@ -1530,7 +1588,7 @@ a .m3-metric-card:hover {
     border-color: var(--cm-sys-color-hairline, #3c4043) !important;
 }
 
-[data-bs-theme="dark"] .card {
+[data-bs-theme="dark"] .card:not([style*="background"]):not([style*="background-color"]):not(.bg-primary):not(.bg-secondary):not(.bg-success):not(.bg-danger):not(.bg-warning):not(.bg-info):not(.bg-dark):not(.bg-gradient):not(.seller-stat-card-gradient) {
     background-color: var(--cm-sys-color-surface, #1f1f1f) !important;
     border-color: var(--cm-sys-color-hairline, #3c4043) !important;
     color: var(--cm-sys-color-on-surface, #e8eaed) !important;
@@ -1576,6 +1634,28 @@ a .m3-metric-card:hover {
     background-color: var(--cm-sys-color-container, #28292c) !important;
     border-color: var(--cm-sys-color-primary, #8ab4f8) !important;
     color: #ffffff !important;
+}
+
+[data-bs-theme="dark"] .seller-stat-card-gradient .badge.bg-white {
+    background-color: #ffffff !important;
+    color: #0d6efd !important;
+}
+
+[data-bs-theme="dark"] .seller-stat-card-held .badge.bg-white,
+[data-bs-theme="dark"] .seller-stat-card-finance-held .badge.bg-white {
+    background-color: #ffffff !important;
+    color: #b45309 !important;
+}
+
+[data-bs-theme="dark"] .seller-stat-card-gradient .btn-light {
+    background-color: #ffffff !important;
+    color: #0d6efd !important;
+    border-color: rgba(255, 255, 255, 0.5) !important;
+}
+
+[data-bs-theme="dark"] .seller-stat-card-held .btn-light,
+[data-bs-theme="dark"] .seller-stat-card-finance-held .btn-light {
+    color: #b45309 !important;
 }
 
 [data-bs-theme="dark"] .input-group-text {

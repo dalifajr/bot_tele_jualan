@@ -15,7 +15,7 @@
     .hero-seller-banner {
         background: linear-gradient(135deg, #0d47a1 0%, #1565c0 50%, #1e88e5 100%);
         min-height: 220px;
-        border-radius: 24px;
+        border-radius: 8px;
     }
     .hero-pattern {
         position: absolute;
@@ -72,17 +72,17 @@
         <div class="row g-2 g-md-3">
             <!-- 1. Wallet Balance Card -->
             <div class="col-6 col-lg-3">
-                <div class="card border-0 shadow-sm h-100 rounded-4 text-white overflow-hidden lift-hover" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);">
+                <div class="card border-0 shadow-sm h-100 text-white overflow-hidden lift-hover seller-stat-card-gradient seller-stat-card-wallet" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important; border-radius: 8px;">
                     <div class="card-body p-3 p-md-4 position-relative">
                         <div class="position-absolute end-0 bottom-0 text-white d-none d-md-block" style="font-size: 7rem; transform: translate(15px, 15px); opacity: 0.12; pointer-events: none;">
                             <i class="fas fa-wallet"></i>
                         </div>
                         <div class="position-relative z-1">
-                            <span class="badge bg-white text-primary rounded-pill px-2 px-md-3 py-1 mb-2 small fw-bold text-uppercase shadow-sm" style="font-size: 0.68rem;">{{ __('Saldo Dompet') }}</span>
+                            <span class="badge bg-white text-primary px-2 px-md-3 py-1 mb-2 small fw-bold text-uppercase shadow-sm" style="font-size: 0.68rem; border-radius: 4px;">{{ __('Saldo Dompet') }}</span>
                             <h3 class="fw-bold mb-2 text-white h4 h2-md">Rp {{ number_format($user->wallet_balance, 0, ',', '.') }}</h3>
                             <div class="d-flex align-items-center justify-content-between pt-2 border-top border-white border-opacity-25" style="font-size: 0.75rem;">
-                                <span class="text-white-50">{{ __('Komisi:') }} <strong>{{ !empty($user->commission_per_product) ? __('Per-Produk') : ($user->platform_fee_percent . '%') }}</strong></span>
-                                <a href="{{ route('seller.finance.index') }}" class="btn btn-light btn-xs btn-sm-sm rounded-pill px-2 px-md-3 fw-bold text-primary shadow-sm" style="font-size: 0.72rem;">{{ __('Tarik') }}</a>
+                                <span class="text-white-50" style="color: rgba(255, 255, 255, 0.85) !important;">{{ __('Komisi:') }} <strong class="text-white">{{ !empty($user->commission_per_product) ? __('Per-Produk') : ($user->platform_fee_percent . '%') }}</strong></span>
+                                <a href="{{ route('seller.finance.index') }}" class="btn btn-light btn-xs btn-sm-sm px-2 px-md-3 fw-bold text-primary shadow-sm" style="font-size: 0.72rem; border-radius: 4px;">{{ __('Tarik') }}</a>
                             </div>
                         </div>
                     </div>
@@ -91,17 +91,17 @@
 
             <!-- 2. Held Balance Card -->
             <div class="col-6 col-lg-3">
-                <div class="card border-0 shadow-sm h-100 rounded-4 text-white overflow-hidden lift-hover" style="background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);">
+                <div class="card border-0 shadow-sm h-100 text-white overflow-hidden lift-hover seller-stat-card-gradient seller-stat-card-held" style="background: linear-gradient(135deg, #b45309 0%, #d97706 50%, #f59e0b 100%) !important; border-radius: 8px;">
                     <div class="card-body p-3 p-md-4 position-relative">
                         <div class="position-absolute end-0 bottom-0 text-white d-none d-md-block" style="font-size: 7rem; transform: translate(15px, 15px); opacity: 0.15; pointer-events: none;">
                             <i class="fas fa-lock"></i>
                         </div>
                         <div class="position-relative z-1">
-                            <span class="badge bg-white text-warning-emphasis rounded-pill px-2 px-md-3 py-1 mb-2 small fw-bold text-uppercase shadow-sm" style="font-size: 0.68rem;">{{ __('Tertahan') }}</span>
+                            <span class="badge bg-white text-warning-emphasis px-2 px-md-3 py-1 mb-2 small fw-bold text-uppercase shadow-sm" style="font-size: 0.68rem; border-radius: 4px; color: #b45309 !important;">{{ __('Tertahan') }}</span>
                             <h3 class="fw-bold mb-2 text-white h4 h2-md">Rp {{ number_format($heldBalance, 0, ',', '.') }}</h3>
                             <div class="d-flex align-items-center justify-content-between pt-2 border-top border-white border-opacity-25" style="font-size: 0.75rem;">
-                                <span class="text-white-50">{{ __('Garansi') }}</span>
-                                <a href="{{ route('seller.finance.index') }}" class="btn btn-light btn-xs btn-sm-sm rounded-pill px-2 px-md-3 fw-bold text-warning-emphasis shadow-sm" style="font-size: 0.72rem;">{{ __('Rincian') }}</a>
+                                <span class="text-white-50" style="color: rgba(255, 255, 255, 0.85) !important;">{{ __('Garansi') }}</span>
+                                <a href="{{ route('seller.finance.index') }}" class="btn btn-light btn-xs btn-sm-sm px-2 px-md-3 fw-bold shadow-sm" style="font-size: 0.72rem; border-radius: 4px; color: #b45309 !important;">{{ __('Rincian') }}</a>
                             </div>
                         </div>
                     </div>
@@ -110,11 +110,11 @@
 
             <!-- 3. Monthly Earnings Card -->
             <div class="col-6 col-lg-3">
-                <div class="card border-0 shadow-sm h-100 rounded-4 lift-hover overflow-hidden">
+                <div class="card border-0 shadow-sm h-100 lift-hover overflow-hidden" style="border-radius: 8px;">
                     <div class="card-body p-3 p-md-4">
                         <div class="d-flex justify-content-between align-items-center mb-1 mb-md-2">
-                            <span class="badge bg-success-subtle text-success rounded-pill px-2 px-md-3 py-1 small fw-bold text-uppercase" style="font-size: 0.68rem;">{{ __('Pendapatan') }}</span>
-                            <select onchange="let params = new URLSearchParams(window.location.search); params.set('earnings_days', this.value); window.location.href = window.location.pathname + '?' + params.toString();" class="form-select form-select-sm py-0 px-1 border-0 shadow-sm bg-light" style="width: auto; font-size: 0.65rem; border-radius: 8px; cursor: pointer;">
+                            <span class="badge bg-success-subtle text-success px-2 px-md-3 py-1 small fw-bold text-uppercase" style="font-size: 0.68rem; border-radius: 4px;">{{ __('Pendapatan') }}</span>
+                            <select onchange="let params = new URLSearchParams(window.location.search); params.set('earnings_days', this.value); window.location.href = window.location.pathname + '?' + params.toString();" class="form-select form-select-sm py-0 px-2 fw-medium" style="width: auto; font-size: 0.68rem; border-radius: 4px; cursor: pointer; border: 1px solid var(--cm-sys-color-hairline) !important; background-color: var(--cm-sys-color-container) !important;">
                                 <option value="all" {{ $earningsDays == 'all' ? 'selected' : '' }}>{{ __('Semua') }}</option>
                                 <option value="7" {{ $earningsDays == '7' ? 'selected' : '' }}>{{ __('7 Hari') }}</option>
                                 <option value="30" {{ $earningsDays == '30' ? 'selected' : '' }}>{{ __('30 Hari') }}</option>
@@ -133,18 +133,18 @@
 
             <!-- 4. Active Stock & Review Card -->
             <div class="col-6 col-lg-3">
-                <div class="card border-0 shadow-sm h-100 rounded-4 lift-hover overflow-hidden">
+                <div class="card border-0 shadow-sm h-100 lift-hover overflow-hidden" style="border-radius: 8px;">
                     <div class="card-body p-3 p-md-4">
                         <div class="d-flex justify-content-between align-items-center mb-1 mb-md-2">
-                            <span class="badge bg-info-subtle text-info rounded-pill px-2 px-md-3 py-1 small fw-bold text-uppercase" style="font-size: 0.68rem;">{{ __('Stok & Rating') }}</span>
-                            <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill px-2 py-1 fw-bold" style="font-size: 0.68rem;">
+                            <span class="badge bg-info-subtle text-info px-2 px-md-3 py-1 small fw-bold text-uppercase" style="font-size: 0.68rem; border-radius: 4px;">{{ __('Stok & Rating') }}</span>
+                            <span class="badge bg-warning-subtle text-warning-emphasis px-2 py-1 fw-bold" style="font-size: 0.68rem; border-radius: 4px;">
                                 <i class="fas fa-star me-1 text-warning"></i>{{ $avgRating ? number_format($avgRating, 1) : '0.0' }}
                             </span>
                         </div>
                         <h3 class="fw-bold text-info mb-2 h4 h2-md">{{ $readyStockCount }} <span class="fs-6 text-muted fw-normal">{{ __('ready') }}</span></h3>
                         <div class="d-flex gap-1 mb-1" style="font-size: 0.68rem;">
-                            <span class="badge bg-warning-subtle text-warning rounded-pill px-1.5">{{ $savedStockCount }} {{ __('karantina') }}</span>
-                            <span class="badge bg-secondary-subtle text-secondary rounded-pill px-1.5">{{ $soldStockCount }} {{ __('terjual') }}</span>
+                            <span class="badge bg-warning-subtle text-warning-emphasis px-2 py-1" style="border-radius: 4px;">{{ $savedStockCount }} {{ __('karantina') }}</span>
+                            <span class="badge bg-secondary-subtle text-secondary px-2 py-1" style="border-radius: 4px;">{{ $soldStockCount }} {{ __('terjual') }}</span>
                         </div>
                     </div>
                 </div>
@@ -164,7 +164,7 @@
                     <p class="text-muted small mb-0">{{ __('Statistik omzet penjualan dalam :days', ['days' => $days == 180 ? '6 bulan terakhir' : ($days == 365 ? '1 tahun terakhir' : ($days === 'all' ? 'sepanjang waktu' : $days . ' hari terakhir'))]) }}</p>
                 </div>
                 <div>
-                    <select class="form-select form-select-sm rounded-pill px-3 bg-light border-0 fw-bold" style="width: auto;" onchange="let params = new URLSearchParams(window.location.search); params.set('days', this.value); window.location.href = '{{ route('seller.dashboard') }}?' + params.toString()">
+                    <select class="form-select form-select-sm px-3 fw-bold" style="width: auto; border: 1px solid var(--cm-sys-color-hairline) !important; background-color: var(--cm-sys-color-container) !important; border-radius: 4px;" onchange="let params = new URLSearchParams(window.location.search); params.set('days', this.value); window.location.href = '{{ route('seller.dashboard') }}?' + params.toString()">
                         <option value="7" {{ $days == 7 ? 'selected' : '' }}>{{ __('7 Hari Terakhir') }}</option>
                         <option value="14" {{ $days == 14 ? 'selected' : '' }}>{{ __('14 Hari Terakhir') }}</option>
                         <option value="30" {{ $days == 30 ? 'selected' : '' }}>{{ __('30 Hari Terakhir') }}</option>
@@ -299,9 +299,9 @@
 
     <!-- Finance Overview -->
     <div class="col-12 col-lg-5">
-        <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+        <div class="card border-0 shadow-sm p-4 h-100">
             <h5 class="fw-bold mb-3 text-body"><i class="fas fa-hand-holding-usd text-primary me-2"></i>{{ __('Status Payout Terakhir') }}</h5>
-            <div class="text-center py-4 bg-light rounded-4 mb-3">
+            <div class="text-center py-4 mb-3" style="background-color: var(--cm-sys-color-container); border: 1px solid var(--cm-sys-color-hairline); border-radius: 8px;">
                 <i class="fas fa-history text-muted mb-2 fs-3"></i>
                 <div class="small text-muted">{{ __('Total Pengajuan Penarikan:') }}</div>
                 <h5 class="fw-bold m-0 text-primary">{{ $pendingWithdrawalCount + $approvedWithdrawalCount }} {{ __('Permintaan') }}</h5>
@@ -317,7 +317,7 @@
                 </div>
             </div>
             <div class="mt-4 text-center">
-                <a href="{{ route('seller.finance.index') }}" class="btn btn-outline-primary btn-sm rounded-pill px-4 fw-bold">{{ __('Lihat Dompet Saya') }}</a>
+                <a href="{{ route('seller.finance.index') }}" class="btn btn-outline-primary btn-sm px-4 fw-bold" style="border-radius: 4px;">{{ __('Lihat Dompet Saya') }}</a>
             </div>
         </div>
     </div>
