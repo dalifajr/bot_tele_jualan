@@ -15,6 +15,23 @@ body {
   font-family: "Aptos", "Aptos Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
 }
 
+/* Font Awesome Protection in Auth */
+.fa, .fas, .far, .fab, [class*="fa-"] {
+  font-family: "Font Awesome 6 Free", "Font Awesome 6 Brands", "FontAwesome" !important;
+  font-style: normal !important;
+  line-height: 1 !important;
+}
+.fa::before, .fas::before, .far::before, .fab::before, [class*="fa-"]::before {
+  font-family: "Font Awesome 6 Free" !important;
+  font-style: normal !important;
+}
+.fab, .fab::before {
+  font-family: "Font Awesome 6 Brands" !important;
+}
+.fas, .fas::before {
+  font-weight: 900 !important;
+}
+
 /* Background Ambient Glow */
 body::before {
   content: '';

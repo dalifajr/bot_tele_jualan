@@ -273,13 +273,8 @@ html.theme-transitioning .m3-console-header {
     transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease !important;
 }
 
-/* === UNIVERSAL APTOS FAMILY ENFORCEMENT ON ALL SYSTEM ELEMENTS === */
-*,
-*::before,
-*::after {
-    font-family: var(--font-aptos-sans);
-}
-
+/* === UNIVERSAL APTOS FAMILY ENFORCEMENT (SAFE TEXT INHERITANCE) === */
+html,
 body {
     font-family: var(--font-aptos-sans) !important;
     font-size: 0.8125rem; /* 13px — Google Cloud Console body-medium */
@@ -305,23 +300,23 @@ h1, h2, h3, h4, h5, h6,
     color: var(--cm-sys-color-on-surface);
 }
 
-/* Enforce Aptos Sans on all UI Components, Controls and Typography */
-button,
+/* Enforce Aptos Sans on all UI Components, Controls and Typography without overriding icon fonts */
+button:not(.fa):not([class*="fa-"]),
 input,
 optgroup,
 select,
 textarea,
-.table,
+.table:not(.fa),
 .table th,
 .table td,
 .card,
 .card-body,
 .card-footer,
-.badge,
+.badge:not(.fa):not([class*="fa-"]),
 .nav,
 .nav-pills,
-.nav-link,
-.btn,
+.nav-link:not(.fa):not([class*="fa-"]),
+.btn:not(.fa):not([class*="fa-"]),
 .dropdown-menu,
 .dropdown-item,
 .modal,
@@ -334,12 +329,82 @@ textarea,
 .input-group-text,
 .alert,
 p,
-span,
+span:not(.fa):not([class*="fa-"]):not(.navbar-brand-icon),
 label,
 li,
 td,
 th {
-    font-family: var(--font-aptos-sans) !important;
+    font-family: var(--font-aptos-sans);
+}
+
+/* === CRITICAL FONT AWESOME ICON PROTECTION (PREVENTS FONT OVERRIDE) === */
+.fa,
+.fas,
+.far,
+.fal,
+.fad,
+.fab,
+.fa-solid,
+.fa-regular,
+.fa-light,
+.fa-thin,
+.fa-duotone,
+.fa-brands,
+[class*="fa-"],
+[class^="fa-"] {
+    font-family: "Font Awesome 6 Free", "Font Awesome 6 Brands", "FontAwesome" !important;
+    font-style: normal !important;
+    font-variant: normal !important;
+    text-rendering: auto !important;
+    line-height: 1 !important;
+    -webkit-font-smoothing: antialiased !important;
+    -moz-osx-font-smoothing: grayscale !important;
+}
+
+.fa::before,
+.fas::before,
+.far::before,
+.fal::before,
+.fad::before,
+.fa-solid::before,
+.fa-regular::before,
+[class*="fa-"]::before,
+[class^="fa-"]::before {
+    font-family: "Font Awesome 6 Free" !important;
+    font-style: normal !important;
+    font-variant: normal !important;
+    text-rendering: auto !important;
+    -webkit-font-smoothing: antialiased !important;
+    -moz-osx-font-smoothing: grayscale !important;
+}
+
+.fab,
+.fa-brands,
+.fab::before,
+.fa-brands::before {
+    font-family: "Font Awesome 6 Brands" !important;
+}
+
+.fas,
+.fa-solid,
+.fas::before,
+.fa-solid::before {
+    font-weight: 900 !important;
+}
+
+.far,
+.fa-regular,
+.far::before,
+.fa-regular::before {
+    font-weight: 400 !important;
+}
+
+.navbar-brand-icon i,
+.navbar-brand-icon .fa,
+.navbar-brand-icon .fas {
+    font-family: "Font Awesome 6 Free" !important;
+    font-weight: 900 !important;
+    display: inline-block;
 }
 
 /* Enforce Cloud Console crisp heading proportions */

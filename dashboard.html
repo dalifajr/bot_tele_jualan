@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
 <meta charset="utf-8">
 <style>
 @font-face {
@@ -34,8 +35,23 @@
   font-style: normal;
 }
 
-*, *::before, *::after {
+html, body {
   font-family: "Aptos", "Aptos Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+}
+.fa, .fas, .far, .fab, [class*="fa-"] {
+  font-family: "Font Awesome 6 Free", "Font Awesome 6 Brands", "FontAwesome" !important;
+  font-style: normal !important;
+  line-height: 1 !important;
+}
+.fa::before, .fas::before, .far::before, .fab::before, [class*="fa-"]::before {
+  font-family: "Font Awesome 6 Free" !important;
+  font-style: normal !important;
+}
+.fab, .fab::before {
+  font-family: "Font Awesome 6 Brands" !important;
+}
+.fas, .fas::before {
+  font-weight: 900 !important;
 }
 h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   font-family: "Aptos Display", "Aptos", sans-serif !important;
