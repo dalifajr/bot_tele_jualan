@@ -3,256 +3,219 @@
 @section('title', __('Admin Dashboard'))
 @section('page_subtitle', __('Dashboard'))
 
-@push('styles')
-<style>
-    .lift-hover {
-        transition: transform 0.25s ease, box-shadow 0.25s ease;
-    }
-    .lift-hover:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 14px 28px rgba(0, 0, 0, 0.1) !important;
-    }
-    .hero-admin-banner {
-        background: linear-gradient(135deg, #0d47a1 0%, #1565c0 50%, #1e88e5 100%);
-        min-height: 220px;
-        border-radius: 24px;
-    }
-    .hero-pattern {
-        position: absolute;
-        top: 0; right: 0; bottom: 0; left: 0;
-        opacity: 0.12;
-        background-image: radial-gradient(#ffffff 1.5px, transparent 1.5px);
-        background-size: 22px 22px;
-    }
-    .floating-stats-container {
-        margin-top: -55px;
-    }
-    @media (max-width: 767.98px) {
-        .floating-stats-container {
-            margin-top: 1rem;
-        }
-    }
-</style>
-@endpush
-
 @section('content')
-<!-- Hero Section (Gradient & Abstract Pattern) -->
-<div class="position-relative mb-5">
-    <div class="hero-admin-banner p-4 p-md-5 text-white shadow-sm overflow-hidden position-relative">
-        <div class="hero-pattern"></div>
-        
-        <div class="position-relative z-1 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
-            <div>
-                <span class="badge bg-white text-primary rounded-pill px-3 py-2 mb-2 text-uppercase tracking-wider fw-bold shadow-sm" style="font-size: 0.75rem; letter-spacing: 0.5px;">
-                    <i class="fas fa-user-shield me-1 text-warning"></i> {{ __('Admin Portal Overview') }}
-                </span>
-                <h1 class="fw-bold mb-2 text-white fs-2 fs-md-1">
-                    {{ __('Admin Dashboard') }}
-                </h1>
-                <p class="mb-0 fs-6 opacity-85 fw-light text-white">
-                    {{ __('Ringkasan aktivitas toko Anda (:period)', ['period' => $periodLabel]) }}
-                </p>
+<!-- Google Cloud / Material 3 Flat Console Header & Filter Bar -->
+<div class="m3-console-header mb-4">
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 pb-3 border-bottom" style="border-color: var(--outline-color) !important;">
+        <div>
+            <div class="d-inline-flex align-items-center gap-1.5 px-2.5 py-1 rounded-pill mb-2 fw-semibold" style="background: var(--primary-container); color: var(--on-primary-container); font-size: 0.72rem; letter-spacing: 0.04em; text-transform: uppercase;">
+                <i class="fas fa-user-shield"></i>
+                <span>{{ __('Admin Portal Overview') }}</span>
             </div>
-            
-            <div class="d-flex align-items-center gap-2 flex-wrap">
-                <a href="{{ route('admin.products.index') }}" class="btn btn-light text-primary fw-bold rounded-pill px-4 py-2 shadow-sm lift-hover">
-                    <i class="fas fa-plus me-2"></i>{{ __('Kelola Produk') }}
-                </a>
-                <a href="{{ route('admin.stock.index') }}" class="btn btn-outline-light rounded-pill px-4 py-2 fw-semibold">
-                    <i class="fas fa-cubes me-2"></i>{{ __('Kelola Stok') }}
-                </a>
-            </div>
+            <h1 class="h4 fw-bold mb-1" style="color: var(--on-surface);">
+                {{ __('Admin Dashboard') }}
+            </h1>
+            <p class="mb-0 small" style="color: var(--on-surface-variant);">
+                {{ __('Ringkasan aktivitas toko Anda (:period)', ['period' => $periodLabel]) }}
+            </p>
         </div>
 
-        <!-- Filter Form Integrated in Banner Footer -->
-        <div class="mt-4 pt-3 border-top border-white border-opacity-25 position-relative z-1">
-            <form action="{{ route('admin.dashboard') }}" method="GET" class="row g-2 g-md-3 align-items-center">
-                <div class="col-12 col-md-4 mb-1 mb-md-0">
-                    <div class="input-group input-group-sm">
-                        <span class="input-group-text bg-white bg-opacity-10 text-white border-white border-opacity-25"><i class="fas fa-box"></i></span>
-                        <select name="product_id" class="form-select form-select-sm bg-white bg-opacity-20 text-white border-white border-opacity-25 shadow-none">
-                            <option value="" class="text-dark">{{ __('Semua Produk') }}</option>
-                            @foreach($products as $p)
-                                <option value="{{ $p->id }}" {{ $productId == $p->id ? 'selected' : '' }} class="text-dark">
-                                    {{ $p->is_suspended ? '🔴' : '✅' }} {{ $p->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-                <div class="col-12 col-md-4 mb-1 mb-md-0">
-                    <div class="input-group input-group-sm">
-                        <span class="input-group-text bg-white bg-opacity-10 text-white border-white border-opacity-25"><i class="fas fa-calendar-alt"></i></span>
-                        <select name="period" class="form-select form-select-sm bg-white bg-opacity-20 text-white border-white border-opacity-25 shadow-none">
-                            <option value="24_hours" {{ $period == '24_hours' ? 'selected' : '' }} class="text-dark">{{ __('24 Jam Terakhir') }}</option>
-                            <option value="7_days" {{ $period == '7_days' ? 'selected' : '' }} class="text-dark">{{ __('7 Hari Terakhir') }}</option>
-                            <option value="30_days" {{ $period == '30_days' ? 'selected' : '' }} class="text-dark">{{ __('30 Hari Terakhir') }}</option>
-                            <option value="6_months" {{ $period == '6_months' ? 'selected' : '' }} class="text-dark">{{ __('6 Bulan Terakhir') }}</option>
-                            <option value="all_time" {{ $period == 'all_time' ? 'selected' : '' }} class="text-dark">{{ __('Sepanjang Waktu') }}</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="col-12 col-md-4 d-flex gap-2">
-                    <button type="submit" class="btn btn-sm btn-light text-primary fw-bold rounded-pill px-3 flex-fill">
-                        <i class="fas fa-search me-1"></i> {{ __('Filter') }}
-                    </button>
-                    <a href="{{ route('admin.dashboard') }}" class="btn btn-sm btn-outline-light rounded-pill px-3 flex-fill">
-                        <i class="fas fa-sync me-1"></i> {{ __('Reset') }}
-                    </a>
-                </div>
-            </form>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <a href="{{ route('admin.products.index') }}" class="btn btn-primary rounded-pill px-4 py-2 fw-semibold">
+                <i class="fas fa-plus me-1.5"></i>{{ __('Kelola Produk') }}
+            </a>
+            <a href="{{ route('admin.stock.index') }}" class="btn btn-outline-primary rounded-pill px-4 py-2 fw-semibold">
+                <i class="fas fa-cubes me-1.5"></i>{{ __('Kelola Stok') }}
+            </a>
         </div>
     </div>
 
-    <!-- Floating Stat Cards -->
-    <div class="container-fluid px-2 px-md-3 floating-stats-container">
-        <div class="row g-2 g-md-3">
-            <!-- 1. Total Revenue -->
-            <div class="col-6 col-md-4 col-xl-3">
-                <div class="card border-0 shadow-sm h-100 rounded-4 lift-hover overflow-hidden">
-                    <div class="card-body p-2 p-md-3 d-flex align-items-center">
-                        <div class="stat-icon bg-primary-subtle text-primary rounded-3 p-2 p-md-3 me-2 me-md-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 44px; height: 44px; font-size: 1.15rem;">
-                            <i class="fas fa-wallet"></i>
-                        </div>
-                        <div class="text-truncate flex-grow-1">
-                            <div class="text-muted small fw-semibold text-uppercase" style="letter-spacing: 0.5px; font-size: 0.7rem;">{{ __('Total Pendapatan') }}</div>
-                            <h6 class="fw-bold mb-0 text-nowrap text-body fs-6 fs-md-5">Rp {{ number_format($totalRevenue, 0, ',', '.') }}</h6>
-                            <div class="mt-1" style="font-size: 0.72rem;">
-                                <span class="{{ $revenueStats['class'] }} fw-bold">
-                                    <i class="fas {{ $revenueStats['icon'] }} me-1"></i>{{ $revenueStats['formatted_percent'] }}
-                                </span>
-                                <span class="text-muted d-none d-sm-inline">{{ __('vs periode lalu') }}</span>
-                            </div>
-                        </div>
+    <!-- Filter Form Integrated in Flat Console Surface -->
+    <div class="pt-3">
+        <form action="{{ route('admin.dashboard') }}" method="GET" class="row g-2 g-md-3 align-items-center">
+            <div class="col-12 col-md-4">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text"><i class="fas fa-box"></i></span>
+                    <select name="product_id" class="form-select form-select-sm">
+                        <option value="">{{ __('Semua Produk') }}</option>
+                        @foreach($products as $p)
+                            <option value="{{ $p->id }}" {{ $productId == $p->id ? 'selected' : '' }}>
+                                {{ $p->is_suspended ? '🔴' : '✅' }} {{ $p->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+            <div class="col-12 col-md-4">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                    <select name="period" class="form-select form-select-sm">
+                        <option value="24_hours" {{ $period == '24_hours' ? 'selected' : '' }}>{{ __('24 Jam Terakhir') }}</option>
+                        <option value="7_days" {{ $period == '7_days' ? 'selected' : '' }}>{{ __('7 Hari Terakhir') }}</option>
+                        <option value="30_days" {{ $period == '30_days' ? 'selected' : '' }}>{{ __('30 Hari Terakhir') }}</option>
+                        <option value="6_months" {{ $period == '6_months' ? 'selected' : '' }}>{{ __('6 Bulan Terakhir') }}</option>
+                        <option value="all_time" {{ $period == 'all_time' ? 'selected' : '' }}>{{ __('Sepanjang Waktu') }}</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-12 col-md-4 d-flex gap-2">
+                <button type="submit" class="btn btn-sm btn-primary rounded-pill px-3 flex-fill fw-semibold">
+                    <i class="fas fa-filter me-1"></i> {{ __('Filter') }}
+                </button>
+                <a href="{{ route('admin.dashboard') }}" class="btn btn-sm btn-light rounded-pill px-3 flex-fill fw-semibold">
+                    <i class="fas fa-sync me-1"></i> {{ __('Reset') }}
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Flat Material 3 KPI Metric Grid -->
+<div class="row g-3 mb-4">
+    <!-- 1. Total Revenue -->
+    <div class="col-6 col-md-4 col-xl-3">
+        <div class="card m3-metric-card h-100">
+            <div class="card-body p-3 d-flex align-items-center">
+                <div class="m3-metric-icon bg-primary-subtle text-primary me-3">
+                    <i class="fas fa-wallet"></i>
+                </div>
+                <div class="text-truncate flex-grow-1">
+                    <div class="text-muted small fw-semibold text-uppercase" style="letter-spacing: 0.04em; font-size: 0.7rem;">{{ __('Total Pendapatan') }}</div>
+                    <h6 class="fw-bold mb-0 text-nowrap text-body fs-6 fs-md-5">Rp {{ number_format($totalRevenue, 0, ',', '.') }}</h6>
+                    <div class="mt-1" style="font-size: 0.72rem;">
+                        <span class="{{ $revenueStats['class'] }} fw-bold">
+                            <i class="fas {{ $revenueStats['icon'] }} me-1"></i>{{ $revenueStats['formatted_percent'] }}
+                        </span>
+                        <span class="text-muted d-none d-sm-inline">{{ __('vs periode lalu') }}</span>
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
 
-            <!-- 2. Platform Commission -->
-            <div class="col-6 col-md-4 col-xl-3">
-                <div class="card border-0 shadow-sm h-100 rounded-4 lift-hover overflow-hidden">
-                    <div class="card-body p-2 p-md-3 d-flex align-items-center">
-                        <div class="stat-icon rounded-3 p-2 p-md-3 me-2 me-md-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 44px; height: 44px; font-size: 1.15rem; background-color: rgba(111, 66, 193, 0.12); color: #6f42c1;">
-                            <i class="fas fa-coins"></i>
-                        </div>
-                        <div class="text-truncate flex-grow-1">
-                            <div class="text-muted small fw-semibold text-uppercase" style="letter-spacing: 0.5px; font-size: 0.7rem;">{{ __('Komisi Platform') }}</div>
-                            <h6 class="fw-bold mb-0 text-nowrap text-body fs-6 fs-md-5">Rp {{ number_format($platformCommission, 0, ',', '.') }}</h6>
-                            <div class="mt-1" style="font-size: 0.72rem;">
-                                <span class="{{ $commissionStats['class'] }} fw-bold">
-                                    <i class="fas {{ $commissionStats['icon'] }} me-1"></i>{{ $commissionStats['formatted_percent'] }}
-                                </span>
-                                <span class="text-muted d-none d-sm-inline">{{ __('vs periode lalu') }}</span>
-                            </div>
-                        </div>
+    <!-- 2. Platform Commission -->
+    <div class="col-6 col-md-4 col-xl-3">
+        <div class="card m3-metric-card h-100">
+            <div class="card-body p-3 d-flex align-items-center">
+                <div class="m3-metric-icon me-3" style="background-color: rgba(111, 66, 193, 0.12); color: #6f42c1;">
+                    <i class="fas fa-coins"></i>
+                </div>
+                <div class="text-truncate flex-grow-1">
+                    <div class="text-muted small fw-semibold text-uppercase" style="letter-spacing: 0.04em; font-size: 0.7rem;">{{ __('Komisi Platform') }}</div>
+                    <h6 class="fw-bold mb-0 text-nowrap text-body fs-6 fs-md-5">Rp {{ number_format($platformCommission, 0, ',', '.') }}</h6>
+                    <div class="mt-1" style="font-size: 0.72rem;">
+                        <span class="{{ $commissionStats['class'] }} fw-bold">
+                            <i class="fas {{ $commissionStats['icon'] }} me-1"></i>{{ $commissionStats['formatted_percent'] }}
+                        </span>
+                        <span class="text-muted d-none d-sm-inline">{{ __('vs periode lalu') }}</span>
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
 
-            <!-- 3. Admin Earnings -->
-            <div class="col-6 col-md-4 col-xl-3">
-                <div class="card border-0 shadow-sm h-100 rounded-4 lift-hover overflow-hidden">
-                    <div class="card-body p-2 p-md-3 d-flex align-items-center">
-                        <div class="stat-icon bg-danger-subtle text-danger rounded-3 p-2 p-md-3 me-2 me-md-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 44px; height: 44px; font-size: 1.15rem;">
-                            <i class="fas fa-user-shield"></i>
-                        </div>
-                        <div class="text-truncate flex-grow-1">
-                            <div class="text-muted small fw-semibold text-uppercase" style="letter-spacing: 0.5px; font-size: 0.7rem;">{{ __('Pendapatan Admin') }}</div>
-                            <h6 class="fw-bold mb-0 text-nowrap text-body fs-6 fs-md-5">Rp {{ number_format($adminEarnings, 0, ',', '.') }}</h6>
-                            <div class="mt-1" style="font-size: 0.72rem;">
-                                <span class="{{ $adminEarningsStats['class'] }} fw-bold">
-                                    <i class="fas {{ $adminEarningsStats['icon'] }} me-1"></i>{{ $adminEarningsStats['formatted_percent'] }}
-                                </span>
-                                <span class="text-muted d-none d-sm-inline">{{ __('vs periode lalu') }}</span>
-                            </div>
-                        </div>
+    <!-- 3. Admin Earnings -->
+    <div class="col-6 col-md-4 col-xl-3">
+        <div class="card m3-metric-card h-100">
+            <div class="card-body p-3 d-flex align-items-center">
+                <div class="m3-metric-icon bg-danger-subtle text-danger me-3">
+                    <i class="fas fa-user-shield"></i>
+                </div>
+                <div class="text-truncate flex-grow-1">
+                    <div class="text-muted small fw-semibold text-uppercase" style="letter-spacing: 0.04em; font-size: 0.7rem;">{{ __('Pendapatan Admin') }}</div>
+                    <h6 class="fw-bold mb-0 text-nowrap text-body fs-6 fs-md-5">Rp {{ number_format($adminEarnings, 0, ',', '.') }}</h6>
+                    <div class="mt-1" style="font-size: 0.72rem;">
+                        <span class="{{ $adminEarningsStats['class'] }} fw-bold">
+                            <i class="fas {{ $adminEarningsStats['icon'] }} me-1"></i>{{ $adminEarningsStats['formatted_percent'] }}
+                        </span>
+                        <span class="text-muted d-none d-sm-inline">{{ __('vs periode lalu') }}</span>
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
 
-            <!-- 4. Seller Earnings -->
-            <div class="col-6 col-md-4 col-xl-3">
-                <div class="card border-0 shadow-sm h-100 rounded-4 lift-hover overflow-hidden">
-                    <div class="card-body p-2 p-md-3 d-flex align-items-center justify-content-between w-100">
-                        <div class="d-flex align-items-center text-truncate me-1 me-md-2">
-                            <div class="stat-icon rounded-3 p-2 p-md-3 me-2 me-md-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 44px; height: 44px; font-size: 1.15rem; background-color: rgba(32, 201, 151, 0.12); color: #20c997;">
-                                <i class="fas fa-store"></i>
-                            </div>
-                            <div class="text-truncate">
-                                <div class="text-muted small fw-semibold text-uppercase" style="letter-spacing: 0.5px; font-size: 0.7rem;">{{ __('Pendapatan Seller') }}</div>
-                                <h6 class="fw-bold mb-0 text-nowrap text-body fs-6 fs-md-5">Rp {{ number_format($totalSellerEarnings, 0, ',', '.') }}</h6>
-                                <div class="mt-1" style="font-size: 0.72rem;">
-                                    <span class="{{ $sellerEarningsStats['class'] }} fw-bold">
-                                        <i class="fas {{ $sellerEarningsStats['icon'] }} me-1"></i>{{ $sellerEarningsStats['formatted_percent'] }}
-                                    </span>
-                                    <span class="text-muted d-none d-sm-inline">{{ __('vs periode lalu') }}</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="d-none d-md-block">
-                            <a href="{{ route('admin.sellers.index') }}" class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1 fw-bold">{{ __('Detail') }}</a>
+    <!-- 4. Seller Earnings -->
+    <div class="col-6 col-md-4 col-xl-3">
+        <div class="card m3-metric-card h-100">
+            <div class="card-body p-3 d-flex align-items-center justify-content-between w-100">
+                <div class="d-flex align-items-center text-truncate me-1 me-md-2">
+                    <div class="m3-metric-icon bg-success-subtle text-success me-3">
+                        <i class="fas fa-store"></i>
+                    </div>
+                    <div class="text-truncate">
+                        <div class="text-muted small fw-semibold text-uppercase" style="letter-spacing: 0.04em; font-size: 0.7rem;">{{ __('Pendapatan Seller') }}</div>
+                        <h6 class="fw-bold mb-0 text-nowrap text-body fs-6 fs-md-5">Rp {{ number_format($totalSellerEarnings, 0, ',', '.') }}</h6>
+                        <div class="mt-1" style="font-size: 0.72rem;">
+                            <span class="{{ $sellerEarningsStats['class'] }} fw-bold">
+                                <i class="fas {{ $sellerEarningsStats['icon'] }} me-1"></i>{{ $sellerEarningsStats['formatted_percent'] }}
+                            </span>
+                            <span class="text-muted d-none d-sm-inline">{{ __('vs periode lalu') }}</span>
                         </div>
                     </div>
                 </div>
+                <div class="d-none d-md-block">
+                    <a href="{{ route('admin.sellers.index') }}" class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1 fw-semibold">{{ __('Detail') }}</a>
+                </div>
             </div>
+        </div>
+    </div>
 
-            <!-- 5. Total Orders -->
-            <div class="col-6 col-md-4 col-xl-4">
-                <div class="card border-0 shadow-sm h-100 rounded-4 lift-hover overflow-hidden">
-                    <div class="card-body p-2 p-md-3 d-flex align-items-center">
-                        <div class="stat-icon bg-success-subtle text-success rounded-3 p-2 p-md-3 me-2 me-md-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 44px; height: 44px; font-size: 1.15rem;">
-                            <i class="fas fa-shopping-cart"></i>
-                        </div>
-                        <div class="text-truncate flex-grow-1">
-                            <div class="text-muted small fw-semibold text-uppercase" style="letter-spacing: 0.5px; font-size: 0.7rem;">{{ __('Total Order') }}</div>
-                            <h4 class="fw-bold mb-0 text-nowrap text-body fs-5 fs-md-4">{{ number_format($totalOrders, 0, ',', '.') }}</h4>
-                            <div class="mt-1" style="font-size: 0.72rem;">
-                                <span class="{{ $ordersStats['class'] }} fw-bold">
-                                    <i class="fas {{ $ordersStats['icon'] }} me-1"></i>{{ $ordersStats['formatted_percent'] }}
-                                </span>
-                                <span class="text-muted d-none d-sm-inline">{{ __('vs periode lalu') }}</span>
-                            </div>
-                        </div>
+    <!-- 5. Total Orders -->
+    <div class="col-6 col-md-4 col-xl-4">
+        <div class="card m3-metric-card h-100">
+            <div class="card-body p-3 d-flex align-items-center">
+                <div class="m3-metric-icon bg-success-subtle text-success me-3">
+                    <i class="fas fa-shopping-cart"></i>
+                </div>
+                <div class="text-truncate flex-grow-1">
+                    <div class="text-muted small fw-semibold text-uppercase" style="letter-spacing: 0.04em; font-size: 0.7rem;">{{ __('Total Order') }}</div>
+                    <h4 class="fw-bold mb-0 text-nowrap text-body fs-5 fs-md-4">{{ number_format($totalOrders, 0, ',', '.') }}</h4>
+                    <div class="mt-1" style="font-size: 0.72rem;">
+                        <span class="{{ $ordersStats['class'] }} fw-bold">
+                            <i class="fas {{ $ordersStats['icon'] }} me-1"></i>{{ $ordersStats['formatted_percent'] }}
+                        </span>
+                        <span class="text-muted d-none d-sm-inline">{{ __('vs periode lalu') }}</span>
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
 
-            <!-- 6. Total Products -->
-            <div class="col-6 col-md-4 col-xl-4">
-                <div class="card border-0 shadow-sm h-100 rounded-4 lift-hover overflow-hidden">
-                    <div class="card-body p-2 p-md-3 d-flex align-items-center">
-                        <div class="stat-icon bg-info-subtle text-info rounded-3 p-2 p-md-3 me-2 me-md-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 44px; height: 44px; font-size: 1.15rem;">
-                            <i class="fas fa-box"></i>
-                        </div>
-                        <div class="text-truncate flex-grow-1">
-                            <div class="text-muted small fw-semibold text-uppercase" style="letter-spacing: 0.5px; font-size: 0.7rem;">{{ __('Total Produk') }}</div>
-                            <h4 class="fw-bold mb-0 text-nowrap text-body fs-5 fs-md-4">{{ number_format($totalProducts, 0, ',', '.') }}</h4>
-                            <div class="mt-1" style="font-size: 0.72rem;">
-                                <span class="{{ $productsStats['class'] }} fw-bold">
-                                    <i class="fas {{ $productsStats['icon'] }} me-1"></i>{{ $productsStats['formatted_percent'] }}
-                                </span>
-                                <span class="text-muted d-none d-sm-inline">{{ __('vs periode lalu') }}</span>
-                            </div>
-                        </div>
+    <!-- 6. Total Products -->
+    <div class="col-6 col-md-4 col-xl-4">
+        <div class="card m3-metric-card h-100">
+            <div class="card-body p-3 d-flex align-items-center">
+                <div class="m3-metric-icon bg-info-subtle text-info me-3">
+                    <i class="fas fa-box"></i>
+                </div>
+                <div class="text-truncate flex-grow-1">
+                    <div class="text-muted small fw-semibold text-uppercase" style="letter-spacing: 0.04em; font-size: 0.7rem;">{{ __('Total Produk') }}</div>
+                    <h4 class="fw-bold mb-0 text-nowrap text-body fs-5 fs-md-4">{{ number_format($totalProducts, 0, ',', '.') }}</h4>
+                    <div class="mt-1" style="font-size: 0.72rem;">
+                        <span class="{{ $productsStats['class'] }} fw-bold">
+                            <i class="fas {{ $productsStats['icon'] }} me-1"></i>{{ $productsStats['formatted_percent'] }}
+                        </span>
+                        <span class="text-muted d-none d-sm-inline">{{ __('vs periode lalu') }}</span>
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
 
-            <!-- 7. Total Users -->
-            <div class="col-12 col-md-4 col-xl-4">
-                <div class="card border-0 shadow-sm h-100 rounded-4 lift-hover overflow-hidden">
-                    <div class="card-body p-2 p-md-3 d-flex align-items-center">
-                        <div class="stat-icon bg-warning-subtle text-warning-emphasis rounded-3 p-2 p-md-3 me-2 me-md-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 44px; height: 44px; font-size: 1.15rem;">
-                            <i class="fas fa-users"></i>
-                        </div>
-                        <div class="text-truncate flex-grow-1">
-                            <div class="text-muted small fw-semibold text-uppercase" style="letter-spacing: 0.5px; font-size: 0.7rem;">{{ __('Total User') }}</div>
-                            <h4 class="fw-bold mb-0 text-nowrap text-body fs-5 fs-md-4">{{ number_format($totalUsers, 0, ',', '.') }}</h4>
-                            <div class="d-flex gap-2 mt-1" style="font-size: 0.72rem;">
-                                <span class="badge bg-primary-subtle text-primary rounded-pill"><i class="fas fa-desktop me-1"></i>Web: {{ $webUsersCount }}</span>
-                                <span class="badge bg-success-subtle text-success rounded-pill"><i class="fab fa-telegram-plane me-1"></i>TG: {{ $tgUsersCount }}</span>
-                            </div>
-                        </div>
+    <!-- 7. Total Users -->
+    <div class="col-12 col-md-4 col-xl-4">
+        <div class="card m3-metric-card h-100">
+            <div class="card-body p-3 d-flex align-items-center">
+                <div class="m3-metric-icon bg-warning-subtle text-warning-emphasis me-3">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="text-truncate flex-grow-1">
+                    <div class="text-muted small fw-semibold text-uppercase" style="letter-spacing: 0.04em; font-size: 0.7rem;">{{ __('Total User') }}</div>
+                    <h4 class="fw-bold mb-0 text-nowrap text-body fs-5 fs-md-4">{{ number_format($totalUsers, 0, ',', '.') }}</h4>
+                    <div class="d-flex gap-2 mt-1" style="font-size: 0.72rem;">
+                        <span class="badge bg-primary-subtle text-primary rounded-pill"><i class="fas fa-desktop me-1"></i>Web: {{ $webUsersCount }}</span>
+                        <span class="badge bg-success-subtle text-success rounded-pill"><i class="fab fa-telegram-plane me-1"></i>TG: {{ $tgUsersCount }}</span>
                     </div>
                 </div>
             </div>
@@ -261,11 +224,11 @@
 </div>
 
 <!-- Charts & Operational Analytics -->
-<div class="row g-4 mb-5">
+<div class="row g-4 mb-4">
     <!-- Chart: Sales Trend -->
     <div class="col-lg-8">
-        <div class="card border-0 shadow-sm rounded-4 h-100">
-            <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div class="card h-100">
+            <div class="card-header bg-transparent pt-3 px-4 pb-2 d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <div>
                     <h5 class="fw-bold mb-1 text-body"><i class="fas fa-chart-line text-primary me-2"></i>{{ __('Tren Pendapatan Harian') }}</h5>
                     <p class="text-muted small mb-0">{{ __('Statistik omzet penjualan dalam :period', ['period' => $periodLabel]) }}</p>
@@ -281,8 +244,8 @@
 
     <!-- Chart: Order Status Distribution -->
     <div class="col-lg-4">
-        <div class="card border-0 shadow-sm rounded-4 h-100">
-            <div class="card-header bg-transparent border-0 pt-4 px-4">
+        <div class="card h-100">
+            <div class="card-header bg-transparent pt-3 px-4 pb-2">
                 <h5 class="fw-bold mb-1 text-body"><i class="fas fa-chart-pie text-success me-2"></i>{{ __('Rasio Status Order') }}</h5>
                 <p class="text-muted small mb-0">{{ __('Persentase sukses vs batal/expired') }}</p>
             </div>
@@ -308,10 +271,10 @@
 </div>
 
 <!-- Recent Orders Table -->
-<div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
-    <div class="card-header bg-transparent border-0 pt-4 px-4 pb-2 d-flex justify-content-between align-items-center">
+<div class="card overflow-hidden mb-4">
+    <div class="card-header bg-transparent pt-3 px-4 pb-3 d-flex justify-content-between align-items-center">
         <h5 class="fw-bold mb-0 text-body"><i class="fas fa-history text-primary me-2"></i>{{ __('Pesanan Terbaru') }}</h5>
-        <a href="{{ route('admin.orders.index') }}" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold">{{ __('Lihat Semua') }}</a>
+        <a href="{{ route('admin.orders.index') }}" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-semibold">{{ __('Lihat Semua') }}</a>
     </div>
     <div class="card-body p-0">
         @if($recentOrders->count() > 0)
@@ -319,19 +282,19 @@
         <div class="table-responsive d-none d-md-block">
             <table class="table table-hover align-middle mb-0">
                 <thead>
-                    <tr class="text-secondary small fw-bold text-uppercase" style="letter-spacing: 0.5px;">
-                        <th class="px-4 py-3 border-0">{{ __('No. Order') }}</th>
-                        <th class="py-3 border-0">{{ __('Pelanggan') }}</th>
-                        <th class="py-3 border-0">{{ __('Produk') }}</th>
-                        <th class="py-3 border-0">{{ __('Total') }}</th>
-                        <th class="py-3 border-0 text-center">{{ __('Status') }}</th>
-                        <th class="py-3 border-0 text-end pe-4">{{ __('Tanggal') }}</th>
+                    <tr>
+                        <th class="px-4 py-3">{{ __('No. Order') }}</th>
+                        <th class="py-3">{{ __('Pelanggan') }}</th>
+                        <th class="py-3">{{ __('Produk') }}</th>
+                        <th class="py-3">{{ __('Total') }}</th>
+                        <th class="py-3 text-center">{{ __('Status') }}</th>
+                        <th class="py-3 text-end pe-4">{{ __('Tanggal') }}</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach($recentOrders as $order)
                     <tr>
-                        <td class="px-4 fw-bold text-primary">{{ $order->reference }}</td>
+                        <td class="px-4 fw-bold text-primary font-monospace">{{ $order->reference }}</td>
                         <td>
                             <div class="d-flex flex-column">
                                 <span class="fw-bold text-body">{{ $order->user->full_name ?? $order->user->username ?? 'User' }}</span>
@@ -397,7 +360,7 @@
             mode: isDark ? 'dark' : 'light'
         };
 
-        // 1. Sales Trend Line/Area Chart
+        // 1. Sales Trend Line/Area Chart (Material 3 / GCP Palette)
         const salesOptions = {
             series: [{
                 name: 'Pendapatan (Rp)',
@@ -408,29 +371,32 @@
                 type: 'area',
                 toolbar: { show: false },
                 zoom: { enabled: false },
-                background: 'transparent'
+                background: 'transparent',
+                fontFamily: 'inherit'
             },
             theme: chartTheme,
-            colors: ['#0d6efd'],
+            colors: [isDark ? '#a8c7fa' : '#0b57d0'],
             dataLabels: { enabled: false },
-            stroke: { curve: 'smooth', width: 3 },
+            stroke: { curve: 'smooth', width: 2.5 },
             fill: {
                 type: 'gradient',
                 gradient: {
                     shadeIntensity: 1,
-                    opacityFrom: 0.45,
-                    opacityTo: 0.05,
-                    stops: [0, 90, 100]
+                    opacityFrom: 0.28,
+                    opacityTo: 0.02,
+                    stops: [0, 95, 100]
                 }
             },
             grid: {
-                borderColor: isDark ? '#2d3748' : '#e2e8f0',
+                borderColor: isDark ? '#30363d' : '#dadce0',
                 strokeDashArray: 4
             },
             xaxis: {
                 categories: @json($chartLabels),
+                axisBorder: { show: false },
+                axisTicks: { show: false },
                 labels: {
-                    style: { colors: isDark ? '#a0aec0' : '#4a5568' }
+                    style: { colors: isDark ? '#9aa0a6' : '#5f6368' }
                 }
             },
             yaxis: {
@@ -438,10 +404,11 @@
                     formatter: function (value) {
                         return "Rp " + value.toLocaleString('id-ID');
                     },
-                    style: { colors: isDark ? '#a0aec0' : '#4a5568' }
+                    style: { colors: isDark ? '#9aa0a6' : '#5f6368' }
                 }
             },
             tooltip: {
+                theme: isDark ? 'dark' : 'light',
                 y: {
                     formatter: function (val) {
                         return "Rp " + val.toLocaleString('id-ID');
@@ -453,32 +420,37 @@
         const salesChart = new ApexCharts(document.querySelector("#salesChart"), salesOptions);
         salesChart.render();
 
-        // 2. Status Distribution Donut Chart
+        // 2. Status Distribution Donut Chart (Material 3 Semantic Colors)
         const completionOptions = {
             series: [{{ $deliveredOrders }}, {{ $cancelledOrders }}],
             chart: {
                 type: 'donut',
                 height: 250,
-                background: 'transparent'
+                background: 'transparent',
+                fontFamily: 'inherit'
             },
             labels: ['Sukses', 'Batal/Expired'],
-            colors: ['#198754', '#dc3545'],
+            colors: [isDark ? '#75b798' : '#146c2e', isDark ? '#ea868f' : '#ba1a1a'],
             theme: chartTheme,
             legend: { show: false },
             dataLabels: { enabled: false },
+            stroke: {
+                width: 2,
+                colors: [isDark ? '#161b22' : '#ffffff']
+            },
             plotOptions: {
                 pie: {
                     donut: {
-                        size: '75%',
+                        size: '74%',
                         labels: {
                             show: true,
                             name: {
                                 show: true,
-                                color: isDark ? '#a0aec0' : '#4a5568'
+                                color: isDark ? '#9aa0a6' : '#5f6368'
                             },
                             value: {
                                 show: true,
-                                color: isDark ? '#ffffff' : '#0f172a',
+                                color: isDark ? '#e3e3e3' : '#1f1f1f',
                                 formatter: function (val) {
                                     return val;
                                 }
@@ -486,7 +458,7 @@
                             total: {
                                 show: true,
                                 label: 'Total Pesanan',
-                                color: isDark ? '#a0aec0' : '#4a5568',
+                                color: isDark ? '#9aa0a6' : '#5f6368',
                                 formatter: function (w) {
                                     return w.globals.seriesTotals.reduce((a, b) => a + b, 0);
                                 }
@@ -505,23 +477,27 @@
                 if (mutation.type === 'attributes' && mutation.attributeName === 'data-bs-theme') {
                     const newTheme = document.documentElement.getAttribute('data-bs-theme');
                     const isNewDark = newTheme === 'dark';
-                    
+
                     salesChart.updateOptions({
                         theme: { mode: newTheme },
-                        grid: { borderColor: isNewDark ? '#2d3748' : '#e2e8f0' },
-                        xaxis: { labels: { style: { colors: isNewDark ? '#a0aec0' : '#4a5568' } } },
-                        yaxis: { labels: { style: { colors: isNewDark ? '#a0aec0' : '#4a5568' } } }
+                        colors: [isNewDark ? '#a8c7fa' : '#0b57d0'],
+                        grid: { borderColor: isNewDark ? '#30363d' : '#dadce0' },
+                        xaxis: { labels: { style: { colors: isNewDark ? '#9aa0a6' : '#5f6368' } } },
+                        yaxis: { labels: { style: { colors: isNewDark ? '#9aa0a6' : '#5f6368' } } },
+                        tooltip: { theme: isNewDark ? 'dark' : 'light' }
                     });
-                    
+
                     completionChart.updateOptions({
                         theme: { mode: newTheme },
+                        colors: [isNewDark ? '#75b798' : '#146c2e', isNewDark ? '#ea868f' : '#ba1a1a'],
+                        stroke: { colors: [isNewDark ? '#161b22' : '#ffffff'] },
                         plotOptions: {
                             pie: {
                                 donut: {
                                     labels: {
-                                        name: { color: isNewDark ? '#a0aec0' : '#4a5568' },
-                                        value: { color: isNewDark ? '#ffffff' : '#0f172a' },
-                                        total: { color: isNewDark ? '#a0aec0' : '#4a5568' }
+                                        name: { color: isNewDark ? '#9aa0a6' : '#5f6368' },
+                                        value: { color: isNewDark ? '#e3e3e3' : '#1f1f1f' },
+                                        total: { color: isNewDark ? '#9aa0a6' : '#5f6368' }
                                     }
                                 }
                             }

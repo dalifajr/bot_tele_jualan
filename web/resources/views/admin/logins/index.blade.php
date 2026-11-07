@@ -11,16 +11,16 @@
     </div>
 </div>
 
-{{-- KPI Metric Cards Keamanan --}}
+{{-- KPI Metric Cards Keamanan (Flat Material 3) --}}
 <div class="row g-3 mb-4">
     <div class="col-6 col-lg-3">
-        <div class="card border-0 shadow-sm rounded-4 h-100">
+        <div class="card m3-metric-card h-100">
             <div class="card-body p-3 p-md-4 d-flex align-items-center gap-3">
-                <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px; font-size: 1.25rem;">
+                <div class="m3-metric-icon bg-primary-subtle text-primary">
                     <i class="fas fa-sign-in-alt"></i>
                 </div>
                 <div class="overflow-hidden">
-                    <span class="text-muted small fw-bold text-uppercase d-block text-truncate" style="font-size: 0.72rem;">{{ __('Total Percobaan') }}</span>
+                    <span class="text-muted small fw-bold text-uppercase d-block text-truncate" style="font-size: 0.72rem; letter-spacing: 0.04em;">{{ __('Total Percobaan') }}</span>
                     <h4 class="fw-bold mb-0 text-body">{{ number_format($totalLoginAttempts ?? 0, 0, ',', '.') }}</h4>
                     <small class="text-muted" style="font-size: 0.7rem;">{{ __('Hari ini:') }} <span class="fw-semibold text-primary">{{ number_format($todayLoginCount ?? 0, 0, ',', '.') }}</span> · <span class="fw-semibold">{{ number_format($uniqueIpCount ?? 0, 0, ',', '.') }}</span> IP</small>
                 </div>
@@ -28,13 +28,13 @@
         </div>
     </div>
     <div class="col-6 col-lg-3">
-        <div class="card border-0 shadow-sm rounded-4 h-100">
+        <div class="card m3-metric-card h-100">
             <div class="card-body p-3 p-md-4 d-flex align-items-center gap-3">
-                <div class="rounded-circle bg-success-subtle text-success d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px; font-size: 1.25rem;">
+                <div class="m3-metric-icon bg-success-subtle text-success">
                     <i class="fas fa-check-circle"></i>
                 </div>
                 <div class="overflow-hidden">
-                    <span class="text-muted small fw-bold text-uppercase d-block text-truncate" style="font-size: 0.72rem;">{{ __('Login Berhasil') }}</span>
+                    <span class="text-muted small fw-bold text-uppercase d-block text-truncate" style="font-size: 0.72rem; letter-spacing: 0.04em;">{{ __('Login Berhasil') }}</span>
                     <h4 class="fw-bold mb-0 text-success">{{ number_format($successLoginCount ?? 0, 0, ',', '.') }}</h4>
                     <small class="text-muted" style="font-size: 0.7rem;">{{ __('Token TG:') }} <span class="fw-semibold text-success">{{ $tgUsedTokens ?? 0 }}/{{ $tgTotalTokens ?? 0 }}</span> ({{ $tgConversionRate ?? 0 }}%)</small>
                 </div>
@@ -42,13 +42,13 @@
         </div>
     </div>
     <div class="col-6 col-lg-3">
-        <div class="card border-0 shadow-sm rounded-4 h-100">
+        <div class="card m3-metric-card h-100">
             <div class="card-body p-3 p-md-4 d-flex align-items-center gap-3">
-                <div class="rounded-circle bg-danger-subtle text-danger d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px; font-size: 1.25rem;">
+                <div class="m3-metric-icon bg-danger-subtle text-danger">
                     <i class="fas fa-exclamation-triangle"></i>
                 </div>
                 <div class="overflow-hidden">
-                    <span class="text-muted small fw-bold text-uppercase d-block text-truncate" style="font-size: 0.72rem;">{{ __('Login Gagal / Ditolak') }}</span>
+                    <span class="text-muted small fw-bold text-uppercase d-block text-truncate" style="font-size: 0.72rem; letter-spacing: 0.04em;">{{ __('Login Gagal / Ditolak') }}</span>
                     <h4 class="fw-bold mb-0 text-danger">{{ number_format($failedLoginCount ?? 0, 0, ',', '.') }}</h4>
                     <small class="text-muted" style="font-size: 0.7rem;">{{ __('Hari ini:') }} <span class="fw-semibold text-danger">{{ $todayFailedCount ?? 0 }}</span> · <span class="fw-semibold">{{ $uniqueFailedIpCount ?? 0 }}</span> {{ __('IP Gagal') }}</small>
                 </div>
@@ -56,13 +56,13 @@
         </div>
     </div>
     <div class="col-6 col-lg-3">
-        <div class="card border-0 shadow-sm rounded-4 h-100">
+        <div class="card m3-metric-card h-100">
             <div class="card-body p-3 p-md-4 d-flex align-items-center gap-3">
-                <div class="rounded-circle bg-info-subtle text-info d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px; font-size: 1.25rem;">
+                <div class="m3-metric-icon bg-info-subtle text-info">
                     <i class="fas fa-shield-alt"></i>
                 </div>
                 <div class="overflow-hidden">
-                    <span class="text-muted small fw-bold text-uppercase d-block text-truncate" style="font-size: 0.72rem;">{{ __('Tingkat Keberhasilan') }}</span>
+                    <span class="text-muted small fw-bold text-uppercase d-block text-truncate" style="font-size: 0.72rem; letter-spacing: 0.04em;">{{ __('Tingkat Keberhasilan') }}</span>
                     <h4 class="fw-bold mb-0 text-body">{{ $successRate ?? 0 }}%</h4>
                     <small class="text-muted" style="font-size: 0.7rem;">{{ __('Skor Keamanan:') }} <span class="fw-bold text-{{ $securityBadgeColor ?? 'success' }}">{{ $securityScore ?? 100 }}/100</span></small>
                 </div>
@@ -74,8 +74,8 @@
 {{-- Panel Hasil Analisis Keamanan & Deteksi Anomali Login --}}
 <div class="row g-3 mb-4">
     <div class="col-12 col-lg-7">
-        <div class="card border-0 shadow-sm rounded-4 h-100">
-            <div class="card-header bg-transparent border-0 pt-3 pb-0 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div class="card h-100">
+            <div class="card-header bg-transparent pt-3 pb-2 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <div>
                     <h5 class="fw-bold mb-1 text-body"><i class="fas fa-user-shield text-primary me-2"></i>{{ __('Hasil Analisis Keamanan & Evaluasi Risiko Login') }}</h5>
                     <span class="text-muted small">{{ __('Diagnosis otomatis pola autentikasi, potensi serangan brute-force, dan rekomendasi mitigasi') }}</span>
@@ -87,8 +87,8 @@
             <div class="card-body px-4 pt-3 pb-3">
                 <div class="d-flex flex-column gap-3">
                     @foreach(($loginAnalysisInsights ?? []) as $insight)
-                        <div class="d-flex align-items-start gap-3 p-3 rounded-3 bg-light border-start border-4 border-{{ $insight['color'] ?? 'primary' }}">
-                            <div class="rounded-circle bg-{{ $insight['color'] ?? 'primary' }}-subtle text-{{ $insight['color'] ?? 'primary' }} d-flex align-items-center justify-content-center flex-shrink-0 mt-1" style="width: 36px; height: 36px;">
+                        <div class="d-flex align-items-start gap-3 p-3 m3-tonal-item border-start border-4 border-{{ $insight['color'] ?? 'primary' }}">
+                            <div class="rounded-3 bg-{{ $insight['color'] ?? 'primary' }}-subtle text-{{ $insight['color'] ?? 'primary' }} d-flex align-items-center justify-content-center flex-shrink-0 mt-1" style="width: 36px; height: 36px;">
                                 <i class="fas {{ $insight['icon'] ?? 'fa-info-circle' }}"></i>
                             </div>
                             <div>
@@ -103,17 +103,17 @@
     </div>
 
     <div class="col-12 col-lg-5">
-        <div class="card border-0 shadow-sm rounded-4 h-100">
-            <div class="card-header bg-transparent border-0 pt-3 pb-0 px-4">
+        <div class="card h-100">
+            <div class="card-header bg-transparent pt-3 pb-2 px-4">
                 <h5 class="fw-bold mb-1 text-body"><i class="fas fa-crosshairs text-danger me-2"></i>{{ __('Radar IP Gagal & Akun Target Serangan') }}</h5>
                 <span class="text-muted small">{{ __('Sumber IP gagal terbanyak dan akun yang sering dicoba') }}</span>
             </div>
             <div class="card-body px-4 pt-3 pb-3">
-                <h6 class="text-uppercase text-muted fw-bold mb-2" style="font-size: 0.7rem;">{{ __('Top IP Gagal Login') }}</h6>
+                <h6 class="text-uppercase text-muted fw-bold mb-2" style="font-size: 0.7rem; letter-spacing: 0.04em;">{{ __('Top IP Gagal Login') }}</h6>
                 @if(isset($topFailedIps) && count($topFailedIps) > 0)
                     <div class="d-flex flex-column gap-2 mb-3">
                         @foreach($topFailedIps as $badIp)
-                            <div class="p-2 rounded-3 bg-light d-flex align-items-center justify-content-between gap-2">
+                            <div class="p-2.5 m3-tonal-item d-flex align-items-center justify-content-between gap-2">
                                 <div class="overflow-hidden">
                                     <div class="d-flex align-items-center gap-2">
                                         <span class="fw-bold font-monospace text-body" style="font-size: 0.85rem;">{{ $badIp->ip_address }}</span>
@@ -139,23 +139,23 @@
                         @endforeach
                     </div>
                 @else
-                    <div class="p-2 rounded-3 bg-light text-muted small mb-3">
+                    <div class="p-2.5 m3-tonal-item text-muted small mb-3">
                         <i class="fas fa-check-circle text-success me-1"></i>{{ __('Belum ada IP dengan catatan gagal login.') }}
                     </div>
                 @endif
 
-                <h6 class="text-uppercase text-muted fw-bold mb-2" style="font-size: 0.7rem;">{{ __('Akun / Username Paling Sering Dicoba Gagal') }}</h6>
+                <h6 class="text-uppercase text-muted fw-bold mb-2" style="font-size: 0.7rem; letter-spacing: 0.04em;">{{ __('Akun / Username Paling Sering Dicoba Gagal') }}</h6>
                 @if(isset($topTargetedAccounts) && count($topTargetedAccounts) > 0)
                     <div class="d-flex flex-wrap gap-2">
                         @foreach($topTargetedAccounts as $targetAcc)
-                            <span class="badge bg-warning-subtle text-dark border border-warning-subtle rounded-pill px-3 py-1.5" style="font-size: 0.75rem;">
+                            <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill px-3 py-1.5" style="font-size: 0.75rem;">
                                 <i class="fas fa-user-lock text-warning me-1"></i>{{ Str::limit($targetAcc->username_or_email, 22) }}
                                 <strong class="text-danger ms-1">({{ $targetAcc->failed_count }}x / {{ $targetAcc->unique_ips }} IP)</strong>
                             </span>
                         @endforeach
                     </div>
                 @else
-                    <div class="p-2 rounded-3 bg-light text-muted small">
+                    <div class="p-2.5 m3-tonal-item text-muted small">
                         <i class="fas fa-shield-alt text-secondary me-1"></i>{{ __('Tidak ada akun yang menjadi target kegagalan berulang.') }}
                     </div>
                 @endif
@@ -168,8 +168,8 @@
 <div class="row g-3 mb-4">
     <!-- Chart: Login Trend -->
     <div class="col-12 col-lg-7">
-        <div class="card border-0 shadow-sm h-100 rounded-4">
-            <div class="card-header bg-transparent border-0 pt-3 pb-0 px-4">
+        <div class="card h-100">
+            <div class="card-header bg-transparent pt-3 pb-2 px-4">
                 <h5 class="fw-bold mb-1 text-body"><i class="fas fa-chart-line text-primary me-2"></i>{{ __('Tren Percobaan Login (7 Hari Terakhir)') }}</h5>
                 <span class="text-muted small">{{ __('Perbandingan frekuensi login berhasil vs gagal dari hari ke hari') }}</span>
             </div>
@@ -181,8 +181,8 @@
 
     <!-- Chart: Hourly Time Slot Distribution -->
     <div class="col-12 col-lg-5">
-        <div class="card border-0 shadow-sm h-100 rounded-4">
-            <div class="card-header bg-transparent border-0 pt-3 pb-0 px-4 d-flex justify-content-between align-items-center">
+        <div class="card h-100">
+            <div class="card-header bg-transparent pt-3 pb-2 px-4 d-flex justify-content-between align-items-center">
                 <div>
                     <h5 class="fw-bold mb-1 text-body"><i class="fas fa-clock text-warning me-2"></i>{{ __('Pola Jam Akses & Serangan') }}</h5>
                     <span class="text-muted small">{{ __('Distribusi waktu login per 4 jam (Jam Puncak:') }} <strong>{{ $peakTimeWindow ?? '-' }}</strong>)</span>
@@ -199,8 +199,8 @@
 <div class="row g-3 mb-4">
     <!-- Chart: Device Distribution -->
     <div class="col-12 col-lg-6">
-        <div class="card border-0 shadow-sm h-100 rounded-4">
-            <div class="card-header bg-transparent border-0 pt-3 pb-0 px-4">
+        <div class="card h-100">
+            <div class="card-header bg-transparent pt-3 pb-2 px-4">
                 <h5 class="fw-bold mb-1 text-body"><i class="fas fa-laptop text-info me-2"></i>{{ __('Distribusi Perangkat Pengguna') }}</h5>
                 <span class="text-muted small">{{ __('Persentase platform perangkat yang mengakses sistem') }}</span>
             </div>
@@ -219,8 +219,8 @@
 
     <!-- Chart: Browser Distribution -->
     <div class="col-12 col-lg-6">
-        <div class="card border-0 shadow-sm h-100 rounded-4">
-            <div class="card-header bg-transparent border-0 pt-3 pb-0 px-4">
+        <div class="card h-100">
+            <div class="card-header bg-transparent pt-3 pb-2 px-4">
                 <h5 class="fw-bold mb-1 text-body"><i class="fas fa-globe text-success me-2"></i>{{ __('Distribusi Peramban (Browser) Terpopuler') }}</h5>
                 <span class="text-muted small">{{ __('Perbandingan browser dan klien yang digunakan saat login') }}</span>
             </div>
@@ -238,20 +238,20 @@
     </div>
 </div>
 
-{{-- Filter Pencarian Log Login --}}
-<div class="card border-0 shadow-sm mb-4 rounded-4">
+{{-- Filter Pencarian Log Login (Flat Material 3 Outlined Controls) --}}
+<div class="card mb-4">
     <div class="card-body p-3">
         <form action="{{ route('admin.logins.index') }}" method="GET" class="row g-3 align-items-end">
             <div class="col-lg-5 col-md-12">
                 <label class="form-label text-secondary small fw-bold mb-1">{{ __('Cari User / IP / Lokasi / Browser') }}</label>
                 <div class="input-group">
-                    <span class="input-group-text bg-light border-0"><i class="fas fa-search text-muted"></i></span>
-                    <input type="text" name="search" class="form-control bg-light border-0" placeholder="{{ __('Ketik username, email, IP address, atau lokasi...') }}" value="{{ request('search') }}">
+                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                    <input type="text" name="search" class="form-control" placeholder="{{ __('Ketik username, email, IP address, atau lokasi...') }}" value="{{ request('search') }}">
                 </div>
             </div>
             <div class="col-lg-3 col-md-6">
                 <label class="form-label text-secondary small fw-bold mb-1">{{ __('Status Autentikasi') }}</label>
-                <select name="status" class="form-select bg-light border-0">
+                <select name="status" class="form-select">
                     <option value="">{{ __('Semua Status') }}</option>
                     <option value="success" {{ request('status') === 'success' ? 'selected' : '' }}>{{ __('Berhasil Login') }}</option>
                     <option value="failed" {{ request('status') === 'failed' ? 'selected' : '' }}>{{ __('Gagal / Ditolak') }}</option>
@@ -259,7 +259,7 @@
             </div>
             <div class="col-lg-3 col-md-6">
                 <label class="form-label text-secondary small fw-bold mb-1">{{ __('Tipe Perangkat') }}</label>
-                <select name="device_type" class="form-select bg-light border-0">
+                <select name="device_type" class="form-select">
                     <option value="">{{ __('Semua Perangkat') }}</option>
                     @foreach(($deviceLabels ?? []) as $dl)
                         <option value="{{ $dl }}" {{ request('device_type') === $dl ? 'selected' : '' }}>{{ $dl }}</option>
@@ -270,7 +270,7 @@
                 <div class="d-flex gap-2">
                     <button type="submit" class="btn btn-primary w-100 rounded-pill" title="{{ __('Terapkan Filter') }}"><i class="fas fa-filter"></i></button>
                     @if(request()->filled('search') || request()->filled('status') || request()->filled('device_type'))
-                        <a href="{{ route('admin.logins.index') }}" class="btn btn-light rounded-pill text-muted px-3" title="{{ __('Reset Filter') }}"><i class="fas fa-undo"></i></a>
+                        <a href="{{ route('admin.logins.index') }}" class="btn btn-light rounded-pill px-3" title="{{ __('Reset Filter') }}"><i class="fas fa-undo"></i></a>
                     @endif
                 </div>
             </div>
@@ -302,19 +302,19 @@
 
 <div class="tab-content" id="loginTabsContent">
     <div class="tab-pane fade show active" id="logs-pane" role="tabpanel" tabindex="0">
-        <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 16px;">
+        <div class="card overflow-hidden">
             <div class="card-body p-0">
                 @if($loginLogs->count() > 0)
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
                         <thead>
-                            <tr class="text-secondary small border-bottom bg-light">
-                                <th class="px-4 py-3 border-0">{{ __('Waktu') }}</th>
-                                <th class="py-3 border-0">{{ __('Status') }}</th>
-                                <th class="py-3 border-0">{{ __('User/Email') }}</th>
-                                <th class="py-3 border-0">{{ __('IP & Lokasi') }}</th>
-                                <th class="py-3 border-0">{{ __('Perangkat') }}</th>
-                                <th class="py-3 border-0 text-end pe-4">{{ __('Aksi') }}</th>
+                            <tr>
+                                <th class="px-4 py-3">{{ __('Waktu') }}</th>
+                                <th class="py-3">{{ __('Status') }}</th>
+                                <th class="py-3">{{ __('User/Email') }}</th>
+                                <th class="py-3">{{ __('IP & Lokasi') }}</th>
+                                <th class="py-3">{{ __('Perangkat') }}</th>
+                                <th class="py-3 text-end pe-4">{{ __('Aksi') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -328,12 +328,12 @@
                                 $isAccountSuspended = ($log->user && $log->user->is_suspended);
                             @endphp
                             <tr class="{{ $isDeviceBlocked ? 'table-danger bg-danger bg-opacity-10' : '' }}">
-                                <td class="px-4 text-secondary small">{{ $log->created_at->format('d M Y H:i') }}</td>
+                                <td class="px-4 text-secondary small font-monospace">{{ $log->created_at->format('d M Y H:i') }}</td>
                                 <td>
                                     @if($log->is_successful)
-                                        <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill"><i class="fas fa-check-circle me-1"></i>{{ __('Berhasil') }}</span>
+                                        <span class="badge bg-success-subtle text-success px-3 py-1.5 rounded-pill"><i class="fas fa-check-circle me-1"></i>{{ __('Berhasil') }}</span>
                                     @else
-                                        <span class="badge bg-danger bg-opacity-10 text-danger px-3 py-2 rounded-pill"><i class="fas fa-times-circle me-1"></i>{{ __('Gagal') }}</span>
+                                        <span class="badge bg-danger-subtle text-danger px-3 py-1.5 rounded-pill"><i class="fas fa-times-circle me-1"></i>{{ __('Gagal') }}</span>
                                     @endif
                                     @if($isDeviceBlocked)
                                         <div class="mt-1">
@@ -349,14 +349,14 @@
                                         </div>
                                     @endif
                                 </td>
-                                <td class="fw-bold text-muted">
+                                <td class="fw-bold text-body">
                                     {{ $log->username_or_email ?? '-' }}
                                     @if($isAccountSuspended)
-                                        <div class="mt-1"><span class="badge bg-danger bg-opacity-10 text-danger border border-danger font-monospace" style="font-size: 0.65rem;"><i class="fas fa-user-slash me-1"></i>{{ __('Akun Ditangguhkan') }}</span></div>
+                                        <div class="mt-1"><span class="badge bg-danger-subtle text-danger font-monospace" style="font-size: 0.65rem;"><i class="fas fa-user-slash me-1"></i>{{ __('Akun Ditangguhkan') }}</span></div>
                                     @endif
                                 </td>
                                 <td>
-                                    <div class="fw-medium text-dark">
+                                    <div class="fw-semibold text-body font-monospace" style="font-size: 0.85rem;">
                                         {{ $log->ip_address }}
                                         @if($isIpBlocked)
                                             <span class="badge bg-danger text-white ms-1" style="font-size: 0.65rem;"><i class="fas fa-ban me-1"></i>{{ __('IP Diblokir') }}</span>
@@ -365,13 +365,13 @@
                                     <div class="text-secondary small"><i class="fas fa-map-marker-alt text-danger me-1"></i>{{ $log->location ?? 'Unknown' }}</div>
                                 </td>
                                 <td>
-                                    <div class="text-dark small">{{ $log->device_type }}</div>
+                                    <div class="text-body small fw-medium">{{ $log->device_type }}</div>
                                     <div class="text-secondary small" title="{{ $log->user_agent }}"><i class="fab me-1 {{ str_contains(strtolower($log->browser ?? ''), 'firefox') ? 'fa-firefox-browser text-warning' : (str_contains(strtolower($log->browser ?? ''), 'chrome') ? 'fa-chrome text-primary' : 'fa-globe text-secondary') }}"></i>{{ $log->browser ?? '-' }}</div>
                                     @if($effectiveFp)
                                         <div class="mt-1 d-flex align-items-center gap-1 flex-wrap">
-                                            <span class="badge bg-secondary bg-opacity-10 text-secondary border font-monospace" style="font-size: 0.65rem;" title="Fingerprint: {{ $effectiveFp }}"><i class="fas fa-fingerprint me-1"></i>{{ Str::limit($effectiveFp, 16) }}</span>
+                                            <span class="badge bg-secondary-subtle text-secondary font-monospace" style="font-size: 0.65rem;" title="Fingerprint: {{ $effectiveFp }}"><i class="fas fa-fingerprint me-1"></i>{{ Str::limit($effectiveFp, 16) }}</span>
                                             @if($isDeviceBlocked)
-                                                <span class="badge bg-dark text-white" style="font-size: 0.65rem;"><i class="fas fa-laptop me-1"></i>{{ __('Perangkat Diblokir') }}</span>
+                                                <span class="badge bg-danger text-white" style="font-size: 0.65rem;"><i class="fas fa-laptop me-1"></i>{{ __('Perangkat Diblokir') }}</span>
                                             @endif
                                         </div>
                                     @endif
@@ -381,7 +381,7 @@
                                         <button class="btn btn-sm btn-outline-secondary rounded-pill dropdown-toggle px-3" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                                             <i class="fas fa-shield-alt me-1"></i>{{ __('Kelola Blokir') }}
                                         </button>
-                                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" style="border-radius: 12px; z-index: 1050;">
+                                        <ul class="dropdown-menu dropdown-menu-end" style="z-index: 1050;">
                                             <li>
                                                 <button type="button" class="dropdown-item text-danger py-2" onclick="openUnifiedBlockModal('{{ $log->ip_address }}', '{{ $effectiveFp }}', '{{ $effectiveDevId }}', '{{ $log->user_id }}', '{{ $log->user ? $log->user->username : ($log->username_or_email ?? '') }}')">
                                                     <i class="fas fa-ban me-2 text-danger"></i>{{ __('Blokir Akses') }}
@@ -414,34 +414,34 @@
     </div>
 
     <div class="tab-pane fade" id="tg-pane" role="tabpanel" tabindex="0">
-        <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 16px;">
+        <div class="card overflow-hidden">
             <div class="card-body p-0">
                 @if($loginTokens->count() > 0)
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
                         <thead>
-                            <tr class="text-secondary small border-bottom bg-light">
-                                <th class="px-4 py-3 border-0">{{ __('Kode / Token') }}</th>
-                                <th class="py-3 border-0">{{ __('Status') }}</th>
-                                <th class="py-3 border-0">{{ __('IP Address') }}</th>
-                                <th class="py-3 border-0">{{ __('Browser') }}</th>
-                                <th class="py-3 border-0">{{ __('Waktu Expired') }}</th>
+                            <tr>
+                                <th class="px-4 py-3">{{ __('Kode / Token') }}</th>
+                                <th class="py-3">{{ __('Status') }}</th>
+                                <th class="py-3">{{ __('IP Address') }}</th>
+                                <th class="py-3">{{ __('Browser') }}</th>
+                                <th class="py-3">{{ __('Waktu Expired') }}</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach($loginTokens as $login)
                             <tr>
-                                <td class="px-4 fw-bold text-muted">{{ $login->token }}</td>
+                                <td class="px-4 fw-bold text-body font-monospace">{{ $login->token }}</td>
                                 <td>
                                     @if($login->status === 'used')
-                                        <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill">{{ __('Digunakan') }}</span>
+                                        <span class="badge bg-success-subtle text-success px-3 py-1.5 rounded-pill">{{ __('Digunakan') }}</span>
                                     @elseif($login->status === 'pending')
-                                        <span class="badge bg-warning bg-opacity-10 text-warning px-3 py-2 rounded-pill">{{ __('Menunggu Verifikasi') }}</span>
+                                        <span class="badge bg-warning-subtle text-warning px-3 py-1.5 rounded-pill">{{ __('Menunggu Verifikasi') }}</span>
                                     @else
-                                        <span class="badge bg-secondary bg-opacity-10 text-secondary px-3 py-2 rounded-pill">{{ ucfirst($login->status) }}</span>
+                                        <span class="badge bg-secondary-subtle text-secondary px-3 py-1.5 rounded-pill">{{ ucfirst($login->status) }}</span>
                                     @endif
                                 </td>
-                                <td class="text-secondary small">{{ $login->ip_address ?? '-' }}</td>
+                                <td class="text-secondary small font-monospace">{{ $login->ip_address ?? '-' }}</td>
                                 <td class="text-secondary small text-truncate" style="max-width: 200px;" title="{{ $login->user_agent }}">{{ $login->user_agent ?? '-' }}</td>
                                 <td class="text-secondary small">{{ $login->expires_at->diffForHumans() }}</td>
                             </tr>
@@ -727,7 +727,9 @@
 <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-    // 1. Login Trend Multi-Area Chart (Berhasil vs Gagal)
+    const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+
+    // 1. Login Trend Multi-Area Chart (Berhasil vs Gagal — Material 3 Semantic Palette)
     const loginTrendOptions = {
         series: [
             {
@@ -744,19 +746,25 @@ document.addEventListener("DOMContentLoaded", function () {
             height: 280,
             toolbar: { show: false },
             zoom: { enabled: false },
+            background: 'transparent',
             fontFamily: 'inherit'
         },
-        colors: ['#198754', '#dc3545'],
+        theme: { mode: isDark ? 'dark' : 'light' },
+        colors: ['#146c2e', '#ba1a1a'],
         dataLabels: { enabled: false },
-        stroke: { curve: 'smooth', width: [3, 3] },
+        stroke: { curve: 'smooth', width: [2.5, 2.5] },
         fill: {
             type: 'gradient',
             gradient: {
                 shadeIntensity: 1,
-                opacityFrom: 0.45,
-                opacityTo: 0.05,
+                opacityFrom: 0.26,
+                opacityTo: 0.02,
                 stops: [20, 100]
             }
+        },
+        grid: {
+            borderColor: isDark ? '#30363d' : '#dadce0',
+            strokeDashArray: 4
         },
         xaxis: {
             categories: @json($loginTrendLabels ?? []),
@@ -776,7 +784,7 @@ document.addEventListener("DOMContentLoaded", function () {
             horizontalAlign: 'right'
         },
         tooltip: {
-            theme: 'dark'
+            theme: isDark ? 'dark' : 'light'
         }
     };
     const loginTrendChart = new ApexCharts(document.querySelector("#loginTrendChart"), loginTrendOptions);
@@ -799,15 +807,21 @@ document.addEventListener("DOMContentLoaded", function () {
             height: 280,
             stacked: true,
             toolbar: { show: false },
+            background: 'transparent',
             fontFamily: 'inherit'
         },
-        colors: ['#198754', '#dc3545'],
+        theme: { mode: isDark ? 'dark' : 'light' },
+        colors: ['#146c2e', '#ba1a1a'],
         plotOptions: {
             bar: {
                 horizontal: false,
                 borderRadius: 5,
                 columnWidth: '55%'
             }
+        },
+        grid: {
+            borderColor: isDark ? '#30363d' : '#dadce0',
+            strokeDashArray: 4
         },
         dataLabels: { enabled: false },
         xaxis: {
@@ -828,7 +842,7 @@ document.addEventListener("DOMContentLoaded", function () {
             horizontalAlign: 'right'
         },
         tooltip: {
-            theme: 'dark'
+            theme: isDark ? 'dark' : 'light'
         }
     };
     const loginHourlyChart = new ApexCharts(document.querySelector("#loginHourlyChart"), loginHourlyOptions);
@@ -842,9 +856,15 @@ document.addEventListener("DOMContentLoaded", function () {
         chart: {
             type: 'donut',
             height: 260,
+            background: 'transparent',
             fontFamily: 'inherit'
         },
-        colors: ['#0d6efd', '#20c997', '#ffc107', '#0dcaf0', '#6c757d'],
+        theme: { mode: isDark ? 'dark' : 'light' },
+        colors: ['#0b57d0', '#146c2e', '#e37400', '#00639b', '#5f6368'],
+        stroke: {
+            width: 2,
+            colors: [isDark ? '#161b22' : '#ffffff']
+        },
         legend: {
             position: 'bottom',
             fontSize: '12px'
@@ -873,7 +893,7 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         },
         tooltip: {
-            theme: 'dark'
+            theme: isDark ? 'dark' : 'light'
         }
     };
     const deviceDistChart = new ApexCharts(document.querySelector("#deviceDistChart"), deviceDistOptions);
@@ -891,8 +911,10 @@ document.addEventListener("DOMContentLoaded", function () {
             type: 'bar',
             height: 260,
             toolbar: { show: false },
+            background: 'transparent',
             fontFamily: 'inherit'
         },
+        theme: { mode: isDark ? 'dark' : 'light' },
         plotOptions: {
             bar: {
                 borderRadius: 6,
@@ -901,7 +923,11 @@ document.addEventListener("DOMContentLoaded", function () {
                 barHeight: '55%'
             }
         },
-        colors: ['#0d6efd', '#20c997', '#ffc107', '#6f42c1', '#fd7e14'],
+        colors: ['#0b57d0', '#146c2e', '#e37400', '#6f42c1', '#00639b'],
+        grid: {
+            borderColor: isDark ? '#30363d' : '#dadce0',
+            strokeDashArray: 4
+        },
         dataLabels: {
             enabled: true,
             formatter: function (val) {
@@ -918,7 +944,7 @@ document.addEventListener("DOMContentLoaded", function () {
         },
         legend: { show: false },
         tooltip: {
-            theme: 'dark'
+            theme: isDark ? 'dark' : 'light'
         }
     };
     const browserDistChart = new ApexCharts(document.querySelector("#browserDistChart"), browserDistOptions);

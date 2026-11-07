@@ -11,16 +11,16 @@
     </div>
 </div>
 
-{{-- KPI Metric Cards --}}
+{{-- KPI Metric Cards (Flat Material 3) --}}
 <div class="row g-3 mb-4">
     <div class="col-6 col-lg-3">
-        <div class="card border-0 shadow-sm rounded-4 h-100">
+        <div class="card m3-metric-card h-100">
             <div class="card-body p-3 p-md-4 d-flex align-items-center gap-3">
-                <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px; font-size: 1.25rem;">
+                <div class="m3-metric-icon bg-primary-subtle text-primary">
                     <i class="fas fa-clipboard-list"></i>
                 </div>
                 <div class="overflow-hidden">
-                    <span class="text-muted small fw-bold text-uppercase d-block text-truncate" style="font-size: 0.72rem;">{{ __('Total Log Audit') }}</span>
+                    <span class="text-muted small fw-bold text-uppercase d-block text-truncate" style="font-size: 0.72rem; letter-spacing: 0.04em;">{{ __('Total Log Audit') }}</span>
                     <h4 class="fw-bold mb-0 text-body">{{ number_format($totalAuditCount ?? 0, 0, ',', '.') }}</h4>
                     <small class="text-muted" style="font-size: 0.7rem;">{{ __('Hari ini:') }} <span class="fw-semibold text-primary">{{ number_format($todayAuditCount ?? 0, 0, ',', '.') }}</span> ({{ __('Kemarin:') }} {{ number_format($yesterdayAuditCount ?? 0, 0, ',', '.') }})</small>
                 </div>
@@ -28,13 +28,13 @@
         </div>
     </div>
     <div class="col-6 col-lg-3">
-        <div class="card border-0 shadow-sm rounded-4 h-100">
+        <div class="card m3-metric-card h-100">
             <div class="card-body p-3 p-md-4 d-flex align-items-center gap-3">
-                <div class="rounded-circle bg-info-subtle text-info d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px; font-size: 1.25rem;">
+                <div class="m3-metric-icon bg-info-subtle text-info">
                     <i class="fas fa-calendar-week"></i>
                 </div>
                 <div class="overflow-hidden">
-                    <span class="text-muted small fw-bold text-uppercase d-block text-truncate" style="font-size: 0.72rem;">{{ __('Aktivitas 7 Hari') }}</span>
+                    <span class="text-muted small fw-bold text-uppercase d-block text-truncate" style="font-size: 0.72rem; letter-spacing: 0.04em;">{{ __('Aktivitas 7 Hari') }}</span>
                     <h4 class="fw-bold mb-0 text-body">{{ number_format($weekAuditCount ?? 0, 0, ',', '.') }}</h4>
                     <small class="text-muted" style="font-size: 0.7rem;">{{ __('Rata-rata:') }} <span class="fw-semibold">{{ $dailyAverageAudit ?? 0 }}</span> {{ __('log/hari') }}</small>
                 </div>
@@ -42,13 +42,13 @@
         </div>
     </div>
     <div class="col-6 col-lg-3">
-        <div class="card border-0 shadow-sm rounded-4 h-100">
+        <div class="card m3-metric-card h-100">
             <div class="card-body p-3 p-md-4 d-flex align-items-center gap-3">
-                <div class="rounded-circle bg-warning-subtle text-warning d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px; font-size: 1.25rem;">
+                <div class="m3-metric-icon bg-warning-subtle text-warning">
                     <i class="fas fa-bolt"></i>
                 </div>
                 <div class="overflow-hidden">
-                    <span class="text-muted small fw-bold text-uppercase d-block text-truncate" style="font-size: 0.72rem;">{{ __('Aksi Terbanyak') }}</span>
+                    <span class="text-muted small fw-bold text-uppercase d-block text-truncate" style="font-size: 0.72rem; letter-spacing: 0.04em;">{{ __('Aksi Terbanyak') }}</span>
                     <h5 class="fw-bold mb-0 text-truncate text-body" style="font-size: 1rem;" title="{{ $topActionName ?? '-' }}">
                         {{ $topActionName ?? '-' }}
                     </h5>
@@ -58,13 +58,13 @@
         </div>
     </div>
     <div class="col-6 col-lg-3">
-        <div class="card border-0 shadow-sm rounded-4 h-100">
+        <div class="card m3-metric-card h-100">
             <div class="card-body p-3 p-md-4 d-flex align-items-center gap-3">
-                <div class="rounded-circle bg-success-subtle text-success d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px; font-size: 1.25rem;">
+                <div class="m3-metric-icon bg-success-subtle text-success">
                     <i class="fas fa-user-shield"></i>
                 </div>
                 <div class="overflow-hidden">
-                    <span class="text-muted small fw-bold text-uppercase d-block text-truncate" style="font-size: 0.72rem;">{{ __('Pelaku (User / Bot)') }}</span>
+                    <span class="text-muted small fw-bold text-uppercase d-block text-truncate" style="font-size: 0.72rem; letter-spacing: 0.04em;">{{ __('Pelaku (User / Bot)') }}</span>
                     <h5 class="fw-bold mb-0 text-body" style="font-size: 1rem;">
                         {{ $actorAuditCount ?? 0 }} <span class="text-muted fw-normal" style="font-size: 0.8rem;">/ {{ $systemAuditCount ?? 0 }} bot</span>
                     </h5>
@@ -78,8 +78,8 @@
 {{-- Panel Hasil Analisis & Kesimpulan Audit + Top Pelaku --}}
 <div class="row g-3 mb-4">
     <div class="col-12 col-lg-7">
-        <div class="card border-0 shadow-sm rounded-4 h-100">
-            <div class="card-header bg-transparent border-0 pt-3 pb-0 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div class="card h-100">
+            <div class="card-header bg-transparent pt-3 pb-2 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <div>
                     <h5 class="fw-bold mb-1 text-body"><i class="fas fa-microscope text-primary me-2"></i>{{ __('Hasil Analisis & Kesimpulan Log Audit') }}</h5>
                     <span class="text-muted small">{{ __('Ringkasan intelijen operasional dan evaluasi jejak sistem otomatis') }}</span>
@@ -91,8 +91,8 @@
             <div class="card-body px-4 pt-3 pb-3">
                 <div class="d-flex flex-column gap-3">
                     @foreach(($auditAnalysisInsights ?? []) as $insight)
-                        <div class="d-flex align-items-start gap-3 p-3 rounded-3 bg-light border-start border-4 border-{{ $insight['color'] ?? 'primary' }}">
-                            <div class="rounded-circle bg-{{ $insight['color'] ?? 'primary' }}-subtle text-{{ $insight['color'] ?? 'primary' }} d-flex align-items-center justify-content-center flex-shrink-0 mt-1" style="width: 36px; height: 36px;">
+                        <div class="d-flex align-items-start gap-3 p-3 m3-tonal-item border-start border-4 border-{{ $insight['color'] ?? 'primary' }}">
+                            <div class="rounded-3 bg-{{ $insight['color'] ?? 'primary' }}-subtle text-{{ $insight['color'] ?? 'primary' }} d-flex align-items-center justify-content-center flex-shrink-0 mt-1" style="width: 36px; height: 36px;">
                                 <i class="fas {{ $insight['icon'] ?? 'fa-info-circle' }}"></i>
                             </div>
                             <div>
@@ -107,8 +107,8 @@
     </div>
 
     <div class="col-12 col-lg-5">
-        <div class="card border-0 shadow-sm rounded-4 h-100">
-            <div class="card-header bg-transparent border-0 pt-3 pb-0 px-4">
+        <div class="card h-100">
+            <div class="card-header bg-transparent pt-3 pb-2 px-4">
                 <h5 class="fw-bold mb-1 text-body"><i class="fas fa-users-cog text-warning me-2"></i>{{ __('Pelaku (Actor) Paling Aktif') }}</h5>
                 <span class="text-muted small">{{ __('Kontribusi eksekusi perubahan berdasarkan akun pengguna') }}</span>
             </div>
@@ -116,8 +116,8 @@
                 @if(isset($topActors) && count($topActors) > 0)
                     <div class="d-flex flex-column gap-2">
                         @foreach($topActors as $actorRow)
-                            <div class="p-2 rounded-3 bg-light d-flex align-items-center justify-content-between gap-2">
-                                <div class="d-flex align-items-center gap-2 overflow-hidden">
+                            <div class="p-2.5 m3-tonal-item d-flex align-items-center justify-content-between gap-2">
+                                <div class="d-flex align-items-center gap-2.5 overflow-hidden">
                                     <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center fw-bold flex-shrink-0" style="width: 34px; height: 34px; font-size: 0.8rem;">
                                         {{ strtoupper(substr($actorRow->actor_username ?? 'U', 0, 1)) }}
                                     </div>
@@ -151,8 +151,8 @@
 <div class="row g-3 mb-4">
     <!-- Chart: Activity Trend (Total vs Manual vs System/Bot) -->
     <div class="col-12 col-lg-5">
-        <div class="card border-0 shadow-sm h-100 rounded-4">
-            <div class="card-header bg-transparent border-0 pt-3 pb-0 px-4 d-flex justify-content-between align-items-center">
+        <div class="card h-100">
+            <div class="card-header bg-transparent pt-3 pb-2 px-4 d-flex justify-content-between align-items-center">
                 <div>
                     <h5 class="fw-bold mb-1 text-body"><i class="fas fa-chart-area text-primary me-2"></i>{{ __('Tren Aktivitas Sistem (7 Hari Terakhir)') }}</h5>
                     <span class="text-muted small">{{ __('Perbandingan total log, aksi manual user, dan otomatisasi bot') }}</span>
@@ -166,8 +166,8 @@
 
     <!-- Chart: Action Distribution -->
     <div class="col-12 col-lg-4">
-        <div class="card border-0 shadow-sm h-100 rounded-4">
-            <div class="card-header bg-transparent border-0 pt-3 pb-0 px-4">
+        <div class="card h-100">
+            <div class="card-header bg-transparent pt-3 pb-2 px-4">
                 <h5 class="fw-bold mb-1 text-body"><i class="fas fa-chart-pie text-success me-2"></i>{{ __('Distribusi Aksi Terbanyak') }}</h5>
                 <span class="text-muted small">{{ __('Porsi jenis aktivitas yang tercatat') }}</span>
             </div>
@@ -186,8 +186,8 @@
 
     <!-- Chart: Entity Distribution -->
     <div class="col-12 col-lg-3">
-        <div class="card border-0 shadow-sm h-100 rounded-4">
-            <div class="card-header bg-transparent border-0 pt-3 pb-0 px-4">
+        <div class="card h-100">
+            <div class="card-header bg-transparent pt-3 pb-2 px-4">
                 <h5 class="fw-bold mb-1 text-body"><i class="fas fa-cubes text-info me-2"></i>{{ __('Distribusi Objek Entitas') }}</h5>
                 <span class="text-muted small">{{ __('Modul sistem yang paling sering berubah') }}</span>
             </div>
@@ -205,20 +205,20 @@
     </div>
 </div>
 
-{{-- Filter Card --}}
-<div class="card border-0 shadow-sm mb-4 rounded-4">
+{{-- Filter Card (Flat Material 3 Outlined Controls) --}}
+<div class="card mb-4">
     <div class="card-body p-3">
         <form action="{{ route('admin.audit-logs.index') }}" method="GET" class="row g-3 align-items-end">
             <div class="col-lg-3 col-md-6">
                 <label class="form-label text-secondary small fw-bold mb-1">{{ __('Cari Kata Kunci') }}</label>
                 <div class="input-group">
-                    <span class="input-group-text bg-light border-0"><i class="fas fa-search text-muted"></i></span>
-                    <input type="text" name="search" class="form-control bg-light border-0" placeholder="{{ __('Aksi, detail, atau pelaku...') }}" value="{{ request('search') }}">
+                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                    <input type="text" name="search" class="form-control" placeholder="{{ __('Aksi, detail, atau pelaku...') }}" value="{{ request('search') }}">
                 </div>
             </div>
             <div class="col-lg-2 col-md-3 col-sm-6">
                 <label class="form-label text-secondary small fw-bold mb-1">{{ __('Tipe Pelaku') }}</label>
-                <select name="actor_type" class="form-select bg-light border-0">
+                <select name="actor_type" class="form-select">
                     <option value="">{{ __('Semua Pelaku') }}</option>
                     <option value="user" {{ request('actor_type') === 'user' ? 'selected' : '' }}>{{ __('User / Admin') }}</option>
                     <option value="system" {{ request('actor_type') === 'system' ? 'selected' : '' }}>{{ __('System / Bot') }}</option>
@@ -226,7 +226,7 @@
             </div>
             <div class="col-lg-2 col-md-3 col-sm-6">
                 <label class="form-label text-secondary small fw-bold mb-1">{{ __('Objek Entitas') }}</label>
-                <select name="entity_type" class="form-select bg-light border-0">
+                <select name="entity_type" class="form-select">
                     <option value="">{{ __('Semua Entitas') }}</option>
                     @foreach(($availableEntityTypes ?? []) as $et)
                         <option value="{{ $et }}" {{ request('entity_type') === $et ? 'selected' : '' }}>{{ strtoupper($et) }}</option>
@@ -235,17 +235,17 @@
             </div>
             <div class="col-lg-2 col-md-4 col-sm-6">
                 <label class="form-label text-secondary small fw-bold mb-1">{{ __('Tanggal Mulai') }}</label>
-                <input type="date" name="start_date" class="form-control bg-light border-0" value="{{ request('start_date') }}">
+                <input type="date" name="start_date" class="form-control" value="{{ request('start_date') }}">
             </div>
             <div class="col-lg-2 col-md-4 col-sm-6">
                 <label class="form-label text-secondary small fw-bold mb-1">{{ __('Tanggal Selesai') }}</label>
-                <input type="date" name="end_date" class="form-control bg-light border-0" value="{{ request('end_date') }}">
+                <input type="date" name="end_date" class="form-control" value="{{ request('end_date') }}">
             </div>
             <div class="col-lg-1 col-md-4">
                 <div class="d-flex gap-2">
                     <button type="submit" class="btn btn-primary w-100 rounded-pill" title="{{ __('Terapkan Filter') }}"><i class="fas fa-filter"></i></button>
                     @if(request()->filled('search') || request()->filled('actor_type') || request()->filled('entity_type') || request()->filled('start_date') || request()->filled('end_date'))
-                        <a href="{{ route('admin.audit-logs.index') }}" class="btn btn-light rounded-pill text-muted px-3" title="{{ __('Reset Filter') }}"><i class="fas fa-undo"></i></a>
+                        <a href="{{ route('admin.audit-logs.index') }}" class="btn btn-light rounded-pill px-3" title="{{ __('Reset Filter') }}"><i class="fas fa-undo"></i></a>
                     @endif
                 </div>
             </div>
@@ -253,25 +253,25 @@
     </div>
 </div>
 
-{{-- Table Card --}}
-<div class="card border-0 shadow-sm overflow-hidden rounded-4">
+{{-- Table Card (Google Cloud Data Table Flat) --}}
+<div class="card overflow-hidden">
     <div class="card-body p-0">
         @if($logs->count() > 0)
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
                 <thead>
-                    <tr class="text-secondary small border-bottom bg-light">
-                        <th class="px-4 py-3 border-0" style="width: 170px;">{{ __('Waktu') }}</th>
-                        <th class="py-3 border-0" style="width: 190px;">{{ __('Pelaku (Actor)') }}</th>
-                        <th class="py-3 border-0" style="width: 180px;">{{ __('Aksi') }}</th>
-                        <th class="py-3 border-0" style="width: 140px;">{{ __('Objek Entitas') }}</th>
-                        <th class="py-3 border-0">{{ __('Detail Perubahan') }}</th>
+                    <tr>
+                        <th class="px-4 py-3" style="width: 170px;">{{ __('Waktu') }}</th>
+                        <th class="py-3" style="width: 190px;">{{ __('Pelaku (Actor)') }}</th>
+                        <th class="py-3" style="width: 180px;">{{ __('Aksi') }}</th>
+                        <th class="py-3" style="width: 140px;">{{ __('Objek Entitas') }}</th>
+                        <th class="py-3">{{ __('Detail Perubahan') }}</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach($logs as $log)
                     <tr>
-                        <td class="px-4 text-secondary small">{{ \Carbon\Carbon::parse($log->created_at)->format('d M Y H:i:s') }}</td>
+                        <td class="px-4 text-secondary small font-monospace">{{ \Carbon\Carbon::parse($log->created_at)->format('d M Y H:i:s') }}</td>
                         <td>
                             @if($log->actor)
                             <div class="d-flex align-items-center gap-2">
@@ -297,7 +297,7 @@
                         </td>
                         <td>
                             @if(!empty($log->entity_type))
-                                <span class="badge bg-info-subtle text-info border border-info-subtle rounded-pill px-2 py-1 font-monospace" style="font-size: 0.7rem;">
+                                <span class="badge bg-info-subtle text-info rounded-pill px-2.5 py-1 font-monospace" style="font-size: 0.7rem;">
                                     {{ strtoupper($log->entity_type) }}{{ $log->entity_id ? ' #' . $log->entity_id : '' }}
                                 </span>
                             @else
@@ -323,7 +323,7 @@
     </div>
     
     @if($logs->hasPages())
-    <div class="card-footer bg-transparent border-0 px-4 py-3">
+    <div class="card-footer bg-transparent px-4 py-3">
         {{ $logs->links() }}
     </div>
     @endif
@@ -334,7 +334,9 @@
 <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-    // 1. Audit Trend Multi-Series Area Chart
+    const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+
+    // 1. Audit Trend Multi-Series Area Chart (Material 3 / GCP Palette)
     const trendOptions = {
         series: [
             {
@@ -355,19 +357,25 @@ document.addEventListener("DOMContentLoaded", function () {
             height: 280,
             toolbar: { show: false },
             zoom: { enabled: false },
+            background: 'transparent',
             fontFamily: 'inherit'
         },
+        theme: { mode: isDark ? 'dark' : 'light' },
         dataLabels: { enabled: false },
-        stroke: { curve: 'smooth', width: [3, 2, 2], dashArray: [0, 0, 4] },
-        colors: ['#0d6efd', '#20c997', '#6c757d'],
+        stroke: { curve: 'smooth', width: [2.5, 2, 2], dashArray: [0, 0, 4] },
+        colors: ['#0b57d0', '#146c2e', '#5f6368'],
         fill: {
             type: 'gradient',
             gradient: {
                 shadeIntensity: 1,
-                opacityFrom: 0.4,
-                opacityTo: 0.05,
+                opacityFrom: 0.25,
+                opacityTo: 0.02,
                 stops: [20, 100]
             }
+        },
+        grid: {
+            borderColor: isDark ? '#30363d' : '#dadce0',
+            strokeDashArray: 4
         },
         xaxis: {
             categories: @json($auditTrendLabels ?? []),
@@ -387,7 +395,7 @@ document.addEventListener("DOMContentLoaded", function () {
             horizontalAlign: 'right'
         },
         tooltip: {
-            theme: 'dark',
+            theme: isDark ? 'dark' : 'light',
             y: {
                 formatter: function (val) {
                     return val + " {{ __('aktivitas') }}";
@@ -406,9 +414,15 @@ document.addEventListener("DOMContentLoaded", function () {
         chart: {
             type: 'donut',
             height: 280,
+            background: 'transparent',
             fontFamily: 'inherit'
         },
-        colors: ['#0d6efd', '#20c997', '#ffc107', '#0dcaf0', '#6f42c1', '#6c757d'],
+        theme: { mode: isDark ? 'dark' : 'light' },
+        colors: ['#0b57d0', '#146c2e', '#e37400', '#00639b', '#6f42c1', '#5f6368'],
+        stroke: {
+            width: 2,
+            colors: [isDark ? '#161b22' : '#ffffff']
+        },
         legend: {
             position: 'bottom',
             fontSize: '12px'
@@ -437,7 +451,7 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         },
         tooltip: {
-            theme: 'dark'
+            theme: isDark ? 'dark' : 'light'
         }
     };
     const actionDistChart = new ApexCharts(document.querySelector("#actionDistributionChart"), actionDistOptions);
@@ -455,8 +469,10 @@ document.addEventListener("DOMContentLoaded", function () {
             type: 'bar',
             height: 280,
             toolbar: { show: false },
+            background: 'transparent',
             fontFamily: 'inherit'
         },
+        theme: { mode: isDark ? 'dark' : 'light' },
         plotOptions: {
             bar: {
                 borderRadius: 6,
@@ -465,7 +481,11 @@ document.addEventListener("DOMContentLoaded", function () {
                 barHeight: '60%'
             }
         },
-        colors: ['#0dcaf0', '#0d6efd', '#20c997', '#ffc107', '#6f42c1', '#fd7e14'],
+        colors: ['#00639b', '#0b57d0', '#146c2e', '#e37400', '#6f42c1', '#ba1a1a'],
+        grid: {
+            borderColor: isDark ? '#30363d' : '#dadce0',
+            strokeDashArray: 4
+        },
         dataLabels: {
             enabled: true,
             formatter: function (val) {
@@ -482,7 +502,7 @@ document.addEventListener("DOMContentLoaded", function () {
         },
         legend: { show: false },
         tooltip: {
-            theme: 'dark'
+            theme: isDark ? 'dark' : 'light'
         }
     };
     const entityDistChart = new ApexCharts(document.querySelector("#entityDistributionChart"), entityDistOptions);

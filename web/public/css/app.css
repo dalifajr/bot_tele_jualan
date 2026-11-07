@@ -428,6 +428,87 @@ body {
     color: var(--on-surface);
 }
 
+/* === GCP / MATERIAL 3 CONSOLE HEADER & DATA-DENSE COMPONENTS (STAGE 4) === */
+.m3-console-header {
+    background: var(--surface-bg);
+    border: 1px solid var(--outline-color);
+    border-radius: var(--radius-lg, 16px);
+    padding: 1.5rem;
+    box-shadow: none !important;
+}
+
+.m3-console-filter-bar {
+    background: var(--surface-container-low);
+    border: 1px solid var(--outline-color);
+    border-radius: var(--radius-md, 12px);
+    padding: 0.875rem 1rem;
+}
+
+.m3-metric-card {
+    background: var(--surface-bg) !important;
+    border: 1px solid var(--outline-color) !important;
+    border-radius: var(--radius-md, 12px) !important;
+    box-shadow: none !important;
+    transition: border-color 0.15s cubic-bezier(0.2, 0, 0, 1), background-color 0.15s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.m3-metric-card:hover {
+    border-color: var(--outline-variant) !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+a .m3-metric-card:hover {
+    border-color: var(--primary-color) !important;
+    background: var(--surface-container-low) !important;
+}
+
+.m3-metric-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-md, 12px);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+    flex-shrink: 0;
+}
+
+.m3-tonal-item {
+    background: var(--surface-container-low) !important;
+    border: 1px solid var(--outline-color);
+    border-radius: var(--radius-md, 12px);
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.m3-tonal-item:hover {
+    background: var(--surface-container-high) !important;
+}
+
+/* Material 3 Segmented / Pill Tabs */
+.nav-pills .nav-link {
+    color: var(--on-surface-variant) !important;
+    background: var(--surface-bg);
+    border: 1px solid var(--outline-color);
+    border-radius: var(--radius-pill, 9999px) !important;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 0.5rem 1.25rem;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.nav-pills .nav-link:hover:not(.active) {
+    background: var(--surface-container-low);
+    color: var(--on-surface) !important;
+}
+
+.nav-pills .nav-link.active {
+    background: var(--primary-container) !important;
+    color: var(--on-primary-container) !important;
+    border-color: rgba(var(--primary-rgb), 0.35) !important;
+    box-shadow: none !important;
+}
+
 /* === QUICK ACTIONS === */
 .quick-action-btn {
     display: flex;
