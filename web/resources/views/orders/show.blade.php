@@ -6,12 +6,12 @@
 @section('content')
 <div class="d-flex align-items-center justify-content-between mb-3">
     <div class="d-flex align-items-center gap-2">
-        <a href="{{ route('orders.index') }}" class="btn btn-light rounded-circle shadow-sm border d-inline-flex align-items-center justify-content-center" style="width: 38px; height: 38px;" title="{{ __('Kembali ke Riwayat Pesanan') }}">
+        <a href="{{ route('orders.index') }}" class="btn btn-light rounded-circle border d-inline-flex align-items-center justify-content-center" style="width: 38px; height: 38px;" title="{{ __('Kembali ke Riwayat Pesanan') }}">
             <i class="fas fa-arrow-left text-body"></i>
         </a>
         <div>
             <h5 class="fw-bold m-0 text-body" style="font-size: 1.15rem;">{{ __('Detail Pesanan') }}</h5>
-            <small class="text-muted" style="font-size: 0.75rem;">{{ $order->reference }} &bull; {{ $order->created_at->format('d M Y, H:i') }}</small>
+            <small class="text-muted font-monospace" style="font-size: 0.75rem;">{{ $order->reference }} &bull; {{ $order->created_at->format('d M Y, H:i') }}</small>
         </div>
     </div>
     <span class="badge bg-{{ $order->status_color }}-subtle text-{{ $order->status_color }} rounded-pill px-3 py-1.5 fw-bold">
@@ -21,32 +21,30 @@
 
 <div class="row g-4">
     <div class="col-lg-8">
-        <div class="card border-0 shadow-sm" style="border-radius: 16px;">
-            <div class="card-header bg-transparent border-0 pt-4 px-4 d-none d-md-block">
+        <div class="card">
+            <div class="card-header bg-transparent pt-3 px-4 pb-3 d-none d-md-block">
                 <div class="d-flex justify-content-between align-items-center">
-                    <h5 class="fw-bold mb-0">
+                    <h5 class="fw-bold mb-0 text-body">
                         <i class="fas fa-receipt text-primary me-2"></i>
-                        Pesanan {{ $order->reference }}
+                        Pesanan <span class="font-monospace">{{ $order->reference }}</span>
                     </h5>
-                    <span class="badge bg-{{ $order->status_color }}-subtle text-{{ $order->status_color }} rounded-pill px-3 py-2">
+                    <span class="badge bg-{{ $order->status_color }}-subtle text-{{ $order->status_color }} rounded-pill px-3 py-1.5">
                         {{ $order->status_label }}
                     </span>
                 </div>
             </div>
-            <div class="card-body px-4 pb-4">
-
-
+            <div class="card-body px-4 pb-4 pt-4">
                 <div class="mb-4">
-                    <span class="text-muted small d-block mb-2">{{ __('Item Pesanan:') }}</span>
-                    <div class="list-group list-group-flush border rounded-3 overflow-hidden mb-3">
+                    <span class="text-muted small fw-semibold text-uppercase d-block mb-2" style="letter-spacing: 0.04em; font-size: 0.72rem;">{{ __('Item Pesanan:') }}</span>
+                    <div class="list-group list-group-flush border rounded-3 overflow-hidden mb-3" style="border-color: var(--outline-color) !important;">
                         @foreach($order->items as $item)
-                        <div class="list-group-item p-3">
+                        <div class="list-group-item p-3" style="background: var(--surface-bg); border-color: var(--outline-color) !important;">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <span class="fw-bold text-dark">{{ $item->product->name ?? '-' }}</span>
-                                    <small class="text-muted d-block">{{ $item->quantity }} x Rp {{ number_format($item->unit_price, 0, ',', '.') }}</small>
+                                    <span class="fw-bold text-body">{{ $item->product->name ?? '-' }}</span>
+                                    <small class="text-muted d-block">{{ $item->quantity }} &times; Rp {{ number_format($item->unit_price, 0, ',', '.') }}</small>
                                 </div>
-                                <span class="fw-bold text-dark">Rp {{ number_format($item->unit_price * $item->quantity, 0, ',', '.') }}</span>
+                                <span class="fw-bold text-body">Rp {{ number_format($item->unit_price * $item->quantity, 0, ',', '.') }}</span>
                             </div>
 
                             {{-- Product Review Section --}}
@@ -57,7 +55,7 @@
                                         ->first();
                                 @endphp
                                 @if($hasReview)
-                                    <div class="mt-3 p-2 bg-success-subtle rounded-3" style="font-size: 0.85rem;">
+                                    <div class="mt-3 p-2.5 bg-success-subtle rounded-3" style="font-size: 0.85rem;">
                                         <i class="fas fa-check-circle text-success me-1"></i> {{ __('Anda telah memberikan ulasan:') }}
                                         <span class="text-warning ms-1">
                                             @for($i=1; $i<=5; $i++)
@@ -69,8 +67,8 @@
                                         @endif
                                     </div>
                                 @else
-                                    <div class="mt-3 p-3 bg-light rounded-3" style="font-size: 0.85rem;">
-                                        <h6 class="fw-bold text-dark small mb-2"><i class="fas fa-star text-warning me-1"></i> {{ __('Berikan Ulasan & Rating:') }}</h6>
+                                    <div class="mt-3 p-3 m3-tonal-item" style="font-size: 0.85rem;">
+                                        <h6 class="fw-bold text-body small mb-2"><i class="fas fa-star text-warning me-1"></i> {{ __('Berikan Ulasan & Rating:') }}</h6>
                                         <form action="{{ route('reviews.store') }}" method="POST">
                                             @csrf
                                             <input type="hidden" name="order_id" value="{{ $order->id }}">
@@ -90,7 +88,7 @@
 
                                             <div class="input-group input-group-sm">
                                                 <input type="text" name="comment" class="form-control" placeholder="{{ __('Tulis ulasan Anda (opsional)...') }}">
-                                                <button class="btn btn-primary" type="submit">{{ __('Kirim') }}</button>
+                                                <button class="btn btn-primary px-3" type="submit">{{ __('Kirim') }}</button>
                                             </div>
                                         </form>
                                     </div>
@@ -103,36 +101,36 @@
 
                 <hr>
 
-                <h6 class="fw-bold mb-3">{{ __('Timeline') }}</h6>
+                <h6 class="fw-bold mb-3 text-body">{{ __('Timeline') }}</h6>
                 <div class="order-timeline">
                     <div class="timeline-step completed">
-                        <div class="fw-bold small">{{ __('Pesanan Dibuat') }}</div>
+                        <div class="fw-bold small text-body">{{ __('Pesanan Dibuat') }}</div>
                         <div class="text-muted small">{{ $order->created_at->format('d M Y H:i:s') }}</div>
                     </div>
 
                     @if($order->status === 'delivered')
                     <div class="timeline-step completed">
-                        <div class="fw-bold small">{{ __('Pembayaran Diterima') }}</div>
+                        <div class="fw-bold small text-body">{{ __('Pembayaran Diterima') }}</div>
                         <div class="text-muted small">{{ __('Pembayaran telah diverifikasi') }}</div>
                     </div>
                     <div class="timeline-step completed">
-                        <div class="fw-bold small">{{ __('Produk Dikirim') }}</div>
+                        <div class="fw-bold small text-body">{{ __('Produk Dikirim') }}</div>
                         <div class="text-muted small">
                             {{ $order->delivered_at ? $order->delivered_at->format('d M Y H:i:s') : '-' }}
                         </div>
                     </div>
                     @elseif($order->status === 'paid')
                     <div class="timeline-step completed">
-                        <div class="fw-bold small">{{ __('Pembayaran Diterima') }}</div>
+                        <div class="fw-bold small text-body">{{ __('Pembayaran Diterima') }}</div>
                         <div class="text-muted small">{{ __('Menunggu pengiriman produk') }}</div>
                     </div>
                     <div class="timeline-step active">
-                        <div class="fw-bold small">{{ __('Menunggu Pengiriman') }}</div>
+                        <div class="fw-bold small text-body">{{ __('Menunggu Pengiriman') }}</div>
                         <div class="text-muted small">{{ __('Produk sedang diproses') }}</div>
                     </div>
                     @elseif($order->status === 'pending_payment')
                     <div class="timeline-step active">
-                        <div class="fw-bold small">{{ __('Menunggu Pembayaran') }}</div>
+                        <div class="fw-bold small text-body">{{ __('Menunggu Pembayaran') }}</div>
                         <div class="text-muted small">
                             @if($order->expires_at)
                                 Batas waktu: {{ $order->expires_at->format('d M Y H:i:s') }}
@@ -157,7 +155,7 @@
                 @if($order->status === 'delivered')
                     @if($order->stockUnits && $order->stockUnits->count() > 0)
                     <hr>
-                    <h6 class="fw-bold mb-3"><i class="fas fa-key text-success me-2"></i>{{ __('Detail Akun yang Dibeli') }} ({{ $order->stockUnits->count() }} unit)</h6>
+                    <h6 class="fw-bold mb-3 text-body"><i class="fas fa-key text-success me-2"></i>{{ __('Detail Akun yang Dibeli') }} ({{ $order->stockUnits->count() }} unit)</h6>
                     <div class="d-flex flex-column gap-3">
                         @php $groupedUnits = $order->stockUnits->groupBy('product_id'); @endphp
                         @foreach($groupedUnits as $productId => $units)
@@ -181,24 +179,24 @@
 
                     @if($order->vpnAccounts && $order->vpnAccounts->count() > 0)
                     <hr>
-                    <h6 class="fw-bold mb-3"><i class="fas fa-network-wired text-primary me-2"></i>{{ __('Konfigurasi Akun VPN') }}</h6>
+                    <h6 class="fw-bold mb-3 text-body"><i class="fas fa-network-wired text-primary me-2"></i>{{ __('Konfigurasi Akun VPN') }}</h6>
                     @foreach($order->vpnAccounts as $vpn)
-                        <div class="card mb-3 border-primary-subtle shadow-sm" style="border-radius: 12px;">
-                            <div class="card-header bg-primary-subtle border-0">
+                        <div class="card mb-3 overflow-hidden">
+                            <div class="card-header bg-primary-subtle border-bottom">
                                 <h6 class="mb-0 fw-bold text-primary">Protokol: {{ strtoupper($vpn->protocol) }} ({{ $vpn->username }})</h6>
                             </div>
-                            <div class="card-body bg-light">
+                            <div class="card-body">
                                 <div class="mb-2">
                                     <span class="text-muted small">{{ __('Masa Aktif:') }}</span>
-                                    <strong class="d-block">{{ $vpn->expired_at ? $vpn->expired_at->format('d M Y') : '-' }}</strong>
+                                    <strong class="d-block text-body">{{ $vpn->expired_at ? $vpn->expired_at->format('d M Y') : '-' }}</strong>
                                 </div>
                                 <div class="mb-2">
                                     <span class="text-muted small">{{ __('Status:') }}</span>
-                                    <span class="badge {{ $vpn->status === 'active' ? 'bg-success' : 'bg-danger' }}">{{ ucfirst($vpn->status) }}</span>
+                                    <span class="badge {{ $vpn->status === 'active' ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger' }}">{{ ucfirst($vpn->status) }}</span>
                                 </div>
                                 <hr>
                                 <span class="text-muted small d-block mb-2">{{ __('Konfigurasi Output / Link:') }}</span>
-                                <div class="bg-dark text-light rounded-3 p-3 text-break" style="max-height: 250px; overflow-y: auto; font-family: monospace; white-space: pre-wrap; font-size: 0.85rem;">{{ $vpn->config_link ?: 'Tidak ada konfigurasi ditemukan.' }}</div>
+                                <div class="m3-tonal-item p-3 text-break font-monospace" style="max-height: 250px; overflow-y: auto; white-space: pre-wrap; font-size: 0.85rem;">{{ $vpn->config_link ?: 'Tidak ada konfigurasi ditemukan.' }}</div>
                             </div>
                         </div>
                     @endforeach
@@ -210,62 +208,60 @@
                 <hr>
                 <div class="mt-4">
                     @if($order->complaintCase)
-                        <div class="card bg-body-tertiary border-0 shadow-sm" style="border-radius: 12px;">
-                            <div class="card-body p-3">
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <h6 class="fw-bold mb-0 text-dark">
-                                        <i class="fas fa-toolbox text-warning me-2"></i>
-                                        {{ __('Tiket Komplain & Garansi') }}
-                                    </h6>
-                                    @php
-                                        $statusBadge = match($order->complaintCase->status) {
-                                            'new' => ['bg' => 'danger-subtle', 'text' => 'danger', 'label' => 'Baru'],
-                                            'review' => ['bg' => 'warning-subtle', 'text' => 'warning', 'label' => 'Ditinjau'],
-                                            'done' => ['bg' => 'success-subtle', 'text' => 'success', 'label' => 'Selesai'],
-                                            'rejected' => ['bg' => 'secondary-subtle', 'text' => 'secondary', 'label' => 'Ditolak'],
-                                            default => ['bg' => 'secondary-subtle', 'text' => 'secondary', 'label' => $order->complaintCase->status]
-                                        };
-                                    @endphp
-                                    <span class="badge bg-{{ $statusBadge['bg'] }} text-{{ $statusBadge['text'] }} rounded-pill px-3 py-1.5 small">
-                                        {{ $statusBadge['label'] }}
-                                    </span>
-                                </div>
-                                <div class="mb-3">
-                                    <span class="text-muted small d-block">{{ __('No Tiket:') }}</span>
-                                    <span class="fw-bold text-secondary">#{{ $order->complaintCase->complaint_ref }}</span>
-                                </div>
-                                <div class="mb-3">
-                                    <span class="text-muted small d-block">{{ __('Detail Masalah:') }}</span>
-                                    <p class="mb-0 text-dark small bg-body p-2.5 rounded border border-light-subtle">{{ $order->complaintCase->complaint_text }}</p>
-                                </div>
-                                @if($order->complaintCase->status === 'rejected' && $order->complaintCase->rejected_reason)
-                                <div class="alert alert-danger mb-0 py-2.5 px-3 rounded-3 mt-2">
-                                    <h6 class="fw-bold mb-1 small"><i class="fas fa-times-circle me-1"></i>{{ __('Alasan Penolakan Admin:') }}</h6>
-                                    <p class="mb-0 small">{{ $order->complaintCase->rejected_reason }}</p>
-                                </div>
-                                @endif
-                                @if($order->complaintCase->status === 'done' && $order->complaintCase->refund_note)
-                                <div class="alert alert-success mb-0 py-2.5 px-3 rounded-3 mt-2">
-                                    <h6 class="fw-bold mb-1 small"><i class="fas fa-check-circle me-1"></i>{{ __('Catatan Resolusi Admin:') }}</h6>
-                                    <p class="mb-0 small">{{ $order->complaintCase->refund_note }}</p>
-                                </div>
-                                @endif
+                        <div class="m3-tonal-item p-3">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="fw-bold mb-0 text-body">
+                                    <i class="fas fa-toolbox text-warning me-2"></i>
+                                    {{ __('Tiket Komplain & Garansi') }}
+                                </h6>
+                                @php
+                                    $statusBadge = match($order->complaintCase->status) {
+                                        'new' => ['bg' => 'danger-subtle', 'text' => 'danger', 'label' => 'Baru'],
+                                        'review' => ['bg' => 'warning-subtle', 'text' => 'warning', 'label' => 'Ditinjau'],
+                                        'done' => ['bg' => 'success-subtle', 'text' => 'success', 'label' => 'Selesai'],
+                                        'rejected' => ['bg' => 'secondary-subtle', 'text' => 'secondary', 'label' => 'Ditolak'],
+                                        default => ['bg' => 'secondary-subtle', 'text' => 'secondary', 'label' => $order->complaintCase->status]
+                                    };
+                                @endphp
+                                <span class="badge bg-{{ $statusBadge['bg'] }} text-{{ $statusBadge['text'] }} rounded-pill px-3 py-1.5 small">
+                                    {{ $statusBadge['label'] }}
+                                </span>
                             </div>
+                            <div class="mb-3">
+                                <span class="text-muted small d-block">{{ __('No Tiket:') }}</span>
+                                <span class="fw-bold text-secondary font-monospace">#{{ $order->complaintCase->complaint_ref }}</span>
+                            </div>
+                            <div class="mb-3">
+                                <span class="text-muted small d-block">{{ __('Detail Masalah:') }}</span>
+                                <p class="mb-0 text-body small bg-body p-2.5 rounded-3 border" style="border-color: var(--outline-color) !important;">{{ $order->complaintCase->complaint_text }}</p>
+                            </div>
+                            @if($order->complaintCase->status === 'rejected' && $order->complaintCase->rejected_reason)
+                            <div class="alert alert-danger mb-0 py-2.5 px-3 rounded-3 mt-2">
+                                <h6 class="fw-bold mb-1 small"><i class="fas fa-times-circle me-1"></i>{{ __('Alasan Penolakan Admin:') }}</h6>
+                                <p class="mb-0 small">{{ $order->complaintCase->rejected_reason }}</p>
+                            </div>
+                            @endif
+                            @if($order->complaintCase->status === 'done' && $order->complaintCase->refund_note)
+                            <div class="alert alert-success mb-0 py-2.5 px-3 rounded-3 mt-2">
+                                <h6 class="fw-bold mb-1 small"><i class="fas fa-check-circle me-1"></i>{{ __('Catatan Resolusi Admin:') }}</h6>
+                                <p class="mb-0 small">{{ $order->complaintCase->refund_note }}</p>
+                            </div>
+                            @endif
                         </div>
                     @else
                         @if($order->is_warranty_active)
-                        <div class="d-flex align-items-center justify-content-between bg-light-subtle border border-dashed border-secondary-subtle rounded-3 p-3 mt-3">
+                        <div class="d-flex align-items-center justify-content-between m3-tonal-item p-3 mt-3 flex-wrap gap-2">
                             <div>
-                                <h6 class="fw-bold mb-1"><i class="fas fa-shield-alt text-primary me-2"></i>{{ __('Garansi Toko Aktif') }}</h6>
+                                <h6 class="fw-bold mb-1 text-body"><i class="fas fa-shield-alt text-primary me-2"></i>{{ __('Garansi Toko Aktif') }}</h6>
                                 <p class="text-muted small mb-0">{{ __('Batas akhir:') }} <strong>{{ $order->warranty_expires_at->format('d M Y H:i') }}</strong></p>
                                 <p class="text-muted small mb-0 mt-1">{{ __('Apakah akun digital yang Anda beli bermasalah? Ajukan klaim garansi di sini.') }}</p>
                             </div>
-                            <button type="button" class="btn btn-warning rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#complaintModal">
+                            <button type="button" class="btn btn-warning rounded-pill px-4 fw-semibold" data-bs-toggle="modal" data-bs-target="#complaintModal">
                                 <i class="fas fa-toolbox me-2"></i>{{ __('Ajukan Komplain') }}
                             </button>
                         </div>
                         @else
-                        <div class="d-flex align-items-center justify-content-between bg-body-secondary border border-dashed border-secondary-subtle rounded-3 p-3 mt-3">
+                        <div class="d-flex align-items-center justify-content-between m3-tonal-item p-3 mt-3 flex-wrap gap-2">
                             <div>
                                 <h6 class="fw-bold mb-1 text-secondary"><i class="fas fa-shield-alt me-2 text-secondary"></i>{{ __('Garansi Toko Kedaluwarsa') }}</h6>
                                 @if($order->warranty_expires_at)
@@ -287,20 +283,20 @@
     </div>
 
     <div class="col-lg-4">
-        <div class="card border-0 shadow-sm" style="border-radius: 16px;">
+        <div class="card">
             <div class="card-body p-4">
-                <h6 class="fw-bold mb-3">{{ __('Ringkasan') }}</h6>
+                <h6 class="fw-bold mb-3 text-body">{{ __('Ringkasan') }}</h6>
                 <div class="d-flex justify-content-between mb-2">
                     <span class="text-muted">{{ __('Harga Satuan') }}</span>
-                    <span>Rp {{ number_format(($order->total_price / max(1, $order->quantity)), 0, ',', '.') }}</span>
+                    <span class="text-body">Rp {{ number_format(($order->total_price / max(1, $order->quantity)), 0, ',', '.') }}</span>
                 </div>
                 <div class="d-flex justify-content-between mb-2">
                     <span class="text-muted">{{ __('Jumlah') }}</span>
-                    <span>× {{ $order->quantity }}</span>
+                    <span class="text-body">× {{ $order->quantity }}</span>
                 </div>
                 <hr>
-                <div class="d-flex justify-content-between">
-                    <span class="fw-bold">{{ __('Total') }}</span>
+                <div class="d-flex justify-content-between align-items-baseline">
+                    <span class="fw-bold text-body">{{ __('Total') }}</span>
                     <span class="fw-bold product-price">{{ $order->formatted_total }}</span>
                 </div>
             </div>

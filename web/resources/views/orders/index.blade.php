@@ -7,7 +7,7 @@
 {{-- Header --}}
 <div class="d-flex align-items-center justify-content-between mb-3">
     <div class="d-flex align-items-center gap-2">
-        <a href="{{ route('dashboard') }}" class="btn btn-light rounded-circle shadow-sm border d-inline-flex align-items-center justify-content-center" style="width: 38px; height: 38px;" title="{{ __('Kembali ke Home') }}">
+        <a href="{{ route('dashboard') }}" class="btn btn-light rounded-circle border d-inline-flex align-items-center justify-content-center" style="width: 38px; height: 38px;" title="{{ __('Kembali ke Home') }}">
             <i class="fas fa-arrow-left text-body"></i>
         </a>
         <div>
@@ -21,26 +21,26 @@
     </a>
 </div>
 
-{{-- Search & Filter Controls --}}
-<div class="card border-0 shadow-sm mb-3" style="border-radius: 14px;">
-    <div class="card-body p-2 p-md-3">
+{{-- Search & Filter Controls (Flat Material 3 Outlined Controls) --}}
+<div class="card mb-3">
+    <div class="card-body p-2.5 p-md-3">
         <form action="{{ route('orders.index') }}" method="GET" class="row g-2 align-items-center">
             @if(request('status'))
                 <input type="hidden" name="status" value="{{ request('status') }}">
             @endif
             <div class="col">
                 <div class="input-group input-group-sm">
-                    <span class="input-group-text bg-light border-0 ps-3"><i class="fas fa-search text-muted"></i></span>
-                    <input type="text" name="search" class="form-control border-0 bg-light py-2" placeholder="{{ __('Cari nama produk, no. pesanan, atau nominal...') }}" value="{{ request('search') }}">
+                    <span class="input-group-text ps-3"><i class="fas fa-search"></i></span>
+                    <input type="text" name="search" class="form-control py-2" placeholder="{{ __('Cari nama produk, no. pesanan, atau nominal...') }}" value="{{ request('search') }}">
                     @if(request('search'))
-                        <a href="{{ route('orders.index', request('status') ? ['status' => request('status')] : []) }}" class="btn btn-light border-0 px-2.5 text-muted d-flex align-items-center" title="{{ __('Hapus Pencarian') }}">
+                        <a href="{{ route('orders.index', request('status') ? ['status' => request('status')] : []) }}" class="btn btn-light px-2.5 text-muted d-flex align-items-center" title="{{ __('Hapus Pencarian') }}">
                             <i class="fas fa-times-circle"></i>
                         </a>
                     @endif
                 </div>
             </div>
             <div class="col-auto">
-                <button type="submit" class="btn btn-sm btn-primary rounded-pill px-3 py-1.5 fw-semibold">
+                <button type="submit" class="btn btn-sm btn-primary rounded-pill px-3.5 py-1.5 fw-semibold">
                     {{ __('Cari') }}
                 </button>
             </div>
@@ -48,7 +48,7 @@
     </div>
 </div>
 
-{{-- Simplified Filter Tabs (Shopee Style) --}}
+{{-- Simplified Filter Tabs (Material 3 Filter Chips) --}}
 <div class="category-scroll-container mb-3">
     <a href="{{ route('orders.index', array_filter(['search' => request('search')])) }}"
        class="btn btn-sm rounded-pill px-3 py-1.5 fw-semibold text-nowrap flex-shrink-0 {{ is_null($status) ? 'btn-primary' : 'btn-outline-secondary' }}">
@@ -69,13 +69,13 @@
 </div>
 
 {{-- Orders List Container --}}
-<div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 16px;">
+<div class="card overflow-hidden">
     <div class="card-body p-0" id="ordersMainCardBody">
         {{-- Skeleton Shimmer Placeholder for Order Transitions --}}
         <div class="d-none" id="ordersSkeletonContainer">
             <div class="p-3">
                 @for($sk = 0; $sk < 3; $sk++)
-                <div class="card border-0 shadow-sm p-3 mb-2.5" style="border-radius: 12px;">
+                <div class="card p-3 mb-2.5">
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <div class="skeleton-shimmer" style="height: 14px; width: 100px;"></div>
                         <div class="skeleton-shimmer rounded-pill" style="height: 20px; width: 65px;"></div>
@@ -94,7 +94,7 @@
 
         <div id="ordersContentWrapper">
         @if($orders->count() > 0)
-        {{-- Shopee-style Compact Card List --}}
+        {{-- Flat Material 3 Compact Order Card List --}}
         <div class="d-flex flex-column gap-2.5 p-2.5 p-md-3">
             @foreach($orders as $order)
             @php
@@ -106,26 +106,26 @@
             @endphp
 
             {{-- Compact Clickable Card --}}
-            <div class="card border border-subtle shadow-sm rounded-3 overflow-hidden shopee-order-card order-transaction-card"
+            <div class="card rounded-3 overflow-hidden shopee-order-card order-transaction-card"
                  role="button"
                  tabindex="0"
                  onclick="window.location.href='{{ $orderUrl }}'"
                  onkeydown="if(event.key==='Enter'||event.key===' ') { event.preventDefault(); window.location.href='{{ $orderUrl }}'; }"
-                 style="cursor: pointer; transition: all 0.15s ease-in-out;">
+                 style="cursor: pointer; transition: border-color 0.15s ease;">
 
                 {{-- Header Bar: Store Info & Status --}}
-                <div class="card-header bg-light bg-opacity-75 border-bottom px-3 py-2 d-flex align-items-center justify-content-between gap-2">
+                <div class="card-header border-bottom px-3 py-2 d-flex align-items-center justify-content-between gap-2" style="background: var(--surface-container-low);">
                     <div class="d-flex align-items-center gap-2 text-truncate">
                         <i class="fas fa-store text-primary small"></i>
                         @if($sellerId)
                             <a href="{{ route('sellers.show', $sellerId) }}" 
-                               class="fw-bold text-dark text-decoration-none hover-primary small text-truncate"
+                               class="fw-bold text-body text-decoration-none hover-primary small text-truncate"
                                onclick="event.stopPropagation();"
                                title="{{ __('Kunjungi Toko') }}">
                                 {{ $sellerName }}
                             </a>
                         @else
-                            <span class="fw-bold text-dark small text-truncate">{{ $sellerName }}</span>
+                            <span class="fw-bold text-body small text-truncate">{{ $sellerName }}</span>
                         @endif
                         <span class="text-muted d-none d-sm-inline" style="font-size: 0.72rem;">|</span>
                         <span class="text-muted font-monospace small d-none d-sm-inline">#{{ $order->reference }}</span>
@@ -148,7 +148,7 @@
                 {{-- Body: Compact Product Item --}}
                 <div class="card-body p-2.5 p-md-3">
                     <div class="d-flex align-items-center gap-2.5">
-                        <div class="rounded-3 bg-light border p-1.5 d-flex align-items-center justify-content-center text-primary flex-shrink-0" style="width: 50px; height: 50px;">
+                        <div class="rounded-3 border p-1.5 d-flex align-items-center justify-content-center text-primary flex-shrink-0" style="width: 50px; height: 50px; background: var(--surface-container-low); border-color: var(--outline-color) !important;">
                             @if($product && $product->image_url)
                                 <img src="{{ $product->image_url }}" alt="{{ $product->name }}" class="img-fluid rounded-2" style="max-height: 40px; object-fit: contain;">
                             @else
@@ -156,7 +156,7 @@
                             @endif
                         </div>
                         <div class="flex-grow-1 min-w-0">
-                            <h6 class="fw-semibold text-dark mb-1 text-truncate" style="font-size: 0.9rem;" title="{{ $product->name ?? '-' }}">
+                            <h6 class="fw-semibold text-body mb-1 text-truncate" style="font-size: 0.9rem;" title="{{ $product->name ?? '-' }}">
                                 {{ $product->name ?? __('Produk Tidak Tersedia') }}
                             </h6>
                             <div class="text-muted small d-flex flex-wrap align-items-center gap-1.5" style="font-size: 0.76rem;">
@@ -175,7 +175,7 @@
                         </div>
                     </div>
 
-                    {{-- Shopee-style Dedicated Total Row (Lega, jelas, tidak pernah terpotong) --}}
+                    {{-- Dedicated Total Row --}}
                     <div class="d-flex justify-content-between align-items-center pt-2 mt-2 border-top">
                         <span class="text-muted small" style="font-size: 0.76rem;">
                             {{ $order->quantity }} {{ __('Produk') }}
@@ -188,7 +188,7 @@
                 </div>
 
                 {{-- Footer Bar: Contextual Actions --}}
-                <div class="card-footer bg-white border-top px-3 py-2 d-flex align-items-center justify-content-between gap-2">
+                <div class="card-footer border-top px-3 py-2 d-flex align-items-center justify-content-between gap-2" style="background: var(--surface-bg);">
                     <div class="text-muted" style="font-size: 0.75rem;">
                         <span class="d-none d-sm-inline">{{ $order->created_at->format('d M Y, H:i') }} &bull; </span>
                         @if($order->status === 'pending_payment')
@@ -212,7 +212,7 @@
                                     <i class="fas fa-times me-1"></i>{{ __('Batal') }}
                                 </button>
                             </form>
-                            <a href="{{ route('checkout.success', ['order_ref' => $order->order_ref]) }}" class="btn btn-sm btn-success rounded-pill px-3 py-1 fw-bold shadow-sm" style="font-size: 0.78rem;">
+                            <a href="{{ route('checkout.success', ['order_ref' => $order->order_ref]) }}" class="btn btn-sm btn-success rounded-pill px-3 py-1 fw-bold" style="font-size: 0.78rem;">
                                 <i class="fas fa-wallet me-1"></i>{{ __('Bayar Sekarang') }}
                             </a>
                         @elseif($order->status === 'delivered' || $order->status === 'paid')

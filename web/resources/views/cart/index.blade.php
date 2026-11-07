@@ -6,7 +6,7 @@
 @section('content')
 <div class="d-flex align-items-center justify-content-between mb-3">
     <div class="d-flex align-items-center gap-2">
-        <a href="{{ route('catalog.index') }}" class="btn btn-light rounded-circle shadow-sm border d-inline-flex align-items-center justify-content-center" style="width: 38px; height: 38px;" title="{{ __('Kembali ke Katalog') }}">
+        <a href="{{ route('catalog.index') }}" class="btn btn-light rounded-circle border d-inline-flex align-items-center justify-content-center" style="width: 38px; height: 38px;" title="{{ __('Kembali ke Katalog') }}">
             <i class="fas fa-arrow-left text-body"></i>
         </a>
         <div>
@@ -18,16 +18,16 @@
 
 <div class="row g-4">
     <div class="col-lg-8">
-        <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
+        <div class="card mb-4">
             <div class="card-body p-4">
-                <h5 class="fw-bold mb-4 d-none d-md-block"><i class="fas fa-shopping-cart text-primary me-2"></i>{{ __('Keranjang Belanja Anda') }}</h5>
+                <h5 class="fw-bold mb-4 d-none d-md-block text-body"><i class="fas fa-shopping-cart text-primary me-2"></i>{{ __('Keranjang Belanja Anda') }}</h5>
 
                 @if($cartItems->isEmpty())
                 <div class="text-center py-5 text-muted">
                     <div class="mb-3">
                         <i class="fas fa-shopping-basket fs-1 text-secondary opacity-50"></i>
                     </div>
-                    <h6 class="fw-bold">{{ __('Keranjang Anda Masih Kosong') }}</h6>
+                    <h6 class="fw-bold text-body">{{ __('Keranjang Anda Masih Kosong') }}</h6>
                     <p class="small text-muted mb-4">{{ __('Temukan produk digital berkualitas di katalog kami.') }}</p>
                     <a href="{{ route('catalog.index') }}" class="btn btn-primary rounded-pill px-4">
                         <i class="fas fa-search me-1"></i> {{ __('Telusuri Produk') }}
@@ -36,12 +36,12 @@
                 @else
                 {{-- Desktop Table View --}}
                 <div class="table-responsive d-none d-md-block">
-                    <table class="table align-middle border-0 mb-0">
+                    <table class="table align-middle mb-0">
                         <thead>
-                            <tr class="text-muted small">
-                                <th scope="col" class="border-0 pb-3" style="width: 50%;">{{ __('PRODUK') }}</th>
-                                <th scope="col" class="border-0 pb-3 text-center" style="width: 25%;">{{ __('JUMLAH') }}</th>
-                                <th scope="col" class="border-0 pb-3 text-end" style="width: 25%;">{{ __('SUBTOTAL') }}</th>
+                            <tr>
+                                <th scope="col" class="pb-3" style="width: 50%;">{{ __('PRODUK') }}</th>
+                                <th scope="col" class="pb-3 text-center" style="width: 25%;">{{ __('JUMLAH') }}</th>
+                                <th scope="col" class="pb-3 text-end" style="width: 25%;">{{ __('SUBTOTAL') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -51,9 +51,9 @@
                                 $stockCount = $item->product->stockUnits()->where('is_sold', false)->whereNull('sold_order_id')->count();
                             @endphp
                             <tr class="align-middle" data-cart-item-id="{{ $item->id }}" data-price="{{ $item->product->price }}" data-qty="{{ $item->quantity }}" data-max-stock="{{ $stockCount }}">
-                                <td class="border-secondary-subtle py-3">
+                                <td class="py-3">
                                     <div class="d-flex align-items-center gap-3">
-                                        <div class="d-flex align-items-center justify-content-center bg-light rounded-3 text-primary" style="width: 50px; height: 50px; border: 1px solid var(--bs-border-color);">
+                                        <div class="d-flex align-items-center justify-content-center m3-tonal-item text-primary" style="width: 50px; height: 50px;">
                                             <i class="fas fa-box-open fs-5"></i>
                                         </div>
                                         <div>
@@ -62,12 +62,12 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td class="border-secondary-subtle py-3 text-center">
-                                    <div class="d-inline-flex align-items-center bg-light rounded-pill border p-1" style="height: 38px;">
+                                <td class="py-3 text-center">
+                                    <div class="d-inline-flex align-items-center m3-tonal-item rounded-pill p-1" style="height: 38px;">
                                         <button type="button" class="btn btn-sm btn-link text-decoration-none px-2 py-0 text-muted btn-stepper-touch" data-action="decrement" data-id="{{ $item->id }}" {{ $item->quantity <= 1 ? 'disabled' : '' }}>
                                             <i class="fas fa-minus fs-6"></i>
                                         </button>
-                                        <span class="px-2 fw-bold text-dark cart-qty-val-{{ $item->id }}" style="min-width: 24px;">{{ $item->quantity }}</span>
+                                        <span class="px-2 fw-bold text-body cart-qty-val-{{ $item->id }}" style="min-width: 24px;">{{ $item->quantity }}</span>
                                         <button type="button" class="btn btn-sm btn-link text-decoration-none px-2 py-0 text-muted btn-stepper-touch" data-action="increment" data-id="{{ $item->id }}">
                                             <i class="fas fa-plus fs-6"></i>
                                         </button>
@@ -82,7 +82,7 @@
                                         </form>
                                     </div>
                                 </td>
-                                <td class="border-secondary-subtle py-3 text-end fw-bold cart-subtotal-val-{{ $item->id }}">
+                                <td class="py-3 text-end fw-bold text-body cart-subtotal-val-{{ $item->id }}">
                                     Rp{{ number_format($item->product->price * $item->quantity, 0, ',', '.') }}
                                 </td>
                             </tr>
@@ -99,9 +99,9 @@
                     @php
                         $stockCount = $item->product->stockUnits()->where('is_sold', false)->whereNull('sold_order_id')->count();
                     @endphp
-                    <div class="card border border-secondary-subtle rounded-4 p-3 mb-3 shadow-none bg-body" data-cart-item-id="{{ $item->id }}" data-price="{{ $item->product->price }}" data-qty="{{ $item->quantity }}" data-max-stock="{{ $stockCount }}">
+                    <div class="card p-3 mb-3" data-cart-item-id="{{ $item->id }}" data-price="{{ $item->product->price }}" data-qty="{{ $item->quantity }}" data-max-stock="{{ $stockCount }}">
                         <div class="d-flex gap-3 mb-3">
-                            <div class="d-flex align-items-center justify-content-center bg-light rounded-3 text-primary flex-shrink-0" style="width: 54px; height: 54px; border: 1px solid var(--glass-border);">
+                            <div class="d-flex align-items-center justify-content-center m3-tonal-item text-primary flex-shrink-0" style="width: 54px; height: 54px;">
                                 <i class="fas fa-box-open fs-4"></i>
                             </div>
                             <div class="flex-grow-1 overflow-hidden">
@@ -114,11 +114,11 @@
                         
                         <div class="d-flex align-items-center justify-content-between pt-2 border-top">
                             <div class="d-flex align-items-center gap-2">
-                                <div class="d-inline-flex align-items-center bg-light rounded-pill border p-1" style="height: 38px;">
+                                <div class="d-inline-flex align-items-center m3-tonal-item rounded-pill p-1" style="height: 38px;">
                                     <button type="button" class="btn btn-sm btn-link text-decoration-none px-2 py-0 text-muted btn-stepper-touch" data-action="decrement" data-id="{{ $item->id }}" {{ $item->quantity <= 1 ? 'disabled' : '' }}>
                                         <i class="fas fa-minus fs-6"></i>
                                     </button>
-                                    <span class="px-2 fw-bold text-dark cart-qty-val-{{ $item->id }}" style="min-width: 24px; font-size: 0.9rem;">{{ $item->quantity }}</span>
+                                    <span class="px-2 fw-bold text-body cart-qty-val-{{ $item->id }}" style="min-width: 24px; font-size: 0.9rem;">{{ $item->quantity }}</span>
                                     <button type="button" class="btn btn-sm btn-link text-decoration-none px-2 py-0 text-muted btn-stepper-touch" data-action="increment" data-id="{{ $item->id }}">
                                         <i class="fas fa-plus fs-6"></i>
                                     </button>
@@ -147,19 +147,19 @@
 
     @if(!$cartItems->isEmpty())
     <div class="col-lg-4">
-        <div class="card border-0 shadow-sm" style="border-radius: 16px;">
+        <div class="card">
             <div class="card-body p-4">
-                <h5 class="fw-bold mb-4">{{ __('Ringkasan Belanja') }}</h5>
+                <h5 class="fw-bold mb-4 text-body">{{ __('Ringkasan Belanja') }}</h5>
                 
                 <div class="d-flex justify-content-between mb-3 text-muted">
                     <span>Total Barang (<span class="cart-summary-total-qty">{{ $cartItems->sum('quantity') }} unit</span>)</span>
-                    <span class="cart-summary-total-price">Rp{{ number_format($subtotal, 0, ',', '.') }}</span>
+                    <span class="cart-summary-total-price text-body fw-medium">Rp{{ number_format($subtotal, 0, ',', '.') }}</span>
                 </div>
                 
                 <hr class="my-3">
 
                 <div class="d-flex justify-content-between align-items-center mb-4">
-                    <span class="fw-bold">{{ __('Estimasi Total') }}</span>
+                    <span class="fw-bold text-body">{{ __('Estimasi Total') }}</span>
                     <span class="fs-4 fw-bold text-primary cart-summary-total-price">Rp{{ number_format($subtotal, 0, ',', '.') }}</span>
                 </div>
 

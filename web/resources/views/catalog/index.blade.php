@@ -7,29 +7,29 @@
 @section('content')
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
     <div>
-        <h4 class="fw-bold mb-1">{{ __('Katalog Produk') }}</h4>
+        <h4 class="fw-bold mb-1 text-body">{{ __('Katalog Produk') }}</h4>
         <p class="text-muted mb-0">{{ __(':count produk tersedia', ['count' => $products->count()]) }}</p>
     </div>
-    <div class="d-flex align-items-center gap-2" style="max-width: 320px; width: 100%;">
+    <div class="d-flex align-items-center gap-2" style="max-width: 340px; width: 100%;">
         <div class="input-group input-group-sm">
-            <span class="input-group-text bg-body border-end-0 rounded-start-pill ps-3"><i class="fas fa-search text-muted"></i></span>
-            <input type="text" id="catalogSearchInput" class="form-control border-start-0 rounded-end-pill pe-3" placeholder="{{ __('Cari nama produk...') }}">
+            <span class="input-group-text ps-3"><i class="fas fa-search"></i></span>
+            <input type="text" id="catalogSearchInput" class="form-control pe-3" placeholder="{{ __('Cari nama produk...') }}">
         </div>
     </div>
 </div>
 
-{{-- Horizontal Scroll Category Filter Chips --}}
+{{-- Horizontal Scroll Category Filter Chips (Material 3 Filter Chips) --}}
 <div class="category-chips-wrapper mb-3 pb-1 d-flex gap-2 overflow-x-auto text-nowrap" style="-webkit-overflow-scrolling: touch; scrollbar-width: none;">
-    <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 py-1 fw-bold category-filter-chip active" data-filter="all">
+    <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 py-1.5 fw-semibold category-filter-chip active" data-filter="all">
         <i class="fas fa-th-large me-1"></i> {{ __('Semua') }}
     </button>
-    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1 fw-semibold category-filter-chip" data-filter="ready">
+    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1.5 fw-semibold category-filter-chip" data-filter="ready">
         <i class="fas fa-check-circle text-success me-1"></i> {{ __('Ready Stok') }}
     </button>
-    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1 fw-semibold category-filter-chip" data-filter="account">
+    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1.5 fw-semibold category-filter-chip" data-filter="account">
         <i class="fas fa-user-shield text-info me-1"></i> {{ __('Akun Digital') }}
     </button>
-    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1 fw-semibold category-filter-chip" data-filter="vpn">
+    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1.5 fw-semibold category-filter-chip" data-filter="vpn">
         <i class="fas fa-network-wired text-warning me-1"></i> {{ __('VPN / SSH') }}
     </button>
 </div>
@@ -38,7 +38,7 @@
 <div class="row g-2 g-md-4 d-none" id="catalogSkeletonGrid">
     @for($s = 0; $s < 6; $s++)
     <div class="col-6 col-lg-4 col-xl-3">
-        <div class="card product-card h-100 p-2 p-md-3 border-0 shadow-sm" style="border-radius: 16px;">
+        <div class="card product-card h-100 p-2 p-md-3" style="border-radius: 16px;">
             <div class="skeleton-shimmer w-100 mb-2.5" style="height: 125px; border-radius: 12px;"></div>
             <div class="skeleton-shimmer mb-1.5" style="height: 16px; width: 85%;"></div>
             <div class="skeleton-shimmer mb-3" style="height: 12px; width: 50%;"></div>
