@@ -97,7 +97,7 @@
         {{-- Left: Pesanan Terbaru --}}
         <div class="col-lg-8 col-12">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h2 class="h5 fw-bold mb-0 text-body" style="font-family: var(--font-google-sans-display); font-size: 1.25rem;">
+                <h2 class="m3-section-title mb-0">
                     {{ __('Pesanan terbaru') }}
                 </h2>
                 <a href="{{ route('orders.index') }}" @guest data-guest-modal="true" data-feature-name="riwayat pesanan" @endguest class="text-decoration-none small fw-semibold text-primary">
@@ -167,7 +167,7 @@
 
         {{-- Right: Akses Cepat --}}
         <div class="col-lg-4 col-12">
-            <h2 class="h5 fw-bold mb-3 text-body" style="font-family: var(--font-google-sans-display); font-size: 1.25rem;">
+            <h2 class="m3-section-title mb-3">
                 {{ __('Akses cepat') }}
             </h2>
 

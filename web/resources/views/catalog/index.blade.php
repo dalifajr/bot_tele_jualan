@@ -8,7 +8,7 @@
 <div class="d-flex flex-column gap-3">
     {{-- Header Katalog (Figma M3 Style) --}}
     <div>
-        <h1 class="h3 fw-bold mb-1 text-body" style="font-family: var(--font-google-sans-display); font-size: 1.85rem;">
+        <h1 class="m3-page-title mb-1">
             {{ __('Katalog produk') }}
         </h1>
         <p class="text-secondary small mb-0" style="font-size: 0.92rem;">

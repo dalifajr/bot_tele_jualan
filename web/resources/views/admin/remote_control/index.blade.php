@@ -88,7 +88,7 @@
         transition: all 0.2s;
         cursor: pointer;
         padding: 6px 12px;
-        border-radius: 8px;
+        border-radius: var(--radius-sm, 12px);
     }
     .nav-icon-btn:hover {
         color: #38bdf8;

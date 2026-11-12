@@ -356,7 +356,7 @@
             <form action="{{ route('orders.complaint', $order->id) }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <div class="modal-body p-4">
-                    <div class="alert alert-info py-2 px-3 small border-0 mb-3" style="border-radius: 8px;">
+                    <div class="alert alert-info py-2 px-3 small border-0 mb-3" style="border-radius: var(--radius-md, 16px);">
                         <i class="fas fa-info-circle me-1"></i> <b>{{ __('Kebijakan Garansi:') }}</b> {{ __('Harap jelaskan kendala yang dialami secara rinci (misal: kredensial salah, pack belum diklaim, dsb).') }}
                     </div>
                     <div class="mb-3">

@@ -101,7 +101,7 @@
                     @forelse($coupons as $coupon)
                     <tr>
                         <td class="px-4">
-                            <span class="badge bg-primary-subtle text-primary font-monospace fs-6 px-3 py-2" style="border-radius: 8px;">
+                            <span class="badge bg-primary-subtle text-primary font-monospace fs-6 px-3 py-2 rounded-pill">
                                 {{ $coupon->code }}
                             </span>
                         </td>

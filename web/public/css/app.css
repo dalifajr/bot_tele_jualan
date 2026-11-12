@@ -78,18 +78,19 @@
     --total-header-height: calc(var(--header-height) + var(--banner-height));
     --sidebar-width: 264px;
 
-    /* Typography Tokens */
-    --font-google-sans: "Google Sans", "Google Sans Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    --font-google-sans-display: "Google Sans Display", "Google Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    --font-google-sans-mono: "Google Sans Mono", "Roboto Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    /* Typography Tokens - Poppins (M3 Expressive Figma Standard) */
+    --font-poppins: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-google-sans: var(--font-poppins);
+    --font-google-sans-display: var(--font-poppins);
+    --font-google-sans-mono: "Roboto Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
     /* Backward compatibility aliases */
-    --font-aptos-sans: var(--font-google-sans);
-    --font-aptos-display: var(--font-google-sans-display);
+    --font-aptos-sans: var(--font-poppins);
+    --font-aptos-display: var(--font-poppins);
     --font-aptos-mono: var(--font-google-sans-mono);
 
-    --bs-font-sans-serif: var(--font-google-sans);
-    --bs-body-font-family: var(--font-google-sans);
+    --bs-font-sans-serif: var(--font-poppins);
+    --bs-body-font-family: var(--font-poppins);
     --bs-font-monospace: var(--font-google-sans-mono);
 
     /* Flat Material You Concentric Corner Radius Scale (Android 17 / Figma M3) */
@@ -462,20 +463,20 @@ th {
     display: inline-block;
 }
 
-/* Balanced Google Sans Heading & Utility Font-Size Scale */
-h1, .h1 { font-size: 1.625rem; line-height: 2.125rem; font-weight: 600; }  /* 26px */
-h2, .h2 { font-size: 1.375rem; line-height: 1.85rem;  font-weight: 600; }  /* 22px */
-h3, .h3 { font-size: 1.1875rem; line-height: 1.625rem; font-weight: 600; } /* 19px */
-h4, .h4 { font-size: 1.0625rem; line-height: 1.5rem;   font-weight: 600; } /* 17px */
-h5, .h5 { font-size: 0.96875rem; line-height: 1.4rem;  font-weight: 600; } /* 15.5px */
-h6, .h6 { font-size: 0.875rem; line-height: 1.3rem;    font-weight: 600; } /* 14px */
+/* Balanced M3 Poppins Heading & Utility Font-Size Scale */
+h1, .h1 { font-size: 1.35rem; line-height: 1.35; font-weight: 700; }  /* ~21.6px - Compact & modern */
+h2, .h2 { font-size: 1.1875rem; line-height: 1.35; font-weight: 700; }  /* ~19px */
+h3, .h3 { font-size: 1.0625rem; line-height: 1.4; font-weight: 600; } /* ~17px */
+h4, .h4 { font-size: 0.96875rem; line-height: 1.45; font-weight: 600; } /* ~15.5px */
+h5, .h5 { font-size: 0.88rem; line-height: 1.45; font-weight: 600; } /* ~14px */
+h6, .h6 { font-size: 0.8125rem; line-height: 1.45; font-weight: 600; } /* ~13px */
 
-.fs-1 { font-size: 1.875rem !important; }
-.fs-2 { font-size: 1.5rem !important; }
-.fs-3 { font-size: 1.25rem !important; }
-.fs-4 { font-size: 1.125rem !important; }
-.fs-5 { font-size: 1rem !important; }
-.fs-6 { font-size: 0.9375rem !important; } /* 15px — Never larger than card titles */
+.fs-1 { font-size: 1.5rem !important; }
+.fs-2 { font-size: 1.3rem !important; }
+.fs-3 { font-size: 1.15rem !important; }
+.fs-4 { font-size: 1.05rem !important; }
+.fs-5 { font-size: 0.95rem !important; }
+.fs-6 { font-size: 0.85rem !important; } /* ~13.6px — Compact & clear */
 
 code, pre, kbd, samp, .font-monospace {
     font-family: var(--font-google-sans-mono) !important;
@@ -1022,20 +1023,20 @@ a:hover {
     display: none !important;
 }
 
-/* === CARD GLOBAL (GOOGLE CLOUD CONSOLE 8PX OUTLINED CARD) === */
+/* === CARD GLOBAL (MATERIAL DESIGN 3 EXPRESSIVE TONAL CARD) === */
 .card {
-    background-color: var(--cm-sys-color-surface);
+    background-color: var(--surface-container-lowest);
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
-    border: 1px solid var(--cm-sys-color-hairline) !important;
-    border-radius: 8px !important;
+    border: 1px solid var(--outline-variant) !important;
+    border-radius: var(--radius-lg, 20px) !important;
     box-shadow: none !important;
     transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 
 /* Enforce surface background ONLY on cards without custom background styles or color variants */
 .card:not([style*="background"]):not([style*="background-color"]):not(.bg-primary):not(.bg-secondary):not(.bg-success):not(.bg-danger):not(.bg-warning):not(.bg-info):not(.bg-dark):not(.bg-gradient):not(.seller-stat-card-gradient) {
-    background: var(--cm-sys-color-surface) !important;
+    background: var(--surface-container-lowest) !important;
 }
 
 /* Seller Dashboard & Finance Gradient Cards - Preserved with optimal contrast in both Light & Dark modes */
@@ -1166,26 +1167,43 @@ a:hover {
 }
 
 .m3-dash-headline {
-    font-family: var(--font-google-sans-display);
-    font-size: 2.125rem;
+    font-family: var(--font-poppins);
+    font-size: 1.5rem;
     font-weight: 700;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.01em;
     color: var(--on-surface);
-    margin-bottom: 6px;
-    line-height: 1.15;
+    margin-bottom: 4px;
+    line-height: 1.25;
 }
 
 @media (max-width: 576px) {
     .m3-dash-headline {
-        font-size: 1.625rem;
+        font-size: 1.25rem;
     }
 }
 
 .m3-dash-subtitle {
-    font-family: var(--font-google-sans);
+    font-family: var(--font-poppins);
     font-size: 0.9375rem;
     color: var(--on-surface-variant);
     margin-bottom: 16px;
+}
+
+.m3-page-title {
+    font-family: var(--font-poppins);
+    font-size: 1.35rem;
+    font-weight: 700;
+    line-height: 1.35;
+    letter-spacing: -0.01em;
+    color: var(--on-surface);
+}
+
+.m3-section-title {
+    font-family: var(--font-poppins);
+    font-size: 1.125rem;
+    font-weight: 700;
+    line-height: 1.35;
+    color: var(--on-surface);
 }
 
 .m3-balance-card {
@@ -1207,19 +1225,19 @@ a:hover {
 }
 
 .m3-balance-val {
-    font-family: var(--font-google-sans-display);
-    font-size: 1.85rem;
+    font-family: var(--font-poppins);
+    font-size: 1.45rem;
     font-weight: 700;
     color: var(--on-surface);
     letter-spacing: -0.01em;
-    margin: 8px 0 16px 0;
+    margin: 6px 0 12px 0;
 }
 
 .m3-dash-metric-card {
     background: var(--surface-container-low);
     border: 1px solid var(--outline-variant);
     border-radius: var(--radius-lg) !important;
-    padding: 18px 20px;
+    padding: 16px 18px;
     text-decoration: none !important;
     display: flex;
     flex-direction: column;
@@ -1234,12 +1252,12 @@ a:hover {
 }
 
 .m3-dash-metric-val {
-    font-family: var(--font-google-sans-display);
-    font-size: 1.75rem;
+    font-family: var(--font-poppins);
+    font-size: 1.35rem;
     font-weight: 700;
     color: var(--on-surface);
     line-height: 1;
-    margin: 12px 0 0 0;
+    margin: 8px 0 0 0;
 }
 
 .m3-order-row-card {
@@ -1850,7 +1868,7 @@ ul.nav-pills,
 .product-card:hover {
     border-color: var(--primary) !important;
     transform: none !important;
-    box-shadow: 0 2px 8px rgba(11, 87, 208, 0.1) !important;
+    box-shadow: 0 4px 12px rgba(101, 85, 143, 0.12) !important;
 }
 
 .product-badge {
@@ -2389,27 +2407,27 @@ ul.nav-pills,
 }
 
 [data-bs-theme="dark"] .card:not([style*="background"]):not([style*="background-color"]):not(.bg-primary):not(.bg-secondary):not(.bg-success):not(.bg-danger):not(.bg-warning):not(.bg-info):not(.bg-dark):not(.bg-gradient):not(.seller-stat-card-gradient) {
-    background-color: var(--cm-sys-color-surface, #1f1f1f) !important;
-    border-color: var(--cm-sys-color-hairline, #3c4043) !important;
-    color: var(--cm-sys-color-on-surface, #e8eaed) !important;
+    background-color: var(--surface-container-low, #1D1B20) !important;
+    border-color: var(--outline-variant, #49454F) !important;
+    color: var(--on-surface, #E6E0E9) !important;
 }
 
 [data-bs-theme="dark"] .modal-content {
-    background-color: var(--cm-sys-color-surface, #1f1f1f) !important;
-    border: 1px solid var(--cm-sys-color-hairline, #3c4043) !important;
-    color: var(--cm-sys-color-on-surface, #e8eaed) !important;
+    background-color: var(--surface-container-low, #1D1B20) !important;
+    border: 1px solid var(--outline-variant, #49454F) !important;
+    color: var(--on-surface, #E6E0E9) !important;
 }
 
 [data-bs-theme="dark"] .modal-header,
 [data-bs-theme="dark"] .modal-footer {
-    border-color: var(--cm-sys-color-hairline, #3c4043) !important;
+    border-color: var(--outline-variant, #49454F) !important;
     background-color: transparent !important;
 }
 
 [data-bs-theme="dark"] .dropdown-menu {
-    background-color: var(--cm-sys-color-container, #28292c) !important;
-    border: 1px solid var(--cm-sys-color-hairline, #3c4043) !important;
-    color: var(--cm-sys-color-on-surface, #e8eaed) !important;
+    background-color: var(--surface-container, #211F26) !important;
+    border: 1px solid var(--outline-variant, #49454F) !important;
+    color: var(--on-surface, #E6E0E9) !important;
 }
 
 [data-bs-theme="dark"] .dropdown-item {
@@ -2465,30 +2483,32 @@ ul.nav-pills,
 }
 
 [data-bs-theme="dark"] .menu-item {
-    background: var(--cm-sys-color-container, #28292c) !important;
-    border-color: var(--cm-sys-color-hairline, #3c4043) !important;
+    background: transparent !important;
+    border: none !important;
+    color: var(--on-surface-variant) !important;
 }
 
 [data-bs-theme="dark"] .menu-item:hover,
 [data-bs-theme="dark"] .menu-item:active {
-    background: var(--cm-sys-color-container-high, #303134) !important;
-    border-color: var(--cm-sys-color-outline, #80868b) !important;
+    background: var(--surface-container-high) !important;
+    color: var(--on-surface) !important;
 }
 
 [data-bs-theme="dark"] .menu-item .menu-icon-box {
-    background: var(--cm-sys-color-surface, #1f1f1f) !important;
-    border-color: var(--cm-sys-color-hairline, #3c4043) !important;
+    background: transparent !important;
+    border: none !important;
 }
 
 [data-bs-theme="dark"] .menu-item.active {
-    background: var(--cm-sys-color-container-primary, #27354e) !important;
-    border-color: var(--cm-sys-color-primary, #8ab4f8) !important;
+    background: var(--secondary-container) !important;
+    color: var(--on-secondary-container) !important;
+    border: none !important;
 }
 
 [data-bs-theme="dark"] .menu-item.active .menu-icon-box {
-    background: var(--cm-sys-color-surface, #1f1f1f) !important;
-    border-color: var(--cm-sys-color-primary, #8ab4f8) !important;
-    box-shadow: 0 0 0 1px var(--cm-sys-color-primary, #8ab4f8) !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
 }
 
 [data-bs-theme="dark"] .sidebar-header {
@@ -2778,7 +2798,7 @@ ul.nav-pills,
 /* === PROFILE PAGE === */
 .profile-header {
     background: linear-gradient(135deg, hsl(var(--primary-h), var(--primary-s), 40%) 0%, hsl(var(--primary-h), var(--primary-s), 50%) 50%, hsl(var(--primary-h), var(--primary-s), 60%) 100%);
-    border-radius: 8px;
+    border-radius: var(--radius-xl, 24px);
     padding: 1.75rem;
     color: white;
     text-align: center;

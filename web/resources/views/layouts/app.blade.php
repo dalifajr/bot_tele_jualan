@@ -29,53 +29,10 @@
     <meta name="apple-mobile-web-app-title" content="{{ config('app.name', 'Dzulfikrialifajri Store') }}">
     <link rel="apple-touch-icon" href="{{ asset('images/icons/icon-192x192.png') }}">
 
-    {{-- Google Fonts: Google Sans / Plus Jakarta Sans, Roboto & Roboto Mono (Cloud Material Standard) --}}
+    {{-- Google Fonts: Poppins (Clean Modern Material 3 Display & Body) & Roboto Mono --}}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Roboto+Mono:wght@400;500;600&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-
-    {{-- Google Sans Font System Setup --}}
-    <style>
-        @font-face {
-            font-family: 'Google Sans';
-            src: local('Google Sans Regular'), local('Google Sans'), local('Product Sans'),
-                 url('https://fonts.gstatic.com/s/googlesans/v58/4Ua_rENHsxJlGDuGo1OIlJfC6l_24rlCK1Yo_Iqcsih3SAyH6cAwhX9RFD48TE63OOYKtrwEIJllpyw.woff2') format('woff2');
-            font-weight: 400;
-            font-style: normal;
-            font-display: swap;
-        }
-        @font-face {
-            font-family: 'Google Sans';
-            src: local('Google Sans Medium'), local('Google Sans-Medium'), local('Product Sans Medium'),
-                 url('https://fonts.gstatic.com/s/googlesans/v58/4UabrENHsxJlGDuGo1OIlLU94YtzCwY.woff2') format('woff2');
-            font-weight: 500 600;
-            font-style: normal;
-            font-display: swap;
-        }
-        @font-face {
-            font-family: 'Google Sans';
-            src: local('Google Sans Bold'), local('Google Sans-Bold'), local('Product Sans Bold'),
-                 url('https://fonts.gstatic.com/s/googlesans/v58/4UabrENHsxJlGDuGo1OIlLV154tzCwY.woff2') format('woff2');
-            font-weight: 700;
-            font-style: normal;
-            font-display: swap;
-        }
-        @font-face {
-            font-family: 'Google Sans Display';
-            src: local('Google Sans Display'), local('Google Sans'),
-                 url('https://fonts.gstatic.com/s/googlesans/v58/4UabrENHsxJlGDuGo1OIlLU94YtzCwY.woff2') format('woff2');
-            font-weight: 400 700;
-            font-style: normal;
-            font-display: swap;
-        }
-        @font-face {
-            font-family: 'Google Sans Mono';
-            src: local('Google Sans Mono'), local('JetBrains Mono'), local('Roboto Mono');
-            font-weight: 400 700;
-            font-style: normal;
-            font-display: swap;
-        }
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
     {{-- Bootstrap 5.3 --}}
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -280,7 +237,7 @@
             </div>
             <div class="row g-3 g-lg-4">
                 <div class="col-lg-7 col-xl-8">
-                    <div class="card overflow-hidden mb-3" style="border-radius: 8px;">
+                    <div class="card overflow-hidden mb-3" style="border-radius: var(--radius-lg, 20px);">
                         <div class="skeleton-shimmer w-100" style="height: 230px; border-radius: 0;"></div>
                         <div class="card-body p-3 p-md-4">
                             <div class="d-flex justify-content-between align-items-center mb-3">
@@ -308,7 +265,7 @@
                     </div>
                 </div>
                 <div class="col-lg-5 col-xl-4 d-none d-lg-block">
-                    <div class="card p-4" style="border-radius: 8px;">
+                    <div class="card p-4" style="border-radius: var(--radius-lg, 20px);">
                         <div class="skeleton-shimmer mb-3" style="height: 20px; width: 130px;"></div>
                         <div class="skeleton-shimmer mb-3" style="height: 44px; width: 100%; border-radius: 6px;"></div>
                         <div class="skeleton-shimmer mb-2" style="height: 40px; width: 100%; border-radius: 6px;"></div>
@@ -325,7 +282,7 @@
                 </div>
                 <div class="skeleton-shimmer rounded-circle" style="width: 38px; height: 38px;"></div>
             </div>
-            <div class="card p-4 mb-4" style="border-radius: 8px;">
+            <div class="card p-4 mb-4" style="border-radius: var(--radius-lg, 20px);">
                 <div class="d-flex align-items-center gap-3 mb-3">
                     <div class="skeleton-shimmer rounded-circle" style="width: 64px; height: 64px;"></div>
                     <div>
@@ -342,7 +299,7 @@
             <div class="row g-3 g-md-4">
                 @for($i = 0; $i < 4; $i++)
                 <div class="col-6 col-md-4 col-lg-3">
-                    <div class="card p-3 h-100" style="border-radius: 8px;">
+                    <div class="card p-3 h-100" style="border-radius: var(--radius-lg, 20px);">
                         <div class="skeleton-shimmer w-100 mb-2.5" style="height: 120px; border-radius: 6px;"></div>
                         <div class="skeleton-shimmer mb-2" style="height: 16px; width: 80%;"></div>
                         <div class="skeleton-shimmer" style="height: 14px; width: 45%;"></div>
@@ -359,7 +316,7 @@
             <div class="row g-3 g-lg-4">
                 <div class="col-lg-8">
                     @for($c = 0; $c < 3; $c++)
-                    <div class="card p-3 mb-2" style="border-radius: 8px;">
+                    <div class="card p-3 mb-2" style="border-radius: var(--radius-lg, 20px);">
                         <div class="d-flex align-items-center justify-content-between">
                             <div class="d-flex align-items-center gap-3">
                                 <div class="skeleton-shimmer rounded-2" style="width: 50px; height: 50px;"></div>
@@ -374,7 +331,7 @@
                     @endfor
                 </div>
                 <div class="col-lg-4">
-                    <div class="card p-4" style="border-radius: 8px;">
+                    <div class="card p-4" style="border-radius: var(--radius-lg, 20px);">
                         <div class="skeleton-shimmer mb-3" style="height: 20px; width: 130px;"></div>
                         <div class="skeleton-shimmer mb-2" style="height: 16px; width: 100%;"></div>
                         <div class="skeleton-shimmer mb-4" style="height: 16px; width: 70%;"></div>
@@ -397,7 +354,7 @@
             <div class="row g-3 g-md-4">
                 @for($i = 0; $i < 4; $i++)
                 <div class="col-6 col-md-4 col-lg-3 {{ $i >= 2 ? 'd-none d-md-block' : '' }}">
-                    <div class="card p-3 h-100" style="border-radius: 8px;">
+                    <div class="card p-3 h-100" style="border-radius: var(--radius-lg, 20px);">
                         <div class="skeleton-shimmer w-100 mb-3" style="height: 125px; border-radius: 6px;"></div>
                         <div class="skeleton-shimmer mb-2" style="height: 16px; width: 80%;"></div>
                         <div class="skeleton-shimmer mb-3" style="height: 12px; width: 50%;"></div>
@@ -412,7 +369,7 @@
             <div class="mt-4">
                 <div class="skeleton-shimmer mb-3" style="height: 18px; width: 160px; border-radius: 6px;"></div>
                 @for($j = 0; $j < 3; $j++)
-                <div class="card p-3 mb-2" style="border-radius: 8px;">
+                <div class="card p-3 mb-2" style="border-radius: var(--radius-lg, 20px);">
                     <div class="d-flex align-items-center justify-content-between">
                         <div class="d-flex align-items-center gap-2.5 flex-grow-1">
                             <div class="skeleton-shimmer rounded-2" style="width: 44px; height: 44px; flex-shrink: 0;"></div>
@@ -591,11 +548,11 @@
                 </span>
                 @endif
             </button>
-            <ul class="dropdown-menu dropdown-menu-end mt-2 p-0" style="width: 340px; z-index: 1050; overflow: hidden;">
-                <li class="px-3 py-2 border-bottom d-flex justify-content-between align-items-center" style="background: var(--cm-sys-color-container);">
-                    <h6 class="m-0 fw-medium text-primary" style="font: var(--cm-sys-type-label-medium);" data-pex="9c28hsh-7">{{ __('Notifikasi') }}</h6>
+            <ul class="dropdown-menu dropdown-menu-end mt-2 p-0 shadow-sm" style="width: 340px; z-index: 1050; overflow: hidden; border-radius: var(--radius-lg, 20px); border: 1px solid var(--outline-variant);">
+                <li class="px-3 py-2 border-bottom d-flex justify-content-between align-items-center" style="background: var(--surface-container);">
+                    <h6 class="m-0 fw-semibold text-primary" style="font-size: 0.88rem;" data-pex="9c28hsh-7">{{ __('Notifikasi') }}</h6>
                     @if($totalUnreadCount > 0)
-                    <span class="badge bg-primary-subtle">{{ $totalUnreadCount }} {{ __('Baru') }}</span>
+                    <span class="badge bg-primary-subtle text-primary rounded-pill">{{ $totalUnreadCount }} {{ __('Baru') }}</span>
                     @endif
                 </li>
                 
@@ -607,15 +564,15 @@
                                 <i class="{{ $notification->data['icon'] ?? 'fas fa-bell text-secondary' }}" style="font-size: 0.95rem;"></i>
                             </div>
                             <div class="flex-grow-1">
-                                <div class="fw-medium mb-0.5" style="font: var(--cm-sys-type-label-medium); color: var(--cm-sys-color-on-surface);" data-pex="9c28hsh-21">{{ $notification->data['title'] ?? __('Notifikasi') }}</div>
-                                <div class="text-muted" style="font: var(--cm-sys-type-body-small);" data-pex="9c28hsh-22">{{ $notification->data['message'] ?? '' }}</div>
+                                <div class="fw-medium mb-0.5" style="font-size: 0.85rem; color: var(--on-surface);" data-pex="9c28hsh-21">{{ $notification->data['title'] ?? __('Notifikasi') }}</div>
+                                <div class="text-secondary small" style="font-size: 0.8rem;" data-pex="9c28hsh-22">{{ $notification->data['message'] ?? '' }}</div>
                                 
                                 @if(($notification->data['type'] ?? '') === 'login_gagal' && isset($notification->data['ip_address']))
                                 <div class="mt-2" onclick="event.stopPropagation(); event.preventDefault();">
                                     <form action="{{ route('profile.logins.block-ip') }}" method="POST" class="d-inline">
                                         @csrf
                                         <input type="hidden" name="ip_address" value="{{ $notification->data['ip_address'] }}">
-                                        <button type="submit" class="btn btn-sm btn-danger" style="font-size: 0.72rem;">
+                                        <button type="submit" class="btn btn-sm btn-danger rounded-pill" style="font-size: 0.72rem;">
                                             <i class="fas fa-ban me-1"></i>Bukan Saya (Blokir)
                                         </button>
                                     </form>
@@ -636,7 +593,7 @@
                     @endforelse
                 </div>
                 
-                <li class="d-flex justify-content-between px-3 py-2 border-top" style="background: var(--cm-sys-color-container);">
+                <li class="d-flex justify-content-between px-3 py-2 border-top" style="background: var(--surface-container);">
                     <a href="javascript:void(0)" class="text-decoration-none small text-muted hover-primary" onclick="markAllNotificationsRead()"><i class="fas fa-check-double me-1"></i>{{ __('Tandai Dibaca') }}</a>
                     <a href="{{ route('notifications.index') }}" class="text-decoration-none small fw-medium text-primary"><i class="fas fa-list me-1"></i>{{ __('Lihat Semua') }}</a>
                 </li>

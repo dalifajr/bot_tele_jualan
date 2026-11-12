@@ -14,7 +14,7 @@ body {
   color: var(--on-surface, #1d1b20);
   position: relative;
   overflow-x: hidden;
-  font-family: var(--font-google-sans, "Google Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif) !important;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
 }
 
 [data-bs-theme="dark"] body {

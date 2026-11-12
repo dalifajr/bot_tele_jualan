@@ -149,7 +149,7 @@
         max-width: 100%;
         max-height: 180px;
         object-fit: cover;
-        border-radius: 8px;
+        border-radius: var(--radius-sm, 12px);
         cursor: pointer;
         transition: transform 0.2s ease;
     }

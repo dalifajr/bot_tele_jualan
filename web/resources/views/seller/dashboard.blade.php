@@ -167,7 +167,7 @@
                     <p class="text-muted small mb-0">{{ __('Statistik omzet penjualan dalam :days', ['days' => $days == 180 ? '6 bulan terakhir' : ($days == 365 ? '1 tahun terakhir' : ($days === 'all' ? 'sepanjang waktu' : $days . ' hari terakhir'))]) }}</p>
                 </div>
                 <div>
-                    <select class="form-select form-select-sm px-3 fw-bold" style="width: auto; border: 1px solid var(--cm-sys-color-hairline) !important; background-color: var(--cm-sys-color-container) !important; border-radius: 4px;" onchange="let params = new URLSearchParams(window.location.search); params.set('days', this.value); window.location.href = '{{ route('seller.dashboard') }}?' + params.toString()">
+                    <select class="form-select form-select-sm px-3 fw-semibold rounded-pill" style="width: auto; border: 1px solid var(--outline-variant) !important; background-color: var(--surface-container-low) !important; color: var(--on-surface);" onchange="let params = new URLSearchParams(window.location.search); params.set('days', this.value); window.location.href = '{{ route('seller.dashboard') }}?' + params.toString()">
                         <option value="7" {{ $days == 7 ? 'selected' : '' }}>{{ __('7 Hari Terakhir') }}</option>
                         <option value="14" {{ $days == 14 ? 'selected' : '' }}>{{ __('14 Hari Terakhir') }}</option>
                         <option value="30" {{ $days == 30 ? 'selected' : '' }}>{{ __('30 Hari Terakhir') }}</option>
@@ -304,7 +304,7 @@
     <div class="col-12 col-lg-5">
         <div class="card border-0 shadow-sm p-4 h-100">
             <h5 class="fw-bold mb-3 text-body"><i class="fas fa-hand-holding-usd text-primary me-2"></i>{{ __('Status Payout Terakhir') }}</h5>
-            <div class="text-center py-4 mb-3" style="background-color: var(--cm-sys-color-container); border: 1px solid var(--cm-sys-color-hairline); border-radius: 8px;">
+            <div class="text-center py-4 mb-3" style="background-color: var(--surface-container-low); border: 1px solid var(--outline-variant); border-radius: var(--radius-lg, 20px);">
                 <i class="fas fa-history text-muted mb-2 fs-3"></i>
                 <div class="small text-muted">{{ __('Total Pengajuan Penarikan:') }}</div>
                 <h5 class="fw-bold m-0 text-primary">{{ $pendingWithdrawalCount + $approvedWithdrawalCount }} {{ __('Permintaan') }}</h5>

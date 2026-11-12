@@ -43,7 +43,7 @@
     }
     .progress-wrapper .progress {
         height: 10px;
-        border-radius: 8px;
+        border-radius: var(--radius-pill, 9999px);
     }
     .cookie-status-indicator {
         width: 10px;

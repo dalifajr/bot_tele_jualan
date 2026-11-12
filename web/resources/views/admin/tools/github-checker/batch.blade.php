@@ -48,7 +48,7 @@
     }
     .progress-wrapper .progress {
         height: 10px;
-        border-radius: 8px;
+        border-radius: var(--radius-pill, 9999px);
     }
     .log-container {
         max-height: 450px;

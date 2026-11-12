@@ -177,7 +177,7 @@
         </div>
 
         {{-- Held Funds Details --}}
-        <div class="card border-0 shadow-sm overflow-hidden mt-4" style="border-radius: 8px;">
+        <div class="card border-0 shadow-sm overflow-hidden mt-4" style="border-radius: var(--radius-lg, 20px);">
             <div class="card-header border-0 bg-transparent px-4 py-3 border-bottom d-flex justify-content-between align-items-center">
                 <h5 class="fw-bold m-0 text-body"><i class="fas fa-lock text-warning me-2"></i>{{ __('Rincian Saldo Tertahan') }}</h5>
             </div>
@@ -239,18 +239,18 @@
 {{-- View Proof Modal --}}
 <div class="modal fade" id="viewProofModal{{ $withdrawal->id }}" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content" style="border-radius: 8px; border: 1px solid var(--cm-sys-color-hairline);">
+        <div class="modal-content" style="border-radius: var(--radius-xl, 24px); border: 1px solid var(--outline-variant);">
             <div class="modal-header border-0 pb-0">
                 <h5 class="fw-bold">{{ __('Struk Bukti Transfer Payout') }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-4 text-center">
                 @if($withdrawal->proof_image_path)
-                    <img src="{{ asset($withdrawal->proof_image_path) }}" alt="Bukti Transfer Payout" class="img-fluid rounded-2 shadow-sm mb-3" style="max-height: 400px; object-fit: contain;">
+                    <img src="{{ asset($withdrawal->proof_image_path) }}" alt="Bukti Transfer Payout" class="img-fluid rounded-3 shadow-sm mb-3" style="max-height: 400px; object-fit: contain;">
                 @else
                     <p class="text-muted">{{ __('Bukti transfer belum diunggah oleh admin.') }}</p>
                 @endif
-                <div class="p-3 text-start mt-2" style="background-color: var(--cm-sys-color-container); border: 1px solid var(--cm-sys-color-hairline); border-radius: 8px;">
+                <div class="p-3 text-start mt-2" style="background-color: var(--surface-container-low); border: 1px solid var(--outline-variant); border-radius: var(--radius-md, 16px);">
                     <div class="row small py-1">
                         <div class="col-4 text-muted">{{ __('Bank Tujuan') }}</div>
                         <div class="col-8 fw-bold">{{ strtoupper($withdrawal->bank_name) }} — {{ $withdrawal->account_number }}</div>
@@ -270,7 +270,7 @@
                 </div>
             </div>
             <div class="modal-footer border-0 pt-0">
-                <button type="button" class="btn btn-light px-4" style="border-radius: 4px;" data-bs-dismiss="modal">{{ __('Tutup') }}</button>
+                <button type="button" class="btn btn-light px-4 rounded-pill" data-bs-dismiss="modal">{{ __('Tutup') }}</button>
             </div>
         </div>
     </div>
@@ -279,17 +279,17 @@
 {{-- View Rejection Modal --}}
 <div class="modal fade" id="viewRejectionModal{{ $withdrawal->id }}" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content" style="border-radius: 8px; border: 1px solid var(--cm-sys-color-hairline);">
+        <div class="modal-content" style="border-radius: var(--radius-xl, 24px); border: 1px solid var(--outline-variant);">
             <div class="modal-header border-0 pb-0">
                 <h5 class="fw-bold text-danger">{{ __('Pengajuan Payout Ditolak') }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-4">
-                <div class="bg-danger-subtle text-danger p-3 mb-3" style="border-radius: 8px;">
+                <div class="bg-danger-subtle text-danger p-3 mb-3" style="border-radius: var(--radius-md, 16px);">
                     <div class="fw-bold mb-1 small">{{ __('Alasan Penolakan dari Admin:') }}</div>
                     <div class="lh-sm">{{ $withdrawal->rejection_reason ?? 'Tidak ada alasan penolakan yang dicantumkan.' }}</div>
                 </div>
-                <div class="p-3 text-start" style="background-color: var(--cm-sys-color-container); border: 1px solid var(--cm-sys-color-hairline); border-radius: 8px;">
+                <div class="p-3 text-start" style="background-color: var(--surface-container-low); border: 1px solid var(--outline-variant); border-radius: var(--radius-md, 16px);">
                     <div class="row small py-1">
                         <div class="col-4 text-muted">{{ __('Jumlah') }}</div>
                         <div class="col-8 fw-bold text-danger">Rp {{ number_format($withdrawal->amount, 0, ',', '.') }}</div>
