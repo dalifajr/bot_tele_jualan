@@ -136,12 +136,10 @@
     <div class="login-section">
       {{-- Logo & Brand Header --}}
       <div class="brand-header mb-4 d-flex align-items-center gap-3">
-        <div class="user-avatar d-flex align-items-center justify-content-center text-white bg-primary shadow-sm" style="width: 46px; height: 46px; font-size: 1.25rem; border-radius: var(--radius-sm, 14px);">
-          <i class="fas fa-shopping-bag"></i>
-        </div>
+        @include('partials.brand-logo', ['style' => 'width: 44px; height: 44px;'])
         <div>
-          <h4 class="fw-bold text-primary m-0" style="line-height: 1.15;">{{ config('app.name', 'Dzulfikrialifajri Store') }}</h4>
-          <span class="text-muted small">{{ __('Portal Autentikasi Pelanggan & Mitra') }}</span>
+          <h4 class="fw-bold text-primary m-0" style="line-height: 1.15;">{{ config('app.name', 'dzulfikrialifajri') }}</h4>
+          <span class="text-muted small">{{ __('digital store') }}</span>
         </div>
       </div>
 

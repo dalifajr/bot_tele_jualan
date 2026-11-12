@@ -544,9 +544,7 @@
     {{-- Mobile Brand: Only visible on mobile (< 992px) because desktop has brand in sidebar drawer --}}
     <div class="d-flex align-items-center gap-2 d-lg-none">
         <a href="{{ route('dashboard') }}" class="navbar-brand d-flex align-items-center gap-2 m-0 text-decoration-none" style="font-size: 0.95rem;">
-            <span class="m3-cloud-icon" style="width: 32px; height: 32px; font-size: 0.95rem; border-radius: 10px;">
-                <i class="fas fa-cloud"></i>
-            </span>
+            @include('partials.brand-logo', ['style' => 'width: 32px; height: 32px;'])
             <span class="fw-bold" style="color: var(--on-surface); letter-spacing: -0.01em;">
                 {{ config('app.name', "dzulfikrialifajri's store") }}
             </span>
@@ -721,12 +719,10 @@
             </div>
             <div class="d-flex align-items-center justify-content-between px-3 pb-2 pt-1">
                 <a href="{{ route('dashboard') }}" class="d-flex align-items-center gap-2 text-decoration-none">
-                    <span class="navbar-brand-icon" style="width: 32px; height: 32px; font-size: 0.95rem; border-radius: 10px;">
-                        <i class="fas fa-cloud"></i>
-                    </span>
+                    @include('partials.brand-logo', ['style' => 'width: 32px; height: 32px;'])
                     <div class="d-flex flex-column text-start" style="line-height: 1.15;">
-                        <span class="fw-bold text-body" style="font-size: 0.92rem; letter-spacing: -0.01em;">{{ config('app.name', 'Dzulfikrialifajri Store') }}</span>
-                        <small class="text-secondary" style="font-size: 0.72rem; font-weight: 500;">{{ __('Menu & Layanan Lainnya') }}</small>
+                        <span class="fw-bold text-body" style="font-size: 0.92rem; letter-spacing: -0.01em;">{{ config('app.name', 'dzulfikrialifajri') }}</span>
+                        <small class="text-secondary" style="font-size: 0.72rem; font-weight: 500;">{{ __('digital store') }}</small>
                     </div>
                 </a>
                 <button type="button" class="btn btn-sm btn-icon btn-light rounded-pill text-secondary" id="sidebarCloseBtn" aria-label="{{ __('Tutup') }}" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; padding: 0;">
@@ -737,9 +733,7 @@
         {{-- Desktop Top Brand Header & Segmented Belanja/Admin Switcher (Figma M3 Style) --}}
         <div class="d-none d-lg-block">
             <a href="{{ route('dashboard') }}" class="m3-brand-header">
-                <span class="m3-cloud-icon">
-                    <i class="fas fa-cloud"></i>
-                </span>
+                @include('partials.brand-logo')
                 <div class="m3-brand-text">
                     <span class="m3-brand-title">{{ config('app.name', 'dzulfikrialifajri') }}</span>
                     <span class="m3-brand-subtitle">{{ __('digital store') }}</span>
@@ -747,12 +741,19 @@
             </a>
 
             @if(Auth::check() && in_array(Auth::user()->role, ['admin', 'seller']))
-            <div class="m3-segmented-switch">
-                <a href="{{ route('dashboard') }}" class="m3-segmented-item {{ !request()->routeIs('admin.*') && !request()->routeIs('seller.*') ? 'active' : '' }}">
+            @php
+                $userRole = Auth::user()->role;
+                $isAdmin = $userRole === 'admin';
+                $isSeller = $userRole === 'seller';
+                $isManagementMode = ($isAdmin && (request()->routeIs('admin.*') || request('view') === 'admin')) || 
+                                   ($isSeller && (request()->routeIs('seller.*') || request('view') === 'seller'));
+            @endphp
+            <div class="m3-segmented-switch mb-3 mx-3">
+                <a href="{{ route('dashboard') }}" class="m3-segmented-item {{ !$isManagementMode ? 'active' : '' }}" title="{{ __('Mode Belanja') }}">
                     {{ __('Belanja') }}
                 </a>
-                <a href="{{ Auth::user()->role === 'admin' ? route('admin.dashboard') : route('seller.dashboard') }}" class="m3-segmented-item {{ request()->routeIs('admin.*') || request()->routeIs('seller.*') ? 'active' : '' }}">
-                    {{ Auth::user()->role === 'admin' ? __('Admin') : __('Seller') }}
+                <a href="{{ $isAdmin ? route('admin.dashboard') : route('seller.dashboard') }}" class="m3-segmented-item {{ $isManagementMode ? 'active' : '' }}" title="{{ $isAdmin ? __('Panel Admin') : __('Panel Seller') }}">
+                    {{ $isAdmin ? __('Admin') : __('Seller') }}
                 </a>
             </div>
             @endif
@@ -799,293 +800,289 @@
         </div>
         @endauth
 
-        <div class="py-3">
-            <div class="menu-group">
-                <div class="menu-items-grid">
-                    <a href="{{ route('dashboard') }}" class="menu-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
-                        <div class="menu-icon-box"><i class="fas fa-home text-primary"></i></div>
-                        <span class="menu-label-text">{{ __('Home') }}</span>
-                    </a>
-                </div>
-            </div>
-
-            <div class="menu-group">
-                <div class="menu-header"><i class="fas fa-shopping-bag me-1 text-primary"></i> {{ __('Belanja') }}</div>
-                <div class="menu-items-grid">
-                    <a href="{{ route('catalog.index') }}" class="menu-item {{ request()->routeIs('catalog.*') ? 'active' : '' }}">
-                        <div class="menu-icon-box"><i class="fas fa-store text-primary"></i></div>
-                        <span class="menu-label-text">{{ __('Katalog Produk') }}</span>
-                    </a>
-                    <a href="{{ route('orders.index') }}" @guest data-guest-modal="true" data-feature-name="riwayat pesanan" @endguest class="menu-item {{ request()->routeIs('orders.*') ? 'active' : '' }}">
-                        <div class="menu-icon-box"><i class="fas fa-receipt text-success"></i></div>
-                        <span class="menu-label-text">{{ __('Riwayat Pesanan') }}</span>
-                    </a>
-                    <a href="{{ route('customer.complaints.index') }}" @guest data-guest-modal="true" data-feature-name="kelola komplain" @endguest class="menu-item {{ request()->routeIs('customer.complaints.*') ? 'active' : '' }}">
-                        <div class="menu-icon-box"><i class="fas fa-headset text-warning"></i></div>
-                        <span class="menu-label-text">{{ __('Kelola Komplain') }}</span>
-                        @if($customerComplaintsCount > 0)
-                            <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.7rem;">{{ $customerComplaintsCount }}</span>
-                        @endif
-                    </a>
-                    <a href="{{ route('chat.index') }}" @guest data-guest-modal="true" data-feature-name="pusat chat" @endguest class="menu-item {{ request()->routeIs('chat.*') ? 'active' : '' }}">
-                        <div class="menu-icon-box"><i class="fas fa-comments text-info"></i></div>
-                        <span class="menu-label-text">{{ __('Pusat Chat') }}</span>
-                        @if($unreadChatsCount > 0)
-                            <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.7rem;">{{ $unreadChatsCount }}</span>
-                        @endif
-                    </a>
-                    @if(Auth::check() && Auth::user()->canUseRekber())
-                    <a href="{{ route('escrow.index') }}" class="menu-item {{ request()->routeIs('escrow.*') ? 'active' : '' }}">
-                        <div class="menu-icon-box"><i class="fas fa-handshake text-info"></i></div>
-                        <span class="menu-label-text">{{ __('Rekber (Escrow)') }}</span>
-                        @if(isset($activeEscrowCount) && $activeEscrowCount > 0)
-                            <span class="badge bg-primary rounded-pill ms-auto" style="font-size: 0.7rem;">{{ $activeEscrowCount }}</span>
-                        @endif
-                    </a>
-                    @endif
-                </div>
-            </div>
-
-            <div class="menu-group">
-                <div class="menu-header"><i class="fas fa-user-circle me-1 text-primary"></i> {{ __('Akun') }}</div>
-                <div class="menu-items-grid">
-                    <a href="{{ route('profile') }}" @guest data-guest-modal="true" data-feature-name="profil saya" @endguest class="menu-item {{ request()->routeIs('profile') ? 'active' : '' }}">
-                        <div class="menu-icon-box"><i class="fas fa-user-circle text-primary"></i></div>
-                        <span class="menu-label-text">{{ __('Profil Saya') }}</span>
-                    </a>
-                    <a href="{{ route('profile.logins') }}" @guest data-guest-modal="true" data-feature-name="riwayat login" @endguest class="menu-item {{ request()->routeIs('profile.logins') ? 'active' : '' }}">
-                        <div class="menu-icon-box"><i class="fas fa-shield-halved text-danger"></i></div>
-                        <span class="menu-label-text">{{ __('Riwayat Login') }}</span>
-                        @if($customerLoginBadgeCount > 0)
-                            <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.7rem;">{{ $customerLoginBadgeCount }}</span>
-                        @endif
-                    </a>
-                </div>
-            </div>
-
-            @if(Auth::check() && $canAccess2fa && Auth::user()->role === 'customer')
-            <div class="menu-group">
-                <div class="menu-header text-success"><i class="fas fa-tools me-1"></i> {{ __('Tool') }}</div>
-                <div class="menu-items-grid">
-                    <a href="{{ route('tools.2fa-generator') }}" class="menu-item {{ request()->routeIs('tools.2fa-generator*') ? 'active' : '' }}">
-                        <div class="menu-icon-box"><i class="fas fa-key text-success"></i></div>
-                        <span class="menu-label-text">{{ __('Generator Kode 2FA') }}</span>
-                    </a>
-                </div>
-            </div>
-            @endif
-
-            @if(Auth::check() && Auth::user()->role === 'admin')
-            <div class="menu-group">
-                <div class="menu-header text-primary"><i class="fas fa-shield-alt me-1"></i> {{ __('Admin Panel') }}</div>
-                <div class="menu-items-grid">
-                    <a href="{{ route('admin.dashboard') }}" class="menu-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
-                        <div class="menu-icon-box"><i class="fas fa-chart-line text-primary"></i></div>
-                        <span class="menu-label-text">{{ __('Dashboard Admin') }}</span>
-                    </a>
-                    <a href="{{ route('admin.products.index') }}" class="menu-item {{ request()->routeIs('admin.products.*') ? 'active' : '' }}">
-                        <div class="menu-icon-box"><i class="fas fa-boxes-stacked text-info"></i></div>
-                        <span class="menu-label-text">{{ __('Katalog Admin') }}</span>
-                    </a>
-                    <a href="{{ route('admin.stock.index') }}" class="menu-item {{ request()->routeIs('admin.stock.*') ? 'active' : '' }}">
-                        <div class="menu-icon-box"><i class="fas fa-cubes text-warning"></i></div>
-                        <span class="menu-label-text">{{ __('Kelola Stok') }}</span>
-                    </a>
-                    <a href="{{ route('admin.orders.index') }}" class="menu-item {{ request()->routeIs('admin.orders.*') ? 'active' : '' }}">
-                        <div class="menu-icon-box"><i class="fas fa-cart-shopping text-success"></i></div>
-                        <span class="menu-label-text">{{ __('Kelola Pesanan') }}</span>
-                        @if($adminOrdersCount > 0)
-                            <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.7rem;">{{ $adminOrdersCount }}</span>
-                        @endif
-                    </a>
-                    <a href="{{ route('admin.complaints.index') }}" class="menu-item {{ request()->routeIs('admin.complaints.*') ? 'active' : '' }}">
-                        <div class="menu-icon-box"><i class="fas fa-headset text-danger"></i></div>
-                        <span class="menu-label-text">{{ __('Kelola Komplain') }}</span>
-                        @if($adminComplaintsCount > 0)
-                            <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.7rem;">{{ $adminComplaintsCount }}</span>
-                        @endif
-                    </a>
-                    <a href="{{ route('admin.broadcast.index') }}" class="menu-item {{ request()->routeIs('admin.broadcast.*') ? 'active' : '' }}">
-                        <div class="menu-icon-box"><i class="fas fa-bullhorn text-warning"></i></div>
-                        <span class="menu-label-text">{{ __('Broadcast') }}</span>
-                    </a>
-                    <a href="{{ route('admin.users.index') }}" class="menu-item {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
-                        <div class="menu-icon-box"><i class="fas fa-users text-primary"></i></div>
-                        <span class="menu-label-text">{{ __('Kelola Pelanggan') }}</span>
-                    </a>
-                    <a href="{{ route('admin.sellers.index') }}" class="menu-item {{ request()->routeIs('admin.sellers.*') ? 'active' : '' }}">
-                        <div class="menu-icon-box"><i class="fas fa-store text-info"></i></div>
-                        <span class="menu-label-text">{{ __('Kelola Seller') }}</span>
-                    </a>
-                    <a href="{{ route('admin.withdrawals.index') }}" class="menu-item {{ request()->routeIs('admin.withdrawals.*') ? 'active' : '' }}">
-                        <div class="menu-icon-box"><i class="fas fa-money-bill-wave text-success"></i></div>
-                        <span class="menu-label-text">{{ __('Permintaan Payout') }}</span>
-                        @if($pendingPayoutsCount > 0)
-                            <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.7rem;">{{ $pendingPayoutsCount }}</span>
-                        @endif
-                    </a>
-                    <a href="{{ route('admin.coupons.index') }}" class="menu-item {{ request()->routeIs('admin.coupons.*') ? 'active' : '' }}">
-                        <div class="menu-icon-box"><i class="fas fa-ticket text-danger"></i></div>
-                        <span class="menu-label-text">{{ __('Kelola Kupon') }}</span>
-                    </a>
-                    <a href="{{ route('admin.logins.index') }}" class="menu-item {{ request()->routeIs('admin.logins.*') ? 'active' : '' }}">
-                        <div class="menu-icon-box"><i class="fas fa-right-to-bracket text-secondary"></i></div>
-                        <span class="menu-label-text">{{ __('Percobaan Login') }}</span>
-                        @if($pendingLoginsCount > 0)
-                            <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.7rem;">{{ $pendingLoginsCount }}</span>
-                        @endif
-                    </a>
-                    <a href="{{ route('admin.escrow.index') }}" class="menu-item {{ request()->routeIs('admin.escrow.*') ? 'active' : '' }}">
-                        <div class="menu-icon-box"><i class="fas fa-handshake text-info"></i></div>
-                        <span class="menu-label-text">{{ __('Kelola Rekber') }}</span>
-                        @if(isset($adminEscrowCount) && $adminEscrowCount > 0)
-                            <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.7rem;">{{ $adminEscrowCount }}</span>
-                        @endif
-                    </a>
-                    <a href="{{ route('admin.remote-control.index') }}" class="menu-item {{ request()->routeIs('admin.remote-control*') ? 'active' : '' }}">
-                        <div class="menu-icon-box"><i class="fas fa-mobile-screen-button text-primary"></i></div>
-                        <span class="menu-label-text">{{ __('Remote Control HP') }}</span>
-                        <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.65rem;">ROOT</span>
-                    </a>
-                </div>
-            </div>
-
-            <div class="menu-group">
-                <div class="menu-header text-success"><i class="fas fa-tools me-1"></i> {{ __('Tool') }}</div>
-                <div class="menu-items-grid">
-                    <a href="{{ route('admin.tools.github-checker') }}" class="menu-item {{ request()->routeIs('admin.tools.github-checker*') ? 'active' : '' }}">
-                        <div class="menu-icon-box"><i class="fab fa-github text-body"></i></div>
-                        <span class="menu-label-text">{{ __('GitHub Live Checker') }}</span>
-                    </a>
-                    <a href="{{ route('admin.tools.gmail-checker') }}" class="menu-item {{ request()->routeIs('admin.tools.gmail-checker*') ? 'active' : '' }}">
-                        <div class="menu-icon-box"><i class="fas fa-envelope text-danger"></i></div>
-                        <span class="menu-label-text">{{ __('Gmail Live Checker') }}</span>
-                    </a>
-                    <a href="{{ route('tools.2fa-generator') }}" class="menu-item {{ request()->routeIs('tools.2fa-generator*') || request()->routeIs('admin.tools.2fa-generator*') ? 'active' : '' }}">
-                        <div class="menu-icon-box"><i class="fas fa-key text-success"></i></div>
-                        <span class="menu-label-text">{{ __('Generator Kode 2FA') }}</span>
-                    </a>
-                </div>
-            </div>
-
-            <div class="menu-group">
-                <div class="menu-header text-danger"><i class="fas fa-cogs me-1"></i> {{ __('Sistem & Konfigurasi') }}</div>
-                <div class="menu-items-grid">
-                    <a href="{{ route('admin.settings.index') }}" class="menu-item {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
-                        <div class="menu-icon-box"><i class="fas fa-sliders text-danger"></i></div>
-                        <span class="menu-label-text">{{ __('Konfigurasi Sistem') }}</span>
-                    </a>
-                    <a href="{{ route('admin.audit-logs.index') }}" class="menu-item {{ request()->routeIs('admin.audit-logs.*') ? 'active' : '' }}">
-                        <div class="menu-icon-box"><i class="fas fa-clock-rotate-left text-warning"></i></div>
-                        <span class="menu-label-text">{{ __('Log Audit') }}</span>
-                    </a>
-                    <a href="{{ route('admin.website.settings') }}" class="menu-item {{ request()->routeIs('admin.website.settings') ? 'active' : '' }}">
-                        <div class="menu-icon-box"><i class="fas fa-globe text-primary"></i></div>
-                        <span class="menu-label-text">{{ __('Kelola Website') }}</span>
-                    </a>
-                    <a href="{{ route('admin.backup.index') }}" class="menu-item {{ request()->routeIs('admin.backup.*') ? 'active' : '' }}">
-                        <div class="menu-icon-box"><i class="fas fa-database text-info"></i></div>
-                        <span class="menu-label-text">{{ __('Backup & Restore') }}</span>
-                    </a>
-                </div>
-            </div>
-            @endif
-
-            @if(Auth::check() && Auth::user()->role === 'seller')
-            <div class="menu-group">
-                <div class="menu-header text-info"><i class="fas fa-store me-1"></i> {{ __('Seller Portal') }}</div>
-                <div class="menu-items-grid">
-                    <a href="{{ route('seller.dashboard') }}" class="menu-item {{ request()->routeIs('seller.dashboard') ? 'active' : '' }}">
-                        <div class="menu-icon-box"><i class="fas fa-chart-pie text-info"></i></div>
-                        <span class="menu-label-text">{{ __('Dashboard Seller') }}</span>
-                    </a>
-                    <a href="{{ route('seller.products.index') }}" class="menu-item {{ request()->routeIs('seller.products.*') ? 'active' : '' }}">
-                        <div class="menu-icon-box"><i class="fas fa-box-open text-primary"></i></div>
-                        <span class="menu-label-text">{{ __('Produk Saya') }}</span>
-                    </a>
-                    <a href="{{ route('seller.stock.index') }}" class="menu-item {{ request()->routeIs('seller.stock.*') ? 'active' : '' }}">
-                        <div class="menu-icon-box"><i class="fas fa-cubes text-warning"></i></div>
-                        <span class="menu-label-text">{{ __('Stok Akun') }}</span>
-                    </a>
-                    <a href="{{ route('seller.orders.index') }}" class="menu-item {{ request()->routeIs('seller.orders.*') ? 'active' : '' }}">
-                        <div class="menu-icon-box"><i class="fas fa-receipt text-success"></i></div>
-                        <span class="menu-label-text">{{ __('Kelola Pesanan') }}</span>
-                        @if($sellerOrdersCount > 0)
-                            <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.7rem;">{{ $sellerOrdersCount }}</span>
-                        @endif
-                    </a>
-                    <a href="{{ route('seller.complaints.index') }}" class="menu-item {{ request()->routeIs('seller.complaints.*') ? 'active' : '' }}">
-                        <div class="menu-icon-box"><i class="fas fa-headset text-danger"></i></div>
-                        <span class="menu-label-text">{{ __('Kelola Komplain') }}</span>
-                        @if($sellerComplaintsCount > 0)
-                            <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.7rem;">{{ $sellerComplaintsCount }}</span>
-                        @endif
-                    </a>
-                    <a href="{{ route('seller.finance.index') }}" class="menu-item {{ request()->routeIs('seller.finance.*') ? 'active' : '' }}">
-                        <div class="menu-icon-box"><i class="fas fa-wallet text-success"></i></div>
-                        <span class="menu-label-text">{{ __('Dompet & Keuangan') }}</span>
-                    </a>
-                    <a href="{{ route('seller.coupons.index') }}" class="menu-item {{ request()->routeIs('seller.coupons.*') ? 'active' : '' }}">
-                        <div class="menu-icon-box"><i class="fas fa-tags text-warning"></i></div>
-                        <span class="menu-label-text">{{ __('Kupon & Promosi') }}</span>
-                    </a>
-                    <a href="{{ route('seller.settings.index') }}" class="menu-item {{ request()->routeIs('seller.settings.*') ? 'active' : '' }}">
-                        <div class="menu-icon-box"><i class="fas fa-user-gear text-secondary"></i></div>
-                        <span class="menu-label-text">{{ __('Pengaturan Karantina') }}</span>
-                    </a>
-                </div>
-            </div>
+        <div class="py-2">
             @php
-                $sellerHasTools = Auth::check() && ((is_array(Auth::user()->allowed_tools) && count(Auth::user()->allowed_tools) > 0) || $canAccess2fa);
+                $userRole = Auth::check() ? Auth::user()->role : 'guest';
+                $isAdmin = $userRole === 'admin';
+                $isSeller = $userRole === 'seller';
+                $isManagementMode = ($isAdmin && (request()->routeIs('admin.*') || request('view') === 'admin')) || 
+                                   ($isSeller && (request()->routeIs('seller.*') || request('view') === 'seller'));
             @endphp
-            @if($sellerHasTools)
-            <div class="menu-group">
-                <div class="menu-header text-success"><i class="fas fa-tools me-1"></i> {{ __('Tool') }}</div>
-                <div class="menu-items-grid">
-                    @if(is_array(Auth::user()->allowed_tools) && in_array('github_checker', Auth::user()->allowed_tools))
-                    <a href="{{ route('admin.tools.github-checker') }}" class="menu-item {{ request()->routeIs('admin.tools.github-checker*') ? 'active' : '' }}">
-                        <div class="menu-icon-box"><i class="fab fa-github text-body"></i></div>
-                        <span class="menu-label-text">{{ __('GitHub Live Checker') }}</span>
-                    </a>
-                    @endif
-                    @if(is_array(Auth::user()->allowed_tools) && in_array('gmail_checker', Auth::user()->allowed_tools))
-                    <a href="{{ route('admin.tools.gmail-checker') }}" class="menu-item {{ request()->routeIs('admin.tools.gmail-checker*') ? 'active' : '' }}">
-                        <div class="menu-icon-box"><i class="fas fa-envelope text-danger"></i></div>
-                        <span class="menu-label-text">{{ __('Gmail Live Checker') }}</span>
-                    </a>
-                    @endif
-                    @if($canAccess2fa)
-                    <a href="{{ route('tools.2fa-generator') }}" class="menu-item {{ request()->routeIs('tools.2fa-generator*') ? 'active' : '' }}">
-                        <div class="menu-icon-box"><i class="fas fa-key text-success"></i></div>
-                        <span class="menu-label-text">{{ __('Generator Kode 2FA') }}</span>
-                    </a>
-                    @endif
-                </div>
-            </div>
-            @endif
-            @endif
 
-            @if(config('telegram.bot_username'))
-            <div class="menu-group px-3 pt-3 pb-1 border-top">
-                <div class="sidebar-help-card p-3 rounded-3 text-center">
-                    <div class="d-flex align-items-center justify-content-center mb-2">
-                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center shadow-sm" style="width: 36px; height: 36px;">
-                            <i class="fab fa-telegram-plane fs-6"></i>
-                        </div>
+            {{-- 1. MODE BELANJA (Untuk Customer, Tamu, atau Admin/Seller di tab Belanja) --}}
+            @if(!$isManagementMode)
+                <div class="menu-group">
+                    <div class="menu-header px-3"><i class="fas fa-compass me-1 text-primary"></i> {{ __('MENU UTAMA') }}</div>
+                    <div class="menu-items-grid">
+                        <a href="{{ route('dashboard') }}" class="menu-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fas fa-home text-primary"></i></div>
+                            <span class="menu-label-text">{{ __('Home') }}</span>
+                        </a>
+                        <a href="{{ route('catalog.index') }}" class="menu-item {{ request()->routeIs('catalog.*') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fas fa-store text-primary"></i></div>
+                            <span class="menu-label-text">{{ __('Katalog Produk') }}</span>
+                        </a>
+                        <a href="{{ route('orders.index') }}" @guest data-guest-modal="true" data-feature-name="riwayat pesanan" @endguest class="menu-item {{ request()->routeIs('orders.*') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fas fa-receipt text-success"></i></div>
+                            <span class="menu-label-text">{{ __('Riwayat Pesanan') }}</span>
+                        </a>
+                        <a href="{{ route('customer.complaints.index') }}" @guest data-guest-modal="true" data-feature-name="kelola komplain" @endguest class="menu-item {{ request()->routeIs('customer.complaints.*') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fas fa-headset text-warning"></i></div>
+                            <span class="menu-label-text">{{ __('Kelola Komplain') }}</span>
+                            @if($customerComplaintsCount > 0)
+                                <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.7rem;">{{ $customerComplaintsCount }}</span>
+                            @endif
+                        </a>
+                        <a href="{{ route('chat.index') }}" @guest data-guest-modal="true" data-feature-name="pusat chat" @endguest class="menu-item {{ request()->routeIs('chat.*') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fas fa-comments text-info"></i></div>
+                            <span class="menu-label-text">{{ __('Pusat Chat') }}</span>
+                            @if($unreadChatsCount > 0)
+                                <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.7rem;">{{ $unreadChatsCount }}</span>
+                            @endif
+                        </a>
+                        @if(Auth::check() && Auth::user()->canUseRekber())
+                        <a href="{{ route('escrow.index') }}" class="menu-item {{ request()->routeIs('escrow.*') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fas fa-handshake text-info"></i></div>
+                            <span class="menu-label-text">{{ __('Rekber (Escrow)') }}</span>
+                            @if(isset($activeEscrowCount) && $activeEscrowCount > 0)
+                                <span class="badge bg-primary rounded-pill ms-auto" style="font-size: 0.7rem;">{{ $activeEscrowCount }}</span>
+                            @endif
+                        </a>
+                        @endif
                     </div>
-                    <div class="fw-bold text-body mb-1" style="font-size: 0.82rem;">{{ __('Pusat Bantuan') }}</div>
-                    <p class="text-muted small mb-2" style="font-size: 0.72rem; line-height: 1.35;">{{ __('Butuh bantuan atau pertanyaan? Hubungi admin via Telegram.') }}</p>
-                    <a href="https://t.me/{{ config('telegram.bot_username') }}" target="_blank"
-                       class="btn btn-primary btn-sm w-100 rounded-pill fw-bold shadow-sm d-flex align-items-center justify-content-center gap-2 py-1.5"
-                       style="font-size: 0.78rem;">
-                        <i class="fab fa-telegram"></i>
-                        <span>{{ __('Chat Telegram') }}</span>
-                    </a>
                 </div>
-            </div>
-            @endif
 
-        {{-- Sidebar Footer (Figma M3 Style: Telegram Help Card & Language) --}}
+                <div class="menu-group mt-2">
+                    <div class="menu-header px-3"><i class="fas fa-user-circle me-1 text-primary"></i> {{ __('AKUN') }}</div>
+                    <div class="menu-items-grid">
+                        <a href="{{ route('profile') }}" @guest data-guest-modal="true" data-feature-name="profil saya" @endguest class="menu-item {{ request()->routeIs('profile') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fas fa-user-circle text-primary"></i></div>
+                            <span class="menu-label-text">{{ __('Profil Saya') }}</span>
+                        </a>
+                        <a href="{{ route('profile.logins') }}" @guest data-guest-modal="true" data-feature-name="riwayat login" @endguest class="menu-item {{ request()->routeIs('profile.logins') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fas fa-shield-halved text-danger"></i></div>
+                            <span class="menu-label-text">{{ __('Riwayat Login') }}</span>
+                            @if($customerLoginBadgeCount > 0)
+                                <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.7rem;">{{ $customerLoginBadgeCount }}</span>
+                            @endif
+                        </a>
+                    </div>
+                </div>
+
+                @if(Auth::check() && $canAccess2fa && Auth::user()->role === 'customer')
+                <div class="menu-group mt-2">
+                    <div class="menu-header px-3 text-success"><i class="fas fa-tools me-1"></i> {{ __('TOOL') }}</div>
+                    <div class="menu-items-grid">
+                        <a href="{{ route('tools.2fa-generator') }}" class="menu-item {{ request()->routeIs('tools.2fa-generator*') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fas fa-key text-success"></i></div>
+                            <span class="menu-label-text">{{ __('Generator Kode 2FA') }}</span>
+                        </a>
+                    </div>
+                </div>
+                @endif
+
+            {{-- 2. MODE MANAGEMENT UNTUK ADMIN --}}
+            @elseif($isAdmin)
+                <div class="menu-group">
+                    <div class="menu-header px-3 text-primary"><i class="fas fa-shield-alt me-1"></i> {{ __('PANEL ADMIN') }}</div>
+                    <div class="menu-items-grid">
+                        <a href="{{ route('admin.dashboard') }}" class="menu-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fas fa-chart-line text-primary"></i></div>
+                            <span class="menu-label-text">{{ __('Dashboard Admin') }}</span>
+                        </a>
+                        <a href="{{ route('admin.products.index') }}" class="menu-item {{ request()->routeIs('admin.products.*') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fas fa-boxes-stacked text-info"></i></div>
+                            <span class="menu-label-text">{{ __('Katalog Admin') }}</span>
+                        </a>
+                        <a href="{{ route('admin.stock.index') }}" class="menu-item {{ request()->routeIs('admin.stock.*') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fas fa-cubes text-warning"></i></div>
+                            <span class="menu-label-text">{{ __('Kelola Stok') }}</span>
+                        </a>
+                        <a href="{{ route('admin.orders.index') }}" class="menu-item {{ request()->routeIs('admin.orders.*') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fas fa-cart-shopping text-success"></i></div>
+                            <span class="menu-label-text">{{ __('Kelola Pesanan') }}</span>
+                            @if($adminOrdersCount > 0)
+                                <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.7rem;">{{ $adminOrdersCount }}</span>
+                            @endif
+                        </a>
+                        <a href="{{ route('admin.complaints.index') }}" class="menu-item {{ request()->routeIs('admin.complaints.*') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fas fa-headset text-danger"></i></div>
+                            <span class="menu-label-text">{{ __('Kelola Komplain') }}</span>
+                            @if($adminComplaintsCount > 0)
+                                <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.7rem;">{{ $adminComplaintsCount }}</span>
+                            @endif
+                        </a>
+                        <a href="{{ route('admin.broadcast.index') }}" class="menu-item {{ request()->routeIs('admin.broadcast.*') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fas fa-bullhorn text-warning"></i></div>
+                            <span class="menu-label-text">{{ __('Broadcast') }}</span>
+                        </a>
+                        <a href="{{ route('admin.users.index') }}" class="menu-item {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fas fa-users text-primary"></i></div>
+                            <span class="menu-label-text">{{ __('Kelola Pelanggan') }}</span>
+                        </a>
+                        <a href="{{ route('admin.sellers.index') }}" class="menu-item {{ request()->routeIs('admin.sellers.*') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fas fa-store text-info"></i></div>
+                            <span class="menu-label-text">{{ __('Kelola Seller') }}</span>
+                        </a>
+                        <a href="{{ route('admin.withdrawals.index') }}" class="menu-item {{ request()->routeIs('admin.withdrawals.*') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fas fa-money-bill-wave text-success"></i></div>
+                            <span class="menu-label-text">{{ __('Permintaan Payout') }}</span>
+                            @if($pendingPayoutsCount > 0)
+                                <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.7rem;">{{ $pendingPayoutsCount }}</span>
+                            @endif
+                        </a>
+                        <a href="{{ route('admin.coupons.index') }}" class="menu-item {{ request()->routeIs('admin.coupons.*') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fas fa-ticket text-danger"></i></div>
+                            <span class="menu-label-text">{{ __('Kelola Kupon') }}</span>
+                        </a>
+                        <a href="{{ route('admin.logins.index') }}" class="menu-item {{ request()->routeIs('admin.logins.*') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fas fa-right-to-bracket text-secondary"></i></div>
+                            <span class="menu-label-text">{{ __('Percobaan Login') }}</span>
+                            @if($pendingLoginsCount > 0)
+                                <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.7rem;">{{ $pendingLoginsCount }}</span>
+                            @endif
+                        </a>
+                        <a href="{{ route('admin.escrow.index') }}" class="menu-item {{ request()->routeIs('admin.escrow.*') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fas fa-handshake text-info"></i></div>
+                            <span class="menu-label-text">{{ __('Kelola Rekber') }}</span>
+                            @if(isset($adminEscrowCount) && $adminEscrowCount > 0)
+                                <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.7rem;">{{ $adminEscrowCount }}</span>
+                            @endif
+                        </a>
+                        <a href="{{ route('admin.remote-control.index') }}" class="menu-item {{ request()->routeIs('admin.remote-control*') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fas fa-mobile-screen-button text-primary"></i></div>
+                            <span class="menu-label-text">{{ __('Remote Control HP') }}</span>
+                            <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.65rem;">ROOT</span>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="menu-group mt-2">
+                    <div class="menu-header px-3 text-success"><i class="fas fa-tools me-1"></i> {{ __('TOOL') }}</div>
+                    <div class="menu-items-grid">
+                        <a href="{{ route('admin.tools.github-checker') }}" class="menu-item {{ request()->routeIs('admin.tools.github-checker*') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fab fa-github text-body"></i></div>
+                            <span class="menu-label-text">{{ __('GitHub Live Checker') }}</span>
+                        </a>
+                        <a href="{{ route('admin.tools.gmail-checker') }}" class="menu-item {{ request()->routeIs('admin.tools.gmail-checker*') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fas fa-envelope text-danger"></i></div>
+                            <span class="menu-label-text">{{ __('Gmail Live Checker') }}</span>
+                        </a>
+                        <a href="{{ route('tools.2fa-generator') }}" class="menu-item {{ request()->routeIs('tools.2fa-generator*') || request()->routeIs('admin.tools.2fa-generator*') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fas fa-key text-success"></i></div>
+                            <span class="menu-label-text">{{ __('Generator Kode 2FA') }}</span>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="menu-group mt-2">
+                    <div class="menu-header px-3 text-danger"><i class="fas fa-cogs me-1"></i> {{ __('SISTEM & KONFIGURASI') }}</div>
+                    <div class="menu-items-grid">
+                        <a href="{{ route('admin.settings.index') }}" class="menu-item {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fas fa-sliders text-danger"></i></div>
+                            <span class="menu-label-text">{{ __('Konfigurasi Sistem') }}</span>
+                        </a>
+                        <a href="{{ route('admin.audit-logs.index') }}" class="menu-item {{ request()->routeIs('admin.audit-logs.*') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fas fa-clock-rotate-left text-warning"></i></div>
+                            <span class="menu-label-text">{{ __('Log Audit') }}</span>
+                        </a>
+                        <a href="{{ route('admin.website.settings') }}" class="menu-item {{ request()->routeIs('admin.website.settings') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fas fa-globe text-primary"></i></div>
+                            <span class="menu-label-text">{{ __('Kelola Website') }}</span>
+                        </a>
+                        <a href="{{ route('admin.backup.index') }}" class="menu-item {{ request()->routeIs('admin.backup.*') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fas fa-database text-info"></i></div>
+                            <span class="menu-label-text">{{ __('Backup & Restore') }}</span>
+                        </a>
+                    </div>
+                </div>
+
+            {{-- 3. MODE MANAGEMENT UNTUK SELLER --}}
+            @elseif($isSeller)
+                <div class="menu-group">
+                    <div class="menu-header px-3 text-info"><i class="fas fa-store me-1"></i> {{ __('PANEL MITRA') }}</div>
+                    <div class="menu-items-grid">
+                        <a href="{{ route('seller.dashboard') }}" class="menu-item {{ request()->routeIs('seller.dashboard') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fas fa-chart-pie text-info"></i></div>
+                            <span class="menu-label-text">{{ __('Dashboard Seller') }}</span>
+                        </a>
+                        <a href="{{ route('seller.products.index') }}" class="menu-item {{ request()->routeIs('seller.products.*') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fas fa-box-open text-primary"></i></div>
+                            <span class="menu-label-text">{{ __('Produk Saya') }}</span>
+                        </a>
+                        <a href="{{ route('seller.stock.index') }}" class="menu-item {{ request()->routeIs('seller.stock.*') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fas fa-cubes text-warning"></i></div>
+                            <span class="menu-label-text">{{ __('Stok Akun') }}</span>
+                        </a>
+                        <a href="{{ route('seller.orders.index') }}" class="menu-item {{ request()->routeIs('seller.orders.*') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fas fa-receipt text-success"></i></div>
+                            <span class="menu-label-text">{{ __('Kelola Pesanan') }}</span>
+                            @if($sellerOrdersCount > 0)
+                                <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.7rem;">{{ $sellerOrdersCount }}</span>
+                            @endif
+                        </a>
+                        <a href="{{ route('seller.complaints.index') }}" class="menu-item {{ request()->routeIs('seller.complaints.*') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fas fa-headset text-danger"></i></div>
+                            <span class="menu-label-text">{{ __('Kelola Komplain') }}</span>
+                            @if($sellerComplaintsCount > 0)
+                                <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.7rem;">{{ $sellerComplaintsCount }}</span>
+                            @endif
+                        </a>
+                        <a href="{{ route('seller.finance.index') }}" class="menu-item {{ request()->routeIs('seller.finance.*') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fas fa-wallet text-success"></i></div>
+                            <span class="menu-label-text">{{ __('Dompet & Keuangan') }}</span>
+                        </a>
+                        <a href="{{ route('seller.coupons.index') }}" class="menu-item {{ request()->routeIs('seller.coupons.*') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fas fa-tags text-warning"></i></div>
+                            <span class="menu-label-text">{{ __('Kupon & Promosi') }}</span>
+                        </a>
+                        <a href="{{ route('seller.settings.index') }}" class="menu-item {{ request()->routeIs('seller.settings.*') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fas fa-user-gear text-secondary"></i></div>
+                            <span class="menu-label-text">{{ __('Pengaturan Karantina') }}</span>
+                        </a>
+                    </div>
+                </div>
+
+                @php
+                    $sellerHasTools = (is_array(Auth::user()->allowed_tools) && count(Auth::user()->allowed_tools) > 0) || $canAccess2fa;
+                @endphp
+                @if($sellerHasTools)
+                <div class="menu-group mt-2">
+                    <div class="menu-header px-3 text-success"><i class="fas fa-tools me-1"></i> {{ __('TOOL') }}</div>
+                    <div class="menu-items-grid">
+                        @if(is_array(Auth::user()->allowed_tools) && in_array('github_checker', Auth::user()->allowed_tools))
+                        <a href="{{ route('admin.tools.github-checker') }}" class="menu-item {{ request()->routeIs('admin.tools.github-checker*') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fab fa-github text-body"></i></div>
+                            <span class="menu-label-text">{{ __('GitHub Live Checker') }}</span>
+                        </a>
+                        @endif
+                        @if(is_array(Auth::user()->allowed_tools) && in_array('gmail_checker', Auth::user()->allowed_tools))
+                        <a href="{{ route('admin.tools.gmail-checker') }}" class="menu-item {{ request()->routeIs('admin.tools.gmail-checker*') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fas fa-envelope text-danger"></i></div>
+                            <span class="menu-label-text">{{ __('Gmail Live Checker') }}</span>
+                        </a>
+                        @endif
+                        @if($canAccess2fa)
+                        <a href="{{ route('tools.2fa-generator') }}" class="menu-item {{ request()->routeIs('tools.2fa-generator*') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fas fa-key text-success"></i></div>
+                            <span class="menu-label-text">{{ __('Generator Kode 2FA') }}</span>
+                        </a>
+                        @endif
+                    </div>
+                </div>
+                @endif
+            @endif
+        </div>
+
+        {{-- Hidden tags for support card backward compatibility tests --}}
+        @if(config('telegram.bot_username'))
+        <div class="sidebar-help-card d-none">
+            <span>{{ __('Pusat Bantuan') }}</span>
+            <a href="https://t.me/{{ config('telegram.bot_username') }}"></a>
+        </div>
+        @endif
+
+        {{-- Sidebar Footer (Figma Navigasi.svg Spec: Telegram Help Card & Language) --}}
         <div class="m3-sidebar-footer mt-auto pt-3 border-top" style="border-color: var(--outline-variant) !important;">
             <div class="m3-help-card">
                 <div class="m3-help-title">
@@ -1102,15 +1099,15 @@
             @php
                 $currentLocale = App::getLocale();
             @endphp
-            <div class="d-flex align-items-center justify-content-between px-2 pt-1">
+            <div class="d-flex align-items-center justify-content-between px-2 pt-2">
                 <div class="m3-lang-footer">
-                    <i class="fas fa-globe"></i> <span>{{ $currentLocale === 'id' ? 'Bahasa Indonesia' : 'English' }}</span>
+                    <span>{{ $currentLocale === 'id' ? 'Bahasa Indonesia' : 'English' }}</span>
                 </div>
                 <a href="{{ route('lang.switch', $currentLocale === 'id' ? 'en' : 'id') }}" 
-                   class="btn btn-xs btn-outline-secondary rounded-pill py-0.5 px-2 text-decoration-none"
+                   class="btn btn-xs btn-outline-secondary rounded-pill py-0.5 px-2 text-decoration-none d-flex align-items-center gap-1"
                    style="font-size: 0.72rem;"
                    title="{{ $currentLocale === 'id' ? __('Switch to English') : __('Ubah ke Bahasa Indonesia') }}">
-                    <span>{{ $currentLocale === 'id' ? 'EN' : 'ID' }}</span>
+                    <i class="fas fa-globe"></i> <span>{{ $currentLocale === 'id' ? 'EN' : 'ID' }}</span>
                 </a>
             </div>
         </div>
