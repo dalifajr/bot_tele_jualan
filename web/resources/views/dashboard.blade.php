@@ -1,338 +1,246 @@
 @extends('layouts.app')
 
 @section('title', __('Dashboard'))
-@section('page_subtitle', __('Cloud Overview'))
-@section('meta_description', 'Dashboard akun Anda — lihat ringkasan pesanan dan aktivitas terbaru')
-
-@section('action_bar_buttons')
-    @guest
-    <a href="{{ route('login') }}" class="cm-btn-outline">
-        <i class="fas fa-arrow-right-to-bracket"></i>
-        <span>{{ __('Login') }}</span>
-    </a>
-    @endguest
-@endsection
+@section('page_subtitle', __('Ruang Belanja Anda'))
+@section('meta_description', 'Dashboard akun Anda — jelajahi katalog produk digital dan pantau pesanan Anda')
 
 @section('content')
-<!-- Google Cloud Console Welcome Header & Identity Bar -->
-<div class="m3-console-header mb-3">
-    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
-        <div>
-            @auth
-            <h1 class="h4 fw-semibold mb-1" style="color: var(--cm-sys-color-on-surface);">
-                {{ __('Halo') }}, {{ Auth::user()->username ?: (Auth::user()->full_name ?: 'User') }}
-            </h1>
-            <p class="mb-0 small" style="color: var(--cm-sys-color-on-surface-variant); max-width: 680px;">
-                {{ __('Kelola pesanan produk digital Anda, cek status transaksi terbaru, atau nikmati belanja instan dari katalog kami.') }}
-            </p>
-            @else
-            <h1 class="h4 fw-semibold mb-1" style="color: var(--cm-sys-color-on-surface);">
-                {{ __('Halo, Tamu') }}
-            </h1>
-            <p class="mb-0 small" style="color: var(--cm-sys-color-on-surface-variant); max-width: 680px;">
-                {{ __('Jelajahi berbagai produk digital terbaik kami dengan harga bersahabat dan pengiriman otomatis instan.') }}
-            </p>
-            @endauth
+<div class="d-flex flex-column gap-4">
+    {{-- Row 1: Greeting Hero Banner & Total Belanja Card (Figma M3 Style) --}}
+    <div class="row g-3 align-items-stretch">
+        {{-- Left: Greeting Hero --}}
+        <div class="col-lg-8 col-12 d-flex flex-column justify-content-center">
+            <div class="m3-dash-hero pe-lg-3 py-2">
+                <div class="m3-dash-overline">{{ __('RUANG BELANJA ANDA') }}</div>
+                <h1 class="m3-dash-headline">
+                    {{ __('Halo,') }}<br>
+                    <span>{{ Auth::check() ? (Auth::user()->username ?: (Auth::user()->full_name ?: 'dzulfikrialifajri')) : 'dzulfikrialifajri' }}</span>
+                </h1>
+                <p class="m3-dash-subtitle">
+                    {{ __('Semua kebutuhan digital, dalam satu tempat.') }}
+                </p>
+                <div>
+                    <a href="{{ route('catalog.index') }}" class="btn btn-primary rounded-pill px-4 py-2.5 d-inline-flex align-items-center gap-2 fw-semibold" style="font-size: 0.92rem;">
+                        <i class="fas fa-store"></i>
+                        <span>{{ __('Jelajahi katalog') }}</span>
+                    </a>
+                </div>
+            </div>
         </div>
 
-        <div class="d-flex align-items-center gap-2 flex-wrap">
-            <a href="{{ route('catalog.index') }}" class="btn btn-primary">
-                <i class="fas fa-shopping-bag me-1.5"></i>{{ __('Jelajahi Katalog') }}
+        {{-- Right: Total Belanja Card --}}
+        <div class="col-lg-4 col-12">
+            <a href="{{ Auth::check() ? route('orders.index', ['status' => 'delivered']) : route('login') }}" @guest data-guest-modal="true" data-feature-name="total belanja" @endguest class="m3-balance-card d-block">
+                <div>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <i class="far fa-credit-card text-primary" style="font-size: 1.35rem;"></i>
+                    </div>
+                    <div class="text-secondary small fw-medium">{{ __('Total belanja') }}</div>
+                    <div class="m3-balance-val">
+                        Rp {{ number_format($totalSpent ?? 0, 0, ',', '.') }}
+                    </div>
+                </div>
+                <div class="d-flex justify-content-end text-primary">
+                    <i class="fas fa-arrow-right" style="font-size: 0.95rem;"></i>
+                </div>
             </a>
-            @guest
-            <a href="{{ route('login') }}" class="btn btn-outline-primary">
-                <i class="fas fa-sign-in-alt me-1.5"></i>{{ __('Masuk / Daftar Akun') }}
-            </a>
-            @endguest
         </div>
     </div>
-</div>
 
-<!-- Google Cloud Console Resource Summary Metrics (4x1 Outlined Cards) -->
-<div class="row g-3 mb-4">
-    <!-- Card 1: Total Orders -->
-    <div class="col-6 col-xl-3">
-        <a href="{{ Auth::check() ? route('orders.index') : route('login') }}" @guest data-guest-modal="true" data-feature-name="riwayat pesanan" @endguest class="text-decoration-none d-block h-100">
-            <div class="card m3-metric-card h-100">
-                <div class="card-body p-3">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <div class="m3-metric-icon bg-primary-subtle text-primary">
-                            <i class="fas fa-shopping-cart"></i>
-                        </div>
-                        <span class="badge bg-primary-subtle text-primary">{{ __('Akun') }}</span>
-                    </div>
-                    <div class="text-muted small fw-medium mb-1" style="font-size: 0.75rem;">{{ __('Total Pesanan') }}</div>
-                    <div class="d-flex align-items-baseline justify-content-between">
-                        <h3 class="h4 fw-bold text-body mb-0">{{ $totalOrders ?? 0 }}</h3>
-                        <i class="fas fa-arrow-right text-primary small opacity-75 d-none d-sm-inline"></i>
-                    </div>
+    {{-- Row 2: Metric Mini Cards (3 Columns Desktop / 2x2 Mobile) --}}
+    <div class="row g-3">
+        {{-- Card 1: Total Pesanan --}}
+        <div class="col-md-4 col-6">
+            <a href="{{ Auth::check() ? route('orders.index') : route('login') }}" @guest data-guest-modal="true" data-feature-name="riwayat pesanan" @endguest class="m3-dash-metric-card d-block">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-secondary small fw-medium">{{ __('Total pesanan') }}</span>
+                    <i class="fas fa-shopping-bag text-primary opacity-75"></i>
                 </div>
-            </div>
-        </a>
+                <div class="d-flex align-items-baseline justify-content-between mt-3">
+                    <div class="m3-dash-metric-val">{{ $totalOrders ?? 0 }}</div>
+                    <i class="fas fa-arrow-right text-secondary small"></i>
+                </div>
+            </a>
+        </div>
+
+        {{-- Card 2: Selesai --}}
+        <div class="col-md-4 col-6">
+            <a href="{{ Auth::check() ? route('orders.index', ['status' => 'delivered']) : route('login') }}" @guest data-guest-modal="true" data-feature-name="pesanan selesai" @endguest class="m3-dash-metric-card d-block">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-secondary small fw-medium">{{ __('Selesai') }}</span>
+                    <i class="fas fa-check-circle text-success opacity-75"></i>
+                </div>
+                <div class="d-flex align-items-baseline justify-content-between mt-3">
+                    <div class="m3-dash-metric-val">{{ $completedOrders ?? 0 }}</div>
+                    <i class="fas fa-arrow-right text-secondary small"></i>
+                </div>
+            </a>
+        </div>
+
+        {{-- Card 3: Menunggu --}}
+        <div class="col-md-4 col-12">
+            <a href="{{ Auth::check() ? route('orders.index', ['status' => 'pending_payment']) : route('login') }}" @guest data-guest-modal="true" data-feature-name="pesanan menunggu" @endguest class="m3-dash-metric-card d-block" style="background: var(--surface-container-high);">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-secondary small fw-medium">{{ __('Menunggu') }}</span>
+                    <i class="far fa-clock text-danger opacity-75"></i>
+                </div>
+                <div class="d-flex align-items-baseline justify-content-between mt-3">
+                    <div class="m3-dash-metric-val">{{ $pendingOrders ?? 0 }}</div>
+                    <i class="fas fa-arrow-right text-secondary small"></i>
+                </div>
+            </a>
+        </div>
     </div>
 
-    <!-- Card 2: Completed Orders -->
-    <div class="col-6 col-xl-3">
-        <a href="{{ Auth::check() ? route('orders.index', ['status' => 'delivered']) : route('login') }}" @guest data-guest-modal="true" data-feature-name="pesanan selesai" @endguest class="text-decoration-none d-block h-100">
-            <div class="card m3-metric-card h-100">
-                <div class="card-body p-3">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <div class="m3-metric-icon bg-success-subtle text-success">
-                            <i class="fas fa-check-circle"></i>
-                        </div>
-                        <span class="badge bg-success-subtle text-success">{{ __('Berhasil') }}</span>
-                    </div>
-                    <div class="text-muted small fw-medium mb-1" style="font-size: 0.75rem;">{{ __('Selesai') }}</div>
-                    <div class="d-flex align-items-baseline justify-content-between">
-                        <h3 class="h4 fw-bold text-body mb-0">{{ $completedOrders ?? 0 }}</h3>
-                        <i class="fas fa-arrow-right text-primary small opacity-75 d-none d-sm-inline"></i>
-                    </div>
-                </div>
-            </div>
-        </a>
-    </div>
-
-    <!-- Card 3: Pending Orders -->
-    <div class="col-6 col-xl-3">
-        <a href="{{ Auth::check() ? route('orders.index', ['status' => 'pending_payment']) : route('login') }}" @guest data-guest-modal="true" data-feature-name="pesanan menunggu" @endguest class="text-decoration-none d-block h-100">
-            <div class="card m3-metric-card h-100">
-                <div class="card-body p-3">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <div class="m3-metric-icon bg-warning-subtle text-warning-emphasis">
-                            <i class="fas fa-clock"></i>
-                        </div>
-                        <span class="badge bg-warning-subtle text-warning-emphasis">{{ __('Pending') }}</span>
-                    </div>
-                    <div class="text-muted small fw-medium mb-1" style="font-size: 0.75rem;">{{ __('Menunggu') }}</div>
-                    <div class="d-flex align-items-baseline justify-content-between">
-                        <h3 class="h4 fw-bold text-body mb-0">{{ $pendingOrders ?? 0 }}</h3>
-                        <i class="fas fa-arrow-right text-primary small opacity-75 d-none d-sm-inline"></i>
-                    </div>
-                </div>
-            </div>
-        </a>
-    </div>
-
-    <!-- Card 4: Total Spent -->
-    <div class="col-6 col-xl-3">
-        <a href="{{ Auth::check() ? route('orders.index', ['status' => 'delivered']) : route('login') }}" @guest data-guest-modal="true" data-feature-name="total belanja" @endguest class="text-decoration-none d-block h-100">
-            <div class="card m3-metric-card h-100">
-                <div class="card-body p-3">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <div class="m3-metric-icon bg-info-subtle text-info-emphasis">
-                            <i class="fas fa-wallet"></i>
-                        </div>
-                        <span class="badge bg-info-subtle text-info-emphasis">{{ __('Total') }}</span>
-                    </div>
-                    <div class="text-muted small fw-medium mb-1" style="font-size: 0.75rem;">{{ __('Total Belanja') }}</div>
-                    <div class="d-flex align-items-baseline justify-content-between">
-                        <h3 class="h5 fw-bold text-body mb-0">Rp {{ number_format($totalSpent ?? 0, 0, ',', '.') }}</h3>
-                        <i class="fas fa-arrow-right text-primary small opacity-75 d-none d-sm-inline"></i>
-                    </div>
-                </div>
-            </div>
-        </a>
-    </div>
-</div>
-
-<!-- Main Content Split (Recent Orders & Quick Actions) -->
-<div class="row g-4">
-    <!-- Left Column: Recent Orders Table -->
-    <div class="col-lg-8">
-        <div class="card overflow-hidden h-100">
-            <div class="card-header bg-transparent d-flex justify-content-between align-items-center pt-3 px-4 pb-3">
-                <h5 class="fw-bold mb-0 text-body">
-                    <i class="fas fa-history text-primary me-2"></i>{{ __('Pesanan Terbaru') }}
-                </h5>
-                <a href="{{ route('orders.index') }}" @guest data-guest-modal="true" data-feature-name="riwayat pesanan" @endguest class="btn btn-sm btn-outline-primary rounded-1 px-3 fw-semibold">
-                    {{ __('Lihat Semua') }} <i class="fas fa-arrow-right ms-1 small"></i>
+    {{-- Row 3: Split Section (Pesanan Terbaru & Akses Cepat) --}}
+    <div class="row g-4">
+        {{-- Left: Pesanan Terbaru --}}
+        <div class="col-lg-8 col-12">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="h5 fw-bold mb-0 text-body" style="font-family: var(--font-google-sans-display); font-size: 1.25rem;">
+                    {{ __('Pesanan terbaru') }}
+                </h2>
+                <a href="{{ route('orders.index') }}" @guest data-guest-modal="true" data-feature-name="riwayat pesanan" @endguest class="text-decoration-none small fw-semibold text-primary">
+                    {{ __('Lihat semua') }}
                 </a>
             </div>
-            <div class="card-body p-0">
-                @guest
-                    <div class="text-center py-5 px-3">
-                        <div class="bg-primary-subtle text-primary rounded-2 d-inline-flex align-items-center justify-content-center mb-3" style="width: 72px; height: 72px;">
-                            <i class="fas fa-user-lock" style="font-size: 1.85rem;"></i>
-                        </div>
-                        <h6 class="fw-bold text-body mb-1">{{ __('Masuk untuk Melihat Riwayat Transaksi') }}</h6>
-                        <p class="text-muted small mb-3 mx-auto" style="max-width: 420px;">{{ __('Masuk atau buat akun baru untuk melihat status pesanan, mengakses lisensi dan akun digital Anda, serta mendapatkan bantuan garansi.') }}</p>
-                        <div class="d-flex justify-content-center gap-2">
-                            <a href="{{ route('login') }}" class="btn btn-primary rounded-1 px-4 fw-bold">
-                                <i class="fas fa-sign-in-alt me-1"></i> {{ __('Masuk Akun') }}
-                            </a>
-                            <a href="{{ route('catalog.index') }}" class="btn btn-outline-primary rounded-1 px-4 fw-bold">
-                                <i class="fas fa-shopping-bag me-1"></i> {{ __('Lihat Katalog') }}
-                            </a>
-                        </div>
-                    </div>
-                @else
-                    @if(isset($recentOrders) && count($recentOrders) > 0)
-                    {{-- Desktop Table View --}}
-                    <div class="table-responsive d-none d-md-block">
-                        <table class="table table-hover align-middle mb-0">
-                            <thead>
-                                <tr>
-                                    <th class="ps-4">{{ __('No. Ref') }}</th>
-                                    <th>{{ __('Produk') }}</th>
-                                    <th>{{ __('Total Harga') }}</th>
-                                    <th class="text-center">{{ __('Status') }}</th>
-                                    <th class="pe-4 text-end">{{ __('Tanggal') }}</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($recentOrders as $order)
-                                <tr>
-                                    <td class="ps-4 fw-bold text-primary font-monospace">
-                                        <a href="{{ route('orders.show', $order->id) }}" class="text-decoration-none fw-bold">
-                                            {{ $order->reference }}
-                                        </a>
-                                    </td>
-                                    <td class="fw-semibold text-body">
-                                        {{ Str::limit($order->product->name ?? '-', 28) }}
-                                    </td>
-                                    <td class="fw-bold">
-                                        Rp {{ number_format($order->total_price ?? 0, 0, ',', '.') }}
-                                    </td>
-                                    <td class="text-center">
-                                        @php
-                                            $statusMap = [
-                                                'pending_payment' => [__('Menunggu'), 'warning'],
-                                                'paid' => [__('Dibayar'), 'info'],
-                                                'delivered' => [__('Selesai'), 'success'],
-                                                'cancelled' => [__('Dibatalkan'), 'danger'],
-                                                'expired' => [__('Kedaluwarsa'), 'secondary'],
-                                            ];
-                                            [$label, $color] = $statusMap[$order->status] ?? [$order->status, 'secondary'];
-                                        @endphp
-                                        <span class="badge bg-{{ $color }}-subtle text-{{ $color }} rounded-1 px-2.5 py-1 fw-bold">
-                                            {{ $label }}
-                                        </span>
-                                    </td>
-                                    <td class="pe-4 text-end text-secondary small">
-                                        {{ $order->created_at->format('d M Y') }}
-                                    </td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
 
-                    {{-- Mobile Activity Cards View --}}
-                    <div class="d-md-none p-3">
-                        @foreach($recentOrders as $order)
-                            @php
-                                $statusMap = [
-                                    'pending_payment' => [__('Menunggu'), 'warning'],
-                                    'paid' => [__('Dibayar'), 'info'],
-                                    'delivered' => [__('Selesai'), 'success'],
-                                    'cancelled' => [__('Dibatalkan'), 'danger'],
-                                    'expired' => [__('Kedaluwarsa'), 'secondary'],
-                                ];
-                                [$label, $color] = $statusMap[$order->status] ?? [$order->status, 'secondary'];
-                            @endphp
-                            <a href="{{ route('orders.show', $order->id) }}" class="text-decoration-none text-body">
-                                <div class="mobile-activity-card">
-                                    <div class="d-flex justify-content-between align-items-center mb-1">
-                                        <span class="fw-bold text-primary font-monospace" style="font-size: 0.85rem;">{{ $order->reference }}</span>
-                                        <span class="badge bg-{{ $color }}-subtle text-{{ $color }} rounded-1 px-2 py-0.5" style="font-size: 0.68rem;">
-                                            {{ $label }}
-                                        </span>
-                                    </div>
-                                    <div class="fw-semibold text-body mb-2" style="font-size: 0.88rem;">
-                                        {{ Str::limit($order->product->name ?? '-', 35) }}
-                                    </div>
-                                    <div class="d-flex justify-content-between align-items-center text-muted small" style="font-size: 0.78rem;">
-                                        <span class="fw-bold text-body">Rp {{ number_format($order->total_price ?? 0, 0, ',', '.') }}</span>
-                                        <span><i class="far fa-calendar-alt me-1"></i>{{ $order->created_at->format('d M Y') }}</span>
-                                    </div>
-                                </div>
-                            </a>
-                        @endforeach
+            @guest
+                <div class="m3-order-row-card p-4 text-center d-flex flex-column align-items-center justify-content-center">
+                    <div class="m3-cloud-icon mb-3" style="width: 52px; height: 52px; font-size: 1.35rem;">
+                        <i class="fas fa-lock"></i>
                     </div>
+                    <h6 class="fw-bold mb-1">{{ __('Masuk untuk Melihat Riwayat Pesanan') }}</h6>
+                    <p class="text-secondary small mb-3" style="max-width: 400px;">
+                        {{ __('Silakan masuk dengan akun Anda untuk memantau status transaksi dan mengakses produk digital yang Anda beli.') }}
+                    </p>
+                    <a href="{{ route('login') }}" class="btn btn-primary rounded-pill px-4 btn-sm fw-semibold">
+                        {{ __('Masuk Sekarang') }}
+                    </a>
+                </div>
+            @else
+                @if(isset($recentOrders) && count($recentOrders) > 0)
+                    @foreach($recentOrders as $order)
+                        @php
+                            $statusMap = [
+                                'pending_payment' => [__('Menunggu'), 'warning', 'style="background: #ffd8e4; color: #633b48;"'],
+                                'paid' => [__('Dibayar'), 'info', 'style="background: #eaddff; color: #21005d;"'],
+                                'delivered' => [__('Selesai'), 'success', 'style="background: #c4eed0; color: #072711;"'],
+                                'cancelled' => [__('Dibatalkan'), 'danger', 'style="background: #ffdad6; color: #410002;"'],
+                                'expired' => [__('Kedaluwarsa'), 'secondary', 'style="background: #e6e0e9; color: #49454f;"'],
+                            ];
+                            [$label, $badgeClass, $inlineStyle] = $statusMap[$order->status] ?? [$order->status, 'secondary', ''];
+                        @endphp
+                        <a href="{{ route('orders.show', $order->id) }}" class="m3-order-row-card">
+                            <div class="d-flex flex-column pe-3">
+                                <span class="fw-bold text-body" style="font-size: 0.92rem; line-height: 1.3;">
+                                    {{ Str::limit($order->product->name ?? '-', 35) }}
+                                </span>
+                                <div class="d-flex align-items-center gap-2 mt-1">
+                                    <span class="text-secondary font-monospace" style="font-size: 0.75rem;">{{ $order->reference }}</span>
+                                    <span class="text-secondary small">•</span>
+                                    <span class="text-secondary small" style="font-size: 0.75rem;">{{ $order->created_at->format('d M Y') }}</span>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center gap-3 ms-auto text-end">
+                                <span class="fw-bold text-body" style="font-size: 0.95rem;">
+                                    Rp {{ number_format($order->total_price ?? 0, 0, ',', '.') }}
+                                </span>
+                                <span class="badge rounded-pill px-3 py-1.5 fw-semibold" {!! $inlineStyle !!} style="font-size: 0.75rem;">
+                                    {{ $label }}
+                                </span>
+                            </div>
+                        </a>
+                    @endforeach
                 @else
-                    <div class="text-center py-5 px-3">
-                        <div class="m3-tonal-item rounded-2 d-inline-flex align-items-center justify-content-center mb-3" style="width: 72px; height: 72px;">
-                            <i class="fas fa-box-open text-muted" style="font-size: 2rem;"></i>
-                        </div>
-                        <h6 class="fw-bold text-body mb-1">{{ __('Belum Ada Pesanan') }}</h6>
-                        <p class="text-muted small mb-3">{{ __('Anda belum pernah melakukan pemesanan produk digital.') }}</p>
-                        <a href="{{ route('catalog.index') }}" class="btn btn-primary rounded-1 px-4 fw-bold">
-                            <i class="fas fa-store me-2"></i>{{ __('Mulai Belanja') }}
+                    <div class="m3-order-row-card p-4 text-center d-flex flex-column align-items-center justify-content-center">
+                        <i class="fas fa-box-open text-secondary mb-2" style="font-size: 2rem;"></i>
+                        <div class="fw-bold text-body mb-1">{{ __('Belum Ada Pesanan') }}</div>
+                        <p class="text-secondary small mb-3">{{ __('Mulai belanja produk digital pilihan Anda dari katalog kami.') }}</p>
+                        <a href="{{ route('catalog.index') }}" class="btn btn-primary rounded-pill px-4 btn-sm fw-semibold">
+                            {{ __('Mulai Belanja') }}
                         </a>
                     </div>
                 @endif
-                @endguest
+            @endguest
+        </div>
+
+        {{-- Right: Akses Cepat --}}
+        <div class="col-lg-4 col-12">
+            <h2 class="h5 fw-bold mb-3 text-body" style="font-family: var(--font-google-sans-display); font-size: 1.25rem;">
+                {{ __('Akses cepat') }}
+            </h2>
+
+            <div class="d-flex flex-column gap-2">
+                {{-- 1. Katalog Produk --}}
+                <a href="{{ route('catalog.index') }}" class="m3-quick-card">
+                    <div class="m3-cloud-icon" style="width: 36px; height: 36px; min-width: 36px; border-radius: 10px; font-size: 1rem;">
+                        <i class="fas fa-store"></i>
+                    </div>
+                    <div class="d-flex flex-column flex-grow-1 overflow-hidden">
+                        <span class="fw-bold text-body" style="font-size: 0.88rem;">{{ __('Katalog produk') }}</span>
+                        <small class="text-secondary text-truncate" style="font-size: 0.75rem;">{{ __('Temukan kebutuhan digital') }}</small>
+                    </div>
+                    <i class="fas fa-chevron-right text-secondary small"></i>
+                </a>
+
+                {{-- 2. Riwayat Pesanan --}}
+                <a href="{{ route('orders.index') }}" @guest data-guest-modal="true" data-feature-name="riwayat pesanan" @endguest class="m3-quick-card">
+                    <div class="m3-cloud-icon" style="width: 36px; height: 36px; min-width: 36px; border-radius: 10px; font-size: 1rem;">
+                        <i class="fas fa-receipt"></i>
+                    </div>
+                    <div class="d-flex flex-column flex-grow-1 overflow-hidden">
+                        <span class="fw-bold text-body" style="font-size: 0.88rem;">{{ __('Riwayat pesanan') }}</span>
+                        <small class="text-secondary text-truncate" style="font-size: 0.75rem;">{{ __('Cek transaksi dan lisensi') }}</small>
+                    </div>
+                    <i class="fas fa-chevron-right text-secondary small"></i>
+                </a>
+
+                {{-- 3. Pusat Bantuan Chat --}}
+                <a href="{{ route('chat.index') }}" @guest data-guest-modal="true" data-feature-name="pusat chat" @endguest class="m3-quick-card">
+                    <div class="m3-cloud-icon" style="width: 36px; height: 36px; min-width: 36px; border-radius: 10px; font-size: 1rem;">
+                        <i class="fas fa-comments"></i>
+                    </div>
+                    <div class="d-flex flex-column flex-grow-1 overflow-hidden">
+                        <span class="fw-bold text-body" style="font-size: 0.88rem;">{{ __('Pusat bantuan chat') }}</span>
+                        <small class="text-secondary text-truncate" style="font-size: 0.75rem;">{{ __('Diskusi dengan tim support') }}</small>
+                    </div>
+                    <i class="fas fa-chevron-right text-secondary small"></i>
+                </a>
+
+                {{-- 4. Bot Telegram --}}
+                @if(config('telegram.bot_username'))
+                <a href="https://t.me/{{ config('telegram.bot_username') }}" target="_blank" rel="noopener noreferrer" class="m3-quick-card">
+                    <div class="m3-cloud-icon" style="width: 36px; height: 36px; min-width: 36px; border-radius: 10px; font-size: 1rem;">
+                        <i class="fab fa-telegram"></i>
+                    </div>
+                    <div class="d-flex flex-column flex-grow-1 overflow-hidden">
+                        <span class="fw-bold text-body" style="font-size: 0.88rem;">{{ __('Bot Telegram') }}</span>
+                        <small class="text-secondary text-truncate" style="font-size: 0.75rem;">{{ __('Transaksi & notifikasi otomatis') }}</small>
+                    </div>
+                    <i class="fas fa-arrow-up-right-from-square text-secondary" style="font-size: 0.75rem;"></i>
+                </a>
+                @endif
             </div>
         </div>
     </div>
 
-    <!-- Right Column: Quick Actions & Support Widget -->
-    <div class="col-lg-4">
-        <div class="card h-100">
-            <div class="card-header bg-transparent pt-3 px-4 pb-3">
-                <h5 class="fw-bold mb-0 text-body">
-                    <i class="fas fa-bolt text-warning me-2"></i>{{ __('Akses Cepat') }}
-                </h5>
+    {{-- Row 4: Complaint Support Banner (Full Width Bottom - Figma M3 Style) --}}
+    <div class="m3-complaint-banner">
+        <div class="d-flex align-items-center gap-3">
+            <div class="rounded-circle d-flex align-items-center justify-content-center bg-white text-primary flex-shrink-0" style="width: 44px; height: 44px; font-size: 1.15rem;">
+                <i class="fas fa-headset"></i>
             </div>
-            <div class="card-body px-4 pb-4 pt-3">
-                <div class="d-flex flex-column gap-2.5">
-                    <a href="{{ route('catalog.index') }}" class="quick-action-btn">
-                        <div class="qa-icon bg-primary-subtle text-primary">
-                            <i class="fas fa-store"></i>
-                        </div>
-                        <div>
-                            <div class="fw-bold text-body">{{ __('Katalog Produk') }}</div>
-                            <small class="text-muted">{{ __('Jelajahi produk digital terlaris') }}</small>
-                        </div>
-                        <i class="fas fa-chevron-right text-secondary ms-auto small"></i>
-                    </a>
-
-                    <a href="{{ route('orders.index') }}" @guest data-guest-modal="true" data-feature-name="riwayat pesanan" @endguest class="quick-action-btn">
-                        <div class="qa-icon bg-success-subtle text-success">
-                            <i class="fas fa-receipt"></i>
-                        </div>
-                        <div>
-                            <div class="fw-bold text-body">{{ __('Riwayat Pesanan') }}</div>
-                            <small class="text-muted">{{ __('Cek detail & lisensi akun Anda') }}</small>
-                        </div>
-                        <i class="fas fa-chevron-right text-secondary ms-auto small"></i>
-                    </a>
-
-                    <a href="{{ route('chat.index') }}" @guest data-guest-modal="true" data-feature-name="pusat chat" @endguest class="quick-action-btn">
-                        <div class="qa-icon bg-info-subtle text-info">
-                            <i class="fas fa-comments"></i>
-                        </div>
-                        <div>
-                            <div class="fw-bold text-body">{{ __('Pusat Bantuan Chat') }}</div>
-                            <small class="text-muted">{{ __('Diskusi langsung dengan tim support') }}</small>
-                        </div>
-                        <i class="fas fa-chevron-right text-secondary ms-auto small"></i>
-                    </a>
-
-                    @if(config('telegram.bot_username'))
-                    <a href="https://t.me/{{ config('telegram.bot_username') }}" target="_blank" class="quick-action-btn">
-                        <div class="qa-icon bg-primary-subtle text-primary">
-                            <i class="fab fa-telegram"></i>
-                        </div>
-                        <div>
-                            <div class="fw-bold text-body">{{ __('Bot Telegram') }}</div>
-                            <small class="text-muted">{{ __('Transaksi & notifikasi otomatis') }}</small>
-                        </div>
-                        <i class="fas fa-external-link-alt text-secondary ms-auto small"></i>
-                    </a>
-                    @endif
-                </div>
-
-                <!-- Info Box Widget -->
-                <div class="m3-tonal-item p-3 mt-4">
-                    <div class="d-flex align-items-center gap-2 mb-1 text-primary fw-bold small">
-                        <i class="fas fa-info-circle"></i> {{ __('Butuh Pertolongan?') }}
-                    </div>
-                    <p class="text-muted small mb-0" style="font-size: 0.825rem; line-height: 1.45;">
-                        {{ __('Jika Anda mengalami kendala transaksi atau garansi produk, gunakan fitur Kelola Komplain atau hubungi admin via Telegram.') }}
-                    </p>
-                </div>
+            <div class="d-flex flex-column">
+                <span class="fw-bold" style="font-size: 1rem;">{{ __('Ada kendala dengan pesanan Anda?') }}</span>
+                <span class="small opacity-85">{{ __('Buka Kelola Komplain untuk bantuan transaksi atau garansi produk.') }}</span>
             </div>
+        </div>
+        <div>
+            <a href="{{ Auth::check() ? route('customer.complaints.index') : route('login') }}" @guest data-guest-modal="true" data-feature-name="kelola komplain" @endguest class="btn btn-light rounded-pill px-4 py-2 fw-bold d-inline-flex align-items-center gap-2" style="color: var(--primary); font-size: 0.875rem;">
+                <i class="fas fa-headset"></i>
+                <span>{{ __('Kelola komplain') }}</span>
+            </a>
         </div>
     </div>
 </div>
