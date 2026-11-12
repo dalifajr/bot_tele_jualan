@@ -1,6 +1,6 @@
 # RENCANA REDESAIN ANTARMUKA WEB (MATERIAL DESIGN 3 / FIGMA REFERENCE)
 
-Dokumen ini memuat arsitektur teknis, spesifikasi token desain, pemetaan komponen Blade, dan tahapan eksekusi implementasi antarmuka berdasarkan file desain `reference design/Untitled.svg`.
+Dokumen ini memuat arsitektur teknis, spesifikasi token desain, pemetaan komponen Blade, dan status eksekusi implementasi antarmuka berdasarkan file desain `reference design/Untitled.svg`.
 
 ---
 
@@ -21,64 +21,64 @@ Mengadopsi **Material Design 3 (M3) Expressive / Android 17 Material You** denga
 
 | Token CSS | Light Mode | Dark Mode | Fungsi |
 | :--- | :--- | :--- | :--- |
-| `--md-sys-color-primary` | `#65558F` | `#D0BCFF` | Tombol CTA utama, status aktif, fokus indikator |
-| `--md-sys-color-on-primary` | `#FFFFFF` | `#381E72` | Teks di atas warna primary |
-| `--md-sys-color-primary-container` | `#EADDFF` | `#4F378B` | Highlight chip aktif, pill background |
-| `--md-sys-color-on-primary-container` | `#21005D` | `#EADDFF` | Teks & ikon di atas primary container |
-| `--md-sys-color-surface` | `#FEF7FF` | `#141218` | Latar belakang kanvas aplikasi |
-| `--md-sys-color-surface-container-low` | `#F3EDF7` | `#1D1B20` | Background sidebar drawer, kartu banner |
-| `--md-sys-color-surface-container` | `#ECE6F0` | `#211F26` | Background kartu metrik, list group item |
-| `--md-sys-color-surface-container-high` | `#E6E0E9` | `#2B2930` | Hover state, input background |
-| `--md-sys-color-outline` | `#79747E` | `#938F99` | Border input, pembatas outline |
-| `--md-sys-color-outline-variant` | `#CAC4D0` | `#49454F` | Divider halus, hairline border |
-| `--md-sys-color-error` | `#BA1A1A` | `#FFB4AB` | Badge notifikasi, stok habis, status batal |
+| `--primary` | `#65558F` | `#D0BCFF` | Tombol CTA utama, status aktif, fokus indikator |
+| `--on-primary` | `#FFFFFF` | `#381E72` | Teks di atas warna primary |
+| `--primary-container` | `#EADDFF` | `#4F378B` | Highlight chip aktif, pill background |
+| `--on-primary-container` | `#21005D` | `#EADDFF` | Teks & ikon di atas primary container |
+| `--surface` | `#FEF7FF` | `#141218` | Latar belakang kanvas aplikasi |
+| `--surface-container-low` | `#F3EDF7` | `#1D1B20` | Background sidebar drawer, kartu banner |
+| `--surface-container` | `#ECE6F0` | `#211F26` | Background kartu metrik, list group item |
+| `--surface-container-high` | `#E6E0E9` | `#2B2930` | Hover state, input background |
+| `--outline` | `#79747E` | `#938F99` | Border input, pembatas outline |
+| `--outline-variant` | `#CAC4D0` | `#49454F` | Divider halus, hairline border |
+| `--error` | `#BA1A1A` | `#FFB4AB` | Badge notifikasi, stok habis, status batal |
 
 ---
 
-## 3. Peta Jalan Eksekusi Bertahap
+## 3. Status Pelaksanaan Tahap Demi Tahap
 
-### Tahap 1: Fondasi Token & CSS (`web/public/css/app.css`)
-- Menerapkan variabel token M3 Lavender Palette (Light & Dark Mode).
-- Menjaga proteksi icon Font Awesome.
-- Menstandarkan komponen atomik: Pill buttons, Outlined squircle inputs, Tonal cards.
+- [x] **Tahap 1: Fondasi Token & CSS M3 (`web/public/css/app.css`)**
+  - Menerapkan variabel token M3 Lavender Palette (Light & Dark Mode).
+  - Menjaga proteksi icon Font Awesome.
+  - Menstandarkan komponen atomik: Pill buttons, Outlined squircle inputs, Tonal cards.
 
-### Tahap 2: Layout Navigasi Shell (`web/resources/views/layouts/app.blade.php`)
-- **Desktop Sidebar (264px)**:
-  - Header dengan icon cloud squircle + nama store.
-  - Segmented button switcher `Belanja` vs `Admin` (khusus role admin/seller).
-  - Item menu dengan active indicator Full Pill lavender (`#E8DEF8`).
-  - Help card Telegram di footer sidebar.
-- **Top App Bar (56px)**:
-  - Search bar Full Pill `48px` terpusat.
-  - Notification icon dengan badge merah berdempetan presisi di sudut kanan atas.
-  - Cart icon, Dark mode toggle, Avatar dropdown.
-- **Mobile Navigation**:
-  - Top bar ringkas dan navigasi bawah ergonomis satu tangan.
+- [x] **Tahap 2: Layout Navigasi Shell (`web/resources/views/layouts/app.blade.php`)**
+  - Desktop Sidebar (264px membentang penuh) dengan Cloud Header, Segmented switch Belanja/Admin, Full pill active indicator, Telegram Help footer.
+  - Top App Bar (56px) dengan Search Bar Full Pill 48px terpusat, Action buttons (Notification micro badge presisi, Keranjang Belanja, Dark mode switch, Avatar menu).
+  - Shell Mobile ergonomis satu tangan.
 
-### Tahap 3: Halaman Dashboard Utama (`web/resources/views/dashboard.blade.php`)
-- Hero Greeting Banner squircle 28px dengan tombol pill CTA `Jelajahi katalog`.
-- Kartu Total Belanja / Saldo tebal dengan icon dompet.
-- Kartu Metrik (3 Kolom Desktop / 2x2 Mobile): `Total pesanan`, `Selesai`, `Menunggu`.
-- Daftar Pesanan Terbaru: Baris kartu squircle 16px dengan status pill badge.
-- Panel Akses Cepat & Banner Bantuan Komplain di bagian bawah.
+- [x] **Tahap 3: Halaman Dashboard Utama (`web/resources/views/dashboard.blade.php`)**
+  - Hero Greeting Banner squircle 28px dengan tombol pill CTA `Jelajahi katalog`.
+  - Kartu Total Belanja / Saldo tebal dengan icon dompet dan link navigasi.
+  - Kartu Metrik 3 Kolom: `Total pesanan`, `Selesai`, `Menunggu`.
+  - Daftar Pesanan Terbaru baris kartu squircle 16px dengan status pill badge lembut.
+  - Panel Akses Cepat & Complaint Banner di bagian bawah.
 
-### Tahap 4: Halaman Katalog Produk (`web/resources/views/catalog/index.blade.php`)
-- Kolom pencarian Full Pill + dropdown sort.
-- Filter chip horizontal scrollable sentuh mulus.
-- Kartu produk M3: Image media dengan stok pill tag di atas, detail info, dan quick-add cart button di pojok bawah.
+- [x] **Tahap 4: Halaman Katalog Produk (`web/resources/views/catalog/index.blade.php`)**
+  - Kolom pencarian Full Pill + dropdown urutkan terlaris.
+  - Filter chips kategori scrollable horizontal untuk mobile & desktop.
+  - Counter produk real-time `:count produk`.
+  - Grid kartu produk M3: Image media thumbnail dengan stok pill tag di atas, detail info, dan quick-add cart circle button di pojok bawah.
 
-### Tahap 5: Halaman Profil & Keamanan (`web/resources/views/profile.blade.php`)
-- Banner akun dengan avatar lingkaran, badge role, status 2FA.
-- Tab navigasi sub-menu flat.
-- Form data profil squircle dan panduan keamanan.
+- [x] **Tahap 5: Halaman Profil & Keamanan (`web/resources/views/profile.blade.php`)**
+  - Header akun squircle 28px dengan avatar lingkaran, badge role, status 2FA, link akun Telegram, tombol logout pill.
+  - Tab navigasi sub-menu flat M3 (`Data profil`, `Sandi & 2FA`, `Integrasi bot`, `Keamanan IP`).
+  - Row cards squircle 16px untuk ringkasan data akun dan toggle form pengeditan.
+  - Security banner M3 untuk pengaturan 2FA Telegram OTP dan kata sandi baru.
 
-### Tahap 6: Halaman Autentikasi (`login.blade.php`, `register.blade.php`)
-- Split-card dialog modern: Sisi kiri form masuk/daftar, sisi kanan info store dan kontak admin.
-- Tombol alternatif Login dengan Telegram.
+- [x] **Tahap 6: Halaman Autentikasi (`web/resources/views/auth/login.blade.php`, `web/public/css/auth.css`)**
+  - Split-card dialog modern radius 28px dengan segmented button switcher `Masuk` vs `Daftar`.
+  - Input field squircle 12px dan tombol masuk pill M3.
+  - Tombol full-width pill `Login dengan Telegram` yang kontras dan elegan.
+  - Sisi kanan info store dengan latar primary container, greeting juragan, dan kontak WhatsApp/Telegram admin.
 
-### Tahap 7: Testing & Sinkronisasi Installer
-- Menjalankan test suite Laravel (`php artisan test`) untuk memastikan seluruh 200 test tetap lulus.
-- Sinkronisasi perubahan ke installer dan updater (`ops/website_installer.sh` & `ops/update_manager.sh`).
+- [x] **Tahap 7: Testing & Build Android Listener**
+  - Menjalankan automated test suite Laravel: **200 passed (1077 assertions, 27.41s)** tanpa regresi.
+  - Build ulang aplikasi Android Listener (`android_listener`):
+    - `app-release.apk` (Universal)
+    - `app-arm64-v8a-release.apk` (Arsitektur 64-bit modern)
+    - `app-armeabi-v7a-release.apk` (Arsitektur 32-bit)
+    - `app-x86_64-release.apk` (Emulator / PC)
 
 ---
 
@@ -87,4 +87,3 @@ Mengadopsi **Material Design 3 (M3) Expressive / Android 17 Material You** denga
 2. **Role Exposure**: Segmented button "Admin" hanya dimunculkan jika user yang sedang login memiliki hak akses admin atau seller.
 3. **Responsivitas Layar Sempit**: Menggunakan CSS grid responsif dengan horizontal scroll wrapper pada area kategori & tabs agar tidak ada elemen terpotong.
 4. **Service Integritas**: Tidak mengubah skema database, tabel model, atau controller bot Telegram.
-

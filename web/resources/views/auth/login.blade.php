@@ -236,7 +236,7 @@
                       <div class="cf-turnstile" data-sitekey="{{ config('services.turnstile.site_key') }}" data-theme="light"></div>
                   </div>
 
-                  <button type="submit" class="btn btn-primary py-2.5 w-100 fw-bold">
+                  <button type="submit" class="btn btn-primary rounded-pill py-2.5 w-100 fw-bold shadow-none">
                       <span>{{ __('Masuk Sistem') }}</span>
                       <i class="fas fa-arrow-right ms-1"></i>
                   </button>
@@ -249,8 +249,8 @@
 
               <form action="{{ route('auth.telegram.request') }}" method="POST" class="d-grid">
                   @csrf
-                  <button type="submit" class="btn btn-tonal py-2.5 w-100 fw-bold">
-                      <i class="fab fa-telegram text-primary fs-5 me-1.5"></i>{{ __('Login dengan Telegram') }}
+                  <button type="submit" class="m3-auth-tg-btn py-2.5 w-100 fw-bold">
+                      <i class="fab fa-telegram fs-5 me-1.5"></i>{{ __('Login dengan Telegram') }}
                   </button>
               </form>
           </div>
@@ -315,7 +315,7 @@
                       <div class="cf-turnstile" data-sitekey="{{ config('services.turnstile.site_key') }}" data-theme="light"></div>
                   </div>
 
-                  <button type="submit" id="btn-register" class="btn btn-primary py-2.5 w-100 fw-bold">
+                  <button type="submit" id="btn-register" class="btn btn-primary rounded-pill py-2.5 w-100 fw-bold shadow-none">
                       <span>{{ __('Daftar Sekarang') }}</span>
                       <i class="fas fa-user-plus ms-1"></i>
                   </button>

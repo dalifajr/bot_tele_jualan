@@ -1,7 +1,7 @@
 /* ==========================================
    JUALAN DIGITAL - AUTHENTICATION DESIGN SYSTEM
-   Flat Material You (Android 17 / BeerCSS M3 Architecture)
-   Concentric Radii (24px Outer Card / 12px Inputs / Full Pill Tabs & Buttons)
+   Figma M3 Expressive Lavender Spec
+   Concentric Radii (28px Outer Card / 12px Inputs / Full Pill Tabs & Buttons)
    ========================================== */
 
 body {
@@ -10,16 +10,16 @@ body {
   align-items: center;
   justify-content: center;
   padding: 1.5rem 1rem;
-  background-color: var(--surface, #f8fafd);
-  color: var(--on-surface, #191c20);
+  background-color: var(--surface, #fef7ff);
+  color: var(--on-surface, #1d1b20);
   position: relative;
   overflow-x: hidden;
   font-family: var(--font-google-sans, "Google Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif) !important;
 }
 
 [data-bs-theme="dark"] body {
-  background-color: var(--surface, #111318) !important;
-  color: var(--on-surface, #e2e2e9) !important;
+  background-color: var(--surface, #141218) !important;
+  color: var(--on-surface, #e6e0e9) !important;
 }
 
 /* Font Awesome Protection in Auth */
@@ -48,7 +48,7 @@ body::before {
   width: 550px;
   height: 550px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(11, 87, 208, 0.08) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(101, 85, 143, 0.08) 0%, transparent 70%);
   pointer-events: none;
   z-index: 0;
 }
@@ -61,7 +61,7 @@ body::after {
   width: 550px;
   height: 550px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(0, 99, 155, 0.07) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(125, 82, 96, 0.07) 0%, transparent 70%);
   pointer-events: none;
   z-index: 0;
 }
@@ -73,7 +73,7 @@ body::after {
   right: 1.25rem;
   z-index: 1050;
   background: var(--surface-container-lowest, #ffffff);
-  border: 1px solid var(--outline-variant, #dce0e9);
+  border: 1px solid var(--outline-variant, #cac4d0);
   border-radius: 9999px !important;
   width: 44px;
   height: 44px;
@@ -85,23 +85,23 @@ body::after {
 }
 
 .auth-theme-toggle:hover {
-  background: var(--surface-container, #eceef4);
-  border-color: var(--primary, #0b57d0);
+  background: var(--surface-container, #ece6f0);
+  border-color: var(--primary, #65558f);
 }
 
 [data-bs-theme="dark"] .auth-theme-toggle {
-  background: var(--surface-container-lowest, #191c20);
-  border-color: var(--outline-variant, #33363f);
+  background: var(--surface-container-lowest, #1d1b20);
+  border-color: var(--outline-variant, #49454f);
 }
 
-/* Login Card Wrapper (Flat Material You 24px Card) */
+/* Login Card Wrapper (Figma M3 28px Card) */
 .login-wrapper {
   width: 100%;
-  max-width: 960px;
-  border-radius: var(--radius-xl, 24px) !important;
-  border: 1px solid var(--outline-variant, #dce0e9);
-  background: var(--surface-container-lowest, #ffffff);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+  max-width: 980px;
+  border-radius: var(--radius-xl, 28px) !important;
+  border: 1px solid var(--outline-variant, #cac4d0);
+  background: var(--surface-container-low, #f3edf7);
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.04);
   position: relative;
   z-index: 10;
   display: flex;
@@ -109,14 +109,14 @@ body::after {
 }
 
 [data-bs-theme="dark"] .login-wrapper {
-  background: var(--surface-container-lowest, #191c20);
-  border-color: var(--outline-variant, #33363f);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  background: var(--surface-container-low, #1d1b20);
+  border-color: var(--outline-variant, #49454f);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4);
 }
 
 /* Left Section: Form */
 .login-section {
-  flex: 1 1 520px;
+  flex: 1 1 540px;
   padding: 2.75rem 2.5rem;
   display: flex;
   flex-direction: column;
@@ -126,38 +126,53 @@ body::after {
 }
 
 [data-bs-theme="dark"] .login-section {
-  background: var(--surface-container-lowest, #191c20);
+  background: var(--surface-container-lowest, #141218);
 }
 
-/* Right Section: Info & Showcase (Flat Tonal Surface) */
+/* Right Section: Info & Showcase (Primary Container Surface) */
 .info-section {
-  flex: 1 1 400px;
+  flex: 1 1 420px;
   padding: 2.75rem 2.25rem;
-  background: var(--surface-container-low, #f2f5fa);
-  border-left: 1px solid var(--outline-variant, #dce0e9);
+  background: var(--primary-container, #eaddff);
+  color: var(--on-primary-container, #21005d);
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: space-between;
   position: relative;
+  overflow: hidden;
+}
+
+.info-section::before {
+  content: '';
+  position: absolute;
+  top: 0; right: 0; bottom: 0; left: 0;
+  opacity: 0.07;
+  background-image: radial-gradient(var(--on-primary-container, #21005d) 1.5px, transparent 1.5px);
+  background-size: 18px 18px;
+  pointer-events: none;
 }
 
 [data-bs-theme="dark"] .info-section {
-  background: var(--surface-container-low, #1d2024);
-  border-left-color: var(--outline-variant, #33363f);
+  background: var(--surface-container, #211f26);
+  color: var(--on-surface, #e6e0e9);
+  border-left: 1px solid var(--outline-variant, #49454f);
 }
 
 /* Card inside Info Section (Concentric 16px Radius) */
 .glass-card {
-  background: var(--surface-container-lowest, #ffffff);
-  border: 1px solid var(--outline-variant, #dce0e9);
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
   border-radius: var(--radius-md, 16px) !important;
   padding: 1.75rem;
   box-shadow: none;
+  position: relative;
+  z-index: 2;
 }
 
 [data-bs-theme="dark"] .glass-card {
-  background: var(--surface-container-lowest, #191c20);
-  border-color: var(--outline-variant, #33363f);
+  background: var(--surface-container-lowest, #141218);
+  border-color: var(--outline-variant, #49454f);
 }
 
 .glass-header {
@@ -165,64 +180,62 @@ body::after {
   align-items: center;
   gap: 0.6rem;
   font-weight: 700;
-  font-size: 1rem;
+  font-size: 1.05rem;
   margin-bottom: 1rem;
-  color: var(--primary, #0b57d0);
+  color: var(--primary, #65558f);
 }
 
 [data-bs-theme="dark"] .glass-header {
-  color: var(--primary, #a8c7fa);
+  color: var(--primary, #d0bcff);
 }
 
 /* Form Controls & Seamless Input Group in Auth (12px Squircle Radius) */
 .login-section .form-control,
 .login-section .form-select {
   border-radius: var(--radius-sm, 12px) !important;
-  padding: 0.6rem 0.95rem !important;
-  font-size: 0.9rem !important;
-  min-height: 44px;
-  background-color: var(--surface-container-low, #f2f5fa) !important;
-  border: 1px solid var(--outline-variant, #dce0e9) !important;
-  color: var(--on-surface, #191c20) !important;
-  transition: border-color 0.15s ease, background-color 0.15s ease;
+  padding: 0.65rem 1rem !important;
+  font-size: 0.92rem !important;
+  min-height: 46px;
+  background-color: var(--surface-container-lowest, #ffffff) !important;
+  border: 1px solid var(--outline-variant, #cac4d0) !important;
+  color: var(--on-surface, #1d1b20) !important;
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 [data-bs-theme="dark"] .login-section .form-control,
 [data-bs-theme="dark"] .login-section .form-select {
-  background-color: var(--surface-container-low, #1d2024) !important;
-  border-color: var(--outline-variant, #33363f) !important;
-  color: var(--on-surface, #e2e2e9) !important;
+  background-color: var(--surface-container-lowest, #141218) !important;
+  border-color: var(--outline-variant, #49454f) !important;
+  color: var(--on-surface, #e6e0e9) !important;
 }
 
 .login-section .form-control:focus,
 .login-section .form-select:focus {
-  border-color: var(--primary, #0b57d0) !important;
-  background-color: var(--surface-container-lowest, #ffffff) !important;
-  box-shadow: 0 0 0 1px var(--primary, #0b57d0) !important;
+  border-color: var(--primary, #65558f) !important;
+  box-shadow: 0 0 0 3px rgba(101, 85, 143, 0.2) !important;
 }
 
 [data-bs-theme="dark"] .login-section .form-control:focus,
 [data-bs-theme="dark"] .login-section .form-select:focus {
-  border-color: var(--primary, #a8c7fa) !important;
-  background-color: var(--surface-container-lowest, #191c20) !important;
-  box-shadow: 0 0 0 1px var(--primary, #a8c7fa) !important;
+  border-color: var(--primary, #d0bcff) !important;
+  box-shadow: 0 0 0 3px rgba(208, 188, 255, 0.2) !important;
 }
 
 .login-section .input-group .input-group-text {
   border-radius: var(--radius-sm, 12px) 0 0 var(--radius-sm, 12px) !important;
-  font-size: 0.9rem !important;
-  padding: 0.6rem 0.95rem !important;
-  min-height: 44px;
-  background-color: var(--surface-container, #eceef4) !important;
-  border: 1px solid var(--outline-variant, #dce0e9) !important;
+  font-size: 0.92rem !important;
+  padding: 0.65rem 1rem !important;
+  min-height: 46px;
+  background-color: var(--surface-container, #ece6f0) !important;
+  border: 1px solid var(--outline-variant, #cac4d0) !important;
   border-right: 0 !important;
-  color: var(--on-surface-variant, #44474e) !important;
+  color: var(--on-surface-variant, #49454f) !important;
 }
 
 [data-bs-theme="dark"] .login-section .input-group .input-group-text {
-  background-color: var(--surface-container, #23262b) !important;
-  border-color: var(--outline-variant, #33363f) !important;
-  color: var(--on-surface-variant, #c4c6d0) !important;
+  background-color: var(--surface-container, #211f26) !important;
+  border-color: var(--outline-variant, #49454f) !important;
+  color: var(--on-surface-variant, #cac4d0) !important;
 }
 
 .login-section .input-group .form-control {
@@ -233,32 +246,34 @@ body::after {
 /* Material You Segmented Button Tab Bar in Auth (Concentric Full Pill) */
 .login-section ul.nav-pills {
   border-radius: 9999px !important;
-  background-color: var(--surface-container, #eceef4) !important;
-  border: 1px solid var(--outline-variant, #dce0e9) !important;
+  background-color: var(--surface-container, #ece6f0) !important;
+  border: 1px solid var(--outline-variant, #cac4d0) !important;
   padding: 4px !important;
 }
 
 [data-bs-theme="dark"] .login-section ul.nav-pills {
-  background-color: var(--surface-container, #23262b) !important;
-  border-color: var(--outline-variant, #33363f) !important;
+  background-color: var(--surface-container, #211f26) !important;
+  border-color: var(--outline-variant, #49454f) !important;
 }
 
 .login-section .nav-pills .nav-link {
   border-radius: 9999px !important;
-  padding: 0.5rem 1rem !important;
+  padding: 0.55rem 1.25rem !important;
   font-weight: 600 !important;
-  color: var(--on-surface-variant, #44474e) !important;
+  color: var(--on-surface-variant, #49454f) !important;
+  transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
 }
 
 .login-section .nav-pills .nav-link.active {
-  background-color: var(--secondary-container, #c2e7ff) !important;
-  color: var(--on-secondary-container, #001d35) !important;
+  background-color: var(--surface-container-lowest, #ffffff) !important;
+  color: var(--primary, #65558f) !important;
   font-weight: 700 !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08) !important;
 }
 
 [data-bs-theme="dark"] .login-section .nav-pills .nav-link.active {
-  background-color: var(--secondary-container, #004a77) !important;
-  color: var(--on-secondary-container, #c2e7ff) !important;
+  background-color: var(--surface-container-high, #2b2930) !important;
+  color: var(--primary, #d0bcff) !important;
 }
 
 /* Responsive adjustments */

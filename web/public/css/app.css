@@ -1888,7 +1888,33 @@ ul.nav-pills,
 .product-price {
     font-size: 1.15rem;
     font-weight: 700;
-    color: var(--primary);
+    color: var(--on-surface);
+}
+
+/* Figma M3 Quick Cart Circle Button */
+.btn-quick-cart-circle {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    border-radius: 50% !important;
+    background: var(--primary-container) !important;
+    color: var(--primary) !important;
+    border: none !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    transition: background-color 0.15s ease, transform 0.15s ease;
+    cursor: pointer;
+}
+
+.btn-quick-cart-circle:hover {
+    background: var(--secondary-container) !important;
+    transform: scale(1.06);
+}
+
+.btn-quick-cart-circle:active {
+    transform: scale(0.94);
 }
 
 /* === ORDER STATUS TIMELINE === */
@@ -3279,4 +3305,227 @@ main.flex-grow-1 {
 [data-bs-theme="dark"] .swal2-popup.swal2-toast .swal2-html-container {
     color: var(--on-surface-variant) !important;
 }
+
+/* ==========================================================================
+   Material Design 3 - Profile & Security Components (Figma Spec)
+   ========================================================================== */
+.m3-profile-header-card {
+    background: var(--surface-container-low);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--radius-xl);
+    padding: 1.75rem;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+}
+
+.m3-profile-avatar-circle {
+    width: 76px;
+    height: 76px;
+    border-radius: 50%;
+    background: var(--primary-container);
+    color: var(--on-primary-container);
+    font-size: 1.85rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid var(--surface-container-lowest);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+    flex-shrink: 0;
+}
+
+.m3-profile-tabs-nav {
+    display: flex;
+    gap: 0.5rem;
+    background: var(--surface-container-low);
+    padding: 0.35rem;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--outline-variant);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    margin-bottom: 1.25rem;
+}
+
+.m3-profile-tabs-nav::-webkit-scrollbar {
+    display: none;
+}
+
+.m3-profile-tab-btn {
+    border: none;
+    background: transparent;
+    color: var(--on-surface-variant);
+    font-size: 0.88rem;
+    font-weight: 600;
+    padding: 0.5rem 1.25rem;
+    border-radius: var(--radius-pill);
+    transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.m3-profile-tab-btn:hover {
+    background: var(--surface-container-high);
+    color: var(--on-surface);
+}
+
+.m3-profile-tab-btn.active {
+    background: var(--secondary-container);
+    color: var(--on-secondary-container);
+    font-weight: 700;
+}
+
+.m3-profile-section-card {
+    background: var(--surface-container-low);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    margin-bottom: 1.25rem;
+}
+
+.m3-data-row-card {
+    background: var(--surface-container-lowest);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--radius-md);
+    padding: 1rem 1.25rem;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.m3-data-row-card:hover {
+    border-color: var(--outline);
+}
+
+.m3-security-banner {
+    background: var(--tertiary-container);
+    color: var(--on-tertiary-container);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem 1.5rem;
+    border: 1px solid rgba(125, 82, 96, 0.2);
+}
+
+.m3-telegram-card {
+    background: var(--surface-container-lowest);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem 1.5rem;
+}
+
+/* ==========================================================================
+   Material Design 3 - Auth Split Card Components (Figma Spec)
+   ========================================================================== */
+.m3-auth-container {
+    max-width: 1040px;
+    margin: 2rem auto;
+}
+
+.m3-auth-split-card {
+    background: var(--surface-container-low);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+}
+
+.m3-auth-form-side {
+    padding: 2.5rem;
+}
+
+.m3-auth-info-side {
+    background: var(--primary-container);
+    color: var(--on-primary-container);
+    padding: 2.75rem 2.25rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+}
+
+.m3-auth-info-pattern {
+    position: absolute;
+    top: 0; right: 0; bottom: 0; left: 0;
+    opacity: 0.06;
+    background-image: radial-gradient(var(--on-primary-container) 1.5px, transparent 1.5px);
+    background-size: 18px 18px;
+    pointer-events: none;
+}
+
+.m3-auth-segmented {
+    display: inline-flex;
+    background: var(--surface-container);
+    border-radius: var(--radius-pill);
+    padding: 4px;
+    width: 100%;
+    margin-bottom: 1.5rem;
+}
+
+.m3-auth-segmented-item {
+    flex: 1;
+    text-align: center;
+    padding: 0.5rem 1rem;
+    font-size: 0.88rem;
+    font-weight: 600;
+    border-radius: var(--radius-pill);
+    color: var(--on-surface-variant);
+    text-decoration: none;
+    transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.m3-auth-segmented-item.active {
+    background: var(--surface-container-lowest);
+    color: var(--primary);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.m3-auth-input {
+    background: var(--surface-container-lowest);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--radius-sm);
+    padding: 0.65rem 1rem;
+    color: var(--on-surface);
+    font-size: 0.92rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.m3-auth-input:focus {
+    background: var(--surface-container-lowest);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(101, 85, 143, 0.2);
+    color: var(--on-surface);
+}
+
+.m3-auth-tg-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background: #229ed9;
+    color: #ffffff !important;
+    border: none;
+    border-radius: var(--radius-pill);
+    font-weight: 600;
+    padding: 0.7rem 1.25rem;
+    transition: background 0.15s ease, transform 0.15s ease;
+    width: 100%;
+    text-decoration: none;
+}
+
+.m3-auth-tg-btn:hover {
+    background: #1b87ba;
+    transform: translateY(-1px);
+    color: #ffffff;
+}
+
+@media (max-width: 991.98px) {
+    .m3-auth-form-side {
+        padding: 1.75rem 1.25rem;
+    }
+    .m3-auth-info-side {
+        padding: 1.75rem 1.25rem;
+    }
+}
+
 
