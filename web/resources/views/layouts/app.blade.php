@@ -540,16 +540,25 @@
 </style>
 @endif
 
-<nav class="navbar navbar-expand fixed-top px-2 px-md-3 bg-body border-bottom pcc-platform-bar" style="z-index: 1030;">
-    <div class="d-flex align-items-center gap-2">
-        <a href="{{ route('dashboard') }}" class="navbar-brand d-flex align-items-center gap-2 m-0 text-decoration-none" style="font-size: 0.98rem;">
-            <span class="navbar-brand-icon">
+<nav class="navbar navbar-expand fixed-top px-3 px-md-4 pcc-platform-bar" style="z-index: 1030;">
+    {{-- Mobile Brand: Only visible on mobile (< 992px) because desktop has brand in sidebar drawer --}}
+    <div class="d-flex align-items-center gap-2 d-lg-none">
+        <a href="{{ route('dashboard') }}" class="navbar-brand d-flex align-items-center gap-2 m-0 text-decoration-none" style="font-size: 0.95rem;">
+            <span class="m3-cloud-icon" style="width: 32px; height: 32px; font-size: 0.95rem; border-radius: 10px;">
                 <i class="fas fa-cloud"></i>
             </span>
-            <span class="fw-medium" style="color: var(--cm-sys-color-on-surface); letter-spacing: 0;">
-                {{ config('app.name', 'Dzulfikrialifajri Store') }}
+            <span class="fw-bold" style="color: var(--on-surface); letter-spacing: -0.01em;">
+                {{ config('app.name', "dzulfikrialifajri's store") }}
             </span>
         </a>
+    </div>
+
+    {{-- Desktop Centered Search Bar (Figma M3 Full Pill 48px) --}}
+    <div class="d-none d-lg-flex align-items-center flex-grow-1 me-3" style="max-width: 540px;">
+        <form action="{{ route('catalog.index') }}" method="GET" class="m3-top-search-bar my-0 w-100">
+            <i class="fas fa-search"></i>
+            <input type="text" name="search" class="m3-top-search-input" placeholder="{{ __('Cari produk atau pesanan') }}" value="{{ request('search') }}">
+        </form>
     </div>
 
     <div class="ms-auto d-flex align-items-center gap-1">
@@ -657,16 +666,44 @@
             <i class="fas fa-moon" style="font-size: 0.95rem;" id="themeIcon"></i>
         </button>
 
-        {{-- Logout or Login Button (Desktop Only) --}}
+        {{-- User Avatar Dropdown (Desktop >= 992px) - Figma M3 Style --}}
         @auth
-        <form action="{{ route('logout') }}" method="POST" class="m-0 d-none d-lg-block">
-            @csrf
-            <button type="submit" class="btn btn-sm btn-outline-secondary rounded-pill d-flex align-items-center gap-1.5 px-3" aria-label="{{ __('Logout') }}">
-                <i class="fas fa-sign-out-alt text-danger" style="font-size: 0.78rem;"></i> <span class="d-none d-sm-inline">{{ __('Logout') }}</span>
+        <div class="dropdown d-none d-lg-block ms-1">
+            <button class="m3-user-avatar-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="{{ Auth::user()->full_name ?? Auth::user()->username }}">
+                <div class="m3-user-avatar-img">
+                    @if(Auth::user()->avatar)
+                        <img src="{{ \Illuminate\Support\Facades\Storage::url(Auth::user()->avatar) }}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                    @else
+                        {{ strtoupper(substr(Auth::user()->full_name ?? Auth::user()->username ?? 'U', 0, 1)) }}
+                    @endif
+                </div>
+                <i class="fas fa-chevron-down" style="font-size: 0.72rem; color: var(--on-surface-variant);"></i>
             </button>
-        </form>
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm border mt-2" style="border-radius: var(--radius-md); min-width: 220px; background: var(--surface-container-low); border-color: var(--outline-variant) !important;">
+                <li class="px-3 py-2 border-bottom" style="border-color: var(--outline-variant) !important;">
+                    <div class="fw-bold text-truncate" style="color: var(--on-surface);">{{ Auth::user()->full_name ?? Auth::user()->username }}</div>
+                    <small class="text-muted text-truncate d-block">{{ Auth::user()->email ?: (Auth::user()->telegram_id ? 'TG: ' . Auth::user()->telegram_id : 'Member') }}</small>
+                </li>
+                <li><a class="dropdown-item py-2" href="{{ route('profile') }}"><i class="fas fa-user-circle me-2 text-primary"></i>{{ __('Profil Saya') }}</a></li>
+                <li><a class="dropdown-item py-2" href="{{ route('profile.logins') }}"><i class="fas fa-shield-halved me-2 text-info"></i>{{ __('Riwayat Login') }}</a></li>
+                @if(Auth::user()->role === 'admin')
+                <li><a class="dropdown-item py-2" href="{{ route('admin.dashboard') }}"><i class="fas fa-chart-line me-2 text-warning"></i>{{ __('Admin Panel') }}</a></li>
+                @elseif(Auth::user()->role === 'seller')
+                <li><a class="dropdown-item py-2" href="{{ route('seller.dashboard') }}"><i class="fas fa-store me-2 text-warning"></i>{{ __('Seller Portal') }}</a></li>
+                @endif
+                <li><hr class="dropdown-divider" style="border-color: var(--outline-variant);"></li>
+                <li>
+                    <form action="{{ route('logout') }}" method="POST" class="m-0">
+                        @csrf
+                        <button type="submit" class="dropdown-item text-danger py-2">
+                            <i class="fas fa-sign-out-alt me-2"></i>{{ __('Keluar dari akun') }}
+                        </button>
+                    </form>
+                </li>
+            </ul>
+        </div>
         @else
-        <a href="{{ route('login') }}" class="btn btn-sm btn-primary rounded-pill px-3 d-none d-lg-flex align-items-center gap-1.5">
+        <a href="{{ route('login') }}" class="btn btn-sm btn-primary rounded-pill px-3 d-none d-lg-flex align-items-center gap-1.5 ms-1">
             <i class="fas fa-sign-in-alt"></i> <span>{{ __('Masuk') }}</span>
         </a>
         @endauth
@@ -697,8 +734,33 @@
                 </button>
             </div>
         </div>
+        {{-- Desktop Top Brand Header & Segmented Belanja/Admin Switcher (Figma M3 Style) --}}
+        <div class="d-none d-lg-block">
+            <a href="{{ route('dashboard') }}" class="m3-brand-header">
+                <span class="m3-cloud-icon">
+                    <i class="fas fa-cloud"></i>
+                </span>
+                <div class="m3-brand-text">
+                    <span class="m3-brand-title">{{ config('app.name', 'dzulfikrialifajri') }}</span>
+                    <span class="m3-brand-subtitle">{{ __('digital store') }}</span>
+                </div>
+            </a>
+
+            @if(Auth::check() && in_array(Auth::user()->role, ['admin', 'seller']))
+            <div class="m3-segmented-switch">
+                <a href="{{ route('dashboard') }}" class="m3-segmented-item {{ !request()->routeIs('admin.*') && !request()->routeIs('seller.*') ? 'active' : '' }}">
+                    {{ __('Belanja') }}
+                </a>
+                <a href="{{ Auth::user()->role === 'admin' ? route('admin.dashboard') : route('seller.dashboard') }}" class="m3-segmented-item {{ request()->routeIs('admin.*') || request()->routeIs('seller.*') ? 'active' : '' }}">
+                    {{ Auth::user()->role === 'admin' ? __('Admin') : __('Seller') }}
+                </a>
+            </div>
+            @endif
+        </div>
+
         @auth
-        <div class="sidebar-header d-flex align-items-center gap-3">
+        {{-- User Header on Mobile Sheet Only (< 992px) --}}
+        <div class="sidebar-header d-flex align-items-center gap-3 d-lg-none">
             <div class="user-avatar rounded-circle d-flex align-items-center justify-content-center fw-bold text-white bg-primary overflow-hidden" style="width: 40px; height: 40px; flex-shrink: 0;">
                 @if(Auth::user()->avatar)
                     <img src="{{ \Illuminate\Support\Facades\Storage::url(Auth::user()->avatar) }}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover;">
@@ -721,7 +783,7 @@
             </div>
         </div>
         @else
-        <div class="sidebar-header d-flex align-items-center gap-3 bg-body-tertiary rounded-3 p-3 m-2 border">
+        <div class="sidebar-header d-flex align-items-center gap-3 bg-body-tertiary rounded-3 p-3 m-2 border d-lg-none">
             <div class="user-avatar rounded-circle d-flex align-items-center justify-content-center fw-bold text-white bg-secondary" style="width: 40px; height: 40px; flex-shrink: 0;">
                 <i class="fas fa-user"></i>
             </div>
@@ -1023,21 +1085,33 @@
             </div>
             @endif
 
-            <div class="menu-group border-top pt-3 px-3">
-                <div class="menu-header text-secondary"><i class="fas fa-language me-1"></i> {{ __('Bahasa / Language') }}</div>
-                @php
-                    $currentLocale = App::getLocale();
-                @endphp
-                <div class="d-flex align-items-center justify-content-between mt-2">
-                    <span class="small text-secondary">{{ __('Bahasa Aktif:') }} <strong class="text-uppercase">{{ $currentLocale }}</strong></span>
-                    <a href="{{ route('lang.switch', $currentLocale === 'id' ? 'en' : 'id') }}" 
-                       class="btn btn-xs btn-outline-secondary d-flex align-items-center gap-1 py-1 px-2 text-decoration-none"
-                       style="font-size: 0.78rem;"
-                       title="{{ $currentLocale === 'id' ? __('Switch to English') : __('Ubah ke Bahasa Indonesia') }}">
-                        <i class="fas fa-globe text-secondary"></i>
-                        <span>{{ $currentLocale === 'id' ? __('English') : __('Indonesia') }}</span>
-                    </a>
+        {{-- Sidebar Footer (Figma M3 Style: Telegram Help Card & Language) --}}
+        <div class="m3-sidebar-footer mt-auto pt-3 border-top" style="border-color: var(--outline-variant) !important;">
+            <div class="m3-help-card">
+                <div class="m3-help-title">
+                    <i class="far fa-question-circle text-primary"></i> {{ __('Butuh bantuan?') }}
                 </div>
+                <div class="m3-help-sub">
+                    {{ __('Hubungi admin via Telegram.') }}
+                </div>
+                <a href="https://t.me/{{ config('telegram.bot_username', 'dzulfikrialifajri_bot') }}" target="_blank" rel="noopener noreferrer" class="m3-help-link">
+                    {{ __('Chat Telegram') }} <i class="fas fa-arrow-up-right-from-square" style="font-size: 0.72rem;"></i>
+                </a>
+            </div>
+
+            @php
+                $currentLocale = App::getLocale();
+            @endphp
+            <div class="d-flex align-items-center justify-content-between px-2 pt-1">
+                <div class="m3-lang-footer">
+                    <i class="fas fa-globe"></i> <span>{{ $currentLocale === 'id' ? 'Bahasa Indonesia' : 'English' }}</span>
+                </div>
+                <a href="{{ route('lang.switch', $currentLocale === 'id' ? 'en' : 'id') }}" 
+                   class="btn btn-xs btn-outline-secondary rounded-pill py-0.5 px-2 text-decoration-none"
+                   style="font-size: 0.72rem;"
+                   title="{{ $currentLocale === 'id' ? __('Switch to English') : __('Ubah ke Bahasa Indonesia') }}">
+                    <span>{{ $currentLocale === 'id' ? 'EN' : 'ID' }}</span>
+                </a>
             </div>
         </div>
     </div>

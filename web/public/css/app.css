@@ -71,12 +71,12 @@
     font-display: swap;
 }
 
-/* === CORE VARIABLES & FLAT MATERIAL YOU (ANDROID 17 / BEERCSS M3) DESIGN TOKENS === */
+/* === CORE VARIABLES & FLAT MATERIAL YOU (M3 EXPRESSIVE FIGMA REFERENCE) DESIGN TOKENS === */
 :root {
     --header-height: 56px;
     --banner-height: 0px;
     --total-header-height: calc(var(--header-height) + var(--banner-height));
-    --sidebar-width: 256px;
+    --sidebar-width: 264px;
 
     /* Typography Tokens */
     --font-google-sans: "Google Sans", "Google Sans Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -92,13 +92,13 @@
     --bs-body-font-family: var(--font-google-sans);
     --bs-font-monospace: var(--font-google-sans-mono);
 
-    /* Flat Material You Concentric Corner Radius Scale (Android 17) */
+    /* Flat Material You Concentric Corner Radius Scale (Android 17 / Figma M3) */
     --radius-xs: 8px;       /* Badges, micro tags */
     --radius-sm: 12px;      /* Inputs, squircle sub-buttons, nested inner blocks */
     --radius-md: 16px;      /* Standard Cards, list panels, dialogs */
-    --radius-lg: 20px;      /* Large Cards, Hero banners */
-    --radius-xl: 28px;      /* Bottom Sheets, Floating Modals */
-    --radius-pill: 9999px;  /* Full Pill buttons, active nav indicators */
+    --radius-lg: 20px;      /* Large Cards, Hero banners (Figma: 20-24px) */
+    --radius-xl: 28px;      /* Bottom Sheets, Floating Modals, Hero Card (Figma: 28px) */
+    --radius-pill: 9999px;  /* Full Pill buttons, active nav indicators, search bar */
 
     /* Bootstrap Border Radius Mappings */
     --bs-border-radius-sm: var(--radius-xs);
@@ -109,51 +109,51 @@
     --bs-border-radius-2xl: var(--radius-xl);
     --bs-border-radius-pill: var(--radius-pill);
 
-    /* BeerCSS & M3 Design Tokens (Light Mode - Dominant Blue) */
-    --primary: #0b57d0;
+    /* Figma M3 Palette (Light Mode - Expressive Lavender & Deep Purple) */
+    --primary: #65558f;
     --on-primary: #ffffff;
-    --primary-container: #d3e3fd;
-    --on-primary-container: #041e49;
+    --primary-container: #eaddff;
+    --on-primary-container: #21005d;
 
-    --secondary: #00639b;
+    --secondary: #625b71;
     --on-secondary: #ffffff;
-    --secondary-container: #c2e7ff;
-    --on-secondary-container: #001d35;
+    --secondary-container: #e8def8;
+    --on-secondary-container: #1d192b;
 
-    --tertiary: #146c2e;
+    --tertiary: #7d5260;
     --on-tertiary: #ffffff;
-    --tertiary-container: #c4eed0;
-    --on-tertiary-container: #072711;
+    --tertiary-container: #ffd8e4;
+    --on-tertiary-container: #31111d;
 
-    --error: #b3261e;
+    --error: #ba1a1a;
     --on-error: #ffffff;
-    --error-container: #f9dedc;
-    --on-error-container: #410e0b;
+    --error-container: #ffdad6;
+    --on-error-container: #410002;
 
-    /* Tonal Surfaces (Android 17 Flat Layering) */
-    --background: #f8fafd;
-    --on-background: #191c20;
-    --surface: #f8fafd;
-    --surface-dim: #d8dae0;
-    --surface-bright: #f8fafd;
+    /* Tonal Surfaces (Figma M3 Layering) */
+    --background: #fef7ff;
+    --on-background: #1d1b20;
+    --surface: #fef7ff;
+    --surface-dim: #ded8e1;
+    --surface-bright: #fef7ff;
     --surface-container-lowest: #ffffff;
-    --surface-container-low: #f2f5fa;
-    --surface-container: #eceef4;
-    --surface-container-high: #e6e8ee;
-    --surface-container-highest: #e1e2e8;
-    --on-surface: #191c20;
-    --surface-variant: #e0e2ec;
-    --on-surface-variant: #44474e;
+    --surface-container-low: #f3edf7;
+    --surface-container: #ece6f0;
+    --surface-container-high: #e6e0e9;
+    --surface-container-highest: #e1e2ec;
+    --on-surface: #1d1b20;
+    --surface-variant: #e7e0ec;
+    --on-surface-variant: #49454f;
 
     /* Outlines & Physics */
-    --outline: #74777f;
-    --outline-variant: #dce0e9;
+    --outline: #79747e;
+    --outline-variant: #cac4d0;
     --shadow: none;
     --scrim: #000000;
-    --active: rgba(11, 87, 208, 0.12);
+    --active: rgba(101, 85, 143, 0.12);
     --overlay: rgba(0, 0, 0, 0.38);
 
-    /* Cloud Console / Legacy Variable Compatibility */
+    /* Legacy Variable Compatibility */
     --cm-sys-color-primary: var(--primary);
     --cm-sys-color-on-primary: var(--on-primary);
     --cm-sys-color-primary-on-container: var(--on-primary-container);
@@ -168,8 +168,8 @@
     --cm-sys-color-outline: var(--outline);
     --cm-sys-color-hairline: var(--outline-variant);
 
-    --cm-sys-color-status-success: var(--tertiary);
-    --cm-sys-color-status-success-container: var(--tertiary-container);
+    --cm-sys-color-status-success: #146c2e;
+    --cm-sys-color-status-success-container: #c4eed0;
     --cm-sys-color-status-warning: #b45309;
     --cm-sys-color-status-warning-container: #ffdf9e;
     --cm-sys-color-status-error: var(--error);
@@ -178,10 +178,10 @@
     --cm-sys-color-status-neutral-container: var(--surface-container);
 
     --primary-color: var(--primary);
-    --primary-hover: #0842a0;
-    --primary-active: #041e49;
+    --primary-hover: #4f378b;
+    --primary-active: #21005d;
     --primary-light: var(--primary-container);
-    --primary-rgb: 11, 87, 208;
+    --primary-rgb: 101, 85, 143;
 
     --surface-bg: var(--surface);
     --outline-color: var(--outline-variant);
@@ -209,45 +209,45 @@
 }
 
 [data-bs-theme="dark"] {
-    /* BeerCSS & M3 Design Tokens (Dark Mode - Dominant Blue) */
-    --primary: #a8c7fa;
-    --on-primary: #062e6f;
-    --primary-container: #0842a0;
-    --on-primary-container: #d3e3fd;
+    /* Figma M3 Design Tokens (Dark Mode - Expressive Lavender) */
+    --primary: #d0bcff;
+    --on-primary: #381e72;
+    --primary-container: #4f378b;
+    --on-primary-container: #eaddff;
 
-    --secondary: #7fcfff;
-    --on-secondary: #003355;
-    --secondary-container: #004a77;
-    --on-secondary-container: #c2e7ff;
+    --secondary: #ccc2dc;
+    --on-secondary: #332d41;
+    --secondary-container: #4a4458;
+    --on-secondary-container: #e8def8;
 
-    --tertiary: #6dd58c;
-    --on-tertiary: #0a3818;
-    --tertiary-container: #0f5223;
-    --on-tertiary-container: #c4eed0;
+    --tertiary: #efb8c8;
+    --on-tertiary: #492532;
+    --tertiary-container: #633b48;
+    --on-tertiary-container: #ffd8e4;
 
     --error: #f2b8b5;
     --on-error: #601410;
     --error-container: #8c1d18;
     --on-error-container: #f9dedc;
 
-    /* Tonal Surfaces Dark */
-    --background: #111318;
-    --on-background: #e2e2e9;
-    --surface: #111318;
-    --surface-dim: #111318;
-    --surface-bright: #37393e;
-    --surface-container-lowest: #191c20;
-    --surface-container-low: #1d2024;
-    --surface-container: #23262b;
-    --surface-container-high: #2c3036;
-    --surface-container-highest: #33353a;
-    --on-surface: #e2e2e9;
-    --surface-variant: #44474e;
-    --on-surface-variant: #c4c6d0;
+    /* Tonal Surfaces Dark (Material 3 Android 17 / WCAG AAA) */
+    --background: #141218;
+    --on-background: #e6e0e9;
+    --surface: #141218;
+    --surface-dim: #141218;
+    --surface-bright: #3b383e;
+    --surface-container-lowest: #0f0d13;
+    --surface-container-low: #1d1b20;
+    --surface-container: #211f26;
+    --surface-container-high: #2b2930;
+    --surface-container-highest: #36343b;
+    --on-surface: #e6e0e9;
+    --surface-variant: #49454f;
+    --on-surface-variant: #cac4d0;
 
-    --outline: #8e9099;
-    --outline-variant: #33363f;
-    --active: rgba(168, 199, 250, 0.14);
+    --outline: #938f99;
+    --outline-variant: #49454f;
+    --active: rgba(208, 188, 255, 0.14);
 
     --cm-sys-color-primary: var(--primary);
     --cm-sys-color-on-primary: var(--on-primary);
@@ -498,7 +498,7 @@ a:hover {
     min-height: var(--header-height);
     max-height: var(--header-height);
     top: var(--banner-height) !important;
-    background: var(--surface-container-lowest) !important;
+    background: var(--surface) !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
     border-bottom: 1px solid var(--outline-variant) !important;
@@ -508,7 +508,25 @@ a:hover {
     align-items: center;
     box-sizing: border-box;
     box-shadow: none !important;
-    transition: background-color 0.2s cubic-bezier(0.2, 0, 0, 1), border-bottom 0.2s cubic-bezier(0.2, 0, 0, 1), top 0.15s ease;
+    transition: background-color 0.2s cubic-bezier(0.2, 0, 0, 1), border-bottom 0.2s cubic-bezier(0.2, 0, 0, 1), top 0.15s ease, left 0.2s ease, width 0.2s ease;
+}
+
+@media (min-width: 992px) {
+    .navbar {
+        left: var(--sidebar-width) !important;
+        width: calc(100% - var(--sidebar-width)) !important;
+        padding-left: 1.5rem !important;
+        padding-right: 1.5rem !important;
+    }
+}
+
+@media (max-width: 991.98px) {
+    .navbar {
+        left: 0 !important;
+        width: 100% !important;
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
 }
 
 .navbar-brand-icon {
@@ -620,7 +638,7 @@ a:hover {
     color: var(--on-secondary-container) !important;
 }
 
-/* === SIDEBAR (ANDROID 17 / M3 EXPRESSIVE 256PX NAVIGATION DRAWER) === */
+/* === SIDEBAR (M3 EXPRESSIVE 264PX FIGMA NAVIGATION DRAWER) === */
 .sidebar {
     width: var(--sidebar-width);
     background: var(--surface-container-low);
@@ -628,8 +646,8 @@ a:hover {
     -webkit-backdrop-filter: none !important;
     border-right: 1px solid var(--outline-variant);
     position: fixed;
-    top: var(--total-header-height) !important;
-    height: calc(100vh - var(--total-header-height)) !important;
+    top: 0 !important;
+    height: 100vh !important;
     left: 0;
     z-index: 1040 !important;
     display: flex;
@@ -638,7 +656,228 @@ a:hover {
     overscroll-behavior: contain;
     flex-shrink: 0;
     box-sizing: border-box;
-    transition: transform 0.25s cubic-bezier(0.2, 0, 0, 1), width 0.2s ease, background-color 0.2s cubic-bezier(0.2, 0, 0, 1), border-right 0.2s cubic-bezier(0.2, 0, 0, 1), top 0.15s ease;
+    transition: transform 0.25s cubic-bezier(0.2, 0, 0, 1), width 0.2s ease, background-color 0.2s cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* Sidebar Top Brand (Figma M3 Style) */
+.m3-brand-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 24px 20px 16px 20px;
+    text-decoration: none !important;
+    color: inherit;
+}
+
+.m3-cloud-icon {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    border-radius: 14px;
+    background-color: var(--primary-container);
+    color: var(--primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+}
+
+.m3-brand-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+    overflow: hidden;
+}
+
+.m3-brand-title {
+    font-family: var(--font-google-sans-display);
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--on-surface);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.m3-brand-subtitle {
+    font-family: var(--font-google-sans);
+    font-size: 0.75rem;
+    color: var(--on-surface-variant);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+/* Segmented Button (Figma M3 Pill Switch: Belanja vs Admin) */
+.m3-segmented-switch {
+    display: flex;
+    background: var(--surface-container-high);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--radius-pill);
+    padding: 3px;
+    margin: 4px 16px 16px 16px;
+    position: relative;
+    user-select: none;
+}
+
+.m3-segmented-item {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 32px;
+    border-radius: var(--radius-pill);
+    font-family: var(--font-google-sans);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--on-surface-variant);
+    text-decoration: none !important;
+    transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.m3-segmented-item.active {
+    background: var(--secondary-container);
+    color: var(--on-secondary-container);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.m3-segmented-item:hover:not(.active) {
+    color: var(--on-surface);
+    background: var(--surface-container);
+}
+
+/* Top App Bar Search Bar (Figma M3 Full Pill 48px) */
+.m3-top-search-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 48px;
+    background: var(--surface-container-low);
+    border-radius: var(--radius-pill);
+    padding: 0 18px;
+    width: 100%;
+    max-width: 540px;
+    transition: background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.m3-top-search-bar:focus-within {
+    background: var(--surface-container);
+    box-shadow: 0 0 0 1.5px var(--primary);
+}
+
+.m3-top-search-bar i {
+    color: var(--on-surface-variant);
+    font-size: 0.95rem;
+}
+
+.m3-top-search-input {
+    background: transparent !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    font-family: var(--font-google-sans);
+    font-size: 0.875rem;
+    color: var(--on-surface) !important;
+    width: 100%;
+    padding: 0;
+}
+
+.m3-top-search-input::placeholder {
+    color: var(--on-surface-variant);
+    opacity: 0.8;
+}
+
+/* Top Bar User Avatar Dropdown Button */
+.m3-user-avatar-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    border: none;
+    padding: 4px;
+    border-radius: var(--radius-pill);
+    cursor: pointer;
+    text-decoration: none !important;
+    transition: background-color 0.15s ease;
+}
+
+.m3-user-avatar-btn:hover {
+    background: var(--surface-container-high);
+}
+
+.m3-user-avatar-img {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1.5px solid var(--outline-variant);
+    background-color: var(--primary-container);
+    color: var(--primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.875rem;
+}
+
+/* Sidebar Footer (Figma: Butuh Bantuan Telegram + Bahasa) */
+.m3-sidebar-footer {
+    margin-top: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.m3-help-card {
+    padding: 12px 14px;
+    border-radius: var(--radius-md);
+    background: transparent;
+    border: 1px solid var(--outline-variant);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.m3-help-title {
+    font-family: var(--font-google-sans);
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--on-surface);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.m3-help-sub {
+    font-size: 0.75rem;
+    color: var(--on-surface-variant);
+}
+
+.m3-help-link {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--primary);
+    text-decoration: none !important;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 4px;
+}
+
+.m3-help-link:hover {
+    text-decoration: underline !important;
+}
+
+.m3-lang-footer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.75rem;
+    color: var(--on-surface-variant);
+    padding: 0 4px;
 }
 
 .sidebar-header {
