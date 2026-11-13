@@ -160,7 +160,7 @@
 
                 <div class="d-grid gap-2">
                     {{-- Desktop Only Checkout Button (Hidden on Mobile to eliminate duplication with Sticky Bar) --}}
-                    <a href="{{ route('cart.checkout') }}" class="btn btn-success rounded-pill py-3 fw-bold d-none d-md-block">
+                    <a href="{{ route('cart.checkout') }}" class="btn btn-primary rounded-pill py-3 fw-bold d-none d-md-block">
                         <i class="fas fa-shopping-bag me-2"></i>{{ __('Lanjut ke Checkout') }}
                     </a>
                     <a href="{{ route('catalog.index') }}" class="btn btn-outline-secondary rounded-pill py-2">
@@ -170,21 +170,25 @@
             </div>
         </div>
     </div>
-
-    {{-- Mobile Sticky Checkout Bar (Single primary checkout button on mobile) --}}
-    <div class="mobile-sticky-action-bar d-md-none">
-        <div class="d-flex align-items-center justify-content-between gap-3">
-            <div>
-                <span class="text-muted d-block" style="font-size: 0.68rem; line-height: 1;">Total (<span class="cart-summary-total-qty">{{ $cartItems->sum('quantity') }} unit</span>)</span>
-                <span class="fw-bold text-primary cart-summary-total-price" style="font-size: 1.1rem;">Rp{{ number_format($subtotal, 0, ',', '.') }}</span>
-            </div>
-            <a href="{{ route('cart.checkout') }}" class="btn btn-success rounded-pill px-4 py-2 fw-bold shadow-sm d-flex align-items-center gap-2" style="font-size: 0.85rem;">
-                <i class="fas fa-shopping-bag"></i> {{ __('Checkout') }}
-            </a>
-        </div>
-    </div>
     @endif
 </div>
+@endsection
+
+@section('mobile_bottom_action_bar')
+@if(!$cartItems->isEmpty())
+{{-- Mobile Sticky Checkout Bar (Seamlessly stacked directly above Bottom Nav) --}}
+<div class="mobile-sticky-action-bar d-lg-none">
+    <div class="d-flex align-items-center justify-content-between gap-3">
+        <div>
+            <span class="text-muted d-block" style="font-size: 0.68rem; line-height: 1;">Total (<span class="cart-summary-total-qty">{{ $cartItems->sum('quantity') }} unit</span>)</span>
+            <span class="fw-bold text-primary cart-summary-total-price" style="font-size: 1.1rem;">Rp{{ number_format($subtotal, 0, ',', '.') }}</span>
+        </div>
+        <a href="{{ route('cart.checkout') }}" class="btn btn-primary rounded-pill px-4 py-2 fw-bold shadow-sm d-flex align-items-center gap-2" style="font-size: 0.85rem;">
+            <i class="fas fa-shopping-bag"></i> {{ __('Checkout') }}
+        </a>
+    </div>
+</div>
+@endif
 @endsection
 
 @push('scripts')

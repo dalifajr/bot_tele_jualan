@@ -330,18 +330,20 @@
 </div>
 
 @if($order->status === 'pending_payment')
-{{-- Mobile Sticky Bottom Bar for Pending Payment --}}
-<div class="mobile-sticky-action-bar d-md-none">
+@section('mobile_bottom_action_bar')
+{{-- Mobile Sticky Bottom Bar for Pending Payment (Stacked above Bottom Nav) --}}
+<div class="mobile-sticky-action-bar d-lg-none">
     <div class="d-flex align-items-center justify-content-between gap-2">
         <div>
             <span class="text-muted d-block" style="font-size: 0.68rem; line-height: 1;">Total Tagihan</span>
             <span class="fw-bold text-primary" style="font-size: 1.05rem;">{{ $order->formatted_total }}</span>
         </div>
-        <a href="{{ route('checkout.success', $order->order_ref) }}" class="btn btn-success btn-sm rounded-pill px-3 py-2 fw-bold shadow-sm d-flex align-items-center gap-1" style="font-size: 0.82rem;">
+        <a href="{{ route('checkout.success', $order->order_ref) }}" class="btn btn-primary btn-sm rounded-pill px-3 py-2 fw-bold shadow-sm d-flex align-items-center gap-1" style="font-size: 0.82rem;">
             <i class="fas fa-qrcode"></i> {{ __('Bayar (QRIS)') }}
         </a>
     </div>
 </div>
+@endsection
 @endif
 
 @if($order->status === 'delivered' && !$order->complaintCase)

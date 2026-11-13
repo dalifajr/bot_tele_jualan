@@ -182,15 +182,17 @@
         </div>
     </div>
 </div>
+@endsection
 
-{{-- Mobile Sticky Bottom Bar for Checkout --}}
-<div class="mobile-sticky-action-bar d-md-none">
+@section('mobile_bottom_action_bar')
+{{-- Mobile Sticky Bottom Bar for Checkout (Stacked cleanly above Bottom Nav) --}}
+<div class="mobile-sticky-action-bar d-lg-none">
     <div class="d-flex align-items-center justify-content-between gap-3">
         <div>
             <span class="text-muted d-block" style="font-size: 0.68rem; line-height: 1;">Total Bayar</span>
             <span class="fw-bold text-primary" style="font-size: 1.15rem;">Rp{{ number_format($total, 0, ',', '.') }}</span>
         </div>
-        <button type="button" class="btn btn-success rounded-pill px-4 py-2 fw-bold shadow-sm d-flex align-items-center gap-2" onclick="document.getElementById('formProcessCheckout').requestSubmit()" style="font-size: 0.85rem;">
+        <button type="button" class="btn btn-primary rounded-pill px-4 py-2 fw-bold shadow-sm d-flex align-items-center gap-2" onclick="document.getElementById('formProcessCheckout').requestSubmit()" style="font-size: 0.85rem;">
             <i class="fas fa-check-double"></i> {{ __('Buat Pesanan') }}
         </button>
     </div>

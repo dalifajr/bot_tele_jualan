@@ -582,16 +582,9 @@
             }
             const r = parseInt(c.slice(1, 3), 16);
             const g = parseInt(c.slice(3, 5), 16);
-            const b = parseInt(c.slice(5, 7), 16);
-            const root = document.documentElement;
-
-            root.style.setProperty('--primary', c);
-            root.style.setProperty('--bs-primary', c);
-            root.style.setProperty('--primary-rgb', `${r}, ${g}, ${b}`);
-            root.style.setProperty('--bs-primary-rgb', `${r}, ${g}, ${b}`);
-            root.style.setProperty('--primary-container', `rgba(${r}, ${g}, ${b}, 0.16)`);
-            root.style.setProperty('--on-primary-container', c);
-            root.style.setProperty('--cm-sys-color-primary', c);
+            if (window.applyMaterialYouTheme) {
+                window.applyMaterialYouTheme(c);
+            }
 
             localStorage.setItem('user_primary_palette', c);
             if (customColorPicker) customColorPicker.value = c;
@@ -648,6 +641,10 @@
         if (customColorPicker) {
             customColorPicker.addEventListener('input', function() {
                 if (customColorHex) customColorHex.value = this.value;
+                if (window.applyMaterialYouTheme) {
+                    const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+                    window.applyMaterialYouTheme(this.value, isDark);
+                }
             });
         }
 

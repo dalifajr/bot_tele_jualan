@@ -13,25 +13,159 @@
                     document.cookie = "jualan-theme=" + savedTheme + ";path=/;max-age=31536000;SameSite=Lax";
                 }
 
-                // Material You Dynamic User Palette
-                var userPalette = @json(Auth::check() && Auth::user()->theme_color ? Auth::user()->theme_color : null) || localStorage.getItem('user_primary_palette');
-                if (userPalette && /^#([a-fA-F0-9]{6}|[a-fA-F0-9]{3})$/.test(userPalette)) {
-                    var c = userPalette;
-                    if (c.length === 4) {
-                        c = '#' + c[1] + c[1] + c[2] + c[2] + c[3] + c[3];
+                // Helper: Convert HEX to HSL
+                window.hexToHsl = function(hex) {
+                    var c = hex.replace('#', '');
+                    if (c.length === 3) c = c[0]+c[0]+c[1]+c[1]+c[2]+c[2];
+                    var r = parseInt(c.substring(0, 2), 16) / 255;
+                    var g = parseInt(c.substring(2, 4), 16) / 255;
+                    var b = parseInt(c.substring(4, 6), 16) / 255;
+                    var max = Math.max(r, g, b), min = Math.min(r, g, b);
+                    var h, s, l = (max + min) / 2;
+                    if (max === min) {
+                        h = s = 0;
+                    } else {
+                        var d = max - min;
+                        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                        switch (max) {
+                            case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                            case g: h = (b - r) / d + 2; break;
+                            case b: h = (r - g) / d + 4; break;
+                        }
+                        h /= 6;
                     }
+                    return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
+                };
+
+                // Full Material You Dynamic Tonal Surface & Component System
+                window.applyMaterialYouTheme = function(hexColor, isDark) {
+                    if (!hexColor || !/^#([a-fA-F0-9]{6}|[a-fA-F0-9]{3})$/.test(hexColor)) return;
+                    
+                    var c = hexColor;
+                    if (c.length === 4) c = '#' + c[1] + c[1] + c[2] + c[2] + c[3] + c[3];
                     var r = parseInt(c.slice(1, 3), 16);
                     var g = parseInt(c.slice(3, 5), 16);
                     var b = parseInt(c.slice(5, 7), 16);
+                    var hsl = window.hexToHsl(c);
+                    var h = hsl.h;
+
                     var root = document.documentElement;
+                    if (typeof isDark === 'undefined') {
+                        isDark = root.getAttribute('data-bs-theme') === 'dark';
+                    }
+
+                    // 1. Primary Tokens
                     root.style.setProperty('--primary', c);
                     root.style.setProperty('--bs-primary', c);
                     root.style.setProperty('--primary-rgb', r + ', ' + g + ', ' + b);
                     root.style.setProperty('--bs-primary-rgb', r + ', ' + g + ', ' + b);
-                    root.style.setProperty('--primary-container', 'rgba(' + r + ', ' + g + ', ' + b + ', 0.16)');
-                    root.style.setProperty('--on-primary-container', c);
                     root.style.setProperty('--cm-sys-color-primary', c);
+
+                    var tertH = (h + 50) % 360;
+
+                    if (isDark) {
+                        // Dark Mode M3 Tonal System (Tinted Surfaces)
+                        var bgVal = 'hsl(' + h + ', 18%, 8.5%)';
+                        var cardBg = 'hsl(' + h + ', 18%, 11%)';
+                        var onSurface = 'hsl(' + h + ', 25%, 92%)';
+
+                        root.style.setProperty('--primary-container', 'hsl(' + h + ', 55%, 30%)');
+                        root.style.setProperty('--on-primary-container', 'hsl(' + h + ', 85%, 90%)');
+                        root.style.setProperty('--secondary-container', 'hsl(' + h + ', 26%, 22%)');
+                        root.style.setProperty('--on-secondary-container', 'hsl(' + h + ', 35%, 88%)');
+
+                        root.style.setProperty('--tertiary', 'hsl(' + tertH + ', 50%, 75%)');
+                        root.style.setProperty('--on-tertiary', 'hsl(' + tertH + ', 60%, 15%)');
+                        root.style.setProperty('--tertiary-container', 'hsl(' + tertH + ', 50%, 28%)');
+                        root.style.setProperty('--on-tertiary-container', 'hsl(' + tertH + ', 85%, 92%)');
+
+                        root.style.setProperty('--background', bgVal);
+                        root.style.setProperty('--surface', bgVal);
+                        root.style.setProperty('--surface-bg', bgVal);
+                        root.style.setProperty('--surface-container-lowest', 'hsl(' + h + ', 18%, 6.5%)');
+                        root.style.setProperty('--surface-container-low', cardBg);
+                        root.style.setProperty('--surface-container', 'hsl(' + h + ', 18%, 14%)');
+                        root.style.setProperty('--surface-container-high', 'hsl(' + h + ', 18%, 17%)');
+                        root.style.setProperty('--surface-container-highest', 'hsl(' + h + ', 18%, 21%)');
+                        root.style.setProperty('--surface-variant', 'hsl(' + h + ', 18%, 26%)');
+                        root.style.setProperty('--outline', 'hsl(' + h + ', 10%, 58%)');
+                        root.style.setProperty('--outline-variant', 'hsl(' + h + ', 12%, 27%)');
+                        root.style.setProperty('--on-surface', onSurface);
+                        root.style.setProperty('--on-surface-variant', 'hsl(' + h + ', 18%, 78%)');
+
+                        // Bootstrap Variables
+                        root.style.setProperty('--bs-body-bg', bgVal);
+                        root.style.setProperty('--bs-body-color', onSurface);
+                        root.style.setProperty('--bs-card-bg', cardBg);
+                        root.style.setProperty('--bs-tertiary-bg', 'hsl(' + h + ', 18%, 14%)');
+                        root.style.setProperty('--bs-secondary-bg', cardBg);
+                        root.style.setProperty('--bs-border-color', 'hsl(' + h + ', 12%, 27%)');
+                    } else {
+                        // Light Mode M3 Tonal System (Tinted Surfaces)
+                        var bgVal = 'hsl(' + h + ', 35%, 97.2%)';
+                        var cardBg = 'hsl(' + h + ', 30%, 99.4%)';
+                        var onSurface = 'hsl(' + h + ', 35%, 12%)';
+
+                        root.style.setProperty('--primary-container', 'hsl(' + h + ', 70%, 92%)');
+                        root.style.setProperty('--on-primary-container', 'hsl(' + h + ', 85%, 22%)');
+                        root.style.setProperty('--secondary-container', 'hsl(' + h + ', 42%, 91%)');
+                        root.style.setProperty('--on-secondary-container', 'hsl(' + h + ', 50%, 18%)');
+
+                        root.style.setProperty('--tertiary', 'hsl(' + tertH + ', 50%, 42%)');
+                        root.style.setProperty('--on-tertiary', '#ffffff');
+                        root.style.setProperty('--tertiary-container', 'hsl(' + tertH + ', 65%, 90%)');
+                        root.style.setProperty('--on-tertiary-container', 'hsl(' + tertH + ', 85%, 16%)');
+
+                        root.style.setProperty('--background', bgVal);
+                        root.style.setProperty('--surface', bgVal);
+                        root.style.setProperty('--surface-bg', bgVal);
+                        root.style.setProperty('--surface-container-lowest', cardBg);
+                        root.style.setProperty('--surface-container-low', 'hsl(' + h + ', 30%, 95.2%)');
+                        root.style.setProperty('--surface-container', 'hsl(' + h + ', 30%, 92.5%)');
+                        root.style.setProperty('--surface-container-high', 'hsl(' + h + ', 30%, 88.5%)');
+                        root.style.setProperty('--surface-container-highest', 'hsl(' + h + ', 30%, 84.5%)');
+                        root.style.setProperty('--surface-variant', 'hsl(' + h + ', 25%, 90.5%)');
+                        root.style.setProperty('--outline', 'hsl(' + h + ', 18%, 52%)');
+                        root.style.setProperty('--outline-variant', 'hsl(' + h + ', 22%, 82%)');
+                        root.style.setProperty('--on-surface', onSurface);
+                        root.style.setProperty('--on-surface-variant', 'hsl(' + h + ', 20%, 30%)');
+
+                        // Bootstrap Variables
+                        root.style.setProperty('--bs-body-bg', bgVal);
+                        root.style.setProperty('--bs-body-color', onSurface);
+                        root.style.setProperty('--bs-card-bg', cardBg);
+                        root.style.setProperty('--bs-tertiary-bg', 'hsl(' + h + ', 30%, 92.5%)');
+                        root.style.setProperty('--bs-secondary-bg', 'hsl(' + h + ', 30%, 95.2%)');
+                        root.style.setProperty('--bs-border-color', 'hsl(' + h + ', 22%, 82%)');
+                    }
+
+                    if (document.body) {
+                        document.body.style.backgroundColor = isDark ? 'hsl(' + h + ', 18%, 8.5%)' : 'hsl(' + h + ', 35%, 97.2%)';
+                        document.body.style.color = isDark ? 'hsl(' + h + ', 25%, 92%)' : 'hsl(' + h + ', 35%, 12%)';
+                    }
+
+                    // 2. Legacy / Derivative Tokens
+                    root.style.setProperty('--cm-sys-color-surface', root.style.getPropertyValue('--surface-container-lowest'));
+                    root.style.setProperty('--cm-sys-color-surface-variant', root.style.getPropertyValue('--surface-container-low'));
+                    root.style.setProperty('--cm-sys-color-container', root.style.getPropertyValue('--surface-container-low'));
+                    root.style.setProperty('--cm-sys-color-container-high', root.style.getPropertyValue('--surface-container'));
+                    root.style.setProperty('--cm-sys-color-hairline', root.style.getPropertyValue('--outline-variant'));
+                    root.style.setProperty('--cm-sys-color-outline', root.style.getPropertyValue('--outline'));
+                };
+
+                // Apply saved user palette immediately
+                var userPalette = @json(Auth::check() && Auth::user()->theme_color ? Auth::user()->theme_color : null) || localStorage.getItem('user_primary_palette');
+                if (userPalette) {
+                    window.applyMaterialYouTheme(userPalette, savedTheme === 'dark');
                 }
+
+                document.addEventListener('DOMContentLoaded', function() {
+                    var p = @json(Auth::check() && Auth::user()->theme_color ? Auth::user()->theme_color : null) || localStorage.getItem('user_primary_palette');
+                    if (p && typeof window.applyMaterialYouTheme === 'function') {
+                        var dark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+                        window.applyMaterialYouTheme(p, dark);
+                    }
+                });
             } catch (e) {}
         })();
     </script>
@@ -163,6 +297,7 @@
         }
 
         /* Mobile Bottom Wrapper: Perfectly stacks Sticky Action Bar on top of Bottom Nav with ZERO gap */
+        /* Mobile Bottom Dock: Perfectly unites Sticky Action Bar & Bottom Nav as ONE solid dock */
         @media (max-width: 991.98px) {
             .mobile-bottom-wrapper {
                 position: fixed !important;
@@ -173,36 +308,44 @@
                 z-index: 1045 !important;
                 display: flex !important;
                 flex-direction: column !important;
-                pointer-events: none !important;
+                pointer-events: auto !important;
                 margin: 0 !important;
                 padding: 0 !important;
+                background: var(--surface-bg) !important;
+                border-top: 1px solid var(--outline-variant) !important;
+                box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08) !important;
             }
-            .mobile-bottom-wrapper > * {
-                pointer-events: auto !important;
-            }
-            .mobile-bottom-wrapper .mobile-bottom-nav {
-                position: relative !important;
+            .mobile-bottom-wrapper .mobile-sticky-action-bar {
+                position: static !important;
                 bottom: auto !important;
                 left: auto !important;
                 right: auto !important;
                 width: 100% !important;
                 margin: 0 !important;
-            }
-            .mobile-bottom-wrapper .mobile-sticky-action-bar,
-            .mobile-sticky-action-bar {
-                position: fixed !important;
-                bottom: calc(64px + env(safe-area-inset-bottom)) !important;
-                left: 0 !important;
-                right: 0 !important;
-                width: 100% !important;
-                margin: 0 !important;
-                background: var(--surface-bg) !important;
-                border-top: 1px solid var(--outline-color) !important;
-                box-shadow: 0 -3px 12px rgba(0, 0, 0, 0.06) !important;
-                padding: 0.65rem 1rem !important;
+                background: var(--surface-container-low) !important;
+                border: none !important;
+                border-bottom: 1px solid var(--outline-variant) !important;
+                box-shadow: none !important;
+                padding: 0.75rem 1rem !important;
                 backdrop-filter: none !important;
                 -webkit-backdrop-filter: none !important;
-                z-index: 1039 !important;
+                z-index: 1046 !important;
+                box-sizing: border-box !important;
+            }
+            .mobile-bottom-wrapper .mobile-bottom-nav {
+                position: static !important;
+                bottom: auto !important;
+                left: auto !important;
+                right: auto !important;
+                width: 100% !important;
+                margin: 0 !important;
+                height: auto !important;
+                min-height: 58px !important;
+                border: none !important;
+                border-top: none !important;
+                box-shadow: none !important;
+                background: var(--surface-bg) !important;
+                padding-bottom: env(safe-area-inset-bottom) !important;
             }
 
             @if(request()->routeIs('catalog.show') || request()->routeIs('checkout.*') || request()->routeIs('cart.*') || request()->routeIs('orders.show'))
@@ -536,7 +679,7 @@
 <div class="app-container">
     @unless($hideSidebar)
     {{-- Sidebar (Desktop Column / Mobile Card Sheet) --}}
-    <div id="sidebar" class="sidebar" style="z-index: 1040; overflow-y: auto; overscroll-behavior: contain;">
+    <div id="sidebar" class="sidebar" style="z-index: 1040; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; -ms-overflow-style: none;">
         {{-- Mobile Bottom Sheet Grab Handle & Header (Mobile Only) --}}
         <div class="sheet-header-mobile d-lg-none sticky-top bg-body pt-2 pb-1 border-bottom" style="border-top-left-radius: var(--radius-xl); border-top-right-radius: var(--radius-xl); z-index: 10;">
             <div class="sheet-handle-area" id="sheetHandleArea" title="{{ __('Geser ke bawah untuk menutup') }}">

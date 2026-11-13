@@ -50,6 +50,12 @@ function initThemeToggle() {
         }
 
         updateThemeIcon(icon, next);
+        
+        const userPalette = localStorage.getItem('user_primary_palette');
+        if (userPalette && typeof window.applyMaterialYouTheme === 'function') {
+            window.applyMaterialYouTheme(userPalette, next === 'dark');
+        }
+
         setTimeout(() => html.classList.remove('theme-transitioning'), 300);
     });
 }
