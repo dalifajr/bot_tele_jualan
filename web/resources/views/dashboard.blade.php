@@ -178,7 +178,20 @@
 
             <div class="m3-promo-carousel-container">
                 <div class="m3-promo-track" id="promoTrack">
-                    {{-- 1. Promo Diskon Lisensi --}}
+                    @forelse($promos ?? [] as $promo)
+                    <div class="m3-promo-card" style="background: {{ $promo->gradient_style }};">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="badge rounded-pill fw-bold" style="background: {{ $promo->badge_color }}; color: #ffffff; font-size: 0.72rem; letter-spacing: 0.03em;">{{ $promo->badge_text ?: 'INFO' }}</span>
+                            <i class="{{ $promo->icon }} text-primary opacity-50 fs-5"></i>
+                        </div>
+                        <h3 class="fw-bold text-body mb-1" style="font-size: 1rem; line-height: 1.35;">{{ $promo->title }}</h3>
+                        <p class="text-secondary small mb-3" style="font-size: 0.8125rem; line-height: 1.4;">{{ $promo->description }}</p>
+                        <a href="{{ $promo->button_url }}" class="btn btn-sm btn-primary rounded-pill px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5" style="font-size: 0.8125rem;">
+                            <span>{{ $promo->button_text }}</span>
+                            <i class="fas fa-arrow-right" style="font-size: 0.7rem;"></i>
+                        </a>
+                    </div>
+                    @empty
                     <div class="m3-promo-card" style="background: linear-gradient(135deg, rgba(11, 87, 208, 0.08), var(--surface-container));">
                         <div class="d-flex align-items-center justify-content-between mb-2">
                             <span class="badge rounded-pill fw-bold" style="background: var(--primary); color: #ffffff; font-size: 0.72rem; letter-spacing: 0.03em;">PROMO SPESIAL</span>
@@ -191,62 +204,16 @@
                             <i class="fas fa-arrow-right" style="font-size: 0.7rem;"></i>
                         </a>
                     </div>
-
-                    {{-- 2. Keamanan Akun 2FA --}}
-                    <div class="m3-promo-card" style="background: linear-gradient(135deg, rgba(56, 106, 33, 0.08), var(--surface-container));">
-                        <div class="d-flex align-items-center justify-content-between mb-2">
-                            <span class="badge rounded-pill fw-bold" style="background: #2e7d32; color: #ffffff; font-size: 0.72rem; letter-spacing: 0.03em;">KEAMANAN AKUN</span>
-                            <i class="fas fa-shield-alt text-success opacity-50 fs-5"></i>
-                        </div>
-                        <h3 class="fw-bold text-body mb-1" style="font-size: 1rem; line-height: 1.35;">{{ __('Lindungi Akun dengan 2FA') }}</h3>
-                        <p class="text-secondary small mb-3" style="font-size: 0.8125rem; line-height: 1.4;">{{ __('Aktifkan Two-Factor Authentication via Google Authenticator untuk keamanan berlapis saat transaksi.') }}</p>
-                        <a href="{{ route('profile') }}" @guest data-guest-modal="true" data-feature-name="profil" @endguest class="btn btn-sm btn-outline-success rounded-pill px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5" style="font-size: 0.8125rem;">
-                            <span>{{ __('Atur keamanan') }}</span>
-                            <i class="fas fa-lock" style="font-size: 0.7rem;"></i>
-                        </a>
-                    </div>
-
-                    {{-- 3. Notifikasi Bot Telegram --}}
-                    <div class="m3-promo-card" style="background: linear-gradient(135deg, rgba(34, 158, 217, 0.1), var(--surface-container));">
-                        <div class="d-flex align-items-center justify-content-between mb-2">
-                            <span class="badge rounded-pill fw-bold" style="background: #0288d1; color: #ffffff; font-size: 0.72rem; letter-spacing: 0.03em;">NOTIFIKASI INSTAN</span>
-                            <i class="fab fa-telegram text-info opacity-50 fs-5"></i>
-                        </div>
-                        <h3 class="fw-bold text-body mb-1" style="font-size: 1rem; line-height: 1.35;">{{ __('Update Cepat via Telegram') }}</h3>
-                        <p class="text-secondary small mb-3" style="font-size: 0.8125rem; line-height: 1.4;">{{ __('Dapatkan pembaruan status pengiriman lisensi akun dan bukti transaksi secara otomatis di Telegram.') }}</p>
-                        @if(config('telegram.bot_username'))
-                        <a href="https://t.me/{{ config('telegram.bot_username') }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm rounded-pill px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 text-white" style="background: #229ed9; font-size: 0.8125rem;">
-                            <span>{{ __('Buka Telegram') }}</span>
-                            <i class="fas fa-arrow-up-right-from-square" style="font-size: 0.7rem;"></i>
-                        </a>
-                        @else
-                        <a href="{{ route('catalog.index') }}" class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1.5 fw-semibold" style="font-size: 0.8125rem;">
-                            <span>{{ __('Lihat katalog') }}</span>
-                        </a>
-                        @endif
-                    </div>
-
-                    {{-- 4. Bantuan & Garansi Toko --}}
-                    <div class="m3-promo-card" style="background: linear-gradient(135deg, rgba(142, 68, 173, 0.08), var(--surface-container));">
-                        <div class="d-flex align-items-center justify-content-between mb-2">
-                            <span class="badge rounded-pill fw-bold" style="background: #8e44ad; color: #ffffff; font-size: 0.72rem; letter-spacing: 0.03em;">GARANSI RESMI</span>
-                            <i class="fas fa-headset text-purple opacity-50 fs-5"></i>
-                        </div>
-                        <h3 class="fw-bold text-body mb-1" style="font-size: 1rem; line-height: 1.35;">{{ __('Pusat Komplain & Garansi') }}</h3>
-                        <p class="text-secondary small mb-3" style="font-size: 0.8125rem; line-height: 1.4;">{{ __('Kendala akun atau lisensi? Buka tiket komplain kapan saja untuk penanganan cepat dalam 1x24 jam.') }}</p>
-                        <a href="{{ Auth::check() ? route('customer.complaints.index') : route('login') }}" @guest data-guest-modal="true" data-feature-name="kelola komplain" @endguest class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5" style="font-size: 0.8125rem;">
-                            <span>{{ __('Buka bantuan') }}</span>
-                            <i class="fas fa-life-ring" style="font-size: 0.7rem;"></i>
-                        </a>
-                    </div>
+                    @endforelse
                 </div>
 
                 {{-- Dots Navigation Indicators --}}
                 <div class="d-flex justify-content-center align-items-center gap-1.5 mt-2" id="promoDots">
-                    <span class="m3-promo-dot active" data-index="0"></span>
-                    <span class="m3-promo-dot" data-index="1"></span>
-                    <span class="m3-promo-dot" data-index="2"></span>
-                    <span class="m3-promo-dot" data-index="3"></span>
+                    @forelse($promos ?? [] as $promoIdx => $p)
+                        <span class="m3-promo-dot {{ $loop->first ? 'active' : '' }}" data-index="{{ $promoIdx }}"></span>
+                    @empty
+                        <span class="m3-promo-dot active" data-index="0"></span>
+                    @endforelse
                 </div>
             </div>
         </div>

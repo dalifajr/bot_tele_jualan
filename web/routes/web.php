@@ -198,6 +198,7 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
     // Profile
     Route::get('/profile', [\App\Http\Controllers\ProfileController::class, 'index'])->name('profile');
     Route::post('/profile/edit', [\App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
+    Route::post('/profile/theme-color', [\App\Http\Controllers\ProfileController::class, 'updateThemeColor'])->name('profile.theme-color');
     Route::post('/profile/password', [\App\Http\Controllers\Auth\AuthController::class, 'updatePassword'])->name('profile.password.update');
     Route::post('/profile/dismiss-password-prompt', [\App\Http\Controllers\ProfileController::class, 'dismissPasswordPrompt'])->name('profile.password.dismiss-prompt');
     Route::post('/profile/telegram-link', [\App\Http\Controllers\ProfileController::class, 'generateTelegramLink'])->name('profile.telegram.link');
@@ -304,6 +305,15 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         Route::post('/coupons', [\App\Http\Controllers\Admin\CouponController::class, 'store'])->name('coupons.store');
         Route::put('/coupons/{id}', [\App\Http\Controllers\Admin\CouponController::class, 'update'])->name('coupons.update');
         Route::delete('/coupons/{id}', [\App\Http\Controllers\Admin\CouponController::class, 'destroy'])->name('coupons.destroy');
+
+        // Dashboard Promo Cards Management
+        Route::get('/promos', [\App\Http\Controllers\Admin\DashboardPromoController::class, 'index'])->name('promos.index');
+        Route::get('/promos/create', [\App\Http\Controllers\Admin\DashboardPromoController::class, 'create'])->name('promos.create');
+        Route::post('/promos', [\App\Http\Controllers\Admin\DashboardPromoController::class, 'store'])->name('promos.store');
+        Route::get('/promos/{promo}/edit', [\App\Http\Controllers\Admin\DashboardPromoController::class, 'edit'])->name('promos.edit');
+        Route::put('/promos/{promo}', [\App\Http\Controllers\Admin\DashboardPromoController::class, 'update'])->name('promos.update');
+        Route::post('/promos/{promo}/toggle', [\App\Http\Controllers\Admin\DashboardPromoController::class, 'toggleStatus'])->name('promos.toggle');
+        Route::delete('/promos/{promo}', [\App\Http\Controllers\Admin\DashboardPromoController::class, 'destroy'])->name('promos.destroy');
         
         // Backup & Restore
         Route::get('/backup', [\App\Http\Controllers\Admin\BackupController::class, 'index'])->name('backup.index');

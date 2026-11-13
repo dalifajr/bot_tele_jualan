@@ -25,6 +25,7 @@ class User extends Authenticatable
         'dismiss_set_password_prompt',
         'has_custom_password',
         'avatar',
+        'theme_color',
         'commission_per_product',
     ];
 

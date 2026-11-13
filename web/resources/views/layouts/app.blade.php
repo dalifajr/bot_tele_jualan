@@ -12,6 +12,26 @@
                 if (!document.cookie.includes('jualan-theme=' + savedTheme)) {
                     document.cookie = "jualan-theme=" + savedTheme + ";path=/;max-age=31536000;SameSite=Lax";
                 }
+
+                // Material You Dynamic User Palette
+                var userPalette = @json(Auth::check() && Auth::user()->theme_color ? Auth::user()->theme_color : null) || localStorage.getItem('user_primary_palette');
+                if (userPalette && /^#([a-fA-F0-9]{6}|[a-fA-F0-9]{3})$/.test(userPalette)) {
+                    var c = userPalette;
+                    if (c.length === 4) {
+                        c = '#' + c[1] + c[1] + c[2] + c[2] + c[3] + c[3];
+                    }
+                    var r = parseInt(c.slice(1, 3), 16);
+                    var g = parseInt(c.slice(3, 5), 16);
+                    var b = parseInt(c.slice(5, 7), 16);
+                    var root = document.documentElement;
+                    root.style.setProperty('--primary', c);
+                    root.style.setProperty('--bs-primary', c);
+                    root.style.setProperty('--primary-rgb', r + ', ' + g + ', ' + b);
+                    root.style.setProperty('--bs-primary-rgb', r + ', ' + g + ', ' + b);
+                    root.style.setProperty('--primary-container', 'rgba(' + r + ', ' + g + ', ' + b + ', 0.16)');
+                    root.style.setProperty('--on-primary-container', c);
+                    root.style.setProperty('--cm-sys-color-primary', c);
+                }
             } catch (e) {}
         })();
     </script>
@@ -170,25 +190,24 @@
             }
             .mobile-bottom-wrapper .mobile-sticky-action-bar,
             .mobile-sticky-action-bar {
-                position: relative !important;
-                bottom: auto !important;
-                left: auto !important;
-                right: auto !important;
+                position: fixed !important;
+                bottom: calc(64px + env(safe-area-inset-bottom)) !important;
+                left: 0 !important;
+                right: 0 !important;
                 width: 100% !important;
                 margin: 0 !important;
                 background: var(--surface-bg) !important;
                 border-top: 1px solid var(--outline-color) !important;
-                border-bottom: 1px solid var(--outline-color) !important;
-                box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08) !important;
-                padding: 0.5rem 0.75rem !important;
+                box-shadow: 0 -3px 12px rgba(0, 0, 0, 0.06) !important;
+                padding: 0.65rem 1rem !important;
                 backdrop-filter: none !important;
                 -webkit-backdrop-filter: none !important;
-                z-index: 1046 !important;
+                z-index: 1039 !important;
             }
 
-            @if(request()->routeIs('catalog.show') || request()->routeIs('checkout.review') || request()->routeIs('cart.*'))
+            @if(request()->routeIs('catalog.show') || request()->routeIs('checkout.*') || request()->routeIs('cart.*') || request()->routeIs('orders.show'))
             body {
-                padding-bottom: calc(130px + env(safe-area-inset-bottom)) !important;
+                padding-bottom: calc(140px + env(safe-area-inset-bottom)) !important;
             }
             @endif
         }
@@ -372,7 +391,7 @@
             </a>
         </div>
 
-        {{-- Notification Dropdown for Desktop (>= 768px): Popover --}}
+        {{-- Notification Dropdown for Desktop (>= 768px): Material You M3 Floating Popover --}}
         <div class="dropdown d-none d-md-block">
             <button class="btn btn-link link-body-emphasis m3-icon-btn position-relative" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="{{ __('Notifikasi') }}" data-pex="xrpax4o-0">
                 <i class="fas fa-bell" style="font-size: 0.95rem;" data-pex="xrpax4o-1"></i>
@@ -382,56 +401,71 @@
                 </span>
                 @endif
             </button>
-            <ul class="dropdown-menu dropdown-menu-end mt-2 p-0 shadow-sm" style="width: 340px; z-index: 1050; overflow: hidden; border-radius: var(--radius-lg, 20px); border: 1px solid var(--outline-variant);">
-                <li class="px-3 py-2 border-bottom d-flex justify-content-between align-items-center" style="background: var(--surface-container);">
-                    <h6 class="m-0 fw-semibold text-primary" style="font-size: 0.88rem;" data-pex="9c28hsh-7">{{ __('Notifikasi') }}</h6>
+            <div class="dropdown-menu dropdown-menu-end mt-2 p-0" style="width: 360px; z-index: 1050; border-radius: var(--radius-xl, 24px); border: 1px solid var(--outline-variant); background: var(--surface-container-low); box-shadow: 0 12px 36px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04); overflow: hidden;">
+                {{-- M3 Popover Header --}}
+                <div class="px-3.5 py-3 border-bottom d-flex justify-content-between align-items-center" style="border-color: var(--outline-variant) !important; background: var(--surface-container-low);">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="fas fa-bell text-primary" style="font-size: 0.95rem;"></i>
+                        <span class="fw-bold" style="font-family: var(--font-poppins); font-size: 0.95rem; color: var(--on-surface);">{{ __('Notifikasi') }}</span>
+                    </div>
                     @if($totalUnreadCount > 0)
-                    <span class="badge bg-primary-subtle text-primary rounded-pill">{{ $totalUnreadCount }} {{ __('Baru') }}</span>
+                    <span class="badge rounded-pill fw-semibold" style="background: var(--primary); color: #ffffff; font-size: 0.72rem; padding: 4px 10px;">
+                        {{ $totalUnreadCount }} {{ __('Baru') }}
+                    </span>
                     @endif
-                </li>
+                </div>
                 
-                <div class="notification-list" style="max-height: 380px; overflow-y: auto;">
+                {{-- Notification List --}}
+                <div class="notification-list p-1" style="max-height: 380px; overflow-y: auto;">
                     @forelse($unreadNotifications as $notification)
-                    <li>
-                        <a class="dropdown-item py-2.5 px-3 d-flex align-items-start gap-2.5 border-bottom" href="{{ $notification->data['url'] ?? '#' }}" style="white-space: normal; border-radius: 0 !important;" onclick="markSingleNotificationAsRead('{{ $notification->id }}')">
-                            <div class="mt-1">
-                                <i class="{{ $notification->data['icon'] ?? 'fas fa-bell text-secondary' }}" style="font-size: 0.95rem;"></i>
+                    <div class="mb-1">
+                        <a class="dropdown-item py-2.5 px-3 d-flex align-items-start gap-2.5 rounded-3" href="{{ $notification->data['url'] ?? '#' }}" style="white-space: normal; transition: background 0.15s ease;" onclick="markSingleNotificationAsRead('{{ $notification->id }}')">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 mt-0.5" style="width: 36px; height: 36px; background: var(--primary-container); color: var(--primary); font-size: 0.9rem;">
+                                <i class="{{ $notification->data['icon'] ?? 'fas fa-bell' }}"></i>
                             </div>
-                            <div class="flex-grow-1">
-                                <div class="fw-medium mb-0.5" style="font-size: 0.85rem; color: var(--on-surface);" data-pex="9c28hsh-21">{{ $notification->data['title'] ?? __('Notifikasi') }}</div>
-                                <div class="text-secondary small" style="font-size: 0.8rem;" data-pex="9c28hsh-22">{{ $notification->data['message'] ?? '' }}</div>
+                            <div class="flex-grow-1 overflow-hidden">
+                                <div class="fw-semibold mb-0.5" style="font-size: 0.85rem; color: var(--on-surface);">{{ $notification->data['title'] ?? __('Notifikasi') }}</div>
+                                <div class="text-secondary small" style="font-size: 0.8rem; line-height: 1.35;">{{ $notification->data['message'] ?? '' }}</div>
                                 
                                 @if(($notification->data['type'] ?? '') === 'login_gagal' && isset($notification->data['ip_address']))
                                 <div class="mt-2" onclick="event.stopPropagation(); event.preventDefault();">
                                     <form action="{{ route('profile.logins.block-ip') }}" method="POST" class="d-inline">
                                         @csrf
                                         <input type="hidden" name="ip_address" value="{{ $notification->data['ip_address'] }}">
-                                        <button type="submit" class="btn btn-sm btn-danger rounded-pill" style="font-size: 0.72rem;">
-                                            <i class="fas fa-ban me-1"></i>Bukan Saya (Blokir)
+                                        <button type="submit" class="btn btn-sm btn-danger rounded-pill px-3 py-1" style="font-size: 0.72rem; font-weight: 600;">
+                                            <i class="fas fa-ban me-1"></i>{{ __('Bukan Saya (Blokir)') }}
                                         </button>
                                     </form>
                                 </div>
                                 @endif
 
-                                <div class="text-muted mt-1" style="font-size: 0.7rem;" data-pex="9c28hsh-23"><i class="far fa-clock me-1"></i>{{ $notification->created_at->diffForHumans() }}</div>
+                                <div class="text-secondary mt-1.5 opacity-75" style="font-size: 0.7rem;"><i class="far fa-clock me-1"></i>{{ $notification->created_at->diffForHumans() }}</div>
                             </div>
                         </a>
-                    </li>
+                    </div>
                     @empty
-                    <li>
-                        <div class="dropdown-item py-4 text-center text-muted" style="border-radius: 0 !important;">
-                            <i class="fas fa-check-circle fs-4 mb-1.5 text-success"></i><br>
-                            <small>{{ __('Tidak ada notifikasi baru.') }}</small>
+                    <div class="py-4 px-3 text-center d-flex flex-column align-items-center justify-content-center">
+                        <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width: 48px; height: 48px; background: var(--secondary-container); color: var(--on-secondary-container); font-size: 1.25rem;">
+                            <i class="fas fa-check"></i>
                         </div>
-                    </li>
+                        <div class="fw-semibold text-body" style="font-size: 0.9rem;">{{ __('Semua bersih!') }}</div>
+                        <small class="text-secondary" style="font-size: 0.8rem;">{{ __('Tidak ada notifikasi baru saat ini.') }}</small>
+                    </div>
                     @endforelse
                 </div>
                 
-                <li class="d-flex justify-content-between px-3 py-2 border-top" style="background: var(--surface-container);">
-                    <a href="javascript:void(0)" class="text-decoration-none small text-muted hover-primary" onclick="markAllNotificationsRead()"><i class="fas fa-check-double me-1"></i>{{ __('Tandai Dibaca') }}</a>
-                    <a href="{{ route('notifications.index') }}" class="text-decoration-none small fw-medium text-primary"><i class="fas fa-list me-1"></i>{{ __('Lihat Semua') }}</a>
-                </li>
-            </ul>
+                {{-- M3 Popover Footer --}}
+                <div class="d-flex justify-content-between align-items-center px-3.5 py-2.5 border-top" style="border-color: var(--outline-variant) !important; background: var(--surface-container-low);">
+                    <button type="button" class="btn btn-sm btn-link text-decoration-none text-secondary p-0 fw-semibold d-inline-flex align-items-center gap-1.5" onclick="markAllNotificationsRead()" style="font-size: 0.8125rem;">
+                        <i class="fas fa-check-double"></i>
+                        <span>{{ __('Tandai Dibaca') }}</span>
+                    </button>
+                    <a href="{{ route('notifications.index') }}" class="btn btn-sm btn-primary rounded-pill px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 text-decoration-none" style="font-size: 0.8125rem;">
+                        <span>{{ __('Lihat Semua') }}</span>
+                        <i class="fas fa-arrow-right" style="font-size: 0.7rem;"></i>
+                    </a>
+                </div>
+            </div>
         </div>
 
         {{-- Shopping Cart Icon --}}
@@ -738,6 +772,10 @@
                         <a href="{{ route('admin.coupons.index') }}" class="menu-item {{ request()->routeIs('admin.coupons.*') ? 'active' : '' }}">
                             <div class="menu-icon-box"><i class="fas fa-ticket text-danger"></i></div>
                             <span class="menu-label-text">{{ __('Kelola Kupon') }}</span>
+                        </a>
+                        <a href="{{ route('admin.promos.index') }}" class="menu-item {{ request()->routeIs('admin.promos.*') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fas fa-bullhorn text-warning"></i></div>
+                            <span class="menu-label-text">{{ __('Promo Dashboard') }}</span>
                         </a>
                         <a href="{{ route('admin.logins.index') }}" class="menu-item {{ request()->routeIs('admin.logins.*') ? 'active' : '' }}">
                             <div class="menu-icon-box"><i class="fas fa-right-to-bracket text-secondary"></i></div>

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\DashboardPromo;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -34,12 +35,15 @@ class DashboardController extends Controller
                 ->get();
         }
 
+        $promos = DashboardPromo::active()->ordered()->get();
+
         return view('dashboard', compact(
             'totalOrders',
             'completedOrders',
             'pendingOrders',
             'totalSpent',
-            'recentOrders'
+            'recentOrders',
+            'promos'
         ));
     }
 }

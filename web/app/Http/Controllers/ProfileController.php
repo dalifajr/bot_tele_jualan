@@ -47,6 +47,28 @@ class ProfileController extends Controller
         return redirect()->back()->with('success', __('Profil berhasil diperbarui!'));
     }
 
+    public function updateThemeColor(Request $request)
+    {
+        $request->validate([
+            'theme_color' => ['nullable', 'string', 'max:30', 'regex:/^#([a-fA-F0-9]{6}|[a-fA-F0-9]{3})$/'],
+        ]);
+
+        $user = Auth::user();
+        $user->update([
+            'theme_color' => $request->theme_color,
+        ]);
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'status' => 'success',
+                'message' => __('Warna tema berhasil disimpan!'),
+                'theme_color' => $user->theme_color,
+            ]);
+        }
+
+        return redirect()->back()->with('success', __('Warna tema berhasil disimpan!'));
+    }
+
     public function checkTelegramId(Request $request)
     {
         $request->validate([

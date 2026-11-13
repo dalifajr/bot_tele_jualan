@@ -112,6 +112,9 @@
         <button class="m3-profile-tab-btn" id="tab-geolokasi-btn" data-bs-toggle="pill" data-bs-target="#tab-geolokasi" type="button" role="tab">
             <i class="fas fa-shield-alt"></i> {{ __('Keamanan IP') }}
         </button>
+        <button class="m3-profile-tab-btn" id="tab-tema-btn" data-bs-toggle="pill" data-bs-target="#tab-tema" type="button" role="tab">
+            <i class="fas fa-palette"></i> {{ __('Tema & Warna') }}
+        </button>
     </div>
 
     <!-- Tab Content Panes -->
@@ -383,6 +386,96 @@
                 </div>
             </div>
         </div>
+
+        <!-- Tab 5: Personalisasi Tema & Palet Warna -->
+        <div class="tab-pane fade" id="tab-tema" role="tabpanel">
+            <div class="m3-profile-section-card">
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <i class="fas fa-palette text-primary fa-lg"></i>
+                    <h5 class="fw-bold mb-0 text-body">{{ __('Personalisasi Warna Palet (Material You)') }}</h5>
+                </div>
+                <p class="small text-secondary mb-4">
+                    {{ __('Pilih warna aksen utama yang Anda sukai. Warna pilihan Anda akan langsung diterapkan ke seluruh elemen tombol, badge, dan kontainer website.') }}
+                </p>
+
+                @php
+                    $currentPalette = Auth::user()->theme_color ?: '#65558f';
+                    $presets = [
+                        ['name' => 'Lavender & Purple (Default M3)', 'color' => '#65558f'],
+                        ['name' => 'Google Android Blue', 'color' => '#0b57d0'],
+                        ['name' => 'Emerald Mint (Hijau Segar)', 'color' => '#00875a'],
+                        ['name' => 'Ocean Cyan (Biru Langit)', 'color' => '#0288d1'],
+                        ['name' => 'Sunset Amber (Oranye Senja)', 'color' => '#e65100'],
+                        ['name' => 'Rose Crimson (Merah Elegan)', 'color' => '#b3261e'],
+                    ];
+                @endphp
+
+                {{-- Preset Palettes Grid --}}
+                <div class="row g-3 mb-4" id="palettePresetGrid">
+                    @foreach($presets as $p)
+                    <div class="col-sm-6 col-lg-4">
+                        <div class="palette-option-card p-3 rounded-4 border d-flex align-items-center gap-3 cursor-pointer {{ strtolower($currentPalette) === strtolower($p['color']) ? 'active-palette' : '' }}" 
+                             data-color="{{ $p['color'] }}" 
+                             style="cursor: pointer; transition: all 0.2s ease; background: var(--surface-container-low); border-color: var(--outline-variant) !important;">
+                            <div class="rounded-circle flex-shrink-0 d-flex align-items-center justify-content-center text-white fw-bold shadow-sm" style="width: 44px; height: 44px; background: {{ $p['color'] }}; font-size: 1.1rem;">
+                                <i class="fas fa-check palette-check-icon {{ strtolower($currentPalette) === strtolower($p['color']) ? '' : 'd-none' }}"></i>
+                            </div>
+                            <div class="flex-grow-1 overflow-hidden">
+                                <div class="fw-semibold text-body text-truncate" style="font-size: 0.88rem;">{{ $p['name'] }}</div>
+                                <code class="small text-secondary text-uppercase">{{ $p['color'] }}</code>
+                            </div>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+
+                {{-- Custom Color Picker Box --}}
+                <div class="p-3.5 rounded-4 border mb-4" style="background: var(--surface-container-low); border-color: var(--outline-variant) !important;">
+                    <div class="row g-3 align-items-center">
+                        <div class="col-md-7">
+                            <div class="fw-semibold text-body mb-0.5" style="font-size: 0.9rem;">
+                                <i class="fas fa-eye-dropper text-primary me-1.5"></i>{{ __('Pilih Warna Kustom') }}
+                            </div>
+                            <small class="text-secondary">{{ __('Gunakan pemilih warna bebas untuk menyesuaikan palet sesuai selera pribadi Anda.') }}</small>
+                        </div>
+                        <div class="col-md-5">
+                            <div class="d-flex align-items-center gap-2">
+                                <input type="color" id="customColorPicker" class="form-control form-control-color rounded-circle p-1 border-0 shadow-sm" value="{{ $currentPalette }}" style="width: 46px; height: 46px; cursor: pointer;">
+                                <input type="text" id="customColorHex" class="form-control rounded-pill text-uppercase fw-semibold" value="{{ $currentPalette }}" readonly style="font-size: 0.88rem; max-width: 140px;">
+                                <button type="button" id="btnApplyCustomColor" class="btn btn-sm btn-primary rounded-pill px-3 py-2 fw-semibold text-nowrap">
+                                    {{ __('Terapkan') }}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Live Theme Preview Showcase --}}
+                <div class="p-3.5 rounded-4 border mb-4" style="background: var(--surface-container-lowest); border-color: var(--outline-variant) !important;">
+                    <div class="fw-semibold text-body mb-2" style="font-size: 0.88rem;">
+                        <i class="fas fa-magic text-primary me-1.5"></i>{{ __('Pratinjau Komponen dengan Tema Pilihan Anda') }}
+                    </div>
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                        <button type="button" class="btn btn-primary rounded-pill px-4 py-2 fw-semibold btn-sm">
+                            <i class="fas fa-check me-1"></i>{{ __('Tombol Utama') }}
+                        </button>
+                        <button type="button" class="btn btn-outline-primary rounded-pill px-4 py-2 fw-semibold btn-sm">
+                            {{ __('Tombol Outline') }}
+                        </button>
+                        <span class="badge rounded-pill bg-primary px-3 py-1.5 fw-semibold" style="font-size: 0.78rem;">Badge Solid</span>
+                        <span class="badge rounded-pill bg-primary-subtle text-primary px-3 py-1.5 fw-semibold" style="font-size: 0.78rem;">Badge Tonal</span>
+                        <a href="javascript:void(0)" class="fw-semibold ms-2 text-decoration-none" style="font-size: 0.88rem; color: var(--primary);">{{ __('Tautan Berwarna') }}</a>
+                    </div>
+                </div>
+
+                {{-- Reset Button --}}
+                <div class="d-flex justify-content-end">
+                    <button type="button" id="btnResetDefaultColor" class="btn btn-sm btn-outline-secondary rounded-pill px-4 py-2 fw-semibold">
+                        <i class="fas fa-undo me-1.5"></i>{{ __('Reset ke Default M3') }}
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -472,6 +565,111 @@
 
         if (btnCancelEdit) btnCancelEdit.addEventListener('click', cancelEditProfile);
         if (btnCancelEditBottom) btnCancelEditBottom.addEventListener('click', cancelEditProfile);
+
+        // === MATERIAL YOU PALETTE PICKER ENGINE ===
+        const paletteCards = document.querySelectorAll('.palette-option-card');
+        const customColorPicker = document.getElementById('customColorPicker');
+        const customColorHex = document.getElementById('customColorHex');
+        const btnApplyCustomColor = document.getElementById('btnApplyCustomColor');
+        const btnResetDefaultColor = document.getElementById('btnResetDefaultColor');
+
+        function applyAndSaveColor(hexColor) {
+            if (!hexColor || !/^#([a-fA-F0-9]{6}|[a-fA-F0-9]{3})$/.test(hexColor)) return;
+
+            let c = hexColor;
+            if (c.length === 4) {
+                c = '#' + c[1] + c[1] + c[2] + c[2] + c[3] + c[3];
+            }
+            const r = parseInt(c.slice(1, 3), 16);
+            const g = parseInt(c.slice(3, 5), 16);
+            const b = parseInt(c.slice(5, 7), 16);
+            const root = document.documentElement;
+
+            root.style.setProperty('--primary', c);
+            root.style.setProperty('--bs-primary', c);
+            root.style.setProperty('--primary-rgb', `${r}, ${g}, ${b}`);
+            root.style.setProperty('--bs-primary-rgb', `${r}, ${g}, ${b}`);
+            root.style.setProperty('--primary-container', `rgba(${r}, ${g}, ${b}, 0.16)`);
+            root.style.setProperty('--on-primary-container', c);
+            root.style.setProperty('--cm-sys-color-primary', c);
+
+            localStorage.setItem('user_primary_palette', c);
+            if (customColorPicker) customColorPicker.value = c;
+            if (customColorHex) customColorHex.value = c;
+
+            // Update active state in UI
+            paletteCards.forEach(card => {
+                const cardColor = card.getAttribute('data-color');
+                const checkIcon = card.querySelector('.palette-check-icon');
+                if (cardColor.toLowerCase() === c.toLowerCase()) {
+                    card.classList.add('active-palette');
+                    if (checkIcon) checkIcon.classList.remove('d-none');
+                } else {
+                    card.classList.remove('active-palette');
+                    if (checkIcon) checkIcon.classList.add('d-none');
+                }
+            });
+
+            // Send AJAX to server
+            fetch("{{ route('profile.theme-color') }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ theme_color: c })
+            }).then(res => res.json()).then(data => {
+                if (typeof Swal !== 'undefined') {
+                    const Toast = Swal.mixin({
+                        toast: true,
+                        position: 'bottom-end',
+                        showConfirmButton: false,
+                        timer: 2500,
+                        timerProgressBar: true
+                    });
+                    Toast.fire({
+                        icon: 'success',
+                        title: data.message || '{{ __('Warna tema berhasil disimpan!') }}'
+                    });
+                }
+            }).catch(err => {
+                console.error('Failed to save theme color on server:', err);
+            });
+        }
+
+        paletteCards.forEach(card => {
+            card.addEventListener('click', function() {
+                const color = this.getAttribute('data-color');
+                applyAndSaveColor(color);
+            });
+        });
+
+        if (customColorPicker) {
+            customColorPicker.addEventListener('input', function() {
+                if (customColorHex) customColorHex.value = this.value;
+            });
+        }
+
+        if (btnApplyCustomColor && customColorPicker) {
+            btnApplyCustomColor.addEventListener('click', function() {
+                applyAndSaveColor(customColorPicker.value);
+            });
+        }
+
+        if (btnResetDefaultColor) {
+            btnResetDefaultColor.addEventListener('click', function() {
+                applyAndSaveColor('#65558f');
+            });
+        }
+
+        if (hash === '#tab-tema' || hash === '#tema' || urlParams.get('tab') === 'tema') {
+            const temaTabBtn = document.getElementById('tab-tema-btn');
+            if (temaTabBtn) {
+                const tab = new bootstrap.Tab(temaTabBtn);
+                tab.show();
+            }
+        }
     });
 </script>
 @endsection
