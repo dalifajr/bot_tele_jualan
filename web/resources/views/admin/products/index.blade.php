@@ -473,25 +473,25 @@
     </div>
 </div>
 
-{{-- Delete Modal --}}
+{{-- Delete Modal (M3 Alert Dialog Style) --}}
 <div class="modal fade" id="deleteProductModal{{ $product->id }}" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content text-center" style="border-radius: 16px; border: none;">
-            <div class="modal-body p-4">
-                <i class="fas fa-exclamation-triangle text-danger mb-3" style="font-size: 3rem;"></i>
-                <h5 class="fw-bold">{{ __('Hapus Produk?') }}</h5>
-                <p class="text-muted small mb-3">{{ __('Menghapus produk akan turut menghapus semua stok yang terkait dengannya. Lanjutkan?') }}</p>
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 440px;">
+        <div class="modal-content text-center" style="border-radius: 28px; border: none; padding: 24px; background-color: var(--surface-container-high, #ece6f0);">
+            <div class="modal-body p-0">
+                <div class="mx-auto mb-3 d-flex align-items-center justify-content-center rounded-circle" style="width: 38px; height: 38px; background: var(--surface-container-highest, #dce4eb); color: var(--on-surface-variant, #44474f); font-weight: 600; font-size: 1.1rem;">i</div>
+                <h5 class="fw-bold mb-2" style="font-family: var(--font-poppins); font-size: 1.4rem;">{{ __('Hapus Produk?') }}</h5>
+                <p class="text-muted small mb-3" style="font-family: var(--font-poppins); font-size: 0.95rem; line-height: 1.5;">{{ __('Menghapus produk akan turut menghapus semua stok yang terkait dengannya. Lanjutkan?') }}</p>
                 
                 @php
                     $unsoldStockCount = $product->stockUnits()->where('is_sold', false)->count();
                 @endphp
                 @if($unsoldStockCount > 0)
-                <div class="alert alert-warning border-0 rounded-3 text-start small mb-3">
-                    <div class="d-flex align-items-center gap-2 mb-2">
-                        <i class="fas fa-exclamation-circle text-warning fs-5"></i>
+                <div class="alert alert-warning border-0 rounded-4 text-start small mb-3 p-3" style="background-color: var(--surface-container-highest, #e8edf2);">
+                    <div class="d-flex align-items-center gap-2 mb-2 text-warning-emphasis">
+                        <i class="fas fa-exclamation-circle fs-5"></i>
                         <span class="fw-bold">{{ __('Perhatian: Sisa Stok Aktif') }}</span>
                     </div>
-                    {{ __('Terdapat') }} <strong>{{ $unsoldStockCount }}</strong> {{ __('sisa stok aktif yang belum terjual. Anda disarankan untuk mengunduh sisa stok tersebut sebelum menghapus produk:') }}
+                    <span class="text-secondary">{{ __('Terdapat') }} <strong>{{ $unsoldStockCount }}</strong> {{ __('sisa stok aktif yang belum terjual. Anda disarankan untuk mengunduh sisa stok tersebut sebelum menghapus produk:') }}</span>
                     <div class="mt-2 text-center">
                         <a href="{{ route('admin.products.export-unsold', $product->id) }}" class="btn btn-sm btn-success rounded-pill px-3 fw-bold">
                             <i class="fas fa-file-excel me-1"></i> Unduh Sisa Stok (.xlsx)
@@ -500,13 +500,13 @@
                 </div>
                 @endif
 
-                <div class="d-flex gap-2 justify-content-center mt-4">
-                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">{{ __('Batal') }}</button>
-                    <form action="{{ route('admin.products.destroy', $product->id) }}" method="POST">
+                <div class="d-flex gap-2 justify-content-end align-items-center mt-3">
+                    <form action="{{ route('admin.products.destroy', $product->id) }}" method="POST" class="m-0">
                         @csrf
                         @method('DELETE')
-                        <button type="submit" class="btn btn-danger rounded-pill px-4">{{ __('Ya, Hapus') }}</button>
+                        <button type="submit" class="btn btn-link text-primary text-decoration-none fw-semibold px-3 py-2" style="border-radius: 20px;">{{ __('Konfirmasi') }}</button>
                     </form>
+                    <button type="button" class="btn btn-link text-primary text-decoration-none fw-semibold px-3 py-2" data-bs-dismiss="modal" style="border-radius: 20px;">{{ __('Batal') }}</button>
                 </div>
             </div>
         </div>

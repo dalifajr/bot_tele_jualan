@@ -902,10 +902,10 @@
                 text: '{{ __("Apakah Anda yakin ingin menghapus akun") }} "' + name + '"? {{ __("Tindakan ini tidak dapat dibatalkan.") }}',
                 icon: 'info',
                 showCancelButton: true,
-                confirmButtonText: 'Confirm',
-                cancelButtonText: 'Dismiss',
+                confirmButtonText: '{{ __("Konfirmasi") }}',
+                cancelButtonText: '{{ __("Batal") }}',
                 reverseButtons: false,
-                focusCancel: true
+                focusConfirm: false
             }).then((result) => {
                 if (result.isConfirmed) {
                     fetch('/tools/2fa-generator/accounts/' + id, {

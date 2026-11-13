@@ -424,19 +424,16 @@ function confirmSuspend(event) {
             return;
         }
         
-        // Second popup: Confirmation
+        // Second popup: Confirmation (M3 Alert Dialog)
         Swal.fire({
             title: 'Konfirmasi Penangguhan',
             text: 'Apakah Anda yakin ingin menangguhkan pengguna ini? Akses bot mereka akan diblokir.',
-            icon: 'warning',
+            icon: 'info',
             showCancelButton: true,
-            confirmButtonText: 'Ya, Tangguhkan!',
+            confirmButtonText: 'Konfirmasi',
             cancelButtonText: 'Batal',
-            confirmButtonColor: '#dc3545',
-            cancelButtonColor: '#6c757d',
-            customClass: {
-                popup: 'rounded-4'
-            }
+            reverseButtons: false,
+            focusConfirm: false
         }).then((confirmResult) => {
             if (confirmResult.isConfirmed) {
                 // Show page loader

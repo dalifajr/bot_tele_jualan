@@ -235,62 +235,111 @@
         if (typeof Swal !== 'undefined') {
             const originalSwalFire = Swal.fire.bind(Swal);
             window.Swal.fire = function(...args) {
-                if (args.length === 1 && typeof args[0] === 'object') {
-                    const opts = args[0];
-                    if (opts.toast) {
-                        // M3 Toast: Pure notification without backdrop or action buttons
-                        opts.backdrop = false; // Zero backdrop: eliminates any brief gray flash
-                        opts.showConfirmButton = false;
-                        opts.showCancelButton = false;
-                        opts.showDenyButton = false;
-                        if (!opts.timer) opts.timer = 2200;
-                        if (!opts.position) opts.position = 'top-end';
+                let opts = {};
+                if (args.length === 1 && typeof args[0] === 'object' && args[0] !== null) {
+                    opts = args[0];
+                } else if (args.length >= 1 && typeof args[0] === 'string') {
+                    opts = {
+                        title: args[0],
+                        html: args[1] || '',
+                        icon: args[2] || 'info'
+                    };
+                }
 
-                        // Fail-safe auto dismiss: ensure toast element is cleanly removed from DOM
-                        const origDidOpen = opts.didOpen;
-                        opts.didOpen = (toastEl) => {
-                            if (typeof origDidOpen === 'function') origDidOpen(toastEl);
-                            setTimeout(() => {
-                                if (document.body.contains(toastEl)) {
-                                    Swal.close();
-                                }
-                            }, (opts.timer || 2200) + 300);
-                        };
-                    } else {
-                        // M3 Dialog: standardize confirm & cancel ("Batal") buttons across entire website
-                        if (opts.cancelButtonText === 'Dismiss' || (!opts.cancelButtonText && opts.showCancelButton)) {
+                if (opts.toast) {
+                    // M3 Toast: Pure notification without backdrop or action buttons
+                    opts.backdrop = false; // Zero backdrop: eliminates any brief gray flash
+                    opts.showConfirmButton = false;
+                    opts.showCancelButton = false;
+                    opts.showDenyButton = false;
+                    if (!opts.timer) opts.timer = 2200;
+                    if (!opts.position) opts.position = 'top-end';
+
+                    // Fail-safe auto dismiss: ensure toast element is cleanly removed from DOM
+                    const origDidOpen = opts.didOpen;
+                    opts.didOpen = (toastEl) => {
+                        if (typeof origDidOpen === 'function') origDidOpen(toastEl);
+                        setTimeout(() => {
+                            if (document.body.contains(toastEl)) {
+                                Swal.close();
+                            }
+                        }, (opts.timer || 2200) + 300);
+                    };
+                } else {
+                    // M3 Dialog: standardize confirm & cancel ("Batal") buttons across entire website
+                    if (opts.showCancelButton || opts.cancelButtonText) {
+                        opts.showCancelButton = true;
+                        if (!opts.cancelButtonText || opts.cancelButtonText === 'Dismiss' || opts.cancelButtonText === 'Cancel') {
                             opts.cancelButtonText = 'Batal';
                         }
-                        if (opts.confirmButtonText === 'Confirm' || (!opts.confirmButtonText && opts.showCancelButton)) {
+                    }
+                    if (opts.showCancelButton) {
+                        if (!opts.confirmButtonText || opts.confirmButtonText === 'Confirm' || opts.confirmButtonText === 'OK') {
                             opts.confirmButtonText = 'Konfirmasi';
                         }
-                        if (opts.icon === 'warning' || opts.icon === 'question') {
-                            opts.icon = 'info';
-                        }
-                        opts.reverseButtons = false;
-                        if (typeof opts.allowOutsideClick === 'undefined') opts.allowOutsideClick = true;
-                        if (typeof opts.allowEscapeKey === 'undefined') opts.allowEscapeKey = true;
+                    }
 
-                        if (!opts.customClass) {
-                            opts.customClass = {
-                                popup: 'm3-dialog-popup',
-                                title: 'm3-dialog-title',
-                                htmlContainer: 'm3-dialog-content',
-                                actions: 'm3-dialog-actions',
-                                confirmButton: 'm3-dialog-btn-confirm',
-                                cancelButton: 'm3-dialog-btn-cancel'
+                    // Terapkan icon info lingkaran bulat seperti di gambar untuk semua dialog konfirmasi
+                    if (opts.icon === 'warning' || opts.icon === 'question' || (!opts.icon && opts.showCancelButton)) {
+                        opts.icon = 'info';
+                    }
+
+                    opts.reverseButtons = false;
+                    if (typeof opts.allowOutsideClick === 'undefined') opts.allowOutsideClick = true;
+                    if (typeof opts.allowEscapeKey === 'undefined') opts.allowEscapeKey = true;
+                    if (typeof opts.focusConfirm === 'undefined') opts.focusConfirm = false;
+
+                    if (!opts.customClass) {
+                        opts.customClass = {
+                            popup: 'm3-dialog-popup',
+                            title: 'm3-dialog-title',
+                            htmlContainer: 'm3-dialog-content',
+                            actions: 'm3-dialog-actions',
+                            confirmButton: 'm3-dialog-btn-confirm',
+                            cancelButton: 'm3-dialog-btn-cancel'
+                        };
+                    }
+
+                    // Event didOpen: tombol Batal seketika menutup popup
+                    const origDidOpen = opts.didOpen;
+                    opts.didOpen = (popup) => {
+                        if (typeof origDidOpen === 'function') origDidOpen(popup);
+                        const cancelBtn = popup ? popup.querySelector('.swal2-cancel') : null;
+                        if (cancelBtn) {
+                            cancelBtn.onclick = function(e) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                Swal.close({ isDismissed: true, dismiss: Swal.DismissReason.cancel });
                             };
                         }
-                    }
+                    };
+
+                    // Fail-safe cleanup di didClose
+                    const origDidClose = opts.didClose;
+                    opts.didClose = () => {
+                        if (typeof origDidClose === 'function') origDidClose();
+                        setTimeout(() => {
+                            const containers = document.querySelectorAll('.swal2-container:not(.swal2-top-end):not(.swal2-top)');
+                            containers.forEach(c => {
+                                if (!c.querySelector('.swal2-toast') && (c.classList.contains('swal2-backdrop-hide') || !document.querySelector('.swal2-modal.swal2-show'))) {
+                                    c.remove();
+                                }
+                            });
+                            if (!document.querySelector('.swal2-shown .swal2-modal')) {
+                                document.body.classList.remove('swal2-shown', 'swal2-height-auto');
+                            }
+                        }, 200);
+                    };
                 }
-                return originalSwalFire.apply(this, args);
+
+                return originalSwalFire(opts);
             };
         }
 
         function confirmAction(event, message, title = 'Konfirmasi Aksi') {
             event.preventDefault();
             let element = event.currentTarget;
-            let form = element.closest('form') || element;
+            let form = element.closest('form') || (element.tagName === 'FORM' ? element : null);
             Swal.fire({
                 title: title,
                 text: message,
@@ -299,7 +348,7 @@
                 confirmButtonText: 'Konfirmasi',
                 cancelButtonText: 'Batal',
                 reverseButtons: false,
-                focusConfirm: true,
+                focusConfirm: false,
                 allowOutsideClick: true,
                 allowEscapeKey: true,
                 customClass: {
@@ -319,9 +368,9 @@
                     if (typeof startTopLoadingBar === 'function') {
                         startTopLoadingBar();
                     }
-                    if (form.tagName === 'FORM') {
+                    if (form && form.tagName === 'FORM') {
                         form.submit();
-                    } else if (element.href) {
+                    } else if (element && element.href) {
                         window.location.href = element.href;
                     }
                 }

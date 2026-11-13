@@ -212,17 +212,9 @@
             confirmButtonText: 'Konfirmasi',
             cancelButtonText: 'Batal',
             reverseButtons: false,
-            focusConfirm: true,
+            focusConfirm: false,
             allowOutsideClick: true,
-            allowEscapeKey: true,
-            customClass: {
-                popup: 'm3-dialog-popup',
-                title: 'm3-dialog-title',
-                htmlContainer: 'm3-dialog-content',
-                actions: 'm3-dialog-actions',
-                confirmButton: 'm3-dialog-btn-confirm',
-                cancelButton: 'm3-dialog-btn-cancel'
-            }
+            allowEscapeKey: true
         }).then((result) => {
             if (result.isConfirmed) {
                 const pageLoader = document.getElementById('pageLoader');

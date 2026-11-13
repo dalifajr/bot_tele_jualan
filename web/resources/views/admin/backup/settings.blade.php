@@ -150,18 +150,12 @@
         Swal.fire({
             title: 'Apakah Anda Yakin?',
             text: "Tindakan ini akan menghapus SELURUH data produk, stok, pesanan, komplain, log, dan riwayat! Pengaturan bot dan akun admin tetap dipertahankan agar Anda bisa tetap login.",
-            icon: 'warning',
+            icon: 'info',
             showCancelButton: true,
-            confirmButtonColor: '#dc3545',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Ya, Hapus Semua Data!',
+            confirmButtonText: 'Konfirmasi',
             cancelButtonText: 'Batal',
-            customClass: {
-                popup: 'rounded-4',
-                confirmButton: 'btn btn-danger rounded-pill px-4 me-2',
-                cancelButton: 'btn btn-secondary rounded-pill px-4'
-            },
-            buttonsStyling: false
+            reverseButtons: false,
+            focusConfirm: false
         }).then((result) => {
             if (result.isConfirmed) {
                 // Show loading indicator

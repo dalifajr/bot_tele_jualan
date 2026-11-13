@@ -270,9 +270,13 @@
                                 <button class="btn btn-sm btn-light text-warning rounded-circle" data-bs-toggle="modal" data-bs-target="#editStockModal{{ $unit->id }}" title="{{ __('Edit') }}">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button class="btn btn-sm btn-light text-danger rounded-circle" data-bs-toggle="modal" data-bs-target="#deleteStockModal{{ $unit->id }}" title="{{ __('Hapus') }}">
-                                    <i class="fas fa-trash-alt"></i>
-                                </button>
+                                <form action="{{ route('seller.stock.destroy', $unit->id) }}" method="POST" class="d-inline m-0" onsubmit="confirmAction(event, '{{ __('Stok ini belum terjual. Yakin ingin menghapusnya?') }}', '{{ __('Hapus Stok?') }}');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-sm btn-light text-danger rounded-circle" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;" title="{{ __('Hapus') }}">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </form>
                                 @else
                                 <button class="btn btn-sm btn-light text-secondary rounded-circle" disabled title="{{ __('Tidak bisa diedit') }}"><i class="fas fa-edit"></i></button>
                                 <button class="btn btn-sm btn-light text-secondary rounded-circle" disabled title="{{ __('Tidak bisa dihapus') }}"><i class="fas fa-trash-alt"></i></button>
@@ -553,21 +557,21 @@
     </div>
 </div>
 
-{{-- Delete Modal --}}
+{{-- Delete Modal (M3 Alert Dialog Style) --}}
 <div class="modal fade" id="deleteStockModal{{ $unit->id }}" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-sm">
-        <div class="modal-content text-center" style="border-radius: 16px; border: none;">
-            <div class="modal-body p-4">
-                <i class="fas fa-trash-alt text-danger mb-3" style="font-size: 3rem;"></i>
-                <h5 class="fw-bold">{{ __('Hapus Stok?') }}</h5>
-                <p class="text-muted small">{{ __('Stok ini belum terjual. Yakin ingin menghapusnya?') }}</p>
-                <div class="d-flex gap-2 justify-content-center mt-4">
-                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">{{ __('Batal') }}</button>
-                    <form action="{{ route('seller.stock.destroy', $unit->id) }}" method="POST">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 440px;">
+        <div class="modal-content text-center" style="border-radius: 28px; border: none; padding: 24px; background-color: var(--surface-container-high, #ece6f0);">
+            <div class="modal-body p-0">
+                <div class="mx-auto mb-3 d-flex align-items-center justify-content-center rounded-circle" style="width: 38px; height: 38px; background: var(--surface-container-highest, #dce4eb); color: var(--on-surface-variant, #44474f); font-weight: 600; font-size: 1.1rem;">i</div>
+                <h5 class="fw-bold mb-2" style="font-family: var(--font-poppins); font-size: 1.4rem;">{{ __('Hapus Stok?') }}</h5>
+                <p class="text-muted small mb-4" style="font-family: var(--font-poppins); font-size: 0.95rem; line-height: 1.5;">{{ __('Stok ini belum terjual. Yakin ingin menghapusnya?') }}</p>
+                <div class="d-flex gap-2 justify-content-end align-items-center">
+                    <form action="{{ route('seller.stock.destroy', $unit->id) }}" method="POST" class="m-0">
                         @csrf
                         @method('DELETE')
-                        <button type="submit" class="btn btn-danger rounded-pill px-4">{{ __('Ya, Hapus') }}</button>
+                        <button type="submit" class="btn btn-link text-primary text-decoration-none fw-semibold px-3 py-2" style="border-radius: 20px;">{{ __('Konfirmasi') }}</button>
                     </form>
+                    <button type="button" class="btn btn-link text-primary text-decoration-none fw-semibold px-3 py-2" data-bs-dismiss="modal" style="border-radius: 20px;">{{ __('Batal') }}</button>
                 </div>
             </div>
         </div>
@@ -616,21 +620,21 @@
     </div>
 </div>
 
-{{-- Bulk Delete Modal --}}
+{{-- Bulk Delete Modal (M3 Alert Dialog Style) --}}
 <div class="modal fade" id="bulkDeleteModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-sm">
-        <div class="modal-content text-center" style="border-radius: 16px; border: none;">
-            <div class="modal-body p-4">
-                <i class="fas fa-trash-alt text-danger mb-3" style="font-size: 3rem;"></i>
-                <h5 class="fw-bold">{{ __('Hapus Masal?') }}</h5>
-                <p class="text-muted small">{{ __('Anda akan menghapus') }} <span class="bulk-selected-count">0</span> {{ __('akun yang dipilih secara permanen.') }}</p>
-                <div class="d-flex gap-2 justify-content-center mt-4">
-                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">{{ __('Batal') }}</button>
-                    <form action="{{ route('seller.stock.bulkDestroy') }}" method="POST" id="bulk-delete-form">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 440px;">
+        <div class="modal-content text-center" style="border-radius: 28px; border: none; padding: 24px; background-color: var(--surface-container-high, #ece6f0);">
+            <div class="modal-body p-0">
+                <div class="mx-auto mb-3 d-flex align-items-center justify-content-center rounded-circle" style="width: 38px; height: 38px; background: var(--surface-container-highest, #dce4eb); color: var(--on-surface-variant, #44474f); font-weight: 600; font-size: 1.1rem;">i</div>
+                <h5 class="fw-bold mb-2" style="font-family: var(--font-poppins); font-size: 1.4rem;">{{ __('Hapus Masal?') }}</h5>
+                <p class="text-muted small mb-4" style="font-family: var(--font-poppins); font-size: 0.95rem; line-height: 1.5;">{{ __('Anda akan menghapus') }} <span class="bulk-selected-count">0</span> {{ __('akun yang dipilih secara permanen.') }}</p>
+                <div class="d-flex gap-2 justify-content-end align-items-center">
+                    <form action="{{ route('seller.stock.bulkDestroy') }}" method="POST" id="bulk-delete-form" class="m-0">
                         @csrf
                         <input type="hidden" name="ids" id="bulk-delete-ids">
-                        <button type="submit" class="btn btn-danger rounded-pill px-4">{{ __('Ya, Hapus Masal') }}</button>
+                        <button type="submit" class="btn btn-link text-primary text-decoration-none fw-semibold px-3 py-2" style="border-radius: 20px;">{{ __('Konfirmasi') }}</button>
                     </form>
+                    <button type="button" class="btn btn-link text-primary text-decoration-none fw-semibold px-3 py-2" data-bs-dismiss="modal" style="border-radius: 20px;">{{ __('Batal') }}</button>
                 </div>
             </div>
         </div>

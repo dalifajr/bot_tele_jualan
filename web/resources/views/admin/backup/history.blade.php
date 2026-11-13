@@ -116,18 +116,12 @@
             Swal.fire({
                 title: 'Hapus File Backup?',
                 text: 'File backup yang dihapus dari server local tidak dapat diunduh kembali.',
-                icon: 'warning',
+                icon: 'info',
                 showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonColor: '#3085d6',
-                confirmButtonText: 'Ya, Hapus!',
+                confirmButtonText: 'Konfirmasi',
                 cancelButtonText: 'Batal',
-                customClass: {
-                    popup: 'rounded-4',
-                    confirmButton: 'btn btn-danger rounded-pill px-4',
-                    cancelButton: 'btn btn-secondary rounded-pill px-4 ms-2'
-                },
-                buttonsStyling: false
+                reverseButtons: false,
+                focusConfirm: false
             }).then((result) => {
                 if (result.isConfirmed) {
                     const pageLoader = document.getElementById('pageLoader');

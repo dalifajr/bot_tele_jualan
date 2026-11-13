@@ -496,15 +496,16 @@ function initSweetAlertConfirms() {
         el.addEventListener('click', function(e) {
             e.preventDefault();
             const message = this.getAttribute('data-confirm');
+            const title = this.getAttribute('data-confirm-title') || 'Konfirmasi Aksi';
             Swal.fire({
-                title: 'Konfirmasi Aksi',
+                title: title,
                 text: message,
                 icon: 'info',
                 showCancelButton: true,
                 confirmButtonText: 'Konfirmasi',
                 cancelButtonText: 'Batal',
                 reverseButtons: false,
-                focusConfirm: true,
+                focusConfirm: false,
                 allowOutsideClick: true,
                 allowEscapeKey: true,
                 customClass: {
@@ -521,12 +522,14 @@ function initSweetAlertConfirms() {
                     if (pageLoader) {
                         pageLoader.classList.remove('fade-out');
                     }
-                    startTopLoadingBar();
+                    if (typeof startTopLoadingBar === 'function') {
+                        startTopLoadingBar();
+                    }
                     if (this.tagName === 'FORM') {
                         this.submit();
                     } else if (this.closest('form')) {
                         this.closest('form').submit();
-                    } else {
+                    } else if (this.href) {
                         window.location.href = this.href;
                     }
                 }
