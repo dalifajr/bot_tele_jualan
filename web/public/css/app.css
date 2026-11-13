@@ -3751,7 +3751,7 @@ main.flex-grow-1 {
     position: relative;
     overflow: hidden;
     display: flex;
-    min-height: 180px;
+    min-height: 185px;
     transition: transform 0.25s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.25s cubic-bezier(0.2, 0, 0, 1);
 }
 
@@ -3759,7 +3759,7 @@ main.flex-grow-1 {
     .m3-promo-card {
         flex: 0 0 calc(100% - 12px);
         min-width: 280px;
-        min-height: 165px;
+        min-height: 175px;
     }
 }
 
@@ -3768,55 +3768,76 @@ main.flex-grow-1 {
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
 }
 
-/* Promo Image with Wide Smooth Transition Gradient */
-.m3-promo-img-box {
-    width: 38%;
-    flex-shrink: 0;
-    position: relative;
+/* Promo Image on the RIGHT with Wide Smooth Transition Gradient to the LEFT */
+.m3-promo-img-right {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 58%;
+    z-index: 1;
     overflow: hidden;
-    background: var(--surface-container-high);
+    pointer-events: none;
 }
 
 @media (max-width: 575.98px) {
-    .m3-promo-img-box {
-        width: 34%;
+    .m3-promo-img-right {
+        width: 65%;
     }
 }
 
-.m3-promo-img-box img {
+.m3-promo-img-right img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    object-position: center;
+    object-position: right center;
     display: block;
     transition: transform 0.4s cubic-bezier(0.2, 0, 0, 1);
 }
 
-.m3-promo-card:hover .m3-promo-img-box img {
+.m3-promo-card:hover .m3-promo-img-right img {
     transform: scale(1.06);
 }
 
-.m3-promo-gradient-mask {
+/* Wide Smooth Transition Gradient Mask: extending from the right image toward the left */
+.m3-promo-gradient-mask-right {
     position: absolute;
     inset: 0;
     pointer-events: none;
-    z-index: 1;
+    z-index: 2;
 }
 
+/* Content overlays across the gradient and photo directly */
 .m3-promo-content {
-    padding: 16px 20px;
+    padding: 18px 22px;
     position: relative;
-    z-index: 2;
+    z-index: 3;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    flex-grow: 1;
+    width: 100%;
     overflow: hidden;
+}
+
+.m3-promo-content .promo-title-overlap {
+    max-width: 82%;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.m3-promo-content .promo-desc-overlap {
+    max-width: 78%;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 @media (max-width: 575.98px) {
     .m3-promo-content {
-        padding: 12px 14px;
+        padding: 14px 16px;
+    }
+    .m3-promo-content .promo-title-overlap {
+        max-width: 88%;
+    }
+    .m3-promo-content .promo-desc-overlap {
+        max-width: 85%;
     }
 }
 
@@ -3901,15 +3922,15 @@ main > div:nth-of-type(2) > div:first-child h4,
 }
 
 .m3-order-card .card-footer {
-    background-color: var(--surface-container-lowest) !important;
+    background-color: var(--surface-container-low) !important;
     border-top: 1px solid var(--outline-variant) !important;
-    padding: 0.75rem 1.25rem !important;
+    padding: 0.85rem 1.25rem !important;
 }
 
 .m3-order-thumb {
-    width: 60px;
-    height: 60px;
-    min-width: 60px;
+    width: 64px;
+    height: 64px;
+    min-width: 64px;
     border-radius: 16px;
     background-color: var(--surface-container-low);
     border: 1px solid var(--outline-variant);

@@ -111,9 +111,9 @@
                     @forelse($promos ?? [] as $promo)
                     <div class="m3-promo-card" style="background: {{ $promo->gradient_style }};">
                         @if($promo->image)
-                            <div class="m3-promo-img-box">
+                            <div class="m3-promo-img-right">
                                 <img src="{{ $promo->image_url }}" alt="{{ $promo->title }}" loading="lazy">
-                                <div class="m3-promo-gradient-mask" style="background: linear-gradient(to right, transparent 0%, rgba({{ $promo->theme_rgb }}, 0.25) 35%, var(--surface-container) 95%);"></div>
+                                <div class="m3-promo-gradient-mask-right" style="background: linear-gradient(to left, rgba({{ $promo->theme_rgb }}, 0.05) 0%, rgba({{ $promo->theme_rgb }}, 0.45) 40%, rgba({{ $promo->theme_rgb }}, 0.85) 75%, var(--surface-container) 100%);"></div>
                             </div>
                         @endif
                         <div class="m3-promo-content">
@@ -122,8 +122,8 @@
                                     <span class="badge rounded-pill fw-bold" style="background: {{ $promo->badge_color }}; color: #ffffff; font-size: 0.72rem; letter-spacing: 0.03em;">{{ $promo->badge_text ?: 'INFO' }}</span>
                                     <i class="{{ $promo->icon }} text-primary opacity-50 fs-5"></i>
                                 </div>
-                                <h3 class="fw-bold text-body mb-1" style="font-size: 1.05rem; line-height: 1.35;">{{ $promo->title }}</h3>
-                                <p class="text-secondary small mb-3" style="font-size: 0.825rem; line-height: 1.45;">{{ $promo->description }}</p>
+                                <h3 class="fw-bold text-body mb-1 promo-title-overlap" style="font-size: 1.05rem; line-height: 1.35;">{{ $promo->title }}</h3>
+                                <p class="text-secondary small mb-3 promo-desc-overlap" style="font-size: 0.825rem; line-height: 1.45;">{{ $promo->description }}</p>
                             </div>
                             <div>
                                 <a href="{{ $promo->button_url }}" class="btn btn-sm btn-primary rounded-pill px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5" style="font-size: 0.8125rem;">
@@ -141,8 +141,8 @@
                                     <span class="badge rounded-pill fw-bold" style="background: var(--primary); color: #ffffff; font-size: 0.72rem; letter-spacing: 0.03em;">PROMO SPESIAL</span>
                                     <i class="fas fa-tags text-primary opacity-50 fs-5"></i>
                                 </div>
-                                <h3 class="fw-bold text-body mb-1" style="font-size: 1.05rem; line-height: 1.35;">{{ __('Diskon Lisensi s/d 30%') }}</h3>
-                                <p class="text-secondary small mb-3" style="font-size: 0.825rem; line-height: 1.45;">{{ __('Gunakan kupon promo spesial saat checkout untuk menikmati potongan harga langsung produk digital.') }}</p>
+                                <h3 class="fw-bold text-body mb-1 promo-title-overlap" style="font-size: 1.05rem; line-height: 1.35;">{{ __('Diskon Lisensi s/d 30%') }}</h3>
+                                <p class="text-secondary small mb-3 promo-desc-overlap" style="font-size: 0.825rem; line-height: 1.45;">{{ __('Gunakan kupon promo spesial saat checkout untuk menikmati potongan harga langsung produk digital.') }}</p>
                             </div>
                             <div>
                                 <a href="{{ route('catalog.index') }}" class="btn btn-sm btn-primary rounded-pill px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5" style="font-size: 0.8125rem;">

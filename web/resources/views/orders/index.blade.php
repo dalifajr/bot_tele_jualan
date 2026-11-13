@@ -11,6 +11,7 @@
 @endsection
 
 @section('content')
+<div class="orders-page-container mx-auto" style="max-width: 1040px;">
 {{-- Header Riwayat Pesanan (Flat Material 3 Style) --}}
 <div class="mb-3">
     <h1 class="m3-page-title mb-1">
@@ -277,9 +278,9 @@
                             <i class="fas fa-redo me-1"></i>{{ __('Beli Lagi') }}
                         </a>
                         @endif
-                        <a href="{{ $orderUrl }}" class="btn btn-sm btn-light border rounded-pill px-3.5 py-1.5 fw-semibold text-secondary d-inline-flex align-items-center gap-1.5" style="font-size: 0.8rem; background: var(--surface-container-lowest); border-color: var(--outline-variant) !important;">
+                        <a href="{{ $orderUrl }}" class="btn btn-sm btn-primary rounded-pill px-3.5 py-1.5 fw-semibold text-white d-inline-flex align-items-center gap-1.5 shadow-sm" style="font-size: 0.8rem;">
                             <span>{{ __('Rincian') }}</span>
-                            <i class="fas fa-chevron-right small"></i>
+                            <i class="fas fa-arrow-right small"></i>
                         </a>
                     @elseif($order->status === 'cancelled' || $order->status === 'expired')
                         @if($product)
@@ -335,6 +336,7 @@
     </div>
 @endif
 </div>{{-- /#ordersContentWrapper --}}
+</div>{{-- /.orders-page-container --}}
 
 @push('scripts')
 <script>

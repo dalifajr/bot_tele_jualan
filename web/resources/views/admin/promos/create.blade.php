@@ -150,20 +150,20 @@
             </div>
             
             <div class="m3-promo-card position-relative overflow-hidden" id="liveCardPreview" style="background: linear-gradient(135deg, rgba(11, 87, 208, 0.08), var(--surface-container)); border: 1px solid var(--outline-variant); border-radius: var(--radius-xl, 20px); min-height: 180px; display: flex;">
-                {{-- Left Image Container with Wide Transition Gradient --}}
-                <div id="previewImgContainer" class="position-relative d-none" style="width: 38%; flex-shrink: 0; overflow: hidden;">
-                    <img id="previewImgEl" src="" alt="Promo Preview" style="width: 100%; height: 100%; object-fit: cover; object-position: center;">
-                    <div class="preview-gradient-mask" id="previewGradientMask" style="position: absolute; inset: 0; background: linear-gradient(to right, transparent 0%, rgba(11, 87, 208, 0.2) 35%, var(--surface-container) 95%); pointer-events: none;"></div>
+                {{-- Right Image Container with Wide Transition Gradient to the Left --}}
+                <div id="previewImgContainer" class="position-absolute end-0 top-0 bottom-0 d-none" style="width: 58%; overflow: hidden; pointer-events: none; z-index: 1;">
+                    <img id="previewImgEl" src="" alt="Promo Preview" style="width: 100%; height: 100%; object-fit: cover; object-position: right center;">
+                    <div class="preview-gradient-mask" id="previewGradientMask" style="position: absolute; inset: 0; background: linear-gradient(to left, rgba(11, 87, 208, 0.05) 0%, rgba(11, 87, 208, 0.45) 40%, rgba(11, 87, 208, 0.85) 75%, var(--surface-container) 100%); pointer-events: none; z-index: 2;"></div>
                 </div>
 
-                <div class="p-3.5 d-flex flex-column justify-content-between flex-grow-1 position-relative" style="z-index: 2;">
+                <div class="p-3.5 d-flex flex-column justify-content-between w-100 position-relative" style="z-index: 3;">
                     <div>
                         <div class="d-flex align-items-center justify-content-between mb-2">
                             <span class="badge rounded-pill fw-bold" id="previewBadge" style="background: #0b57d0; color: #ffffff; font-size: 0.72rem; letter-spacing: 0.03em;">PROMO SPESIAL</span>
                             <i class="fas fa-tags text-primary opacity-50 fs-5" id="previewIcon"></i>
                         </div>
-                        <h3 class="fw-bold text-body mb-1" id="previewTitle" style="font-size: 1rem; line-height: 1.35;">{{ __('Judul Promo') }}</h3>
-                        <p class="text-secondary small mb-3" id="previewDesc" style="font-size: 0.8125rem; line-height: 1.4;">{{ __('Deskripsi singkat kartu promosi Anda akan muncul di sini.') }}</p>
+                        <h3 class="fw-bold text-body mb-1 promo-title-overlap" id="previewTitle" style="font-size: 1rem; line-height: 1.35; max-width: 82%;">{{ __('Judul Promo') }}</h3>
+                        <p class="text-secondary small mb-3 promo-desc-overlap" id="previewDesc" style="font-size: 0.8125rem; line-height: 1.4; max-width: 78%;">{{ __('Deskripsi singkat kartu promosi Anda akan muncul di sini.') }}</p>
                     </div>
                     <div>
                         <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5" style="font-size: 0.8125rem;">
@@ -239,7 +239,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         if (previewGradientMask) {
-            previewGradientMask.style.background = `linear-gradient(to right, transparent 0%, rgba(${rgb}, 0.25) 35%, var(--surface-container) 95%)`;
+            previewGradientMask.style.background = `linear-gradient(to left, rgba(${rgb}, 0.05) 0%, rgba(${rgb}, 0.45) 40%, rgba(${rgb}, 0.85) 75%, var(--surface-container) 100%)`;
         }
     }
 

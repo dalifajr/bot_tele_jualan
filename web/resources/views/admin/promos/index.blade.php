@@ -54,12 +54,12 @@
                     <td>
                         <div class="rounded-3 text-start position-relative overflow-hidden d-flex" style="width: 240px; font-size: 0.75rem; background: {{ $promo->gradient_style }}; border: 1px solid var(--outline-variant); min-height: 70px;">
                             @if($promo->image)
-                                <div class="position-relative flex-shrink-0" style="width: 70px;">
-                                    <img src="{{ $promo->image_url }}" alt="{{ $promo->title }}" style="width: 100%; height: 100%; object-fit: cover;">
-                                    <div style="position: absolute; inset: 0; background: linear-gradient(to right, transparent 0%, rgba({{ $promo->theme_rgb }}, 0.3) 40%, var(--surface-container) 95%);"></div>
+                                <div class="position-absolute end-0 top-0 bottom-0" style="width: 100px; pointer-events: none; z-index: 1;">
+                                    <img src="{{ $promo->image_url }}" alt="{{ $promo->title }}" style="width: 100%; height: 100%; object-fit: cover; object-position: right center;">
+                                    <div style="position: absolute; inset: 0; background: linear-gradient(to left, rgba({{ $promo->theme_rgb }}, 0.05) 0%, rgba({{ $promo->theme_rgb }}, 0.5) 45%, var(--surface-container) 95%); pointer-events: none; z-index: 2;"></div>
                                 </div>
                             @endif
-                            <div class="p-2 flex-grow-1 overflow-hidden">
+                            <div class="p-2 w-100 overflow-hidden position-relative" style="z-index: 3;">
                                 <div class="d-flex align-items-center justify-content-between mb-1">
                                     <span class="badge rounded-pill" style="background: {{ $promo->badge_color }}; color: #ffffff; font-size: 0.65rem;">
                                         {{ $promo->badge_text ?: 'INFO' }}

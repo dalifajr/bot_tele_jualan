@@ -401,15 +401,6 @@ function initSidebar() {
     }
 }
 
-    // Restore saved sidebar collapsed state on desktop
-    if (window.innerWidth >= 992 && container) {
-        const isCollapsed = localStorage.getItem('jualan-sidebar-collapsed') === 'true';
-        if (isCollapsed) {
-            container.classList.add('sidebar-collapsed');
-        }
-    }
-}
-
 /* === TOP PROGRESS BAR LOADER === */
 let topBarEl = null;
 
