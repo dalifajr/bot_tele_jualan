@@ -64,38 +64,83 @@ function updateThemeIcon(icon, theme) {
     icon.className = theme === 'dark' ? 'fas fa-sun fs-5' : 'fas fa-moon fs-5';
 }
 
-/* === SIDEBAR & BOTTOM SHEET (Mobile Bottom Sheet + Swipe Down to Close) === */
+/* === SIDEBAR & BOTTOM SHEET (Mobile Bottom Sheet + Interactive Realtime Drag Up/Down) === */
 function initSidebar() {
     const sidebar = document.getElementById('sidebar');
     const toggleBtn = document.getElementById('sidebarToggle');
     const bottomNavToggle = document.getElementById('bottomNavMenuToggle');
     const closeBtn = document.getElementById('sidebarCloseBtn');
     const handleArea = document.getElementById('sheetHandleArea');
+    const headerMobile = document.querySelector('.sheet-header-mobile');
     const overlay = document.getElementById('sidebarOverlay');
     const container = document.querySelector('.app-container');
 
     if (!sidebar) return;
 
-    const closeMobileSheet = () => {
-        sidebar.style.transition = 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)';
-        sidebar.style.transform = '';
-        sidebar.classList.remove('show');
-        if (overlay) overlay.classList.remove('show');
-        document.body.classList.remove('sidebar-open');
-        if (bottomNavToggle) bottomNavToggle.classList.remove('active');
+    // States: 'closed' | 'normal' | 'expanded'
+    let sheetState = 'closed';
+
+    const getNormalHeight = () => Math.round(window.innerHeight * 0.74);
+    const getExpandedHeight = () => Math.round(window.innerHeight * 0.94);
+
+    const applySheetState = (state, animate = true) => {
+        sheetState = state;
+        sidebar.classList.remove('is-dragging');
+
+        if (animate) {
+            sidebar.style.transition = 'transform 0.35s cubic-bezier(0.2, 0, 0, 1), height 0.35s cubic-bezier(0.2, 0, 0, 1)';
+            if (overlay) overlay.style.transition = 'opacity 0.3s cubic-bezier(0.2, 0, 0, 1)';
+        } else {
+            sidebar.style.transition = 'none';
+            if (overlay) overlay.style.transition = 'none';
+        }
+
+        if (state === 'closed') {
+            sidebar.style.transform = 'translateY(105%)';
+            sidebar.classList.remove('show');
+            if (overlay) {
+                overlay.style.opacity = '0';
+                setTimeout(() => {
+                    if (sheetState === 'closed') {
+                        overlay.classList.remove('show');
+                        overlay.style.opacity = '';
+                    }
+                }, 300);
+            }
+            document.body.classList.remove('sidebar-open');
+            if (bottomNavToggle) bottomNavToggle.classList.remove('active');
+        } else if (state === 'normal') {
+            const h = getNormalHeight();
+            sidebar.style.height = h + 'px';
+            sidebar.style.maxHeight = h + 'px';
+            sidebar.style.transform = 'translateY(0)';
+            sidebar.classList.add('show');
+            if (overlay) {
+                overlay.classList.add('show');
+                overlay.style.opacity = '1';
+            }
+            document.body.classList.add('sidebar-open');
+            if (bottomNavToggle) bottomNavToggle.classList.add('active');
+        } else if (state === 'expanded') {
+            const h = getExpandedHeight();
+            sidebar.style.height = h + 'px';
+            sidebar.style.maxHeight = h + 'px';
+            sidebar.style.transform = 'translateY(0)';
+            sidebar.classList.add('show');
+            if (overlay) {
+                overlay.classList.add('show');
+                overlay.style.opacity = '1';
+            }
+            document.body.classList.add('sidebar-open');
+            if (bottomNavToggle) bottomNavToggle.classList.add('active');
+        }
     };
 
-    const openMobileSheet = () => {
-        sidebar.style.transition = 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)';
-        sidebar.style.transform = '';
-        sidebar.classList.add('show');
-        if (overlay) overlay.classList.add('show');
-        document.body.classList.add('sidebar-open');
-        if (bottomNavToggle) bottomNavToggle.classList.add('active');
-    };
+    const closeMobileSheet = () => applySheetState('closed', true);
+    const openMobileSheet = () => applySheetState('normal', true);
 
     const toggleMobileSheet = () => {
-        if (sidebar.classList.contains('show')) {
+        if (sidebar.classList.contains('show') && sheetState !== 'closed') {
             closeMobileSheet();
         } else {
             openMobileSheet();
@@ -152,51 +197,209 @@ function initSidebar() {
         });
     });
 
-    // === SWIPE DOWN TO CLOSE GESTURE ON HANDLE AREA ===
-    if (handleArea) {
-        let startY = 0;
-        let currentY = 0;
-        let isDragging = false;
+    // ==============================================================
+    // === INTERACTIVE REALTIME DRAG GESTURE (SWIPE UP & DOWN) ===
+    // ==============================================================
+    let isDragging = false;
+    let startY = 0;
+    let startX = 0;
+    let currentY = 0;
+    let startTime = 0;
+    let startHeight = 0;
+    let isHorizontalGesture = false;
 
-        const onTouchStart = (e) => {
-            if (window.innerWidth >= 992) return;
-            startY = e.touches[0].clientY;
-            currentY = startY;
-            isDragging = true;
-            sidebar.style.transition = 'none'; // Instant finger tracking
-        };
+    const onDragStart = (clientY, clientX, target) => {
+        if (window.innerWidth >= 992) return;
+        if (!sidebar.classList.contains('show') || sheetState === 'closed') return;
 
-        const onTouchMove = (e) => {
-            if (!isDragging || window.innerWidth >= 992) return;
-            currentY = e.touches[0].clientY;
-            const deltaY = currentY - startY;
-            if (deltaY > 0) {
-                // Dragging downwards
-                e.preventDefault();
-                sidebar.style.transform = `translateY(${deltaY}px)`;
-            }
-        };
+        // Jangan drag jika menekan tombol close atau link di header
+        if (target && (target.closest('#sidebarCloseBtn') || target.closest('a'))) {
+            return;
+        }
 
-        const onTouchEnd = () => {
-            if (!isDragging || window.innerWidth >= 992) return;
-            isDragging = false;
-            const deltaY = currentY - startY;
-            sidebar.style.transition = 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)';
-            
-            // Threshold to close: 80px downward drag
-            if (deltaY > 80) {
-                closeMobileSheet();
+        isDragging = true;
+        isHorizontalGesture = false;
+        startY = clientY;
+        startX = clientX;
+        currentY = clientY;
+        startTime = performance.now();
+        startHeight = sidebar.offsetHeight || (sheetState === 'expanded' ? getExpandedHeight() : getNormalHeight());
+
+        sidebar.classList.add('is-dragging');
+        sidebar.style.transition = 'none';
+        if (overlay) overlay.style.transition = 'none';
+    };
+
+    const onDragMove = (clientY, clientX, e) => {
+        if (!isDragging || window.innerWidth >= 992) return;
+
+        const deltaX = clientX - startX;
+        const deltaY = clientY - startY;
+
+        // Abaikan jika gesture horizontal (scroll)
+        if (!isHorizontalGesture && Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
+            isHorizontalGesture = true;
+            return;
+        }
+        if (isHorizontalGesture) return;
+
+        if (e && e.cancelable) {
+            e.preventDefault();
+        }
+
+        currentY = clientY;
+        const normalH = getNormalHeight();
+        const expandedH = getExpandedHeight();
+
+        if (sheetState === 'normal') {
+            if (deltaY < 0) {
+                // GESER NAIK (Expand secara realtime)
+                const pullUp = -deltaY;
+                const targetH = startHeight + pullUp;
+                if (targetH <= expandedH) {
+                    sidebar.style.height = targetH + 'px';
+                    sidebar.style.maxHeight = targetH + 'px';
+                    sidebar.style.transform = 'translateY(0)';
+                } else {
+                    // Rubber band overscroll ke atas
+                    const overflow = targetH - expandedH;
+                    const damped = overflow * 0.22;
+                    sidebar.style.height = expandedH + 'px';
+                    sidebar.style.maxHeight = expandedH + 'px';
+                    sidebar.style.transform = `translateY(-${damped}px)`;
+                }
+                if (overlay) overlay.style.opacity = '1';
             } else {
-                // Snap/spring back to open
-                sidebar.style.transform = 'translateY(0)';
-            }
-        };
+                // GESER TURUN (Menuju ditutup secara realtime)
+                sidebar.style.height = startHeight + 'px';
+                sidebar.style.maxHeight = startHeight + 'px';
+                sidebar.style.transform = `translateY(${deltaY}px)`;
 
-        handleArea.addEventListener('touchstart', onTouchStart, { passive: false });
-        handleArea.addEventListener('touchmove', onTouchMove, { passive: false });
-        handleArea.addEventListener('touchend', onTouchEnd, { passive: true });
-        handleArea.addEventListener('touchcancel', onTouchEnd, { passive: true });
+                const progress = Math.max(0, 1 - (deltaY / (startHeight * 0.75)));
+                if (overlay) overlay.style.opacity = progress.toString();
+            }
+        } else { // sheetState === 'expanded'
+            if (deltaY < 0) {
+                // Di posisi expanded, geser naik -> rubber band
+                const damped = Math.abs(deltaY) * 0.22;
+                sidebar.style.height = startHeight + 'px';
+                sidebar.style.maxHeight = startHeight + 'px';
+                sidebar.style.transform = `translateY(-${damped}px)`;
+                if (overlay) overlay.style.opacity = '1';
+            } else {
+                // GESER TURUN dari Expanded
+                const pullDown = deltaY;
+                const targetH = startHeight - pullDown;
+                if (targetH >= normalH) {
+                    // Bergerak turun menuju normal secara realtime
+                    sidebar.style.height = targetH + 'px';
+                    sidebar.style.maxHeight = targetH + 'px';
+                    sidebar.style.transform = 'translateY(0)';
+                    if (overlay) overlay.style.opacity = '1';
+                } else {
+                    // Ditarik lebih jauh dari normal menuju penutupan
+                    sidebar.style.height = normalH + 'px';
+                    sidebar.style.maxHeight = normalH + 'px';
+                    const offsetDown = pullDown - (startHeight - normalH);
+                    sidebar.style.transform = `translateY(${offsetDown}px)`;
+                    const progress = Math.max(0, 1 - (offsetDown / (normalH * 0.75)));
+                    if (overlay) overlay.style.opacity = progress.toString();
+                }
+            }
+        }
+    };
+
+    const onDragEnd = () => {
+        if (!isDragging || window.innerWidth >= 992) return;
+        isDragging = false;
+        sidebar.classList.remove('is-dragging');
+
+        const deltaY = currentY - startY;
+        const elapsed = Math.max(1, performance.now() - startTime);
+        const velocity = deltaY / elapsed; // px per ms (negatif: swipe up, positif: swipe down)
+        const moveDist = Math.abs(deltaY);
+
+        // Jika hanya tap tanpa pergeseran (< 6px) -> toggle normal / expanded
+        if (moveDist < 6) {
+            if (sheetState === 'normal') {
+                applySheetState('expanded', true);
+            } else if (sheetState === 'expanded') {
+                applySheetState('normal', true);
+            }
+            return;
+        }
+
+        if (sheetState === 'normal') {
+            if (velocity < -0.32 || deltaY < -55) {
+                // Swipe cepat naik atau ditarik naik > 55px -> Expand
+                applySheetState('expanded', true);
+            } else if (velocity > 0.4 || deltaY > 90) {
+                // Swipe cepat turun atau ditarik turun > 90px -> Tutup
+                applySheetState('closed', true);
+            } else {
+                // Balik ke Normal
+                applySheetState('normal', true);
+            }
+        } else { // sheetState === 'expanded'
+            if (velocity > 0.75 || deltaY > (startHeight * 0.55)) {
+                // Lemparan kuat ke bawah -> Tutup langsung
+                applySheetState('closed', true);
+            } else if (velocity > 0.3 || deltaY > 65) {
+                // Tarikan turun terukur -> Snap ke Normal
+                applySheetState('normal', true);
+            } else {
+                // Balik ke Expanded
+                applySheetState('expanded', true);
+            }
+        }
+    };
+
+    // Attach Touch Listeners
+    const targetAreas = [handleArea, headerMobile].filter(Boolean);
+    targetAreas.forEach(area => {
+        area.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+                onDragStart(e.touches[0].clientY, e.touches[0].clientX, e.target);
+            }
+        }, { passive: true });
+
+        // Mouse drag support (Simulator/DevTools/PC)
+        area.addEventListener('mousedown', (e) => {
+            if (e.button === 0) {
+                onDragStart(e.clientY, e.clientX, e.target);
+            }
+        });
+    });
+
+    window.addEventListener('touchmove', (e) => {
+        if (isDragging && e.touches.length === 1) {
+            onDragMove(e.touches[0].clientY, e.touches[0].clientX, e);
+        }
+    }, { passive: false });
+
+    window.addEventListener('touchend', onDragEnd, { passive: true });
+    window.addEventListener('touchcancel', onDragEnd, { passive: true });
+
+    window.addEventListener('mousemove', (e) => {
+        if (isDragging) {
+            onDragMove(e.clientY, e.clientX, e);
+        }
+    });
+
+    window.addEventListener('mouseup', () => {
+        if (isDragging) {
+            onDragEnd();
+        }
+    });
+
+    // Restore saved sidebar collapsed state on desktop
+    if (window.innerWidth >= 992 && container) {
+        const isCollapsed = localStorage.getItem('jualan-sidebar-collapsed') === 'true';
+        if (isCollapsed) {
+            container.classList.add('sidebar-collapsed');
+        }
     }
+}
 
     // Restore saved sidebar collapsed state on desktop
     if (window.innerWidth >= 992 && container) {

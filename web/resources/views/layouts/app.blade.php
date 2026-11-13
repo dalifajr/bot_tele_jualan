@@ -682,7 +682,7 @@
     <div id="sidebar" class="sidebar" style="z-index: 1040; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; -ms-overflow-style: none;">
         {{-- Mobile Bottom Sheet Grab Handle & Header (Mobile Only) --}}
         <div class="sheet-header-mobile d-lg-none sticky-top bg-body pt-2 pb-1 border-bottom" style="border-top-left-radius: var(--radius-xl); border-top-right-radius: var(--radius-xl); z-index: 10;">
-            <div class="sheet-handle-area" id="sheetHandleArea" title="{{ __('Geser ke bawah untuk menutup') }}">
+            <div class="sheet-handle-area" id="sheetHandleArea" title="{{ __('Geser ke atas untuk memperluas, geser ke bawah untuk menutup') }}">
                 <div class="sheet-handle-bar"></div>
             </div>
             <div class="d-flex align-items-center justify-content-between px-3 pb-2 pt-1">
