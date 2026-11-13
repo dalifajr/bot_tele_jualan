@@ -3272,7 +3272,7 @@ ul.nav-pills,
         flex-direction: column !important;
         background: var(--surface-bg) !important;
         border-top: 1px solid var(--outline-variant) !important;
-        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08) !important;
+        box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.12) !important;
         margin: 0 !important;
         padding: 0 !important;
         pointer-events: auto !important;
@@ -3287,7 +3287,7 @@ ul.nav-pills,
         right: auto !important;
         width: 100% !important;
         margin: 0 !important;
-        background: var(--surface-container-low) !important;
+        background: var(--surface-bg) !important;
         border: none !important;
         border-bottom: 1px solid var(--outline-variant) !important;
         box-shadow: none !important;
@@ -3321,7 +3321,7 @@ ul.nav-pills,
 
     /* Padding for pages with sticky bottom action bar */
     .has-mobile-action-bar {
-        padding-bottom: calc(135px + env(safe-area-inset-bottom)) !important;
+        padding-bottom: calc(160px + env(safe-area-inset-bottom)) !important;
     }
 }
 
@@ -3921,37 +3921,38 @@ main > div:nth-of-type(2) > div:first-child h4,
     border-radius: 20px !important;
     border: 1px solid var(--outline-variant) !important;
     background-color: var(--surface-container-lowest) !important;
+    box-shadow: 0 3px 14px rgba(0, 0, 0, 0.05) !important;
     transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s cubic-bezier(0.2, 0, 0, 1), border-color 0.2s cubic-bezier(0.2, 0, 0, 1) !important;
     overflow: hidden;
 }
 
 .m3-order-card:hover {
     transform: translateY(-2px);
-    border-color: var(--primary) !important;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05) !important;
+    border-color: rgba(var(--primary-rgb), 0.45) !important;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.09) !important;
 }
 
 .m3-order-card .card-header {
     background-color: var(--surface-container-low) !important;
     border-bottom: 1px solid var(--outline-variant) !important;
-    padding: 0.75rem 1.25rem !important;
+    padding: 0.85rem 1.35rem !important;
 }
 
 .m3-order-card .card-body {
-    padding: 1.15rem 1.25rem !important;
+    padding: 1.25rem 1.35rem !important;
     background-color: transparent !important;
 }
 
 .m3-order-card .card-footer {
     background-color: var(--surface-container-low) !important;
     border-top: 1px solid var(--outline-variant) !important;
-    padding: 0.85rem 1.25rem !important;
+    padding: 0.9rem 1.35rem !important;
 }
 
 .m3-order-thumb {
-    width: 64px;
-    height: 64px;
-    min-width: 64px;
+    width: 72px;
+    height: 72px;
+    min-width: 72px;
     border-radius: 16px;
     background-color: var(--surface-container-low);
     border: 1px solid var(--outline-variant);
@@ -4024,18 +4025,34 @@ main > div:nth-of-type(2) > div:first-child h4,
    MATERIAL DESIGN 3 (M3) ALERT DIALOG & MOTION SYSTEM (GOOGLE MATERIAL WEB)
    ========================================================================== */
 
-/* === M3 DIALOG BACKDROP === */
-.swal2-container {
+/* === M3 DIALOG BACKDROP (APPLIED ONLY TO MODALS, NEVER TO TOASTS) === */
+.swal2-container:not(.swal2-toast-shown):not(:has(.swal2-toast)) {
     z-index: 2000 !important;
-    background: rgba(0, 0, 0, 0.36) !important;
+    background: rgba(0, 0, 0, 0.42) !important;
     backdrop-filter: blur(4px) !important;
     -webkit-backdrop-filter: blur(4px) !important;
     transition: opacity var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard) !important;
 }
 
+/* === M3 TOAST CONTAINER: ZERO BACKDROP, TRANSPARENT & NON-BLOCKING === */
+.swal2-container.swal2-toast-shown,
+body.swal2-toast-shown .swal2-container,
+.swal2-container:has(.swal2-toast) {
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    pointer-events: none !important;
+    z-index: 9999 !important;
+}
+
+.swal2-toast-shown .swal2-popup,
+.swal2-popup.swal2-toast {
+    pointer-events: auto !important;
+}
+
 /* === M3 ALERT DIALOG CONTAINER (EXACT MATCH TO REFERENCE IMAGE) === */
-.swal2-popup.swal2-modal,
-.swal2-popup {
+.swal2-popup.swal2-modal:not(.swal2-toast),
+.swal2-popup:not(.swal2-toast) {
     background-color: var(--surface-container-high, #ece6f0) !important;
     color: var(--on-surface, #1d1b20) !important;
     border-radius: 28px !important;
@@ -4052,14 +4069,14 @@ main > div:nth-of-type(2) > div:first-child h4,
     animation: m3DialogEnter var(--md-sys-motion-duration-medium1) var(--md-sys-motion-easing-emphasized-decelerate) forwards !important;
 }
 
-[data-bs-theme="dark"] .swal2-popup {
+[data-bs-theme="dark"] .swal2-popup:not(.swal2-toast) {
     background-color: var(--surface-container-high, #2b2930) !important;
     color: var(--on-surface, #e6e0e9) !important;
     border: 1px solid var(--outline-variant) !important;
 }
 
 /* === M3 DIALOG ICON (SLOT="ICON") === */
-.swal2-icon {
+.swal2-popup:not(.swal2-toast) .swal2-icon {
     width: 36px !important;
     height: 36px !important;
     min-width: 36px !important;
@@ -4072,28 +4089,28 @@ main > div:nth-of-type(2) > div:first-child h4,
     font-size: 1.15rem !important;
 }
 
-.swal2-icon.swal2-info,
-.swal2-icon.swal2-question {
+.swal2-popup:not(.swal2-toast) .swal2-icon.swal2-info,
+.swal2-popup:not(.swal2-toast) .swal2-icon.swal2-question {
     background-color: var(--surface-container-highest, #e6e0e9) !important;
     color: var(--on-surface-variant, #49454f) !important;
 }
 
-.swal2-icon.swal2-warning {
+.swal2-popup:not(.swal2-toast) .swal2-icon.swal2-warning {
     background-color: var(--primary-container, #eaddff) !important;
     color: var(--primary, #65558f) !important;
 }
 
-.swal2-icon.swal2-success {
+.swal2-popup:not(.swal2-toast) .swal2-icon.swal2-success {
     background-color: rgba(46, 125, 50, 0.15) !important;
     color: #2e7d32 !important;
 }
 
-.swal2-icon.swal2-error {
+.swal2-popup:not(.swal2-toast) .swal2-icon.swal2-error {
     background-color: rgba(186, 26, 26, 0.15) !important;
     color: #ba1a1a !important;
 }
 
-.swal2-icon .swal2-icon-content {
+.swal2-popup:not(.swal2-toast) .swal2-icon .swal2-icon-content {
     font-size: 1.15rem !important;
     font-family: inherit !important;
     display: flex !important;
@@ -4111,7 +4128,7 @@ main > div:nth-of-type(2) > div:first-child h4,
 }
 
 /* === M3 DIALOG HEADLINE (SLOT="HEADLINE") === */
-.swal2-title {
+.swal2-popup:not(.swal2-toast) .swal2-title {
     font-family: var(--font-poppins) !important;
     font-size: 1.45rem !important;
     font-weight: 500 !important;
@@ -4124,12 +4141,12 @@ main > div:nth-of-type(2) > div:first-child h4,
     width: 100% !important;
 }
 
-[data-bs-theme="dark"] .swal2-title {
+[data-bs-theme="dark"] .swal2-popup:not(.swal2-toast) .swal2-title {
     color: var(--on-surface, #e6e0e9) !important;
 }
 
 /* === M3 DIALOG SUPPORTING TEXT (SLOT="CONTENT") === */
-.swal2-html-container {
+.swal2-popup:not(.swal2-toast) .swal2-html-container {
     font-family: var(--font-poppins) !important;
     font-size: 0.95rem !important;
     line-height: 1.5 !important;
@@ -4141,12 +4158,12 @@ main > div:nth-of-type(2) > div:first-child h4,
     width: 100% !important;
 }
 
-[data-bs-theme="dark"] .swal2-html-container {
+[data-bs-theme="dark"] .swal2-popup:not(.swal2-toast) .swal2-html-container {
     color: var(--on-surface-variant, #cac4d0) !important;
 }
 
 /* === M3 DIALOG ACTIONS (SLOT="ACTIONS") === */
-.swal2-actions {
+.swal2-popup:not(.swal2-toast) .swal2-actions {
     width: 100% !important;
     display: flex !important;
     justify-content: flex-end !important;
@@ -4156,8 +4173,21 @@ main > div:nth-of-type(2) > div:first-child h4,
     padding: 0 !important;
 }
 
-/* === M3 TEXT BUTTONS (CONFIRM & DISMISS) === */
-.swal2-actions button.swal2-styled {
+/* Sembunyikan actions dan buttons pada TOAST secara total */
+.swal2-popup.swal2-toast .swal2-actions,
+.swal2-popup.swal2-toast .swal2-confirm,
+.swal2-popup.swal2-toast .swal2-deny,
+.swal2-popup.swal2-toast .swal2-cancel {
+    display: none !important;
+}
+
+/* Jangan paksa tombol yang di-hide oleh SweetAlert untuk tampil */
+.swal2-actions button[style*="display: none"] {
+    display: none !important;
+}
+
+/* === M3 TEXT BUTTONS (CONFIRM ONLY IN DIALOGS) === */
+.swal2-popup:not(.swal2-toast) .swal2-actions button.swal2-styled {
     font-family: var(--font-poppins) !important;
     font-size: 0.875rem !important;
     font-weight: 600 !important;
@@ -4173,51 +4203,45 @@ main > div:nth-of-type(2) > div:first-child h4,
                 transform var(--md-sys-motion-duration-short1) var(--md-sys-motion-easing-standard) !important;
     margin: 0 !important;
     min-height: 40px !important;
-    display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
     text-decoration: none !important;
 }
 
-/* Dismiss / Cancel: M3 Flat Text Button */
-.swal2-actions button.swal2-cancel {
-    background-color: transparent !important;
-    color: var(--primary) !important;
-}
-
-.swal2-actions button.swal2-cancel:hover,
-.swal2-actions button.swal2-cancel:focus-visible {
-    background-color: rgba(var(--primary-rgb), 0.08) !important;
-    color: var(--primary) !important;
-}
-
-.swal2-actions button.swal2-cancel:active {
-    background-color: rgba(var(--primary-rgb), 0.14) !important;
-    transform: scale(0.98);
-}
-
 /* Confirm: M3 Flat Text Button */
-.swal2-actions button.swal2-confirm {
+.swal2-popup:not(.swal2-toast) .swal2-actions button.swal2-confirm {
     background-color: transparent !important;
     color: var(--primary) !important;
 }
 
-.swal2-actions button.swal2-confirm:hover,
-.swal2-actions button.swal2-confirm:focus-visible {
+.swal2-popup:not(.swal2-toast) .swal2-actions button.swal2-confirm:hover,
+.swal2-popup:not(.swal2-toast) .swal2-actions button.swal2-confirm:focus-visible {
     background-color: rgba(var(--primary-rgb), 0.1) !important;
     color: var(--primary) !important;
 }
 
-.swal2-actions button.swal2-confirm:active {
+.swal2-popup:not(.swal2-toast) .swal2-actions button.swal2-confirm:active {
     background-color: rgba(var(--primary-rgb), 0.18) !important;
     transform: scale(0.98);
 }
 
+/* Cancel Button jika ada */
+.swal2-popup:not(.swal2-toast) .swal2-actions button.swal2-cancel {
+    background-color: transparent !important;
+    color: var(--on-surface-variant, #49454f) !important;
+}
+
+.swal2-popup:not(.swal2-toast) .swal2-actions button.swal2-cancel:hover,
+.swal2-popup:not(.swal2-toast) .swal2-actions button.swal2-cancel:focus-visible {
+    background-color: rgba(0, 0, 0, 0.06) !important;
+    color: var(--on-surface) !important;
+}
+
 /* Destructive / Danger Confirm Buttons */
-.swal2-actions button.swal2-confirm.m3-btn-destructive {
+.swal2-popup:not(.swal2-toast) .swal2-actions button.swal2-confirm.m3-btn-destructive {
     color: var(--error, #ba1a1a) !important;
 }
-.swal2-actions button.swal2-confirm.m3-btn-destructive:hover {
+.swal2-popup:not(.swal2-toast) .swal2-actions button.swal2-confirm.m3-btn-destructive:hover {
     background-color: rgba(186, 26, 26, 0.08) !important;
 }
 
@@ -4244,10 +4268,64 @@ main > div:nth-of-type(2) > div:first-child h4,
     }
 }
 
-/* === M3 TOAST NOTIFICATIONS (POPUP TOAST) === */
-.swal2-container.swal2-top-end .swal2-popup,
-.swal2-container.swal2-top .swal2-popup {
-    border-radius: 16px !important;
+/* === M3 TOAST NOTIFICATIONS (M3 SNACKBAR / PILL TOAST) === */
+.swal2-popup.swal2-toast {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 12px !important;
+    padding: 10px 18px !important;
+    border-radius: 9999px !important;
+    background: var(--surface-container-high, #ece6f0) !important;
+    color: var(--on-surface, #1d1b20) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.16) !important;
+    border: 1px solid var(--outline-variant) !important;
+    max-width: 380px !important;
+    width: auto !important;
+    min-width: 220px !important;
+    margin: 12px !important;
+    animation: m3ToastEnter var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-emphasized-decelerate) forwards !important;
+}
+
+[data-bs-theme="dark"] .swal2-popup.swal2-toast {
+    background: var(--surface-container-high, #2b2930) !important;
+    color: var(--on-surface, #e6e0e9) !important;
+    border-color: var(--outline-variant) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35) !important;
+}
+
+.swal2-popup.swal2-toast .swal2-icon {
+    width: 24px !important;
+    height: 24px !important;
+    min-width: 24px !important;
+    margin: 0 !important;
+    font-size: 0.85rem !important;
+    border-radius: 50% !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.swal2-popup.swal2-toast .swal2-title {
+    font-family: var(--font-poppins) !important;
+    font-size: 0.88rem !important;
+    font-weight: 500 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    text-align: left !important;
+    color: inherit !important;
+    line-height: 1.35 !important;
+}
+
+.swal2-popup.swal2-toast .swal2-html-container {
+    font-family: var(--font-poppins) !important;
+    font-size: 0.84rem !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    text-align: left !important;
+    color: var(--on-surface-variant) !important;
+}
     padding: 12px 18px !important;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12) !important;
     background-color: var(--surface-container-high, #ece6f0) !important;

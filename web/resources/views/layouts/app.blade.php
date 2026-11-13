@@ -231,19 +231,21 @@
     {{-- SweetAlert2 --}}
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        // Material Design 3 Alert Dialog Mixin Defaults (Google Material Web Specification)
+        // Material Design 3 Alert Dialog & Toast System (Google Material Web Specification)
         if (typeof Swal !== 'undefined') {
             const originalSwalFire = Swal.fire.bind(Swal);
             window.Swal.fire = function(...args) {
                 if (args.length === 1 && typeof args[0] === 'object') {
                     const opts = args[0];
-                    if (!opts.toast) {
-                        if (opts.showCancelButton && (!opts.cancelButtonText || opts.cancelButtonText === 'Batal')) {
-                            opts.cancelButtonText = 'Dismiss';
-                        }
-                        if (opts.showCancelButton && (!opts.confirmButtonText || opts.confirmButtonText === 'Ya, Lanjutkan' || opts.confirmButtonText === 'Ya, lanjutkan!')) {
-                            opts.confirmButtonText = 'Confirm';
-                        }
+                    if (opts.toast) {
+                        // M3 Toast: Pure notification without backdrop or action buttons
+                        opts.showConfirmButton = false;
+                        opts.showCancelButton = false;
+                        opts.showDenyButton = false;
+                        if (!opts.timer) opts.timer = 2200;
+                        if (!opts.position) opts.position = 'top-end';
+                    } else {
+                        // M3 Dialog
                         if (opts.icon === 'warning' || opts.icon === 'question') {
                             opts.icon = 'info';
                         }
@@ -262,18 +264,18 @@
                 title: title,
                 text: message,
                 icon: 'info',
-                showCancelButton: true,
+                showCancelButton: false, // Hilangkan tombol dismiss pada dialog konfirmasi sesuai spesifikasi Helm
                 confirmButtonText: 'Confirm',
-                cancelButtonText: 'Dismiss',
                 reverseButtons: false,
-                focusCancel: true,
+                focusConfirm: true,
+                allowOutsideClick: true,
+                allowEscapeKey: true,
                 customClass: {
                     popup: 'm3-dialog-popup',
                     title: 'm3-dialog-title',
                     htmlContainer: 'm3-dialog-content',
                     actions: 'm3-dialog-actions',
-                    confirmButton: 'm3-dialog-btn-confirm',
-                    cancelButton: 'm3-dialog-btn-dismiss'
+                    confirmButton: 'm3-dialog-btn-confirm'
                 }
             }).then((result) => {
                 if (result.isConfirmed) {
@@ -344,7 +346,7 @@
                 padding: 0 !important;
                 background: var(--surface-bg) !important;
                 border-top: 1px solid var(--outline-variant) !important;
-                box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08) !important;
+                box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.12) !important;
             }
             .mobile-bottom-wrapper .mobile-sticky-action-bar {
                 position: static !important;
@@ -353,7 +355,7 @@
                 right: auto !important;
                 width: 100% !important;
                 margin: 0 !important;
-                background: var(--surface-container-low) !important;
+                background: var(--surface-bg) !important;
                 border: none !important;
                 border-bottom: 1px solid var(--outline-variant) !important;
                 box-shadow: none !important;

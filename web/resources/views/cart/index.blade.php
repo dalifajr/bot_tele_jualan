@@ -11,7 +11,7 @@
 @endsection
 
 @section('content')
-<div class="row g-3 g-lg-4">
+<div class="row g-3 g-lg-4 has-mobile-action-bar">
     <div class="col-lg-8">
         <div class="card mb-4">
             <div class="card-body p-4">

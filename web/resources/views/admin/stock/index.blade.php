@@ -1289,23 +1289,37 @@ function confirmExportStock() {
         inputPlaceholder: 'Masukkan password Anda...',
         inputAttributes: { autocomplete: 'current-password' },
         showCancelButton: true,
+        showDenyButton: false,
         confirmButtonText: '<i class="fas fa-file-excel me-1"></i> Ekspor',
         cancelButtonText: 'Batal',
         confirmButtonColor: '#198754',
         cancelButtonColor: '#6c757d',
+        allowOutsideClick: true,
+        allowEscapeKey: true,
         customClass: { input: 'form-control', popup: 'rounded-4' },
+        didOpen: () => {
+            const cancelBtn = Swal.getCancelButton();
+            if (cancelBtn) {
+                cancelBtn.onclick = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    Swal.close();
+                };
+            }
+        },
         inputValidator: (value) => {
             if (!value) return 'Password wajib diisi!';
         }
     }).then((result) => {
-        if (result.isConfirmed) {
-            let form = document.createElement('form');
-            form.method = 'POST';
-            form.action = "{{ route('admin.stock.export', request()->all()) }}";
-            form.innerHTML = '@csrf<input type="hidden" name="password" value="' + result.value + '">';
-            document.body.appendChild(form);
-            form.submit();
+        if (!result.isConfirmed) {
+            return;
         }
+        let form = document.createElement('form');
+        form.method = 'POST';
+        form.action = "{{ route('admin.stock.export', request()->all()) }}";
+        form.innerHTML = '@csrf<input type="hidden" name="password" value="' + result.value + '">';
+        document.body.appendChild(form);
+        form.submit();
     });
 }
 

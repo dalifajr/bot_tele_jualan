@@ -500,11 +500,12 @@ function initSweetAlertConfirms() {
                 title: 'Konfirmasi Aksi',
                 text: message,
                 icon: 'info',
-                showCancelButton: true,
+                showCancelButton: false, // Hilangkan tombol dismiss pada dialog konfirmasi sesuai spesifikasi Helm
                 confirmButtonText: 'Confirm',
-                cancelButtonText: 'Dismiss',
                 reverseButtons: false,
-                focusCancel: true
+                focusConfirm: true,
+                allowOutsideClick: true,
+                allowEscapeKey: true
             }).then((result) => {
                 if (result.isConfirmed) {
                     const pageLoader = document.getElementById('pageLoader');
