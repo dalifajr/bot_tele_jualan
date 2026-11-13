@@ -223,167 +223,9 @@
 <body class="cm-gm2 cm-cm3">
 
 <div id="pageLoader" class="fade-out">
-    <div class="skeleton-page-placeholder container-fluid px-3 px-md-4 pt-3 pt-md-4">
-        @if(View::hasSection('page_skeleton'))
-            @yield('page_skeleton')
-        @elseif(request()->routeIs('catalog.show'))
-            {{-- Contextual Skeleton: Detail Produk --}}
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <div class="d-flex align-items-center gap-2">
-                    <div class="skeleton-shimmer rounded-circle" style="width: 38px; height: 38px;"></div>
-                    <div class="skeleton-shimmer" style="height: 22px; width: 130px; border-radius: 6px;"></div>
-                </div>
-                <div class="skeleton-shimmer rounded-circle" style="width: 38px; height: 38px;"></div>
-            </div>
-            <div class="row g-3 g-lg-4">
-                <div class="col-lg-7 col-xl-8">
-                    <div class="card overflow-hidden mb-3" style="border-radius: var(--radius-lg, 20px);">
-                        <div class="skeleton-shimmer w-100" style="height: 230px; border-radius: 0;"></div>
-                        <div class="card-body p-3 p-md-4">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <div class="skeleton-shimmer" style="height: 28px; width: 140px; border-radius: 6px;"></div>
-                                <div class="skeleton-shimmer" style="height: 24px; width: 90px; border-radius: 4px;"></div>
-                            </div>
-                            <div class="skeleton-shimmer mb-2" style="height: 22px; width: 85%; border-radius: 6px;"></div>
-                            <div class="skeleton-shimmer mb-3" style="height: 14px; width: 45%; border-radius: 4px;"></div>
-                            <div class="row g-2 mb-4">
-                                <div class="col-4"><div class="skeleton-shimmer w-100 rounded-2" style="height: 58px;"></div></div>
-                                <div class="col-4"><div class="skeleton-shimmer w-100 rounded-2" style="height: 58px;"></div></div>
-                                <div class="col-4"><div class="skeleton-shimmer w-100 rounded-2" style="height: 58px;"></div></div>
-                            </div>
-                            <div class="p-3 rounded-2 border d-flex align-items-center justify-content-between mb-4">
-                                <div class="d-flex align-items-center gap-3">
-                                    <div class="skeleton-shimmer rounded-circle" style="width: 46px; height: 46px;"></div>
-                                    <div>
-                                        <div class="skeleton-shimmer mb-1.5" style="height: 16px; width: 120px;"></div>
-                                        <div class="skeleton-shimmer" style="height: 12px; width: 80px;"></div>
-                                    </div>
-                                </div>
-                                <div class="skeleton-shimmer rounded-circle" style="width: 38px; height: 38px;"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-5 col-xl-4 d-none d-lg-block">
-                    <div class="card p-4" style="border-radius: var(--radius-lg, 20px);">
-                        <div class="skeleton-shimmer mb-3" style="height: 20px; width: 130px;"></div>
-                        <div class="skeleton-shimmer mb-3" style="height: 44px; width: 100%; border-radius: 6px;"></div>
-                        <div class="skeleton-shimmer mb-2" style="height: 40px; width: 100%; border-radius: 6px;"></div>
-                        <div class="skeleton-shimmer" style="height: 40px; width: 100%; border-radius: 6px;"></div>
-                    </div>
-                </div>
-            </div>
-        @elseif(request()->routeIs('sellers.show'))
-            {{-- Contextual Skeleton: Profil Toko Seller --}}
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <div class="d-flex align-items-center gap-2">
-                    <div class="skeleton-shimmer rounded-circle" style="width: 38px; height: 38px;"></div>
-                    <div class="skeleton-shimmer" style="height: 22px; width: 120px; border-radius: 6px;"></div>
-                </div>
-                <div class="skeleton-shimmer rounded-circle" style="width: 38px; height: 38px;"></div>
-            </div>
-            <div class="card p-4 mb-4" style="border-radius: var(--radius-lg, 20px);">
-                <div class="d-flex align-items-center gap-3 mb-3">
-                    <div class="skeleton-shimmer rounded-circle" style="width: 64px; height: 64px;"></div>
-                    <div>
-                        <div class="skeleton-shimmer mb-2" style="height: 22px; width: 160px; border-radius: 6px;"></div>
-                        <div class="skeleton-shimmer" style="height: 14px; width: 110px; border-radius: 4px;"></div>
-                    </div>
-                </div>
-                <div class="row g-2 mt-2 pt-2 border-top">
-                    <div class="col-4"><div class="skeleton-shimmer w-100 rounded-2" style="height: 48px;"></div></div>
-                    <div class="col-4"><div class="skeleton-shimmer w-100 rounded-2" style="height: 48px;"></div></div>
-                    <div class="col-4"><div class="skeleton-shimmer w-100 rounded-2" style="height: 48px;"></div></div>
-                </div>
-            </div>
-            <div class="row g-3 g-md-4">
-                @for($i = 0; $i < 4; $i++)
-                <div class="col-6 col-md-4 col-lg-3">
-                    <div class="card p-3 h-100" style="border-radius: var(--radius-lg, 20px);">
-                        <div class="skeleton-shimmer w-100 mb-2.5" style="height: 120px; border-radius: 6px;"></div>
-                        <div class="skeleton-shimmer mb-2" style="height: 16px; width: 80%;"></div>
-                        <div class="skeleton-shimmer" style="height: 14px; width: 45%;"></div>
-                    </div>
-                </div>
-                @endfor
-            </div>
-        @elseif(request()->routeIs('cart.*'))
-            {{-- Contextual Skeleton: Keranjang Belanja --}}
-            <div class="d-flex align-items-center gap-2 mb-3">
-                <div class="skeleton-shimmer rounded-circle" style="width: 38px; height: 38px;"></div>
-                <div class="skeleton-shimmer" style="height: 22px; width: 150px; border-radius: 6px;"></div>
-            </div>
-            <div class="row g-3 g-lg-4">
-                <div class="col-lg-8">
-                    @for($c = 0; $c < 3; $c++)
-                    <div class="card p-3 mb-2" style="border-radius: var(--radius-lg, 20px);">
-                        <div class="d-flex align-items-center justify-content-between">
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="skeleton-shimmer rounded-2" style="width: 50px; height: 50px;"></div>
-                                <div>
-                                    <div class="skeleton-shimmer mb-1.5" style="height: 16px; width: 140px;"></div>
-                                    <div class="skeleton-shimmer" style="height: 13px; width: 75px;"></div>
-                                </div>
-                            </div>
-                            <div class="skeleton-shimmer" style="height: 32px; width: 90px; border-radius: 6px;"></div>
-                        </div>
-                    </div>
-                    @endfor
-                </div>
-                <div class="col-lg-4">
-                    <div class="card p-4" style="border-radius: var(--radius-lg, 20px);">
-                        <div class="skeleton-shimmer mb-3" style="height: 20px; width: 130px;"></div>
-                        <div class="skeleton-shimmer mb-2" style="height: 16px; width: 100%;"></div>
-                        <div class="skeleton-shimmer mb-4" style="height: 16px; width: 70%;"></div>
-                        <div class="skeleton-shimmer" style="height: 40px; width: 100%; border-radius: 6px;"></div>
-                    </div>
-                </div>
-            </div>
-        @else
-            {{-- Skeleton Universal Default (Catalog, Dashboard, etc.) --}}
-            <div class="d-flex align-items-center justify-content-between mb-4 pb-2 border-bottom">
-                <div class="d-flex align-items-center gap-2">
-                    <div class="skeleton-shimmer rounded-circle" style="width: 38px; height: 38px;"></div>
-                    <div class="skeleton-shimmer" style="height: 22px; width: 140px; border-radius: 6px;"></div>
-                </div>
-                <div class="d-flex align-items-center gap-2">
-                    <div class="skeleton-shimmer" style="height: 32px; width: 90px; border-radius: 6px;"></div>
-                    <div class="skeleton-shimmer rounded-circle" style="width: 32px; height: 32px;"></div>
-                </div>
-            </div>
-            <div class="row g-3 g-md-4">
-                @for($i = 0; $i < 4; $i++)
-                <div class="col-6 col-md-4 col-lg-3 {{ $i >= 2 ? 'd-none d-md-block' : '' }}">
-                    <div class="card p-3 h-100" style="border-radius: var(--radius-lg, 20px);">
-                        <div class="skeleton-shimmer w-100 mb-3" style="height: 125px; border-radius: 6px;"></div>
-                        <div class="skeleton-shimmer mb-2" style="height: 16px; width: 80%;"></div>
-                        <div class="skeleton-shimmer mb-3" style="height: 12px; width: 50%;"></div>
-                        <div class="d-flex justify-content-between align-items-center mt-auto pt-2 border-top">
-                            <div class="skeleton-shimmer" style="height: 18px; width: 65px;"></div>
-                            <div class="skeleton-shimmer" style="height: 26px; width: 36px; border-radius: 6px;"></div>
-                        </div>
-                    </div>
-                </div>
-                @endfor
-            </div>
-            <div class="mt-4">
-                <div class="skeleton-shimmer mb-3" style="height: 18px; width: 160px; border-radius: 6px;"></div>
-                @for($j = 0; $j < 3; $j++)
-                <div class="card p-3 mb-2" style="border-radius: var(--radius-lg, 20px);">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div class="d-flex align-items-center gap-2.5 flex-grow-1">
-                            <div class="skeleton-shimmer rounded-2" style="width: 44px; height: 44px; flex-shrink: 0;"></div>
-                            <div class="w-75">
-                                <div class="skeleton-shimmer mb-1.5" style="height: 14px; width: 65%;"></div>
-                                <div class="skeleton-shimmer" style="height: 11px; width: 40%;"></div>
-                            </div>
-                        </div>
-                        <div class="skeleton-shimmer" style="height: 24px; width: 70px; border-radius: 4px;"></div>
-                    </div>
-                </div>
-                @endfor
-            </div>
-        @endif
+    <div class="m3-loader-card d-inline-flex align-items-center gap-3">
+        <div class="m3-spinner-circle" role="status" aria-label="{{ __('Memuat...') }}"></div>
+        <span class="m3-loader-text">{{ __('Memuat...') }}</span>
     </div>
 </div>
 
@@ -506,14 +348,6 @@
                 {{ config('app.name', "dzulfikrialifajri's store") }}
             </span>
         </a>
-    </div>
-
-    {{-- Desktop Centered Search Bar (Figma M3 Full Pill 48px) --}}
-    <div class="d-none d-lg-flex align-items-center flex-grow-1 me-3" style="max-width: 540px;">
-        <form action="{{ route('catalog.index') }}" method="GET" class="m3-top-search-bar my-0 w-100">
-            <i class="fas fa-search"></i>
-            <input type="text" name="search" class="m3-top-search-input" placeholder="{{ __('Cari produk atau pesanan') }}" value="{{ request('search') }}">
-        </form>
     </div>
 
     <div class="ms-auto d-flex align-items-center gap-1">
@@ -688,7 +522,7 @@
             </div>
         </div>
         {{-- Desktop Top Brand Header & Segmented Belanja/Admin Switcher (Figma M3 Style) --}}
-        <div class="d-none d-lg-block">
+        <div class="d-none d-lg-block sticky-top" style="position: sticky; top: 0; z-index: 10; background: var(--surface-container-low); padding-bottom: 4px;">
             <a href="{{ route('dashboard') }}" class="m3-brand-header">
                 @include('partials.brand-logo')
                 <div class="m3-brand-text">
@@ -706,12 +540,12 @@
                                    ($isSeller && (request()->routeIs('seller.*') || request('view') === 'seller'));
             @endphp
             <div class="m3-segmented-switch mb-3 mx-3">
-                <a href="{{ route('dashboard') }}" class="m3-segmented-item {{ !$isManagementMode ? 'active' : '' }}" title="{{ __('Mode Belanja') }}">
+                <button type="button" class="m3-segmented-item tab-btn-belanja {{ !$isManagementMode ? 'active' : '' }}" onclick="switchSidebarRoleTab('belanja')" title="{{ __('Mode Belanja') }}">
                     {{ __('Belanja') }}
-                </a>
-                <a href="{{ $isAdmin ? route('admin.dashboard') : route('seller.dashboard') }}" class="m3-segmented-item {{ $isManagementMode ? 'active' : '' }}" title="{{ $isAdmin ? __('Panel Admin') : __('Panel Seller') }}">
+                </button>
+                <button type="button" class="m3-segmented-item tab-btn-management {{ $isManagementMode ? 'active' : '' }}" onclick="switchSidebarRoleTab('management')" title="{{ $isAdmin ? __('Panel Admin') : __('Panel Seller') }}">
                     {{ $isAdmin ? __('Admin') : __('Seller') }}
-                </a>
+                </button>
             </div>
             @endif
         </div>
@@ -740,6 +574,17 @@
                 </form>
             </div>
         </div>
+
+        @if(Auth::check() && in_array(Auth::user()->role, ['admin', 'seller']))
+        <div class="m3-segmented-switch my-2 mx-3 d-lg-none">
+            <button type="button" class="m3-segmented-item tab-btn-belanja {{ !$isManagementMode ? 'active' : '' }}" onclick="switchSidebarRoleTab('belanja')" title="{{ __('Mode Belanja') }}">
+                {{ __('Belanja') }}
+            </button>
+            <button type="button" class="m3-segmented-item tab-btn-management {{ $isManagementMode ? 'active' : '' }}" onclick="switchSidebarRoleTab('management')" title="{{ $isAdmin ? __('Panel Admin') : __('Panel Seller') }}">
+                {{ $isAdmin ? __('Admin') : __('Seller') }}
+            </button>
+        </div>
+        @endif
         @else
         <div class="sidebar-header d-flex align-items-center gap-3 bg-body-tertiary rounded-3 p-3 m-2 border d-lg-none">
             <div class="user-avatar rounded-circle d-flex align-items-center justify-content-center fw-bold text-white bg-secondary" style="width: 40px; height: 40px; flex-shrink: 0;">
@@ -767,7 +612,7 @@
             @endphp
 
             {{-- 1. MODE BELANJA (Untuk Customer, Tamu, atau Admin/Seller di tab Belanja) --}}
-            @if(!$isManagementMode)
+            <div id="sidebarMenuBelanja" class="{{ (in_array($userRole, ['admin', 'seller']) && $isManagementMode) ? 'd-none' : '' }}">
                 <div class="menu-group">
                     <div class="menu-header px-3"><i class="fas fa-compass me-1 text-primary"></i> {{ __('MENU UTAMA') }}</div>
                     <div class="menu-items-grid">
@@ -837,9 +682,11 @@
                     </div>
                 </div>
                 @endif
+            </div>
 
             {{-- 2. MODE MANAGEMENT UNTUK ADMIN --}}
-            @elseif($isAdmin)
+            @if($isAdmin)
+            <div id="sidebarMenuManagement" class="{{ !$isManagementMode ? 'd-none' : '' }}">
                 <div class="menu-group">
                     <div class="menu-header px-3 text-primary"><i class="fas fa-shield-alt me-1"></i> {{ __('PANEL ADMIN') }}</div>
                     <div class="menu-items-grid">
@@ -953,9 +800,11 @@
                         </a>
                     </div>
                 </div>
+            </div>
 
             {{-- 3. MODE MANAGEMENT UNTUK SELLER --}}
             @elseif($isSeller)
+            <div id="sidebarMenuManagement" class="{{ !$isManagementMode ? 'd-none' : '' }}">
                 <div class="menu-group">
                     <div class="menu-header px-3 text-info"><i class="fas fa-store me-1"></i> {{ __('PANEL MITRA') }}</div>
                     <div class="menu-items-grid">
@@ -1028,6 +877,7 @@
                     </div>
                 </div>
                 @endif
+            </div>
             @endif
         </div>
 
@@ -1606,6 +1456,27 @@
         }
         const bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
         bsModal.show();
+    };
+
+    window.switchSidebarRoleTab = function(mode) {
+        const belanjaMenu = document.getElementById('sidebarMenuBelanja');
+        const managementMenu = document.getElementById('sidebarMenuManagement');
+        const tabBelanjaBtns = document.querySelectorAll('.tab-btn-belanja');
+        const tabMgmtBtns = document.querySelectorAll('.tab-btn-management');
+
+        if (mode === 'belanja') {
+            if (belanjaMenu) belanjaMenu.classList.remove('d-none');
+            if (managementMenu) managementMenu.classList.add('d-none');
+            tabBelanjaBtns.forEach(b => b.classList.add('active'));
+            tabMgmtBtns.forEach(b => b.classList.remove('active'));
+            try { localStorage.setItem('sidebarRoleTab', 'belanja'); } catch(e) {}
+        } else {
+            if (belanjaMenu) belanjaMenu.classList.add('d-none');
+            if (managementMenu) managementMenu.classList.remove('d-none');
+            tabBelanjaBtns.forEach(b => b.classList.remove('active'));
+            tabMgmtBtns.forEach(b => b.classList.add('active'));
+            try { localStorage.setItem('sidebarRoleTab', 'management'); } catch(e) {}
+        }
     };
 </script>
 

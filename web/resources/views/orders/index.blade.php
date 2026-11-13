@@ -11,45 +11,82 @@
 @endsection
 
 @section('content')
-{{-- Orders List Container with Integrated Google Cloud Filter Bar --}}
-<div class="card overflow-hidden">
-    <div class="sd-dashboard-filter-bar flex-column align-items-stretch gap-2.5 p-2.5 px-md-3">
-        <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-2.5">
-            {{-- Simplified Filter Tabs (Google Cloud .cfc-chip) --}}
-            <div class="category-scroll-container m-0 p-0">
+{{-- Header Riwayat Pesanan (Flat Material 3 Style) --}}
+<div class="mb-3">
+    <h1 class="m3-page-title mb-1">
+        {{ __('Riwayat pesanan') }}
+    </h1>
+    <p class="text-secondary small mb-0" style="font-size: 0.92rem;">
+        {{ __('Daftar transaksi dan status pembelian produk digital Anda.') }}
+    </p>
+</div>
+
+{{-- Orders List Container with Responsive M3 Filter Bar --}}
+<div class="card overflow-hidden border-0 shadow-sm" style="border-radius: var(--radius-xl, 20px);">
+    <div class="m3-order-filter-wrapper">
+        <div class="d-flex align-items-center justify-content-between gap-2">
+            {{-- Horizontal Scrollable Filter Chips --}}
+            <div class="m3-filter-chip-row flex-grow-1">
                 <a href="{{ route('orders.index', array_filter(['search' => request('search')])) }}"
-                   class="btn btn-sm cfc-chip text-nowrap flex-shrink-0 {{ is_null($status) ? 'btn-primary active' : 'btn-outline-secondary' }}">
+                   class="btn btn-sm rounded-pill px-3 py-1.5 fw-semibold text-nowrap flex-shrink-0 {{ is_null($status) ? 'btn-primary' : 'btn-outline-secondary' }}">
                     {{ __('Semua') }}
                 </a>
                 <a href="{{ route('orders.index', array_filter(['status' => 'pending_payment', 'search' => request('search')])) }}"
-                   class="btn btn-sm cfc-chip text-nowrap flex-shrink-0 {{ $status === 'pending_payment' ? 'btn-primary active' : 'btn-outline-secondary' }}">
+                   class="btn btn-sm rounded-pill px-3 py-1.5 fw-semibold text-nowrap flex-shrink-0 {{ $status === 'pending_payment' ? 'btn-primary' : 'btn-outline-secondary' }}">
                     {{ __('Menunggu') }}
                 </a>
                 <a href="{{ route('orders.index', array_filter(['status' => 'delivered', 'search' => request('search')])) }}"
-                   class="btn btn-sm cfc-chip text-nowrap flex-shrink-0 {{ $status === 'delivered' ? 'btn-primary active' : 'btn-outline-secondary' }}">
+                   class="btn btn-sm rounded-pill px-3 py-1.5 fw-semibold text-nowrap flex-shrink-0 {{ $status === 'delivered' ? 'btn-primary' : 'btn-outline-secondary' }}">
                     {{ __('Selesai') }}
                 </a>
                 <a href="{{ route('orders.index', array_filter(['status' => 'cancelled_expired', 'search' => request('search')])) }}"
-                   class="btn btn-sm cfc-chip text-nowrap flex-shrink-0 {{ $status === 'cancelled_expired' || in_array($status, ['cancelled', 'expired']) ? 'btn-primary active' : 'btn-outline-secondary' }}">
+                   class="btn btn-sm rounded-pill px-3 py-1.5 fw-semibold text-nowrap flex-shrink-0 {{ $status === 'cancelled_expired' || in_array($status, ['cancelled', 'expired']) ? 'btn-primary' : 'btn-outline-secondary' }}">
                     {{ __('Dibatalkan & Kedaluwarsa') }}
                 </a>
             </div>
 
-            {{-- Search Form --}}
-            <form action="{{ route('orders.index') }}" method="GET" class="d-flex align-items-center gap-2 m-0" style="max-width: 420px; width: 100%;">
+            {{-- Desktop Search Form (d-none d-md-flex) --}}
+            <form action="{{ route('orders.index') }}" method="GET" class="d-none d-md-flex align-items-center gap-2 m-0 flex-shrink-0" style="max-width: 340px; width: 100%;">
                 @if(request('status'))
                     <input type="hidden" name="status" value="{{ request('status') }}">
                 @endif
                 <div class="input-group input-group-sm flex-grow-1">
-                    <span class="input-group-text ps-2.5"><i class="fas fa-filter text-muted"></i></span>
-                    <input type="text" name="search" class="form-control" placeholder="{{ __('Cari nama produk, no. pesanan, atau nominal...') }}" value="{{ request('search') }}">
+                    <span class="input-group-text ps-2.5 bg-transparent border-end-0"><i class="fas fa-search text-muted"></i></span>
+                    <input type="text" name="search" class="form-control border-start-0 ps-0" placeholder="{{ __('Cari pesanan...') }}" value="{{ request('search') }}">
                     @if(request('search'))
                         <a href="{{ route('orders.index', request('status') ? ['status' => request('status')] : []) }}" class="btn btn-light px-2 text-muted d-flex align-items-center" title="{{ __('Hapus Pencarian') }}">
                             <i class="fas fa-times-circle"></i>
                         </a>
                     @endif
                 </div>
-                <button type="submit" class="btn btn-sm btn-primary px-3 flex-shrink-0">
+                <button type="submit" class="btn btn-sm btn-primary rounded-pill px-3 flex-shrink-0 fw-semibold">
+                    {{ __('Cari') }}
+                </button>
+            </form>
+
+            {{-- Mobile Search Toggle Button (d-md-none) --}}
+            <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill d-md-none flex-shrink-0 d-inline-flex align-items-center gap-1.5 px-3 py-1.5 fw-semibold {{ request('search') ? 'active' : '' }}" data-bs-toggle="collapse" data-bs-target="#ordersMobileSearchCollapse" aria-expanded="{{ request('search') ? 'true' : 'false' }}">
+                <i class="fas fa-search"></i>
+                <span style="font-size: 0.8125rem;">{{ __('Cari') }}</span>
+            </button>
+        </div>
+
+        {{-- Mobile Collapsible Search Container (d-md-none) --}}
+        <div class="collapse {{ request('search') ? 'show' : '' }} d-md-none pt-2.5" id="ordersMobileSearchCollapse">
+            <form action="{{ route('orders.index') }}" method="GET" class="d-flex align-items-center gap-2 m-0 w-100">
+                @if(request('status'))
+                    <input type="hidden" name="status" value="{{ request('status') }}">
+                @endif
+                <div class="input-group input-group-sm flex-grow-1">
+                    <span class="input-group-text ps-2.5 bg-transparent border-end-0"><i class="fas fa-search text-muted"></i></span>
+                    <input type="text" name="search" class="form-control border-start-0 ps-0" placeholder="{{ __('Cari nama produk, no. pesanan...') }}" value="{{ request('search') }}">
+                    @if(request('search'))
+                        <a href="{{ route('orders.index', request('status') ? ['status' => request('status')] : []) }}" class="btn btn-light px-2 text-muted d-flex align-items-center" title="{{ __('Hapus Pencarian') }}">
+                            <i class="fas fa-times-circle"></i>
+                        </a>
+                    @endif
+                </div>
+                <button type="submit" class="btn btn-sm btn-primary rounded-pill px-3 flex-shrink-0 fw-semibold">
                     {{ __('Cari') }}
                 </button>
             </form>

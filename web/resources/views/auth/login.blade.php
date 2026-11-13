@@ -79,24 +79,11 @@
     </button>
   </div>
 
-  {{-- Loader Overlay: Skeleton Shimmer Form --}}
+  {{-- Loader Overlay: Material You Android 17 Spinning Card --}}
   <div id="pageLoader" class="fade-out">
-    <div class="d-flex align-items-center justify-content-center h-100 p-4">
-      <div class="card border p-4 w-100" style="max-width: 440px; border-radius: var(--radius-xl, 24px);">
-        <div class="d-flex align-items-center gap-3 mb-4">
-          <div class="skeleton-shimmer rounded-circle" style="width: 46px; height: 46px;"></div>
-          <div class="w-50">
-            <div class="skeleton-shimmer mb-2" style="height: 18px; width: 100%; border-radius: 6px;"></div>
-            <div class="skeleton-shimmer" style="height: 12px; width: 60%; border-radius: 6px;"></div>
-          </div>
-        </div>
-        <div class="skeleton-shimmer mb-3" style="height: 44px; border-radius: var(--radius-sm, 12px); width: 100%;"></div>
-        <div class="skeleton-shimmer mb-3" style="height: 44px; border-radius: var(--radius-sm, 12px); width: 100%;"></div>
-        <div class="skeleton-shimmer mb-4" style="height: 44px; border-radius: 9999px; width: 100%;"></div>
-        <div class="d-flex justify-content-center">
-          <div class="skeleton-shimmer" style="height: 14px; width: 50%; border-radius: 6px;"></div>
-        </div>
-      </div>
+    <div class="m3-loader-card d-inline-flex align-items-center gap-3">
+      <div class="m3-spinner-circle" role="status" aria-label="{{ __('Memuat...') }}"></div>
+      <span class="m3-loader-text">{{ __('Memuat...') }}</span>
     </div>
   </div>
 

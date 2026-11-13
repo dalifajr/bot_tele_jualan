@@ -80,49 +80,49 @@
         @endfor
     </div>
 
-    {{-- Products Grid (3 Columns on Desktop, 2 on Tablet, 1-2 on Mobile) --}}
-    <div class="row g-3" id="catalogProductsRow">
+    {{-- Products Grid (2 Columns on Mobile, 3 on Tablet, 4 on Desktop) --}}
+    <div class="row g-2 g-md-3" id="catalogProductsRow">
         @forelse($products as $product)
-        <div class="col-12 col-sm-6 col-lg-4 product-item-col" 
+        <div class="col-6 col-md-4 col-xl-3 product-item-col" 
              data-name="{{ strtolower($product->name) }}" 
              data-is-vpn="{{ $product->is_vpn ? '1' : '0' }}" 
              data-has-stock="{{ $product->stock_count > 0 ? '1' : '0' }}">
-            <div class="card product-card h-100 position-relative clickable-product-card" data-href="{{ route('catalog.show', $product->id) }}" style="border-radius: var(--radius-lg) !important; background: var(--surface-container-low); border: 1px solid var(--outline-variant) !important; cursor: pointer;">
+            <div class="card product-card h-100 position-relative clickable-product-card" data-href="{{ route('catalog.show', $product->id) }}" style="border-radius: var(--radius-lg, 18px) !important; background: var(--surface-container-low); border: 1px solid var(--outline-variant) !important; cursor: pointer;">
                 {{-- Stock Badge (Figma M3 Style) --}}
-                <div class="product-badge" style="top: 12px; left: 12px; position: absolute; z-index: 5;">
+                <div class="product-badge" style="top: 8px; left: 8px; position: absolute; z-index: 5;">
                     @if($product->stock_count > 0)
-                        <span class="badge bg-white text-dark rounded-pill px-2.5 py-1 fw-bold shadow-sm d-inline-flex align-items-center gap-1.5" style="font-size: 0.72rem; color: #1D1B20 !important;">
-                            <span class="rounded-circle" style="width: 6px; height: 6px; background: #146C2E;"></span>
-                            <span>{{ $product->stock_count }} {{ __('stok') }}</span>
+                        <span class="badge bg-white text-dark rounded-pill px-2 py-0.5 fw-bold shadow-sm d-inline-flex align-items-center gap-1" style="font-size: 0.68rem; color: #1D1B20 !important;">
+                            <span class="rounded-circle" style="width: 5px; height: 5px; background: #146C2E;"></span>
+                            <span>{{ $product->stock_count }} <span class="d-none d-sm-inline">{{ __('stok') }}</span></span>
                         </span>
                     @else
-                        <span class="badge rounded-pill px-2.5 py-1 fw-bold shadow-sm d-inline-flex align-items-center gap-1.5" style="background: #ffdad6; color: #410002; font-size: 0.72rem;">
-                            <span class="rounded-circle" style="width: 6px; height: 6px; background: #BA1A1A;"></span>
+                        <span class="badge rounded-pill px-2 py-0.5 fw-bold shadow-sm d-inline-flex align-items-center gap-1" style="background: #ffdad6; color: #410002; font-size: 0.68rem;">
+                            <span class="rounded-circle" style="width: 5px; height: 5px; background: #BA1A1A;"></span>
                             <span>{{ __('Habis') }}</span>
                         </span>
                     @endif
                 </div>
 
                 {{-- Product Thumbnail / Icon (Figma M3 Style) --}}
-                <div class="product-icon-wrapper position-relative overflow-hidden" style="height: 160px; background: var(--surface-container); border-radius: var(--radius-lg) var(--radius-lg) 0 0;">
+                <div class="product-icon-wrapper position-relative overflow-hidden" style="height: 120px; background: var(--surface-container); border-radius: var(--radius-lg, 18px) var(--radius-lg, 18px) 0 0;">
                     @if($product->image_url)
                         <img src="{{ $product->image_url }}" alt="{{ $product->name }}" class="w-100 h-100" style="object-fit: cover; transition: transform 0.35s ease;">
                     @else
                         @if($product->is_vpn)
-                            <i class="fas fa-network-wired" style="font-size: 2.85rem; color: var(--primary); opacity: 0.85;"></i>
+                            <i class="fas fa-network-wired" style="font-size: 2.2rem; color: var(--primary); opacity: 0.85;"></i>
                         @else
-                            <i class="fas fa-envelope-open-text" style="font-size: 2.85rem; color: var(--primary); opacity: 0.85;"></i>
+                            <i class="fas fa-envelope-open-text" style="font-size: 2.2rem; color: var(--primary); opacity: 0.85;"></i>
                         @endif
                     @endif
                 </div>
 
-                <div class="card-body d-flex flex-column p-3">
-                    <h6 class="fw-bold mb-1 text-body" style="font-size: 0.95rem; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.6em;" title="{{ $product->name }}">{{ $product->name }}</h6>
+                <div class="card-body d-flex flex-column p-2.5 p-md-3">
+                    <h6 class="fw-bold mb-1 text-body" style="font-size: 0.88rem; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.6em;" title="{{ $product->name }}">{{ $product->name }}</h6>
                     @if($product->description)
-                        <p class="text-secondary small mb-2 text-truncate" style="font-size: 0.78rem;">{{ Str::limit($product->description, 55) }}</p>
+                        <p class="text-secondary small mb-1.5 text-truncate d-none d-sm-block" style="font-size: 0.75rem;">{{ Str::limit($product->description, 45) }}</p>
                     @endif
 
-                    <div class="d-flex align-items-center mb-3 small text-secondary" style="font-size: 0.72rem;">
+                    <div class="d-flex align-items-center mb-2 small text-secondary" style="font-size: 0.7rem;">
                         @php
                             $storeSellerId = $product->creator_id;
                             if (!$storeSellerId) {
@@ -131,27 +131,27 @@
                             }
                         @endphp
                         @if($product->creator)
-                            <a href="{{ route('sellers.show', $storeSellerId) }}" class="btn-stop-prop text-decoration-none text-secondary hover-primary text-truncate d-inline-flex align-items-center" style="max-width: 75%; font-size: 0.72rem;" title="{{ __('Kunjungi Toko') }}">
+                            <a href="{{ route('sellers.show', $storeSellerId) }}" class="btn-stop-prop text-decoration-none text-secondary hover-primary text-truncate d-inline-flex align-items-center" style="max-width: 90%; font-size: 0.7rem;" title="{{ __('Kunjungi Toko') }}">
                                 <i class="fas fa-store me-1 text-primary"></i><span class="text-truncate">{{ $product->creator->full_name ?? $product->creator->username }}</span>
                             </a>
                         @else
-                            <a href="{{ route('sellers.show', $storeSellerId) }}" class="btn-stop-prop text-decoration-none text-secondary hover-primary text-truncate d-inline-flex align-items-center" style="max-width: 75%; font-size: 0.72rem;" title="{{ __('Kunjungi Toko Resmi') }}">
-                                <i class="fas fa-store me-1 text-primary"></i><span>Official Store</span>
+                            <a href="{{ route('sellers.show', $storeSellerId) }}" class="btn-stop-prop text-decoration-none text-secondary hover-primary text-truncate d-inline-flex align-items-center" style="max-width: 90%; font-size: 0.7rem;" title="{{ __('Kunjungi Toko Resmi') }}">
+                                <i class="fas fa-store me-1 text-primary"></i><span>Official</span>
                             </a>
                         @endif
                     </div>
 
-                    <div class="d-flex justify-content-between align-items-end mt-auto pt-2">
+                    <div class="d-flex justify-content-between align-items-end mt-auto pt-1">
                         <div class="d-flex flex-column">
-                            <span class="product-price mb-0" style="font-size: 1.05rem; font-weight: 700; color: var(--on-surface);">{{ $product->formatted_price }}</span>
-                            <small class="text-secondary" style="font-size: 0.72rem;">
+                            <span class="product-price mb-0" style="font-size: 0.95rem; font-weight: 700; color: var(--on-surface);">{{ $product->formatted_price }}</span>
+                            <small class="text-secondary" style="font-size: 0.68rem;">
                                 {{ $product->sales_count ?? 0 }} {{ __('terjual') }}
                             </small>
                         </div>
                         <div>
                             @if($product->stock_count > 0 && !$product->is_vpn)
-                            <button type="button" class="btn-quick-cart-circle btn-quick-cart-add btn-stop-prop" data-product-id="{{ $product->id }}" title="{{ __('Tambah ke Keranjang') }}">
-                                <i class="fas fa-shopping-cart"></i>
+                            <button type="button" class="btn-quick-cart-circle btn-quick-cart-add btn-stop-prop" data-product-id="{{ $product->id }}" title="{{ __('Tambah ke Keranjang') }}" style="width: 32px; height: 32px;">
+                                <i class="fas fa-shopping-cart" style="font-size: 0.78rem;"></i>
                             </button>
                             @endif
                         </div>

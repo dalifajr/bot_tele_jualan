@@ -6,8 +6,8 @@
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h4 class="fw-bold mb-1">{{ __('Kelola Komplain Pelanggan') }}</h4>
-        <p class="text-muted mb-0">{{ __('Daftar keluhan dari pembeli produk digital Anda') }}</p>
+        <h1 class="m3-page-title mb-1">{{ __('Kelola Komplain Pelanggan') }}</h1>
+        <p class="text-secondary small mb-0" style="font-size: 0.92rem;">{{ __('Daftar keluhan dari pembeli produk digital Anda.') }}</p>
     </div>
 </div>
 

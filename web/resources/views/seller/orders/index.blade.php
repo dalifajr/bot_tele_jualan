@@ -6,8 +6,8 @@
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-3">
     <div>
-        <h4 class="fw-bold mb-1">{{ __('Manajemen Pesanan') }}</h4>
-        <p class="text-muted mb-0 small">{{ __('Daftar transaksi pesanan produk toko Anda') }}</p>
+        <h1 class="m3-page-title mb-1">{{ __('Manajemen Pesanan') }}</h1>
+        <p class="text-secondary small mb-0" style="font-size: 0.92rem;">{{ __('Daftar transaksi pesanan produk toko Anda.') }}</p>
     </div>
 </div>
 

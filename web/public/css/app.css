@@ -730,11 +730,14 @@ a:hover {
     gap: 6px;
     height: 32px;
     border-radius: var(--radius-pill);
-    font-family: var(--font-google-sans);
+    font-family: var(--font-poppins);
     font-size: 0.8125rem;
     font-weight: 600;
     color: var(--on-surface-variant);
     text-decoration: none !important;
+    border: none;
+    background: transparent;
+    cursor: pointer;
     transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 
@@ -747,6 +750,18 @@ a:hover {
 .m3-segmented-item:hover:not(.active) {
     color: var(--on-surface);
     background: var(--surface-container);
+}
+
+/* Chat Active Item - Material 3 Expressive Rounded Pill Highlight */
+.active-chat-item {
+    background: var(--secondary-container, #eaddff) !important;
+    color: var(--on-secondary-container, #21005d) !important;
+    font-weight: 600;
+}
+
+[data-bs-theme="dark"] .active-chat-item {
+    background: var(--secondary-container, #4a4458) !important;
+    color: var(--on-secondary-container, #e8def8) !important;
 }
 
 /* Top App Bar Search Bar (Figma M3 Full Pill 48px) */
@@ -2752,25 +2767,72 @@ ul.nav-pills,
     -webkit-backdrop-filter: blur(2px) !important;
 }
 
-/* SweetAlert2 Dialog (M3 Dialog) */
+/* ==========================================================================
+   Material Design 3 / Flat Material You Confirmation Dialog (Android 17 M3)
+   ========================================================================== */
 .swal2-popup:not(.swal2-toast) {
-    border-radius: var(--radius-xl) !important;
+    font-family: var(--font-poppins) !important;
+    border-radius: var(--radius-xl, 24px) !important;
     border: 1px solid var(--outline-variant) !important;
-    background: var(--surface-container-lowest) !important;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15) !important;
+    background: var(--surface-container-high) !important;
     color: var(--on-surface) !important;
-    padding: 1.75rem !important;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22) !important;
+    padding: 24px !important;
 }
 
 .swal2-popup:not(.swal2-toast) .swal2-title {
+    font-family: var(--font-poppins) !important;
     color: var(--on-surface) !important;
-    font: var(--cm-sys-type-title-large) !important;
+    font-size: 1.25rem !important;
     font-weight: 700 !important;
+    margin-bottom: 8px !important;
 }
 
 .swal2-popup:not(.swal2-toast) .swal2-html-container {
+    font-family: var(--font-poppins) !important;
     color: var(--on-surface-variant) !important;
-    font: var(--cm-sys-type-body-medium) !important;
+    font-size: 0.9rem !important;
+    line-height: 1.5 !important;
+    margin: 0 0 16px 0 !important;
+}
+
+.swal2-popup:not(.swal2-toast) .swal2-actions {
+    gap: 12px !important;
+    margin-top: 1.25rem !important;
+}
+
+.swal2-popup:not(.swal2-toast) .swal2-confirm {
+    border-radius: var(--radius-pill, 9999px) !important;
+    background: var(--primary) !important;
+    color: var(--on-primary) !important;
+    font-family: var(--font-poppins) !important;
+    font-weight: 600 !important;
+    font-size: 0.875rem !important;
+    padding: 10px 24px !important;
+    box-shadow: none !important;
+    border: none !important;
+    transition: filter 0.15s ease;
+}
+
+.swal2-popup:not(.swal2-toast) .swal2-confirm:hover {
+    filter: brightness(1.08) !important;
+}
+
+.swal2-popup:not(.swal2-toast) .swal2-cancel {
+    border-radius: var(--radius-pill, 9999px) !important;
+    background: var(--surface-container) !important;
+    color: var(--on-surface) !important;
+    font-family: var(--font-poppins) !important;
+    font-weight: 600 !important;
+    font-size: 0.875rem !important;
+    padding: 10px 24px !important;
+    border: 1px solid var(--outline-variant) !important;
+    box-shadow: none !important;
+    transition: background-color 0.15s ease;
+}
+
+.swal2-popup:not(.swal2-toast) .swal2-cancel:hover {
+    background: var(--surface-container-highest) !important;
 }
 
 /* === CARD SURFACE STANDARDIZATION (FLAT 16PX) === */
@@ -2946,7 +3008,7 @@ ul.nav-pills,
     border-radius: 4px;
 }
 
-/* Page Loader Overlay: Transformed into modern contextual skeleton screen */
+/* Page Loader Overlay: Material You Android 17 Spinning Card */
 #pageLoader {
     position: fixed;
     top: 0;
@@ -2954,13 +3016,16 @@ ul.nav-pills,
     width: 100%;
     height: 100%;
     z-index: 9999;
-    display: block;
-    background-color: var(--bs-body-bg, #f8f9fa);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 0, 0, 0.32);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
     opacity: 1;
     visibility: visible;
-    transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-    overflow-y: hidden;
-    pointer-events: none;
+    transition: opacity 0.25s cubic-bezier(0.2, 0, 0, 1), visibility 0.25s cubic-bezier(0.2, 0, 0, 1);
+    pointer-events: all;
 }
 
 #pageLoader.fade-out {
@@ -2969,14 +3034,58 @@ ul.nav-pills,
     pointer-events: none;
 }
 
-[data-bs-theme="dark"] #pageLoader {
-    background-color: var(--cm-sys-color-surface, #1f1f1f) !important;
+.m3-loader-card {
+    background: var(--surface-container-high, #eceef4);
+    color: var(--on-surface, #191c20);
+    border: 1px solid var(--outline-variant, #c4c6d0);
+    border-radius: var(--radius-xl, 24px);
+    padding: 16px 24px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+    user-select: none;
+    animation: m3LoaderCardPop 0.25s cubic-bezier(0.2, 0, 0, 1);
 }
 
-.skeleton-page-placeholder {
-    max-width: 1240px;
-    margin: 0 auto;
-    user-select: none;
+[data-bs-theme="dark"] .m3-loader-card {
+    background: var(--surface-container-high, #282a2f) !important;
+    color: var(--on-surface, #e2e2e9) !important;
+    border-color: var(--outline-variant, #44474e) !important;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45) !important;
+}
+
+@keyframes m3LoaderCardPop {
+    from {
+        transform: scale(0.92);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Authentic Android Material You circular spinning arc */
+.m3-spinner-circle {
+    width: 26px;
+    height: 26px;
+    border: 3.5px solid var(--secondary-container, #eaddff);
+    border-top-color: var(--primary, #65558f);
+    border-radius: 50%;
+    animation: m3SpinnerRotate 0.85s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    flex-shrink: 0;
+}
+
+@keyframes m3SpinnerRotate {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.m3-loader-text {
+    font-family: var(--font-poppins);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: var(--on-surface);
 }
 
 
@@ -3224,27 +3333,30 @@ main.flex-grow-1 {
 }
 
 /* ==========================================================================
-   Modern SweetAlert2 Toast Notification Styles (Google Cloud Snackbar 4px)
+   Material Design 3 / Flat Material You Toast Notification (Android 17 Pill)
    ========================================================================== */
 .swal2-container.swal2-top-end .swal2-popup.swal2-toast,
 .swal2-popup.swal2-toast {
-    font-family: var(--font-google-sans) !important;
-    border-radius: 4px !important;
-    padding: 10px 16px !important;
-    background: var(--cm-sys-color-surface) !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    border: 1px solid var(--cm-sys-color-hairline) !important;
-    box-shadow: 0 1px 8px 0 rgba(0, 0, 0, 0.2), 0 3px 4px 0 rgba(0, 0, 0, 0.14) !important;
-    color: var(--cm-sys-color-on-surface) !important;
-    font-size: 0.8125rem !important;
+    font-family: var(--font-poppins) !important;
+    border-radius: var(--radius-pill, 9999px) !important;
+    padding: 10px 22px !important;
+    background: var(--surface-container-high, #eceef4) !important;
+    color: var(--on-surface, #191c20) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    border: 1px solid var(--outline-variant, #c4c6d0) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14) !important;
+    font-size: 0.85rem !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 10px !important;
 }
 
 /* Spring entrance animation for toast */
 @keyframes toastSlideInDown {
     0% {
         opacity: 0;
-        transform: translateY(-12px) scale(0.98);
+        transform: translateY(-12px) scale(0.96);
     }
     100% {
         opacity: 1;
@@ -3253,30 +3365,31 @@ main.flex-grow-1 {
 }
 
 .swal2-toast.swal2-show {
-    animation: toastSlideInDown 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    animation: toastSlideInDown 0.25s cubic-bezier(0.2, 0, 0, 1) !important;
 }
 
 .swal2-popup.swal2-toast .swal2-title {
-    font-family: var(--font-google-sans-display) !important;
-    font-weight: 500 !important;
-    font-size: 0.8125rem !important;
-    color: var(--cm-sys-color-on-surface) !important;
+    font-family: var(--font-poppins) !important;
+    font-weight: 600 !important;
+    font-size: 0.875rem !important;
+    color: var(--on-surface) !important;
     margin: 0 !important;
-    padding: 0 0.5rem 0 0 !important;
+    padding: 0 !important;
 }
 
 .swal2-popup.swal2-toast .swal2-html-container {
-    font-size: 0.75rem !important;
-    color: var(--cm-sys-color-on-surface-variant) !important;
+    font-family: var(--font-poppins) !important;
+    font-size: 0.8rem !important;
+    color: var(--on-surface-variant) !important;
     margin: 2px 0 0 0 !important;
 }
 
 /* Toast Icons Modern Styling */
 .swal2-popup.swal2-toast .swal2-icon {
-    width: 26px !important;
-    height: 26px !important;
-    min-width: 26px !important;
-    margin: 0 10px 0 0 !important;
+    width: 22px !important;
+    height: 22px !important;
+    min-width: 22px !important;
+    margin: 0 !important;
     border-width: 2px !important;
 }
 
@@ -3305,25 +3418,25 @@ main.flex-grow-1 {
 }
 
 .swal2-popup.swal2-toast .swal2-icon.swal2-info {
-    border-color: #0b57d0 !important;
-    color: #0b57d0 !important;
+    border-color: #65558f !important;
+    color: #65558f !important;
 }
 
 /* Toast Dark Mode Support */
 [data-bs-theme="dark"] .swal2-container.swal2-top-end .swal2-popup.swal2-toast,
 [data-bs-theme="dark"] .swal2-popup.swal2-toast {
-    background: var(--surface-bg) !important;
-    border-color: var(--outline-color) !important;
-    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45) !important;
-    color: var(--on-surface) !important;
+    background: var(--surface-container-high, #282a2f) !important;
+    border-color: var(--outline-variant, #44474e) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45) !important;
+    color: var(--on-surface, #e2e2e9) !important;
 }
 
 [data-bs-theme="dark"] .swal2-popup.swal2-toast .swal2-title {
-    color: var(--on-surface) !important;
+    color: var(--on-surface, #e2e2e9) !important;
 }
 
 [data-bs-theme="dark"] .swal2-popup.swal2-toast .swal2-html-container {
-    color: var(--on-surface-variant) !important;
+    color: var(--on-surface-variant, #c4c6d0) !important;
 }
 
 /* ==========================================================================
@@ -3547,5 +3660,97 @@ main.flex-grow-1 {
         padding: 1.75rem 1.25rem;
     }
 }
+
+/* === M3 PROMO & NOTICE HORIZONTAL STACK / CAROUSEL === */
+.m3-promo-carousel-container {
+    position: relative;
+    width: 100%;
+}
+
+.m3-promo-track {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 4px;
+}
+
+.m3-promo-track::-webkit-scrollbar {
+    display: none;
+}
+
+.m3-promo-card {
+    scroll-snap-align: start;
+    flex: 0 0 100%;
+    min-width: 260px;
+    border-radius: var(--radius-xl, 20px);
+    border: 1px solid var(--outline-variant);
+    padding: 18px 20px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.m3-promo-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+}
+
+.m3-promo-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 9999px;
+    background: var(--outline-variant);
+    transition: all 0.25s cubic-bezier(0.2, 0, 0, 1);
+    cursor: pointer;
+    display: inline-block;
+}
+
+.m3-promo-dot.active {
+    width: 22px;
+    background: var(--primary);
+}
+
+/* === UNIFY ADMIN & SELLER HEADINGS TO MATERIAL YOU M3 === */
+.page-header h4,
+main > div:nth-of-type(2) > div:first-child h4,
+.d-flex > div > h4.fw-bold {
+    font-family: var(--font-poppins) !important;
+    font-size: 1.35rem !important;
+    font-weight: 700 !important;
+    line-height: 1.35 !important;
+    letter-spacing: -0.01em !important;
+    color: var(--on-surface) !important;
+}
+
+/* === RESPONSIVE ORDER FILTER BAR M3 === */
+.m3-order-filter-wrapper {
+    background: var(--surface-container-low);
+    border-bottom: 1px solid var(--outline-variant);
+    padding: 12px 16px;
+}
+
+.m3-filter-chip-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+}
+
+.m3-filter-chip-row::-webkit-scrollbar {
+    display: none;
+}
+
+@media (max-width: 767.98px) {
+    .m3-order-filter-wrapper {
+        padding: 10px 12px;
+    }
+}
+
 
 

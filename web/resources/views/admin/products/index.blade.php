@@ -6,8 +6,8 @@
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
     <div>
-        <h4 class="fw-bold mb-1">{{ __('Manajemen Produk') }}</h4>
-        <p class="text-muted mb-0">{{ __('Kelola katalog produk digital, filter seller, serta kelola hak akses kepemilikan.') }}</p>
+        <h1 class="m3-page-title mb-1">{{ __('Manajemen Produk') }}</h1>
+        <p class="text-secondary small mb-0" style="font-size: 0.92rem;">{{ __('Kelola katalog produk digital, filter seller, serta kelola hak akses kepemilikan.') }}</p>
     </div>
     <div>
         <button class="btn btn-primary rounded-pill px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#addProductModal">

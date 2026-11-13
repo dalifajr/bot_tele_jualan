@@ -112,13 +112,16 @@
                 @endif
             </div>
             
-            <div class="list-group list-group-flush overflow-y-auto flex-grow-1" style="overscroll-behavior: contain;">
+            <div class="overflow-y-auto flex-grow-1 p-2" style="overscroll-behavior: contain;">
                 @forelse($contacts as $contact)
-                    @if($contact->unread_count > 0 && (!$selectedContact || $selectedContact->id !== $contact->id))
-                        {{-- UNREAD STYLE --}}
+                    @php
+                        $isActive = $selectedContact && $selectedContact->id === $contact->id;
+                    @endphp
+                    @if($contact->unread_count > 0 && !$isActive)
+                        {{-- UNREAD STYLE (M3 Expressive Squircle Pill) --}}
                         <a href="{{ route('chat.index', ['contact_id' => $contact->id]) }}" 
-                           class="list-group-item list-group-item-action border-bottom py-3 px-4 d-flex align-items-center gap-3 bg-primary-subtle"
-                           style="border-left: 0px solid transparent;">
+                           class="d-flex align-items-center gap-3 p-2.5 mb-1 text-decoration-none"
+                           style="border-radius: var(--radius-lg, 16px); background: var(--primary-container, #eaddff); color: var(--on-primary-container, #21005d); transition: background-color 0.15s ease;">
                             <div class="position-relative">
                                 <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold small overflow-hidden" style="width: 42px; height: 42px; min-width: 42px;">
                                     @if($contact->avatar)
@@ -145,10 +148,10 @@
                             </div>
                         </a>
                     @else
-                        {{-- NORMAL / ACTIVE STYLE --}}
+                        {{-- NORMAL / ACTIVE STYLE (M3 Expressive Squircle Pill Highlight) --}}
                         <a href="{{ route('chat.index', ['contact_id' => $contact->id]) }}" 
-                           class="list-group-item list-group-item-action border-bottom py-3 px-4 d-flex align-items-center gap-3 {{ ($selectedContact && $selectedContact->id === $contact->id) ? 'active bg-light border-start border-primary border-4 text-dark' : '' }}"
-                           style="{{ ($selectedContact && $selectedContact->id === $contact->id) ? 'border-left: 4px solid var(--bs-primary) !important;' : '' }}">
+                           class="d-flex align-items-center gap-3 p-2.5 mb-1 text-decoration-none {{ $isActive ? 'active-chat-item' : 'text-body' }}"
+                           style="border-radius: var(--radius-lg, 16px); transition: background-color 0.15s ease;">
                             <div class="position-relative">
                                 <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold small overflow-hidden" style="width: 42px; height: 42px; min-width: 42px;">
                                     @if($contact->avatar)
@@ -163,13 +166,13 @@
                             </div>
                             <div class="flex-grow-1 overflow-hidden">
                                 <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <span class="fw-bold small text-dark">{{ Str::limit($contact->full_name ?? $contact->username, 16) }}</span>
+                                    <span class="fw-bold small text-body">{{ Str::limit($contact->full_name ?? $contact->username, 16) }}</span>
                                     @if($contact->last_message_time)
                                         <span class="text-muted" style="font-size: 0.7rem;">{{ $contact->last_message_time->format('H:i') }}</span>
                                     @endif
                                 </div>
                                 <div class="d-flex justify-content-between align-items-center">
-                                    <small class="text-muted text-truncate d-inline-block w-100">{{ $contact->last_message ?: 'Kirim pesan pertama Anda...' }}</small>
+                                    <small class="text-secondary text-truncate d-inline-block w-100">{{ $contact->last_message ?: 'Kirim pesan pertama Anda...' }}</small>
                                 </div>
                             </div>
                         </a>
