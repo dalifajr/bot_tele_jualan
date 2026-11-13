@@ -3756,11 +3756,11 @@ main > div:nth-of-type(2) > div:first-child h4,
 @media (min-width: 992px) {
     .navbar {
         background: var(--surface-container-low) !important;
-        border-bottom: 1px solid var(--outline-variant) !important;
+        border-bottom: none !important;
     }
     .sidebar {
         background: var(--surface-container-low) !important;
-        border-right: 1px solid var(--outline-variant) !important;
+        border-right: none !important;
     }
     .app-container {
         background: var(--surface-container-low) !important;
@@ -3770,13 +3770,13 @@ main > div:nth-of-type(2) > div:first-child h4,
         border-top-left-radius: 24px !important;
         border-top: 1px solid var(--outline-variant) !important;
         border-left: 1px solid var(--outline-variant) !important;
-        margin-left: calc(var(--sidebar-width) - 1px) !important;
-        margin-top: -1px !important;
+        margin-left: var(--sidebar-width) !important;
         position: relative;
         z-index: 10;
-        box-shadow: -2px -2px 10px rgba(0, 0, 0, 0.02);
+        box-shadow: -2px -2px 12px rgba(0, 0, 0, 0.02);
     }
 }
+
 
 /* === THEME PALETTE PICKER M3 === */
 .palette-option-card:hover {

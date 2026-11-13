@@ -112,7 +112,7 @@
                 @endif
             </div>
             
-            <div class="overflow-y-auto flex-grow-1 p-2" style="overscroll-behavior: contain;">
+            <div class="overflow-y-auto flex-grow-1 p-3 d-flex flex-column gap-2" style="overscroll-behavior: contain;">
                 @forelse($contacts as $contact)
                     @php
                         $isActive = $selectedContact && $selectedContact->id === $contact->id;
@@ -120,10 +120,10 @@
                     @if($contact->unread_count > 0 && !$isActive)
                         {{-- UNREAD STYLE (M3 Expressive Squircle Pill) --}}
                         <a href="{{ route('chat.index', ['contact_id' => $contact->id]) }}" 
-                           class="d-flex align-items-center gap-3 p-2.5 mb-1 text-decoration-none"
+                           class="d-flex align-items-center gap-3 p-3 text-decoration-none"
                            style="border-radius: var(--radius-lg, 16px); background: var(--primary-container, #eaddff); color: var(--on-primary-container, #21005d); transition: background-color 0.15s ease;">
                             <div class="position-relative">
-                                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold small overflow-hidden" style="width: 42px; height: 42px; min-width: 42px;">
+                                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold small overflow-hidden" style="width: 44px; height: 44px; min-width: 44px;">
                                     @if($contact->avatar)
                                         <img src="{{ \Illuminate\Support\Facades\Storage::url($contact->avatar) }}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover;">
                                     @else
@@ -150,10 +150,10 @@
                     @else
                         {{-- NORMAL / ACTIVE STYLE (M3 Expressive Squircle Pill Highlight) --}}
                         <a href="{{ route('chat.index', ['contact_id' => $contact->id]) }}" 
-                           class="d-flex align-items-center gap-3 p-2.5 mb-1 text-decoration-none {{ $isActive ? 'active-chat-item' : 'text-body' }}"
+                           class="d-flex align-items-center gap-3 p-3 text-decoration-none {{ $isActive ? 'active-chat-item' : 'text-body' }}"
                            style="border-radius: var(--radius-lg, 16px); transition: background-color 0.15s ease;">
                             <div class="position-relative">
-                                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold small overflow-hidden" style="width: 42px; height: 42px; min-width: 42px;">
+                                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold small overflow-hidden" style="width: 44px; height: 44px; min-width: 44px;">
                                     @if($contact->avatar)
                                         <img src="{{ \Illuminate\Support\Facades\Storage::url($contact->avatar) }}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover;">
                                     @else
