@@ -3890,6 +3890,14 @@ main > div:nth-of-type(2) > div:first-child h4,
 }
 
 /* === RESPONSIVE ORDER FILTER BAR M3 === */
+.m3-orders-filter-container {
+    background-color: var(--surface-container-low);
+    border: 1px solid var(--outline-variant);
+    border-radius: 9999px;
+    padding: 5px 8px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
 .m3-order-filter-wrapper {
     background: var(--surface-container-low);
     border-bottom: 1px solid var(--outline-variant);
@@ -3899,11 +3907,43 @@ main > div:nth-of-type(2) > div:first-child h4,
 .m3-filter-chip-row {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     overflow-x: auto;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
     flex-wrap: nowrap;
+    padding: 2px 0;
+}
+
+.m3-filter-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 16px;
+    border-radius: 9999px;
+    font-family: var(--font-poppins);
+    font-size: 0.84rem;
+    font-weight: 500;
+    color: var(--on-surface-variant);
+    background-color: transparent;
+    border: 1px solid transparent;
+    text-decoration: none;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+    cursor: pointer;
+}
+
+.m3-filter-chip:hover:not(.active) {
+    background-color: var(--surface-container-high);
+    color: var(--on-surface);
+}
+
+.m3-filter-chip.active {
+    background-color: var(--primary) !important;
+    color: var(--on-primary) !important;
+    font-weight: 600;
+    box-shadow: 0 2px 6px rgba(var(--primary-rgb), 0.28);
 }
 
 .m3-filter-chip-row::-webkit-scrollbar {
@@ -4436,6 +4476,157 @@ body.swal2-toast-shown .swal2-container,
     background-color: var(--primary) !important;
     border-radius: 2px !important;
     transition: width var(--md-sys-motion-duration-medium3) var(--md-sys-motion-easing-emphasized) !important;
+}
+
+/* === MATERIAL DESIGN 3 (M3) PAGINATION SYSTEM (PILL BAR & TONAL CHIPS) === */
+.pagination {
+    display: inline-flex !important;
+    gap: 6px !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 0 !important;
+    padding: 6px 10px !important;
+    list-style: none !important;
+    border-radius: 9999px !important;
+    background-color: var(--surface-container-lowest) !important;
+    border: 1px solid var(--outline-variant) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+}
+
+.pagination .page-item {
+    margin: 0 !important;
+}
+
+.pagination .page-item .page-link {
+    min-width: 38px !important;
+    height: 38px !important;
+    border-radius: 9999px !important;
+    border: none !important;
+    background-color: transparent !important;
+    color: var(--on-surface-variant) !important;
+    font-family: var(--font-poppins) !important;
+    font-size: 0.85rem !important;
+    font-weight: 600 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 12px !important;
+    text-decoration: none !important;
+    transition: background-color 0.2s cubic-bezier(0.2, 0, 0, 1),
+                color 0.2s cubic-bezier(0.2, 0, 0, 1),
+                transform 0.1s ease !important;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: var(--primary) !important;
+    color: var(--on-primary) !important;
+    box-shadow: 0 2px 8px rgba(var(--primary-rgb), 0.28) !important;
+}
+
+.pagination .page-item:not(.active):not(.disabled) .page-link:hover {
+    background-color: rgba(var(--primary-rgb), 0.1) !important;
+    color: var(--primary) !important;
+    transform: scale(1.05);
+}
+
+.pagination .page-item.disabled .page-link {
+    opacity: 0.38 !important;
+    pointer-events: none !important;
+    background-color: transparent !important;
+    color: var(--on-surface-variant) !important;
+}
+
+/* === M3 SEGMENTED TABS (ANDROID 17 / M3 SPECIFICATION) === */
+.m3-segmented-tabs-wrapper {
+    width: 100%;
+}
+
+.m3-segmented-tabs {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    background-color: var(--surface-container-high) !important;
+    border: 1px solid var(--outline-variant) !important;
+    border-radius: 9999px !important;
+    padding: 4px !important;
+    gap: 4px !important;
+    align-items: center !important;
+    width: 100% !important;
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+}
+
+.m3-segmented-tabs::-webkit-scrollbar {
+    display: none !important;
+}
+
+.m3-segmented-tabs .nav-item {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    display: flex !important;
+}
+
+.m3-segmented-btn {
+    width: 100% !important;
+    min-height: 40px !important;
+    border-radius: 9999px !important;
+    border: none !important;
+    background-color: transparent !important;
+    color: var(--on-surface-variant) !important;
+    font-family: var(--font-poppins) !important;
+    font-size: 0.88rem !important;
+    font-weight: 500 !important;
+    padding: 8px 12px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    text-decoration: none !important;
+    white-space: nowrap !important;
+    transition: background-color 0.2s cubic-bezier(0.2, 0, 0, 1),
+                color 0.2s cubic-bezier(0.2, 0, 0, 1),
+                box-shadow 0.2s cubic-bezier(0.2, 0, 0, 1) !important;
+    cursor: pointer !important;
+}
+
+.m3-segmented-btn:hover:not(.active) {
+    background-color: rgba(var(--primary-rgb), 0.08) !important;
+    color: var(--primary) !important;
+}
+
+.m3-segmented-btn.active {
+    background-color: var(--primary) !important;
+    color: var(--on-primary) !important;
+    font-weight: 600 !important;
+    box-shadow: 0 2px 8px rgba(var(--primary-rgb), 0.28) !important;
+}
+
+.m3-segmented-btn .m3-tab-counter {
+    font-size: 0.72rem !important;
+    padding: 2px 7px !important;
+    font-weight: 700 !important;
+    background-color: var(--surface-container-highest) !important;
+    color: var(--on-surface-variant) !important;
+    border-radius: 9999px !important;
+    transition: background-color 0.2s ease, color 0.2s ease !important;
+}
+
+.m3-segmented-btn.active .m3-tab-counter {
+    background-color: rgba(255, 255, 255, 0.25) !important;
+    color: #ffffff !important;
+}
+
+@media (max-width: 575.98px) {
+    .m3-segmented-btn {
+        font-size: 0.8rem !important;
+        padding: 8px 6px !important;
+        gap: 4px !important;
+    }
+    .m3-segmented-btn i {
+        font-size: 0.85rem !important;
+    }
 }
 
 

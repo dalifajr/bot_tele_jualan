@@ -22,31 +22,31 @@
     </p>
 </div>
 
-{{-- Orders Filter Bar (Material 3 Expressive Tonal Card) --}}
-<div class="card border p-2.5 p-md-3 mb-3.5 shadow-sm" style="border-radius: var(--radius-lg, 18px); background: var(--surface-container-lowest); border-color: var(--outline-variant) !important;">
-    <div class="d-flex align-items-center justify-content-between gap-2.5">
+{{-- Orders Filter Bar (Material 3 Expressive Tonal Pill Bar) --}}
+<div class="m3-orders-filter-container mb-3.5">
+    <div class="d-flex align-items-center justify-content-between gap-2">
         {{-- Horizontal Scrollable Filter Chips --}}
         <div class="m3-filter-chip-row flex-grow-1">
             <a href="{{ route('orders.index', array_filter(['search' => request('search')])) }}"
-               class="btn btn-sm rounded-pill px-3.5 py-1.5 fw-semibold text-nowrap flex-shrink-0 {{ is_null($status) ? 'btn-primary' : 'btn-outline-secondary' }}">
+               class="m3-filter-chip {{ is_null($status) ? 'active' : '' }}">
                 {{ __('Semua') }}
             </a>
             <a href="{{ route('orders.index', array_filter(['status' => 'pending_payment', 'search' => request('search')])) }}"
-               class="btn btn-sm rounded-pill px-3.5 py-1.5 fw-semibold text-nowrap flex-shrink-0 {{ $status === 'pending_payment' ? 'btn-primary' : 'btn-outline-secondary' }}">
+               class="m3-filter-chip {{ $status === 'pending_payment' ? 'active' : '' }}">
                 {{ __('Menunggu') }}
             </a>
             <a href="{{ route('orders.index', array_filter(['status' => 'delivered', 'search' => request('search')])) }}"
-               class="btn btn-sm rounded-pill px-3.5 py-1.5 fw-semibold text-nowrap flex-shrink-0 {{ $status === 'delivered' ? 'btn-primary' : 'btn-outline-secondary' }}">
+               class="m3-filter-chip {{ $status === 'delivered' ? 'active' : '' }}">
                 {{ __('Selesai') }}
             </a>
             <a href="{{ route('orders.index', array_filter(['status' => 'cancelled_expired', 'search' => request('search')])) }}"
-               class="btn btn-sm rounded-pill px-3.5 py-1.5 fw-semibold text-nowrap flex-shrink-0 {{ $status === 'cancelled_expired' || in_array($status, ['cancelled', 'expired']) ? 'btn-primary' : 'btn-outline-secondary' }}">
+               class="m3-filter-chip {{ $status === 'cancelled_expired' || in_array($status, ['cancelled', 'expired']) ? 'active' : '' }}">
                 {{ __('Dibatalkan & Kedaluwarsa') }}
             </a>
         </div>
 
         {{-- Desktop Search Form (d-none d-md-flex) --}}
-        <form action="{{ route('orders.index') }}" method="GET" class="d-none d-md-flex align-items-center gap-2 m-0 flex-shrink-0" style="max-width: 320px; width: 100%;">
+        <form action="{{ route('orders.index') }}" method="GET" class="d-none d-md-flex align-items-center gap-2 m-0 flex-shrink-0" style="max-width: 300px; width: 100%;">
             @if(request('status'))
                 <input type="hidden" name="status" value="{{ request('status') }}">
             @endif
@@ -65,14 +65,14 @@
         </form>
 
         {{-- Mobile Search Toggle Button (d-md-none) --}}
-        <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill d-md-none flex-shrink-0 d-inline-flex align-items-center gap-1.5 px-3 py-1.5 fw-semibold {{ request('search') ? 'active' : '' }}" data-bs-toggle="collapse" data-bs-target="#ordersMobileSearchCollapse" aria-expanded="{{ request('search') ? 'true' : 'false' }}">
+        <button type="button" class="btn btn-sm rounded-pill d-md-none flex-shrink-0 d-inline-flex align-items-center gap-1.5 px-3 py-1.5 fw-semibold {{ request('search') ? 'btn-primary' : 'btn-outline-secondary' }}" data-bs-toggle="collapse" data-bs-target="#ordersMobileSearchCollapse" aria-expanded="{{ request('search') ? 'true' : 'false' }}" style="border-color: var(--outline-variant) !important;">
             <i class="fas fa-search"></i>
             <span style="font-size: 0.8125rem;">{{ __('Cari') }}</span>
         </button>
     </div>
 
     {{-- Mobile Collapsible Search Container (d-md-none) --}}
-    <div class="collapse {{ request('search') ? 'show' : '' }} d-md-none pt-2.5" id="ordersMobileSearchCollapse">
+    <div class="collapse {{ request('search') ? 'show' : '' }} d-md-none pt-2.5 px-1" id="ordersMobileSearchCollapse">
         <form action="{{ route('orders.index') }}" method="GET" class="d-flex align-items-center gap-2 m-0 w-100">
             @if(request('status'))
                 <input type="hidden" name="status" value="{{ request('status') }}">
@@ -236,28 +236,25 @@
                         <small class="text-secondary" style="font-size: 0.75rem;">({{ $order->quantity }} {{ __('Produk') }})</small>
                     </div>
 
-                    {{-- Mobile Total Row --}}
-                    <div class="col-12 d-md-none pt-2.5 mt-1 border-top d-flex justify-content-between align-items-center">
-                        <span class="text-secondary small fw-medium" style="font-size: 0.8rem;">{{ $order->quantity }} {{ __('Produk') }}</span>
-                        <div class="d-flex align-items-baseline gap-1.5">
-                            <span class="text-secondary small" style="font-size: 0.8rem;">{{ __('Total:') }}</span>
-                            <span class="fw-bold text-primary fs-5">{{ $order->formatted_total }}</span>
-                        </div>
+                    {{-- Mobile Total Row (Seamless integration without harsh splitting border) --}}
+                    <div class="col-12 d-md-none pt-2 mt-1 d-flex justify-content-between align-items-center">
+                        <span class="text-secondary small fw-medium" style="font-size: 0.82rem;">{{ __('Total Pesanan:') }}</span>
+                        <span class="fw-bold text-primary fs-5">{{ $order->formatted_total }}</span>
                     </div>
                 </div>
             </div>
 
             {{-- Card Footer: Status Note & Action Buttons --}}
             <div class="card-footer px-3 px-md-4 py-2.5 py-md-3 d-flex flex-wrap align-items-center justify-content-between gap-2.5" style="background: var(--surface-container-low);">
-                <div class="text-secondary small d-flex align-items-center gap-1.5" style="font-size: 0.8rem;">
+                <div class="text-secondary small d-flex align-items-center gap-1.5" style="font-size: 0.82rem;">
                     @if($order->status === 'delivered')
-                        <span class="text-success fw-medium"><i class="fas fa-check-circle me-1"></i>{{ __('Pesanan selesai. Akun digital aktif & siap digunakan.') }}</span>
+                        <span class="text-success fw-semibold"><i class="fas fa-check-circle me-1.5"></i>{{ __('Pesanan selesai') }}</span>
                     @elseif($order->status === 'pending_payment')
-                        <span class="text-warning-emphasis fw-medium"><i class="fas fa-clock me-1"></i>{{ __('Menunggu pembayaran sebelum batas waktu berakhir.') }}</span>
+                        <span class="text-warning-emphasis fw-semibold"><i class="fas fa-clock me-1.5"></i>{{ __('Menunggu pembayaran') }}</span>
                     @elseif($order->status === 'cancelled')
-                        <span class="text-danger fw-medium"><i class="fas fa-times-circle me-1"></i>{{ __('Pesanan dibatalkan.') }}</span>
+                        <span class="text-danger fw-semibold"><i class="fas fa-times-circle me-1.5"></i>{{ __('Pesanan dibatalkan') }}</span>
                     @elseif($order->status === 'expired')
-                        <span class="text-secondary fw-medium"><i class="fas fa-hourglass-end me-1"></i>{{ __('Batas waktu pembayaran habis.') }}</span>
+                        <span class="text-secondary fw-semibold"><i class="fas fa-hourglass-end me-1.5"></i>{{ __('Batas waktu pembayaran habis') }}</span>
                     @else
                         <span>{{ $order->status_label }}</span>
                     @endif
@@ -302,11 +299,9 @@
         @endforeach
     </div>
 
-    {{-- Pagination Card --}}
-    <div class="card p-3 border mt-3.5 shadow-sm" style="border-radius: var(--radius-lg, 18px); background: var(--surface-container-lowest); border-color: var(--outline-variant) !important;">
-        <div class="d-flex justify-content-center">
-            {{ $orders->withQueryString()->links() }}
-        </div>
+    {{-- Pagination (Material 3 Pill Bar) --}}
+    <div class="py-4 mt-2 d-flex justify-content-center">
+        {{ $orders->withQueryString()->links() }}
     </div>
 @else
     {{-- Empty State M3 Card --}}

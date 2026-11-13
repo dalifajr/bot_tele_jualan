@@ -11,29 +11,32 @@
     </div>
 </div>
 
-{{-- Navigation Tabs: Single vs Batch vs Saved Accounts --}}
-<div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
-    <div class="card-body p-2">
-        <ul class="nav nav-pills nav-fill" id="generatorTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active fw-bold py-2 rounded-pill" id="single-tab" data-bs-toggle="tab" data-bs-target="#single" type="button" role="tab">
-                    <i class="fas fa-key me-2"></i>{{ __('Generator Tunggal') }}
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link fw-bold py-2 rounded-pill" id="batch-tab" data-bs-toggle="tab" data-bs-target="#batch" type="button" role="tab">
-                    <i class="fas fa-list-check me-2"></i>{{ __('Generator Massal (Multi-Akun)') }}
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link fw-bold py-2 rounded-pill d-flex align-items-center justify-content-center gap-1.5" id="accounts-tab" data-bs-toggle="tab" data-bs-target="#accounts" type="button" role="tab">
-                    <i class="fas fa-user-shield me-1"></i>
-                    <span>{{ __('Akun Tersimpan') }}</span>
-                    <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-0.5" id="saved-accounts-count-badge">{{ isset($savedAccounts) ? $savedAccounts->count() : 0 }}</span>
-                </button>
-            </li>
-        </ul>
-    </div>
+{{-- Navigation Tabs: Single vs Batch vs Saved Accounts (Android 17 / M3 Segmented Tabs) --}}
+<div class="m3-segmented-tabs-wrapper mb-4">
+    <ul class="nav nav-pills m3-segmented-tabs" id="generatorTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active m3-segmented-btn" id="single-tab" data-bs-toggle="tab" data-bs-target="#single" type="button" role="tab" aria-selected="true">
+                <i class="fas fa-key me-1.5"></i>
+                <span class="d-none d-sm-inline">{{ __('Generator Tunggal') }}</span>
+                <span class="d-inline d-sm-none">{{ __('Tunggal') }}</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link m3-segmented-btn" id="batch-tab" data-bs-toggle="tab" data-bs-target="#batch" type="button" role="tab" aria-selected="false">
+                <i class="fas fa-list-check me-1.5"></i>
+                <span class="d-none d-sm-inline">{{ __('Generator Massal') }}</span>
+                <span class="d-inline d-sm-none">{{ __('Massal') }}</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link m3-segmented-btn" id="accounts-tab" data-bs-toggle="tab" data-bs-target="#accounts" type="button" role="tab" aria-selected="false">
+                <i class="fas fa-user-shield me-1.5"></i>
+                <span class="d-none d-sm-inline">{{ __('Akun Tersimpan') }}</span>
+                <span class="d-inline d-sm-none">{{ __('Tersimpan') }}</span>
+                <span class="badge m3-tab-counter ms-1" id="saved-accounts-count-badge">{{ isset($savedAccounts) ? $savedAccounts->count() : 0 }}</span>
+            </button>
+        </li>
+    </ul>
 </div>
 
 <div class="tab-content" id="generatorTabsContent">
