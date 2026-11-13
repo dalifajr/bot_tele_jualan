@@ -52,15 +52,23 @@
                         </span>
                     </td>
                     <td>
-                        <div class="p-2.5 rounded-3 text-start position-relative overflow-hidden" style="width: 220px; font-size: 0.75rem; background: {{ $promo->gradient_style }}; border: 1px solid var(--outline-variant);">
-                            <div class="d-flex align-items-center justify-content-between mb-1">
-                                <span class="badge rounded-pill" style="background: {{ $promo->badge_color }}; color: #ffffff; font-size: 0.65rem;">
-                                    {{ $promo->badge_text ?: 'INFO' }}
-                                </span>
-                                <i class="{{ $promo->icon }} opacity-50"></i>
+                        <div class="rounded-3 text-start position-relative overflow-hidden d-flex" style="width: 240px; font-size: 0.75rem; background: {{ $promo->gradient_style }}; border: 1px solid var(--outline-variant); min-height: 70px;">
+                            @if($promo->image)
+                                <div class="position-relative flex-shrink-0" style="width: 70px;">
+                                    <img src="{{ $promo->image_url }}" alt="{{ $promo->title }}" style="width: 100%; height: 100%; object-fit: cover;">
+                                    <div style="position: absolute; inset: 0; background: linear-gradient(to right, transparent 0%, rgba({{ $promo->theme_rgb }}, 0.3) 40%, var(--surface-container) 95%);"></div>
+                                </div>
+                            @endif
+                            <div class="p-2 flex-grow-1 overflow-hidden">
+                                <div class="d-flex align-items-center justify-content-between mb-1">
+                                    <span class="badge rounded-pill" style="background: {{ $promo->badge_color }}; color: #ffffff; font-size: 0.65rem;">
+                                        {{ $promo->badge_text ?: 'INFO' }}
+                                    </span>
+                                    <i class="{{ $promo->icon }} opacity-50"></i>
+                                </div>
+                                <div class="fw-bold text-truncate text-body mb-0.5" style="max-width: 150px;">{{ $promo->title }}</div>
+                                <div class="text-secondary small text-truncate" style="max-width: 150px;">{{ $promo->description }}</div>
                             </div>
-                            <div class="fw-bold text-truncate text-body mb-0.5" style="max-width: 190px;">{{ $promo->title }}</div>
-                            <div class="text-secondary small text-truncate" style="max-width: 190px;">{{ $promo->description }}</div>
                         </div>
                     </td>
                     <td>

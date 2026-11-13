@@ -17,6 +17,7 @@ class DashboardPromo extends Model
         'badge_color',
         'description',
         'icon',
+        'image',
         'button_text',
         'button_url',
         'gradient_theme',
@@ -43,6 +44,22 @@ class DashboardPromo extends Model
     }
 
     /**
+     * Get accessible image URL
+     */
+    public function getImageUrlAttribute(): ?string
+    {
+        if (!$this->image) {
+            return null;
+        }
+
+        if (filter_var($this->image, FILTER_VALIDATE_URL)) {
+            return $this->image;
+        }
+
+        return asset('storage/' . $this->image);
+    }
+
+    /**
      * Helper to get CSS gradient style based on gradient_theme
      */
     public function getGradientStyleAttribute(): string
@@ -54,6 +71,21 @@ class DashboardPromo extends Model
             'amber'  => 'linear-gradient(135deg, rgba(230, 81, 0, 0.08), var(--surface-container))',
             'red'    => 'linear-gradient(135deg, rgba(179, 38, 30, 0.08), var(--surface-container))',
             default  => 'linear-gradient(135deg, rgba(11, 87, 208, 0.08), var(--surface-container))',
+        };
+    }
+
+    /**
+     * Helper to get theme solid / tint rgb for wide gradient transitions with images
+     */
+    public function getThemeRgbAttribute(): string
+    {
+        return match ($this->gradient_theme) {
+            'green'  => '56, 106, 33',
+            'cyan'   => '34, 158, 217',
+            'purple' => '142, 68, 173',
+            'amber'  => '230, 81, 0',
+            'red'    => '179, 38, 30',
+            default  => '11, 87, 208',
         };
     }
 }

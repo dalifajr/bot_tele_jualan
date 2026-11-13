@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\DashboardPromo;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class DashboardPromoController extends Controller
 {
@@ -27,6 +28,7 @@ class DashboardPromoController extends Controller
             'badge_color' => 'required|string|max:30',
             'description' => 'nullable|string|max:500',
             'icon' => 'required|string|max:100',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp,svg|max:4096',
             'button_text' => 'required|string|max:50',
             'button_url' => 'required|string|max:255',
             'gradient_theme' => 'required|in:blue,green,cyan,purple,amber,red',
@@ -35,6 +37,10 @@ class DashboardPromoController extends Controller
         ]);
 
         $validated['is_active'] = $request->has('is_active');
+
+        if ($request->hasFile('image')) {
+            $validated['image'] = $request->file('image')->store('promos', 'public');
+        }
 
         DashboardPromo::create($validated);
 
@@ -55,6 +61,8 @@ class DashboardPromoController extends Controller
             'badge_color' => 'required|string|max:30',
             'description' => 'nullable|string|max:500',
             'icon' => 'required|string|max:100',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp,svg|max:4096',
+            'remove_image' => 'nullable|boolean',
             'button_text' => 'required|string|max:50',
             'button_url' => 'required|string|max:255',
             'gradient_theme' => 'required|in:blue,green,cyan,purple,amber,red',
@@ -63,6 +71,20 @@ class DashboardPromoController extends Controller
         ]);
 
         $validated['is_active'] = $request->has('is_active');
+
+        if ($request->boolean('remove_image')) {
+            if ($promo->image) {
+                Storage::disk('public')->delete($promo->image);
+            }
+            $validated['image'] = null;
+        }
+
+        if ($request->hasFile('image')) {
+            if ($promo->image) {
+                Storage::disk('public')->delete($promo->image);
+            }
+            $validated['image'] = $request->file('image')->store('promos', 'public');
+        }
 
         $promo->update($validated);
 
@@ -80,6 +102,10 @@ class DashboardPromoController extends Controller
 
     public function destroy(DashboardPromo $promo)
     {
+        if ($promo->image) {
+            Storage::disk('public')->delete($promo->image);
+        }
+
         $promo->delete();
 
         return redirect()->route('admin.promos.index')

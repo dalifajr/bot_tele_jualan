@@ -87,10 +87,89 @@
         </div>
     </div>
 
-    {{-- Row 3: Split Section (Pesanan Terbaru & Akses Cepat) --}}
-    <div class="row g-4">
-        {{-- Left: Pesanan Terbaru --}}
-        <div class="col-lg-8 col-12">
+    {{-- Row 3: Promo & Info Terkini Carousel (Di Bawah 4 Card Info dengan Foto di Kiri & Gradien Halus Lebar) --}}
+    <div class="row g-3">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h2 class="m3-section-title mb-0">
+                        {{ __('Promo & info terkini') }}
+                    </h2>
+                </div>
+                <div class="d-flex align-items-center gap-1">
+                    <button type="button" id="promoScrollPrev" class="btn btn-sm btn-icon rounded-circle d-flex align-items-center justify-content-center p-0" style="width: 32px; height: 32px; background: var(--surface-container-high); border: 1px solid var(--outline-variant); color: var(--on-surface);" aria-label="Geser ke kiri" title="Sebelumnya">
+                        <i class="fas fa-chevron-left" style="font-size: 0.72rem;"></i>
+                    </button>
+                    <button type="button" id="promoScrollNext" class="btn btn-sm btn-icon rounded-circle d-flex align-items-center justify-content-center p-0" style="width: 32px; height: 32px; background: var(--surface-container-high); border: 1px solid var(--outline-variant); color: var(--on-surface);" aria-label="Geser ke kanan" title="Berikutnya">
+                        <i class="fas fa-chevron-right" style="font-size: 0.72rem;"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="m3-promo-carousel-container">
+                <div class="m3-promo-track" id="promoTrack">
+                    @forelse($promos ?? [] as $promo)
+                    <div class="m3-promo-card" style="background: {{ $promo->gradient_style }};">
+                        @if($promo->image)
+                            <div class="m3-promo-img-box">
+                                <img src="{{ $promo->image_url }}" alt="{{ $promo->title }}" loading="lazy">
+                                <div class="m3-promo-gradient-mask" style="background: linear-gradient(to right, transparent 0%, rgba({{ $promo->theme_rgb }}, 0.25) 35%, var(--surface-container) 95%);"></div>
+                            </div>
+                        @endif
+                        <div class="m3-promo-content">
+                            <div>
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <span class="badge rounded-pill fw-bold" style="background: {{ $promo->badge_color }}; color: #ffffff; font-size: 0.72rem; letter-spacing: 0.03em;">{{ $promo->badge_text ?: 'INFO' }}</span>
+                                    <i class="{{ $promo->icon }} text-primary opacity-50 fs-5"></i>
+                                </div>
+                                <h3 class="fw-bold text-body mb-1" style="font-size: 1.05rem; line-height: 1.35;">{{ $promo->title }}</h3>
+                                <p class="text-secondary small mb-3" style="font-size: 0.825rem; line-height: 1.45;">{{ $promo->description }}</p>
+                            </div>
+                            <div>
+                                <a href="{{ $promo->button_url }}" class="btn btn-sm btn-primary rounded-pill px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5" style="font-size: 0.8125rem;">
+                                    <span>{{ $promo->button_text }}</span>
+                                    <i class="fas fa-arrow-right" style="font-size: 0.7rem;"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    @empty
+                    <div class="m3-promo-card" style="background: linear-gradient(135deg, rgba(11, 87, 208, 0.08), var(--surface-container));">
+                        <div class="m3-promo-content">
+                            <div>
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <span class="badge rounded-pill fw-bold" style="background: var(--primary); color: #ffffff; font-size: 0.72rem; letter-spacing: 0.03em;">PROMO SPESIAL</span>
+                                    <i class="fas fa-tags text-primary opacity-50 fs-5"></i>
+                                </div>
+                                <h3 class="fw-bold text-body mb-1" style="font-size: 1.05rem; line-height: 1.35;">{{ __('Diskon Lisensi s/d 30%') }}</h3>
+                                <p class="text-secondary small mb-3" style="font-size: 0.825rem; line-height: 1.45;">{{ __('Gunakan kupon promo spesial saat checkout untuk menikmati potongan harga langsung produk digital.') }}</p>
+                            </div>
+                            <div>
+                                <a href="{{ route('catalog.index') }}" class="btn btn-sm btn-primary rounded-pill px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5" style="font-size: 0.8125rem;">
+                                    <span>{{ __('Klaim promo') }}</span>
+                                    <i class="fas fa-arrow-right" style="font-size: 0.7rem;"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    @endforelse
+                </div>
+
+                {{-- Dots Navigation Indicators --}}
+                <div class="d-flex justify-content-center align-items-center gap-1.5 mt-2" id="promoDots">
+                    @forelse($promos ?? [] as $promoIdx => $p)
+                        <span class="m3-promo-dot {{ $loop->first ? 'active' : '' }}" data-index="{{ $promoIdx }}"></span>
+                    @empty
+                        <span class="m3-promo-dot active" data-index="0"></span>
+                    @endforelse
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Row 4: Pesanan Terbaru (Full Width Section) --}}
+    <div class="row g-3">
+        <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h2 class="m3-section-title mb-0">
                     {{ __('Pesanan terbaru') }}
@@ -129,7 +208,7 @@
                         <a href="{{ route('orders.show', $order->id) }}" class="m3-order-row-card">
                             <div class="d-flex flex-column pe-3">
                                 <span class="fw-bold text-body" style="font-size: 0.92rem; line-height: 1.3;">
-                                    {{ Str::limit($order->product->name ?? '-', 35) }}
+                                    {{ Str::limit($order->product->name ?? '-', 45) }}
                                 </span>
                                 <div class="d-flex align-items-center gap-2 mt-1">
                                     <span class="text-secondary font-monospace" style="font-size: 0.75rem;">{{ $order->reference }}</span>
@@ -158,64 +237,6 @@
                     </div>
                 @endif
             @endguest
-        </div>
-
-        {{-- Right: Informasi & Promosi Pilihan (Scrollable Stack / Carousel M3) --}}
-        <div class="col-lg-4 col-12">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h2 class="m3-section-title mb-0">
-                    {{ __('Promo & info terkini') }}
-                </h2>
-                <div class="d-flex align-items-center gap-1">
-                    <button type="button" id="promoScrollPrev" class="btn btn-sm btn-icon rounded-circle d-flex align-items-center justify-content-center p-0" style="width: 32px; height: 32px; background: var(--surface-container-high); border: 1px solid var(--outline-variant); color: var(--on-surface);" aria-label="Geser ke kiri" title="Sebelumnya">
-                        <i class="fas fa-chevron-left" style="font-size: 0.72rem;"></i>
-                    </button>
-                    <button type="button" id="promoScrollNext" class="btn btn-sm btn-icon rounded-circle d-flex align-items-center justify-content-center p-0" style="width: 32px; height: 32px; background: var(--surface-container-high); border: 1px solid var(--outline-variant); color: var(--on-surface);" aria-label="Geser ke kanan" title="Berikutnya">
-                        <i class="fas fa-chevron-right" style="font-size: 0.72rem;"></i>
-                    </button>
-                </div>
-            </div>
-
-            <div class="m3-promo-carousel-container">
-                <div class="m3-promo-track" id="promoTrack">
-                    @forelse($promos ?? [] as $promo)
-                    <div class="m3-promo-card" style="background: {{ $promo->gradient_style }};">
-                        <div class="d-flex align-items-center justify-content-between mb-2">
-                            <span class="badge rounded-pill fw-bold" style="background: {{ $promo->badge_color }}; color: #ffffff; font-size: 0.72rem; letter-spacing: 0.03em;">{{ $promo->badge_text ?: 'INFO' }}</span>
-                            <i class="{{ $promo->icon }} text-primary opacity-50 fs-5"></i>
-                        </div>
-                        <h3 class="fw-bold text-body mb-1" style="font-size: 1rem; line-height: 1.35;">{{ $promo->title }}</h3>
-                        <p class="text-secondary small mb-3" style="font-size: 0.8125rem; line-height: 1.4;">{{ $promo->description }}</p>
-                        <a href="{{ $promo->button_url }}" class="btn btn-sm btn-primary rounded-pill px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5" style="font-size: 0.8125rem;">
-                            <span>{{ $promo->button_text }}</span>
-                            <i class="fas fa-arrow-right" style="font-size: 0.7rem;"></i>
-                        </a>
-                    </div>
-                    @empty
-                    <div class="m3-promo-card" style="background: linear-gradient(135deg, rgba(11, 87, 208, 0.08), var(--surface-container));">
-                        <div class="d-flex align-items-center justify-content-between mb-2">
-                            <span class="badge rounded-pill fw-bold" style="background: var(--primary); color: #ffffff; font-size: 0.72rem; letter-spacing: 0.03em;">PROMO SPESIAL</span>
-                            <i class="fas fa-tags text-primary opacity-50 fs-5"></i>
-                        </div>
-                        <h3 class="fw-bold text-body mb-1" style="font-size: 1rem; line-height: 1.35;">{{ __('Diskon Lisensi s/d 30%') }}</h3>
-                        <p class="text-secondary small mb-3" style="font-size: 0.8125rem; line-height: 1.4;">{{ __('Gunakan kupon promo spesial saat checkout untuk menikmati potongan harga langsung produk digital.') }}</p>
-                        <a href="{{ route('catalog.index') }}" class="btn btn-sm btn-primary rounded-pill px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5" style="font-size: 0.8125rem;">
-                            <span>{{ __('Klaim promo') }}</span>
-                            <i class="fas fa-arrow-right" style="font-size: 0.7rem;"></i>
-                        </a>
-                    </div>
-                    @endforelse
-                </div>
-
-                {{-- Dots Navigation Indicators --}}
-                <div class="d-flex justify-content-center align-items-center gap-1.5 mt-2" id="promoDots">
-                    @forelse($promos ?? [] as $promoIdx => $p)
-                        <span class="m3-promo-dot {{ $loop->first ? 'active' : '' }}" data-index="{{ $promoIdx }}"></span>
-                    @empty
-                        <span class="m3-promo-dot active" data-index="0"></span>
-                    @endforelse
-                </div>
-            </div>
         </div>
     </div>
 
@@ -252,7 +273,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function getCardWidth() {
         const firstCard = track.querySelector('.m3-promo-card');
-        return firstCard ? firstCard.offsetWidth + 12 : 280;
+        return firstCard ? firstCard.offsetWidth + 16 : 380;
     }
 
     function updateDots() {

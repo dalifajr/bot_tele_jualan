@@ -16,7 +16,7 @@
 <div class="row g-4">
     <div class="col-lg-8">
         <div class="card border-0 shadow-sm p-4" style="border-radius: var(--radius-xl, 24px);">
-            <form action="{{ route('admin.promos.store') }}" method="POST">
+            <form action="{{ route('admin.promos.store') }}" method="POST" enctype="multipart/form-data">
                 @csrf
 
                 {{-- Judul Promo --}}
@@ -24,6 +24,16 @@
                     <label class="form-label fw-semibold text-body" style="font-size: 0.88rem;">{{ __('Judul Promo / Info') }} <span class="text-danger">*</span></label>
                     <input type="text" name="title" id="promoTitleInput" class="form-control rounded-3 @error('title') is-invalid @enderror" placeholder="{{ __('Contoh: Diskon Lisensi s/d 30%') }}" value="{{ old('title') }}" required>
                     @error('title')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+
+                {{-- Foto Promo (Opsional) --}}
+                <div class="mb-3">
+                    <label class="form-label fw-semibold text-body" style="font-size: 0.88rem;">{{ __('Foto / Banner Promo (Opsional)') }}</label>
+                    <input type="file" name="image" id="promoImageInput" class="form-control rounded-3 @error('image') is-invalid @enderror" accept="image/*">
+                    <small class="text-secondary" style="font-size: 0.72rem;">{{ __('Format: JPG, PNG, WEBP, SVG (Maks. 4MB). Gambar akan tampil di sebelah kiri kartu dengan gradien transisi lebar yang halus.') }}</small>
+                    @error('image')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
@@ -139,17 +149,29 @@
                 <span class="fw-bold text-body" style="font-size: 0.95rem;">{{ __('Live Preview Card') }}</span>
             </div>
             
-            <div class="m3-promo-card" id="liveCardPreview" style="background: linear-gradient(135deg, rgba(11, 87, 208, 0.08), var(--surface-container)); border: 1px solid var(--outline-variant); border-radius: var(--radius-xl, 20px); padding: 18px 20px;">
-                <div class="d-flex align-items-center justify-content-between mb-2">
-                    <span class="badge rounded-pill fw-bold" id="previewBadge" style="background: #0b57d0; color: #ffffff; font-size: 0.72rem; letter-spacing: 0.03em;">PROMO SPESIAL</span>
-                    <i class="fas fa-tags text-primary opacity-50 fs-5" id="previewIcon"></i>
+            <div class="m3-promo-card position-relative overflow-hidden" id="liveCardPreview" style="background: linear-gradient(135deg, rgba(11, 87, 208, 0.08), var(--surface-container)); border: 1px solid var(--outline-variant); border-radius: var(--radius-xl, 20px); min-height: 180px; display: flex;">
+                {{-- Left Image Container with Wide Transition Gradient --}}
+                <div id="previewImgContainer" class="position-relative d-none" style="width: 38%; flex-shrink: 0; overflow: hidden;">
+                    <img id="previewImgEl" src="" alt="Promo Preview" style="width: 100%; height: 100%; object-fit: cover; object-position: center;">
+                    <div class="preview-gradient-mask" id="previewGradientMask" style="position: absolute; inset: 0; background: linear-gradient(to right, transparent 0%, rgba(11, 87, 208, 0.2) 35%, var(--surface-container) 95%); pointer-events: none;"></div>
                 </div>
-                <h3 class="fw-bold text-body mb-1" id="previewTitle" style="font-size: 1rem; line-height: 1.35;">{{ __('Judul Promo') }}</h3>
-                <p class="text-secondary small mb-3" id="previewDesc" style="font-size: 0.8125rem; line-height: 1.4;">{{ __('Deskripsi singkat kartu promosi Anda akan muncul di sini.') }}</p>
-                <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5" style="font-size: 0.8125rem;">
-                    <span id="previewBtnText">{{ __('Klaim promo') }}</span>
-                    <i class="fas fa-arrow-right" style="font-size: 0.7rem;"></i>
-                </button>
+
+                <div class="p-3.5 d-flex flex-column justify-content-between flex-grow-1 position-relative" style="z-index: 2;">
+                    <div>
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="badge rounded-pill fw-bold" id="previewBadge" style="background: #0b57d0; color: #ffffff; font-size: 0.72rem; letter-spacing: 0.03em;">PROMO SPESIAL</span>
+                            <i class="fas fa-tags text-primary opacity-50 fs-5" id="previewIcon"></i>
+                        </div>
+                        <h3 class="fw-bold text-body mb-1" id="previewTitle" style="font-size: 1rem; line-height: 1.35;">{{ __('Judul Promo') }}</h3>
+                        <p class="text-secondary small mb-3" id="previewDesc" style="font-size: 0.8125rem; line-height: 1.4;">{{ __('Deskripsi singkat kartu promosi Anda akan muncul di sini.') }}</p>
+                    </div>
+                    <div>
+                        <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5" style="font-size: 0.8125rem;">
+                            <span id="previewBtnText">{{ __('Klaim promo') }}</span>
+                            <i class="fas fa-arrow-right" style="font-size: 0.7rem;"></i>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -168,6 +190,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const iconPreview = document.getElementById('promoIconPreview');
     const themeSelect = document.getElementById('promoThemeSelect');
     const btnTextInput = document.getElementById('promoBtnTextInput');
+    const imageInput = document.getElementById('promoImageInput');
 
     const previewTitle = document.getElementById('previewTitle');
     const previewBadge = document.getElementById('previewBadge');
@@ -175,6 +198,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const previewIcon = document.getElementById('previewIcon');
     const previewBtnText = document.getElementById('previewBtnText');
     const liveCard = document.getElementById('liveCardPreview');
+    const previewImgContainer = document.getElementById('previewImgContainer');
+    const previewImgEl = document.getElementById('previewImgEl');
+    const previewGradientMask = document.getElementById('previewGradientMask');
 
     const themeGradients = {
         blue: 'linear-gradient(135deg, rgba(11, 87, 208, 0.08), var(--surface-container))',
@@ -183,6 +209,15 @@ document.addEventListener('DOMContentLoaded', function () {
         purple: 'linear-gradient(135deg, rgba(142, 68, 173, 0.08), var(--surface-container))',
         amber: 'linear-gradient(135deg, rgba(230, 81, 0, 0.08), var(--surface-container))',
         red: 'linear-gradient(135deg, rgba(179, 38, 30, 0.08), var(--surface-container))'
+    };
+
+    const themeRgbs = {
+        blue: '11, 87, 208',
+        green: '56, 106, 33',
+        cyan: '34, 158, 217',
+        purple: '142, 68, 173',
+        amber: '230, 81, 0',
+        red: '179, 38, 30'
     };
 
     function updatePreview() {
@@ -198,9 +233,30 @@ document.addEventListener('DOMContentLoaded', function () {
         previewIcon.className = iconClass + ' text-primary opacity-50 fs-5';
 
         const theme = themeSelect.value;
+        const rgb = themeRgbs[theme] || '11, 87, 208';
         if (themeGradients[theme]) {
             liveCard.style.background = themeGradients[theme];
         }
+
+        if (previewGradientMask) {
+            previewGradientMask.style.background = `linear-gradient(to right, transparent 0%, rgba(${rgb}, 0.25) 35%, var(--surface-container) 95%)`;
+        }
+    }
+
+    if (imageInput) {
+        imageInput.addEventListener('change', function () {
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    previewImgEl.src = e.target.result;
+                    previewImgContainer.classList.remove('d-none');
+                };
+                reader.readAsDataURL(file);
+            } else {
+                previewImgContainer.classList.add('d-none');
+            }
+        });
     }
 
     [titleInput, badgeInput, badgeColorInput, descInput, iconInput, themeSelect, btnTextInput].forEach(el => {

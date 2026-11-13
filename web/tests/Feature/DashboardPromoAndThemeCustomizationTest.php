@@ -127,6 +127,40 @@ class DashboardPromoAndThemeCustomizationTest extends TestCase
         ]);
     }
 
+    public function test_admin_can_upload_promo_image()
+    {
+        \Illuminate\Support\Facades\Storage::fake('public');
+
+        $admin = $this->createTestUser('admin');
+        $file = \Illuminate\Http\UploadedFile::fake()->image('promo_banner.png', 800, 400);
+
+        $response = $this->actingAs($admin)->post(route('admin.promos.store'), [
+            'title' => 'Promo Dengan Gambar',
+            'badge_text' => 'SUPER DEAL',
+            'badge_color' => '#0b57d0',
+            'description' => 'Ada foto promo di sebelah kiri.',
+            'icon' => 'fas fa-image',
+            'image' => $file,
+            'button_text' => 'Buka',
+            'button_url' => '/catalog',
+            'gradient_theme' => 'blue',
+            'order_index' => 1,
+            'is_active' => '1',
+        ]);
+
+        $response->assertRedirect(route('admin.promos.index'));
+
+        $promo = DashboardPromo::where('title', 'Promo Dengan Gambar')->first();
+        $this->assertNotNull($promo);
+        $this->assertNotNull($promo->image);
+        \Illuminate\Support\Facades\Storage::disk('public')->assertExists($promo->image);
+
+        // Check dashboard sees the promo image
+        $dashResponse = $this->actingAs($admin)->get(route('dashboard'));
+        $dashResponse->assertStatus(200);
+        $dashResponse->assertSee($promo->image_url);
+    }
+
     public function test_user_can_customize_and_save_primary_theme_color()
     {
         $user = $this->createTestUser('customer');
