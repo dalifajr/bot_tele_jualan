@@ -188,6 +188,9 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         Route::get('/tools/2fa-generator', [\App\Http\Controllers\TwoFactorController::class, 'index'])->name('tools.2fa-generator');
         Route::post('/tools/2fa-generator/generate', [\App\Http\Controllers\TwoFactorController::class, 'generateAjax'])->name('tools.2fa-generator.generate');
         Route::post('/tools/2fa-generator/batch-generate', [\App\Http\Controllers\TwoFactorController::class, 'batchGenerateAjax'])->name('tools.2fa-generator.batch-generate');
+        Route::post('/tools/2fa-generator/accounts', [\App\Http\Controllers\TwoFactorController::class, 'storeAccount'])->name('tools.2fa-generator.accounts.store');
+        Route::put('/tools/2fa-generator/accounts/{id}', [\App\Http\Controllers\TwoFactorController::class, 'updateAccount'])->name('tools.2fa-generator.accounts.update');
+        Route::delete('/tools/2fa-generator/accounts/{id}', [\App\Http\Controllers\TwoFactorController::class, 'destroyAccount'])->name('tools.2fa-generator.accounts.destroy');
     });
 
     // Customer Complaints

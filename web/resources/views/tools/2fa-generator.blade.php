@@ -11,7 +11,7 @@
     </div>
 </div>
 
-{{-- Navigation Tabs: Single vs Batch --}}
+{{-- Navigation Tabs: Single vs Batch vs Saved Accounts --}}
 <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
     <div class="card-body p-2">
         <ul class="nav nav-pills nav-fill" id="generatorTabs" role="tablist">
@@ -23,6 +23,13 @@
             <li class="nav-item" role="presentation">
                 <button class="nav-link fw-bold py-2 rounded-pill" id="batch-tab" data-bs-toggle="tab" data-bs-target="#batch" type="button" role="tab">
                     <i class="fas fa-list-check me-2"></i>{{ __('Generator Massal (Multi-Akun)') }}
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link fw-bold py-2 rounded-pill d-flex align-items-center justify-content-center gap-1.5" id="accounts-tab" data-bs-toggle="tab" data-bs-target="#accounts" type="button" role="tab">
+                    <i class="fas fa-user-shield me-1"></i>
+                    <span>{{ __('Akun Tersimpan') }}</span>
+                    <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-0.5" id="saved-accounts-count-badge">{{ isset($savedAccounts) ? $savedAccounts->count() : 0 }}</span>
                 </button>
             </li>
         </ul>
@@ -111,11 +118,15 @@
                             </div>
                         </div>
 
-                        {{-- Copy Button --}}
-                        <div class="mt-2 w-100" style="max-width: 280px;">
+                        {{-- Copy & Save Action Buttons --}}
+                        <div class="mt-2 w-100 d-flex flex-column gap-2" style="max-width: 280px;">
                             <button type="button" id="btn-copy-single" class="btn btn-primary rounded-pill w-100 py-2.5 fw-bold shadow-sm d-flex align-items-center justify-content-center gap-2" onclick="copySingleTotpCode()">
                                 <i class="fas fa-copy"></i>
                                 <span id="btn-copy-text">{{ __('Salin Kode (Copy)') }}</span>
+                            </button>
+                            <button type="button" id="btn-save-single" class="btn btn-outline-success rounded-pill w-100 py-2 fw-bold d-flex align-items-center justify-content-center gap-2" onclick="promptSaveCurrentSecret()">
+                                <i class="fas fa-bookmark"></i>
+                                <span>{{ __('Simpan Akun F2A') }}</span>
                             </button>
                         </div>
                     </div>
@@ -174,6 +185,138 @@
                 {{-- Mobile Batch Cards View --}}
                 <div class="d-md-none d-flex flex-column gap-2.5" id="batch-cards-mobile"></div>
             </div>
+        </div>
+    </div>
+
+    {{-- TAB 3: SAVED ACCOUNTS --}}
+    <div class="tab-pane fade" id="accounts" role="tabpanel">
+        <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
+            <div class="card-body p-4">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                    <div>
+                        <h5 class="fw-bold mb-1"><i class="fas fa-user-shield text-primary me-2"></i>{{ __('Daftar Akun 2FA Tersimpan') }}</h5>
+                        <p class="text-muted small mb-0">{{ __('Pantau kode verifikasi realtime yang tersinkronisasi. Semua kode diperbarui otomatis.') }}</p>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="input-group input-group-sm" style="max-width: 250px;">
+                            <span class="input-group-text bg-light border-end-0 rounded-start-pill"><i class="fas fa-search text-muted"></i></span>
+                            <input type="text" id="search-saved-accounts" class="form-control bg-light border-start-0 rounded-end-pill" placeholder="{{ __('Cari akun...') }}" oninput="filterSavedAccounts()">
+                        </div>
+                        <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 py-1.5 fw-bold d-flex align-items-center gap-1.5 flex-shrink-0" onclick="promptAddNewAccount()">
+                            <i class="fas fa-plus"></i>
+                            <span>{{ __('Tambah Akun') }}</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Container for Accounts Cards --}}
+        <div id="saved-accounts-container">
+            @if(!isset($savedAccounts) || $savedAccounts->isEmpty())
+                <div id="saved-accounts-empty" class="card border-0 shadow-sm text-center py-5 px-3" style="border-radius: 16px;">
+                    <div class="card-body">
+                        <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-primary-subtle text-primary mb-3" style="width: 72px; height: 72px;">
+                            <i class="fas fa-shield-cat fs-2"></i>
+                        </div>
+                        <h5 class="fw-bold mb-2">{{ __('Belum Ada Akun Tersimpan') }}</h5>
+                        <p class="text-muted small mx-auto mb-4" style="max-width: 440px;">
+                            {{ __('Simpan secret key dari menu Generator Tunggal atau klik tombol Tambah Akun di atas agar Anda tidak perlu memasukkan ulang secret key setiap kali membutuhkan kode 2FA.') }}
+                        </p>
+                        <button type="button" class="btn btn-primary rounded-pill px-4 py-2 fw-bold" onclick="promptAddNewAccount()">
+                            <i class="fas fa-plus-circle me-1.5"></i>{{ __('Simpan Akun Pertama') }}
+                        </button>
+                    </div>
+                </div>
+            @else
+                <div class="row g-3" id="saved-accounts-grid">
+                    @foreach($savedAccounts as $account)
+                        <div class="col-12 col-md-6 col-xl-4 saved-account-item" id="account-card-{{ $account->id }}" data-account-id="{{ $account->id }}" data-name="{{ strtolower($account->name) }}" data-issuer="{{ strtolower($account->issuer ?? '') }}">
+                            <div class="card border-0 shadow-sm h-100" style="border-radius: 16px; transition: transform 0.2s, box-shadow 0.2s;" data-totp-container data-totp-secret="{{ $account->secret }}">
+                                <div class="card-body p-3.5 d-flex flex-column justify-content-between">
+                                    {{-- Card Header: Avatar, Name, Issuer, Actions --}}
+                                    <div>
+                                        <div class="d-flex justify-content-between align-items-start mb-2.5">
+                                            <div class="d-flex align-items-center gap-2.5 overflow-hidden">
+                                                <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center flex-shrink-0 fw-bold shadow-sm" style="width: 42px; height: 42px; font-size: 1.15rem;">
+                                                    {{ strtoupper(substr($account->name, 0, 1)) }}
+                                                </div>
+                                                <div class="overflow-hidden">
+                                                    <h6 class="fw-bold mb-0 text-truncate text-dark account-name-label" title="{{ $account->name }}">{{ $account->name }}</h6>
+                                                    @if($account->issuer)
+                                                        <span class="badge bg-light text-secondary border small py-0.5 px-2 mt-0.5">{{ $account->issuer }}</span>
+                                                    @else
+                                                        <span class="text-muted small" style="font-size: 0.75rem;">{{ __('Akun 2FA') }}</span>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                            <div class="dropdown">
+                                                <button class="btn btn-sm btn-light rounded-circle text-muted" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="{{ __('Pilihan') }}" style="width: 32px; height: 32px; padding: 0;">
+                                                    <i class="fas fa-ellipsis-v"></i>
+                                                </button>
+                                                <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3">
+                                                    <li>
+                                                        <button class="dropdown-item small py-2 d-flex align-items-center gap-2" type="button" onclick="promptEditAccountName({{ $account->id }}, '{{ addslashes($account->name) }}')">
+                                                            <i class="fas fa-edit text-warning"></i>{{ __('Ubah Nama') }}
+                                                        </button>
+                                                    </li>
+                                                    <li>
+                                                        <button class="dropdown-item small py-2 d-flex align-items-center gap-2" type="button" onclick="copySecretKey('{{ $account->secret }}')">
+                                                            <i class="fas fa-key text-info"></i>{{ __('Salin Secret Key') }}
+                                                        </button>
+                                                    </li>
+                                                    <li><hr class="dropdown-divider my-1"></li>
+                                                    <li>
+                                                        <button class="dropdown-item small py-2 text-danger d-flex align-items-center gap-2" type="button" onclick="confirmDeleteAccount({{ $account->id }}, '{{ addslashes($account->name) }}')">
+                                                            <i class="fas fa-trash-alt"></i>{{ __('Hapus Akun') }}
+                                                        </button>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+
+                                        {{-- OTP Code Display with Tap-to-Copy --}}
+                                        <div class="bg-light bg-opacity-75 rounded-4 p-3 my-2 text-center position-relative border border-light">
+                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                <span class="text-uppercase text-muted fw-bold" style="font-size: 0.7rem; letter-spacing: 0.5px;">{{ __('Kode Saat Ini') }}</span>
+                                                <span class="badge bg-success text-white rounded-pill px-2.5 py-0.5 totp-timer fw-bold small">30s</span>
+                                            </div>
+                                            <div class="font-monospace fw-bolder fs-2 text-primary totp-code user-select-all py-1" role="button" onclick="copyTotpCode(this, '{{ $account->secret }}')" title="{{ __('Ketuk untuk salin') }}" style="letter-spacing: 5px; cursor: pointer;">
+                                                ------
+                                            </div>
+                                            <div class="text-muted small" style="font-size: 0.72rem;">
+                                                <i class="fas fa-hand-pointer me-1"></i>{{ __('Ketuk kode untuk salin') }}
+                                            </div>
+                                        </div>
+
+                                        {{-- Secret Key Preview (Masked) --}}
+                                        <div class="d-flex align-items-center justify-content-between px-1 mb-3">
+                                            <div class="small font-monospace text-muted text-truncate me-2" style="font-size: 0.75rem;">
+                                                <span class="text-secondary fw-semibold">Secret:</span>
+                                                <span class="secret-masked font-monospace">•••• •••• {{ substr($account->secret, -4) }}</span>
+                                            </div>
+                                            <button type="button" class="btn btn-link btn-sm text-secondary p-0 text-decoration-none small" style="font-size: 0.75rem;" onclick="copySecretKey('{{ $account->secret }}')" title="{{ __('Salin Secret Key') }}">
+                                                <i class="fas fa-copy me-1"></i>{{ __('Salin Key') }}
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {{-- Card Footer Action: Copy Button --}}
+                                    <div class="pt-2 border-top">
+                                        <button type="button" class="btn btn-primary rounded-pill w-100 py-2 fw-bold shadow-sm d-flex align-items-center justify-content-center gap-2" onclick="copyTotpCode(this, '{{ $account->secret }}')">
+                                            <i class="fas fa-copy"></i>
+                                            <span>{{ __('Salin Kode 2FA') }}</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+                <div id="no-search-results" class="card border-0 shadow-sm text-center py-4 px-3 d-none" style="border-radius: 16px;">
+                    <p class="text-muted mb-0"><i class="fas fa-search me-2"></i>{{ __('Tidak ada akun tersimpan yang cocok dengan pencarian.') }}</p>
+                </div>
+            @endif
         </div>
     </div>
 </div>
@@ -449,6 +592,428 @@
         function escapeHtml(string) {
             return String(string).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         }
+
+        // ==========================================
+        // FITUR PENYIMPANAN AKUN 2FA (SAVED ACCOUNTS)
+        // ==========================================
+
+        // Auto open accounts tab if hash is present
+        if (window.location.hash === '#accounts') {
+            const accountsTabBtn = document.getElementById('accounts-tab');
+            if (accountsTabBtn) {
+                const tab = new bootstrap.Tab(accountsTabBtn);
+                tab.show();
+            }
+        }
+
+        // 1. Simpan secret key dari Generator Tunggal
+        window.promptSaveCurrentSecret = function () {
+            const secretInput = document.getElementById('single-secret-input');
+            const rawVal = secretInput ? secretInput.value.trim() : '';
+
+            if (!rawVal) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: '{{ __("Secret Key Belum Diisi") }}',
+                    text: '{{ __("Silakan masukkan Secret Key 2FA terlebih dahulu sebelum menyimpan.") }}',
+                    confirmButtonColor: '#0d6efd',
+                    confirmButtonText: 'OK'
+                });
+                return;
+            }
+
+            let defaultName = '';
+            let defaultIssuer = '';
+            let cleanSecret = rawVal;
+
+            // Cek apakah format otpauth URL
+            if (rawVal.startsWith('otpauth://')) {
+                try {
+                    const url = new URL(rawVal);
+                    const label = decodeURIComponent(url.pathname.replace(/^\/\/totp\//i, '').replace(/^\/totp\//i, ''));
+                    if (label.includes(':')) {
+                        const parts = label.split(':');
+                        defaultIssuer = parts[0].trim();
+                        defaultName = parts.slice(1).join(':').trim();
+                    } else {
+                        defaultName = label;
+                    }
+                    if (url.searchParams.get('issuer')) {
+                        defaultIssuer = url.searchParams.get('issuer');
+                    }
+                    if (url.searchParams.get('secret')) {
+                        cleanSecret = url.searchParams.get('secret');
+                    }
+                } catch (e) {}
+            }
+
+            cleanSecret = cleanSecret.toUpperCase().replace(/[^A-Z2-7]/g, '');
+
+            if (typeof TotpEngine !== 'undefined') {
+                const testCode = TotpEngine.compute(cleanSecret);
+                if (!testCode) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: '{{ __("Secret Key Tidak Valid") }}',
+                        text: '{{ __("Format secret key tidak sesuai standar Base32. Periksa kembali secret key Anda.") }}',
+                        confirmButtonColor: '#0d6efd',
+                        confirmButtonText: 'Tutup'
+                    });
+                    return;
+                }
+            }
+
+            Swal.fire({
+                title: '{{ __("Simpan Akun 2FA") }}',
+                html: `
+                    <div class="text-start mb-3">
+                        <label class="form-label small fw-bold text-muted mb-1">{{ __("Nama Akun") }} <span class="text-danger">*</span></label>
+                        <input type="text" id="swal-acc-name" class="form-control" placeholder="{{ __("Contoh: Akun GitHub, Instagram Toko, dll.") }}" value="${escapeHtml(defaultName)}">
+                    </div>
+                    <div class="text-start mb-3">
+                        <label class="form-label small fw-bold text-muted mb-1">{{ __("Penerbit / Layanan (Opsional)") }}</label>
+                        <input type="text" id="swal-acc-issuer" class="form-control" placeholder="{{ __("Contoh: GitHub, Google, Facebook") }}" value="${escapeHtml(defaultIssuer)}">
+                    </div>
+                    <div class="text-start">
+                        <label class="form-label small fw-bold text-muted mb-1">{{ __("Secret Key") }}</label>
+                        <input type="text" id="swal-acc-secret" class="form-control font-monospace bg-light" readonly value="${cleanSecret}">
+                    </div>
+                `,
+                showCancelButton: true,
+                confirmButtonText: '<i class="fas fa-bookmark me-1"></i> {{ __("Simpan") }}',
+                cancelButtonText: '{{ __("Batal") }}',
+                confirmButtonColor: '#198754',
+                cancelButtonColor: '#6c757d',
+                focusConfirm: false,
+                didOpen: () => {
+                    const input = document.getElementById('swal-acc-name');
+                    if (input) input.focus();
+                },
+                preConfirm: () => {
+                    const name = document.getElementById('swal-acc-name').value.trim();
+                    const issuer = document.getElementById('swal-acc-issuer').value.trim();
+                    const secret = document.getElementById('swal-acc-secret').value.trim();
+                    if (!name) {
+                        Swal.showValidationMessage('{{ __("Nama akun wajib diisi!") }}');
+                        return false;
+                    }
+                    return { name, issuer, secret };
+                }
+            }).then((result) => {
+                if (result.isConfirmed && result.value) {
+                    submitSaveAccount(result.value);
+                }
+            });
+        };
+
+        // 2. Tambah akun manual dari tab Akun Tersimpan
+        window.promptAddNewAccount = function () {
+            Swal.fire({
+                title: '{{ __("Tambah Akun 2FA Baru") }}',
+                html: `
+                    <div class="text-start mb-3">
+                        <label class="form-label small fw-bold text-muted mb-1">{{ __("Nama Akun") }} <span class="text-danger">*</span></label>
+                        <input type="text" id="swal-add-name" class="form-control" placeholder="{{ __("Contoh: Akun Email Kerja") }}">
+                    </div>
+                    <div class="text-start mb-3">
+                        <label class="form-label small fw-bold text-muted mb-1">{{ __("Secret Key atau Link otpauth://") }} <span class="text-danger">*</span></label>
+                        <input type="text" id="swal-add-secret" class="form-control font-monospace" placeholder="JBSWY3DPEHPK3PXP">
+                    </div>
+                    <div class="text-start">
+                        <label class="form-label small fw-bold text-muted mb-1">{{ __("Penerbit / Layanan (Opsional)") }}</label>
+                        <input type="text" id="swal-add-issuer" class="form-control" placeholder="{{ __("Contoh: Google, Tokopedia, dll.") }}">
+                    </div>
+                `,
+                showCancelButton: true,
+                confirmButtonText: '<i class="fas fa-plus me-1"></i> {{ __("Simpan Akun") }}',
+                cancelButtonText: '{{ __("Batal") }}',
+                confirmButtonColor: '#0d6efd',
+                cancelButtonColor: '#6c757d',
+                focusConfirm: false,
+                didOpen: () => {
+                    const input = document.getElementById('swal-add-name');
+                    if (input) input.focus();
+                },
+                preConfirm: () => {
+                    const name = document.getElementById('swal-add-name').value.trim();
+                    let rawSecret = document.getElementById('swal-add-secret').value.trim();
+                    const issuer = document.getElementById('swal-add-issuer').value.trim();
+
+                    if (!name) {
+                        Swal.showValidationMessage('{{ __("Nama akun wajib diisi!") }}');
+                        return false;
+                    }
+                    if (!rawSecret) {
+                        Swal.showValidationMessage('{{ __("Secret key wajib diisi!") }}');
+                        return false;
+                    }
+
+                    // Ekstrak jika otpauth
+                    if (rawSecret.startsWith('otpauth://')) {
+                        try {
+                            const url = new URL(rawSecret);
+                            if (url.searchParams.get('secret')) {
+                                rawSecret = url.searchParams.get('secret');
+                            }
+                        } catch (e) {}
+                    }
+
+                    const clean = rawSecret.toUpperCase().replace(/[^A-Z2-7]/g, '');
+                    if (typeof TotpEngine !== 'undefined' && !TotpEngine.compute(clean)) {
+                        Swal.showValidationMessage('{{ __("Secret key tidak valid (harus format Base32)!") }}');
+                        return false;
+                    }
+
+                    return { name, issuer, secret: clean };
+                }
+            }).then((result) => {
+                if (result.isConfirmed && result.value) {
+                    submitSaveAccount(result.value);
+                }
+            });
+        };
+
+        // 3. Kirim AJAX simpan akun
+        function submitSaveAccount(data) {
+            Swal.fire({
+                title: '{{ __("Menyimpan...") }}',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            fetch('{{ route("tools.2fa-generator.accounts.store") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(res => res.json())
+            .then(res => {
+                if (res.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: '{{ __("Berhasil Disimpan!") }}',
+                        text: res.message || '{{ __("Akun F2A berhasil disimpan.") }}',
+                        timer: 1500,
+                        showConfirmButton: false
+                    }).then(() => {
+                        window.location.hash = 'accounts';
+                        window.location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: '{{ __("Gagal Menyimpan") }}',
+                        text: res.message || '{{ __("Terjadi kesalahan saat menyimpan akun.") }}',
+                        confirmButtonColor: '#0d6efd'
+                    });
+                }
+            })
+            .catch(err => {
+                Swal.fire({
+                    icon: 'error',
+                    title: '{{ __("Terjadi Kesalahan") }}',
+                    text: err.message || '{{ __("Gagal menghubungi server.") }}',
+                    confirmButtonColor: '#0d6efd'
+                });
+            });
+        }
+
+        // 4. Ubah nama akun tersimpan
+        window.promptEditAccountName = function (id, currentName) {
+            Swal.fire({
+                title: '{{ __("Ubah Nama Akun") }}',
+                input: 'text',
+                inputValue: currentName,
+                inputAttributes: {
+                    maxlength: 100,
+                    placeholder: '{{ __("Masukkan nama akun baru") }}'
+                },
+                showCancelButton: true,
+                confirmButtonText: '{{ __("Simpan Perubahan") }}',
+                cancelButtonText: '{{ __("Batal") }}',
+                confirmButtonColor: '#0d6efd',
+                cancelButtonColor: '#6c757d',
+                inputValidator: (value) => {
+                    if (!value || !value.trim()) {
+                        return '{{ __("Nama akun tidak boleh kosong!") }}';
+                    }
+                }
+            }).then((result) => {
+                if (result.isConfirmed && result.value) {
+                    const newName = result.value.trim();
+                    fetch('/tools/2fa-generator/accounts/' + id, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({ name: newName })
+                    })
+                    .then(res => res.json())
+                    .then(res => {
+                        if (res.success) {
+                            const card = document.getElementById('account-card-' + id);
+                            if (card) {
+                                const nameLabel = card.querySelector('.account-name-label');
+                                if (nameLabel) {
+                                    nameLabel.textContent = newName;
+                                    nameLabel.title = newName;
+                                }
+                                card.setAttribute('data-name', newName.toLowerCase());
+                            }
+                            const Toast = Swal.mixin({
+                                toast: true,
+                                position: 'top-end',
+                                showConfirmButton: false,
+                                timer: 2000,
+                                timerProgressBar: true
+                            });
+                            Toast.fire({
+                                icon: 'success',
+                                title: res.message || '{{ __("Nama akun diperbarui!") }}'
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: '{{ __("Gagal") }}',
+                                text: res.message || '{{ __("Gagal memperbarui nama akun.") }}'
+                            });
+                        }
+                    })
+                    .catch(err => {
+                        Swal.fire({
+                            icon: 'error',
+                            title: '{{ __("Error") }}',
+                            text: err.message
+                        });
+                    });
+                }
+            });
+        };
+
+        // 5. Hapus akun tersimpan
+        window.confirmDeleteAccount = function (id, name) {
+            Swal.fire({
+                title: '{{ __("Hapus Akun Ini?") }}',
+                text: '{{ __("Apakah Anda yakin ingin menghapus akun") }} "' + name + '"? {{ __("Tindakan ini tidak dapat dibatalkan.") }}',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="fas fa-trash-alt me-1"></i> {{ __("Ya, Hapus") }}',
+                cancelButtonText: '{{ __("Batal") }}'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch('/tools/2fa-generator/accounts/' + id, {
+                        method: 'DELETE',
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Accept': 'application/json'
+                        }
+                    })
+                    .then(res => res.json())
+                    .then(res => {
+                        if (res.success) {
+                            const card = document.getElementById('account-card-' + id);
+                            if (card) {
+                                card.style.transition = 'all 0.3s ease';
+                                card.style.opacity = '0';
+                                card.style.transform = 'scale(0.9)';
+                                setTimeout(() => {
+                                    card.remove();
+                                    const grid = document.getElementById('saved-accounts-grid');
+                                    const items = document.querySelectorAll('.saved-account-item');
+                                    const badge = document.getElementById('saved-accounts-count-badge');
+                                    if (badge) badge.textContent = items.length;
+
+                                    if (items.length === 0) {
+                                        window.location.hash = 'accounts';
+                                        window.location.reload();
+                                    }
+                                }, 300);
+                            }
+                            const Toast = Swal.mixin({
+                                toast: true,
+                                position: 'top-end',
+                                showConfirmButton: false,
+                                timer: 2000,
+                                timerProgressBar: true
+                            });
+                            Toast.fire({
+                                icon: 'success',
+                                title: res.message || '{{ __("Akun berhasil dihapus!") }}'
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: '{{ __("Gagal") }}',
+                                text: res.message || '{{ __("Gagal menghapus akun.") }}'
+                            });
+                        }
+                    })
+                    .catch(err => {
+                        Swal.fire({
+                            icon: 'error',
+                            title: '{{ __("Error") }}',
+                            text: err.message
+                        });
+                    });
+                }
+            });
+        };
+
+        // 6. Salin secret key ke clipboard
+        window.copySecretKey = function (secret) {
+            navigator.clipboard.writeText(secret).then(() => {
+                const Toast = Swal.mixin({
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 1500,
+                    timerProgressBar: true
+                });
+                Toast.fire({
+                    icon: 'success',
+                    title: '{{ __("Secret Key disalin ke clipboard!") }}'
+                });
+            });
+        };
+
+        // 7. Filter / pencarian live akun tersimpan
+        window.filterSavedAccounts = function () {
+            const searchInput = document.getElementById('search-saved-accounts');
+            if (!searchInput) return;
+            const query = searchInput.value.trim().toLowerCase();
+            const items = document.querySelectorAll('.saved-account-item');
+            const noResults = document.getElementById('no-search-results');
+            let visibleCount = 0;
+
+            items.forEach(item => {
+                const name = item.getAttribute('data-name') || '';
+                const issuer = item.getAttribute('data-issuer') || '';
+                if (name.includes(query) || issuer.includes(query)) {
+                    item.classList.remove('d-none');
+                    visibleCount++;
+                } else {
+                    item.classList.add('d-none');
+                }
+            });
+
+            if (noResults) {
+                if (visibleCount === 0 && items.length > 0) {
+                    noResults.classList.remove('d-none');
+                } else {
+                    noResults.classList.add('d-none');
+                }
+            }
+        };
     });
 </script>
 @endpush

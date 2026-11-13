@@ -124,6 +124,11 @@ class User extends Authenticatable
         return $this->hasMany(Order::class, 'customer_id');
     }
 
+    public function savedTwoFactorAccounts()
+    {
+        return $this->hasMany(SavedTwoFactorAccount::class);
+    }
+
     /**
      * Get display name (prefer full_name, fallback to username).
      */

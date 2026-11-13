@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Services\TwoFactorService;
+use App\Models\SavedTwoFactorAccount;
+use Illuminate\Support\Facades\Auth;
 
 class TwoFactorController extends Controller
 {
@@ -14,8 +16,81 @@ class TwoFactorController extends Controller
     {
         $serverTime = time();
         $remainingSeconds = TwoFactorService::getRemainingSeconds($serverTime);
+        $savedAccounts = SavedTwoFactorAccount::where('user_id', Auth::id())
+            ->orderByDesc('id')
+            ->get();
 
-        return view('tools.2fa-generator', compact('serverTime', 'remainingSeconds'));
+        return view('tools.2fa-generator', compact('serverTime', 'remainingSeconds', 'savedAccounts'));
+    }
+
+    /**
+     * Store a saved 2FA account for the authenticated user.
+     */
+    public function storeAccount(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:100',
+            'secret' => 'required|string',
+        ]);
+
+        $rawSecret = $request->input('secret');
+        $cleanSecret = TwoFactorService::extractSecretFromOtpAuth($rawSecret);
+        $code = TwoFactorService::generateOtp($cleanSecret);
+
+        if ($code === null) {
+            return response()->json([
+                'success' => false,
+                'message' => __('Format secret key 2FA tidak valid. Pastikan format Base32 benar.'),
+            ], 422);
+        }
+
+        $account = SavedTwoFactorAccount::create([
+            'user_id' => Auth::id(),
+            'name' => trim($request->input('name')),
+            'secret' => $cleanSecret,
+            'issuer' => $request->input('issuer'),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => __('Akun F2A berhasil disimpan.'),
+            'account' => $account,
+        ]);
+    }
+
+    /**
+     * Update the name of a saved 2FA account.
+     */
+    public function updateAccount(Request $request, $id)
+    {
+        $request->validate([
+            'name' => 'required|string|max:100',
+        ]);
+
+        $account = SavedTwoFactorAccount::where('user_id', Auth::id())->findOrFail($id);
+        $account->update([
+            'name' => trim($request->input('name')),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => __('Nama akun F2A berhasil diperbarui.'),
+            'account' => $account,
+        ]);
+    }
+
+    /**
+     * Delete a saved 2FA account.
+     */
+    public function destroyAccount($id)
+    {
+        $account = SavedTwoFactorAccount::where('user_id', Auth::id())->findOrFail($id);
+        $account->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => __('Akun F2A berhasil dihapus.'),
+        ]);
     }
 
     /**
