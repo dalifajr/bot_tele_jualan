@@ -158,6 +158,32 @@
     --cm-sys-color-primary: var(--primary);
     --cm-sys-color-on-primary: var(--on-primary);
     --cm-sys-color-primary-on-container: var(--on-primary-container);
+
+    /* Material Design 3 (M3) Motion System Tokens (Google Material Web Specification) */
+    --md-sys-motion-easing-emphasized: cubic-bezier(0.2, 0, 0, 1);
+    --md-sys-motion-easing-emphasized-decelerate: cubic-bezier(0.05, 0.7, 0.1, 1);
+    --md-sys-motion-easing-emphasized-accelerate: cubic-bezier(0.3, 0, 0.8, 0.15);
+    --md-sys-motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+    --md-sys-motion-easing-standard-decelerate: cubic-bezier(0, 0, 0, 1);
+    --md-sys-motion-easing-standard-accelerate: cubic-bezier(0.3, 0, 1, 1);
+
+    --md-sys-motion-duration-short1: 50ms;
+    --md-sys-motion-duration-short2: 100ms;
+    --md-sys-motion-duration-short3: 150ms;
+    --md-sys-motion-duration-short4: 200ms;
+    --md-sys-motion-duration-medium1: 250ms;
+    --md-sys-motion-duration-medium2: 300ms;
+    --md-sys-motion-duration-medium3: 350ms;
+    --md-sys-motion-duration-medium4: 400ms;
+    --md-sys-motion-duration-long1: 450ms;
+    --md-sys-motion-duration-long2: 500ms;
+
+    /* Motion token aliases */
+    --motion-easing-emphasized: var(--md-sys-motion-easing-emphasized);
+    --motion-easing-decelerate: var(--md-sys-motion-easing-emphasized-decelerate);
+    --motion-easing-accelerate: var(--md-sys-motion-easing-emphasized-accelerate);
+    --motion-duration-enter: var(--md-sys-motion-duration-medium1);
+    --motion-duration-exit: var(--md-sys-motion-duration-short4);
     --cm-sys-color-container-primary: var(--primary-container);
     --cm-sys-color-surface: var(--surface-container-lowest);
     --cm-sys-color-surface-variant: var(--surface-container-low);
@@ -3768,22 +3794,15 @@ main.flex-grow-1 {
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
 }
 
-/* Promo Image on the RIGHT with Wide Smooth Transition Gradient to the LEFT */
+/* Promo Image with Seamless Full-Bleed Alpha Mask (Zero Hard Cut) */
 .m3-promo-img-right {
     position: absolute;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    width: 58%;
+    inset: 0;
+    width: 100%;
+    height: 100%;
     z-index: 1;
     overflow: hidden;
     pointer-events: none;
-}
-
-@media (max-width: 575.98px) {
-    .m3-promo-img-right {
-        width: 65%;
-    }
 }
 
 .m3-promo-img-right img {
@@ -3793,13 +3812,15 @@ main.flex-grow-1 {
     object-position: right center;
     display: block;
     transition: transform 0.4s cubic-bezier(0.2, 0, 0, 1);
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, transparent 18%, rgba(0, 0, 0, 0.25) 42%, rgba(0, 0, 0, 0.8) 72%, #000 100%);
+    mask-image: linear-gradient(to right, transparent 0%, transparent 18%, rgba(0, 0, 0, 0.25) 42%, rgba(0, 0, 0, 0.8) 72%, #000 100%);
 }
 
 .m3-promo-card:hover .m3-promo-img-right img {
-    transform: scale(1.06);
+    transform: scale(1.05);
 }
 
-/* Wide Smooth Transition Gradient Mask: extending from the right image toward the left */
+/* Wide Smooth Transition Gradient Mask: seamless blend from right photo toward left surface */
 .m3-promo-gradient-mask-right {
     position: absolute;
     inset: 0;
@@ -3997,6 +4018,346 @@ main > div:nth-of-type(2) > div:first-child h4,
     background: var(--primary-container) !important;
     border-color: var(--primary) !important;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+/* ==========================================================================
+   MATERIAL DESIGN 3 (M3) ALERT DIALOG & MOTION SYSTEM (GOOGLE MATERIAL WEB)
+   ========================================================================== */
+
+/* === M3 DIALOG BACKDROP === */
+.swal2-container {
+    z-index: 2000 !important;
+    background: rgba(0, 0, 0, 0.36) !important;
+    backdrop-filter: blur(4px) !important;
+    -webkit-backdrop-filter: blur(4px) !important;
+    transition: opacity var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard) !important;
+}
+
+/* === M3 ALERT DIALOG CONTAINER (EXACT MATCH TO REFERENCE IMAGE) === */
+.swal2-popup.swal2-modal,
+.swal2-popup {
+    background-color: var(--surface-container-high, #ece6f0) !important;
+    color: var(--on-surface, #1d1b20) !important;
+    border-radius: 28px !important;
+    padding: 24px !important;
+    border: none !important;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18), 0 1px 3px rgba(0, 0, 0, 0.12) !important;
+    max-width: 440px !important;
+    width: 90% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    box-sizing: border-box !important;
+    transform-origin: center center !important;
+    animation: m3DialogEnter var(--md-sys-motion-duration-medium1) var(--md-sys-motion-easing-emphasized-decelerate) forwards !important;
+}
+
+[data-bs-theme="dark"] .swal2-popup {
+    background-color: var(--surface-container-high, #2b2930) !important;
+    color: var(--on-surface, #e6e0e9) !important;
+    border: 1px solid var(--outline-variant) !important;
+}
+
+/* === M3 DIALOG ICON (SLOT="ICON") === */
+.swal2-icon {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    border-radius: 50% !important;
+    border: none !important;
+    margin: 0 auto 16px auto !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 1.15rem !important;
+}
+
+.swal2-icon.swal2-info,
+.swal2-icon.swal2-question {
+    background-color: var(--surface-container-highest, #e6e0e9) !important;
+    color: var(--on-surface-variant, #49454f) !important;
+}
+
+.swal2-icon.swal2-warning {
+    background-color: var(--primary-container, #eaddff) !important;
+    color: var(--primary, #65558f) !important;
+}
+
+.swal2-icon.swal2-success {
+    background-color: rgba(46, 125, 50, 0.15) !important;
+    color: #2e7d32 !important;
+}
+
+.swal2-icon.swal2-error {
+    background-color: rgba(186, 26, 26, 0.15) !important;
+    color: #ba1a1a !important;
+}
+
+.swal2-icon .swal2-icon-content {
+    font-size: 1.15rem !important;
+    font-family: inherit !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+/* Hide default SweetAlert ring/pulse lines for clean Material 3 look */
+.swal2-icon .swal2-success-ring,
+.swal2-icon .swal2-success-line-tip,
+.swal2-icon .swal2-success-line-long,
+.swal2-icon .swal2-x-mark-line-left,
+.swal2-icon .swal2-x-mark-line-right {
+    display: none !important;
+}
+
+/* === M3 DIALOG HEADLINE (SLOT="HEADLINE") === */
+.swal2-title {
+    font-family: var(--font-poppins) !important;
+    font-size: 1.45rem !important;
+    font-weight: 500 !important;
+    line-height: 1.33 !important;
+    letter-spacing: 0 !important;
+    color: var(--on-surface, #1d1b20) !important;
+    text-align: center !important;
+    padding: 0 !important;
+    margin: 0 0 14px 0 !important;
+    width: 100% !important;
+}
+
+[data-bs-theme="dark"] .swal2-title {
+    color: var(--on-surface, #e6e0e9) !important;
+}
+
+/* === M3 DIALOG SUPPORTING TEXT (SLOT="CONTENT") === */
+.swal2-html-container {
+    font-family: var(--font-poppins) !important;
+    font-size: 0.95rem !important;
+    line-height: 1.5 !important;
+    letter-spacing: 0.015em !important;
+    color: var(--on-surface-variant, #49454f) !important;
+    text-align: center !important;
+    margin: 0 0 24px 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+}
+
+[data-bs-theme="dark"] .swal2-html-container {
+    color: var(--on-surface-variant, #cac4d0) !important;
+}
+
+/* === M3 DIALOG ACTIONS (SLOT="ACTIONS") === */
+.swal2-actions {
+    width: 100% !important;
+    display: flex !important;
+    justify-content: flex-end !important;
+    align-items: center !important;
+    gap: 8px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* === M3 TEXT BUTTONS (CONFIRM & DISMISS) === */
+.swal2-actions button.swal2-styled {
+    font-family: var(--font-poppins) !important;
+    font-size: 0.875rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.015em !important;
+    padding: 10px 20px !important;
+    border-radius: 20px !important;
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+    cursor: pointer !important;
+    transition: background-color var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard),
+                color var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard),
+                transform var(--md-sys-motion-duration-short1) var(--md-sys-motion-easing-standard) !important;
+    margin: 0 !important;
+    min-height: 40px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-decoration: none !important;
+}
+
+/* Dismiss / Cancel: M3 Flat Text Button */
+.swal2-actions button.swal2-cancel {
+    background-color: transparent !important;
+    color: var(--primary) !important;
+}
+
+.swal2-actions button.swal2-cancel:hover,
+.swal2-actions button.swal2-cancel:focus-visible {
+    background-color: rgba(var(--primary-rgb), 0.08) !important;
+    color: var(--primary) !important;
+}
+
+.swal2-actions button.swal2-cancel:active {
+    background-color: rgba(var(--primary-rgb), 0.14) !important;
+    transform: scale(0.98);
+}
+
+/* Confirm: M3 Flat Text Button */
+.swal2-actions button.swal2-confirm {
+    background-color: transparent !important;
+    color: var(--primary) !important;
+}
+
+.swal2-actions button.swal2-confirm:hover,
+.swal2-actions button.swal2-confirm:focus-visible {
+    background-color: rgba(var(--primary-rgb), 0.1) !important;
+    color: var(--primary) !important;
+}
+
+.swal2-actions button.swal2-confirm:active {
+    background-color: rgba(var(--primary-rgb), 0.18) !important;
+    transform: scale(0.98);
+}
+
+/* Destructive / Danger Confirm Buttons */
+.swal2-actions button.swal2-confirm.m3-btn-destructive {
+    color: var(--error, #ba1a1a) !important;
+}
+.swal2-actions button.swal2-confirm.m3-btn-destructive:hover {
+    background-color: rgba(186, 26, 26, 0.08) !important;
+}
+
+/* === M3 MOTION ANIMATION KEYFRAMES === */
+@keyframes m3DialogEnter {
+    0% {
+        transform: scale(0.9) translateY(12px);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes m3DialogExit {
+    0% {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(0.92) translateY(8px);
+        opacity: 0;
+    }
+}
+
+/* === M3 TOAST NOTIFICATIONS (POPUP TOAST) === */
+.swal2-container.swal2-top-end .swal2-popup,
+.swal2-container.swal2-top .swal2-popup {
+    border-radius: 16px !important;
+    padding: 12px 18px !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12) !important;
+    background-color: var(--surface-container-high, #ece6f0) !important;
+    color: var(--on-surface, #1d1b20) !important;
+    border: 1px solid var(--outline-variant) !important;
+    animation: m3ToastEnter var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-emphasized-decelerate) forwards !important;
+}
+
+@keyframes m3ToastEnter {
+    0% {
+        transform: translateY(-16px) scale(0.95);
+        opacity: 0;
+    }
+    100% {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+}
+
+/* === BOOTSTRAP MODAL AS M3 DIALOG === */
+.modal-content {
+    background-color: var(--surface-container-high) !important;
+    border-radius: 28px !important;
+    border: 1px solid var(--outline-variant) !important;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18) !important;
+    padding: 12px 16px !important;
+    animation: m3DialogEnter var(--md-sys-motion-duration-medium1) var(--md-sys-motion-easing-emphasized-decelerate) forwards !important;
+}
+
+.modal-header {
+    border-bottom: none !important;
+    padding: 16px 16px 8px 16px !important;
+}
+
+.modal-title {
+    font-family: var(--font-poppins) !important;
+    font-size: 1.35rem !important;
+    font-weight: 500 !important;
+    color: var(--on-surface) !important;
+}
+
+.modal-body {
+    padding: 8px 16px 16px 16px !important;
+    color: var(--on-surface-variant) !important;
+    font-size: 0.95rem !important;
+}
+
+.modal-footer {
+    border-top: none !important;
+    padding: 8px 16px 12px 16px !important;
+    gap: 8px !important;
+    justify-content: flex-end !important;
+}
+
+/* === M3 FORM CONTROLS (TEXT FIELD & SELECT ALIGNED TO REFERENCE DESIGN) === */
+.form-control,
+.form-select {
+    border-radius: 12px !important;
+    border: 1px solid var(--outline-variant) !important;
+    background-color: var(--surface-container-lowest) !important;
+    color: var(--on-surface) !important;
+    padding: 10px 14px !important;
+    font-size: 0.92rem !important;
+    transition: border-color var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard),
+                box-shadow var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard),
+                background-color var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard) !important;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.22) !important;
+    background-color: var(--surface-container-lowest) !important;
+    color: var(--on-surface) !important;
+}
+
+/* === M3 SWITCH (ALIGNED TO REFERENCE DESIGN SWITCH.MD) === */
+.form-switch .form-check-input {
+    width: 48px !important;
+    height: 28px !important;
+    border-radius: 14px !important;
+    background-color: var(--surface-container-highest) !important;
+    border: 2px solid var(--outline) !important;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%2379747e'/%3e%3c/svg%3e") !important;
+    background-position: left center !important;
+    transition: background-position var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard),
+                background-color var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard),
+                border-color var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard) !important;
+    cursor: pointer !important;
+}
+
+.form-switch .form-check-input:checked {
+    background-color: var(--primary) !important;
+    border-color: var(--primary) !important;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3.5' fill='%23ffffff'/%3e%3c/svg%3e") !important;
+    background-position: right center !important;
+}
+
+/* === M3 LINEAR PROGRESS (ALIGNED TO REFERENCE DESIGN PROGRESS.MD) === */
+.progress {
+    height: 4px !important;
+    border-radius: 2px !important;
+    background-color: var(--surface-container-highest) !important;
+    overflow: hidden !important;
+}
+
+.progress-bar {
+    background-color: var(--primary) !important;
+    border-radius: 2px !important;
+    transition: width var(--md-sys-motion-duration-medium3) var(--md-sys-motion-easing-emphasized) !important;
 }
 
 

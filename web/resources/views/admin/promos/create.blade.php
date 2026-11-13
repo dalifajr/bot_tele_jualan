@@ -150,10 +150,10 @@
             </div>
             
             <div class="m3-promo-card position-relative overflow-hidden" id="liveCardPreview" style="background: linear-gradient(135deg, rgba(11, 87, 208, 0.08), var(--surface-container)); border: 1px solid var(--outline-variant); border-radius: var(--radius-xl, 20px); min-height: 180px; display: flex;">
-                {{-- Right Image Container with Wide Transition Gradient to the Left --}}
-                <div id="previewImgContainer" class="position-absolute end-0 top-0 bottom-0 d-none" style="width: 58%; overflow: hidden; pointer-events: none; z-index: 1;">
-                    <img id="previewImgEl" src="" alt="Promo Preview" style="width: 100%; height: 100%; object-fit: cover; object-position: right center;">
-                    <div class="preview-gradient-mask" id="previewGradientMask" style="position: absolute; inset: 0; background: linear-gradient(to left, rgba(11, 87, 208, 0.05) 0%, rgba(11, 87, 208, 0.45) 40%, rgba(11, 87, 208, 0.85) 75%, var(--surface-container) 100%); pointer-events: none; z-index: 2;"></div>
+                {{-- Right Image Container with Full-Bleed Seamless Alpha Mask to the Left --}}
+                <div id="previewImgContainer" class="position-absolute inset-0 w-100 h-100 d-none" style="overflow: hidden; pointer-events: none; z-index: 1;">
+                    <img id="previewImgEl" src="" alt="Promo Preview" style="width: 100%; height: 100%; object-fit: cover; object-position: right center; -webkit-mask-image: linear-gradient(to right, transparent 0%, transparent 18%, rgba(0, 0, 0, 0.25) 42%, rgba(0, 0, 0, 0.8) 72%, #000 100%); mask-image: linear-gradient(to right, transparent 0%, transparent 18%, rgba(0, 0, 0, 0.25) 42%, rgba(0, 0, 0, 0.8) 72%, #000 100%);">
+                    <div class="preview-gradient-mask" id="previewGradientMask" style="position: absolute; inset: 0; background: linear-gradient(to left, rgba(11, 87, 208, 0.04) 0%, rgba(11, 87, 208, 0.35) 45%, rgba(11, 87, 208, 0.8) 75%, var(--surface-container) 98%); pointer-events: none; z-index: 2;"></div>
                 </div>
 
                 <div class="p-3.5 d-flex flex-column justify-content-between w-100 position-relative" style="z-index: 3;">

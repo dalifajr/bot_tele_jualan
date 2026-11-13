@@ -205,20 +205,14 @@
         e.preventDefault();
         
         Swal.fire({
-            title: 'Konfirmasi Pembuatan Pesanan',
+            title: 'Buat Pesanan',
             text: 'Apakah Anda yakin ingin memproses pesanan ini? Batas waktu pembayaran adalah 15 menit setelah pesanan dibuat.',
-            icon: 'question',
+            icon: 'info',
             showCancelButton: true,
-            confirmButtonColor: '#198754',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Ya, Buat Pesanan!',
-            cancelButtonText: 'Batal',
-            customClass: {
-                popup: 'rounded-4',
-                confirmButton: 'btn btn-success rounded-pill px-4',
-                cancelButton: 'btn btn-secondary rounded-pill px-4 ms-2'
-            },
-            buttonsStyling: false
+            confirmButtonText: 'Confirm',
+            cancelButtonText: 'Dismiss',
+            reverseButtons: false,
+            focusCancel: true
         }).then((result) => {
             if (result.isConfirmed) {
                 const pageLoader = document.getElementById('pageLoader');

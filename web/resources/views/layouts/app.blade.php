@@ -231,19 +231,50 @@
     {{-- SweetAlert2 --}}
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        function confirmAction(event, message) {
+        // Material Design 3 Alert Dialog Mixin Defaults (Google Material Web Specification)
+        if (typeof Swal !== 'undefined') {
+            const originalSwalFire = Swal.fire.bind(Swal);
+            window.Swal.fire = function(...args) {
+                if (args.length === 1 && typeof args[0] === 'object') {
+                    const opts = args[0];
+                    if (!opts.toast) {
+                        if (opts.showCancelButton && (!opts.cancelButtonText || opts.cancelButtonText === 'Batal')) {
+                            opts.cancelButtonText = 'Dismiss';
+                        }
+                        if (opts.showCancelButton && (!opts.confirmButtonText || opts.confirmButtonText === 'Ya, Lanjutkan' || opts.confirmButtonText === 'Ya, lanjutkan!')) {
+                            opts.confirmButtonText = 'Confirm';
+                        }
+                        if (opts.icon === 'warning' || opts.icon === 'question') {
+                            opts.icon = 'info';
+                        }
+                        opts.reverseButtons = false;
+                    }
+                }
+                return originalSwalFire.apply(this, args);
+            };
+        }
+
+        function confirmAction(event, message, title = 'Konfirmasi Aksi') {
             event.preventDefault();
             let element = event.currentTarget;
             let form = element.closest('form') || element;
             Swal.fire({
-                title: 'Konfirmasi Aksi',
+                title: title,
                 text: message,
-                icon: 'warning',
+                icon: 'info',
                 showCancelButton: true,
-                confirmButtonColor: '#3085d6',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Ya, lanjutkan!',
-                cancelButtonText: 'Batal'
+                confirmButtonText: 'Confirm',
+                cancelButtonText: 'Dismiss',
+                reverseButtons: false,
+                focusCancel: true,
+                customClass: {
+                    popup: 'm3-dialog-popup',
+                    title: 'm3-dialog-title',
+                    htmlContainer: 'm3-dialog-content',
+                    actions: 'm3-dialog-actions',
+                    confirmButton: 'm3-dialog-btn-confirm',
+                    cancelButton: 'm3-dialog-btn-dismiss'
+                }
             }).then((result) => {
                 if (result.isConfirmed) {
                     let loader = document.getElementById('pageLoader');

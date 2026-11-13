@@ -113,7 +113,7 @@
                         @if($promo->image)
                             <div class="m3-promo-img-right">
                                 <img src="{{ $promo->image_url }}" alt="{{ $promo->title }}" loading="lazy">
-                                <div class="m3-promo-gradient-mask-right" style="background: linear-gradient(to left, rgba({{ $promo->theme_rgb }}, 0.05) 0%, rgba({{ $promo->theme_rgb }}, 0.45) 40%, rgba({{ $promo->theme_rgb }}, 0.85) 75%, var(--surface-container) 100%);"></div>
+                                <div class="m3-promo-gradient-mask-right" style="background: linear-gradient(to left, rgba({{ $promo->theme_rgb }}, 0.04) 0%, rgba({{ $promo->theme_rgb }}, 0.35) 45%, rgba({{ $promo->theme_rgb }}, 0.8) 75%, var(--surface-container) 98%);"></div>
                             </div>
                         @endif
                         <div class="m3-promo-content">

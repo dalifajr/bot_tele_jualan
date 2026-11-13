@@ -490,27 +490,21 @@ function initCsrfToken() {
     };
 }
 
-/* === SWEETALERT CONFIRM === */
+/* === SWEETALERT CONFIRM (M3 ALERT DIALOG SPECIFICATION) === */
 function initSweetAlertConfirms() {
     document.querySelectorAll('[data-confirm]').forEach(el => {
         el.addEventListener('click', function(e) {
             e.preventDefault();
             const message = this.getAttribute('data-confirm');
             Swal.fire({
-                title: 'Konfirmasi',
+                title: 'Konfirmasi Aksi',
                 text: message,
-                icon: 'warning',
+                icon: 'info',
                 showCancelButton: true,
-                confirmButtonColor: '#3085d6',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Ya, Lanjutkan',
-                cancelButtonText: 'Batal',
-                customClass: {
-                    popup: 'rounded-4',
-                    confirmButton: 'btn btn-primary rounded-pill px-4',
-                    cancelButton: 'btn btn-danger rounded-pill px-4 ms-2'
-                },
-                buttonsStyling: false
+                confirmButtonText: 'Confirm',
+                cancelButtonText: 'Dismiss',
+                reverseButtons: false,
+                focusCancel: true
             }).then((result) => {
                 if (result.isConfirmed) {
                     const pageLoader = document.getElementById('pageLoader');

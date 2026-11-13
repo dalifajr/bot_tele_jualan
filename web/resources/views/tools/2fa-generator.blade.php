@@ -680,10 +680,8 @@
                     </div>
                 `,
                 showCancelButton: true,
-                confirmButtonText: '<i class="fas fa-bookmark me-1"></i> {{ __("Simpan") }}',
-                cancelButtonText: '{{ __("Batal") }}',
-                confirmButtonColor: '#198754',
-                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Confirm',
+                cancelButtonText: 'Dismiss',
                 focusConfirm: false,
                 didOpen: () => {
                     const input = document.getElementById('swal-acc-name');
@@ -725,10 +723,8 @@
                     </div>
                 `,
                 showCancelButton: true,
-                confirmButtonText: '<i class="fas fa-plus me-1"></i> {{ __("Simpan Akun") }}',
-                cancelButtonText: '{{ __("Batal") }}',
-                confirmButtonColor: '#0d6efd',
-                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Confirm',
+                cancelButtonText: 'Dismiss',
                 focusConfirm: false,
                 didOpen: () => {
                     const input = document.getElementById('swal-add-name');
@@ -835,10 +831,8 @@
                     placeholder: '{{ __("Masukkan nama akun baru") }}'
                 },
                 showCancelButton: true,
-                confirmButtonText: '{{ __("Simpan Perubahan") }}',
-                cancelButtonText: '{{ __("Batal") }}',
-                confirmButtonColor: '#0d6efd',
-                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Confirm',
+                cancelButtonText: 'Dismiss',
                 inputValidator: (value) => {
                     if (!value || !value.trim()) {
                         return '{{ __("Nama akun tidak boleh kosong!") }}';
@@ -903,12 +897,12 @@
             Swal.fire({
                 title: '{{ __("Hapus Akun Ini?") }}',
                 text: '{{ __("Apakah Anda yakin ingin menghapus akun") }} "' + name + '"? {{ __("Tindakan ini tidak dapat dibatalkan.") }}',
-                icon: 'warning',
+                icon: 'info',
                 showCancelButton: true,
-                confirmButtonColor: '#dc3545',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: '<i class="fas fa-trash-alt me-1"></i> {{ __("Ya, Hapus") }}',
-                cancelButtonText: '{{ __("Batal") }}'
+                confirmButtonText: 'Confirm',
+                cancelButtonText: 'Dismiss',
+                reverseButtons: false,
+                focusCancel: true
             }).then((result) => {
                 if (result.isConfirmed) {
                     fetch('/tools/2fa-generator/accounts/' + id, {
