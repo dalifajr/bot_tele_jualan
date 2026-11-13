@@ -4065,16 +4065,32 @@ main > div:nth-of-type(2) > div:first-child h4,
    MATERIAL DESIGN 3 (M3) ALERT DIALOG & MOTION SYSTEM (GOOGLE MATERIAL WEB)
    ========================================================================== */
 
-/* === M3 DIALOG BACKDROP (APPLIED ONLY TO MODALS, NEVER TO TOASTS) === */
-.swal2-container:not(.swal2-toast-shown):not(:has(.swal2-toast)) {
+/* === GLOBAL CONTAINER DEFAULTS: TRANSPARENT & NON-BLOCKING === */
+.swal2-container {
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
     z-index: 2000 !important;
+}
+
+/* === M3 DIALOG BACKDROP: EXCLUSIVE TO ACTIVE MODAL DIALOGS === */
+body.swal2-shown:not(.swal2-toast-shown) .swal2-container.swal2-backdrop-show,
+.swal2-container.swal2-backdrop-show.swal2-center,
+.swal2-container.swal2-backdrop-show:not(.swal2-top):not(.swal2-top-start):not(.swal2-top-end):not(.swal2-center-start):not(.swal2-center-end):not(.swal2-bottom):not(.swal2-bottom-start):not(.swal2-bottom-end) {
     background: rgba(0, 0, 0, 0.42) !important;
     backdrop-filter: blur(4px) !important;
     -webkit-backdrop-filter: blur(4px) !important;
     transition: opacity var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard) !important;
+    pointer-events: auto !important;
 }
 
 /* === M3 TOAST CONTAINER: ZERO BACKDROP, TRANSPARENT & NON-BLOCKING === */
+.swal2-container.swal2-top-end,
+.swal2-container.swal2-top,
+.swal2-container.swal2-top-start,
+.swal2-container.swal2-bottom-end,
+.swal2-container.swal2-bottom,
+.swal2-container.swal2-bottom-start,
 .swal2-container.swal2-toast-shown,
 body.swal2-toast-shown .swal2-container,
 .swal2-container:has(.swal2-toast) {
@@ -4265,16 +4281,21 @@ body.swal2-toast-shown .swal2-container,
     transform: scale(0.98);
 }
 
-/* Cancel Button jika ada */
+/* Cancel Button (Batal: M3 Flat Text Button) */
 .swal2-popup:not(.swal2-toast) .swal2-actions button.swal2-cancel {
     background-color: transparent !important;
-    color: var(--on-surface-variant, #49454f) !important;
+    color: var(--primary) !important;
 }
 
 .swal2-popup:not(.swal2-toast) .swal2-actions button.swal2-cancel:hover,
 .swal2-popup:not(.swal2-toast) .swal2-actions button.swal2-cancel:focus-visible {
-    background-color: rgba(0, 0, 0, 0.06) !important;
-    color: var(--on-surface) !important;
+    background-color: rgba(var(--primary-rgb), 0.08) !important;
+    color: var(--primary) !important;
+}
+
+.swal2-popup:not(.swal2-toast) .swal2-actions button.swal2-cancel:active {
+    background-color: rgba(var(--primary-rgb), 0.14) !important;
+    transform: scale(0.98);
 }
 
 /* Destructive / Danger Confirm Buttons */
@@ -4325,7 +4346,37 @@ body.swal2-toast-shown .swal2-container,
     width: auto !important;
     min-width: 220px !important;
     margin: 12px !important;
-    animation: m3ToastEnter var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-emphasized-decelerate) forwards !important;
+    pointer-events: auto !important;
+}
+
+.swal2-popup.swal2-toast.swal2-show {
+    animation: m3ToastEnter 250ms cubic-bezier(0.05, 0.7, 0.1, 1) forwards !important;
+}
+
+.swal2-popup.swal2-toast.swal2-hide {
+    animation: m3ToastExit 180ms cubic-bezier(0.3, 0, 0.8, 0.15) forwards !important;
+}
+
+@keyframes m3ToastEnter {
+    0% {
+        transform: translateY(-16px) scale(0.95);
+        opacity: 0;
+    }
+    100% {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes m3ToastExit {
+    0% {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(-12px) scale(0.92);
+        opacity: 0;
+    }
 }
 
 [data-bs-theme="dark"] .swal2-popup.swal2-toast {
@@ -4365,24 +4416,6 @@ body.swal2-toast-shown .swal2-container,
     padding: 0 !important;
     text-align: left !important;
     color: var(--on-surface-variant) !important;
-}
-    padding: 12px 18px !important;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12) !important;
-    background-color: var(--surface-container-high, #ece6f0) !important;
-    color: var(--on-surface, #1d1b20) !important;
-    border: 1px solid var(--outline-variant) !important;
-    animation: m3ToastEnter var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-emphasized-decelerate) forwards !important;
-}
-
-@keyframes m3ToastEnter {
-    0% {
-        transform: translateY(-16px) scale(0.95);
-        opacity: 0;
-    }
-    100% {
-        transform: translateY(0) scale(1);
-        opacity: 1;
-    }
 }
 
 /* === BOOTSTRAP MODAL AS M3 DIALOG === */

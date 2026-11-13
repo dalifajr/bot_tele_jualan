@@ -239,17 +239,48 @@
                     const opts = args[0];
                     if (opts.toast) {
                         // M3 Toast: Pure notification without backdrop or action buttons
+                        opts.backdrop = false; // Zero backdrop: eliminates any brief gray flash
                         opts.showConfirmButton = false;
                         opts.showCancelButton = false;
                         opts.showDenyButton = false;
                         if (!opts.timer) opts.timer = 2200;
                         if (!opts.position) opts.position = 'top-end';
+
+                        // Fail-safe auto dismiss: ensure toast element is cleanly removed from DOM
+                        const origDidOpen = opts.didOpen;
+                        opts.didOpen = (toastEl) => {
+                            if (typeof origDidOpen === 'function') origDidOpen(toastEl);
+                            setTimeout(() => {
+                                if (document.body.contains(toastEl)) {
+                                    Swal.close();
+                                }
+                            }, (opts.timer || 2200) + 300);
+                        };
                     } else {
-                        // M3 Dialog
+                        // M3 Dialog: standardize confirm & cancel ("Batal") buttons across entire website
+                        if (opts.cancelButtonText === 'Dismiss' || (!opts.cancelButtonText && opts.showCancelButton)) {
+                            opts.cancelButtonText = 'Batal';
+                        }
+                        if (opts.confirmButtonText === 'Confirm' || (!opts.confirmButtonText && opts.showCancelButton)) {
+                            opts.confirmButtonText = 'Konfirmasi';
+                        }
                         if (opts.icon === 'warning' || opts.icon === 'question') {
                             opts.icon = 'info';
                         }
                         opts.reverseButtons = false;
+                        if (typeof opts.allowOutsideClick === 'undefined') opts.allowOutsideClick = true;
+                        if (typeof opts.allowEscapeKey === 'undefined') opts.allowEscapeKey = true;
+
+                        if (!opts.customClass) {
+                            opts.customClass = {
+                                popup: 'm3-dialog-popup',
+                                title: 'm3-dialog-title',
+                                htmlContainer: 'm3-dialog-content',
+                                actions: 'm3-dialog-actions',
+                                confirmButton: 'm3-dialog-btn-confirm',
+                                cancelButton: 'm3-dialog-btn-cancel'
+                            };
+                        }
                     }
                 }
                 return originalSwalFire.apply(this, args);
@@ -264,8 +295,9 @@
                 title: title,
                 text: message,
                 icon: 'info',
-                showCancelButton: false, // Hilangkan tombol dismiss pada dialog konfirmasi sesuai spesifikasi Helm
-                confirmButtonText: 'Confirm',
+                showCancelButton: true,
+                confirmButtonText: 'Konfirmasi',
+                cancelButtonText: 'Batal',
                 reverseButtons: false,
                 focusConfirm: true,
                 allowOutsideClick: true,
@@ -275,7 +307,8 @@
                     title: 'm3-dialog-title',
                     htmlContainer: 'm3-dialog-content',
                     actions: 'm3-dialog-actions',
-                    confirmButton: 'm3-dialog-btn-confirm'
+                    confirmButton: 'm3-dialog-btn-confirm',
+                    cancelButton: 'm3-dialog-btn-cancel'
                 }
             }).then((result) => {
                 if (result.isConfirmed) {
