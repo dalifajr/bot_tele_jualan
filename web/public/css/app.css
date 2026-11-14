@@ -2776,15 +2776,11 @@ ul.nav-pills,
 }
 
 /* === MODALS (M3 DIALOG 24PX/28PX SQUIRCLE) === */
-.modal-content {
-    background-color: var(--surface-container-lowest) !important;
-    border: 1px solid var(--outline-variant) !important;
-    border-radius: var(--radius-xl) !important;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12) !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    color: var(--on-surface) !important;
-    overflow: hidden;
+.modal-backdrop {
+    background-color: rgba(15, 23, 42, 0.6) !important;
+    backdrop-filter: blur(6px) !important;
+    -webkit-backdrop-filter: blur(6px) !important;
+    transition: opacity 0.25s cubic-bezier(0.2, 0, 0, 1) !important;
 }
 
 .modal-header {
@@ -2804,22 +2800,16 @@ ul.nav-pills,
     background-color: transparent !important;
 }
 
-.modal-backdrop {
-    background-color: var(--overlay) !important;
-    backdrop-filter: blur(2px) !important;
-    -webkit-backdrop-filter: blur(2px) !important;
-}
-
 /* ==========================================================================
    Material Design 3 / Flat Material You Confirmation Dialog (Android 17 M3)
    ========================================================================== */
 .swal2-popup:not(.swal2-toast) {
     font-family: var(--font-poppins) !important;
-    border-radius: var(--radius-xl, 24px) !important;
+    border-radius: 28px !important;
     border: 1px solid var(--outline-variant) !important;
     background: var(--surface-container-high) !important;
     color: var(--on-surface) !important;
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22) !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(0, 0, 0, 0.05) !important;
     padding: 24px !important;
 }
 
@@ -4115,40 +4105,113 @@ body.swal2-toast-shown .swal2-container,
     pointer-events: auto !important;
 }
 
-/* === M3 ALERT DIALOG CONTAINER (EXACT MATCH TO REFERENCE IMAGE) === */
-.swal2-popup.swal2-modal:not(.swal2-toast),
-.swal2-popup:not(.swal2-toast) {
-    background-color: var(--surface-container-high, #ece6f0) !important;
-    color: var(--on-surface, #1d1b20) !important;
-    border-radius: 28px !important;
-    padding: 24px !important;
-    border: none !important;
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18), 0 1px 3px rgba(0, 0, 0, 0.12) !important;
-    max-width: 440px !important;
-    width: 90% !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    box-sizing: border-box !important;
-    transform-origin: center center !important;
+/* === M3 & VCC ALERT DIALOG CONTAINER (EXACT MATCH TO REFERENCE & #vccSelectorContainer) === */
+.swal2-container:not(.swal2-toast-shown):not(:has(.swal2-toast)) {
+    background: rgba(15, 23, 42, 0.6) !important;
+    backdrop-filter: blur(6px) !important;
+    -webkit-backdrop-filter: blur(6px) !important;
+    transition: background-color 0.25s cubic-bezier(0.2, 0, 0, 1) !important;
 }
 
-.swal2-popup.swal2-modal:not(.swal2-toast).swal2-show,
-.swal2-popup:not(.swal2-toast).swal2-show {
-    animation: m3DialogEnter var(--md-sys-motion-duration-medium1) var(--md-sys-motion-easing-emphasized-decelerate) forwards !important;
+@media (min-width: 768px) {
+    .swal2-popup.swal2-modal:not(.swal2-toast),
+    .swal2-popup:not(.swal2-toast) {
+        background-color: var(--surface-container-high, #ece6f0) !important;
+        color: var(--on-surface, #1d1b20) !important;
+        border-radius: 28px !important;
+        padding: 28px 24px !important;
+        border: 1px solid var(--outline-variant, #e2e8f0) !important;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(0, 0, 0, 0.05) !important;
+        max-width: 460px !important;
+        width: 90% !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        box-sizing: border-box !important;
+        transform-origin: center center !important;
+    }
+
+    .swal2-popup.swal2-modal:not(.swal2-toast).swal2-show,
+    .swal2-popup:not(.swal2-toast).swal2-show {
+        animation: vccPopupDesktopEnter 0.25s cubic-bezier(0.2, 0, 0, 1) forwards !important;
+    }
+
+    .swal2-popup.swal2-modal:not(.swal2-toast).swal2-hide,
+    .swal2-popup:not(.swal2-toast).swal2-hide {
+        animation: vccPopupDesktopExit 0.2s cubic-bezier(0.2, 0, 0, 1) forwards !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+    }
 }
 
-.swal2-popup.swal2-modal:not(.swal2-toast).swal2-hide,
-.swal2-popup:not(.swal2-toast).swal2-hide {
-    animation: m3DialogExit var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-emphasized-accelerate) forwards !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
+@media (max-width: 767.98px) {
+    .swal2-container:not(.swal2-toast-shown):not(:has(.swal2-toast)) {
+        display: flex !important;
+        align-items: flex-end !important;
+        justify-content: center !important;
+        padding: 0 !important;
+    }
+
+    .swal2-popup.swal2-modal:not(.swal2-toast),
+    .swal2-popup:not(.swal2-toast) {
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        background-color: var(--surface-container-high, #ece6f0) !important;
+        color: var(--on-surface, #1d1b20) !important;
+        border-radius: 28px 28px 0 0 !important;
+        border-bottom: none !important;
+        border-top: 1px solid var(--outline-variant, #e2e8f0) !important;
+        border-left: 1px solid var(--outline-variant, #e2e8f0) !important;
+        border-right: 1px solid var(--outline-variant, #e2e8f0) !important;
+        max-height: 85vh !important;
+        box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.25) !important;
+        padding: 12px 20px 24px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        box-sizing: border-box !important;
+        transform-origin: bottom center !important;
+        overflow-y: auto !important;
+    }
+
+    .swal2-popup.swal2-modal:not(.swal2-toast)::before,
+    .swal2-popup:not(.swal2-toast)::before {
+        content: "" !important;
+        display: block !important;
+        width: 38px !important;
+        height: 4.5px !important;
+        background: var(--outline-variant, #cbd5e1) !important;
+        border-radius: 9999px !important;
+        margin: 0 auto 12px auto !important;
+        flex-shrink: 0 !important;
+    }
+
+    .swal2-popup.swal2-modal:not(.swal2-toast).swal2-show,
+    .swal2-popup:not(.swal2-toast).swal2-show {
+        animation: vccPopupMobileEnter 0.3s cubic-bezier(0.2, 0, 0, 1) forwards !important;
+    }
+
+    .swal2-popup.swal2-modal:not(.swal2-toast).swal2-hide,
+    .swal2-popup:not(.swal2-toast).swal2-hide {
+        animation: vccPopupMobileExit 0.25s cubic-bezier(0.2, 0, 0, 1) forwards !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+    }
 }
 
 [data-bs-theme="dark"] .swal2-popup:not(.swal2-toast) {
     background-color: var(--surface-container-high, #2b2930) !important;
     color: var(--on-surface, #e6e0e9) !important;
     border: 1px solid var(--outline-variant) !important;
+}
+
+[data-bs-theme="dark"] .swal2-popup:not(.swal2-toast)::before {
+    background: var(--outline-variant, #49454f) !important;
 }
 
 /* === M3 DIALOG ICON (SLOT="ICON") === */
@@ -4319,25 +4382,69 @@ body.swal2-toast-shown .swal2-container,
     background-color: rgba(186, 26, 26, 0.08) !important;
 }
 
-/* === M3 MOTION ANIMATION KEYFRAMES === */
-@keyframes m3DialogEnter {
+/* === M3 MOTION ANIMATION KEYFRAMES (ALIGNED TO #vccSelectorContainer) === */
+@keyframes vccPopupDesktopEnter {
     0% {
-        transform: scale(0.9) translateY(12px);
+        transform: scale(0.92);
         opacity: 0;
     }
     100% {
-        transform: scale(1) translateY(0);
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes vccPopupDesktopExit {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(0.92);
+        opacity: 0;
+    }
+}
+
+@keyframes vccPopupMobileEnter {
+    0% {
+        transform: translateY(100%);
+        opacity: 0.8;
+    }
+    100% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes vccPopupMobileExit {
+    0% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(100%);
+        opacity: 0.8;
+    }
+}
+
+@keyframes m3DialogEnter {
+    0% {
+        transform: scale(0.92);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(1);
         opacity: 1;
     }
 }
 
 @keyframes m3DialogExit {
     0% {
-        transform: scale(1) translateY(0);
+        transform: scale(1);
         opacity: 1;
     }
     100% {
-        transform: scale(0.92) translateY(8px);
+        transform: scale(0.92);
         opacity: 0;
     }
 }
@@ -4431,14 +4538,86 @@ body.swal2-toast-shown .swal2-container,
     color: var(--on-surface-variant) !important;
 }
 
-/* === BOOTSTRAP MODAL AS M3 DIALOG === */
-.modal-content {
-    background-color: var(--surface-container-high) !important;
-    border-radius: 28px !important;
-    border: 1px solid var(--outline-variant) !important;
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18) !important;
-    padding: 12px 16px !important;
-    animation: m3DialogEnter var(--md-sys-motion-duration-medium1) var(--md-sys-motion-easing-emphasized-decelerate) forwards !important;
+/* === BOOTSTRAP MODAL AS M3 DIALOG (DESKTOP) & M3 BOTTOM SHEET DRAWER (MOBILE) === */
+@media (min-width: 768px) {
+    .modal.fade .modal-dialog {
+        transform: scale(0.92) !important;
+        opacity: 0 !important;
+        transition: transform 0.25s cubic-bezier(0.2, 0, 0, 1), opacity 0.25s cubic-bezier(0.2, 0, 0, 1) !important;
+    }
+
+    .modal.fade.show .modal-dialog {
+        transform: scale(1) !important;
+        opacity: 1 !important;
+    }
+
+    .modal-content {
+        background-color: var(--surface-container-high) !important;
+        border-radius: 28px !important;
+        border: 1px solid var(--outline-variant) !important;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(0, 0, 0, 0.05) !important;
+        padding: 16px 20px !important;
+        animation: none !important;
+        overflow: hidden !important;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .modal {
+        padding: 0 !important;
+        overflow-y: hidden !important;
+    }
+
+    .modal.fade .modal-dialog {
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        max-height: 88vh !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: flex-end !important;
+        transform: translateY(100%) !important;
+        transition: transform 0.3s cubic-bezier(0.2, 0, 0, 1) !important;
+    }
+
+    .modal.fade.show .modal-dialog {
+        transform: translateY(0) !important;
+    }
+
+    .modal-content {
+        background-color: var(--surface-container-high) !important;
+        border-radius: 28px 28px 0 0 !important;
+        border-bottom: none !important;
+        border-top: 1px solid var(--outline-variant) !important;
+        border-left: 1px solid var(--outline-variant) !important;
+        border-right: 1px solid var(--outline-variant) !important;
+        box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.25) !important;
+        max-height: 88vh !important;
+        overflow-y: auto !important;
+        padding: 12px 20px 24px !important;
+        animation: none !important;
+    }
+
+    .modal-header {
+        position: relative !important;
+        padding-top: 24px !important;
+    }
+
+    .modal-header::before {
+        content: "" !important;
+        position: absolute !important;
+        top: 8px !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        width: 38px !important;
+        height: 4.5px !important;
+        background: var(--outline-variant, #cbd5e1) !important;
+        border-radius: 9999px !important;
+    }
 }
 
 .modal-header {
@@ -4464,6 +4643,16 @@ body.swal2-toast-shown .swal2-container,
     padding: 8px 16px 12px 16px !important;
     gap: 8px !important;
     justify-content: flex-end !important;
+}
+
+[data-bs-theme="dark"] .modal-content {
+    background-color: var(--surface-container-high, #2b2930) !important;
+    color: var(--on-surface, #e6e0e9) !important;
+    border-color: var(--outline-variant, #49454f) !important;
+}
+
+[data-bs-theme="dark"] .modal-header::before {
+    background: var(--outline-variant, #49454f) !important;
 }
 
 /* === M3 FORM CONTROLS (TEXT FIELD & SELECT ALIGNED TO REFERENCE DESIGN) === */
