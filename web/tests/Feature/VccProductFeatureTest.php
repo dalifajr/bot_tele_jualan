@@ -220,4 +220,74 @@ class VccProductFeatureTest extends TestCase
         $this->assertCount(2, $reservedUnits);
         $this->assertEquals(['Linode', 'Vultr'], $reservedUnits->pluck('vcc_service')->sort()->values()->toArray());
     }
+
+    public function test_vcc_multi_quantity_per_service_and_stock_limit()
+    {
+        $customer = User::forceCreate([
+            'full_name' => 'Multi Qty Cust',
+            'username' => 'multiqtycust',
+            'email' => 'multiqty@example.com',
+            'password' => bcrypt('password123'),
+            'role' => 'customer',
+        ]);
+
+        $product = Product::create([
+            'name' => 'VCC Multi Qty Test',
+            'price' => 50000,
+            'is_vcc' => true,
+            'vcc_services' => ['Shopee', 'Lazada'],
+            'is_suspended' => false,
+        ]);
+
+        // Input 2 unit Shopee, 1 unit Lazada
+        StockUnit::create([
+            'product_id' => $product->id,
+            'raw_text' => '4000111122223333|01|30|111',
+            'vcc_service' => 'Shopee',
+            'vcc_group_id' => 'grp_a',
+            'stock_status' => 'ready',
+            'is_sold' => false,
+        ]);
+        StockUnit::create([
+            'product_id' => $product->id,
+            'raw_text' => '4000111122224444|02|30|222',
+            'vcc_service' => 'Shopee',
+            'vcc_group_id' => 'grp_b',
+            'stock_status' => 'ready',
+            'is_sold' => false,
+        ]);
+        StockUnit::create([
+            'product_id' => $product->id,
+            'raw_text' => '4000111122225555|03|30|333',
+            'vcc_service' => 'Lazada',
+            'vcc_group_id' => 'grp_c',
+            'stock_status' => 'ready',
+            'is_sold' => false,
+        ]);
+
+        // 1. Membeli melebihi stok yang ada (misal: Shopee 3 unit padahal stok cuma 2)
+        $failCartResp = $this->actingAs($customer)->postJson(route('cart.add', $product->id), [
+            'vcc_services' => ['Shopee', 'Shopee', 'Shopee']
+        ]);
+        $failCartResp->assertStatus(422);
+
+        // 2. Membeli sesuai stok (Shopee 2 unit + Lazada 1 unit = 3 unit kartu)
+        $okCartResp = $this->actingAs($customer)->postJson(route('cart.add', $product->id), [
+            'vcc_services' => ['Shopee', 'Shopee', 'Lazada']
+        ]);
+        $okCartResp->assertOk();
+
+        // 3. Checkout
+        $checkoutResp = $this->actingAs($customer)->post(route('cart.process'));
+        $checkoutResp->assertRedirect();
+
+        $order = Order::where('customer_id', $customer->id)->latest('id')->first();
+        $this->assertEquals(150000, $order->subtotal);
+
+        // Verifikasi 3 StockUnit ter-reserve (2 Shopee, 1 Lazada)
+        $reservedUnits = StockUnit::where('sold_order_id', $order->id)->get();
+        $this->assertCount(3, $reservedUnits);
+        $this->assertEquals(2, $reservedUnits->where('vcc_service', 'Shopee')->count());
+        $this->assertEquals(1, $reservedUnits->where('vcc_service', 'Lazada')->count());
+    }
 }

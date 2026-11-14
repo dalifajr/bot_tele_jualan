@@ -61,8 +61,9 @@ class CartController extends Controller
                 return back()->with('error', $msg);
             }
 
-            // Validate stock availability per selected service
-            foreach ($vccServices as $service) {
+            // Validate stock availability per selected service (accounting for multi-quantity)
+            $serviceCounts = array_count_values($vccServices);
+            foreach ($serviceCounts as $service => $requiredQty) {
                 $srvStock = StockUnit::where('product_id', $product->id)
                     ->where('vcc_service', $service)
                     ->where('is_sold', false)
@@ -72,8 +73,10 @@ class CartController extends Controller
                               ->orWhereNull('stock_status');
                     })->count();
 
-                if ($srvStock < 1) {
-                    $msg = __("Stok untuk layanan ':service' saat ini sedang habis.", ['service' => $service]);
+                if ($srvStock < $requiredQty) {
+                    $msg = $srvStock > 0 
+                        ? __("Stok untuk layanan ':service' hanya tersisa :stock unit.", ['service' => $service, 'stock' => $srvStock])
+                        : __("Stok untuk layanan ':service' saat ini sedang habis.", ['service' => $service]);
                     if ($request->expectsJson()) {
                         return response()->json(['success' => false, 'message' => $msg], 422);
                     }
@@ -323,7 +326,8 @@ class CartController extends Controller
                 }
 
                 if ($product->is_vcc && !empty($item->vcc_services)) {
-                    foreach ($item->vcc_services as $srv) {
+                    $serviceCounts = array_count_values($item->vcc_services);
+                    foreach ($serviceCounts as $srv => $requiredQty) {
                         $srvStock = StockUnit::where('product_id', $product->id)
                             ->where('vcc_service', $srv)
                             ->where('is_sold', false)
@@ -332,8 +336,8 @@ class CartController extends Controller
                                 $query->where('stock_status', 'ready')
                                       ->orWhereNull('stock_status');
                             })->count();
-                        if ($srvStock < 1) {
-                            throw new \Exception("Stok VCC untuk layanan '{$srv}' pada produk '{$product->name}' tidak cukup atau habis.");
+                        if ($srvStock < $requiredQty) {
+                            throw new \Exception("Stok VCC untuk layanan '{$srv}' pada produk '{$product->name}' hanya tersisa {$srvStock} unit.");
                         }
                     }
                 } else {

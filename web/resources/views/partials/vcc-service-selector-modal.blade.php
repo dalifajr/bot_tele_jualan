@@ -21,11 +21,11 @@
         <div class="vcc-dialog-body">
             <div class="d-flex align-items-center justify-content-between mb-2">
                 <span class="small text-secondary fw-semibold">
-                    <i class="fas fa-list-check text-primary me-1"></i>{{ __('Pilih Layanan (1 Layanan = 1 Stok):') }}
+                    <i class="fas fa-list-check text-primary me-1"></i>{{ __('Pilih Layanan & Atur Kuantitas:') }}
                 </span>
-                <button type="button" class="btn btn-link btn-sm text-decoration-none p-0 fw-semibold" id="btnVccSelectAll" style="font-size: 0.75rem;">
-                    {{ __('Pilih Semua') }}
-                </button>
+                <span class="badge bg-light text-muted border small fw-normal" style="font-size: 0.7rem;">
+                    {{ __('1 layanan = 1 stok') }}
+                </span>
             </div>
 
             {{-- List Layanan Container (Scrollable) --}}
@@ -40,12 +40,16 @@
             {{-- Dynamic Price & Service Summary Box --}}
             <div class="vcc-summary-box p-3 rounded-4 mb-3">
                 <div class="d-flex justify-content-between align-items-center small text-secondary mb-1">
-                    <span>{{ __('Layanan Terpilih') }}</span>
-                    <span class="fw-bold text-body" id="vccSelectedCountText">0 {{ __('layanan') }}</span>
+                    <span>{{ __('Total Kuantitas') }}</span>
+                    <span class="fw-bold text-body" id="vccSelectedCountText">0 unit kartu</span>
                 </div>
-                <div class="d-flex justify-content-between align-items-center small text-secondary mb-2">
+                <div class="d-flex justify-content-between align-items-center small text-secondary mb-1">
                     <span>{{ __('Harga Satuan') }}</span>
                     <span class="fw-semibold text-body" id="vccUnitPriceText">Rp 0</span>
+                </div>
+                <div id="vccSelectedBreakdownRow" class="small text-secondary mb-2 d-none">
+                    <span class="d-block mb-1 text-muted" style="font-size: 0.72rem;">{{ __('Rincian Layanan:') }}</span>
+                    <div id="vccSelectedBreakdownList" class="d-flex flex-wrap gap-1"></div>
                 </div>
                 <div class="border-top pt-2 d-flex justify-content-between align-items-center">
                     <span class="fw-bold text-body small">{{ __('Total Harga Bayar:') }}</span>
@@ -68,14 +72,14 @@
 </div>
 
 <style>
-/* Backdrop Overlay */
+/* Backdrop Overlay - z-index 10050 di atas loader global */
 .vcc-selector-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(15, 23, 42, 0.55);
+    background: rgba(15, 23, 42, 0.6);
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
-    z-index: 1060;
+    z-index: 10050;
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.25s cubic-bezier(0.2, 0, 0, 1), visibility 0.25s cubic-bezier(0.2, 0, 0, 1);
@@ -94,12 +98,12 @@
         left: 50%;
         transform: translate(-50%, -50%) scale(0.92);
         width: 92%;
-        max-width: 480px;
+        max-width: 500px;
         background: var(--surface-container-high, #f8fafc);
         border: 1px solid var(--outline-variant, #e2e8f0);
         border-radius: 28px;
         padding: 28px 24px;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(0, 0, 0, 0.05);
         opacity: 0;
         transition: transform 0.25s cubic-bezier(0.2, 0, 0, 1), opacity 0.25s cubic-bezier(0.2, 0, 0, 1);
         max-height: 90vh;
@@ -125,7 +129,7 @@
         border-top: 1px solid var(--outline-variant, #e2e8f0);
         border-radius: 28px 28px 0 0;
         padding: 12px 20px 24px;
-        box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.25);
         transform: translateY(100%);
         transition: transform 0.3s cubic-bezier(0.2, 0, 0, 1);
         max-height: 85vh;
@@ -163,7 +167,7 @@
 
 /* Scrollable Service List */
 .vcc-service-list {
-    max-height: 240px;
+    max-height: 250px;
     overflow-y: auto;
     padding-right: 4px;
 }
@@ -175,37 +179,82 @@
     border-radius: 16px;
     padding: 10px 14px;
     margin-bottom: 8px;
-    cursor: pointer;
     transition: all 0.2s ease;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    user-select: none;
+    gap: 8px;
 }
 
 .vcc-service-tile:hover {
     border-color: var(--primary, #0284c7);
-    background: rgba(var(--primary-rgb, 2, 132, 199), 0.03);
 }
 
 .vcc-service-tile.is-selected {
     border-color: var(--primary, #0284c7);
-    background: rgba(var(--primary-rgb, 2, 132, 199), 0.08);
+    background: rgba(var(--primary-rgb, 2, 132, 199), 0.06);
 }
 
 .vcc-service-tile.is-disabled {
-    opacity: 0.55;
+    opacity: 0.5;
     background: var(--surface-container-low, #f1f5f9);
     cursor: not-allowed;
     border-color: var(--outline-variant, #e2e8f0);
 }
 
 .vcc-custom-checkbox {
-    width: 19px;
-    height: 19px;
+    width: 20px;
+    height: 20px;
     cursor: pointer;
     accent-color: var(--primary, #0284c7);
     border-radius: 6px;
+    flex-shrink: 0;
+}
+
+/* Stepper Kuantitas per Layanan */
+.vcc-qty-stepper {
+    display: flex;
+    align-items: center;
+    background: var(--surface-container-low, #f1f5f9);
+    border: 1px solid var(--outline-variant, #cbd5e1);
+    border-radius: 9999px;
+    padding: 2px 4px;
+}
+
+.vcc-btn-step {
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border-radius: 50% !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: bold;
+    color: var(--on-surface, #1e293b);
+    background: #ffffff;
+    border: 1px solid var(--outline-variant, #cbd5e1);
+    transition: background 0.15s ease;
+}
+
+.vcc-btn-step:hover:not(:disabled) {
+    background: var(--primary, #0284c7);
+    color: #ffffff;
+    border-color: var(--primary, #0284c7);
+}
+
+.vcc-btn-step:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.vcc-qty-number {
+    min-width: 22px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--on-surface, #1e293b);
+    user-select: none;
 }
 
 /* Summary Box */
@@ -230,12 +279,25 @@
 [data-bs-theme="dark"] .vcc-service-tile.is-disabled {
     background: #1e293b;
 }
+[data-bs-theme="dark"] .vcc-qty-stepper {
+    background: #1e293b;
+    border-color: #475569;
+}
+[data-bs-theme="dark"] .vcc-btn-step {
+    background: #334155;
+    color: #f8fafc;
+    border-color: #475569;
+}
+[data-bs-theme="dark"] .vcc-qty-number {
+    color: #f8fafc;
+}
 </style>
 
 <script>
 (function() {
     let currentVccData = null;
-    let selectedServices = [];
+    // Map of serviceName => { qty: number, maxStock: number }
+    let selectedServicesMap = {};
     let onProceedCallback = null;
 
     const backdrop = document.getElementById('vccSelectorBackdrop');
@@ -244,31 +306,59 @@
     const btnCancel = document.getElementById('btnVccCancel');
     const btnProceed = document.getElementById('btnVccProceed');
     const btnProceedText = document.getElementById('btnVccProceedText');
-    const btnSelectAll = document.getElementById('btnVccSelectAll');
 
     const productNameEl = document.getElementById('vccProductName');
     const productPriceEl = document.getElementById('vccProductPrice');
     const selectedCountEl = document.getElementById('vccSelectedCountText');
     const unitPriceEl = document.getElementById('vccUnitPriceText');
     const totalAmountEl = document.getElementById('vccTotalAmountText');
+    const breakdownRow = document.getElementById('vccSelectedBreakdownRow');
+    const breakdownList = document.getElementById('vccSelectedBreakdownList');
 
     function formatRupiah(val) {
         return 'Rp ' + Number(val || 0).toLocaleString('id-ID');
     }
 
-    function updateSummary() {
-        const count = selectedServices.length;
-        const unitPrice = currentVccData ? currentVccData.price : 0;
-        const total = count * unitPrice;
+    function killPageLoader() {
+        const pageLoader = document.getElementById('pageLoader');
+        if (pageLoader) {
+            pageLoader.classList.add('fade-out');
+        }
+        if (typeof finishTopLoadingBar === 'function') {
+            finishTopLoadingBar();
+        }
+    }
 
-        selectedCountEl.textContent = `${count} ${count > 1 ? 'layanan' : 'layanan'}`;
+    function updateSummary() {
+        let totalQty = 0;
+        let breakdownHtml = '';
+
+        for (const [srvName, item] of Object.entries(selectedServicesMap)) {
+            if (item.qty > 0) {
+                totalQty += item.qty;
+                breakdownHtml += `
+                    <span class="badge bg-white border text-body py-1 px-2 fw-semibold" style="font-size: 0.72rem;">
+                        ${srvName}: <strong class="text-primary">${item.qty} unit</strong>
+                    </span>
+                `;
+            }
+        }
+
+        const unitPrice = currentVccData ? currentVccData.price : 0;
+        const total = totalQty * unitPrice;
+
+        selectedCountEl.textContent = `${totalQty} unit kartu`;
         unitPriceEl.textContent = formatRupiah(unitPrice);
         totalAmountEl.textContent = formatRupiah(total);
 
-        if (count > 0) {
+        if (totalQty > 0) {
             btnProceed.disabled = false;
+            breakdownRow.classList.remove('d-none');
+            breakdownList.innerHTML = breakdownHtml;
         } else {
             btnProceed.disabled = true;
+            breakdownRow.classList.add('d-none');
+            breakdownList.innerHTML = '';
         }
     }
 
@@ -286,24 +376,46 @@
         let html = '';
         services.forEach((srv, idx) => {
             const isAvailable = srv.available && srv.stock > 0;
-            const isChecked = selectedServices.includes(srv.name);
+            const currentItem = selectedServicesMap[srv.name];
+            const isChecked = !!currentItem && currentItem.qty > 0;
+            const currentQty = isChecked ? currentItem.qty : 1;
             const disabledAttr = isAvailable ? '' : 'disabled';
             const disabledClass = isAvailable ? '' : 'is-disabled';
             const selectedClass = isChecked ? 'is-selected' : '';
 
             html += `
-                <div class="vcc-service-tile ${disabledClass} ${selectedClass}" data-service="${encodeURIComponent(srv.name)}" data-available="${isAvailable ? '1' : '0'}">
-                    <div class="d-flex align-items-center gap-2.5">
+                <div class="vcc-service-tile ${disabledClass} ${selectedClass}" data-service="${encodeURIComponent(srv.name)}" data-stock="${srv.stock}" data-available="${isAvailable ? '1' : '0'}">
+                    <div class="d-flex align-items-center gap-2.5 overflow-hidden">
                         <input type="checkbox" class="vcc-custom-checkbox" id="vcc_srv_${idx}" value="${srv.name}" ${isChecked ? 'checked' : ''} ${disabledAttr}>
-                        <label for="vcc_srv_${idx}" class="fw-bold text-body mb-0 small" style="cursor: ${isAvailable ? 'pointer' : 'not-allowed'};">
-                            ${srv.name}
-                        </label>
+                        <div>
+                            <label for="vcc_srv_${idx}" class="fw-bold text-body mb-0 small d-block" style="cursor: ${isAvailable ? 'pointer' : 'not-allowed'};">
+                                ${srv.name}
+                            </label>
+                            <small class="text-secondary" style="font-size: 0.68rem;">
+                                ${isAvailable ? `Tersedia: ${srv.stock} stok` : 'Stok habis'}
+                            </small>
+                        </div>
                     </div>
-                    <div>
-                        ${isAvailable 
-                            ? `<span class="badge bg-success-subtle text-success rounded-pill px-2.5 py-1 fw-bold" style="font-size: 0.72rem;">${srv.stock} stok</span>`
-                            : `<span class="badge bg-danger-subtle text-danger rounded-pill px-2.5 py-1 fw-bold" style="font-size: 0.72rem;">Habis</span>`
-                        }
+                    
+                    <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                        {{-- Stepper Kuantitas (Muncul setelah diceklis) --}}
+                        <div class="vcc-qty-stepper ${isChecked ? '' : 'd-none'}" id="stepper_${idx}">
+                            <button type="button" class="btn vcc-btn-step vcc-step-minus" data-service="${encodeURIComponent(srv.name)}" ${currentQty <= 1 ? 'disabled' : ''} title="Kurangi Kuantitas">
+                                <i class="fas fa-minus" style="font-size: 0.6rem;"></i>
+                            </button>
+                            <span class="vcc-qty-number px-1.5" id="qty_num_${idx}">${currentQty}</span>
+                            <button type="button" class="btn vcc-btn-step vcc-step-plus" data-service="${encodeURIComponent(srv.name)}" ${currentQty >= srv.stock ? 'disabled' : ''} title="Tambah Kuantitas">
+                                <i class="fas fa-plus" style="font-size: 0.6rem;"></i>
+                            </button>
+                        </div>
+
+                        {{-- Default Stock Badge saat belum diceklis --}}
+                        <div class="vcc-stock-badge-wrap ${isChecked ? 'd-none' : ''}" id="stock_badge_${idx}">
+                            ${isAvailable 
+                                ? `<span class="badge bg-success-subtle text-success rounded-pill px-2.5 py-1 fw-bold" style="font-size: 0.72rem;">${srv.stock} stok</span>`
+                                : `<span class="badge bg-danger-subtle text-danger rounded-pill px-2.5 py-1 fw-bold" style="font-size: 0.72rem;">Habis</span>`
+                            }
+                        </div>
                     </div>
                 </div>
             `;
@@ -311,39 +423,84 @@
 
         serviceList.innerHTML = html;
 
-        // Attach Click Listeners
-        serviceList.querySelectorAll('.vcc-service-tile').forEach(tile => {
-            tile.addEventListener('click', function(e) {
-                if (tile.dataset.available !== '1') return;
-                const checkbox = tile.querySelector('input[type="checkbox"]');
-                if (e.target !== checkbox && e.target.tagName !== 'LABEL') {
-                    checkbox.checked = !checkbox.checked;
-                }
-                const serviceName = decodeURIComponent(tile.dataset.service);
-                if (checkbox.checked) {
-                    if (!selectedServices.includes(serviceName)) selectedServices.push(serviceName);
-                    tile.classList.add('is-selected');
-                } else {
-                    selectedServices = selectedServices.filter(s => s !== serviceName);
-                    tile.classList.remove('is-selected');
-                }
-                updateSummary();
-            });
+        // Attach Click & Stepper Listeners
+        serviceList.querySelectorAll('.vcc-service-tile').forEach((tile, idx) => {
+            if (tile.dataset.available !== '1') return;
 
             const checkbox = tile.querySelector('input[type="checkbox"]');
-            if (checkbox) {
-                checkbox.addEventListener('change', function() {
-                    const serviceName = decodeURIComponent(tile.dataset.service);
-                    if (this.checked) {
-                        if (!selectedServices.includes(serviceName)) selectedServices.push(serviceName);
-                        tile.classList.add('is-selected');
-                    } else {
-                        selectedServices = selectedServices.filter(s => s !== serviceName);
-                        tile.classList.remove('is-selected');
-                    }
-                    updateSummary();
+            const stepper = tile.querySelector('.vcc-qty-stepper');
+            const stockBadge = tile.querySelector('.vcc-stock-badge-wrap');
+            const qtyNum = tile.querySelector('.vcc-qty-number');
+            const btnMinus = tile.querySelector('.vcc-step-minus');
+            const btnPlus = tile.querySelector('.vcc-step-plus');
+            const serviceName = decodeURIComponent(tile.dataset.service);
+            const maxStock = parseInt(tile.dataset.stock, 10) || 1;
+
+            function syncItemState(checked) {
+                checkbox.checked = checked;
+                if (checked) {
+                    tile.classList.add('is-selected');
+                    stepper.classList.remove('d-none');
+                    stockBadge.classList.add('d-none');
+                    const initialQty = selectedServicesMap[serviceName]?.qty || 1;
+                    selectedServicesMap[serviceName] = { qty: initialQty, maxStock: maxStock };
+                    qtyNum.textContent = initialQty;
+                    btnMinus.disabled = initialQty <= 1;
+                    btnPlus.disabled = initialQty >= maxStock;
+                } else {
+                    tile.classList.remove('is-selected');
+                    stepper.classList.add('d-none');
+                    stockBadge.classList.remove('d-none');
+                    delete selectedServicesMap[serviceName];
+                }
+                updateSummary();
+            }
+
+            checkbox.addEventListener('change', function(e) {
+                e.stopPropagation();
+                syncItemState(this.checked);
+            });
+
+            // Klik label
+            const label = tile.querySelector('label');
+            if (label) {
+                label.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    syncItemState(!checkbox.checked);
                 });
             }
+
+            // Stepper Minus
+            btnMinus.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!selectedServicesMap[serviceName]) return;
+                let cur = selectedServicesMap[serviceName].qty;
+                if (cur > 1) {
+                    cur--;
+                    selectedServicesMap[serviceName].qty = cur;
+                    qtyNum.textContent = cur;
+                    btnMinus.disabled = cur <= 1;
+                    btnPlus.disabled = cur >= maxStock;
+                    updateSummary();
+                }
+            });
+
+            // Stepper Plus
+            btnPlus.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!selectedServicesMap[serviceName]) return;
+                let cur = selectedServicesMap[serviceName].qty;
+                if (cur < maxStock) {
+                    cur++;
+                    selectedServicesMap[serviceName].qty = cur;
+                    qtyNum.textContent = cur;
+                    btnMinus.disabled = cur <= 1;
+                    btnPlus.disabled = cur >= maxStock;
+                    updateSummary();
+                }
+            });
         });
 
         updateSummary();
@@ -351,6 +508,8 @@
 
     // Open Selector Modal/Drawer
     window.openVccSelector = async function(options) {
+        killPageLoader();
+
         currentVccData = {
             productId: options.productId,
             name: options.productName || 'VCC',
@@ -359,7 +518,7 @@
             mode: options.mode || 'checkout' // 'checkout' or 'cart'
         };
 
-        selectedServices = [];
+        selectedServicesMap = {};
         onProceedCallback = options.onProceed || null;
 
         if (btnProceedText) {
@@ -368,16 +527,18 @@
 
         productNameEl.textContent = currentVccData.name;
         productPriceEl.textContent = currentVccData.formattedPrice;
-        selectedCountEl.textContent = '0 layanan';
+        selectedCountEl.textContent = '0 unit kartu';
         unitPriceEl.textContent = currentVccData.formattedPrice;
         totalAmountEl.textContent = 'Rp 0';
+        breakdownRow.classList.add('d-none');
         btnProceed.disabled = true;
 
         backdrop.style.display = 'block';
-        // Force reflow
-        backdrop.offsetHeight;
+        backdrop.offsetHeight; // Force reflow
         backdrop.classList.add('show');
         document.body.style.overflow = 'hidden';
+
+        killPageLoader();
 
         if (options.services && Array.isArray(options.services) && options.services.length > 0) {
             renderServices(options.services);
@@ -394,6 +555,7 @@
                     headers: { 'Accept': 'application/json' }
                 });
                 const data = await res.json();
+                killPageLoader();
                 if (data.success && data.product) {
                     currentVccData.price = data.product.price;
                     currentVccData.formattedPrice = data.product.formatted_price;
@@ -409,6 +571,7 @@
                 }
             } catch (err) {
                 console.error('Fetch VCC info failed:', err);
+                killPageLoader();
                 serviceList.innerHTML = `
                     <div class="text-center py-4 text-danger small">
                         Terjadi kesalahan jaringan saat memuat layanan VCC.
@@ -424,8 +587,9 @@
         setTimeout(() => {
             backdrop.style.display = 'none';
             document.body.style.overflow = '';
-            selectedServices = [];
+            selectedServicesMap = {};
             currentVccData = null;
+            killPageLoader();
         }, 250);
     };
 
@@ -447,47 +611,32 @@
         });
     }
 
-    // Select All
-    if (btnSelectAll) {
-        btnSelectAll.addEventListener('click', function(e) {
-            e.preventDefault();
-            const tiles = serviceList.querySelectorAll('.vcc-service-tile:not(.is-disabled)');
-            const allChecked = Array.from(tiles).every(t => t.querySelector('input[type="checkbox"]').checked);
-
-            selectedServices = [];
-            tiles.forEach(tile => {
-                const cb = tile.querySelector('input[type="checkbox"]');
-                const srv = decodeURIComponent(tile.dataset.service);
-                cb.checked = !allChecked;
-                if (!allChecked) {
-                    selectedServices.push(srv);
-                    tile.classList.add('is-selected');
-                } else {
-                    tile.classList.remove('is-selected');
-                }
-            });
-            btnSelectAll.textContent = allChecked ? "{{ __('Pilih Semua') }}" : "{{ __('Batal Semua') }}";
-            updateSummary();
-        });
-    }
-
     // Proceed Button Action
     if (btnProceed) {
         btnProceed.addEventListener('click', function(e) {
             e.preventDefault();
-            if (selectedServices.length === 0 || !currentVccData) return;
+            if (!currentVccData) return;
 
-            const chosen = [...selectedServices];
+            // Flatten services array based on chosen quantities
+            // e.g. { Shopee: 2, DigitalOcean: 1 } => ['Shopee', 'Shopee', 'DigitalOcean']
+            const chosenFlatServices = [];
+            for (const [srvName, item] of Object.entries(selectedServicesMap)) {
+                for (let i = 0; i < item.qty; i++) {
+                    chosenFlatServices.push(srvName);
+                }
+            }
+
+            if (chosenFlatServices.length === 0) return;
+
             const pId = currentVccData.productId;
             const mode = currentVccData.mode;
 
             if (typeof onProceedCallback === 'function') {
-                onProceedCallback(chosen, currentVccData);
+                onProceedCallback(chosenFlatServices, currentVccData);
                 window.closeVccSelector();
                 return;
             }
 
-            // Default actions:
             if (mode === 'cart') {
                 // Add to cart via AJAX
                 const origHtml = btnProceed.innerHTML;
@@ -503,12 +652,13 @@
                         'Accept': 'application/json'
                     },
                     body: JSON.stringify({
-                        quantity: chosen.length,
-                        vcc_services: chosen
+                        quantity: chosenFlatServices.length,
+                        vcc_services: chosenFlatServices
                     })
                 })
                 .then(r => r.json())
                 .then(data => {
+                    killPageLoader();
                     if (data.success) {
                         window.closeVccSelector();
                         if (typeof window.updateCartBadgeCount === 'function') {
@@ -537,6 +687,7 @@
                 })
                 .catch(err => {
                     console.error('Cart add error:', err);
+                    killPageLoader();
                     alert('Terjadi kesalahan saat menambahkan produk ke keranjang.');
                 })
                 .finally(() => {
@@ -547,8 +698,8 @@
                 // Direct Checkout review
                 window.closeVccSelector();
                 const params = new URLSearchParams();
-                chosen.forEach(s => params.append('vcc_services[]', s));
-                params.set('quantity', chosen.length);
+                chosenFlatServices.forEach(s => params.append('vcc_services[]', s));
+                params.set('quantity', chosenFlatServices.length);
                 window.location.href = `/checkout/review/${pId}?` + params.toString();
             }
         });

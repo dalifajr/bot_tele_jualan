@@ -247,7 +247,7 @@
 
                 <div class="card-body p-4">
                     @if($stockCount > 0)
-                    <form action="{{ route('checkout.review', $product->id) }}" method="GET" id="mainBuyForm">
+                    <form action="{{ route('checkout.review', $product->id) }}" method="GET" id="mainBuyForm" class="no-loader">
 
                         @if($product->is_vcc)
                             <div class="bg-primary-subtle p-3 rounded-3 mb-3">
@@ -255,7 +255,7 @@
                                     <i class="fas fa-credit-card"></i> {{ __('Produk Virtual Credit Card (VCC)') }}
                                 </h6>
                                 <p class="text-secondary small mb-2" style="font-size: 0.75rem;">
-                                    {{ __('1 kartu dapat di-assign untuk multi layanan. 1 layanan = 1 stok. Klik Beli atau Tambah Keranjang untuk memilih layanan.') }}
+                                    {{ __('1 kartu dapat di-assign untuk multi layanan. 1 layanan = 1 stok. Klik Beli atau Tambah Keranjang untuk memilih layanan & mengatur kuantitas.') }}
                                 </p>
                                 @php $vccServicesList = $product->getVccServicesWithStock(); @endphp
                                 <div class="d-flex flex-wrap gap-1">
@@ -296,7 +296,8 @@
                             </div>
                         @endif
 
-                        {{-- Quantity Selector --}}
+                        {{-- Quantity Selector (Hidden for VCC products - chosen in selector modal) --}}
+                        @if(!$product->is_vcc)
                         <div class="mb-4">
                             <label class="form-label text-muted small fw-bold mb-2">{{ __('Jumlah Beli (QTY)') }}</label>
                             <div class="d-flex align-items-center justify-content-between p-2 m3-tonal-item">
@@ -312,16 +313,17 @@
                                 </button>
                             </div>
                         </div>
+                        @endif
 
                         {{-- Subtotal Calculation --}}
                         <div class="d-flex justify-content-between align-items-center mb-4 p-3 m3-tonal-item">
-                            <span class="text-muted small fw-semibold">{{ __('Total Harga:') }}</span>
+                            <span class="text-muted small fw-semibold">{{ $product->is_vcc ? __('Harga Satuan:') : __('Total Harga:') }}</span>
                             <span class="fw-bold text-primary fs-5" id="displaySubtotal">{{ $product->formatted_price }}</span>
                         </div>
 
                         {{-- Action Buttons --}}
                         <div class="d-flex flex-column gap-2">
-                            <button type="submit" id="btnDesktopBuyNow" class="btn btn-primary w-100 rounded-pill py-3 fw-bold d-flex align-items-center justify-content-center gap-2 btn-buy-now">
+                            <button type="{{ $product->is_vcc ? 'button' : 'submit' }}" id="btnDesktopBuyNow" class="btn btn-primary w-100 rounded-pill py-3 fw-bold d-flex align-items-center justify-content-center gap-2 btn-buy-now">
                                 <i class="fas fa-bolt btn-buy-icon"></i>
                                 <span class="btn-buy-text">{{ __('Beli Sekarang') }}</span>
                             </button>
@@ -552,6 +554,30 @@
         const btnDesktopBuy = document.getElementById('btnDesktopBuyNow');
         const btnMobileBuy = document.getElementById('btnMobileBuyNow');
         let isSubmittingOrder = false;
+
+        if (btnDesktopBuy) {
+            btnDesktopBuy.addEventListener('click', function(e) {
+                if (isVcc) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (isGuest) {
+                        window.location.href = "{{ route('login', ['redirect' => route('catalog.show', $product->id)]) }}";
+                        return;
+                    }
+                    if (typeof window.openVccSelector === 'function') {
+                        window.openVccSelector({
+                            productId: {{ $product->id }},
+                            productName: "{{ addslashes($product->name) }}",
+                            price: unitPrice,
+                            formattedPrice: "{{ $product->formatted_price }}",
+                            services: vccServicesData,
+                            mode: 'checkout'
+                        });
+                    }
+                    return;
+                }
+            });
+        }
 
         function setBuyNowLoadingState(loading) {
             isSubmittingOrder = loading;

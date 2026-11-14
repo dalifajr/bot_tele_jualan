@@ -49,7 +49,8 @@ class CheckoutController extends Controller
                 return redirect()->route('catalog.show', $product->id)->with('error', __('Silakan pilih minimal satu layanan VCC.'));
             }
 
-            foreach ($vccServices as $service) {
+            $serviceCounts = array_count_values($vccServices);
+            foreach ($serviceCounts as $service => $requiredQty) {
                 $srvStock = StockUnit::where('product_id', $product->id)
                     ->where('vcc_service', $service)
                     ->where('is_sold', false)
@@ -59,8 +60,11 @@ class CheckoutController extends Controller
                               ->orWhereNull('stock_status');
                     })->count();
 
-                if ($srvStock < 1) {
-                    return redirect()->route('catalog.show', $product->id)->with('error', __("Stok untuk layanan ':service' saat ini sedang habis.", ['service' => $service]));
+                if ($srvStock < $requiredQty) {
+                    $msg = $srvStock > 0
+                        ? __("Stok untuk layanan ':service' hanya tersisa :stock unit.", ['service' => $service, 'stock' => $srvStock])
+                        : __("Stok untuk layanan ':service' saat ini sedang habis.", ['service' => $service]);
+                    return redirect()->route('catalog.show', $product->id)->with('error', $msg);
                 }
             }
 
@@ -194,7 +198,8 @@ class CheckoutController extends Controller
             // Hitung ketersediaan stok
             $availableStockCount = 999;
             if ($product->is_vcc) {
-                foreach ($vccServices as $service) {
+                $serviceCounts = array_count_values($vccServices);
+                foreach ($serviceCounts as $service => $requiredQty) {
                     $srvStock = StockUnit::where('product_id', $product->id)
                         ->where('vcc_service', $service)
                         ->where('is_sold', false)
@@ -204,9 +209,12 @@ class CheckoutController extends Controller
                                   ->orWhereNull('stock_status');
                         })->count();
 
-                    if ($srvStock < 1) {
+                    if ($srvStock < $requiredQty) {
                         DB::rollBack();
-                        return back()->with('error', __("Stok untuk layanan ':service' baru saja habis atau tidak mencukupi.", ['service' => $service]));
+                        $msg = $srvStock > 0
+                            ? __("Stok untuk layanan ':service' hanya tersisa :stock unit.", ['service' => $service, 'stock' => $srvStock])
+                            : __("Stok untuk layanan ':service' baru saja habis atau tidak mencukupi.", ['service' => $service]);
+                        return back()->with('error', $msg);
                     }
                 }
             } elseif (!$product->is_vpn) {

@@ -71,13 +71,16 @@
                                 <span class="fw-semibold text-primary">{{ $product->formatted_price }}</span> / unit
                             </div>
                             @if($product->is_vcc && !empty($vccServices))
+                            @php $groupedServices = array_count_values($vccServices); @endphp
                             <div class="mt-2">
                                 <span class="badge bg-primary-subtle text-primary fw-bold mb-1" style="font-size: 0.72rem;">
-                                    <i class="fas fa-credit-card me-1"></i>Layanan VCC ({{ count($vccServices) }} Layanan):
+                                    <i class="fas fa-credit-card me-1"></i>Layanan VCC ({{ count($vccServices) }} Unit):
                                 </span>
                                 <div class="d-flex flex-wrap gap-1">
-                                    @foreach($vccServices as $srv)
-                                        <span class="badge bg-white border text-body" style="font-size: 0.72rem;">{{ $srv }}</span>
+                                    @foreach($groupedServices as $srvName => $srvQty)
+                                        <span class="badge bg-white border text-body" style="font-size: 0.72rem;">
+                                            {{ $srvName }} @if($srvQty > 1)<strong class="text-primary">&times;{{ $srvQty }}</strong>@endif
+                                        </span>
                                     @endforeach
                                 </div>
                             </div>

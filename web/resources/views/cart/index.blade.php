@@ -55,12 +55,15 @@
                                             <h6 class="fw-bold mb-1"><a href="{{ route('catalog.show', $item->product->id) }}" class="text-decoration-none text-body">{{ $item->product->name }}</a></h6>
                                             <span class="text-primary fw-bold small">{{ $item->product->formatted_price }}</span>
                                             @if($item->vcc_services && count($item->vcc_services) > 0)
+                                                @php $groupedServices = array_count_values($item->vcc_services); @endphp
                                                 <div class="mt-1 d-flex flex-wrap gap-1 align-items-center">
                                                     <span class="badge bg-primary-subtle text-primary fw-bold" style="font-size: 0.7rem;">
                                                         <i class="fas fa-credit-card me-1"></i>VCC
                                                     </span>
-                                                    @foreach($item->vcc_services as $srv)
-                                                        <span class="badge bg-secondary-subtle text-body" style="font-size: 0.68rem;">{{ $srv }}</span>
+                                                    @foreach($groupedServices as $srvName => $srvQty)
+                                                        <span class="badge bg-secondary-subtle text-body" style="font-size: 0.68rem;">
+                                                            {{ $srvName }}@if($srvQty > 1) ({{ $srvQty }})@endif
+                                                        </span>
                                                     @endforeach
                                                 </div>
                                             @endif
@@ -121,12 +124,15 @@
                                 </h6>
                                 <span class="text-primary fw-bold" style="font-size: 0.9rem;">{{ $item->product->formatted_price }}</span>
                                 @if($item->vcc_services && count($item->vcc_services) > 0)
+                                    @php $groupedServices = array_count_values($item->vcc_services); @endphp
                                     <div class="mt-1 d-flex flex-wrap gap-1 align-items-center">
                                         <span class="badge bg-primary-subtle text-primary fw-bold" style="font-size: 0.68rem;">
                                             <i class="fas fa-credit-card me-1"></i>VCC
                                         </span>
-                                        @foreach($item->vcc_services as $srv)
-                                            <span class="badge bg-secondary-subtle text-body" style="font-size: 0.65rem;">{{ $srv }}</span>
+                                        @foreach($groupedServices as $srvName => $srvQty)
+                                            <span class="badge bg-secondary-subtle text-body" style="font-size: 0.65rem;">
+                                                {{ $srvName }}@if($srvQty > 1) ({{ $srvQty }})@endif
+                                            </span>
                                         @endforeach
                                     </div>
                                 @endif
