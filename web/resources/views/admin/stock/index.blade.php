@@ -201,7 +201,12 @@
                         @else
                         <td class="px-4 fw-bold text-muted">#{{ $unit->id }}</td>
                         @endif
-                        <td>{{ Str::limit($unit->product->name ?? 'Unknown', 25) }}</td>
+                        <td>
+                            <span class="fw-semibold text-dark">{{ Str::limit($unit->product->name ?? 'Unknown', 25) }}</span>
+                            @if($unit->vcc_service)
+                                <br><span class="badge bg-primary-subtle text-primary border rounded-pill px-2 py-0.5" style="font-size: 0.7rem;"><i class="fas fa-credit-card me-1"></i>{{ $unit->vcc_service }}</span>
+                            @endif
+                        </td>
                         <td>
                             @if($unit->uploader)
                                 <span class="fw-bold text-dark">{{ $unit->uploader->full_name ?? $unit->uploader->username }}</span>

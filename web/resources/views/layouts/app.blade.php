@@ -1776,6 +1776,8 @@
     };
 </script>
 
+@include('partials.vcc-service-selector-modal')
+
 @stack('modals')
 
 <script>

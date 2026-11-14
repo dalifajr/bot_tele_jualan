@@ -131,6 +131,12 @@
                             <i class="fas fa-shield-alt me-1"></i>Garansi {{ $product->warranty_days }} Hari
                         </div>
                         @endif
+                        @if($product->is_vcc)
+                        <div class="vr opacity-25"></div>
+                        <div class="text-primary fw-semibold">
+                            <i class="fas fa-credit-card me-1"></i>{{ __('Virtual Credit Card (VCC)') }}
+                        </div>
+                        @endif
                     </div>
 
                     @php
@@ -243,6 +249,25 @@
                     @if($stockCount > 0)
                     <form action="{{ route('checkout.review', $product->id) }}" method="GET" id="mainBuyForm">
 
+                        @if($product->is_vcc)
+                            <div class="bg-primary-subtle p-3 rounded-3 mb-3">
+                                <h6 class="fw-bold text-primary mb-1 d-flex align-items-center gap-1.5" style="font-size: 0.9rem;">
+                                    <i class="fas fa-credit-card"></i> {{ __('Produk Virtual Credit Card (VCC)') }}
+                                </h6>
+                                <p class="text-secondary small mb-2" style="font-size: 0.75rem;">
+                                    {{ __('1 kartu dapat di-assign untuk multi layanan. 1 layanan = 1 stok. Klik Beli atau Tambah Keranjang untuk memilih layanan.') }}
+                                </p>
+                                @php $vccServicesList = $product->getVccServicesWithStock(); @endphp
+                                <div class="d-flex flex-wrap gap-1">
+                                    @foreach($vccServicesList as $srv)
+                                        <span class="badge {{ $srv['available'] ? 'bg-white text-dark border' : 'bg-secondary-subtle text-muted text-decoration-line-through' }} rounded-pill px-2 py-0.5" style="font-size: 0.72rem;">
+                                            {{ $srv['name'] }} ({{ $srv['stock'] }} stok)
+                                        </span>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
+
                         @if($product->is_vpn)
                             <div class="bg-primary-subtle p-3 rounded-3 mb-3">
                                 <h6 class="fw-bold text-primary mb-2 d-flex align-items-center gap-1.5" style="font-size: 0.9rem;">
@@ -335,6 +360,8 @@
         const unitPrice = {{ (float)$product->price }};
         const maxStock = {{ (int)$stockCount }};
         const isVpn = {{ $product->is_vpn ? 'true' : 'false' }};
+        const isVcc = {{ $product->is_vcc ? 'true' : 'false' }};
+        const vccServicesData = @json($product->is_vcc ? $product->getVccServicesWithStock() : []);
         const qtyInput = document.getElementById('quantity');
         const displaySubtotal = document.getElementById('displaySubtotal');
         const mainBuyForm = document.getElementById('mainBuyForm');
@@ -474,6 +501,23 @@
         if (btnDesktopCart) {
             btnDesktopCart.addEventListener('click', function(e) {
                 e.preventDefault();
+                if (isVcc) {
+                    if (isGuest) {
+                        window.location.href = "{{ route('login', ['redirect' => route('catalog.show', $product->id)]) }}";
+                        return;
+                    }
+                    if (typeof window.openVccSelector === 'function') {
+                        window.openVccSelector({
+                            productId: {{ $product->id }},
+                            productName: "{{ addslashes($product->name) }}",
+                            price: unitPrice,
+                            formattedPrice: "{{ $product->formatted_price }}",
+                            services: vccServicesData,
+                            mode: 'cart'
+                        });
+                    }
+                    return;
+                }
                 handleAddToCart(btnDesktopCart);
             });
         }
@@ -483,6 +527,23 @@
         if (btnMobileCart) {
             btnMobileCart.addEventListener('click', function(e) {
                 e.preventDefault();
+                if (isVcc) {
+                    if (isGuest) {
+                        window.location.href = "{{ route('login', ['redirect' => route('catalog.show', $product->id)]) }}";
+                        return;
+                    }
+                    if (typeof window.openVccSelector === 'function') {
+                        window.openVccSelector({
+                            productId: {{ $product->id }},
+                            productName: "{{ addslashes($product->name) }}",
+                            price: unitPrice,
+                            formattedPrice: "{{ $product->formatted_price }}",
+                            services: vccServicesData,
+                            mode: 'cart'
+                        });
+                    }
+                    return;
+                }
                 handleAddToCart(btnMobileCart);
             });
         }
@@ -548,6 +609,21 @@
                     return false;
                 }
 
+                if (isVcc) {
+                    e.preventDefault();
+                    if (typeof window.openVccSelector === 'function') {
+                        window.openVccSelector({
+                            productId: {{ $product->id }},
+                            productName: "{{ addslashes($product->name) }}",
+                            price: unitPrice,
+                            formattedPrice: "{{ $product->formatted_price }}",
+                            services: vccServicesData,
+                            mode: 'checkout'
+                        });
+                    }
+                    return false;
+                }
+
                 if (isSubmittingOrder) {
                     e.preventDefault();
                     return false;
@@ -567,6 +643,20 @@
                 e.preventDefault();
                 if (isGuest) {
                     window.location.href = "{{ route('login', ['redirect' => route('catalog.show', $product->id)]) }}";
+                    return;
+                }
+
+                if (isVcc) {
+                    if (typeof window.openVccSelector === 'function') {
+                        window.openVccSelector({
+                            productId: {{ $product->id }},
+                            productName: "{{ addslashes($product->name) }}",
+                            price: unitPrice,
+                            formattedPrice: "{{ $product->formatted_price }}",
+                            services: vccServicesData,
+                            mode: 'checkout'
+                        });
+                    }
                     return;
                 }
 

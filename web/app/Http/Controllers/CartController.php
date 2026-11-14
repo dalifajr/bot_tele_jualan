@@ -47,6 +47,72 @@ class CartController extends Controller
             return back()->with('error', __('Produk ini sedang tidak aktif.'));
         }
 
+        // Handle VCC Products
+        if ($product->is_vcc) {
+            $vccServices = $request->input('vcc_services', []);
+            if (is_string($vccServices)) {
+                $vccServices = json_decode($vccServices, true) ?? [];
+            }
+            if (!is_array($vccServices) || count($vccServices) === 0) {
+                $msg = __('Silakan pilih minimal satu layanan VCC.');
+                if ($request->expectsJson()) {
+                    return response()->json(['success' => false, 'message' => $msg], 422);
+                }
+                return back()->with('error', $msg);
+            }
+
+            // Validate stock availability per selected service
+            foreach ($vccServices as $service) {
+                $srvStock = StockUnit::where('product_id', $product->id)
+                    ->where('vcc_service', $service)
+                    ->where('is_sold', false)
+                    ->whereNull('sold_order_id')
+                    ->where(function ($query) {
+                        $query->where('stock_status', 'ready')
+                              ->orWhereNull('stock_status');
+                    })->count();
+
+                if ($srvStock < 1) {
+                    $msg = __("Stok untuk layanan ':service' saat ini sedang habis.", ['service' => $service]);
+                    if ($request->expectsJson()) {
+                        return response()->json(['success' => false, 'message' => $msg], 422);
+                    }
+                    return back()->with('error', $msg);
+                }
+            }
+
+            $quantity = count($vccServices);
+
+            $existingCartItem = CartItem::where('user_id', Auth::id())
+                ->where('product_id', $product->id)
+                ->first();
+
+            if ($existingCartItem) {
+                $existingCartItem->update([
+                    'quantity' => $quantity,
+                    'vcc_services' => $vccServices,
+                ]);
+            } else {
+                CartItem::create([
+                    'user_id' => Auth::id(),
+                    'product_id' => $product->id,
+                    'quantity' => $quantity,
+                    'vcc_services' => $vccServices,
+                ]);
+            }
+
+            if ($request->expectsJson()) {
+                $totalCartQty = CartItem::where('user_id', Auth::id())->sum('quantity');
+                return response()->json([
+                    'success' => true,
+                    'message' => __('Produk VCC berhasil ditambahkan ke keranjang belanja.'),
+                    'cart_total_qty' => $totalCartQty,
+                ]);
+            }
+
+            return redirect()->route('cart.index')->with('success', __('Produk VCC berhasil ditambahkan ke keranjang belanja.'));
+        }
+
         // Get available stock
         $availableStock = StockUnit::where('product_id', $product->id)
             ->where('is_sold', false)
@@ -256,16 +322,32 @@ class CartController extends Controller
                     throw new \Exception("Produk '{$product->name}' sedang tidak aktif.");
                 }
 
-                $availableStock = StockUnit::where('product_id', $product->id)
-                    ->where('is_sold', false)
-                    ->whereNull('sold_order_id')
-                    ->where(function ($query) {
-                        $query->where('stock_status', 'ready')
-                              ->orWhereNull('stock_status');
-                    })->count();
+                if ($product->is_vcc && !empty($item->vcc_services)) {
+                    foreach ($item->vcc_services as $srv) {
+                        $srvStock = StockUnit::where('product_id', $product->id)
+                            ->where('vcc_service', $srv)
+                            ->where('is_sold', false)
+                            ->whereNull('sold_order_id')
+                            ->where(function ($query) {
+                                $query->where('stock_status', 'ready')
+                                      ->orWhereNull('stock_status');
+                            })->count();
+                        if ($srvStock < 1) {
+                            throw new \Exception("Stok VCC untuk layanan '{$srv}' pada produk '{$product->name}' tidak cukup atau habis.");
+                        }
+                    }
+                } else {
+                    $availableStock = StockUnit::where('product_id', $product->id)
+                        ->where('is_sold', false)
+                        ->whereNull('sold_order_id')
+                        ->where(function ($query) {
+                            $query->where('stock_status', 'ready')
+                                  ->orWhereNull('stock_status');
+                        })->count();
 
-                if ($availableStock < $item->quantity) {
-                    throw new \Exception("Stok produk '{$product->name}' tidak cukup. Tersisa {$availableStock} unit.");
+                    if ($availableStock < $item->quantity) {
+                        throw new \Exception("Stok produk '{$product->name}' tidak cukup. Tersisa {$availableStock} unit.");
+                    }
                 }
 
                 $subtotal += $product->price * $item->quantity;
@@ -365,31 +447,59 @@ class CartController extends Controller
                     'quantity' => $item->quantity,
                     'unit_price' => $item->product->price,
                     'discount_amount' => $itemDiscounts[$item->id] ?? 0,
+                    'vcc_services' => $item->vcc_services,
                 ]);
 
-                // Reserve FIFO stock units
-                $stockUnitsToReserve = StockUnit::where('product_id', $item->product_id)
-                    ->where('is_sold', false)
-                    ->whereNull('sold_order_id')
-                    ->where(function ($query) {
-                        $query->where('stock_status', 'ready')
-                              ->orWhereNull('stock_status');
-                    })
-                    ->orderBy('id', 'asc')
-                    ->limit($item->quantity)
-                    ->lockForUpdate()
-                    ->get();
+                if ($item->product && $item->product->is_vcc && !empty($item->vcc_services)) {
+                    // Reserve VCC stock unit per service
+                    foreach ($item->vcc_services as $srv) {
+                        $unit = StockUnit::where('product_id', $item->product_id)
+                            ->where('vcc_service', $srv)
+                            ->where('is_sold', false)
+                            ->whereNull('sold_order_id')
+                            ->where(function ($query) {
+                                $query->where('stock_status', 'ready')
+                                      ->orWhereNull('stock_status');
+                            })
+                            ->orderBy('id', 'asc')
+                            ->lockForUpdate()
+                            ->first();
 
-                if ($stockUnitsToReserve->count() < $item->quantity) {
-                    throw new \Exception("Stok untuk produk '{$item->product->name}' baru saja dibeli orang lain.");
-                }
+                        if (!$unit) {
+                            throw new \Exception("Stok VCC untuk layanan '{$srv}' pada produk '{$item->product->name}' baru saja dibeli orang lain.");
+                        }
 
-                foreach ($stockUnitsToReserve as $unit) {
-                    $unit->update([
-                        'stock_status' => 'reserved_checkout',
-                        'sold_order_id' => $order->id
-                    ]);
-                    $reservedIds[] = $unit->id;
+                        $unit->update([
+                            'stock_status' => 'reserved_checkout',
+                            'sold_order_id' => $order->id
+                        ]);
+                        $reservedIds[] = $unit->id;
+                    }
+                } else {
+                    // Reserve FIFO stock units
+                    $stockUnitsToReserve = StockUnit::where('product_id', $item->product_id)
+                        ->where('is_sold', false)
+                        ->whereNull('sold_order_id')
+                        ->where(function ($query) {
+                            $query->where('stock_status', 'ready')
+                                  ->orWhereNull('stock_status');
+                        })
+                        ->orderBy('id', 'asc')
+                        ->limit($item->quantity)
+                        ->lockForUpdate()
+                        ->get();
+
+                    if ($stockUnitsToReserve->count() < $item->quantity) {
+                        throw new \Exception("Stok untuk produk '{$item->product->name}' baru saja dibeli orang lain.");
+                    }
+
+                    foreach ($stockUnitsToReserve as $unit) {
+                        $unit->update([
+                            'stock_status' => 'reserved_checkout',
+                            'sold_order_id' => $order->id
+                        ]);
+                        $reservedIds[] = $unit->id;
+                    }
                 }
             }
 

@@ -243,7 +243,13 @@
                         <span class="product-price mb-0" style="font-size: 0.95rem;">{{ $product->formatted_price }}</span>
                         <div class="d-flex gap-1 align-items-center">
                             @if($product->stock_count > 0 && !$product->is_vpn)
-                            <button type="button" class="btn btn-xs btn-outline-primary rounded-pill px-2.5 py-1 fw-bold btn-quick-cart-add btn-stop-prop d-flex align-items-center gap-1" data-product-id="{{ $product->id }}" title="{{ __('Tambah ke Keranjang') }}" style="font-size: 0.75rem;">
+                            <button type="button" class="btn btn-xs btn-outline-primary rounded-pill px-2.5 py-1 fw-bold btn-quick-cart-add btn-stop-prop d-flex align-items-center gap-1" 
+                                    data-product-id="{{ $product->id }}" 
+                                    data-is-vcc="{{ $product->is_vcc ? '1' : '0' }}"
+                                    data-product-name="{{ $product->name }}"
+                                    data-product-price="{{ $product->price }}"
+                                    data-formatted-price="{{ $product->formatted_price }}"
+                                    title="{{ __('Tambah ke Keranjang') }}" style="font-size: 0.75rem;">
                                 <i class="fas fa-cart-plus"></i><span class="d-none d-sm-inline">+ {{ __('Keranjang') }}</span><span class="d-sm-none">+</span>
                             </button>
                             @endif
@@ -399,7 +405,23 @@
             e.preventDefault();
             e.stopPropagation();
 
+            const isVcc = btn.getAttribute('data-is-vcc') === '1';
             const productId = btn.getAttribute('data-product-id');
+            const productName = btn.getAttribute('data-product-name');
+            const productPrice = parseFloat(btn.getAttribute('data-product-price')) || 0;
+            const formattedPrice = btn.getAttribute('data-formatted-price');
+
+            if (isVcc && typeof window.openVccSelector === 'function') {
+                window.openVccSelector({
+                    productId: productId,
+                    productName: productName,
+                    price: productPrice,
+                    formattedPrice: formattedPrice,
+                    mode: 'cart'
+                });
+                return;
+            }
+
             const origHtml = btn.innerHTML;
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';

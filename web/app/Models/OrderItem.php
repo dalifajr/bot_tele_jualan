@@ -18,12 +18,14 @@ class OrderItem extends Model
         'discount_amount',
         'vpn_username',
         'vpn_password',
+        'vcc_services',
     ];
 
     protected $casts = [
         'quantity' => 'integer',
         'unit_price' => 'integer',
         'discount_amount' => 'integer',
+        'vcc_services' => 'array',
     ];
 
     public function order()

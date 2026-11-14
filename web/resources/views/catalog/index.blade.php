@@ -150,7 +150,13 @@
                         </div>
                         <div>
                             @if($product->stock_count > 0 && !$product->is_vpn)
-                            <button type="button" class="btn-quick-cart-circle btn-quick-cart-add btn-stop-prop" data-product-id="{{ $product->id }}" title="{{ __('Tambah ke Keranjang') }}" style="width: 32px; height: 32px;">
+                            <button type="button" class="btn-quick-cart-circle btn-quick-cart-add btn-stop-prop" 
+                                    data-product-id="{{ $product->id }}" 
+                                    data-is-vcc="{{ $product->is_vcc ? '1' : '0' }}"
+                                    data-product-name="{{ $product->name }}"
+                                    data-product-price="{{ $product->price }}"
+                                    data-formatted-price="{{ $product->formatted_price }}"
+                                    title="{{ __('Tambah ke Keranjang') }}" style="width: 32px; height: 32px;">
                                 <i class="fas fa-shopping-cart" style="font-size: 0.78rem;"></i>
                             </button>
                             @endif
@@ -310,7 +316,23 @@
                 return;
             }
 
+            const isVcc = btn.getAttribute('data-is-vcc') === '1';
             const productId = btn.getAttribute('data-product-id');
+            const productName = btn.getAttribute('data-product-name');
+            const productPrice = parseFloat(btn.getAttribute('data-product-price')) || 0;
+            const formattedPrice = btn.getAttribute('data-formatted-price');
+
+            if (isVcc && typeof window.openVccSelector === 'function') {
+                window.openVccSelector({
+                    productId: productId,
+                    productName: productName,
+                    price: productPrice,
+                    formattedPrice: formattedPrice,
+                    mode: 'cart'
+                });
+                return;
+            }
+
             const origHtml = btn.innerHTML;
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';

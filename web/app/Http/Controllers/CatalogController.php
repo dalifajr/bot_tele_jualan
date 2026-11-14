@@ -92,4 +92,32 @@ class CatalogController extends Controller
 
         return view('catalog.show', compact('product', 'stockCount'));
     }
+
+    /**
+     * Get VCC services and live stock availability for customer modal/drawer.
+     */
+    public function vccInfo($id)
+    {
+        $product = Product::findOrFail($id);
+        if (!$product->is_vcc) {
+            return response()->json([
+                'success' => false,
+                'message' => __('Produk ini bukan produk VCC.'),
+            ], 400);
+        }
+
+        $services = $product->getVccServicesWithStock();
+
+        return response()->json([
+            'success' => true,
+            'product' => [
+                'id' => $product->id,
+                'name' => $product->name,
+                'price' => $product->price,
+                'formatted_price' => $product->formatted_price,
+                'image_url' => $product->image_url,
+                'services' => $services,
+            ]
+        ]);
+    }
 }

@@ -18,6 +18,8 @@ class StockUnit extends Model
         'is_sold',
         'sold_order_id',
         'stock_status',
+        'vcc_service',
+        'vcc_group_id',
         'available_at',
         'seller_id',
         'uploaded_by_id',

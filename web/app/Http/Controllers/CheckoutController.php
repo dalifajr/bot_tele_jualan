@@ -39,9 +39,37 @@ class CheckoutController extends Controller
 
         $quantity = max(1, (int)$request->input('quantity', 1));
 
+        // Handle VCC Product validation
+        $vccServices = $request->input('vcc_services', []);
+        if (is_string($vccServices)) {
+            $vccServices = json_decode($vccServices, true) ?? [];
+        }
+        if ($product->is_vcc) {
+            if (!is_array($vccServices) || count($vccServices) === 0) {
+                return redirect()->route('catalog.show', $product->id)->with('error', __('Silakan pilih minimal satu layanan VCC.'));
+            }
+
+            foreach ($vccServices as $service) {
+                $srvStock = StockUnit::where('product_id', $product->id)
+                    ->where('vcc_service', $service)
+                    ->where('is_sold', false)
+                    ->whereNull('sold_order_id')
+                    ->where(function ($query) {
+                        $query->where('stock_status', 'ready')
+                              ->orWhereNull('stock_status');
+                    })->count();
+
+                if ($srvStock < 1) {
+                    return redirect()->route('catalog.show', $product->id)->with('error', __("Stok untuk layanan ':service' saat ini sedang habis.", ['service' => $service]));
+                }
+            }
+
+            $quantity = count($vccServices);
+        }
+
         // Available stock count
         $availableStockCount = 999;
-        if (!$product->is_vpn) {
+        if (!$product->is_vpn && !$product->is_vcc) {
             $availableStockCount = StockUnit::where('product_id', $product->id)
                 ->where('is_sold', false)
                 ->whereNull('sold_order_id')
@@ -57,6 +85,8 @@ class CheckoutController extends Controller
             if ($quantity > $availableStockCount) {
                 $quantity = $availableStockCount;
             }
+        } elseif ($product->is_vcc) {
+            $availableStockCount = count($vccServices);
         }
 
         $vpnUsername = $request->input('vpn_username');
@@ -102,6 +132,7 @@ class CheckoutController extends Controller
             'availableStockCount',
             'vpnUsername',
             'vpnPassword',
+            'vccServices',
             'subtotal',
             'discount',
             'coupon',
@@ -117,11 +148,23 @@ class CheckoutController extends Controller
      */
     public function store(Request $request, Product $product)
     {
-        $request->validate([
-            'quantity' => 'required|integer|min:1'
-        ]);
+        $vccServices = $request->input('vcc_services', []);
+        if (is_string($vccServices)) {
+            $vccServices = json_decode($vccServices, true) ?? [];
+        }
 
-        $quantity = $request->input('quantity');
+        if ($product->is_vcc) {
+            if (!is_array($vccServices) || count($vccServices) === 0) {
+                return back()->with('error', __('Silakan pilih minimal satu layanan VCC.'));
+            }
+            $quantity = count($vccServices);
+        } else {
+            $request->validate([
+                'quantity' => 'required|integer|min:1'
+            ]);
+            $quantity = (int)$request->input('quantity');
+        }
+
         $user = Auth::user();
 
         // Rate limiting order check (max 2 active pending orders)
@@ -150,7 +193,23 @@ class CheckoutController extends Controller
 
             // Hitung ketersediaan stok
             $availableStockCount = 999;
-            if (!$product->is_vpn) {
+            if ($product->is_vcc) {
+                foreach ($vccServices as $service) {
+                    $srvStock = StockUnit::where('product_id', $product->id)
+                        ->where('vcc_service', $service)
+                        ->where('is_sold', false)
+                        ->whereNull('sold_order_id')
+                        ->where(function ($query) {
+                            $query->where('stock_status', 'ready')
+                                  ->orWhereNull('stock_status');
+                        })->count();
+
+                    if ($srvStock < 1) {
+                        DB::rollBack();
+                        return back()->with('error', __("Stok untuk layanan ':service' baru saja habis atau tidak mencukupi.", ['service' => $service]));
+                    }
+                }
+            } elseif (!$product->is_vpn) {
                 $availableStockCount = StockUnit::where('product_id', $product->id)
                     ->where('is_sold', false)
                     ->whereNull('sold_order_id')
@@ -224,6 +283,7 @@ class CheckoutController extends Controller
                 'discount_amount' => $discount,
                 'vpn_username' => $vpnUsername,
                 'vpn_password' => $product->is_vpn ? $request->vpn_password : null,
+                'vcc_services' => $product->is_vcc ? $vccServices : null,
             ]);
 
             // 3. Create Payment
@@ -234,9 +294,35 @@ class CheckoutController extends Controller
                 'status' => 'pending',
             ]);
 
-            // 4. Reserve Stock Units (FIFO)
+            // 4. Reserve Stock Units
             $reservedIds = [];
-            if (!$product->is_vpn) {
+            if ($product->is_vcc) {
+                // Reserve VCC stock units for each specific service selected
+                foreach ($vccServices as $service) {
+                    $unit = StockUnit::where('product_id', $product->id)
+                        ->where('vcc_service', $service)
+                        ->where('is_sold', false)
+                        ->whereNull('sold_order_id')
+                        ->where(function ($query) {
+                            $query->where('stock_status', 'ready')
+                                  ->orWhereNull('stock_status');
+                        })
+                        ->orderBy('id', 'asc')
+                        ->lockForUpdate()
+                        ->first();
+
+                    if (!$unit) {
+                        DB::rollBack();
+                        return back()->with('error', __("Stok untuk layanan ':service' baru saja dibeli oleh orang lain.", ['service' => $service]));
+                    }
+
+                    $unit->update([
+                        'stock_status' => 'reserved_checkout',
+                        'sold_order_id' => $order->id
+                    ]);
+                    $reservedIds[] = $unit->id;
+                }
+            } elseif (!$product->is_vpn) {
                 $stockUnitsToReserve = StockUnit::where('product_id', $product->id)
                     ->where('is_sold', false)
                     ->whereNull('sold_order_id')

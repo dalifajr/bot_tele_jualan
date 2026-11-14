@@ -379,21 +379,55 @@ class SellerController extends Controller
         }
 
         // Split raw text into individual stock blocks supporting line dividers & double-newlines
+        $product = Product::findOrFail($request->product_id);
+        $isVcc = (bool) $product->is_vcc;
+        $vccServices = [];
+        if ($isVcc) {
+            $vccServices = (array) ($product->vcc_services ?? []);
+            if (empty($vccServices)) {
+                $vccServices = \App\Models\BotSetting::getVccServicesList();
+            }
+            if ($request->filled('vcc_services_target') && is_array($request->vcc_services_target)) {
+                $filtered = array_intersect($vccServices, $request->vcc_services_target);
+                if (!empty($filtered)) {
+                    $vccServices = $filtered;
+                }
+            }
+        }
+
         $blocks = $this->splitStockBlocks($request->raw_text);
         $count = 0;
 
         foreach ($blocks as $block) {
             if (!empty($block)) {
-                StockUnit::create([
-                    'product_id' => $request->product_id,
-                    'raw_text' => $block,
-                    'stock_status' => $stockStatus,
-                    'is_sold' => false,
-                    'available_at' => $availableAt,
-                    'seller_id' => $sellerId,
-                    'uploaded_by_id' => $sellerId,
-                ]);
-                $count++;
+                if ($isVcc && !empty($vccServices)) {
+                    $vccGroupId = (string) \Illuminate\Support\Str::uuid();
+                    foreach ($vccServices as $service) {
+                        StockUnit::create([
+                            'product_id' => $request->product_id,
+                            'raw_text' => $block,
+                            'stock_status' => $stockStatus,
+                            'vcc_service' => $service,
+                            'vcc_group_id' => $vccGroupId,
+                            'is_sold' => false,
+                            'available_at' => $availableAt,
+                            'seller_id' => $sellerId,
+                            'uploaded_by_id' => $sellerId,
+                        ]);
+                        $count++;
+                    }
+                } else {
+                    StockUnit::create([
+                        'product_id' => $request->product_id,
+                        'raw_text' => $block,
+                        'stock_status' => $stockStatus,
+                        'is_sold' => false,
+                        'available_at' => $availableAt,
+                        'seller_id' => $sellerId,
+                        'uploaded_by_id' => $sellerId,
+                    ]);
+                    $count++;
+                }
             }
         }
 
@@ -746,6 +780,7 @@ class SellerController extends Controller
             'price' => 'required|integer|min:0',
             'description' => 'nullable|string',
             'warranty_days' => 'required_if:enable_warranty,1|nullable|integer|min:1',
+            'vcc_services' => 'required_if:is_vcc,1|nullable|array',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,webp,gif|max:2048',
         ]);
 
@@ -762,6 +797,8 @@ class SellerController extends Controller
             'creator_id' => Auth::id(),
             'is_suspended' => false,
             'warranty_days' => $request->has('enable_warranty') ? $request->warranty_days : 0,
+            'is_vcc' => $request->has('is_vcc'),
+            'vcc_services' => $request->has('is_vcc') ? array_values(array_unique(array_filter((array)$request->input('vcc_services', [])))) : null,
         ]);
 
         return redirect()->route('seller.products.index')->with('success', __('Produk baru berhasil dibuat.'));
@@ -819,6 +856,7 @@ class SellerController extends Controller
             'price' => 'required|integer|min:0',
             'description' => 'nullable|string',
             'warranty_days' => 'required_if:enable_warranty,1|nullable|integer|min:1',
+            'vcc_services' => 'required_if:is_vcc,1|nullable|array',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,webp,gif|max:2048',
         ]);
 
@@ -827,6 +865,8 @@ class SellerController extends Controller
             'price' => $request->price,
             'description' => $request->description ?? '',
             'warranty_days' => $request->has('enable_warranty') ? $request->warranty_days : 0,
+            'is_vcc' => $request->has('is_vcc'),
+            'vcc_services' => $request->has('is_vcc') ? array_values(array_unique(array_filter((array)$request->input('vcc_services', [])))) : null,
         ];
 
         if ($request->hasFile('image') && $request->file('image')->isValid()) {

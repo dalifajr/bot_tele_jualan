@@ -59,6 +59,11 @@
                 </button>
             </li>
             <li class="nav-item" role="presentation">
+                <button class="nav-link fw-bold px-4 py-3" id="vcc-tab" data-bs-toggle="tab" data-bs-target="#vcc" type="button" role="tab" onclick="switchSettingsTab('vcc', event)">
+                    <i class="fas fa-credit-card me-2"></i>{{ __('Pengaturan VCC') }}
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
                 <button class="nav-link fw-bold px-4 py-3" id="payment-tab" data-bs-toggle="tab" data-bs-target="#payment" type="button" role="tab" onclick="switchSettingsTab('payment', event)">
                     <i class="fas fa-qrcode me-2"></i>{{ __('Payment & QRIS') }}
                 </button>
@@ -523,6 +528,74 @@
                     </div>
                 </div>
             </div>
+
+            {{-- TAB: PENGATURAN VCC --}}
+            <div class="tab-pane fade" id="vcc" role="tabpanel">
+                <div class="card border-0 shadow-sm rounded-4">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <div class="rounded-circle bg-primary-subtle text-primary p-3 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; font-size: 1.25rem;">
+                                <i class="fas fa-credit-card"></i>
+                            </div>
+                            <div>
+                                <h5 class="fw-bold mb-0">{{ __('Pengaturan Layanan VCC (Virtual Credit Card)') }}</h5>
+                                <p class="text-muted small mb-0">{{ __('Kelola master daftar layanan yang dapat digunakan untuk produk VCC pada website.') }}</p>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info border-0 rounded-4 p-3 small mb-4">
+                            <i class="fas fa-info-circle me-1"></i>
+                            <strong>{{ __('Cara Kerja Produk VCC:') }}</strong>
+                            {{ __('Ketika Admin atau Seller menambahkan produk dengan toggle "Jadikan Produk VCC" aktif, mereka dapat memilih layanan apa saja yang di-accept dari daftar di bawah. Setiap 1 data kartu VCC yang diunggah ke stok produk tersebut akan secara otomatis di-generate menjadi slot stok untuk masing-masing layanan yang dipilih (1 layanan = 1 stok).') }}
+                        </div>
+
+                        <form action="{{ route('admin.settings.update') }}" method="POST">
+                            @csrf
+                            <input type="hidden" name="settings_tab" value="vcc">
+
+                            <div class="mb-4">
+                                <label class="form-label fw-bold text-dark">{{ __('Daftar Layanan VCC yang Diterima') }}</label>
+                                <p class="text-muted small mb-2">{{ __('Masukkan daftar layanan yang diakomodasi untuk transaksi VCC (misal: Shopee, Lazada, DigitalOcean, Linode, Vultr, Google Cloud, AWS, PayPal, OpenAI).') }}</p>
+                                
+                                @php
+                                    $vccServices = \App\Models\BotSetting::getVccServicesList();
+                                @endphp
+
+                                <div class="p-3 rounded-4 border bg-body-tertiary mb-3">
+                                    <div class="d-flex flex-wrap gap-2 mb-3" id="vccServicesBadgeContainer">
+                                        @foreach($vccServices as $service)
+                                            <span class="badge bg-white text-dark border shadow-sm px-3 py-2 rounded-pill d-inline-flex align-items-center gap-2 vcc-service-pill" data-service="{{ $service }}">
+                                                <i class="fas fa-check-circle text-primary"></i>
+                                                <span class="fw-semibold">{{ $service }}</span>
+                                                <button type="button" class="btn-close btn-close-sm" style="font-size: 0.65rem;" onclick="removeVccService('{{ $service }}')"></button>
+                                            </span>
+                                        @endforeach
+                                    </div>
+
+                                    <div class="input-group">
+                                        <input type="text" id="newVccServiceInput" class="form-control" placeholder="{{ __('Ketik nama layanan baru (misal: Netflix, DigitalOcean)...') }}" onkeydown="if(event.key === 'Enter'){event.preventDefault(); addNewVccService();}">
+                                        <button type="button" class="btn btn-outline-primary fw-semibold px-3" onclick="addNewVccService()">
+                                            <i class="fas fa-plus me-1"></i>{{ __('Tambah Layanan') }}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label small fw-semibold text-muted">{{ __('Editor Baris (1 Layanan per Baris):') }}</label>
+                                    <textarea name="vcc_services_input" id="vccServicesTextarea" rows="6" class="form-control font-monospace" placeholder="Shopee&#10;Lazada&#10;DigitalOcean&#10;Linode&#10;Vultr" oninput="syncVccServicesFromTextarea()">{{ implode("\n", $vccServices) }}</textarea>
+                                    <div class="form-text small">{{ __('Daftar badge di atas dan kotak teks ini saling tersinkronisasi otomatis. Klik Simpan Pengaturan di bawah untuk menerapkan.') }}</div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-end">
+                                <button type="submit" class="btn btn-primary rounded-pill px-4 py-2 fw-bold shadow-sm">
+                                    <i class="fas fa-save me-1"></i> {{ __('Simpan Pengaturan VCC') }}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -530,6 +603,54 @@
 
 @push('scripts')
 <script>
+    function syncVccServicesFromTextarea() {
+        const textarea = document.getElementById('vccServicesTextarea');
+        const container = document.getElementById('vccServicesBadgeContainer');
+        if (!textarea || !container) return;
+
+        const lines = textarea.value.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+        const unique = [...new Set(lines)];
+
+        container.innerHTML = '';
+        unique.forEach(service => {
+            const span = document.createElement('span');
+            span.className = 'badge bg-white text-dark border shadow-sm px-3 py-2 rounded-pill d-inline-flex align-items-center gap-2 vcc-service-pill';
+            span.setAttribute('data-service', service);
+            span.innerHTML = `<i class="fas fa-check-circle text-primary"></i>
+                <span class="fw-semibold">${escapeHtml(service)}</span>
+                <button type="button" class="btn-close btn-close-sm" style="font-size: 0.65rem;" onclick="removeVccService('${escapeHtml(service)}')"></button>`;
+            container.appendChild(span);
+        });
+    }
+
+    function removeVccService(name) {
+        const textarea = document.getElementById('vccServicesTextarea');
+        if (!textarea) return;
+        let lines = textarea.value.split('\n').map(s => s.trim()).filter(s => s.length > 0 && s.toLowerCase() !== name.toLowerCase());
+        textarea.value = lines.join('\n');
+        syncVccServicesFromTextarea();
+    }
+
+    function addNewVccService() {
+        const input = document.getElementById('newVccServiceInput');
+        const textarea = document.getElementById('vccServicesTextarea');
+        if (!input || !textarea) return;
+        const val = input.value.trim();
+        if (!val) return;
+
+        let lines = textarea.value.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+        if (!lines.some(s => s.toLowerCase() === val.toLowerCase())) {
+            lines.push(val);
+            textarea.value = lines.join('\n');
+            syncVccServicesFromTextarea();
+        }
+        input.value = '';
+    }
+
+    function escapeHtml(text) {
+        const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+        return text.replace(/[&<>"']/g, m => map[m]);
+    }
     function switchSettingsTab(tabId, event) {
         if (event) {
             event.preventDefault();

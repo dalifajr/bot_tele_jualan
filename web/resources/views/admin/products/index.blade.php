@@ -127,6 +127,10 @@
                             <span class="badge bg-info-subtle text-info rounded-pill px-2 py-0.5"><i class="fas fa-network-wired me-1"></i>VPN ({{ strtoupper($product->vpn_protocol) }})</span>
                         @endif
 
+                        @if($product->is_vcc)
+                            <span class="badge bg-success-subtle text-success rounded-pill px-2 py-0.5"><i class="fas fa-credit-card me-1"></i>VCC ({{ count((array)($product->vcc_services ?? [])) }} Layanan)</span>
+                        @endif
+
                         @if($product->warranty_days > 0)
                             <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill px-2 py-0.5"><i class="fas fa-shield-alt me-1"></i>{{ $product->warranty_days }}H</span>
                         @endif
@@ -285,6 +289,36 @@
                                 </div>
                                 <div class="form-text text-muted small"><i class="fas fa-info-circle"></i> {{ __('Stok untuk produk VPN tidak perlu ditambahkan secara manual. Saat pembeli melakukan checkout, sistem akan meng-generate akun secara otomatis di VPS sesuai durasi ini.') }}</div>
                             </div>
+
+                            <div class="form-check form-switch mb-3 border-top pt-3">
+                                <input class="form-check-input" type="checkbox" role="switch" id="isVccAdd" name="is_vcc" value="1">
+                                <label class="form-check-label text-success small fw-bold" for="isVccAdd"><i class="fas fa-credit-card me-1"></i> {{ __('Jadikan Produk VCC?') }}</label>
+                            </div>
+
+                            <div id="vccOptionsAddContainer" style="display: none;" class="bg-light p-3 rounded-4 mb-3 border">
+                                <label class="form-label text-dark small fw-bold d-flex justify-content-between align-items-center mb-1">
+                                    <span>{{ __('Layanan yang Didukung VCC:') }}</span>
+                                    <div class="d-flex gap-2">
+                                        <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2" style="font-size: 0.72rem;" onclick="toggleAllVccServices('vcc-check-add', true)">{{ __('Pilih Semua') }}</button>
+                                        <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2" style="font-size: 0.72rem;" onclick="toggleAllVccServices('vcc-check-add', false)">{{ __('Kosongkan') }}</button>
+                                    </div>
+                                </label>
+                                <div class="row g-2 mt-1">
+                                    @foreach(\App\Models\BotSetting::getVccServicesList() as $srv)
+                                        <div class="col-6 col-md-4">
+                                            <div class="form-check p-2 bg-white rounded-3 border d-flex align-items-center">
+                                                <input class="form-check-input vcc-check-add ms-1 me-2" type="checkbox" name="vcc_services[]" value="{{ $srv }}" id="vccSrvAdd_{{ Str::slug($srv) }}">
+                                                <label class="form-check-label small fw-semibold text-truncate d-block mb-0" for="vccSrvAdd_{{ Str::slug($srv) }}">
+                                                    {{ $srv }}
+                                                </label>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                                <div class="form-text text-muted small mt-2">
+                                    <i class="fas fa-info-circle"></i> {{ __('Setiap 1 data kartu VCC yang diinput ke stok nantinya akan otomatis di-generate menjadi slot stok untuk setiap layanan yang dipilih (1 layanan = 1 stok).') }}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -396,6 +430,40 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <div class="form-check form-switch mb-3 border-top pt-3">
+                                <input class="form-check-input toggle-vcc-edit" type="checkbox" role="switch" name="is_vcc" value="1" id="isVccEdit{{ $product->id }}" data-target="vccOptionsEditContainer{{ $product->id }}" {{ $product->is_vcc ? 'checked' : '' }}>
+                                <label class="form-check-label text-success small fw-bold" for="isVccEdit{{ $product->id }}"><i class="fas fa-credit-card me-1"></i> {{ __('Jadikan Produk VCC?') }}</label>
+                            </div>
+
+                            <div id="vccOptionsEditContainer{{ $product->id }}" style="display: {{ $product->is_vcc ? 'block' : 'none' }};" class="bg-light p-3 rounded-4 mb-3 border">
+                                <label class="form-label text-dark small fw-bold d-flex justify-content-between align-items-center mb-1">
+                                    <span>{{ __('Layanan yang Didukung VCC:') }}</span>
+                                    <div class="d-flex gap-2">
+                                        <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2" style="font-size: 0.72rem;" onclick="toggleAllVccServices('vcc-check-edit-{{ $product->id }}', true)">{{ __('Pilih Semua') }}</button>
+                                        <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2" style="font-size: 0.72rem;" onclick="toggleAllVccServices('vcc-check-edit-{{ $product->id }}', false)">{{ __('Kosongkan') }}</button>
+                                    </div>
+                                </label>
+                                <div class="row g-2 mt-1">
+                                    @php
+                                        $currentServices = (array)($product->vcc_services ?? []);
+                                    @endphp
+                                    @foreach(\App\Models\BotSetting::getVccServicesList() as $srv)
+                                        <div class="col-6 col-md-4">
+                                            <div class="form-check p-2 bg-white rounded-3 border d-flex align-items-center">
+                                                <input class="form-check-input vcc-check-edit-{{ $product->id }} ms-1 me-2" type="checkbox" name="vcc_services[]" value="{{ $srv }}" id="vccSrvEdit_{{ $product->id }}_{{ Str::slug($srv) }}" {{ in_array($srv, $currentServices) ? 'checked' : '' }}>
+                                                <label class="form-check-label small fw-semibold text-truncate d-block mb-0" for="vccSrvEdit_{{ $product->id }}_{{ Str::slug($srv) }}">
+                                                    {{ $srv }}
+                                                </label>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                                <div class="form-text text-muted small mt-2">
+                                    <i class="fas fa-info-circle"></i> {{ __('Setiap 1 data kartu VCC yang diinput ke stok nantinya akan otomatis di-generate menjadi slot stok untuk setiap layanan yang dipilih (1 layanan = 1 stok).') }}
+                                </div>
+                            </div>
+
                             <div class="form-check form-switch mb-3">
                                 <input class="form-check-input" type="checkbox" role="switch" name="is_suspended" value="1" id="suspend{{ $product->id }}" {{ $product->is_suspended ? 'checked' : '' }}>
                                 <label class="form-check-label" for="suspend{{ $product->id }}">Suspend (Sembunyikan dari katalog)</label>
@@ -587,6 +655,27 @@
             }
         });
     });
+
+    // VCC Togglers
+    document.getElementById('isVccAdd')?.addEventListener('change', function() {
+        document.getElementById('vccOptionsAddContainer').style.display = this.checked ? 'block' : 'none';
+    });
+
+    document.querySelectorAll('.toggle-vcc-edit').forEach(function(toggle) {
+        toggle.addEventListener('change', function() {
+            var targetId = this.getAttribute('data-target');
+            var container = document.getElementById(targetId);
+            if (container) {
+                container.style.display = this.checked ? 'block' : 'none';
+            }
+        });
+    });
+
+    window.toggleAllVccServices = function(className, state) {
+        document.querySelectorAll('.' + className).forEach(function(chk) {
+            chk.checked = state;
+        });
+    };
 
     // Form submission loading spinner handler
     document.querySelectorAll('.modal form').forEach(function(form) {

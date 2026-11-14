@@ -13,12 +13,14 @@ class CartItem extends Model
         'user_id',
         'product_id',
         'quantity',
+        'vcc_services',
     ];
 
     protected $casts = [
         'user_id' => 'integer',
         'product_id' => 'integer',
         'quantity' => 'integer',
+        'vcc_services' => 'array',
     ];
 
     public function user()

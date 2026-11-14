@@ -22,6 +22,8 @@ class Product extends Model
         'is_vpn',
         'vpn_protocol',
         'vpn_duration_days',
+        'is_vcc',
+        'vcc_services',
     ];
 
     protected $casts = [
@@ -31,6 +33,8 @@ class Product extends Model
         'warranty_days' => 'integer',
         'is_vpn' => 'boolean',
         'vpn_duration_days' => 'integer',
+        'is_vcc' => 'boolean',
+        'vcc_services' => 'array',
     ];
 
     public function orders()
@@ -85,5 +89,48 @@ class Product extends Model
     public function getFormattedPriceAttribute(): string
     {
         return 'Rp ' . number_format($this->price, 0, ',', '.');
+    }
+
+    /**
+     * Get list of VCC services with stock availability.
+     */
+    public function getVccServicesWithStock(): array
+    {
+        if (!$this->is_vcc) {
+            return [];
+        }
+
+        $services = $this->vcc_services;
+        if (is_string($services)) {
+            $services = json_decode($services, true) ?? [];
+        }
+        if (!is_array($services)) {
+            $services = [];
+        }
+
+        $stocks = StockUnit::where('product_id', $this->id)
+            ->where('is_sold', false)
+            ->whereNull('sold_order_id')
+            ->where(function ($query) {
+                $query->where('stock_status', 'ready')
+                      ->orWhereNull('stock_status');
+            })
+            ->whereNotNull('vcc_service')
+            ->select('vcc_service', \Illuminate\Support\Facades\DB::raw('count(*) as count'))
+            ->groupBy('vcc_service')
+            ->pluck('count', 'vcc_service')
+            ->toArray();
+
+        $result = [];
+        foreach ($services as $service) {
+            $count = (int) ($stocks[$service] ?? 0);
+            $result[] = [
+                'name' => $service,
+                'stock' => $count,
+                'available' => $count > 0,
+            ];
+        }
+
+        return $result;
     }
 }

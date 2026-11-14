@@ -43,6 +43,16 @@
                                 <div>
                                     <span class="fw-bold text-body">{{ $item->product->name ?? '-' }}</span>
                                     <small class="text-muted d-block">{{ $item->quantity }} &times; Rp {{ number_format($item->unit_price, 0, ',', '.') }}</small>
+                                    @if($item->vcc_services && count($item->vcc_services) > 0)
+                                        <div class="mt-1 d-flex flex-wrap gap-1 align-items-center">
+                                            <span class="badge bg-primary-subtle text-primary fw-bold" style="font-size: 0.68rem;">
+                                                <i class="fas fa-credit-card me-1"></i>VCC
+                                            </span>
+                                            @foreach($item->vcc_services as $srv)
+                                                <span class="badge bg-secondary-subtle text-body" style="font-size: 0.65rem;">{{ $srv }}</span>
+                                            @endforeach
+                                        </div>
+                                    @endif
                                 </div>
                                 <span class="fw-bold text-body">Rp {{ number_format($item->unit_price * $item->quantity, 0, ',', '.') }}</span>
                             </div>
@@ -165,7 +175,11 @@
                                 <div class="d-flex flex-column gap-2">
                                     @foreach($units as $unit)
                                     <div>
-                                        @if($units->count() > 1)
+                                        @if($unit->vcc_service)
+                                            <span class="badge bg-primary-subtle text-primary mb-1 fw-bold">
+                                                <i class="fas fa-credit-card me-1"></i>VCC Layanan: {{ $unit->vcc_service }}
+                                            </span>
+                                        @elseif($units->count() > 1)
                                             <span class="badge bg-secondary-subtle text-secondary mb-1">Unit #{{ $loop->iteration }}</span>
                                         @endif
                                         <x-account-credential-viewer :rawText="$unit->raw_text" />

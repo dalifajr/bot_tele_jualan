@@ -1046,6 +1046,7 @@ class AdminController extends Controller
             'warranty_days' => 'required_if:enable_warranty,1|nullable|integer|min:1',
             'vpn_protocol' => 'required_if:is_vpn,1|nullable|string',
             'vpn_duration_days' => 'required_if:is_vpn,1|nullable|integer|min:1',
+            'vcc_services' => 'required_if:is_vcc,1|nullable|array',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,webp,gif|max:2048',
         ]);
         $data = $request->only(['name', 'description', 'price', 'vpn_protocol', 'vpn_duration_days']);
@@ -1054,6 +1055,8 @@ class AdminController extends Controller
         $data['is_suspended'] = false;
         $data['is_vpn'] = $request->has('is_vpn');
         $data['warranty_days'] = $request->has('enable_warranty') ? $request->warranty_days : 0;
+        $data['is_vcc'] = $request->has('is_vcc');
+        $data['vcc_services'] = $request->has('is_vcc') ? array_values(array_unique(array_filter((array)$request->input('vcc_services', [])))) : null;
 
         if ($request->hasFile('image') && $request->file('image')->isValid()) {
             $data['image'] = $request->file('image')->store('products', 'public');
@@ -1075,6 +1078,7 @@ class AdminController extends Controller
             'warranty_days' => $request->has('enable_warranty') ? 'required|integer|min:1' : 'nullable',
             'vpn_protocol' => $request->has('is_vpn') ? 'required|string' : 'nullable',
             'vpn_duration_days' => $request->has('is_vpn') ? 'required|integer|min:1' : 'nullable',
+            'vcc_services' => $request->has('is_vcc') ? 'required|array' : 'nullable',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,webp,gif|max:2048',
         ]);
         $data = $request->only(['name', 'description', 'price', 'vpn_protocol', 'vpn_duration_days']);
@@ -1083,6 +1087,8 @@ class AdminController extends Controller
         $data['is_suspended'] = $request->has('is_suspended');
         $data['is_vpn'] = $request->has('is_vpn');
         $data['warranty_days'] = $request->has('enable_warranty') ? $request->warranty_days : 0;
+        $data['is_vcc'] = $request->has('is_vcc');
+        $data['vcc_services'] = $request->has('is_vcc') ? array_values(array_unique(array_filter((array)$request->input('vcc_services', [])))) : null;
 
         if ($request->hasFile('image') && $request->file('image')->isValid()) {
             if ($product->image && \Illuminate\Support\Facades\Storage::disk('public')->exists($product->image)) {
@@ -1618,18 +1624,50 @@ class AdminController extends Controller
         }
 
         // Split raw text into individual stock blocks supporting line dividers & double-newlines
+        $product = Product::findOrFail($request->product_id);
+        $isVcc = (bool) $product->is_vcc;
+        $vccServices = [];
+        if ($isVcc) {
+            $vccServices = (array) ($product->vcc_services ?? []);
+            if (empty($vccServices)) {
+                $vccServices = \App\Models\BotSetting::getVccServicesList();
+            }
+            if ($request->filled('vcc_services_target') && is_array($request->vcc_services_target)) {
+                $filtered = array_intersect($vccServices, $request->vcc_services_target);
+                if (!empty($filtered)) {
+                    $vccServices = $filtered;
+                }
+            }
+        }
+
         $blocks = $this->splitStockBlocks($request->raw_text);
         $count = 0;
         foreach ($blocks as $block) {
             if (!empty($block)) {
-                \App\Models\StockUnit::create([
-                    'product_id' => $request->product_id,
-                    'raw_text' => $block,
-                    'stock_status' => $request->stock_status,
-                    'is_sold' => false,
-                    'available_at' => $availableAt,
-                ]);
-                $count++;
+                if ($isVcc && !empty($vccServices)) {
+                    $vccGroupId = (string) \Illuminate\Support\Str::uuid();
+                    foreach ($vccServices as $service) {
+                        \App\Models\StockUnit::create([
+                            'product_id' => $request->product_id,
+                            'raw_text' => $block,
+                            'stock_status' => $request->stock_status,
+                            'vcc_service' => $service,
+                            'vcc_group_id' => $vccGroupId,
+                            'is_sold' => false,
+                            'available_at' => $availableAt,
+                        ]);
+                        $count++;
+                    }
+                } else {
+                    \App\Models\StockUnit::create([
+                        'product_id' => $request->product_id,
+                        'raw_text' => $block,
+                        'stock_status' => $request->stock_status,
+                        'is_sold' => false,
+                        'available_at' => $availableAt,
+                    ]);
+                    $count++;
+                }
             }
         }
         return redirect()->route('admin.stock.index')->with('success', __(":count stok berhasil ditambahkan.", ["count" => $count]));
@@ -3198,6 +3236,22 @@ class AdminController extends Controller
             \App\Models\BotSetting::updateOrCreate(
                 ['key' => $key],
                 ['value' => (string)$value, 'updated_at' => now()]
+            );
+        }
+
+        if ($request->has('vcc_services_input')) {
+            $rawServices = $request->input('vcc_services_input');
+            if (is_array($rawServices)) {
+                $cleaned = array_values(array_unique(array_filter(array_map('trim', $rawServices))));
+            } else {
+                $cleaned = array_values(array_unique(array_filter(array_map('trim', preg_split('/[\r\n,]+/', (string)$rawServices)))));
+            }
+            if (empty($cleaned)) {
+                $cleaned = ['Shopee', 'Lazada', 'DigitalOcean', 'Linode', 'Vultr', 'Google Cloud', 'AWS', 'PayPal', 'OpenAI'];
+            }
+            \App\Models\BotSetting::updateOrCreate(
+                ['key' => 'vcc_services_list'],
+                ['value' => json_encode($cleaned), 'updated_at' => now()]
             );
         }
 

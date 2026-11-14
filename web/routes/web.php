@@ -22,6 +22,7 @@ Route::get('/', function () {
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 Route::get('/catalog', [CatalogController::class, 'index'])->name('catalog.index');
 Route::get('/catalog/{id}', [CatalogController::class, 'show'])->name('catalog.show');
+Route::get('/catalog/{id}/vcc-info', [CatalogController::class, 'vccInfo'])->name('catalog.vcc-info');
 Route::get('/sellers/{user}', [\App\Http\Controllers\SellerProfileController::class, 'show'])->name('sellers.show');
 
 Route::post('/api/payment/midtrans/callback', [\App\Http\Controllers\MidtransController::class, 'callback'])->name('payment.midtrans.callback');

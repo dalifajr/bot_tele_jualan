@@ -45,6 +45,16 @@
                                         <div>
                                             <h6 class="fw-bold mb-0">{{ $item->product->name }}</h6>
                                             <small class="text-muted">{{ $item->product->formatted_price }} / unit</small>
+                                            @if($item->vcc_services && count($item->vcc_services) > 0)
+                                                <div class="mt-1 d-flex flex-wrap gap-1 align-items-center">
+                                                    <span class="badge bg-primary-subtle text-primary fw-bold" style="font-size: 0.68rem;">
+                                                        <i class="fas fa-credit-card me-1"></i>VCC
+                                                    </span>
+                                                    @foreach($item->vcc_services as $srv)
+                                                        <span class="badge bg-secondary-subtle text-body" style="font-size: 0.65rem;">{{ $srv }}</span>
+                                                    @endforeach
+                                                </div>
+                                            @endif
                                         </div>
                                     </div>
                                 </td>
@@ -73,6 +83,16 @@
                             <div class="overflow-hidden">
                                 <h6 class="fw-bold mb-0 text-truncate" style="font-size: 0.85rem;">{{ $item->product->name }}</h6>
                                 <small class="text-muted" style="font-size: 0.72rem;">{{ $item->quantity }} × {{ $item->product->formatted_price }}</small>
+                                @if($item->vcc_services && count($item->vcc_services) > 0)
+                                    <div class="mt-1 d-flex flex-wrap gap-1 align-items-center">
+                                        <span class="badge bg-primary-subtle text-primary fw-bold" style="font-size: 0.65rem;">
+                                            <i class="fas fa-credit-card me-1"></i>VCC
+                                        </span>
+                                        @foreach($item->vcc_services as $srv)
+                                            <span class="badge bg-secondary-subtle text-body" style="font-size: 0.62rem;">{{ $srv }}</span>
+                                        @endforeach
+                                    </div>
+                                @endif
                             </div>
                         </div>
                         <span class="fw-bold text-body ms-2" style="font-size: 0.88rem;">Rp{{ number_format($item->product->price * $item->quantity, 0, ',', '.') }}</span>

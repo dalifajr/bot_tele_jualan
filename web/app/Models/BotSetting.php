@@ -38,6 +38,26 @@ class BotSetting extends Model
     }
 
     /**
+     * Helper untuk mengambil daftar layanan VCC yang aktif di sistem.
+     */
+    public static function getVccServicesList(): array
+    {
+        $val = static::where('key', 'vcc_services_list')->value('value');
+        if ($val) {
+            $decoded = json_decode($val, true);
+            if (is_array($decoded) && !empty($decoded)) {
+                return array_values(array_unique(array_filter(array_map('trim', $decoded))));
+            }
+            // Fallback jika disimpan dalam format teks per baris
+            $lines = array_filter(array_map('trim', explode("\n", $val)));
+            if (!empty($lines)) {
+                return array_values(array_unique($lines));
+            }
+        }
+        return ['Shopee', 'Lazada', 'DigitalOcean', 'Linode', 'Vultr', 'Google Cloud', 'AWS', 'PayPal', 'OpenAI'];
+    }
+
+    /**
      * Helper untuk mengambil nilai setting dengan default fallback.
      */
     public static function getSetting(string $key, $default = null)

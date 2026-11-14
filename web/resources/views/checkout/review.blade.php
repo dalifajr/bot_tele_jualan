@@ -70,6 +70,18 @@
                             <div class="text-muted small">
                                 <span class="fw-semibold text-primary">{{ $product->formatted_price }}</span> / unit
                             </div>
+                            @if($product->is_vcc && !empty($vccServices))
+                            <div class="mt-2">
+                                <span class="badge bg-primary-subtle text-primary fw-bold mb-1" style="font-size: 0.72rem;">
+                                    <i class="fas fa-credit-card me-1"></i>Layanan VCC ({{ count($vccServices) }} Layanan):
+                                </span>
+                                <div class="d-flex flex-wrap gap-1">
+                                    @foreach($vccServices as $srv)
+                                        <span class="badge bg-white border text-body" style="font-size: 0.72rem;">{{ $srv }}</span>
+                                    @endforeach
+                                </div>
+                            </div>
+                            @endif
                         </div>
                     </div>
 
@@ -145,6 +157,11 @@
                     <input type="hidden" name="quantity" value="{{ $quantity }}">
                     @if($vpnUsername)<input type="hidden" name="vpn_username" value="{{ $vpnUsername }}">@endif
                     @if($vpnPassword)<input type="hidden" name="vpn_password" value="{{ $vpnPassword }}">@endif
+                    @if($product->is_vcc && !empty($vccServices))
+                        @foreach($vccServices as $srv)
+                            <input type="hidden" name="vcc_services[]" value="{{ $srv }}">
+                        @endforeach
+                    @endif
 
                     <div class="col-sm-8 col-md-9">
                         <input type="text" name="coupon_code" class="form-control form-control-lg font-monospace text-uppercase rounded-3" placeholder="{{ __('CONTOH: DISKON10') }}" value="{{ $couponCode }}">
@@ -223,6 +240,11 @@
                     @if($couponCode && $discount > 0)<input type="hidden" name="coupon_code" value="{{ $couponCode }}">@endif
                     @if($vpnUsername)<input type="hidden" name="vpn_username" value="{{ $vpnUsername }}">@endif
                     @if($vpnPassword)<input type="hidden" name="vpn_password" value="{{ $vpnPassword }}">@endif
+                    @if($product->is_vcc && !empty($vccServices))
+                        @foreach($vccServices as $srv)
+                            <input type="hidden" name="vcc_services[]" value="{{ $srv }}">
+                        @endforeach
+                    @endif
 
                     <button type="submit" id="btnConfirmPay" class="btn btn-primary btn-lg w-100 rounded-pill fw-bold shadow-sm py-3 d-flex align-items-center justify-content-center gap-2 lift-hover btn-buy-now">
                         <i class="fas fa-lock btn-buy-icon"></i>

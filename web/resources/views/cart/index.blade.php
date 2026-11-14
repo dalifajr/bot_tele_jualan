@@ -54,10 +54,25 @@
                                         <div>
                                             <h6 class="fw-bold mb-1"><a href="{{ route('catalog.show', $item->product->id) }}" class="text-decoration-none text-body">{{ $item->product->name }}</a></h6>
                                             <span class="text-primary fw-bold small">{{ $item->product->formatted_price }}</span>
+                                            @if($item->vcc_services && count($item->vcc_services) > 0)
+                                                <div class="mt-1 d-flex flex-wrap gap-1 align-items-center">
+                                                    <span class="badge bg-primary-subtle text-primary fw-bold" style="font-size: 0.7rem;">
+                                                        <i class="fas fa-credit-card me-1"></i>VCC
+                                                    </span>
+                                                    @foreach($item->vcc_services as $srv)
+                                                        <span class="badge bg-secondary-subtle text-body" style="font-size: 0.68rem;">{{ $srv }}</span>
+                                                    @endforeach
+                                                </div>
+                                            @endif
                                         </div>
                                     </div>
                                 </td>
                                 <td class="py-3 text-center">
+                                    @if($item->product->is_vcc)
+                                        <span class="badge bg-light text-body border px-2.5 py-1.5 fw-bold" style="font-size: 0.82rem;">
+                                            {{ $item->quantity }} {{ __('Layanan') }}
+                                        </span>
+                                    @else
                                     <div class="d-inline-flex align-items-center m3-tonal-item rounded-pill p-1" style="height: 38px;">
                                         <button type="button" class="btn btn-sm btn-link text-decoration-none px-2 py-0 text-muted btn-stepper-touch" data-action="decrement" data-id="{{ $item->id }}" {{ $item->quantity <= 1 ? 'disabled' : '' }}>
                                             <i class="fas fa-minus fs-6"></i>
@@ -67,6 +82,7 @@
                                             <i class="fas fa-plus fs-6"></i>
                                         </button>
                                     </div>
+                                    @endif
                                     <div class="mt-1">
                                         <form action="{{ route('cart.remove', $item->id) }}" method="POST" class="d-inline m-0" onsubmit="confirmAction(event, 'Hapus produk ini dari keranjang?');">
                                             @csrf
@@ -104,11 +120,26 @@
                                     <a href="{{ route('catalog.show', $item->product->id) }}" class="text-decoration-none text-body">{{ $item->product->name }}</a>
                                 </h6>
                                 <span class="text-primary fw-bold" style="font-size: 0.9rem;">{{ $item->product->formatted_price }}</span>
+                                @if($item->vcc_services && count($item->vcc_services) > 0)
+                                    <div class="mt-1 d-flex flex-wrap gap-1 align-items-center">
+                                        <span class="badge bg-primary-subtle text-primary fw-bold" style="font-size: 0.68rem;">
+                                            <i class="fas fa-credit-card me-1"></i>VCC
+                                        </span>
+                                        @foreach($item->vcc_services as $srv)
+                                            <span class="badge bg-secondary-subtle text-body" style="font-size: 0.65rem;">{{ $srv }}</span>
+                                        @endforeach
+                                    </div>
+                                @endif
                             </div>
                         </div>
                         
                         <div class="d-flex align-items-center justify-content-between pt-2 border-top">
                             <div class="d-flex align-items-center gap-2">
+                                @if($item->product->is_vcc)
+                                    <span class="badge bg-light text-body border px-2.5 py-1.5 fw-bold" style="font-size: 0.78rem;">
+                                        {{ $item->quantity }} {{ __('Layanan') }}
+                                    </span>
+                                @else
                                 <div class="d-inline-flex align-items-center m3-tonal-item rounded-pill p-1" style="height: 38px;">
                                     <button type="button" class="btn btn-sm btn-link text-decoration-none px-2 py-0 text-muted btn-stepper-touch" data-action="decrement" data-id="{{ $item->id }}" {{ $item->quantity <= 1 ? 'disabled' : '' }}>
                                         <i class="fas fa-minus fs-6"></i>
@@ -118,6 +149,7 @@
                                         <i class="fas fa-plus fs-6"></i>
                                     </button>
                                 </div>
+                                @endif
                                 <form action="{{ route('cart.remove', $item->id) }}" method="POST" class="d-inline m-0" onsubmit="confirmAction(event, 'Hapus produk ini?');">
                                     @csrf
                                     @method('DELETE')
