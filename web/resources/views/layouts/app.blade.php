@@ -255,10 +255,30 @@
                     if (!opts.timer) opts.timer = 2200;
                     if (!opts.position) opts.position = 'top-end';
 
+                    if (!opts.customClass) opts.customClass = {};
+                    opts.customClass.container = ((opts.customClass.container || '') + ' swal2-toast-container-pure').trim();
+
+                    // Pre-render hook: ensure parent container is 100% transparent before mount
+                    const origWillOpen = opts.willOpen;
+                    opts.willOpen = (popup) => {
+                        if (typeof origWillOpen === 'function') origWillOpen(popup);
+                        if (popup && popup.parentElement) {
+                            popup.parentElement.style.setProperty('background', 'transparent', 'important');
+                            popup.parentElement.style.setProperty('backdrop-filter', 'none', 'important');
+                            popup.parentElement.style.setProperty('-webkit-backdrop-filter', 'none', 'important');
+                            popup.parentElement.classList.add('swal2-toast-container-pure');
+                        }
+                    };
+
                     // Fail-safe auto dismiss: ensure toast element is cleanly removed from DOM
                     const origDidOpen = opts.didOpen;
                     opts.didOpen = (toastEl) => {
                         if (typeof origDidOpen === 'function') origDidOpen(toastEl);
+                        if (toastEl && toastEl.parentElement) {
+                            toastEl.parentElement.style.setProperty('background', 'transparent', 'important');
+                            toastEl.parentElement.style.setProperty('backdrop-filter', 'none', 'important');
+                            toastEl.parentElement.style.setProperty('-webkit-backdrop-filter', 'none', 'important');
+                        }
                         setTimeout(() => {
                             if (document.body.contains(toastEl)) {
                                 Swal.close();
@@ -279,8 +299,10 @@
                         }
                     }
 
-                    // Terapkan icon info lingkaran bulat seperti di gambar untuk semua dialog konfirmasi
-                    if (opts.icon === 'warning' || opts.icon === 'question' || (!opts.icon && opts.showCancelButton)) {
+                    // Terapkan icon semantik: Beri default 'info' hanya jika dialog tidak memiliki icon
+                    if (!opts.icon && opts.showCancelButton) {
+                        opts.icon = 'info';
+                    } else if (opts.icon === 'question') {
                         opts.icon = 'info';
                     }
 
@@ -300,7 +322,7 @@
                         };
                     }
 
-                    // Event didOpen: tombol Batal seketika menutup popup
+                    // Event didOpen: tombol Batal seketika menutup popup dengan animasi keluar
                     const origDidOpen = opts.didOpen;
                     opts.didOpen = (popup) => {
                         if (typeof origDidOpen === 'function') origDidOpen(popup);
@@ -314,7 +336,7 @@
                         }
                     };
 
-                    // Fail-safe cleanup di didClose
+                    // Fail-safe cleanup di didClose dengan sinkronisasi animasi penutup
                     const origDidClose = opts.didClose;
                     opts.didClose = () => {
                         if (typeof origDidClose === 'function') origDidClose();
@@ -328,7 +350,7 @@
                             if (!document.querySelector('.swal2-shown .swal2-modal')) {
                                 document.body.classList.remove('swal2-shown', 'swal2-height-auto');
                             }
-                        }, 200);
+                        }, 280);
                     };
                 }
 

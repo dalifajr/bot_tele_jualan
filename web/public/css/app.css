@@ -3461,42 +3461,14 @@ main.flex-grow-1 {
     margin: 2px 0 0 0 !important;
 }
 
-/* Toast Icons Modern Styling */
+/* Toast Icons Modern Styling (M3 System) */
 .swal2-popup.swal2-toast .swal2-icon {
-    width: 22px !important;
-    height: 22px !important;
-    min-width: 22px !important;
+    width: 26px !important;
+    height: 26px !important;
+    min-width: 26px !important;
     margin: 0 !important;
-    border-width: 2px !important;
-}
-
-.swal2-popup.swal2-toast .swal2-icon.swal2-success {
-    border-color: #146c2e !important;
-    color: #146c2e !important;
-}
-.swal2-popup.swal2-toast .swal2-icon.swal2-success [class^='swal2-success-line'] {
-    background-color: #146c2e !important;
-}
-.swal2-popup.swal2-toast .swal2-icon.swal2-success .swal2-success-ring {
-    border-color: rgba(20, 108, 46, 0.3) !important;
-}
-
-.swal2-popup.swal2-toast .swal2-icon.swal2-error {
-    border-color: #ba1a1a !important;
-    color: #ba1a1a !important;
-}
-.swal2-popup.swal2-toast .swal2-icon.swal2-error [class^='swal2-x-mark-line'] {
-    background-color: #ba1a1a !important;
-}
-
-.swal2-popup.swal2-toast .swal2-icon.swal2-warning {
-    border-color: #f9ab00 !important;
-    color: #f9ab00 !important;
-}
-
-.swal2-popup.swal2-toast .swal2-icon.swal2-info {
-    border-color: #65558f !important;
-    color: #65558f !important;
+    border-radius: 50% !important;
+    flex-shrink: 0 !important;
 }
 
 /* Toast Dark Mode Support */
@@ -4063,27 +4035,9 @@ main > div:nth-of-type(2) > div:first-child h4,
     z-index: 2000 !important;
 }
 
-/* === M3 DIALOG BACKDROP: EXCLUSIVE TO ACTIVE MODAL DIALOGS === */
-body.swal2-shown:not(.swal2-toast-shown) .swal2-container.swal2-backdrop-show,
-.swal2-container.swal2-backdrop-show.swal2-center,
-.swal2-container.swal2-backdrop-show:not(.swal2-top):not(.swal2-top-start):not(.swal2-top-end):not(.swal2-center-start):not(.swal2-center-end):not(.swal2-bottom):not(.swal2-bottom-start):not(.swal2-bottom-end) {
-    background: rgba(0, 0, 0, 0.42) !important;
-    backdrop-filter: blur(4px) !important;
-    -webkit-backdrop-filter: blur(4px) !important;
-    transition: opacity var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard) !important;
-    pointer-events: auto !important;
-}
-
-.swal2-container.swal2-backdrop-hide {
-    background: transparent !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
-    transition: opacity 0.15s ease !important;
-}
-
-/* === M3 TOAST CONTAINER: ZERO BACKDROP, TRANSPARENT & NON-BLOCKING === */
+/* === M3 TOAST CONTAINER: ABSOLUTE ZERO BACKDROP, TRANSPARENT & NON-BLOCKING === */
+.swal2-container.swal2-toast-container-pure,
+.swal2-container:has(.swal2-toast),
 .swal2-container.swal2-top-end,
 .swal2-container.swal2-top,
 .swal2-container.swal2-top-start,
@@ -4091,9 +4045,9 @@ body.swal2-shown:not(.swal2-toast-shown) .swal2-container.swal2-backdrop-show,
 .swal2-container.swal2-bottom,
 .swal2-container.swal2-bottom-start,
 .swal2-container.swal2-toast-shown,
-body.swal2-toast-shown .swal2-container,
-.swal2-container:has(.swal2-toast) {
+body.swal2-toast-shown .swal2-container {
     background: transparent !important;
+    background-color: transparent !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
     pointer-events: none !important;
@@ -4106,11 +4060,21 @@ body.swal2-toast-shown .swal2-container,
 }
 
 /* === M3 & VCC ALERT DIALOG CONTAINER (EXACT MATCH TO REFERENCE & #vccSelectorContainer) === */
-.swal2-container:not(.swal2-toast-shown):not(:has(.swal2-toast)) {
+body.swal2-shown:not(.swal2-toast-shown) .swal2-container:not(.swal2-toast-container-pure):not(.swal2-top-end):not(.swal2-top):not(.swal2-top-start):not(.swal2-bottom-end):not(.swal2-bottom):not(.swal2-bottom-start):not(.swal2-toast-shown),
+.swal2-container.swal2-backdrop-show:not(.swal2-toast-container-pure):not(.swal2-top-end):not(.swal2-top):not(.swal2-top-start):not(.swal2-bottom-end):not(.swal2-bottom):not(.swal2-bottom-start):not(.swal2-toast-shown) {
     background: rgba(15, 23, 42, 0.6) !important;
     backdrop-filter: blur(6px) !important;
     -webkit-backdrop-filter: blur(6px) !important;
-    transition: background-color 0.25s cubic-bezier(0.2, 0, 0, 1) !important;
+    transition: background-color 0.25s cubic-bezier(0.2, 0, 0, 1), backdrop-filter 0.25s cubic-bezier(0.2, 0, 0, 1) !important;
+    pointer-events: auto !important;
+}
+
+.swal2-container.swal2-backdrop-hide {
+    background: rgba(15, 23, 42, 0) !important;
+    backdrop-filter: blur(0px) !important;
+    -webkit-backdrop-filter: blur(0px) !important;
+    pointer-events: none !important;
+    transition: background-color 0.25s cubic-bezier(0.2, 0, 0, 1), backdrop-filter 0.25s cubic-bezier(0.2, 0, 0, 1) !important;
 }
 
 @media (min-width: 768px) {
@@ -4139,13 +4103,12 @@ body.swal2-toast-shown .swal2-container,
     .swal2-popup.swal2-modal:not(.swal2-toast).swal2-hide,
     .swal2-popup:not(.swal2-toast).swal2-hide {
         animation: vccPopupDesktopExit 0.2s cubic-bezier(0.2, 0, 0, 1) forwards !important;
-        opacity: 0 !important;
         pointer-events: none !important;
     }
 }
 
 @media (max-width: 767.98px) {
-    .swal2-container:not(.swal2-toast-shown):not(:has(.swal2-toast)) {
+    .swal2-container:not(.swal2-toast-container-pure):not(.swal2-toast-shown):not(:has(.swal2-toast)) {
         display: flex !important;
         align-items: flex-end !important;
         justify-content: center !important;
@@ -4170,7 +4133,7 @@ body.swal2-toast-shown .swal2-container,
         border-right: 1px solid var(--outline-variant, #e2e8f0) !important;
         max-height: 85vh !important;
         box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.25) !important;
-        padding: 12px 20px 24px !important;
+        padding: 14px 20px 24px !important;
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
@@ -4187,7 +4150,7 @@ body.swal2-toast-shown .swal2-container,
         height: 4.5px !important;
         background: var(--outline-variant, #cbd5e1) !important;
         border-radius: 9999px !important;
-        margin: 0 auto 12px auto !important;
+        margin: 0 auto 14px auto !important;
         flex-shrink: 0 !important;
     }
 
@@ -4199,7 +4162,6 @@ body.swal2-toast-shown .swal2-container,
     .swal2-popup.swal2-modal:not(.swal2-toast).swal2-hide,
     .swal2-popup:not(.swal2-toast).swal2-hide {
         animation: vccPopupMobileExit 0.25s cubic-bezier(0.2, 0, 0, 1) forwards !important;
-        opacity: 0 !important;
         pointer-events: none !important;
     }
 }
@@ -4214,57 +4176,107 @@ body.swal2-toast-shown .swal2-container,
     background: var(--outline-variant, #49454f) !important;
 }
 
-/* === M3 DIALOG ICON (SLOT="ICON") === */
+/* === M3 SEMANTIC DIALOG ICON SYSTEM (SUCCESS, INFO, WARNING, ERROR) === */
 .swal2-popup:not(.swal2-toast) .swal2-icon {
-    width: 38px !important;
-    height: 38px !important;
-    min-width: 38px !important;
+    width: 42px !important;
+    height: 42px !important;
+    min-width: 42px !important;
+    flex-shrink: 0 !important;
     border-radius: 50% !important;
     border: none !important;
-    margin: 0 auto 16px auto !important;
+    margin: 0 auto 14px auto !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    font-size: 1.1rem !important;
-    background-color: var(--surface-container-highest, #dce4eb) !important;
-    color: var(--on-surface-variant, #44474f) !important;
+    font-size: 1.15rem !important;
+    position: relative !important;
+    box-sizing: border-box !important;
 }
 
-.swal2-popup:not(.swal2-toast) .swal2-icon.swal2-info,
-.swal2-popup:not(.swal2-toast) .swal2-icon.swal2-question,
-.swal2-popup:not(.swal2-toast) .swal2-icon.swal2-warning,
-.swal2-popup:not(.swal2-toast) .swal2-icon.swal2-error,
+/* Success (Centang Hijau Solid M3) */
 .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-success {
-    background-color: var(--surface-container-highest, #dce4eb) !important;
-    color: var(--on-surface-variant, #44474f) !important;
+    background-color: #dcfce7 !important;
+    color: #15803d !important;
+}
+.swal2-popup:not(.swal2-toast) .swal2-icon.swal2-success::after {
+    content: "" !important;
+    display: block !important;
+    width: 11px !important;
+    height: 20px !important;
+    border: solid #15803d !important;
+    border-width: 0 3px 3px 0 !important;
+    transform: rotate(45deg) translate(-2px, -1px) !important;
+    margin-top: -4px !important;
+}
+.swal2-popup:not(.swal2-toast) .swal2-icon.swal2-success * {
+    display: none !important;
 }
 
-[data-bs-theme="dark"] .swal2-popup:not(.swal2-toast) .swal2-icon,
-[data-bs-theme="dark"] .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-info,
-[data-bs-theme="dark"] .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-question,
-[data-bs-theme="dark"] .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-warning,
-[data-bs-theme="dark"] .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-error,
+/* Info (Biru M3) */
+.swal2-popup:not(.swal2-toast) .swal2-icon.swal2-info,
+.swal2-popup:not(.swal2-toast) .swal2-icon.swal2-question {
+    background-color: #e0f2fe !important;
+    color: #0284c7 !important;
+}
+
+/* Warning (Amber / Kuning) */
+.swal2-popup:not(.swal2-toast) .swal2-icon.swal2-warning {
+    background-color: #fef3c7 !important;
+    color: #d97706 !important;
+}
+
+/* Error (Merah M3) */
+.swal2-popup:not(.swal2-toast) .swal2-icon.swal2-error {
+    background-color: #fee2e2 !important;
+    color: #dc2626 !important;
+}
+.swal2-popup:not(.swal2-toast) .swal2-icon.swal2-error::after {
+    content: "✕" !important;
+    font-size: 1.25rem !important;
+    font-weight: 700 !important;
+    color: #dc2626 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    line-height: 1 !important;
+}
+.swal2-popup:not(.swal2-toast) .swal2-icon.swal2-error * {
+    display: none !important;
+}
+
+/* Dark Mode untuk Dialog Icon */
 [data-bs-theme="dark"] .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-success {
-    background-color: var(--surface-container-highest, #3d4751) !important;
-    color: var(--on-surface-variant, #c4c7c5) !important;
+    background-color: #14532d !important;
+    color: #4ade80 !important;
+}
+[data-bs-theme="dark"] .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-success::after {
+    border-color: #4ade80 !important;
+}
+[data-bs-theme="dark"] .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-info,
+[data-bs-theme="dark"] .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-question {
+    background-color: #0c4a6e !important;
+    color: #38bdf8 !important;
+}
+[data-bs-theme="dark"] .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-warning {
+    background-color: #78350f !important;
+    color: #fcd34d !important;
+}
+[data-bs-theme="dark"] .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-error {
+    background-color: #7f1d1d !important;
+    color: #f87171 !important;
+}
+[data-bs-theme="dark"] .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-error::after {
+    color: #f87171 !important;
 }
 
 .swal2-popup:not(.swal2-toast) .swal2-icon .swal2-icon-content {
-    font-size: 1.15rem !important;
+    font-size: 1.25rem !important;
     font-family: inherit !important;
-    font-weight: 600 !important;
+    font-weight: 700 !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-}
-
-/* Hide default SweetAlert ring/pulse lines for clean Material 3 look */
-.swal2-icon .swal2-success-ring,
-.swal2-icon .swal2-success-line-tip,
-.swal2-icon .swal2-success-line-long,
-.swal2-icon .swal2-x-mark-line-left,
-.swal2-icon .swal2-x-mark-line-right {
-    display: none !important;
+    line-height: 1 !important;
 }
 
 /* === M3 DIALOG HEADLINE (SLOT="HEADLINE") === */
@@ -4423,7 +4435,7 @@ body.swal2-toast-shown .swal2-container,
     }
     100% {
         transform: translateY(100%);
-        opacity: 0.8;
+        opacity: 0;
     }
 }
 
@@ -4506,16 +4518,115 @@ body.swal2-toast-shown .swal2-container,
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35) !important;
 }
 
+/* === M3 SEMANTIC TOAST ICON SYSTEM (CENTANG, INFO, WARNING, ERROR) === */
 .swal2-popup.swal2-toast .swal2-icon {
-    width: 24px !important;
-    height: 24px !important;
-    min-width: 24px !important;
+    width: 26px !important;
+    height: 26px !important;
+    min-width: 26px !important;
+    flex-shrink: 0 !important;
     margin: 0 !important;
-    font-size: 0.85rem !important;
+    font-size: 0.9rem !important;
     border-radius: 50% !important;
+    border: none !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
+    position: relative !important;
+    box-sizing: border-box !important;
+}
+
+.swal2-popup.swal2-toast .swal2-icon .swal2-icon-content {
+    font-size: 0.95rem !important;
+    font-family: inherit !important;
+    font-weight: 700 !important;
+    line-height: 1 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+/* Toast Success (Centang Hijau Solid M3) */
+.swal2-popup.swal2-toast .swal2-icon.swal2-success {
+    background-color: #dcfce7 !important;
+    color: #15803d !important;
+    border: 1.5px solid #86efac !important;
+}
+.swal2-popup.swal2-toast .swal2-icon.swal2-success::after {
+    content: "" !important;
+    display: block !important;
+    width: 6px !important;
+    height: 12px !important;
+    border: solid #15803d !important;
+    border-width: 0 2.2px 2.2px 0 !important;
+    transform: rotate(45deg) translate(-1px, -1px) !important;
+    margin-top: -2px !important;
+}
+.swal2-popup.swal2-toast .swal2-icon.swal2-success * {
+    display: none !important;
+}
+
+/* Toast Info (Biru M3) */
+.swal2-popup.swal2-toast .swal2-icon.swal2-info,
+.swal2-popup.swal2-toast .swal2-icon.swal2-question {
+    background-color: #e0f2fe !important;
+    color: #0284c7 !important;
+    border: 1.5px solid #7dd3fc !important;
+}
+
+/* Toast Warning (Amber / Kuning) */
+.swal2-popup.swal2-toast .swal2-icon.swal2-warning {
+    background-color: #fef3c7 !important;
+    color: #d97706 !important;
+    border: 1.5px solid #fde68a !important;
+}
+
+/* Toast Error (Merah M3) */
+.swal2-popup.swal2-toast .swal2-icon.swal2-error {
+    background-color: #fee2e2 !important;
+    color: #dc2626 !important;
+    border: 1.5px solid #fca5a5 !important;
+}
+.swal2-popup.swal2-toast .swal2-icon.swal2-error::after {
+    content: "✕" !important;
+    font-size: 0.85rem !important;
+    font-weight: 700 !important;
+    color: #dc2626 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    line-height: 1 !important;
+}
+.swal2-popup.swal2-toast .swal2-icon.swal2-error * {
+    display: none !important;
+}
+
+/* Dark Mode untuk Toast Icons */
+[data-bs-theme="dark"] .swal2-popup.swal2-toast .swal2-icon.swal2-success {
+    background-color: #14532d !important;
+    color: #4ade80 !important;
+    border-color: #22c55e !important;
+}
+[data-bs-theme="dark"] .swal2-popup.swal2-toast .swal2-icon.swal2-success::after {
+    border-color: #4ade80 !important;
+}
+[data-bs-theme="dark"] .swal2-popup.swal2-toast .swal2-icon.swal2-info,
+[data-bs-theme="dark"] .swal2-popup.swal2-toast .swal2-icon.swal2-question {
+    background-color: #0c4a6e !important;
+    color: #38bdf8 !important;
+    border-color: #0284c7 !important;
+}
+[data-bs-theme="dark"] .swal2-popup.swal2-toast .swal2-icon.swal2-warning {
+    background-color: #78350f !important;
+    color: #fcd34d !important;
+    border-color: #f59e0b !important;
+}
+[data-bs-theme="dark"] .swal2-popup.swal2-toast .swal2-icon.swal2-error {
+    background-color: #7f1d1d !important;
+    color: #f87171 !important;
+    border-color: #ef4444 !important;
+}
+[data-bs-theme="dark"] .swal2-popup.swal2-toast .swal2-icon.swal2-error::after {
+    color: #f87171 !important;
 }
 
 .swal2-popup.swal2-toast .swal2-title {
