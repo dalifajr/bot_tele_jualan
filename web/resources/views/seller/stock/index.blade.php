@@ -1124,7 +1124,7 @@
                     });
                     Toast.fire({
                         icon: 'info',
-                        title: 'Ada stok akun yang sudah siap diverifikasi!'
+                        title: '{{ __('Ada stok akun yang sudah siap diverifikasi!') }}'
                     });
                 }
             }

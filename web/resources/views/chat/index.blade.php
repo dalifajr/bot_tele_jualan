@@ -339,8 +339,8 @@
                 if (file.size > maxSize) {
                     Swal.fire({
                         icon: 'error',
-                        title: 'File Terlalu Besar',
-                        text: 'Ukuran maksimal file adalah 100MB.'
+                        title: '{{ __('File Terlalu Besar') }}',
+                        text: '{{ __('Ukuran maksimal file adalah 100MB.') }}'
                     });
                     clearAttachment();
                     return;
@@ -538,8 +538,8 @@
         function handleSendError() {
             Swal.fire({
                 icon: 'error',
-                title: 'Pesan Gagal Terkirim',
-                text: 'Silakan periksa koneksi internet Anda.',
+                title: '{{ __('Pesan Gagal Terkirim') }}',
+                text: '{{ __('Silakan periksa koneksi internet Anda.') }}',
                 toast: true,
                 position: 'top-end',
                 showConfirmButton: false,

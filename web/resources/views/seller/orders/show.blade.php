@@ -236,7 +236,7 @@
         @if($order->status === 'pending_payment')
         <div class="card border-0 shadow-sm" style="border-radius: 16px;">
             <div class="card-body p-3">
-                <form action="{{ route('seller.orders.cancel', $order->id) }}" method="POST" class="m-0" onsubmit="confirmAction(event, 'Apakah Anda yakin ingin membatalkan pesanan ini?');">
+                <form action="{{ route('seller.orders.cancel', $order->id) }}" method="POST" class="m-0" onsubmit="confirmAction(event, '{{ __('Apakah Anda yakin ingin membatalkan pesanan ini?') }}');">
                     @csrf
                     <button type="submit" class="btn btn-outline-danger w-100 rounded-pill py-2 fw-semibold">
                         <i class="fas fa-times me-1"></i>{{ __('Batalkan Pesanan Ini') }}

@@ -87,7 +87,7 @@
                                     </div>
                                     @endif
                                     <div class="mt-1">
-                                        <form action="{{ route('cart.remove', $item->id) }}" method="POST" class="d-inline m-0" onsubmit="confirmAction(event, 'Hapus produk ini dari keranjang?');">
+                                        <form action="{{ route('cart.remove', $item->id) }}" method="POST" class="d-inline m-0" onsubmit="confirmAction(event, '{{ __('Hapus produk ini dari keranjang?') }}');">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="btn btn-link text-danger text-decoration-none p-0 small" style="font-size: 0.8rem;">
@@ -156,7 +156,7 @@
                                     </button>
                                 </div>
                                 @endif
-                                <form action="{{ route('cart.remove', $item->id) }}" method="POST" class="d-inline m-0" onsubmit="confirmAction(event, 'Hapus produk ini?');">
+                                <form action="{{ route('cart.remove', $item->id) }}" method="POST" class="d-inline m-0" onsubmit="confirmAction(event, '{{ __('Hapus produk ini?') }}');">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="btn btn-sm btn-light text-danger rounded-circle p-2" title="{{ __('Hapus') }}">
@@ -165,7 +165,7 @@
                                 </form>
                             </div>
                             <div class="text-end">
-                                <span class="text-muted small d-block" style="font-size: 0.7rem;">Subtotal</span>
+                                <span class="text-muted small d-block" style="font-size: 0.7rem;">{{ __('Subtotal') }}</span>
                                 <span class="fw-bold text-body cart-subtotal-val-{{ $item->id }}" style="font-size: 0.95rem;">Rp{{ number_format($item->product->price * $item->quantity, 0, ',', '.') }}</span>
                             </div>
                         </div>
@@ -185,7 +185,7 @@
                 <h5 class="fw-bold mb-4 text-body">{{ __('Ringkasan Belanja') }}</h5>
                 
                 <div class="d-flex justify-content-between mb-3 text-muted">
-                    <span>Total Barang (<span class="cart-summary-total-qty">{{ $cartItems->sum('quantity') }} unit</span>)</span>
+                    <span>{{ __('Total Barang') }} (<span class="cart-summary-total-qty">{{ __(':qty unit', ['qty' => $cartItems->sum('quantity')]) }}</span>)</span>
                     <span class="cart-summary-total-price text-body fw-medium">Rp{{ number_format($subtotal, 0, ',', '.') }}</span>
                 </div>
                 
@@ -218,7 +218,7 @@
 <div class="mobile-sticky-action-bar d-lg-none">
     <div class="d-flex align-items-center justify-content-between gap-3">
         <div>
-            <span class="text-muted d-block" style="font-size: 0.68rem; line-height: 1;">Total (<span class="cart-summary-total-qty">{{ $cartItems->sum('quantity') }} unit</span>)</span>
+            <span class="text-muted d-block" style="font-size: 0.68rem; line-height: 1;">{{ __('Total') }} (<span class="cart-summary-total-qty">{{ __(':qty unit', ['qty' => $cartItems->sum('quantity')]) }}</span>)</span>
             <span class="fw-bold text-primary cart-summary-total-price" style="font-size: 1.1rem;">Rp{{ number_format($subtotal, 0, ',', '.') }}</span>
         </div>
         <a href="{{ route('cart.checkout') }}" class="btn btn-primary rounded-pill px-4 py-2 fw-bold shadow-sm d-flex align-items-center gap-2" style="font-size: 0.85rem;">
@@ -253,7 +253,7 @@
                         toast: true,
                         position: 'top-end',
                         icon: 'warning',
-                        title: `Stok hanya tersedia ${maxStock} unit.`,
+                        title: "{{ __('Stok hanya tersedia :count unit.') }}".replace(':count', maxStock),
                         showConfirmButton: false,
                         timer: 2500
                     });
@@ -302,7 +302,7 @@
             });
             
             document.querySelectorAll('.cart-summary-total-price').forEach(el => el.textContent = formatRupiah(grandTotal));
-            document.querySelectorAll('.cart-summary-total-qty').forEach(el => el.textContent = `${totalItems} unit`);
+            document.querySelectorAll('.cart-summary-total-qty').forEach(el => el.textContent = "{{ __(':qty unit', ['qty' => 'PLACEHOLDER']) }}".replace('PLACEHOLDER', totalItems));
             
             const badge = document.getElementById('cart-badge-count');
             if (badge) {
@@ -337,7 +337,7 @@
                             toast: true,
                             position: 'top-end',
                             icon: 'error',
-                            title: data.message || 'Gagal menyinkronkan keranjang.',
+                            title: data.message || '{{ __('Gagal menyinkronkan keranjang.') }}',
                             showConfirmButton: false,
                             timer: 3000
                         });

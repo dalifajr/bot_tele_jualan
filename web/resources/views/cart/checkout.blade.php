@@ -44,7 +44,7 @@
                                         </div>
                                         <div>
                                             <h6 class="fw-bold mb-0">{{ $item->product->name }}</h6>
-                                            <small class="text-muted">{{ $item->product->formatted_price }} / unit</small>
+                                            <small class="text-muted">{{ $item->product->formatted_price }} / {{ __('unit') }}</small>
                                             @if($item->vcc_services && count($item->vcc_services) > 0)
                                                 @php $groupedServices = array_count_values($item->vcc_services); @endphp
                                                 <div class="mt-1 d-flex flex-wrap gap-1 align-items-center">
@@ -215,7 +215,7 @@
 <div class="mobile-sticky-action-bar d-lg-none">
     <div class="d-flex align-items-center justify-content-between gap-3">
         <div>
-            <span class="text-muted d-block" style="font-size: 0.68rem; line-height: 1;">Total Bayar</span>
+            <span class="text-muted d-block" style="font-size: 0.68rem; line-height: 1;">{{ __('Total Bayar') }}</span>
             <span class="fw-bold text-primary" style="font-size: 1.15rem;">Rp{{ number_format($total, 0, ',', '.') }}</span>
         </div>
         <button type="button" class="btn btn-primary rounded-pill px-4 py-2 fw-bold shadow-sm d-flex align-items-center gap-2" onclick="document.getElementById('formProcessCheckout').requestSubmit()" style="font-size: 0.85rem;">
@@ -231,12 +231,12 @@
         e.preventDefault();
         
         Swal.fire({
-            title: 'Buat Pesanan',
-            text: 'Apakah Anda yakin ingin memproses pesanan ini? Batas waktu pembayaran adalah 15 menit setelah pesanan dibuat.',
+            title: '{{ __('Buat Pesanan') }}',
+            text: '{{ __('Apakah Anda yakin ingin memproses pesanan ini? Batas waktu pembayaran adalah 15 menit setelah pesanan dibuat.') }}',
             icon: 'info',
             showCancelButton: true,
-            confirmButtonText: 'Konfirmasi',
-            cancelButtonText: 'Batal',
+            confirmButtonText: '{{ __('Konfirmasi') }}',
+            cancelButtonText: '{{ __('Batal') }}',
             reverseButtons: false,
             focusConfirm: false,
             allowOutsideClick: true,

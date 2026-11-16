@@ -286,16 +286,18 @@
                         }, (opts.timer || 2200) + 300);
                     };
                 } else {
-                    // M3 Dialog: standardize confirm & cancel ("Batal") buttons across entire website
+                    // M3 Dialog: standardize confirm & cancel buttons across entire website
+                    const defaultCancelText = "{{ __('Batal') }}";
+                    const defaultConfirmText = "{{ __('Konfirmasi') }}";
                     if (opts.showCancelButton || opts.cancelButtonText) {
                         opts.showCancelButton = true;
-                        if (!opts.cancelButtonText || opts.cancelButtonText === 'Dismiss' || opts.cancelButtonText === 'Cancel') {
-                            opts.cancelButtonText = 'Batal';
+                        if (!opts.cancelButtonText || opts.cancelButtonText === 'Dismiss' || opts.cancelButtonText === 'Cancel' || opts.cancelButtonText === 'Batal') {
+                            opts.cancelButtonText = defaultCancelText;
                         }
                     }
                     if (opts.showCancelButton) {
-                        if (!opts.confirmButtonText || opts.confirmButtonText === 'Confirm' || opts.confirmButtonText === 'OK') {
-                            opts.confirmButtonText = 'Konfirmasi';
+                        if (!opts.confirmButtonText || opts.confirmButtonText === 'Confirm' || opts.confirmButtonText === 'OK' || opts.confirmButtonText === 'Konfirmasi') {
+                            opts.confirmButtonText = defaultConfirmText;
                         }
                     }
 
@@ -358,7 +360,7 @@
             };
         }
 
-        function confirmAction(event, message, title = 'Konfirmasi Aksi') {
+        function confirmAction(event, message, title = '{{ __('Konfirmasi Aksi') }}') {
             event.preventDefault();
             let element = event.currentTarget;
             let form = element.closest('form') || (element.tagName === 'FORM' ? element : null);
@@ -367,8 +369,8 @@
                 text: message,
                 icon: 'info',
                 showCancelButton: true,
-                confirmButtonText: 'Konfirmasi',
-                cancelButtonText: 'Batal',
+                confirmButtonText: '{{ __('Konfirmasi') }}',
+                cancelButtonText: '{{ __('Batal') }}',
                 reverseButtons: false,
                 focusConfirm: false,
                 allowOutsideClick: true,
@@ -1415,7 +1417,7 @@
                 if (icon) icon.className = 'fas fa-copy';
             }, 1500);
         }).catch(() => {
-            prompt('Salin data kredensial:', text);
+            prompt('{{ __('Salin data kredensial:') }}', text);
         });
     };
 

@@ -90,7 +90,7 @@
                                     <form action="{{ route('seller.bank-accounts.destroy', $acc->id) }}" method="POST" class="d-inline">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="button" class="btn btn-sm btn-outline-danger p-2" style="border-radius: 4px;" title="{{ __('Hapus Rekening') }}" onclick="confirmAction(event, 'Yakin ingin menghapus rekening bank payout ini?')">
+                                        <button type="button" class="btn btn-sm btn-outline-danger p-2" style="border-radius: 4px;" title="{{ __('Hapus Rekening') }}" onclick="confirmAction(event, '{{ __('Yakin ingin menghapus rekening bank payout ini?') }}')">
                                             <i class="fas fa-trash fa-fw"></i>
                                         </button>
                                     </form>

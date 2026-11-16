@@ -371,11 +371,11 @@
                 if (typeof Swal !== 'undefined') {
                     Swal.fire({
                         icon: 'warning',
-                        title: 'Perhatian',
-                        text: 'Silakan masukkan secret key 2FA yang valid terlebih dahulu.'
+                        title: '{{ __('Perhatian') }}',
+                        text: '{{ __('Silakan masukkan secret key 2FA yang valid terlebih dahulu.') }}'
                     });
                 } else {
-                    alert('Silakan masukkan secret key 2FA terlebih dahulu.');
+                    alert('{{ __('Silakan masukkan secret key 2FA terlebih dahulu.') }}');
                 }
                 return;
             }
@@ -405,7 +405,7 @@
                     });
                     Toast.fire({
                         icon: 'success',
-                        title: 'Kode ' + rawText + ' disalin!'
+                        title: "{{ __('Kode :code disalin!') }}".replace(':code', rawText)
                     });
                 }
             });
@@ -531,7 +531,7 @@
                         computedCode = code;
                         codeHtml = `<span class="badge bg-success-subtle text-success fs-6 font-monospace px-2.5 py-1 border border-success-subtle" style="letter-spacing: 1px;">${code}</span>`;
                         actionHtml = `
-                            <button type="button" class="btn btn-sm btn-light text-primary rounded-circle" title="Salin Kode" onclick="copySpecificCode('${code}', this)">
+                            <button type="button" class="btn btn-sm btn-light text-primary rounded-circle" title="{{ __('Salin Kode') }}" onclick="copySpecificCode('${code}', this)">
                                 <i class="fas fa-copy"></i>
                             </button>
                         `;
@@ -542,7 +542,7 @@
                     <tr>
                         <td class="text-muted small">${item.index}</td>
                         <td class="font-monospace small text-break" style="max-width: 320px;">${escapeHtml(item.raw)}</td>
-                        <td class="font-monospace small text-secondary">${item.secret ? item.secret.substring(0, 16) + (item.secret.length > 16 ? '...' : '') : '<span class="text-muted">Tidak terdeteksi</span>'}</td>
+                        <td class="font-monospace small text-secondary">${item.secret ? item.secret.substring(0, 16) + (item.secret.length > 16 ? '...' : '') : '<span class="text-muted">{{ __('Tidak terdeteksi') }}</span>'}</td>
                         <td>${codeHtml}</td>
                         <td class="text-end">${actionHtml}</td>
                     </tr>
@@ -556,11 +556,11 @@
                         </div>
                         <div class="small font-monospace text-muted text-break mb-2">${escapeHtml(item.raw)}</div>
                         <div class="d-flex justify-content-between align-items-center pt-2 border-top">
-                            <span class="fw-bolder fs-5 font-monospace ${computedCode ? 'text-success' : 'text-muted'}" ${computedCode ? `role="button" onclick="copySpecificCode('${computedCode}', this)" title="Ketuk untuk salin"` : ''}>${computedCode ? computedCode : '------'}</span>
+                            <span class="fw-bolder fs-5 font-monospace ${computedCode ? 'text-success' : 'text-muted'}" ${computedCode ? `role="button" onclick="copySpecificCode('${computedCode}', this)" title="{{ __('Ketuk untuk salin') }}"` : ''}>${computedCode ? computedCode : '------'}</span>
                             ${computedCode ? `
                                 <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 py-1 fw-bold shadow-sm d-flex align-items-center gap-1.5" onclick="copySpecificCode('${computedCode}', this)">
                                     <i class="fas fa-copy"></i>
-                                    <span>Salin</span>
+                                    <span>{{ __('Salin') }}</span>
                                 </button>
                             ` : ''}
                         </div>
@@ -660,7 +660,7 @@
                         title: '{{ __("Secret Key Tidak Valid") }}',
                         text: '{{ __("Format secret key tidak sesuai standar Base32. Periksa kembali secret key Anda.") }}',
                         confirmButtonColor: '#0d6efd',
-                        confirmButtonText: 'Tutup'
+                        confirmButtonText: '{{ __('Tutup') }}'
                     });
                     return;
                 }

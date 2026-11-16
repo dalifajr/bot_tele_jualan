@@ -109,7 +109,7 @@
                         <td class="text-end px-4" onclick="event.stopPropagation();">
                             <div class="d-flex gap-1.5 justify-content-end align-items-center">
                                 @if($order->status === 'pending_payment')
-                                <form action="{{ route('seller.orders.cancel', $order->id) }}" method="POST" class="m-0" onsubmit="confirmAction(event, 'Batalkan pesanan ini?');">
+                                <form action="{{ route('seller.orders.cancel', $order->id) }}" method="POST" class="m-0" onsubmit="confirmAction(event, '{{ __('Batalkan pesanan ini?') }}');">
                                     @csrf
                                     <button type="submit" class="btn btn-sm btn-light text-danger rounded-circle border-danger" title="{{ __('Batalkan Pesanan') }}" style="width: 32px; height: 32px;">
                                         <i class="fas fa-times"></i>
@@ -160,7 +160,7 @@
                     </div>
                     <div class="d-flex align-items-center gap-1.5" onclick="event.stopPropagation();">
                         @if($order->status === 'pending_payment')
-                        <form action="{{ route('seller.orders.cancel', $order->id) }}" method="POST" class="m-0" onsubmit="confirmAction(event, 'Batalkan pesanan ini?');">
+                        <form action="{{ route('seller.orders.cancel', $order->id) }}" method="POST" class="m-0" onsubmit="confirmAction(event, '{{ __('Batalkan pesanan ini?') }}');">
                             @csrf
                             <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-2.5 py-1 small" title="{{ __('Batalkan') }}">
                                 <i class="fas fa-times me-1"></i>{{ __('Batal') }}

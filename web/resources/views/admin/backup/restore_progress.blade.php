@@ -129,10 +129,10 @@
                     btnDone.classList.add('btn-success');
                     
                     Swal.fire({
-                        title: 'Restore Berhasil!',
-                        text: 'Seluruh database dan berkas media berhasil dipulihkan secara penuh.',
+                        title: '{{ __('Restore Berhasil!') }}',
+                        text: '{{ __('Seluruh database dan berkas media berhasil dipulihkan secara penuh.') }}',
                         icon: 'success',
-                        confirmButtonText: 'Kembali',
+                        confirmButtonText: '{{ __('Kembali') }}',
                         customClass: {
                             popup: 'rounded-4',
                             confirmButton: 'btn btn-success rounded-pill px-4'

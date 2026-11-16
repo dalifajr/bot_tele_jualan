@@ -180,7 +180,7 @@
                                         <form action="{{ route('admin.users.destroy', $user->id) }}" method="POST">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="button" class="dropdown-item py-2 text-danger" onclick="confirmAction(event, 'Yakin ingin menghapus permanen pengguna ini? Proses ini tidak dapat dibatalkan.')">
+                                            <button type="button" class="dropdown-item py-2 text-danger" onclick="confirmAction(event, '{{ __('Yakin ingin menghapus permanen pengguna ini? Proses ini tidak dapat dibatalkan.') }}')">
                                                 <i class="fas fa-trash me-2"></i> {{ __('Hapus Pengguna') }}
                                             </button>
                                         </form>
@@ -392,15 +392,15 @@ function confirmSuspend(event) {
     
     // First popup: Ask for reason (optional)
     Swal.fire({
-        title: 'Alasan Penangguhan',
+        title: '{{ __('Alasan Penangguhan') }}',
         input: 'text',
-        inputLabel: 'Masukkan alasan penangguhan (opsional):',
-        inputPlaceholder: 'Tulis alasan di sini...',
+        inputLabel: '{{ __('Masukkan alasan penangguhan (opsional):') }}',
+        inputPlaceholder: '{{ __('Tulis alasan di sini...') }}',
         showCancelButton: true,
         showDenyButton: true,
-        confirmButtonText: 'Lanjut',
-        denyButtonText: 'Lewati',
-        cancelButtonText: 'Batal',
+        confirmButtonText: '{{ __('Lanjut') }}',
+        denyButtonText: '{{ __('Lewati') }}',
+        cancelButtonText: '{{ __('Batal') }}',
         confirmButtonColor: '#3085d6',
         denyButtonColor: '#6c757d',
         cancelButtonColor: '#d33',
@@ -426,12 +426,12 @@ function confirmSuspend(event) {
         
         // Second popup: Confirmation (M3 Alert Dialog)
         Swal.fire({
-            title: 'Konfirmasi Penangguhan',
-            text: 'Apakah Anda yakin ingin menangguhkan pengguna ini? Akses bot mereka akan diblokir.',
+            title: '{{ __('Konfirmasi Penangguhan') }}',
+            text: '{{ __('Apakah Anda yakin ingin menangguhkan pengguna ini? Akses bot mereka akan diblokir.') }}',
             icon: 'info',
             showCancelButton: true,
-            confirmButtonText: 'Konfirmasi',
-            cancelButtonText: 'Batal',
+            confirmButtonText: '{{ __('Konfirmasi') }}',
+            cancelButtonText: '{{ __('Batal') }}',
             reverseButtons: false,
             focusConfirm: false
         }).then((confirmResult) => {

@@ -114,12 +114,12 @@
             e.preventDefault();
             
             Swal.fire({
-                title: 'Hapus File Backup?',
-                text: 'File backup yang dihapus dari server local tidak dapat diunduh kembali.',
+                title: '{{ __('Hapus File Backup?') }}',
+                text: '{{ __('File backup yang dihapus dari server local tidak dapat diunduh kembali.') }}',
                 icon: 'info',
                 showCancelButton: true,
-                confirmButtonText: 'Konfirmasi',
-                cancelButtonText: 'Batal',
+                confirmButtonText: '{{ __('Konfirmasi') }}',
+                cancelButtonText: '{{ __('Batal') }}',
                 reverseButtons: false,
                 focusConfirm: false
             }).then((result) => {

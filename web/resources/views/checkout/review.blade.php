@@ -68,13 +68,13 @@
                         <div>
                             <h6 class="fw-bold mb-1 text-body">{{ $product->name }}</h6>
                             <div class="text-muted small">
-                                <span class="fw-semibold text-primary">{{ $product->formatted_price }}</span> / unit
+                                <span class="fw-semibold text-primary">{{ $product->formatted_price }}</span> / {{ __('unit') }}
                             </div>
                             @if($product->is_vcc && !empty($vccServices))
                             @php $groupedServices = array_count_values($vccServices); @endphp
                             <div class="mt-2">
                                 <span class="badge bg-primary-subtle text-primary fw-bold mb-1" style="font-size: 0.72rem;">
-                                    <i class="fas fa-credit-card me-1"></i>Layanan VCC ({{ count($vccServices) }} Unit):
+                                    <i class="fas fa-credit-card me-1"></i>{{ __('Layanan VCC') }} ({{ count($vccServices) }} {{ __('Unit') }}):
                                 </span>
                                 <div class="d-flex flex-wrap gap-1">
                                     @foreach($groupedServices as $srvName => $srvQty)
@@ -90,7 +90,7 @@
 
                     <div class="d-flex align-items-center justify-content-between justify-content-sm-end gap-3 pt-2 pt-sm-0 border-top border-sm-0">
                         <span class="badge bg-secondary-subtle text-secondary rounded-pill px-3 py-2 fw-bold">
-                            {{ $quantity }} Unit
+                            {{ $quantity }} {{ __('Unit') }}
                         </span>
                         <div class="text-end">
                             <span class="text-muted small d-block" style="font-size: 0.72rem;">{{ __('Subtotal Item') }}</span>

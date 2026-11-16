@@ -45,13 +45,13 @@
                     <p class="text-secondary small mb-0">{{ __('Pelanggan telah membuat pesanan sebesar ') }} <b>{{ $order->formatted_total }}</b>.</p>
                 </div>
                 <div class="d-flex gap-2">
-                    <form action="{{ route('admin.orders.accept', $order->id) }}" method="POST" class="m-0" onsubmit="confirmAction(event, 'Konfirmasi terima pembayaran untuk pesanan ini?');">
+                    <form action="{{ route('admin.orders.accept', $order->id) }}" method="POST" class="m-0" onsubmit="confirmAction(event, '{{ __('Konfirmasi terima pembayaran untuk pesanan ini?') }}');">
                         @csrf
                         <button type="submit" class="btn btn-success rounded-pill px-3 py-1.5 fw-bold">
                             <i class="fas fa-check me-1"></i>{{ __('Terima Pembayaran') }}
                         </button>
                     </form>
-                    <form action="{{ route('admin.orders.reject', $order->id) }}" method="POST" class="m-0" onsubmit="confirmAction(event, 'Tolak dan batalkan pesanan ini?');">
+                    <form action="{{ route('admin.orders.reject', $order->id) }}" method="POST" class="m-0" onsubmit="confirmAction(event, '{{ __('Tolak dan batalkan pesanan ini?') }}');">
                         @csrf
                         <button type="submit" class="btn btn-danger rounded-pill px-3 py-1.5 fw-bold">
                             <i class="fas fa-times me-1"></i>{{ __('Tolak Pesanan') }}
@@ -126,7 +126,7 @@
                     <small class="text-muted">{{ __('Data kredensial yang diserahkan otomatis kepada pembeli') }}</small>
                 </div>
                 @if($order->status === 'delivered')
-                <form action="{{ route('admin.orders.refund', $order->id) }}" method="POST" class="m-0" onsubmit="confirmAction(event, 'Apakah Anda yakin ingin membatalkan pesanan ini, merefund penuh (stok ditarik ke karantina), dan membatalkan/menghapus saldo tertahan seller?');">
+                <form action="{{ route('admin.orders.refund', $order->id) }}" method="POST" class="m-0" onsubmit="confirmAction(event, '{{ __('Apakah Anda yakin ingin membatalkan pesanan ini, merefund penuh (stok ditarik ke karantina), dan membatalkan/menghapus saldo tertahan seller?') }}');">
                     @csrf
                     <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3">
                         <i class="fas fa-undo-alt me-1"></i> {{ __('Refund Penuh & Batalkan') }}
@@ -151,7 +151,7 @@
                                         @if($isMultiUnit)
                                             <input type="checkbox" class="form-check-input stock-checkbox" data-order-id="{{ $order->id }}" value="{{ $unit->id }}" onchange="updateStockCheckboxes('{{ $order->id }}')" style="width: 1.5rem; height: 1.5rem; border-radius: 4px; cursor: pointer; border: 2px solid #ccc;">
                                         @else
-                                            <form action="{{ route('admin.orders.replace-stock', [$order->id, $unit->id]) }}" method="POST" class="m-0" onsubmit="confirmAction(event, 'Apakah Anda yakin ingin mengganti akun ini dengan stok baru milik seller yang sama?');">
+                                            <form action="{{ route('admin.orders.replace-stock', [$order->id, $unit->id]) }}" method="POST" class="m-0" onsubmit="confirmAction(event, '{{ __('Apakah Anda yakin ingin mengganti akun ini dengan stok baru milik seller yang sama?') }}');">
                                                 @csrf
                                                 <button type="submit" class="btn btn-sm btn-outline-warning text-warning-emphasis border-warning rounded-pill px-3">
                                                     <i class="fas fa-sync-alt me-1"></i> {{ __('Ganti Akun') }}
@@ -411,23 +411,23 @@
         let url = '';
         
         if (actionType === 'replace') {
-            confirmMsg = `Apakah Anda yakin ingin mengganti ${ids.length} akun terpilih dengan stok baru dari seller?`;
+            confirmMsg = "{{ __('Apakah Anda yakin ingin mengganti :count akun terpilih dengan stok baru dari seller?') }}".replace(':count', ids.length);
             url = `/admin/orders/${orderId}/replace-stock-bulk`;
         } else {
-            confirmMsg = `Apakah Anda yakin ingin melakukan refund sebagian untuk ${ids.length} akun terpilih ini? (Dana tertahan seller akan dikurangi)`;
+            confirmMsg = "{{ __('Apakah Anda yakin ingin melakukan refund sebagian untuk :count akun terpilih ini? (Dana tertahan seller akan dikurangi)') }}".replace(':count', ids.length);
             url = `/admin/orders/${orderId}/refund-bulk`;
         }
         
         if (typeof Swal !== 'undefined') {
             Swal.fire({
-                title: 'Konfirmasi Aksi',
+                title: '{{ __('Konfirmasi Aksi') }}',
                 text: confirmMsg,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: actionType === 'refund' ? '#dc3545' : '#ffc107',
                 cancelButtonColor: '#6c757d',
-                confirmButtonText: 'Ya, Lanjutkan',
-                cancelButtonText: 'Batal'
+                confirmButtonText: '{{ __('Ya, Lanjutkan') }}',
+                cancelButtonText: '{{ __('Batal') }}'
             }).then((result) => {
                 if (result.isConfirmed) {
                     executeBulkFormSubmit(url, ids);

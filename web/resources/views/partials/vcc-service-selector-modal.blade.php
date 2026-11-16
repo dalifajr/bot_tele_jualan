@@ -41,7 +41,7 @@
             <div class="vcc-summary-box p-3 rounded-4 mb-3">
                 <div class="d-flex justify-content-between align-items-center small text-secondary mb-1">
                     <span>{{ __('Total Kuantitas') }}</span>
-                    <span class="fw-bold text-body" id="vccSelectedCountText">0 unit kartu</span>
+                    <span class="fw-bold text-body" id="vccSelectedCountText">{{ __(':qty unit kartu', ['qty' => 0]) }}</span>
                 </div>
                 <div class="d-flex justify-content-between align-items-center small text-secondary mb-1">
                     <span>{{ __('Harga Satuan') }}</span>
@@ -338,7 +338,7 @@
                 totalQty += item.qty;
                 breakdownHtml += `
                     <span class="badge bg-white border text-body py-1 px-2 fw-semibold" style="font-size: 0.72rem;">
-                        ${srvName}: <strong class="text-primary">${item.qty} unit</strong>
+                        ${srvName}: <strong class="text-primary">${item.qty} {{ __('unit') }}</strong>
                     </span>
                 `;
             }
@@ -347,7 +347,7 @@
         const unitPrice = currentVccData ? currentVccData.price : 0;
         const total = totalQty * unitPrice;
 
-        selectedCountEl.textContent = `${totalQty} unit kartu`;
+        selectedCountEl.textContent = "{{ __(':qty unit kartu', ['qty' => 'PLACEHOLDER']) }}".replace('PLACEHOLDER', totalQty);
         unitPriceEl.textContent = formatRupiah(unitPrice);
         totalAmountEl.textContent = formatRupiah(total);
 
@@ -367,7 +367,7 @@
             serviceList.innerHTML = `
                 <div class="text-center py-4 text-muted">
                     <i class="fas fa-exclamation-circle text-warning fs-3 mb-2"></i>
-                    <p class="small mb-0">Belum ada layanan yang dikonfigurasi untuk VCC ini.</p>
+                    <p class="small mb-0">{{ __('Belum ada layanan yang dikonfigurasi untuk VCC ini.') }}</p>
                 </div>
             `;
             return;
@@ -392,7 +392,7 @@
                                 ${srv.name}
                             </label>
                             <small class="text-secondary" style="font-size: 0.68rem;">
-                                ${isAvailable ? `Tersedia: ${srv.stock} stok` : 'Stok habis'}
+                                ${isAvailable ? "{{ __('Tersedia: :stock stok') }}".replace(':stock', srv.stock) : "{{ __('Stok habis') }}"}
                             </small>
                         </div>
                     </div>
@@ -400,11 +400,11 @@
                     <div class="d-flex align-items-center gap-2 flex-shrink-0">
                         {{-- Stepper Kuantitas (Muncul setelah diceklis) --}}
                         <div class="vcc-qty-stepper ${isChecked ? '' : 'd-none'}" id="stepper_${idx}">
-                            <button type="button" class="btn vcc-btn-step vcc-step-minus" data-service="${encodeURIComponent(srv.name)}" ${currentQty <= 1 ? 'disabled' : ''} title="Kurangi Kuantitas">
+                            <button type="button" class="btn vcc-btn-step vcc-step-minus" data-service="${encodeURIComponent(srv.name)}" ${currentQty <= 1 ? 'disabled' : ''} title="{{ __('Kurangi Kuantitas') }}">
                                 <i class="fas fa-minus" style="font-size: 0.6rem;"></i>
                             </button>
                             <span class="vcc-qty-number px-1.5" id="qty_num_${idx}">${currentQty}</span>
-                            <button type="button" class="btn vcc-btn-step vcc-step-plus" data-service="${encodeURIComponent(srv.name)}" ${currentQty >= srv.stock ? 'disabled' : ''} title="Tambah Kuantitas">
+                            <button type="button" class="btn vcc-btn-step vcc-step-plus" data-service="${encodeURIComponent(srv.name)}" ${currentQty >= srv.stock ? 'disabled' : ''} title="{{ __('Tambah Kuantitas') }}">
                                 <i class="fas fa-plus" style="font-size: 0.6rem;"></i>
                             </button>
                         </div>
@@ -412,8 +412,8 @@
                         {{-- Default Stock Badge saat belum diceklis --}}
                         <div class="vcc-stock-badge-wrap ${isChecked ? 'd-none' : ''}" id="stock_badge_${idx}">
                             ${isAvailable 
-                                ? `<span class="badge bg-success-subtle text-success rounded-pill px-2.5 py-1 fw-bold" style="font-size: 0.72rem;">${srv.stock} stok</span>`
-                                : `<span class="badge bg-danger-subtle text-danger rounded-pill px-2.5 py-1 fw-bold" style="font-size: 0.72rem;">Habis</span>`
+                                ? `<span class="badge bg-success-subtle text-success rounded-pill px-2.5 py-1 fw-bold" style="font-size: 0.72rem;">${srv.stock} {{ __('stok') }}</span>`
+                                : `<span class="badge bg-danger-subtle text-danger rounded-pill px-2.5 py-1 fw-bold" style="font-size: 0.72rem;">{{ __('Habis') }}</span>`
                             }
                         </div>
                     </div>
@@ -527,7 +527,7 @@
 
         productNameEl.textContent = currentVccData.name;
         productPriceEl.textContent = currentVccData.formattedPrice;
-        selectedCountEl.textContent = '0 unit kartu';
+        selectedCountEl.textContent = "{{ __(':qty unit kartu', ['qty' => 0]) }}";
         unitPriceEl.textContent = currentVccData.formattedPrice;
         totalAmountEl.textContent = 'Rp 0';
         breakdownRow.classList.add('d-none');
@@ -547,7 +547,7 @@
             serviceList.innerHTML = `
                 <div class="text-center py-4 text-muted">
                     <i class="fas fa-spinner fa-spin fa-2x text-primary mb-2"></i>
-                    <p class="small mb-0">Memuat info layanan VCC...</p>
+                    <p class="small mb-0">{{ __('Memuat info layanan VCC...') }}</p>
                 </div>
             `;
             try {
@@ -565,7 +565,7 @@
                 } else {
                     serviceList.innerHTML = `
                         <div class="text-center py-4 text-danger small">
-                            ${data.message || 'Gagal memuat layanan VCC.'}
+                            ${data.message || '{{ __('Gagal memuat layanan VCC.') }}'}
                         </div>
                     `;
                 }
@@ -574,7 +574,7 @@
                 killPageLoader();
                 serviceList.innerHTML = `
                     <div class="text-center py-4 text-danger small">
-                        Terjadi kesalahan jaringan saat memuat layanan VCC.
+                        {{ __('Terjadi kesalahan jaringan saat memuat layanan VCC.') }}
                     </div>
                 `;
             }
@@ -676,19 +676,19 @@
                                 toast: true,
                                 position: 'top-end',
                                 icon: 'success',
-                                title: data.message || 'VCC berhasil ditambahkan ke keranjang!',
+                                title: data.message || '{{ __('VCC berhasil ditambahkan ke keranjang!') }}',
                                 showConfirmButton: false,
                                 timer: 2000
                             });
                         }
                     } else {
-                        alert(data.message || 'Gagal menambahkan ke keranjang.');
+                        alert(data.message || '{{ __('Gagal menambahkan ke keranjang.') }}');
                     }
                 })
                 .catch(err => {
                     console.error('Cart add error:', err);
                     killPageLoader();
-                    alert('Terjadi kesalahan saat menambahkan produk ke keranjang.');
+                    alert('{{ __('Terjadi kesalahan saat menambahkan produk ke keranjang.') }}');
                 })
                 .finally(() => {
                     btnProceed.disabled = false;

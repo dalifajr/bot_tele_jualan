@@ -64,7 +64,7 @@
                         <span class="text-muted small d-block mb-2">{{ __('— ATAU —') }}</span>
                         <div class="d-grid gap-2">
                             <button id="pay-button" class="btn btn-success rounded-pill py-2 fw-bold">
-                                <i class="fas fa-credit-card me-1"></i> Bayar Otomatis (Midtrans)
+                                <i class="fas fa-credit-card me-1"></i> {{ __('Bayar Otomatis (Midtrans)') }}
                             </button>
                         </div>
                     </div>
@@ -78,7 +78,7 @@
                         {{ __('Kembali ke Katalog') }}
                     </a>
                     @if($order->status === 'pending_payment')
-                    <form action="{{ route('orders.cancel', $order->id) }}" method="POST" class="d-grid mt-2" onsubmit="confirmAction(event, 'Yakin ingin membatalkan pesanan ini?');">
+                    <form action="{{ route('orders.cancel', $order->id) }}" method="POST" class="d-grid mt-2" onsubmit="confirmAction(event, '{{ __('Yakin ingin membatalkan pesanan ini?') }}');">
                         @csrf
                         <button type="submit" class="btn btn-outline-danger rounded-pill py-2">
                             <i class="fas fa-times-circle me-1"></i> {{ __('Batalkan Pesanan') }}
@@ -101,8 +101,8 @@
             onSuccess: function(result){
                 Swal.fire({
                     icon: 'success',
-                    title: 'Pembayaran Berhasil!',
-                    text: 'Pembayaran Anda telah sukses diverifikasi.',
+                    title: '{{ __('Pembayaran Berhasil!') }}',
+                    text: '{{ __('Pembayaran Anda telah sukses diverifikasi.') }}',
                     timer: 2000,
                     showConfirmButton: false
                 }).then(() => {
@@ -112,22 +112,22 @@
             onPending: function(result){
                 Swal.fire({
                     icon: 'info',
-                    title: 'Menunggu Pembayaran',
-                    text: 'Silakan selesaikan pembayaran sesuai petunjuk.',
+                    title: '{{ __('Menunggu Pembayaran') }}',
+                    text: '{{ __('Silakan selesaikan pembayaran sesuai petunjuk.') }}',
                 });
             },
             onError: function(result){
                 Swal.fire({
                     icon: 'error',
-                    title: 'Pembayaran Gagal',
-                    text: 'Terjadi kesalahan saat memproses pembayaran.',
+                    title: '{{ __('Pembayaran Gagal') }}',
+                    text: '{{ __('Terjadi kesalahan saat memproses pembayaran.') }}',
                 });
             },
             onClose: function(){
                 Swal.fire({
                     icon: 'warning',
-                    title: 'Pembayaran Dibatalkan',
-                    text: 'Anda menutup popup pembayaran sebelum selesai.',
+                    title: '{{ __('Pembayaran Dibatalkan') }}',
+                    text: '{{ __('Anda menutup popup pembayaran sebelum selesai.') }}',
                 });
             }
         });
@@ -165,7 +165,7 @@
                 
                 if (distance < 0) {
                     clearInterval(timer);
-                    countdownEl.innerText = "Waktu Habis";
+                    countdownEl.innerText = "{{ __('Waktu Habis') }}";
                     // Reload to update status server-side if needed
                     setTimeout(() => location.reload(), 2000);
                 } else {

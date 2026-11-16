@@ -92,28 +92,28 @@
     function confirmBlockIp(event, form) {
         event.preventDefault();
         Swal.fire({
-            title: 'Pilih Durasi Blokir IP',
-            text: `Pilih jangka waktu pemblokiran untuk IP ${form.ip_address.value}`,
+            title: '{{ __('Pilih Durasi Blokir IP') }}',
+            text: "{{ __('Pilih jangka waktu pemblokiran untuk IP :ip') }}".replace(':ip', form.ip_address.value),
             icon: 'warning',
             input: 'select',
             inputOptions: {
-                '1': '1 Hari',
-                '7': '7 Hari',
-                '30': '30 Hari',
-                '365': '1 Tahun'
+                '1': '{{ __('1 Hari') }}',
+                '7': '{{ __('7 Hari') }}',
+                '30': '{{ __('30 Hari') }}',
+                '365': '{{ __('1 Tahun') }}'
             },
             inputValue: '1',
             showCancelButton: true,
             confirmButtonColor: '#dc3545',
             cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Blokir IP',
-            cancelButtonText: 'Batal',
+            confirmButtonText: '{{ __('Blokir IP') }}',
+            cancelButtonText: '{{ __('Batal') }}',
             inputValidator: (value) => {
                 return new Promise((resolve) => {
                     if (value) {
                         resolve();
                     } else {
-                        resolve('Anda harus memilih durasi blokir!');
+                        resolve('{{ __('Anda harus memilih durasi blokir!') }}');
                     }
                 });
             }
@@ -139,23 +139,23 @@
         
         if (admins.length === 0) {
             Swal.fire({
-                title: 'Hubungi Admin',
-                text: 'Tidak ada admin aktif saat ini untuk memproses permintaan Anda.',
+                title: '{{ __('Hubungi Admin') }}',
+                text: '{{ __('Tidak ada admin aktif saat ini untuk memproses permintaan Anda.') }}',
                 icon: 'error',
-                confirmButtonText: 'Mengerti'
+                confirmButtonText: '{{ __('Mengerti') }}'
             });
             return;
         }
         
         Swal.fire({
-            title: 'Buka Blokir IP',
-            html: `IP Anda <b>${ip}</b> {{ __('saat ini terblokir.') }}<br>Silakan hubungi administrator untuk membuka blokir ini.`,
+            title: '{{ __('Buka Blokir IP') }}',
+            html: `IP Anda <b>${ip}</b> {{ __('saat ini terblokir.') }}<br>{{ __('Silakan hubungi administrator untuk membuka blokir ini.') }}`,
             icon: 'info',
             showCancelButton: true,
             confirmButtonColor: '#0d6efd',
             cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Chat Admin',
-            cancelButtonText: 'Mengerti'
+            confirmButtonText: '{{ __('Chat Admin') }}',
+            cancelButtonText: '{{ __('Mengerti') }}'
         }).then((result) => {
             if (result.isConfirmed) {
                 if (admins.length === 1) {
@@ -167,20 +167,20 @@
                     });
                     
                     Swal.fire({
-                        title: 'Pilih Administrator',
-                        text: 'Pilih admin yang ingin Anda hubungi:',
+                        title: '{{ __('Pilih Administrator') }}',
+                        text: '{{ __('Pilih admin yang ingin Anda hubungi:') }}',
                         input: 'select',
                         inputOptions: adminOptions,
-                        inputPlaceholder: 'Pilih admin...',
+                        inputPlaceholder: '{{ __('Pilih admin...') }}',
                         showCancelButton: true,
-                        confirmButtonText: 'Pilih & Hubungi',
-                        cancelButtonText: 'Batal',
+                        confirmButtonText: '{{ __('Pilih & Hubungi') }}',
+                        cancelButtonText: '{{ __('Batal') }}',
                         inputValidator: (value) => {
                             return new Promise((resolve) => {
                                 if (value) {
                                     resolve();
                                 } else {
-                                    resolve('Anda harus memilih administrator!');
+                                    resolve('{{ __('Anda harus memilih administrator!') }}');
                                 }
                             });
                         }

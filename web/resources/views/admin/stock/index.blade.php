@@ -1280,7 +1280,7 @@
                     });
                     Toast.fire({
                         icon: 'info',
-                        title: 'Ada stok akun yang sudah siap diverifikasi!'
+                        title: '{{ __('Ada stok akun yang sudah siap diverifikasi!') }}'
                     });
                 }
             }
@@ -1292,15 +1292,15 @@
 
 function confirmExportStock() {
     Swal.fire({
-        title: 'Konfirmasi Ekspor Data',
+        title: '{{ __('Konfirmasi Ekspor Data') }}',
         html: '<p class="text-muted small mb-3">{{ __('Untuk keamanan, masukkan password admin Anda sebelum mengekspor data stok.') }}</p>',
         input: 'password',
-        inputPlaceholder: 'Masukkan password Anda...',
+        inputPlaceholder: '{{ __('Masukkan password Anda...') }}',
         inputAttributes: { autocomplete: 'current-password' },
         showCancelButton: true,
         showDenyButton: false,
-        confirmButtonText: '<i class="fas fa-file-excel me-1"></i> Ekspor',
-        cancelButtonText: 'Batal',
+        confirmButtonText: '<i class="fas fa-file-excel me-1"></i> {{ __('Ekspor') }}',
+        cancelButtonText: '{{ __('Batal') }}',
         confirmButtonColor: '#198754',
         cancelButtonColor: '#6c757d',
         allowOutsideClick: true,

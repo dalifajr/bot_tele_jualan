@@ -125,13 +125,13 @@
                         <td class="text-end px-4" onclick="event.stopPropagation();">
                             <div class="d-flex gap-1.5 justify-content-end align-items-center">
                                 @if($order->status === 'pending_payment')
-                                <form action="{{ route('admin.orders.accept', $order->id) }}" method="POST" class="m-0" onsubmit="confirmAction(event, 'Konfirmasi terima pembayaran untuk pesanan ini?');">
+                                <form action="{{ route('admin.orders.accept', $order->id) }}" method="POST" class="m-0" onsubmit="confirmAction(event, '{{ __('Konfirmasi terima pembayaran untuk pesanan ini?') }}');">
                                     @csrf
                                     <button type="submit" class="btn btn-sm btn-light text-success rounded-circle border-success" title="{{ __('Terima Pembayaran') }}" style="width: 32px; height: 32px;">
                                         <i class="fas fa-check"></i>
                                     </button>
                                 </form>
-                                <form action="{{ route('admin.orders.reject', $order->id) }}" method="POST" class="m-0" onsubmit="confirmAction(event, 'Tolak dan batalkan pesanan ini?');">
+                                <form action="{{ route('admin.orders.reject', $order->id) }}" method="POST" class="m-0" onsubmit="confirmAction(event, '{{ __('Tolak dan batalkan pesanan ini?') }}');">
                                     @csrf
                                     <button type="submit" class="btn btn-sm btn-light text-danger rounded-circle border-danger" title="{{ __('Tolak Pesanan') }}" style="width: 32px; height: 32px;">
                                         <i class="fas fa-times"></i>
@@ -183,13 +183,13 @@
                     </div>
                     <div class="d-flex align-items-center gap-1.5" onclick="event.stopPropagation();">
                         @if($order->status === 'pending_payment')
-                        <form action="{{ route('admin.orders.accept', $order->id) }}" method="POST" class="m-0" onsubmit="confirmAction(event, 'Konfirmasi terima pembayaran?');">
+                        <form action="{{ route('admin.orders.accept', $order->id) }}" method="POST" class="m-0" onsubmit="confirmAction(event, '{{ __('Konfirmasi terima pembayaran?') }}');">
                             @csrf
                             <button type="submit" class="btn btn-sm btn-outline-success rounded-pill px-2.5 py-1 small" title="{{ __('Terima') }}">
                                 <i class="fas fa-check"></i>
                             </button>
                         </form>
-                        <form action="{{ route('admin.orders.reject', $order->id) }}" method="POST" class="m-0" onsubmit="confirmAction(event, 'Tolak pesanan?');">
+                        <form action="{{ route('admin.orders.reject', $order->id) }}" method="POST" class="m-0" onsubmit="confirmAction(event, '{{ __('Tolak pesanan?') }}');">
                             @csrf
                             <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-2.5 py-1 small" title="{{ __('Tolak') }}">
                                 <i class="fas fa-times"></i>

@@ -128,7 +128,7 @@
                         @if(isset($product->warranty_days) && $product->warranty_days > 0)
                         <div class="vr opacity-25"></div>
                         <div class="text-info fw-semibold">
-                            <i class="fas fa-shield-alt me-1"></i>Garansi {{ $product->warranty_days }} Hari
+                            <i class="fas fa-shield-alt me-1"></i>{{ __('Garansi :days Hari', ['days' => $product->warranty_days]) }}
                         </div>
                         @endif
                         @if($product->is_vcc)
@@ -261,7 +261,7 @@
                                 <div class="d-flex flex-wrap gap-1">
                                     @foreach($vccServicesList as $srv)
                                         <span class="badge {{ $srv['available'] ? 'bg-white text-dark border' : 'bg-secondary-subtle text-muted text-decoration-line-through' }} rounded-pill px-2 py-0.5" style="font-size: 0.72rem;">
-                                            {{ $srv['name'] }} ({{ $srv['stock'] }} stok)
+                                            {{ $srv['name'] }} ({{ __(':stock stok', ['stock' => $srv['stock']]) }})
                                         </span>
                                     @endforeach
                                 </div>
@@ -280,7 +280,7 @@
                                 <div class="mb-2">
                                     <label class="form-label text-body small fw-bold mb-1">{{ __('Username VPN') }} <span class="text-danger">*</span></label>
                                     <input type="text" name="vpn_username" class="form-control form-control-sm px-3" required placeholder="{{ __('Contoh: user123') }}" pattern="[a-zA-Z0-9_-]+" title="{{ __('Hanya huruf, angka, dash, dan underscore') }}">
-                                    <div class="form-text text-muted" style="font-size: 0.68rem;">(Sistem akan menambahkan 4 karakter acak untuk mencegah duplikasi)</div>
+                                    <div class="form-text text-muted" style="font-size: 0.68rem;">{{ __('(Sistem akan menambahkan 4 karakter acak untuk mencegah duplikasi)') }}</div>
                                 </div>
                                 
                                 @if($product->vpn_protocol === 'ssh')

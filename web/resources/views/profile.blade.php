@@ -325,7 +325,7 @@
                     </div>
                     <form action="{{ route('profile.telegram.unlink') }}" method="POST">
                         @csrf
-                        <button type="button" class="btn btn-outline-danger rounded-pill px-4 fw-semibold" onclick="confirmAction(event, 'Apakah Anda yakin ingin melepas kaitan akun Telegram Anda?')">
+                        <button type="button" class="btn btn-outline-danger rounded-pill px-4 fw-semibold" onclick="confirmAction(event, '{{ __('Apakah Anda yakin ingin melepas kaitan akun Telegram Anda?') }}')">
                             <i class="fas fa-unlink me-1"></i> {{ __('Lepas Kaitan Telegram') }}
                         </button>
                     </form>

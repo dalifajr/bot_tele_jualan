@@ -129,10 +129,10 @@
                     btnDone.classList.add('btn-success');
                     
                     Swal.fire({
-                        title: 'Pembersihan Selesai!',
-                        text: 'Seluruh data transaksi dan data pengguna telah berhasil dikosongkan. Akun admin dan pengaturan tetap dipertahankan.',
+                        title: '{{ __('Pembersihan Selesai!') }}',
+                        text: '{{ __('Seluruh data transaksi dan data pengguna telah berhasil dikosongkan. Akun admin dan pengaturan tetap dipertahankan.') }}',
                         icon: 'success',
-                        confirmButtonText: 'Selesai',
+                        confirmButtonText: '{{ __('Selesai') }}',
                         customClass: {
                             popup: 'rounded-4',
                             confirmButton: 'btn btn-danger rounded-pill px-4'

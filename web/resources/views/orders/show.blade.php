@@ -26,7 +26,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <h5 class="fw-bold mb-0 text-body">
                         <i class="fas fa-receipt text-primary me-2"></i>
-                        Pesanan <span class="font-monospace">{{ $order->reference }}</span>
+                        {{ __('Pesanan') }} <span class="font-monospace">{{ $order->reference }}</span>
                     </h5>
                     <span class="badge bg-{{ $order->status_color }}-subtle text-{{ $order->status_color }} rounded-pill px-3 py-1.5">
                         {{ $order->status_label }}
@@ -146,19 +146,19 @@
                         <div class="fw-bold small text-body">{{ __('Menunggu Pembayaran') }}</div>
                         <div class="text-muted small">
                             @if($order->expires_at)
-                                Batas waktu: {{ $order->expires_at->format('d M Y H:i:s') }}
+                                {{ __('Batas waktu:') }} {{ $order->expires_at->format('d M Y H:i:s') }}
                             @else
-                                Segera lakukan pembayaran
+                                {{ __('Segera lakukan pembayaran') }}
                             @endif
                         </div>
                     </div>
                     @elseif(in_array($order->status, ['cancelled', 'expired']))
                     <div class="timeline-step">
                         <div class="fw-bold small text-danger">
-                            {{ $order->status === 'cancelled' ? 'Dibatalkan' : 'Kedaluwarsa' }}
+                            {{ $order->status === 'cancelled' ? __('Dibatalkan') : __('Kedaluwarsa') }}
                         </div>
                         <div class="text-muted small">
-                            {{ $order->cancel_reason ?: 'Tidak ada alasan' }}
+                            {{ $order->cancel_reason ?: __('Tidak ada alasan') }}
                         </div>
                     </div>
                     @endif
@@ -168,7 +168,7 @@
                 @if($order->status === 'delivered')
                     @if($order->stockUnits && $order->stockUnits->count() > 0)
                     <hr>
-                    <h6 class="fw-bold mb-3 text-body"><i class="fas fa-key text-success me-2"></i>{{ __('Detail Akun yang Dibeli') }} ({{ $order->stockUnits->count() }} unit)</h6>
+                    <h6 class="fw-bold mb-3 text-body"><i class="fas fa-key text-success me-2"></i>{{ __('Detail Akun yang Dibeli') }} ({{ __(':count unit', ['count' => $order->stockUnits->count()]) }})</h6>
                     <div class="d-flex flex-column gap-3">
                         @php $groupedUnits = $order->stockUnits->groupBy('product_id'); @endphp
                         @foreach($groupedUnits as $productId => $units)
@@ -180,10 +180,10 @@
                                     <div>
                                         @if($unit->vcc_service)
                                             <span class="badge bg-primary-subtle text-primary mb-1 fw-bold">
-                                                <i class="fas fa-credit-card me-1"></i>VCC Layanan: {{ $unit->vcc_service }}
+                                                <i class="fas fa-credit-card me-1"></i>{{ __('VCC Layanan:') }} {{ $unit->vcc_service }}
                                             </span>
                                         @elseif($units->count() > 1)
-                                            <span class="badge bg-secondary-subtle text-secondary mb-1">Unit #{{ $loop->iteration }}</span>
+                                            <span class="badge bg-secondary-subtle text-secondary mb-1">{{ __('Unit') }} #{{ $loop->iteration }}</span>
                                         @endif
                                         <x-account-credential-viewer :rawText="$unit->raw_text" />
                                     </div>
@@ -200,7 +200,7 @@
                     @foreach($order->vpnAccounts as $vpn)
                         <div class="card mb-3 overflow-hidden">
                             <div class="card-header bg-primary-subtle border-bottom">
-                                <h6 class="mb-0 fw-bold text-primary">Protokol: {{ strtoupper($vpn->protocol) }} ({{ $vpn->username }})</h6>
+                                <h6 class="mb-0 fw-bold text-primary">{{ __('Protokol:') }} {{ strtoupper($vpn->protocol) }} ({{ $vpn->username }})</h6>
                             </div>
                             <div class="card-body">
                                 <div class="mb-2">
@@ -335,7 +335,7 @@
             <a href="{{ route('checkout.success', $order->order_ref) }}" class="btn btn-success w-100 rounded-pill mb-2">
                 <i class="fas fa-qrcode me-2"></i>{{ __('Bayar Sekarang (QRIS)') }}
             </a>
-            <form action="{{ route('orders.cancel', $order->id) }}" method="POST" onsubmit="confirmAction(event, 'Apakah Anda yakin ingin membatalkan pesanan ini?');">
+            <form action="{{ route('orders.cancel', $order->id) }}" method="POST" onsubmit="confirmAction(event, '{{ __('Apakah Anda yakin ingin membatalkan pesanan ini?') }}');">
                 @csrf
                 <button type="submit" class="btn btn-outline-danger w-100 rounded-pill">
                     <i class="fas fa-times-circle me-2"></i>{{ __('Batalkan Pesanan') }}
@@ -352,7 +352,7 @@
 <div class="mobile-sticky-action-bar d-lg-none">
     <div class="d-flex align-items-center justify-content-between gap-2">
         <div>
-            <span class="text-muted d-block" style="font-size: 0.68rem; line-height: 1;">Total Tagihan</span>
+            <span class="text-muted d-block" style="font-size: 0.68rem; line-height: 1;">{{ __('Total Tagihan') }}</span>
             <span class="fw-bold text-primary" style="font-size: 1.05rem;">{{ $order->formatted_total }}</span>
         </div>
         <a href="{{ route('checkout.success', $order->order_ref) }}" class="btn btn-primary btn-sm rounded-pill px-3 py-2 fw-bold shadow-sm d-flex align-items-center gap-1" style="font-size: 0.82rem;">

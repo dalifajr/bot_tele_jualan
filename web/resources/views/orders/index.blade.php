@@ -208,10 +208,10 @@
                                     {{ $product->name ?? __('Produk Tidak Tersedia') }}
                                 </h6>
                                 <div class="text-secondary small d-flex flex-wrap align-items-center gap-2 mb-1" style="font-size: 0.82rem;">
-                                    <span class="fw-medium text-body">{{ $order->quantity }} barang &times; Rp {{ number_format($order->subtotal / max(1, $order->quantity), 0, ',', '.') }}</span>
+                                    <span class="fw-medium text-body">{{ __(':qty barang', ['qty' => $order->quantity]) }} &times; Rp {{ number_format($order->subtotal / max(1, $order->quantity), 0, ',', '.') }}</span>
                                     @if($product && $product->warranty_days)
                                         <span class="badge rounded-pill px-2.5 py-1" style="background: var(--primary-container); color: var(--primary); font-size: 0.72rem; font-weight: 600;">
-                                            <i class="fas fa-shield-alt me-1"></i>{{ $product->warranty_days }} Hari Garansi
+                                            <i class="fas fa-shield-alt me-1"></i>{{ __(':days Hari Garansi', ['days' => $product->warranty_days]) }}
                                         </span>
                                     @endif
                                     @if($order->coupon_code)
@@ -221,7 +221,7 @@
                                     @endif
                                     @if($order->items && $order->items->count() > 1)
                                         <span class="badge rounded-pill px-2.5 py-1" style="background: var(--surface-container-high); color: var(--on-surface-variant); font-size: 0.72rem; font-weight: 600;">
-                                            +{{ $order->items->count() - 1 }} produk lainnya
+                                            +{{ __(':count produk lainnya', ['count' => $order->items->count() - 1]) }}
                                         </span>
                                     @endif
                                 </div>
@@ -263,7 +263,7 @@
                 {{-- Action Buttons --}}
                 <div class="d-flex align-items-center gap-2 ms-auto" onclick="event.stopPropagation();">
                     @if($order->status === 'pending_payment')
-                        <form action="{{ route('orders.cancel', $order->id) }}" method="POST" class="m-0" onsubmit="confirmAction(event, 'Apakah Anda yakin ingin membatalkan pesanan ini?');">
+                        <form action="{{ route('orders.cancel', $order->id) }}" method="POST" class="m-0" onsubmit="confirmAction(event, '{{ __('Apakah Anda yakin ingin membatalkan pesanan ini?') }}');">
                             @csrf
                             <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3 py-1.5 fw-semibold" style="font-size: 0.82rem;">
                                 <i class="fas fa-times me-1"></i>{{ __('Batal') }}

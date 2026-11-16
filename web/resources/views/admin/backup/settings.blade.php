@@ -148,20 +148,20 @@
 <script>
     document.getElementById('btnWipeData').addEventListener('click', function() {
         Swal.fire({
-            title: 'Apakah Anda Yakin?',
-            text: "Tindakan ini akan menghapus SELURUH data produk, stok, pesanan, komplain, log, dan riwayat! Pengaturan bot dan akun admin tetap dipertahankan agar Anda bisa tetap login.",
+            title: '{{ __('Apakah Anda Yakin?') }}',
+            text: "{{ __('Tindakan ini akan menghapus SELURUH data produk, stok, pesanan, komplain, log, dan riwayat! Pengaturan bot dan akun admin tetap dipertahankan agar Anda bisa tetap login.') }}",
             icon: 'info',
             showCancelButton: true,
-            confirmButtonText: 'Konfirmasi',
-            cancelButtonText: 'Batal',
+            confirmButtonText: '{{ __('Konfirmasi') }}',
+            cancelButtonText: '{{ __('Batal') }}',
             reverseButtons: false,
             focusConfirm: false
         }).then((result) => {
             if (result.isConfirmed) {
                 // Show loading indicator
                 Swal.fire({
-                    title: 'Memulai Proses...',
-                    text: 'Sedang menghubungi server...',
+                    title: '{{ __('Memulai Proses...') }}',
+                    text: '{{ __('Sedang menghubungi server...') }}',
                     allowOutsideClick: false,
                     didOpen: () => {
                         Swal.showLoading();

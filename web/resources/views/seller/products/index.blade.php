@@ -83,7 +83,7 @@
                                     <form action="{{ route('seller.products.workers.destroy', [$product->id, $worker->id]) }}" method="POST" class="m-0">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="button" class="btn btn-sm btn-outline-danger border-0 py-0 px-2" title="{{ __('Kick Worker') }}" onclick="confirmAction(event, 'Yakin ingin menghapus worker ini dari produk Anda? Seluruh stok milik worker tersebut pada produk ini akan dialihkan kepemilikannya ke dompet Anda, namun data uploader asli tetap dipertahankan.')">
+                                        <button type="button" class="btn btn-sm btn-outline-danger border-0 py-0 px-2" title="{{ __('Kick Worker') }}" onclick="confirmAction(event, '{{ __('Yakin ingin menghapus worker ini dari produk Anda? Seluruh stok milik worker tersebut pada produk ini akan dialihkan kepemilikannya ke dompet Anda, namun data uploader asli tetap dipertahankan.') }}')">
                                             <i class="fas fa-user-slash"></i>
                                         </button>
                                     </form>

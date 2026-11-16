@@ -157,7 +157,7 @@
                                     data-bs-target="#editSellerCouponModal-{{ $coupon->id }}">
                                 <i class="fas fa-edit"></i> {{ __('Edit') }}
                             </button>
-                            <form action="{{ route('seller.coupons.destroy', $coupon->id) }}" method="POST" class="d-inline" onsubmit="confirmAction(event, 'Hapus kupon ini?');">
+                            <form action="{{ route('seller.coupons.destroy', $coupon->id) }}" method="POST" class="d-inline" onsubmit="confirmAction(event, '{{ __('Hapus kupon ini?') }}');">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill">

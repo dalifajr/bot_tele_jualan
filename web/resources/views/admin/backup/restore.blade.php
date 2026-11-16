@@ -118,14 +118,14 @@
         e.preventDefault();
         
         Swal.fire({
-            title: 'Konfirmasi Restore Database',
-            text: 'Apakah Anda yakin ingin memulihkan database? Seluruh data aktif Anda akan terpengaruh sesuai dengan mode yang dipilih. Tindakan ini tidak dapat dibatalkan!',
+            title: '{{ __('Konfirmasi Restore Database') }}',
+            text: '{{ __('Apakah Anda yakin ingin memulihkan database? Seluruh data aktif Anda akan terpengaruh sesuai dengan mode yang dipilih. Tindakan ini tidak dapat dibatalkan!') }}',
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#d33',
             cancelButtonColor: '#3085d6',
-            confirmButtonText: 'Ya, Jalankan Restore!',
-            cancelButtonText: 'Batal',
+            confirmButtonText: '{{ __('Ya, Jalankan Restore!') }}',
+            cancelButtonText: '{{ __('Batal') }}',
             customClass: {
                 popup: 'rounded-4',
                 confirmButton: 'btn btn-danger rounded-pill px-4',
