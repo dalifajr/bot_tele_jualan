@@ -368,7 +368,7 @@
                             toast: true,
                             position: 'top-end',
                             icon: 'success',
-                            title: data.message || 'Produk ditambahkan ke keranjang!',
+                            title: data.message || '{{ __('Produk ditambahkan ke keranjang!') }}',
                             showConfirmButton: false,
                             timer: 2000
                         });
@@ -379,7 +379,7 @@
                             toast: true,
                             position: 'top-end',
                             icon: 'warning',
-                            title: data.message || 'Gagal menambahkan ke keranjang.',
+                            title: data.message || '{{ __('Gagal menambahkan ke keranjang.') }}',
                             showConfirmButton: false,
                             timer: 3000
                         });

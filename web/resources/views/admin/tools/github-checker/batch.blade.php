@@ -68,7 +68,7 @@
             <a href="{{ route('admin.tools.github-checker') }}" class="text-decoration-none text-dark me-2">
                 <i class="fas fa-arrow-left"></i>
             </a>
-            Pengecekan Batch #{{ $batch->id }}
+            {{ __('Pengecekan Batch #') }}{{ $batch->id }}
         </h4>
         <p class="text-muted mb-0">{{ __('Status dan hasil riwayat live checker GitHub') }}</p>
     </div>
@@ -174,7 +174,7 @@
                         <i class="fas fa-download me-1"></i>{{ __('Export') }}
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item" href="#" onclick="exportResults('all')"><i class="fas fa-file-excel me-2 text-success"></i>Semua Hasil (.xlsx)</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="exportResults('all')"><i class="fas fa-file-excel me-2 text-success"></i>{{ __('Semua Hasil (.xlsx)') }}</a></li>
                         <li><a class="dropdown-item" href="#" onclick="exportResults('approved')"><i class="fas fa-check-circle me-2 text-success"></i>{{ __('Hanya Approved') }}</a></li>
                         <li><a class="dropdown-item" href="#" onclick="exportResults('not_approved')"><i class="fas fa-exclamation-circle me-2 text-warning"></i>{{ __('Hanya Revoked') }}</a></li>
                         <li><a class="dropdown-item" href="#" onclick="exportResults('suspended')"><i class="fas fa-times-circle me-2 text-danger"></i>{{ __('Hanya Suspended') }}</a></li>

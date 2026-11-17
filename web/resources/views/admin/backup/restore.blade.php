@@ -67,11 +67,11 @@
                 <label class="form-label fw-bold small text-muted d-block">{{ __('MODE PEMULIHAN') }}</label>
                 <div class="form-check form-check-inline me-4">
                     <input class="form-check-input" type="radio" name="mode" id="modeOverwrite" value="overwrite" checked>
-                    <label class="form-check-label small fw-bold" for="modeOverwrite">Full Overwrite (Hapus & Timpa)</label>
+                    <label class="form-check-label small fw-bold" for="modeOverwrite">{{ __('Full Overwrite (Hapus & Timpa)') }}</label>
                 </div>
                 <div class="form-check form-check-inline">
                     <input class="form-check-input" type="radio" name="mode" id="modeMerge" value="merge">
-                    <label class="form-check-label small fw-bold text-muted" for="modeMerge">Smart Merge (Skip Duplikat)</label>
+                    <label class="form-check-label small fw-bold text-muted" for="modeMerge">{{ __('Smart Merge (Skip Duplikat)') }}</label>
                 </div>
             </div>
 

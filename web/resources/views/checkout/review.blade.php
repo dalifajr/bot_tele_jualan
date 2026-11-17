@@ -180,7 +180,7 @@
                     <div class="alert alert-success d-flex align-items-center gap-2 rounded-3 mt-3 mb-0 py-2.5 px-3">
                         <i class="fas fa-check-circle fs-5 flex-shrink-0"></i>
                         <div class="small">
-                            <strong>{{ __('Kupon Berhasil Diterapkan!') }}</strong> Potongan harga sebesar <strong>Rp {{ number_format($discount, 0, ',', '.') }}</strong>
+                            <strong>{{ __('Kupon Berhasil Diterapkan!') }}</strong> {{ __('Potongan harga sebesar') }} <strong>Rp {{ number_format($discount, 0, ',', '.') }}</strong>
                         </div>
                     </div>
                 @elseif($couponError)

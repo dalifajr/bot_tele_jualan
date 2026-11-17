@@ -287,7 +287,7 @@
             <div class="modal-body p-4">
                 <div class="bg-danger-subtle text-danger p-3 mb-3" style="border-radius: var(--radius-md, 16px);">
                     <div class="fw-bold mb-1 small">{{ __('Alasan Penolakan dari Admin:') }}</div>
-                    <div class="lh-sm">{{ $withdrawal->rejection_reason ?? 'Tidak ada alasan penolakan yang dicantumkan.' }}</div>
+                    <div class="lh-sm">{{ $withdrawal->rejection_reason ?? __('Tidak ada alasan penolakan yang dicantumkan.') }}</div>
                 </div>
                 <div class="p-3 text-start" style="background-color: var(--surface-container-low); border: 1px solid var(--outline-variant); border-radius: var(--radius-md, 16px);">
                     <div class="row small py-1">

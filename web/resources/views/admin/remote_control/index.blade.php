@@ -200,7 +200,7 @@
                             @elseif($serviceStatus['is_installed'] ?? false)
                                 <span class="badge bg-warning text-dark rounded-pill px-2.5 py-1"><i class="fas fa-pause me-1"></i> STOPPED / INACTIVE</span>
                             @else
-                                <span class="badge bg-danger rounded-pill px-2.5 py-1"><i class="fas fa-circle-xmark me-1"></i> BELUM TERPASANG DI VPS</span>
+                                <span class="badge bg-danger rounded-pill px-2.5 py-1"><i class="fas fa-circle-xmark me-1"></i> {{ __('BELUM TERPASANG DI VPS') }}</span>
                             @endif
 
                             @if($serviceStatus['is_nginx_configured'] ?? false)
@@ -210,7 +210,7 @@
                         <p class="text-muted small m-0 mt-1">
                             {{ $serviceStatus['detail'] ?? 'Memeriksa status daemon di port ' . $relayPort }}
                             @if(!($serviceStatus['is_running'] ?? false))
-                                <span class="text-danger fw-semibold"> — HP Android akan menerima 404 Handshake sampai service & reverse proxy Nginx diaktifkan.</span>
+                                <span class="text-danger fw-semibold"> — {{ __('HP Android akan menerima 404 Handshake sampai service & reverse proxy Nginx diaktifkan.') }}</span>
                             @endif
                         </p>
                     </div>
@@ -238,7 +238,7 @@
                 <div class="remote-header-bar d-flex justify-content-between align-items-center">
                     <div class="d-flex align-items-center gap-2">
                         <span id="activeDot" class="device-badge-dot bg-danger"></span>
-                        <span id="activeDeviceTitle" class="fw-bold small text-truncate" style="max-width: 220px;">Menunggu Perangkat...</span>
+                        <span id="activeDeviceTitle" class="fw-bold small text-truncate" style="max-width: 220px;">{{ __('Menunggu Perangkat...') }}</span>
                     </div>
                     <span id="fpsBadge" class="badge bg-dark border border-secondary text-info font-monospace small">0 FPS</span>
                 </div>
@@ -313,24 +313,24 @@
 
                     <!-- Fast Actions Row -->
                     <div class="d-flex gap-2 mb-3 flex-wrap">
-                        <button class="btn btn-sm btn-outline-secondary rounded-pill" onclick="sendShell('input keyevent 26')"><i class="fas fa-moon me-1"></i> Screen Toggle</button>
-                        <button class="btn btn-sm btn-outline-secondary rounded-pill" onclick="sendShell('input swipe 300 1000 300 200 150')"><i class="fas fa-arrow-up me-1"></i> Swipe Up</button>
-                        <button class="btn btn-sm btn-outline-secondary rounded-pill" onclick="sendShell('input swipe 300 300 300 1100 150')"><i class="fas fa-arrow-down me-1"></i> Swipe Down</button>
-                        <button class="btn btn-sm btn-outline-secondary rounded-pill" onclick="sendShell('settings get system screen_brightness')"><i class="fas fa-sun me-1"></i> Cek Brightness</button>
-                        <button class="btn btn-sm btn-outline-danger rounded-pill" onclick="sendShell('reboot')"><i class="fas fa-rotate me-1"></i> Reboot HP</button>
+                        <button class="btn btn-sm btn-outline-secondary rounded-pill" onclick="sendShell('input keyevent 26')"><i class="fas fa-moon me-1"></i> {{ __('Screen Toggle') }}</button>
+                        <button class="btn btn-sm btn-outline-secondary rounded-pill" onclick="sendShell('input swipe 300 1000 300 200 150')"><i class="fas fa-arrow-up me-1"></i> {{ __('Swipe Up') }}</button>
+                        <button class="btn btn-sm btn-outline-secondary rounded-pill" onclick="sendShell('input swipe 300 300 300 1100 150')"><i class="fas fa-arrow-down me-1"></i> {{ __('Swipe Down') }}</button>
+                        <button class="btn btn-sm btn-outline-secondary rounded-pill" onclick="sendShell('settings get system screen_brightness')"><i class="fas fa-sun me-1"></i> {{ __('Cek Brightness') }}</button>
+                        <button class="btn btn-sm btn-outline-danger rounded-pill" onclick="sendShell('reboot')"><i class="fas fa-rotate me-1"></i> {{ __('Reboot HP') }}</button>
                     </div>
 
                     <!-- Terminal Output Box -->
                     <div class="web-terminal-box mb-2">
                         <div class="term-body" id="webTermLogs">
-                            <span class="text-success">[Terminal Root Terhubung] Siap mengeksekusi perintah Android Shell UID 0.</span><br>
+                            <span class="text-success">{{ __('[Terminal Root Terhubung] Siap mengeksekusi perintah Android Shell UID 0.') }}</span><br>
                         </div>
                     </div>
 
                     <!-- Shell Input -->
                     <div class="input-group">
                         <span class="input-group-text bg-dark text-success font-monospace border-secondary">#</span>
-                        <input type="text" id="shellInput" class="form-control font-monospace text-dark" placeholder="Masukkan perintah shell (misal: pm list packages, dumpsys battery)...">
+                        <input type="text" id="shellInput" class="form-control font-monospace text-dark" placeholder="{{ __('Masukkan perintah shell (misal: pm list packages, dumpsys battery)...') }}">
                         <button id="btnSendShell" class="btn btn-primary px-3"><i class="fas fa-paper-plane"></i></button>
                     </div>
                 </div>
@@ -420,10 +420,10 @@
                     <div class="position-relative">
                         <pre class="bg-dark text-success p-3 rounded-3 small font-monospace m-0" id="cmdCurlAuto">su -c "curl -k -o /data/local/tmp/remote_agent.jar https://{{ request()->getHost() }}/downloads/remote_agent.jar && curl -k -o /data/local/tmp/run_agent.sh https://{{ request()->getHost() }}/downloads/run_agent.sh && chmod 755 /data/local/tmp/remote_agent.jar /data/local/tmp/run_agent.sh && sh /data/local/tmp/run_agent.sh"</pre>
                         <button class="btn btn-sm btn-outline-light position-absolute top-0 end-0 m-2" onclick="copyText('cmdCurlAuto')">
-                            <i class="fas fa-copy"></i> Salin
+                            <i class="fas fa-copy"></i> {{ __('Salin') }}
                         </button>
                     </div>
-                    <small class="text-muted d-block mt-1">Perintah di atas otomatis mengunduh binary terbaru, mengatur SELinux ke Permissive (mencegah error 137 Killed), dan menyalakan daemon.</small>
+                    <small class="text-muted d-block mt-1">{{ __('Perintah di atas otomatis mengunduh binary terbaru, mengatur SELinux ke Permissive (mencegah error 137 Killed), dan menyalakan daemon.') }}</small>
                 </div>
 
                 <div class="mb-3">
@@ -435,13 +435,13 @@ pkill -9 -f com.remote.agent.Main 2>/dev/null
 export CLASSPATH=/data/local/tmp/remote_agent.jar
 exec app_process / com.remote.agent.Main --url wss://{{ request()->getHost() }}/ws/device --id ANDROID_01 --token {{ $deviceAuthToken }}</pre>
                         <button class="btn btn-sm btn-outline-light position-absolute top-0 end-0 m-2" onclick="copyText('cmdAppProcess')">
-                            <i class="fas fa-copy"></i> Salin
+                            <i class="fas fa-copy"></i> {{ __('Salin') }}
                         </button>
                     </div>
                 </div>
 
                 <div class="alert alert-info rounded-3 small mb-0">
-                    <i class="fas fa-info-circle me-1"></i> <strong>Catatan Android 14+ (Pixel 7):</strong> Pastikan menjalankan <code>setenforce 0</code> sebelum menjalankan app_process agar SELinux tidak mematikan koneksi dengan status <code>Killed (error 137)</code>.
+                    <i class="fas fa-info-circle me-1"></i> <strong>{{ __('Catatan Android 14+ (Pixel 7):') }}</strong> {{ __('Pastikan menjalankan setenforce 0 sebelum menjalankan app_process agar SELinux tidak mematikan koneksi dengan status Killed (error 137).') }}
                 </div>
             </div>
             <div class="modal-footer border-0 px-4 pb-4">
@@ -468,7 +468,7 @@ exec app_process / com.remote.agent.Main --url wss://{{ request()->getHost() }}/
                             <span class="text-muted small d-block">{{ __('Status Daemon Relay') }}</span>
                             <span id="modalDaemonStatus" class="fw-bold {{ ($serviceStatus['is_running'] ?? false) ? 'text-success' : 'text-danger' }}">
                                 <i class="fas {{ ($serviceStatus['is_running'] ?? false) ? 'fa-circle-check' : 'fa-circle-xmark' }} me-1"></i>
-                                {{ ($serviceStatus['is_running'] ?? false) ? 'Aktif Berjalan' : 'Tidak Aktif' }}
+                                {{ ($serviceStatus['is_running'] ?? false) ? __('Aktif Berjalan') : __('Tidak Aktif') }}
                             </span>
                         </div>
                     </div>
@@ -477,7 +477,7 @@ exec app_process / com.remote.agent.Main --url wss://{{ request()->getHost() }}/
                             <span class="text-muted small d-block">{{ __('Reverse Proxy Nginx (/ws/)') }}</span>
                             <span id="modalNginxStatus" class="fw-bold {{ ($serviceStatus['is_nginx_configured'] ?? false) ? 'text-success' : 'text-warning' }}">
                                 <i class="fas {{ ($serviceStatus['is_nginx_configured'] ?? false) ? 'fa-check' : 'fa-triangle-exclamation' }} me-1"></i>
-                                {{ ($serviceStatus['is_nginx_configured'] ?? false) ? 'Terkonfigurasi' : 'Perlu Diterapkan' }}
+                                {{ ($serviceStatus['is_nginx_configured'] ?? false) ? __('Terkonfigurasi') : __('Perlu Diterapkan') }}
                             </span>
                         </div>
                     </div>
@@ -569,7 +569,7 @@ exec app_process / com.remote.agent.Main --url wss://{{ request()->getHost() }}/
                                 <span class="text-muted small font-monospace">ID: ${dev.device_id} | IP: ${dev.ip || '-'}</span>
                             </div>
                         </div>
-                        <span class="badge bg-success rounded-pill px-3 py-1.5"><i class="fas fa-link me-1"></i> Hubungkan</span>
+                        <span class="badge bg-success rounded-pill px-3 py-1.5"><i class="fas fa-link me-1"></i> {{ __('Hubungkan') }}</span>
                     </div>
                 `;
             });
@@ -626,7 +626,7 @@ exec app_process / com.remote.agent.Main --url wss://{{ request()->getHost() }}/
             ws.onopen = function() {
                 document.getElementById('activeDot').className = 'device-badge-dot bg-success';
                 document.getElementById('screenOverlayPlaceholder').style.display = 'none';
-                appendLog('[Berhasil] Terhubung ke sesi Android ' + device.device_name, 'text-success');
+                appendLog('{{ __("[Berhasil] Terhubung ke sesi Android ") }}' + device.device_name, 'text-success');
 
                 // Minta device memulai transmisi video
                 send({ type: 'start_stream' });
@@ -674,7 +674,7 @@ exec app_process / com.remote.agent.Main --url wss://{{ request()->getHost() }}/
                 document.getElementById('activeDot').className = 'device-badge-dot bg-danger';
                 document.getElementById('screenOverlayPlaceholder').style.display = 'flex';
                 document.getElementById('fpsBadge').textContent = '0 FPS';
-                appendLog('[Peringatan] Koneksi terputus dari perangkat.', 'text-danger');
+                appendLog('{{ __("[Peringatan] Koneksi terputus dari perangkat.") }}', 'text-danger');
             };
         };
 
@@ -686,7 +686,7 @@ exec app_process / com.remote.agent.Main --url wss://{{ request()->getHost() }}/
 
         window.sendShell = function(cmd) {
             if (!activeDeviceId) {
-                alert('Pilih perangkat Android aktif terlebih dahulu.');
+                alert('{{ __("Pilih perangkat Android aktif terlebih dahulu.") }}');
                 return;
             }
             appendLog('# ' + cmd, 'text-warning');
@@ -766,7 +766,7 @@ exec app_process / com.remote.agent.Main --url wss://{{ request()->getHost() }}/
     function copyText(id) {
         const text = document.getElementById(id).innerText;
         navigator.clipboard.writeText(text).then(() => {
-            alert('Perintah berhasil disalin ke clipboard!');
+            alert('{{ __("Perintah berhasil disalin ke clipboard!") }}');
         });
     }
 
@@ -774,7 +774,7 @@ exec app_process / com.remote.agent.Main --url wss://{{ request()->getHost() }}/
     function triggerVpsInstaller() {
         const logBox = document.getElementById('installerLogBox');
         const btn = document.getElementById('btnRunInstaller');
-        logBox.innerHTML = '<span class="text-warning">[Memulai] Menjalankan skrip installer service VPS & reload Nginx... Mohon tunggu.</span><br>';
+        logBox.innerHTML = '<span class="text-warning">{{ __("[Memulai] Menjalankan skrip installer service VPS & reload Nginx... Mohon tunggu.") }}</span><br>';
         btn.disabled = true;
 
         fetch('{{ route("admin.remote-control.install-service") }}', {
@@ -787,7 +787,7 @@ exec app_process / com.remote.agent.Main --url wss://{{ request()->getHost() }}/
         .then(res => res.json())
         .then(data => {
             btn.disabled = false;
-            logBox.innerHTML += `<pre class="text-light m-0 mt-2">${data.output || 'Proses selesai.'}</pre>`;
+            logBox.innerHTML += `<pre class="text-light m-0 mt-2">${data.output || '{{ __("Proses selesai.") }}'}</pre>`;
             refreshVpsStatus();
         })
         .catch(err => {
@@ -799,7 +799,7 @@ exec app_process / com.remote.agent.Main --url wss://{{ request()->getHost() }}/
     // Eksekusi Restart Service VPS via AJAX
     function triggerVpsRestart() {
         const logBox = document.getElementById('installerLogBox');
-        logBox.innerHTML = '<span class="text-info">[Info] Mengirim sinyal restart remote_control.service...</span><br>';
+        logBox.innerHTML = '<span class="text-info">{{ __("[Info] Mengirim sinyal restart remote_control.service...") }}</span><br>';
 
         fetch('{{ route("admin.remote-control.restart-service") }}', {
             method: 'POST',
@@ -829,11 +829,11 @@ exec app_process / com.remote.agent.Main --url wss://{{ request()->getHost() }}/
                     const nginxEl = document.getElementById('modalNginxStatus');
                     if (daemonEl) {
                         daemonEl.className = 'fw-bold ' + (st.is_running ? 'text-success' : 'text-danger');
-                        daemonEl.innerHTML = `<i class="fas ${st.is_running ? 'fa-circle-check' : 'fa-circle-xmark'} me-1"></i> ${st.is_running ? 'Aktif Berjalan' : 'Tidak Aktif'}`;
+                        daemonEl.innerHTML = `<i class="fas ${st.is_running ? 'fa-circle-check' : 'fa-circle-xmark'} me-1"></i> ${st.is_running ? '{{ __("Aktif Berjalan") }}' : '{{ __("Tidak Aktif") }}'}`;
                     }
                     if (nginxEl) {
                         nginxEl.className = 'fw-bold ' + (st.is_nginx_configured ? 'text-success' : 'text-warning');
-                        nginxEl.innerHTML = `<i class="fas ${st.is_nginx_configured ? 'fa-check' : 'fa-triangle-exclamation'} me-1"></i> ${st.is_nginx_configured ? 'Terkonfigurasi' : 'Perlu Diterapkan'}`;
+                        nginxEl.innerHTML = `<i class="fas ${st.is_nginx_configured ? 'fa-check' : 'fa-triangle-exclamation'} me-1"></i> ${st.is_nginx_configured ? '{{ __("Terkonfigurasi") }}' : '{{ __("Perlu Diterapkan") }}'}`;
                     }
                 }
             })

@@ -49,7 +49,7 @@
                 <button class="nav-link fw-bold px-4 py-3 d-flex align-items-center gap-1 {{ ($settings['maintenance_mode'] ?? '0') === '1' ? 'text-danger' : '' }}" id="maintenance-tab" data-bs-toggle="tab" data-bs-target="#maintenance" type="button" role="tab" onclick="switchSettingsTab('maintenance', event)">
                     <i class="fas fa-tools me-1 text-warning"></i>{{ __('Mode Maintenance') }}
                     @if(($settings['maintenance_mode'] ?? '0') === '1')
-                        <span class="badge bg-danger rounded-pill px-2 py-0.5" style="font-size: 0.65rem;">AKTIF</span>
+                        <span class="badge bg-danger rounded-pill px-2 py-0.5" style="font-size: 0.65rem;">{{ __('AKTIF') }}</span>
                     @endif
                 </button>
             </li>

@@ -25,7 +25,7 @@
 
 {{-- Section 1: My Owned Products --}}
 <div class="mb-5">
-    <h5 class="fw-bold mb-3 text-primary"><i class="fas fa-box-open me-2"></i>Produk Buatan Saya (Milik Sendiri)</h5>
+    <h5 class="fw-bold mb-3 text-primary"><i class="fas fa-box-open me-2"></i>{{ __('Produk Buatan Saya (Milik Sendiri)') }}</h5>
     
     @if($myProducts->count() > 0)
     <div class="row g-4">
@@ -48,13 +48,13 @@
                 </div>
                 <div class="card-body p-4 d-flex flex-column justify-content-between">
                     <div class="mb-3">
-                        <p class="text-muted small mb-2" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.5em;" title="{{ $product->description }}">{{ $product->description ?: 'Tidak ada deskripsi produk.' }}</p>
+                        <p class="text-muted small mb-2" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.5em;" title="{{ $product->description }}">{{ $product->description ?: __('Tidak ada deskripsi produk.') }}</p>
                         
                         <div class="d-flex gap-3 small text-secondary mt-3">
                             <span><i class="fas fa-cubes text-info me-1"></i> <strong>{{ $product->stockUnits()->where('is_sold', false)->count() }}</strong> {{ __('unit ready') }}</span>
                             <span><i class="fas fa-shopping-bag text-success me-1"></i> <strong>{{ $product->stockUnits()->where('is_sold', true)->count() }}</strong> {{ __('unit terjual') }}</span>
                             @if($product->is_vcc)
-                                <span class="badge bg-success-subtle text-success rounded-pill px-2 py-0.5"><i class="fas fa-credit-card me-1"></i>VCC ({{ count((array)($product->vcc_services ?? [])) }} Layanan)</span>
+                                <span class="badge bg-success-subtle text-success rounded-pill px-2 py-0.5"><i class="fas fa-credit-card me-1"></i>{{ __('VCC (:count Layanan)', ['count' => count((array)($product->vcc_services ?? []))]) }}</span>
                             @endif
                         </div>
                     </div>
@@ -62,7 +62,7 @@
                     {{-- Workers section --}}
                     <div class="border-top pt-3 mt-2">
                         <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="small fw-bold text-muted">Daftar Worker ({{ $product->workers->count() }})</span>
+                            <span class="small fw-bold text-muted">{{ __('Daftar Worker (:count)', ['count' => $product->workers->count()]) }}</span>
                             <button class="btn btn-sm btn-link text-decoration-none p-0 fw-bold" style="font-size: 0.75rem;" data-bs-toggle="modal" data-bs-target="#addWorkerModal{{ $product->id }}">
                                 <i class="fas fa-user-plus me-1"></i> {{ __('Tambah Worker') }}
                             </button>
@@ -122,7 +122,7 @@
                 </div>
                 <div class="card-body p-4 d-flex flex-column justify-content-between">
                     <div class="mb-3">
-                        <p class="text-muted small mb-2">{{ Str::limit($product->description ?: 'Tidak ada deskripsi produk.', 120) }}</p>
+                        <p class="text-muted small mb-2">{{ Str::limit($product->description ?: __('Tidak ada deskripsi produk.'), 120) }}</p>
                         <div class="small text-muted mb-2">{{ __('Pemilik Produk:') }} <strong>{{ $product->creator->full_name ?? $product->creator->username ?? 'Admin Utama' }}</strong></div>
                         
                         <div class="d-flex gap-3 small text-secondary mt-3">
@@ -166,14 +166,14 @@
                         <input type="text" name="name" class="form-control" placeholder="{{ __('Contoh: GitHub Students Pack Premium') }}" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">Harga Produk (Rupiah)</label>
+                        <label class="form-label text-muted small fw-bold">{{ __('Harga Produk (Rupiah)') }}</label>
                         <div class="input-group">
                             <span class="input-group-text bg-light text-muted">Rp</span>
                             <input type="number" name="price" class="form-control" placeholder="70000" min="0" required>
                         </div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">Deskripsi Produk (Opsional)</label>
+                        <label class="form-label text-muted small fw-bold">{{ __('Deskripsi Produk (Opsional)') }}</label>
                         <textarea name="description" class="form-control" rows="3" placeholder="{{ __('Masukkan deskripsi detail mengenai produk digital ini...') }}"></textarea>
                     </div>
                     <div class="mb-3">
@@ -186,7 +186,7 @@
                         <label class="form-check-label text-muted small fw-bold" for="enableWarrantyAdd">{{ __('Aktifkan garansi?') }}</label>
                     </div>
                     <div class="mb-3" id="warrantyDaysAddContainer" style="display: none;">
-                        <label class="form-label text-muted small fw-bold">Masa Garansi (Hari)</label>
+                        <label class="form-label text-muted small fw-bold">{{ __('Masa Garansi (Hari)') }}</label>
                         <div class="input-group">
                             <input type="number" name="warranty_days" id="warrantyDaysAdd" class="form-control" placeholder="{{ __('Contoh: 3') }}" min="1" disabled>
                             <span class="input-group-text bg-light text-muted">{{ __('hari') }}</span>
@@ -251,7 +251,7 @@
                         <h6 class="fw-bold text-primary m-0">{{ $product->name }}</h6>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">Pilih Seller Mitra (Worker)</label>
+                        <label class="form-label text-muted small fw-bold">{{ __('Pilih Seller Mitra (Worker)') }}</label>
                         <select name="user_id" class="form-select" required>
                             <option value="" disabled selected>{{ __('-- Pilih Seller Mitra --') }}</option>
                             @foreach($allSellers as $seller)
@@ -294,14 +294,14 @@
                         <input type="text" name="name" class="form-control" value="{{ $product->name }}" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">Harga Produk (Rupiah)</label>
+                        <label class="form-label text-muted small fw-bold">{{ __('Harga Produk (Rupiah)') }}</label>
                         <div class="input-group">
                             <span class="input-group-text bg-light text-muted">Rp</span>
                             <input type="number" name="price" class="form-control" value="{{ $product->price }}" min="0" required>
                         </div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">Deskripsi Produk (Opsional)</label>
+                        <label class="form-label text-muted small fw-bold">{{ __('Deskripsi Produk (Opsional)') }}</label>
                         <textarea name="description" class="form-control" rows="3">{{ $product->description }}</textarea>
                     </div>
                     <div class="mb-3">
@@ -323,7 +323,7 @@
                         <label class="form-check-label text-muted small fw-bold" for="enableWarrantyEdit{{ $product->id }}">{{ __('Aktifkan garansi?') }}</label>
                     </div>
                     <div class="mb-3" id="warrantyDaysEditContainer{{ $product->id }}" style="display: {{ $product->warranty_days > 0 ? 'block' : 'none' }};">
-                        <label class="form-label text-muted small fw-bold">Masa Garansi (Hari)</label>
+                        <label class="form-label text-muted small fw-bold">{{ __('Masa Garansi (Hari)') }}</label>
                         <div class="input-group">
                             <input type="number" name="warranty_days" id="warrantyDaysEditInput{{ $product->id }}" class="form-control" value="{{ $product->warranty_days > 0 ? $product->warranty_days : '' }}" min="1" {{ $product->warranty_days > 0 ? '' : 'disabled' }}>
                             <span class="input-group-text bg-light text-muted">{{ __('hari') }}</span>

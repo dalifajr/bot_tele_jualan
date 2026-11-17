@@ -75,19 +75,19 @@
                             <span class="input-group-text bg-light"><i class="fas fa-tags" id="promoIconPreview"></i></span>
                             <input type="text" name="icon" id="promoIconInput" class="form-control rounded-end-3 @error('icon') is-invalid @enderror" placeholder="fas fa-tags" value="{{ old('icon', 'fas fa-tags') }}" required>
                         </div>
-                        <small class="text-secondary" style="font-size: 0.72rem;">Contoh: <code>fas fa-tags</code>, <code>fas fa-shield-alt</code>, <code>fab fa-telegram</code>, <code>fas fa-headset</code></small>
+                        <small class="text-secondary" style="font-size: 0.72rem;">{{ __('Contoh:') }} <code>fas fa-tags</code>, <code>fas fa-shield-alt</code>, <code>fab fa-telegram</code>, <code>fas fa-headset</code></small>
                     </div>
 
                     {{-- Tema Gradien Latar Belakang --}}
                     <div class="col-md-6">
                         <label class="form-label fw-semibold text-body" style="font-size: 0.88rem;">{{ __('Tema Latar M3') }} <span class="text-danger">*</span></label>
                         <select name="gradient_theme" id="promoThemeSelect" class="form-select rounded-3 @error('gradient_theme') is-invalid @enderror" required>
-                            <option value="blue" {{ old('gradient_theme') === 'blue' ? 'selected' : '' }}>Blue (Default Android)</option>
-                            <option value="green" {{ old('gradient_theme') === 'green' ? 'selected' : '' }}>Green (Keamanan / Proteksi)</option>
-                            <option value="cyan" {{ old('gradient_theme') === 'cyan' ? 'selected' : '' }}>Cyan (Telegram / Notifikasi)</option>
-                            <option value="purple" {{ old('gradient_theme') === 'purple' ? 'selected' : '' }}>Purple (Garansi / Layanan)</option>
-                            <option value="amber" {{ old('gradient_theme') === 'amber' ? 'selected' : '' }}>Amber (Perhatian / Event)</option>
-                            <option value="red" {{ old('gradient_theme') === 'red' ? 'selected' : '' }}>Red (Flash Sale / Mendesak)</option>
+                            <option value="blue" {{ old('gradient_theme') === 'blue' ? 'selected' : '' }}>{{ __('Blue (Default Android)') }}</option>
+                            <option value="green" {{ old('gradient_theme') === 'green' ? 'selected' : '' }}>{{ __('Green (Keamanan / Proteksi)') }}</option>
+                            <option value="cyan" {{ old('gradient_theme') === 'cyan' ? 'selected' : '' }}>{{ __('Cyan (Telegram / Notifikasi)') }}</option>
+                            <option value="purple" {{ old('gradient_theme') === 'purple' ? 'selected' : '' }}>{{ __('Purple (Garansi / Layanan)') }}</option>
+                            <option value="amber" {{ old('gradient_theme') === 'amber' ? 'selected' : '' }}>{{ __('Amber (Perhatian / Event)') }}</option>
+                            <option value="red" {{ old('gradient_theme') === 'red' ? 'selected' : '' }}>{{ __('Red (Flash Sale / Mendesak)') }}</option>
                         </select>
                     </div>
                 </div>

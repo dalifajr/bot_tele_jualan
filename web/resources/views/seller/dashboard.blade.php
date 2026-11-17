@@ -329,7 +329,7 @@
 <!-- Recent Orders Table -->
 <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
     <div class="card-header bg-transparent border-0 pt-4 px-4 pb-2">
-        <h5 class="fw-bold mb-0 text-body"><i class="fas fa-history text-secondary me-2"></i>5 Pesanan Sukses Terakhir (Stok Anda)</h5>
+        <h5 class="fw-bold mb-0 text-body"><i class="fas fa-history text-secondary me-2"></i>{{ __('5 Pesanan Sukses Terakhir (Stok Anda)') }}</h5>
     </div>
     <div class="card-body p-0">
         @if($latestOrders->count() > 0)

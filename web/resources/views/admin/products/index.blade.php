@@ -227,7 +227,7 @@
                             </div>
                             <div class="row">
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label text-muted small fw-bold">Harga (Rp)</label>
+                                    <label class="form-label text-muted small fw-bold">{{ __('Harga (Rp)') }}</label>
                                     <input type="number" name="price" class="form-control" required placeholder="{{ __('Contoh: 35000') }}">
                                 </div>
                                 <div class="col-md-6 mb-3">
@@ -255,7 +255,7 @@
                                 <label class="form-check-label text-muted small fw-bold" for="enableWarrantyAdd">{{ __('Aktifkan garansi?') }}</label>
                             </div>
                             <div class="mb-3" id="warrantyDaysAddContainer" style="display: none;">
-                                <label class="form-label text-muted small fw-bold">Masa Garansi (Hari)</label>
+                                <label class="form-label text-muted small fw-bold">{{ __('Masa Garansi (Hari)') }}</label>
                                 <div class="input-group">
                                     <input type="number" name="warranty_days" id="warrantyDaysAdd" class="form-control" placeholder="{{ __('Contoh: 3') }}" min="1">
                                     <span class="input-group-text bg-light text-muted">{{ __('hari') }}</span>
@@ -360,7 +360,7 @@
                             </div>
                             <div class="row">
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label text-muted small fw-bold">Harga (Rp)</label>
+                                    <label class="form-label text-muted small fw-bold">{{ __('Harga (Rp)') }}</label>
                                     <input type="number" name="price" class="form-control" value="{{ $product->price }}" required>
                                 </div>
                                 <div class="col-md-6 mb-3">
@@ -397,7 +397,7 @@
                                 <label class="form-check-label text-muted small fw-bold" for="enableWarrantyEdit{{ $product->id }}">{{ __('Aktifkan garansi?') }}</label>
                             </div>
                             <div class="mb-3" id="warrantyDaysEditContainer{{ $product->id }}" style="display: {{ $product->warranty_days > 0 ? 'block' : 'none' }};">
-                                <label class="form-label text-muted small fw-bold">Masa Garansi (Hari)</label>
+                                <label class="form-label text-muted small fw-bold">{{ __('Masa Garansi (Hari)') }}</label>
                                 <div class="input-group">
                                     <input type="number" name="warranty_days" id="warrantyDaysEdit{{ $product->id }}" class="form-control" value="{{ $product->warranty_days > 0 ? $product->warranty_days : '' }}" min="1">
                                     <span class="input-group-text bg-light text-muted">{{ __('hari') }}</span>
@@ -466,7 +466,7 @@
 
                             <div class="form-check form-switch mb-3">
                                 <input class="form-check-input" type="checkbox" role="switch" name="is_suspended" value="1" id="suspend{{ $product->id }}" {{ $product->is_suspended ? 'checked' : '' }}>
-                                <label class="form-check-label" for="suspend{{ $product->id }}">Suspend (Sembunyikan dari katalog)</label>
+                                <label class="form-check-label" for="suspend{{ $product->id }}">{{ __('Suspend (Sembunyikan dari katalog)') }}</label>
                             </div>
                         </div>
                     </div>

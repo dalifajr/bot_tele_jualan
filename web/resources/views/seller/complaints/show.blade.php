@@ -18,14 +18,14 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <h5 class="fw-bold mb-0">
                         <i class="fas fa-toolbox text-warning me-2"></i>
-                        Tiket Komplain #{{ $complaint->complaint_ref }}
+                        {{ __('Tiket Komplain #') }}{{ $complaint->complaint_ref }}
                     </h5>
                     @php
                         $statusBadge = match($complaint->status) {
-                            'new' => ['bg' => 'danger-subtle', 'text' => 'danger', 'label' => 'Baru'],
-                            'review' => ['bg' => 'warning-subtle', 'text' => 'warning', 'label' => 'Ditinjau'],
-                            'done' => ['bg' => 'success-subtle', 'text' => 'success', 'label' => 'Selesai'],
-                            'rejected' => ['bg' => 'secondary-subtle', 'text' => 'secondary', 'label' => 'Ditolak'],
+                            'new' => ['bg' => 'danger-subtle', 'text' => 'danger', 'label' => __('Baru')],
+                            'review' => ['bg' => 'warning-subtle', 'text' => 'warning', 'label' => __('Ditinjau')],
+                            'done' => ['bg' => 'success-subtle', 'text' => 'success', 'label' => __('Selesai')],
+                            'rejected' => ['bg' => 'secondary-subtle', 'text' => 'secondary', 'label' => __('Ditolak')],
                             default => ['bg' => 'secondary-subtle', 'text' => 'secondary', 'label' => $complaint->status]
                         };
                     @endphp
@@ -58,7 +58,7 @@
                 <div class="mb-4">
                     <span class="text-muted small fw-bold d-block mb-1">{{ __('Lampiran Foto Bukti:') }}</span>
                     <a href="{{ asset('storage/' . $complaint->attachment_path) }}" target="_blank">
-                        <img src="{{ asset('storage/' . $complaint->attachment_path) }}" alt="Bukti Komplain" class="img-fluid rounded-3 border" style="max-height: 300px; object-fit: contain;">
+                        <img src="{{ asset('storage/' . $complaint->attachment_path) }}" alt="{{ __('Bukti Komplain') }}" class="img-fluid rounded-3 border" style="max-height: 300px; object-fit: contain;">
                     </a>
                 </div>
                 @endif
@@ -67,7 +67,7 @@
                 @if($complaint->order)
                 <hr>
                 <div class="mb-4">
-                    <h6 class="fw-bold mb-3"><i class="fas fa-shopping-bag text-primary me-2"></i>Pesanan Terkait: {{ $complaint->order->order_ref }}</h6>
+                    <h6 class="fw-bold mb-3"><i class="fas fa-shopping-bag text-primary me-2"></i>{{ __('Pesanan Terkait:') }} {{ $complaint->order->order_ref }}</h6>
                     <div class="row g-3">
                         <div class="col-md-4">
                             <span class="text-muted small">{{ __('Produk') }}</span>
@@ -111,7 +111,7 @@
     <div class="col-lg-4">
         <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
             <div class="card-body p-4">
-                <h6 class="fw-bold mb-3"><i class="fas fa-gavel text-primary me-2"></i>Resolusi Tiket (Seller)</h6>
+                <h6 class="fw-bold mb-3"><i class="fas fa-gavel text-primary me-2"></i>{{ __('Resolusi Tiket (Seller)') }}</h6>
                 
                 <form action="{{ route('seller.complaints.updateStatus', $complaint->id) }}" method="POST">
                     @csrf
@@ -120,11 +120,11 @@
                         <label class="form-label text-muted small fw-bold">{{ __('Pilih Status Baru') }}</label>
                         <select name="status" id="status-select" class="form-select" required>
                             <option value="">{{ __('-- Pilih Keputusan --') }}</option>
-                            <option value="review" {{ $complaint->status === 'review' ? 'selected' : '' }}>Ditinjau (In Review)</option>
+                            <option value="review" {{ $complaint->status === 'review' ? 'selected' : '' }}>{{ __('Ditinjau (In Review)') }}</option>
                             <option value="replacement" {{ $complaint->status === 'replacement' ? 'selected' : '' }}>{{ __('Kirim Akun Pengganti') }}</option>
                             <option value="refund" {{ $complaint->status === 'refund' ? 'selected' : '' }}>{{ __('Refund') }}</option>
-                            <option value="done" {{ $complaint->status === 'done' ? 'selected' : '' }}>Selesai (Tanpa Ganti Rugi Lain)</option>
-                            <option value="rejected" {{ $complaint->status === 'rejected' ? 'selected' : '' }}>Tolak Klaim (Rejected)</option>
+                            <option value="done" {{ $complaint->status === 'done' ? 'selected' : '' }}>{{ __('Selesai (Tanpa Ganti Rugi Lain)') }}</option>
+                            <option value="rejected" {{ $complaint->status === 'rejected' ? 'selected' : '' }}>{{ __('Tolak Klaim (Rejected)') }}</option>
                         </select>
                     </div>
 

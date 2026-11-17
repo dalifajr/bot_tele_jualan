@@ -130,12 +130,12 @@
 {{-- Audit Logs --}}
 <div class="card border-0 shadow-sm" style="border-radius: 16px;">
     <div class="card-body p-4">
-        <h5 class="fw-bold mb-3"><i class="fas fa-user-shield text-secondary me-2"></i>Riwayat Aktivitas Backup & Restore (Log Audit)</h5>
+        <h5 class="fw-bold mb-3"><i class="fas fa-user-shield text-secondary me-2"></i>{{ __('Riwayat Aktivitas Backup & Restore (Log Audit)') }}</h5>
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0" style="font-size: 0.85rem;">
                 <thead>
                     <tr class="table-light">
-                        <th>Waktu (WIB)</th>
+                        <th>{{ __('Waktu (WIB)') }}</th>
                         <th>{{ __('User Admin') }}</th>
                         <th>{{ __('Aksi Aktivitas') }}</th>
                         <th>{{ __('Detail Log') }}</th>

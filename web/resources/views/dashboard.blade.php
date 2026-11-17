@@ -32,7 +32,7 @@
     <div class="row g-3">
         {{-- Card 1: Total Belanja --}}
         <div class="col-xl-3 col-md-6 col-6">
-            <a href="{{ Auth::check() ? route('orders.index', ['status' => 'delivered']) : route('login') }}" @guest data-guest-modal="true" data-feature-name="total belanja" @endguest class="m3-dash-metric-card d-block">
+            <a href="{{ Auth::check() ? route('orders.index', ['status' => 'delivered']) : route('login') }}" @guest data-guest-modal="true" data-feature-name="{{ __('total belanja') }}" @endguest class="m3-dash-metric-card d-block">
                 <div class="d-flex justify-content-between align-items-center">
                     <span class="text-secondary small fw-medium">{{ __('Total belanja') }}</span>
                     <i class="far fa-credit-card text-primary opacity-75"></i>
@@ -46,7 +46,7 @@
 
         {{-- Card 2: Total Pesanan --}}
         <div class="col-xl-3 col-md-6 col-6">
-            <a href="{{ Auth::check() ? route('orders.index') : route('login') }}" @guest data-guest-modal="true" data-feature-name="riwayat pesanan" @endguest class="m3-dash-metric-card d-block">
+            <a href="{{ Auth::check() ? route('orders.index') : route('login') }}" @guest data-guest-modal="true" data-feature-name="{{ __('riwayat pesanan') }}" @endguest class="m3-dash-metric-card d-block">
                 <div class="d-flex justify-content-between align-items-center">
                     <span class="text-secondary small fw-medium">{{ __('Total pesanan') }}</span>
                     <i class="fas fa-shopping-bag text-primary opacity-75"></i>
@@ -60,7 +60,7 @@
 
         {{-- Card 3: Selesai --}}
         <div class="col-xl-3 col-md-6 col-6">
-            <a href="{{ Auth::check() ? route('orders.index', ['status' => 'delivered']) : route('login') }}" @guest data-guest-modal="true" data-feature-name="pesanan selesai" @endguest class="m3-dash-metric-card d-block">
+            <a href="{{ Auth::check() ? route('orders.index', ['status' => 'delivered']) : route('login') }}" @guest data-guest-modal="true" data-feature-name="{{ __('pesanan selesai') }}" @endguest class="m3-dash-metric-card d-block">
                 <div class="d-flex justify-content-between align-items-center">
                     <span class="text-secondary small fw-medium">{{ __('Selesai') }}</span>
                     <i class="fas fa-check-circle text-success opacity-75"></i>
@@ -74,7 +74,7 @@
 
         {{-- Card 4: Menunggu --}}
         <div class="col-xl-3 col-md-6 col-6">
-            <a href="{{ Auth::check() ? route('orders.index', ['status' => 'pending_payment']) : route('login') }}" @guest data-guest-modal="true" data-feature-name="pesanan menunggu" @endguest class="m3-dash-metric-card d-block" style="background: var(--surface-container-high);">
+            <a href="{{ Auth::check() ? route('orders.index', ['status' => 'pending_payment']) : route('login') }}" @guest data-guest-modal="true" data-feature-name="{{ __('pesanan menunggu') }}" @endguest class="m3-dash-metric-card d-block" style="background: var(--surface-container-high);">
                 <div class="d-flex justify-content-between align-items-center">
                     <span class="text-secondary small fw-medium">{{ __('Menunggu') }}</span>
                     <i class="far fa-clock text-danger opacity-75"></i>
@@ -97,10 +97,10 @@
                     </h2>
                 </div>
                 <div class="d-flex align-items-center gap-1">
-                    <button type="button" id="promoScrollPrev" class="btn btn-sm btn-icon rounded-circle d-flex align-items-center justify-content-center p-0" style="width: 32px; height: 32px; background: var(--surface-container-high); border: 1px solid var(--outline-variant); color: var(--on-surface);" aria-label="Geser ke kiri" title="Sebelumnya">
+                    <button type="button" id="promoScrollPrev" class="btn btn-sm btn-icon rounded-circle d-flex align-items-center justify-content-center p-0" style="width: 32px; height: 32px; background: var(--surface-container-high); border: 1px solid var(--outline-variant); color: var(--on-surface);" aria-label="{{ __('Geser ke kiri') }}" title="{{ __('Sebelumnya') }}">
                         <i class="fas fa-chevron-left" style="font-size: 0.72rem;"></i>
                     </button>
-                    <button type="button" id="promoScrollNext" class="btn btn-sm btn-icon rounded-circle d-flex align-items-center justify-content-center p-0" style="width: 32px; height: 32px; background: var(--surface-container-high); border: 1px solid var(--outline-variant); color: var(--on-surface);" aria-label="Geser ke kanan" title="Berikutnya">
+                    <button type="button" id="promoScrollNext" class="btn btn-sm btn-icon rounded-circle d-flex align-items-center justify-content-center p-0" style="width: 32px; height: 32px; background: var(--surface-container-high); border: 1px solid var(--outline-variant); color: var(--on-surface);" aria-label="{{ __('Geser ke kanan') }}" title="{{ __('Berikutnya') }}">
                         <i class="fas fa-chevron-right" style="font-size: 0.72rem;"></i>
                     </button>
                 </div>
@@ -174,7 +174,7 @@
                 <h2 class="m3-section-title mb-0">
                     {{ __('Pesanan terbaru') }}
                 </h2>
-                <a href="{{ route('orders.index') }}" @guest data-guest-modal="true" data-feature-name="riwayat pesanan" @endguest class="text-decoration-none small fw-semibold text-primary">
+                <a href="{{ route('orders.index') }}" @guest data-guest-modal="true" data-feature-name="{{ __('riwayat pesanan') }}" @endguest class="text-decoration-none small fw-semibold text-primary">
                     {{ __('Lihat semua') }}
                 </a>
             </div>
@@ -252,7 +252,7 @@
             </div>
         </div>
         <div>
-            <a href="{{ Auth::check() ? route('customer.complaints.index') : route('login') }}" @guest data-guest-modal="true" data-feature-name="kelola komplain" @endguest class="btn btn-light rounded-pill px-4 py-2 fw-bold d-inline-flex align-items-center gap-2" style="color: var(--primary); font-size: 0.875rem;">
+            <a href="{{ Auth::check() ? route('customer.complaints.index') : route('login') }}" @guest data-guest-modal="true" data-feature-name="{{ __('kelola komplain') }}" @endguest class="btn btn-light rounded-pill px-4 py-2 fw-bold d-inline-flex align-items-center gap-2" style="color: var(--primary); font-size: 0.875rem;">
                 <i class="fas fa-headset"></i>
                 <span>{{ __('Kelola komplain') }}</span>
             </a>

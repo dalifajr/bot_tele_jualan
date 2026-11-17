@@ -70,9 +70,9 @@
                     <div class="mb-4">
                         <label class="form-label fw-bold small text-muted">{{ __('INTERVAL JADWAL BACKUP') }}</label>
                         <select name="auto_backup_schedule" class="form-select">
-                            <option value="daily" {{ $autoBackupSchedule === 'daily' ? 'selected' : '' }}>Setiap Hari (Jam 00:00 WIB)</option>
-                            <option value="weekly" {{ $autoBackupSchedule === 'weekly' ? 'selected' : '' }}>Setiap Minggu (Hari Minggu)</option>
-                            <option value="monthly" {{ $autoBackupSchedule === 'monthly' ? 'selected' : '' }}>Setiap Bulan (Tanggal 1)</option>
+                            <option value="daily" {{ $autoBackupSchedule === 'daily' ? 'selected' : '' }}>{{ __('Setiap Hari (Jam 00:00 WIB)') }}</option>
+                            <option value="weekly" {{ $autoBackupSchedule === 'weekly' ? 'selected' : '' }}>{{ __('Setiap Minggu (Hari Minggu)') }}</option>
+                            <option value="monthly" {{ $autoBackupSchedule === 'monthly' ? 'selected' : '' }}>{{ __('Setiap Bulan (Tanggal 1)') }}</option>
                         </select>
                     </div>
 

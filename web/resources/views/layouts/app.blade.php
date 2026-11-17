@@ -752,7 +752,7 @@
 
         {{-- Shopping Cart Icon --}}
         <a href="{{ Auth::check() ? route('cart.index') : route('login') }}" 
-           @guest data-guest-modal="true" data-feature-name="keranjang belanja" @endguest 
+           @guest data-guest-modal="true" data-feature-name="{{ __('keranjang belanja') }}" @endguest 
            class="btn btn-link link-body-emphasis m3-icon-btn position-relative" 
            title="{{ __('Keranjang Belanja') }}" 
            id="headerCartBtn">
@@ -940,18 +940,18 @@
                             <div class="menu-icon-box"><i class="fas fa-store text-primary"></i></div>
                             <span class="menu-label-text">{{ __('Katalog Produk') }}</span>
                         </a>
-                        <a href="{{ route('orders.index') }}" @guest data-guest-modal="true" data-feature-name="riwayat pesanan" @endguest class="menu-item {{ request()->routeIs('orders.*') ? 'active' : '' }}">
+                        <a href="{{ route('orders.index') }}" @guest data-guest-modal="true" data-feature-name="{{ __('riwayat pesanan') }}" @endguest class="menu-item {{ request()->routeIs('orders.*') ? 'active' : '' }}">
                             <div class="menu-icon-box"><i class="fas fa-receipt text-success"></i></div>
                             <span class="menu-label-text">{{ __('Riwayat Pesanan') }}</span>
                         </a>
-                        <a href="{{ route('customer.complaints.index') }}" @guest data-guest-modal="true" data-feature-name="kelola komplain" @endguest class="menu-item {{ request()->routeIs('customer.complaints.*') ? 'active' : '' }}">
+                        <a href="{{ route('customer.complaints.index') }}" @guest data-guest-modal="true" data-feature-name="{{ __('kelola komplain') }}" @endguest class="menu-item {{ request()->routeIs('customer.complaints.*') ? 'active' : '' }}">
                             <div class="menu-icon-box"><i class="fas fa-headset text-warning"></i></div>
                             <span class="menu-label-text">{{ __('Kelola Komplain') }}</span>
                             @if($customerComplaintsCount > 0)
                                 <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.7rem;">{{ $customerComplaintsCount }}</span>
                             @endif
                         </a>
-                        <a href="{{ route('chat.index') }}" @guest data-guest-modal="true" data-feature-name="pusat chat" @endguest class="menu-item {{ request()->routeIs('chat.*') ? 'active' : '' }}">
+                        <a href="{{ route('chat.index') }}" @guest data-guest-modal="true" data-feature-name="{{ __('pusat chat') }}" @endguest class="menu-item {{ request()->routeIs('chat.*') ? 'active' : '' }}">
                             <div class="menu-icon-box"><i class="fas fa-comments text-info"></i></div>
                             <span class="menu-label-text">{{ __('Pusat Chat') }}</span>
                             @if($unreadChatsCount > 0)
@@ -973,11 +973,11 @@
                 <div class="menu-group mt-2">
                     <div class="menu-header px-3"><i class="fas fa-user-circle me-1 text-primary"></i> {{ __('AKUN') }}</div>
                     <div class="menu-items-grid">
-                        <a href="{{ route('profile') }}" @guest data-guest-modal="true" data-feature-name="profil saya" @endguest class="menu-item {{ request()->routeIs('profile') ? 'active' : '' }}">
+                        <a href="{{ route('profile') }}" @guest data-guest-modal="true" data-feature-name="{{ __('profil saya') }}" @endguest class="menu-item {{ request()->routeIs('profile') ? 'active' : '' }}">
                             <div class="menu-icon-box"><i class="fas fa-user-circle text-primary"></i></div>
                             <span class="menu-label-text">{{ __('Profil Saya') }}</span>
                         </a>
-                        <a href="{{ route('profile.logins') }}" @guest data-guest-modal="true" data-feature-name="riwayat login" @endguest class="menu-item {{ request()->routeIs('profile.logins') ? 'active' : '' }}">
+                        <a href="{{ route('profile.logins') }}" @guest data-guest-modal="true" data-feature-name="{{ __('riwayat login') }}" @endguest class="menu-item {{ request()->routeIs('profile.logins') ? 'active' : '' }}">
                             <div class="menu-icon-box"><i class="fas fa-shield-halved text-danger"></i></div>
                             <span class="menu-label-text">{{ __('Riwayat Login') }}</span>
                             @if($customerLoginBadgeCount > 0)
@@ -1374,11 +1374,11 @@
             <i class="fas fa-shopping-bag"></i>
             <span>{{ __('Katalog') }}</span>
         </a>
-        <button type="button" class="mobile-nav-item" onclick="openGuestModal('Keranjang Belanja')" title="{{ __('Keranjang') }}">
+        <button type="button" class="mobile-nav-item" onclick="openGuestModal('{{ __('Keranjang Belanja') }}')" title="{{ __('Keranjang') }}">
             <i class="fas fa-shopping-cart"></i>
             <span>{{ __('Keranjang') }}</span>
         </button>
-        <button type="button" class="mobile-nav-item" onclick="openGuestModal('Riwayat Pesanan')" title="{{ __('Pesanan') }}">
+        <button type="button" class="mobile-nav-item" onclick="openGuestModal('{{ __('Riwayat Pesanan') }}')" title="{{ __('Pesanan') }}">
             <i class="fas fa-receipt"></i>
             <span>{{ __('Pesanan') }}</span>
         </button>
@@ -1768,7 +1768,7 @@
         const loginBtn = document.getElementById('guestModalLoginBtn');
         
         if (featureName && descEl) {
-            descEl.innerHTML = `Fitur <strong>${featureName}</strong> memerlukan akun. Silakan masuk atau daftar untuk menikmati kemudahan transaksi, serial key otomatis, dan garansi cepat.`;
+            descEl.innerHTML = "{{ __('Fitur :feature memerlukan akun. Silakan masuk atau daftar untuk menikmati kemudahan transaksi, serial key otomatis, dan garansi cepat.') }}".replace(':feature', `<strong>${featureName}</strong>`);
         }
         if (loginBtn) {
             let redirectUrl = targetUrl || window.location.href;

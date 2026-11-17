@@ -120,7 +120,7 @@
                         <h5 class="fw-bold text-success m-0">Rp {{ number_format($withdrawal->amount, 0, ',', '.') }}</h5>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">Pilih File Bukti Transfer (Gambar)</label>
+                        <label class="form-label text-muted small fw-bold">{{ __('Pilih File Bukti Transfer (Gambar)') }}</label>
                         <input type="file" name="proof_image" class="form-control" accept="image/*" required>
                         <div class="form-text">{{ __('Maksimal ukuran file 2MB dengan tipe JPEG, PNG, JPG.') }}</div>
                     </div>
