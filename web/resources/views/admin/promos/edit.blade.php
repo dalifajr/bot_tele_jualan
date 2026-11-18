@@ -241,12 +241,12 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     function updatePreview() {
-        previewTitle.textContent = titleInput.value.trim() || 'Judul Promo';
+        previewTitle.textContent = titleInput.value.trim() || '{{ __('Judul Promo') }}';
         previewBadge.textContent = badgeInput.value.trim() || 'INFO';
         previewBadge.style.background = badgeColorInput.value;
         badgeColorText.value = badgeColorInput.value;
-        previewDesc.textContent = descInput.value.trim() || 'Deskripsi singkat kartu promosi Anda akan muncul di sini.';
-        previewBtnText.textContent = btnTextInput.value.trim() || 'Lihat Detail';
+        previewDesc.textContent = descInput.value.trim() || '{{ __('Deskripsi singkat kartu promosi Anda akan muncul di sini.') }}';
+        previewBtnText.textContent = btnTextInput.value.trim() || '{{ __('Lihat Detail') }}';
 
         const iconClass = iconInput.value.trim() || 'fas fa-tags';
         iconPreview.className = iconClass;

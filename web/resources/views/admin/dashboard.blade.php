@@ -415,7 +415,7 @@
                 background: 'transparent',
                 fontFamily: 'inherit'
             },
-            labels: ['Sukses', 'Batal/Expired'],
+            labels: ['{{ __('Sukses') }}', '{{ __('Batal/Expired') }}'],
             colors: [isDark ? '#81c995' : '#0b8043', isDark ? '#f28b82' : '#d50000'],
             theme: chartTheme,
             legend: { show: false },
@@ -443,7 +443,7 @@
                             },
                             total: {
                                 show: true,
-                                label: 'Total Pesanan',
+                                label: '{{ __('Total Pesanan') }}',
                                 color: isDark ? '#9aa0a6' : '#5f6368',
                                 formatter: function (w) {
                                     return w.globals.seriesTotals.reduce((a, b) => a + b, 0);

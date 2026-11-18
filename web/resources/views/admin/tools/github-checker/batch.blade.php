@@ -249,11 +249,11 @@
             const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
             if (diffMins < 60) {
-                return Math.max(0, diffMins) + ' menit yang lalu';
+                return Math.max(0, diffMins) + ' ' + '{{ __('menit yang lalu') }}';
             } else if (diffHrs < 24) {
-                return diffHrs + ' jam yang lalu';
+                return diffHrs + ' ' + '{{ __('jam yang lalu') }}';
             } else {
-                return diffDays + ' hari yang lalu';
+                return diffDays + ' ' + '{{ __('hari yang lalu') }}';
             }
         } catch (e) {
             return isoString;
@@ -554,18 +554,18 @@
         });
 
         if (suspendedItems.length === 0) {
-            Swal.fire({ icon: 'info', title: 'Tidak Ada Data', text: 'Tidak ada akun suspended yang terhubung dengan stok.' });
+            Swal.fire({ icon: 'info', title: '{{ __('Tidak Ada Data') }}', text: '{{ __('Tidak ada akun suspended yang terhubung dengan stok.') }}' });
             return;
         }
 
         Swal.fire({
             icon: 'warning',
-            title: 'Hapus Stok Akun Suspended?',
+            title: '{{ __('Hapus Stok Akun Suspended?') }}',
             html: `<p>{{ __('Anda akan menghapus') }} <strong>${suspendedItems.length}</strong> {{ __('stok akun yang berstatus SUSPENDED.') }}</p><p class="text-danger small">{{ __('Tindakan ini tidak dapat dibatalkan!') }}</p>`,
             showCancelButton: true,
             confirmButtonColor: '#dc3545',
-            cancelButtonText: 'Batal',
-            confirmButtonText: 'Ya, Hapus Stok',
+            cancelButtonText: '{{ __('Batal') }}',
+            confirmButtonText: '{{ __('Ya, Hapus Stok') }}',
         }).then(result => {
             if (result.isConfirmed) {
                 const stockIds = suspendedItems.map(item => parseInt(item.stockId));
@@ -576,7 +576,7 @@
                 })
                 .then(r => r.json())
                 .then(data => {
-                    Swal.fire({ icon: 'success', title: 'Berhasil!', text: data.message, timer: 2000, showConfirmButton: false });
+                    Swal.fire({ icon: 'success', title: '{{ __('Berhasil!') }}', text: data.message, timer: 2000, showConfirmButton: false });
                     loadBatchData();
                 });
             }
@@ -586,7 +586,7 @@
     function showDeleteSelectedStockModal() {
         const checked = document.querySelectorAll('.result-cb:checked');
         if (checked.length === 0) {
-            Swal.fire({ icon: 'info', title: 'Pilih Akun', text: 'Pilih akun yang ingin dihapus dari stok menggunakan checkbox.' });
+            Swal.fire({ icon: 'info', title: '{{ __('Pilih Akun') }}', text: '{{ __('Pilih akun yang ingin dihapus dari stok menggunakan checkbox.') }}' });
             return;
         }
 
@@ -596,18 +596,18 @@
         }));
 
         if (stockItems.length === 0) {
-            Swal.fire({ icon: 'info', title: 'Tidak Ada Stok', text: 'Akun terpilih tidak terhubung dengan stok produk.' });
+            Swal.fire({ icon: 'info', title: '{{ __('Tidak Ada Stok') }}', text: '{{ __('Akun terpilih tidak terhubung dengan stok produk.') }}' });
             return;
         }
 
         Swal.fire({
             icon: 'warning',
-            title: 'Hapus Stok Terpilih?',
+            title: '{{ __('Hapus Stok Terpilih?') }}',
             html: `<p>{{ __('Anda akan menghapus') }} <strong>${stockItems.length}</strong> {{ __('stok akun terpilih.') }}</p><p class="text-danger small">{{ __('Tindakan ini tidak dapat dibatalkan!') }}</p>`,
             showCancelButton: true,
             confirmButtonColor: '#dc3545',
-            cancelButtonText: 'Batal',
-            confirmButtonText: 'Ya, Hapus',
+            cancelButtonText: '{{ __('Batal') }}',
+            confirmButtonText: '{{ __('Ya, Hapus') }}',
         }).then(result => {
             if (result.isConfirmed) {
                 const stockIds = stockItems.map(item => item.stockId);
@@ -618,7 +618,7 @@
                 })
                 .then(r => r.json())
                 .then(data => {
-                    Swal.fire({ icon: 'success', title: 'Berhasil!', text: data.message, timer: 2000, showConfirmButton: false });
+                    Swal.fire({ icon: 'success', title: '{{ __('Berhasil!') }}', text: data.message, timer: 2000, showConfirmButton: false });
                     loadBatchData();
                 });
             }
@@ -628,7 +628,7 @@
     function showBulkStockModal() {
         const checked = document.querySelectorAll('.result-cb:checked');
         if (checked.length === 0) {
-            Swal.fire({ icon: 'info', title: 'Pilih Akun', text: 'Pilih akun yang ingin di-update statusnya menggunakan checkbox.' });
+            Swal.fire({ icon: 'info', title: '{{ __('Pilih Akun') }}', text: '{{ __('Pilih akun yang ingin di-update statusnya menggunakan checkbox.') }}' });
             return;
         }
 
@@ -638,14 +638,14 @@
         }));
 
         if (stockItems.length === 0) {
-            Swal.fire({ icon: 'info', title: 'Tidak Ada Stok', text: 'Akun yang dipilih tidak terhubung dengan stok produk.' });
+            Swal.fire({ icon: 'info', title: '{{ __('Tidak Ada Stok') }}', text: '{{ __('Akun yang dipilih tidak terhubung dengan stok produk.') }}' });
             return;
         }
 
         Swal.fire({
-            title: 'Update Status Stok Masal',
+            title: '{{ __('Update Status Stok Masal') }}',
             html: `
-                <p class="small text-muted mb-3">${stockItems.length} akun stok akan diupdate</p>
+                <p class="small text-muted mb-3">${stockItems.length} {{ __('akun stok akan diupdate') }}</p>
                 <select id="swal-stock-status" class="form-select">
                     <option value="ready">{{ __('Ready') }}</option>
                     @if(Auth::user()->role === 'admin')
@@ -655,8 +655,8 @@
                 </select>
             `,
             showCancelButton: true,
-            confirmButtonText: 'Update Status',
-            cancelButtonText: 'Batal',
+            confirmButtonText: '{{ __('Update Status') }}',
+            cancelButtonText: '{{ __('Batal') }}',
             confirmButtonColor: '#0d6efd',
             preConfirm: () => {
                 return document.getElementById('swal-stock-status').value;
@@ -671,7 +671,7 @@
                 })
                 .then(r => r.json())
                 .then(data => {
-                    Swal.fire({ icon: 'success', title: 'Berhasil!', text: data.message, timer: 2000, showConfirmButton: false });
+                    Swal.fire({ icon: 'success', title: '{{ __('Berhasil!') }}', text: data.message, timer: 2000, showConfirmButton: false });
                     loadBatchData();
                 });
             }

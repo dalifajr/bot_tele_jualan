@@ -229,13 +229,13 @@
     function loadStock() {
         const productId = document.getElementById('stock-product-select').value;
         if (!productId) {
-            Swal.fire({ icon: 'warning', title: 'Pilih Produk', text: 'Silakan pilih produk terlebih dahulu.', confirmButtonColor: '#0d6efd' });
+            Swal.fire({ icon: 'warning', title: '{{ __('Pilih Produk') }}', text: '{{ __('Silakan pilih produk terlebih dahulu.') }}', confirmButtonColor: '#0d6efd' });
             return;
         }
 
         const btn = document.getElementById('btn-load-stock');
         btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Memuat...';
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>{{ __('Memuat...') }}';
 
         fetch('{{ route("admin.tools.gmail-checker.load-stock") }}', {
             method: 'POST',
@@ -256,9 +256,9 @@
                 // Hide results section on reload
                 document.getElementById('results-section').classList.add('d-none');
 
-                Swal.fire({ icon: 'success', title: 'Berhasil!', text: `${data.count} akun berhasil dimuat dari stok.`, timer: 2000, showConfirmButton: false });
+                Swal.fire({ icon: 'success', title: '{{ __('Berhasil!') }}', text: `${data.count} {{ __('akun berhasil dimuat dari stok.') }}`, timer: 2000, showConfirmButton: false });
             } else {
-                Swal.fire({ icon: 'error', title: 'Gagal', text: 'Gagal memuat data dari server.' });
+                Swal.fire({ icon: 'error', title: '{{ __('Gagal') }}', text: '{{ __('Gagal memuat data dari server.') }}' });
             }
         })
         .catch(err => {
@@ -266,7 +266,7 @@
         })
         .finally(() => {
             btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-sync-alt me-1"></i>Muat Stok Akun';
+            btn.innerHTML = '<i class="fas fa-sync-alt me-1"></i>{{ __('Muat Stok Akun') }}';
         });
     }
 
@@ -274,7 +274,7 @@
     function copyEmails() {
         const textarea = document.getElementById('clean-emails-textarea');
         if (!textarea.value.trim()) {
-            Swal.fire({ icon: 'warning', title: 'Kosong', text: 'Tidak ada email untuk disalin.' });
+            Swal.fire({ icon: 'warning', title: '{{ __('Kosong') }}', text: '{{ __('Tidak ada email untuk disalin.') }}' });
             return;
         }
         
@@ -283,11 +283,11 @@
         
         try {
             navigator.clipboard.writeText(textarea.value).then(() => {
-                Swal.fire({ icon: 'success', title: 'Berhasil!', text: 'Daftar email berhasil disalin.', timer: 1500, showConfirmButton: false });
+                Swal.fire({ icon: 'success', title: '{{ __('Berhasil!') }}', text: '{{ __('Daftar email berhasil disalin.') }}', timer: 1500, showConfirmButton: false });
             });
         } catch (err) {
             document.execCommand('copy');
-            Swal.fire({ icon: 'success', title: 'Berhasil!', text: 'Daftar email berhasil disalin.', timer: 1500, showConfirmButton: false });
+            Swal.fire({ icon: 'success', title: '{{ __('Berhasil!') }}', text: '{{ __('Daftar email berhasil disalin.') }}', timer: 1500, showConfirmButton: false });
         }
     }
 
@@ -295,13 +295,13 @@
     function processDieEmails() {
         const rawDie = document.getElementById('die-emails-textarea').value.trim();
         if (!rawDie) {
-            Swal.fire({ icon: 'warning', title: 'Input Kosong', text: 'Masukkan hasil email mati (Die) terlebih dahulu.' });
+            Swal.fire({ icon: 'warning', title: '{{ __('Input Kosong') }}', text: '{{ __('Masukkan hasil email mati (Die) terlebih dahulu.') }}' });
             return;
         }
 
         const emails = rawDie.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g) || [];
         if (emails.length === 0) {
-            Swal.fire({ icon: 'error', title: 'Format Salah', text: 'Tidak ada alamat email yang valid ditemukan pada teks input.' });
+            Swal.fire({ icon: 'error', title: '{{ __('Format Salah') }}', text: '{{ __('Tidak ada alamat email yang valid ditemukan pada teks input.') }}' });
             return;
         }
 
@@ -346,8 +346,8 @@
         row.setAttribute('data-email', r.email);
         
         const detailText = r.stock_id 
-            ? `<span class="text-success fw-bold"><i class="fas fa-check-circle me-1"></i>Terhubung ke Stok (ID: ${r.stock_id})</span>`
-            : `<span class="text-muted"><i class="fas fa-exclamation-circle me-1"></i>Manual (Non-Stok)</span>`;
+            ? `<span class="text-success fw-bold"><i class="fas fa-check-circle me-1"></i>{{ __('Terhubung ke Stok (ID:') }} ${r.stock_id})</span>`
+            : `<span class="text-muted"><i class="fas fa-exclamation-circle me-1"></i>{{ __('Manual (Non-Stok)') }}</span>`;
 
         row.innerHTML = `
             <td class="px-4">
@@ -421,14 +421,14 @@
     function showBulkStockModal() {
         const stockIds = getSelectedStockIds();
         if (stockIds.length === 0) {
-            Swal.fire({ icon: 'info', title: 'Pilih Akun', text: 'Pilih akun yang terhubung ke stok jualan terlebih dahulu.' });
+            Swal.fire({ icon: 'info', title: '{{ __('Pilih Akun') }}', text: '{{ __('Pilih akun yang terhubung ke stok jualan terlebih dahulu.') }}' });
             return;
         }
 
         Swal.fire({
-            title: 'Update Status Stok Masal',
+            title: '{{ __('Update Status Stok Masal') }}',
             html: `
-                <p class="small text-muted mb-3">${stockIds.length} akun stok akan diupdate</p>
+                <p class="small text-muted mb-3">${stockIds.length} {{ __('akun stok akan diupdate') }}</p>
                 <select id="swal-stock-status" class="form-select">
                     <option value="ready">{{ __('Ready') }}</option>
                     @if(Auth::user()->role === 'admin')
@@ -438,8 +438,8 @@
                 </select>
             `,
             showCancelButton: true,
-            confirmButtonText: 'Update Status',
-            cancelButtonText: 'Batal',
+            confirmButtonText: '{{ __('Update Status') }}',
+            cancelButtonText: '{{ __('Batal') }}',
             confirmButtonColor: '#0d6efd',
             preConfirm: () => {
                 return document.getElementById('swal-stock-status').value;
@@ -454,18 +454,18 @@
     function showDeleteSelectedModal() {
         const stockIds = getSelectedStockIds();
         if (stockIds.length === 0) {
-            Swal.fire({ icon: 'info', title: 'Pilih Akun', text: 'Pilih akun yang terhubung ke stok jualan terlebih dahulu.' });
+            Swal.fire({ icon: 'info', title: '{{ __('Pilih Akun') }}', text: '{{ __('Pilih akun yang terhubung ke stok jualan terlebih dahulu.') }}' });
             return;
         }
 
         Swal.fire({
             icon: 'warning',
-            title: 'Hapus Stok Terpilih?',
+            title: '{{ __('Hapus Stok Terpilih?') }}',
             html: `<p>{{ __('Anda akan menghapus') }} <strong>${stockIds.length}</strong> {{ __('stok akun terpilih.') }}</p><p class="text-danger small">{{ __('Tindakan ini tidak dapat dibatalkan!') }}</p>`,
             showCancelButton: true,
             confirmButtonColor: '#dc3545',
-            cancelButtonText: 'Batal',
-            confirmButtonText: 'Ya, Hapus',
+            cancelButtonText: '{{ __('Batal') }}',
+            confirmButtonText: '{{ __('Ya, Hapus') }}',
         }).then(result => {
             if (result.isConfirmed) {
                 sendBulkRequest('delete', stockIds);
@@ -479,18 +479,18 @@
             .map(r => r.stock_id);
 
         if (disabledStockIds.length === 0) {
-            Swal.fire({ icon: 'info', title: 'Tidak Ada Data', text: 'Tidak ada akun disabled yang terhubung dengan stok.' });
+            Swal.fire({ icon: 'info', title: '{{ __('Tidak Ada Data') }}', text: '{{ __('Tidak ada akun disabled yang terhubung dengan stok.') }}' });
             return;
         }
 
         Swal.fire({
             icon: 'warning',
-            title: 'Hapus Semua Stok Akun Disabled?',
+            title: '{{ __('Hapus Semua Stok Akun Disabled?') }}',
             html: `<p>{{ __('Anda akan menghapus') }} <strong>${disabledStockIds.length}</strong> {{ __('stok akun yang berstatus DISABLED secara otomatis.') }}</p><p class="text-danger small">{{ __('Tindakan ini tidak dapat dibatalkan!') }}</p>`,
             showCancelButton: true,
             confirmButtonColor: '#dc3545',
-            cancelButtonText: 'Batal',
-            confirmButtonText: 'Ya, Hapus Semua Disabled',
+            cancelButtonText: '{{ __('Batal') }}',
+            confirmButtonText: '{{ __('Ya, Hapus Semua Disabled') }}',
         }).then(result => {
             if (result.isConfirmed) {
                 sendBulkRequest('delete', disabledStockIds);
@@ -501,7 +501,7 @@
     // Send Bulk Requests
     function sendBulkRequest(action, stockIds, status = null) {
         Swal.fire({
-            title: 'Memproses...',
+            title: '{{ __('Memproses...') }}',
             allowOutsideClick: false,
             didOpen: () => {
                 Swal.showLoading();
@@ -516,7 +516,7 @@
         .then(r => r.json())
         .then(data => {
             if (data.success) {
-                Swal.fire({ icon: 'success', title: 'Berhasil!', text: data.message, timer: 2000, showConfirmButton: false });
+                Swal.fire({ icon: 'success', title: '{{ __('Berhasil!') }}', text: data.message, timer: 2000, showConfirmButton: false });
                 
                 // Remove processed/deleted stock ids from local mapping & resultsData
                 if (action === 'delete') {
@@ -541,7 +541,7 @@
                 
                 renderResultsTable();
             } else {
-                Swal.fire({ icon: 'error', title: 'Gagal', text: data.message || 'Terjadi kesalahan saat memproses.' });
+                Swal.fire({ icon: 'error', title: '{{ __('Gagal') }}', text: data.message || '{{ __('Terjadi kesalahan saat memproses.') }}' });
             }
         })
         .catch(err => {

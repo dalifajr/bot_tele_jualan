@@ -171,7 +171,7 @@
                                             </li>
                                             <li><hr class="dropdown-divider my-1"></li>
                                             <li>
-                                                <form action="{{ route('admin.escrow.destroy', $trx->transaction_code) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus transaksi rekber {{ $trx->transaction_code }} beserta seluruh obrolan dan bukti lampiran?')">
+                                                <form action="{{ route('admin.escrow.destroy', $trx->transaction_code) }}" method="POST" onsubmit="return confirm('{{ __('Apakah Anda yakin ingin menghapus transaksi rekber :code beserta seluruh obrolan dan bukti lampiran?', ['code' => $trx->transaction_code]) }}')">
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit" class="dropdown-item small py-2 text-danger">

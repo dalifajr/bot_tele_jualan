@@ -168,17 +168,17 @@
                                 window.location.href = response.redirect_url;
                             } else {
                                 uploadModal.hide();
-                                Swal.fire('Error', 'Gagal memproses pengunggahan.', 'error');
+                                Swal.fire('Error', '{{ __('Gagal memproses pengunggahan.') }}', 'error');
                             }
                         } catch (err) {
                             uploadModal.hide();
-                            Swal.fire('Error', 'Terjadi kesalahan sistem parsing response.', 'error');
+                            Swal.fire('Error', '{{ __('Terjadi kesalahan sistem parsing response.') }}', 'error');
                         }
                     } else {
                         uploadModal.hide();
-                        let errorMsg = 'Gagal mengunggah berkas backup.';
+                        let errorMsg = '{{ __('Gagal mengunggah berkas backup.') }}';
                         if (xhr.status === 413) {
-                            errorMsg = 'Ukuran berkas terlalu besar (Limit Nginx/PHP).';
+                            errorMsg = '{{ __('Ukuran berkas terlalu besar (Limit Nginx/PHP).') }}';
                         } else {
                             try {
                                 const response = JSON.parse(xhr.responseText);

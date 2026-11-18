@@ -257,8 +257,8 @@
                                     $statusBadge = match($unit->stock_status) {
                                         'ready' => ['bg' => 'success-subtle', 'text' => 'success', 'label' => 'Ready'],
                                         'awaiting_benefits' => ['bg' => 'warning-subtle', 'text' => 'warning', 'label' => 'Awaiting Benefits'],
-                                        'saved_for_verification' => ['bg' => 'info-subtle', 'text' => 'info', 'label' => 'Simpan Akun'],
-                                        'saved_ready_notified' => ['bg' => 'primary-subtle', 'text' => 'primary', 'label' => 'Siap Diajukan'],
+                                        'saved_for_verification' => ['bg' => 'info-subtle', 'text' => 'info', 'label' => __('Simpan Akun')],
+                                        'saved_ready_notified' => ['bg' => 'primary-subtle', 'text' => 'primary', 'label' => __('Siap Diajukan')],
                                         default => ['bg' => 'secondary-subtle', 'text' => 'secondary', 'label' => $unit->stock_status]
                                     };
                                 @endphp

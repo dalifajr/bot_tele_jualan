@@ -626,14 +626,14 @@
                         });
                         userSearchResults.innerHTML = html;
                     } else {
-                        throw new Error(data.message || 'Gagal memuat pengguna.');
+                        throw new Error(data.message || '{{ __('Gagal memuat pengguna.') }}');
                     }
                 })
                 .catch(err => {
                     console.error("Error searching users:", err);
                     userSearchResults.innerHTML = `
                         <div class="text-center text-danger py-4 small fw-bold">
-                            Gagal memuat pengguna: ${escapeHtml(err.message)}
+                            {{ __('Gagal memuat pengguna:') }} ${escapeHtml(err.message)}
                         </div>
                     `;
                 });

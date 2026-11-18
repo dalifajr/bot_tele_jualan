@@ -25,7 +25,7 @@
         <a href="{{ route('escrow.public.show', $transaction->public_token) }}" target="_blank" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
             <i class="fas fa-external-link-alt me-1"></i> {{ __('Pratinjau Publik') }}
         </a>
-        <form action="{{ route('admin.escrow.destroy', $transaction->transaction_code) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus transaksi rekber ini secara permanen?')">
+        <form action="{{ route('admin.escrow.destroy', $transaction->transaction_code) }}" method="POST" class="d-inline" onsubmit="return confirm('{{ __('Apakah Anda yakin ingin menghapus transaksi rekber ini secara permanen?') }}')">
             @csrf
             @method('DELETE')
             <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3">
@@ -95,7 +95,7 @@
 
                     <form action="{{ route('admin.escrow.verify-deposit', $transaction->transaction_code) }}" method="POST">
                         @csrf
-                        <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold shadow-sm" onclick="return confirm('Apakah Anda yakin dana mutasi rekening sudah masuk dan sah?')">
+                        <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold shadow-sm" onclick="return confirm('{{ __('Apakah Anda yakin dana mutasi rekening sudah masuk dan sah?') }}')">
                             <i class="fas fa-check-circle me-1.5"></i> {{ __('Verifikasi Sah & Amankan Dana') }}
                         </button>
                     </form>
@@ -126,7 +126,7 @@
                             <label class="form-label small fw-bold text-muted">{{ __('Catatan Admin (Opsional)') }}</label>
                             <input type="text" name="admin_notes" class="form-control rounded-3" placeholder="{{ __('Nomor referensi mutasi bank atau catatan...') }}">
                         </div>
-                        <button type="submit" class="btn btn-success rounded-pill px-4 fw-semibold shadow-sm" onclick="return confirm('Pastikan dana sudah benar-benar terkirim ke penjual sebelum menyimpan.')">
+                        <button type="submit" class="btn btn-success rounded-pill px-4 fw-semibold shadow-sm" onclick="return confirm('{{ __('Pastikan dana sudah benar-benar terkirim ke penjual sebelum menyimpan.') }}')">
                             <i class="fas fa-paper-plane me-1.5"></i> {{ __('Konfirmasi Dana Telah Ditransfer') }}
                         </button>
                     </form>
@@ -173,7 +173,7 @@
                             <textarea name="dispute_resolution" class="form-control rounded-3" rows="3" placeholder="{{ __('Tuliskan alasan keputusan berdasarkan bukti chat & validitas akun...') }}" required></textarea>
                         </div>
 
-                        <button type="submit" class="btn btn-danger rounded-pill px-4 fw-semibold" onclick="return confirm('Apakah Anda yakin dengan keputusan arbitrase ini?')">
+                        <button type="submit" class="btn btn-danger rounded-pill px-4 fw-semibold" onclick="return confirm('{{ __('Apakah Anda yakin dengan keputusan arbitrase ini?') }}')">
                             <i class="fas fa-gavel me-1.5"></i> {{ __('Terapkan Putusan Arbitrase') }}
                         </button>
                     </form>

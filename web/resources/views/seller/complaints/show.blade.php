@@ -146,7 +146,7 @@
                     <div id="replacement-block" class="mb-3 d-none">
                         @if($availableStockCount > 0)
                             <div class="alert alert-success small mb-2">
-                                <strong>{{ __('Stok Tersedia!') }}</strong> Ditemukan {{ $availableStockCount }} stok pengganti untuk produk ini.
+                                <strong>{{ __('Stok Tersedia!') }}</strong> {!! __('Ditemukan :count stok pengganti untuk produk ini.', ['count' => $availableStockCount]) !!}
                                 <hr>
                                 <strong>{{ __('Detail Akun (Random):') }}</strong><br>
                                 <code>{{ $randomStock->raw_text }}</code>

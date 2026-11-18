@@ -432,7 +432,7 @@
                     updateSingleCode();
                 }
             }).catch(() => {
-                alert('Tidak dapat mengakses clipboard browser.');
+                alert('{{ __('Tidak dapat mengakses clipboard browser.') }}');
             });
         };
 

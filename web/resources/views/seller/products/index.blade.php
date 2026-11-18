@@ -395,7 +395,7 @@
                     {{ __('Terdapat') }} <strong>{{ $unsoldStockCount }}</strong> {{ __('sisa stok aktif yang belum terjual. Anda disarankan untuk mengunduh sisa stok tersebut sebelum menghapus produk:') }}
                     <div class="mt-2 text-center">
                         <a href="{{ route('seller.products.export-unsold', $product->id) }}" class="btn btn-sm btn-success rounded-pill px-3 fw-bold">
-                            <i class="fas fa-file-excel me-1"></i> Unduh Sisa Stok (.xlsx)
+                            <i class="fas fa-file-excel me-1"></i> {{ __('Unduh Sisa Stok (.xlsx)') }}
                         </a>
                     </div>
                 </div>

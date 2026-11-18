@@ -105,8 +105,8 @@
                     progressBar.classList.remove('bg-danger', 'progress-bar-striped', 'progress-bar-animated');
                     progressBar.classList.add('bg-warning');
                     progressBar.style.width = '100%';
-                    percentText.innerText = 'Gagal';
-                    statusText.innerText = "Pemulihan Gagal!";
+                    percentText.innerText = '{{ __('Gagal') }}';
+                    statusText.innerText = "{{ __('Pemulihan Gagal!') }}";
                     statusText.className = "text-warning";
                     restoreIcon.className = "fas fa-exclamation-triangle text-warning";
                     btnDone.classList.remove('d-none');

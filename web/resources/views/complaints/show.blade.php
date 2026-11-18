@@ -60,7 +60,7 @@
                 <div class="mb-4">
                     <span class="text-muted small fw-bold d-block mb-1">{{ __('Lampiran Foto Bukti:') }}</span>
                     <a href="{{ asset('storage/' . $complaint->attachment_path) }}" target="_blank">
-                        <img src="{{ asset('storage/' . $complaint->attachment_path) }}" alt="Bukti Komplain" class="img-fluid rounded-3 border" style="max-height: 300px; object-fit: contain;">
+                        <img src="{{ asset('storage/' . $complaint->attachment_path) }}" alt="{{ __('Bukti Komplain') }}" class="img-fluid rounded-3 border" style="max-height: 300px; object-fit: contain;">
                     </a>
                 </div>
                 @endif
@@ -68,7 +68,7 @@
                 @if($complaint->order)
                 <hr>
                 <div class="mb-4">
-                    <h6 class="fw-bold mb-3"><i class="fas fa-shopping-bag text-primary me-2"></i>Pesanan Terkait: {{ $complaint->order->order_ref }}</h6>
+                    <h6 class="fw-bold mb-3"><i class="fas fa-shopping-bag text-primary me-2"></i>{{ __('Pesanan Terkait:') }} {{ $complaint->order->order_ref }}</h6>
                     <div class="row g-3">
                         <div class="col-md-4">
                             <span class="text-muted small">{{ __('Produk') }}</span>

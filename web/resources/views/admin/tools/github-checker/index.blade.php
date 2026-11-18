@@ -351,21 +351,21 @@
                     </button>
                 `;
 
-                Swal.fire({ icon: 'success', title: 'Cookie Valid!', text: data.message, timer: 2000, showConfirmButton: false });
+                Swal.fire({ icon: 'success', title: '{{ __('Cookie Valid!') }}', text: data.message, timer: 2000, showConfirmButton: false });
             } else {
                 indicator.className = 'cookie-status-indicator invalid';
                 statusText.innerHTML = '<span class="text-danger">' + data.message + '</span>';
-                Swal.fire({ icon: 'error', title: 'Cookie Invalid', text: data.message, confirmButtonColor: '#dc3545' });
+                Swal.fire({ icon: 'error', title: '{{ __('Cookie Invalid') }}', text: data.message, confirmButtonColor: '#dc3545' });
             }
         })
         .catch(err => {
-            Swal.fire({ icon: 'error', title: 'Error', text: 'Gagal memvalidasi cookie: ' + err.message });
+            Swal.fire({ icon: 'error', title: 'Error', text: '{{ __('Gagal memvalidasi cookie:') }} ' + err.message });
         })
         .finally(() => {
             const validateBtn = document.getElementById('btn-validate-cookie');
             if (validateBtn) {
                 validateBtn.disabled = false;
-                validateBtn.innerHTML = '<i class="fas fa-check-circle me-1"></i>Validasi';
+                validateBtn.innerHTML = '<i class="fas fa-check-circle me-1"></i>{{ __('Validasi') }}';
             }
         });
     }
@@ -374,7 +374,7 @@
     function clearCookie() {
         const btn = document.getElementById('btn-clear-cookie');
         btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Menghapus...';
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>{{ __('Menghapus...') }}';
 
         fetch('{{ route("admin.tools.github-checker.clear-cookie") }}', {
             method: 'POST',
@@ -400,13 +400,13 @@
                     </button>
                 `;
 
-                Swal.fire({ icon: 'success', title: 'Berhasil!', text: data.message, timer: 1500, showConfirmButton: false });
+                Swal.fire({ icon: 'success', title: '{{ __('Berhasil!') }}', text: data.message, timer: 1500, showConfirmButton: false });
             }
         })
         .catch(err => {
-            Swal.fire({ icon: 'error', title: 'Error', text: 'Gagal menghapus cookie: ' + err.message });
+            Swal.fire({ icon: 'error', title: 'Error', text: '{{ __('Gagal menghapus cookie:') }} ' + err.message });
             btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-trash me-1"></i>Hapus Cookie';
+            btn.innerHTML = '<i class="fas fa-trash me-1"></i>{{ __('Hapus Cookie') }}';
         });
     }
 

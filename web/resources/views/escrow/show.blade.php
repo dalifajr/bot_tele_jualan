@@ -206,7 +206,7 @@
         </button>
 
         {{-- Copy Public Link Button --}}
-        <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" onclick="copyText('{{ $publicUrl }}', 'Tautan ruang rekber berhasil disalin!')">
+        <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" onclick="copyText('{{ $publicUrl }}', '{{ __('Tautan ruang rekber berhasil disalin!') }}')">
             <i class="fas fa-link me-1"></i> {{ __('Salin Tautan') }}
         </button>
     </div>
@@ -376,7 +376,7 @@
                                         <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3" onclick="downloadQrisImage()">
                                             <i class="fas fa-download me-1"></i> {{ __('Unduh Kode QR') }}
                                         </button>
-                                        <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" onclick="copyText('{{ $transaction->total_buyer_pay }}', 'Nominal berhasil disalin!')">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" onclick="copyText('{{ $transaction->total_buyer_pay }}', '{{ __('Nominal berhasil disalin!') }}')">
                                             <i class="fas fa-copy me-1"></i> {{ __('Salin Nominal') }}
                                         </button>
                                     </div>
@@ -434,7 +434,7 @@
                                     </div>
                                     <div class="d-flex align-items-center gap-2">
                                         <span class="fs-5 fw-bold text-primary font-monospace">Rp {{ number_format($transaction->total_buyer_pay, 0, ',', '.') }}</span>
-                                        <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill px-2 py-0.5" style="font-size: 0.72rem;" onclick="copyText('{{ $transaction->total_buyer_pay }}', 'Nominal berhasil disalin!')">
+                                        <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill px-2 py-0.5" style="font-size: 0.72rem;" onclick="copyText('{{ $transaction->total_buyer_pay }}', '{{ __('Nominal berhasil disalin!') }}')">
                                             <i class="fas fa-copy"></i> {{ __('Salin') }}
                                         </button>
                                     </div>
@@ -512,7 +512,7 @@
                                 <div class="d-flex flex-wrap gap-2">
                                     <form action="{{ $isPublicView ? route('escrow.public.confirm', $transaction->public_token) : route('escrow.confirm-complete', $transaction->transaction_code) }}" method="POST">
                                         @csrf
-                                        <button type="submit" class="btn btn-success rounded-pill px-4 fw-semibold" onclick="return confirm('Apakah Anda yakin akun sudah valid dan dana siap dirilis ke penjual?')">
+                                        <button type="submit" class="btn btn-success rounded-pill px-4 fw-semibold" onclick="return confirm('{{ __('Apakah Anda yakin akun sudah valid dan dana siap dirilis ke penjual?') }}')">
                                             <i class="fas fa-check-double me-1.5"></i> {{ __('Konfirmasi Selesai & Rilis Dana') }}
                                         </button>
                                     </form>
@@ -917,7 +917,7 @@
             link.click();
             document.body.removeChild(link);
         } else {
-            alert('Gambar QRIS sedang dimuat. Silakan coba sesaat lagi.');
+            alert('{{ __('Gambar QRIS sedang dimuat. Silakan coba sesaat lagi.') }}');
         }
     }
 </script>
@@ -927,7 +927,7 @@
     function copyText(text, successMsg) {
         if (navigator.clipboard && window.isSecureContext) {
             navigator.clipboard.writeText(text).then(function() {
-                showToast(successMsg || 'Berhasil disalin!');
+                showToast(successMsg || '{{ __('Berhasil disalin!') }}');
             }).catch(function() {
                 fallbackCopy(text);
             });
@@ -937,7 +937,7 @@
     }
 
     function fallbackCopy(text) {
-        prompt('Salin teks berikut:', text);
+        prompt('{{ __('Salin teks berikut:') }}', text);
     }
 
     function showToast(msg) {
@@ -1131,7 +1131,7 @@
                     }
                 })
                 .then(res => {
-                    if (!res.ok) throw new Error('Gagal mengirim pesan');
+                    if (!res.ok) throw new Error('{{ __('Gagal mengirim pesan') }}');
                     return res.json();
                 })
                 .then(data => {
@@ -1145,7 +1145,7 @@
                     }
                 })
                 .catch(err => {
-                    alert('Gagal mengirim pesan obrolan. Silakan coba kembali.');
+                    alert('{{ __('Gagal mengirim pesan obrolan. Silakan coba kembali.') }}');
                     console.error(err);
                 })
                 .finally(() => {

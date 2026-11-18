@@ -324,8 +324,8 @@
           const registerBtn = document.getElementById('tab-btn-register');
           
           if (tabName === 'register') {
-              document.getElementById('auth-title').innerText = 'Daftar Akun Baru';
-              document.getElementById('auth-subtitle').innerText = 'Silakan isi formulir untuk mendaftar sebagai pelanggan.';
+              document.getElementById('auth-title').innerText = '{{ __('Daftar Akun Baru') }}';
+              document.getElementById('auth-subtitle').innerText = '{{ __('Silakan isi formulir untuk mendaftar sebagai pelanggan.') }}';
               
               loginBtn.classList.remove('active', 'text-white');
               loginBtn.classList.add('text-muted');
@@ -336,8 +336,8 @@
               var tab = new bootstrap.Tab(document.getElementById('register-tab'));
               tab.show();
           } else {
-              document.getElementById('auth-title').innerText = 'Selamat Datang';
-              document.getElementById('auth-subtitle').innerText = 'Silakan masuk untuk mengakses portal Anda.';
+              document.getElementById('auth-title').innerText = '{{ __('Selamat Datang') }}';
+              document.getElementById('auth-subtitle').innerText = '{{ __('Silakan masuk untuk mengakses portal Anda.') }}';
               
               registerBtn.classList.remove('active', 'text-white');
               registerBtn.classList.add('text-muted');

@@ -299,13 +299,13 @@ function finishBroadcastUI(status, success, failed) {
     const messageTextarea = document.getElementById('broadcastMessage');
     const mediaFileInput = document.getElementById('mediaFile');
     
-    btnSend.innerHTML = '<i class="fas fa-check-circle me-2"></i>Selesai';
+    btnSend.innerHTML = '<i class="fas fa-check-circle me-2"></i>{{ __('Selesai') }}';
     btnSend.classList.replace('btn-primary', 'btn-success');
     
     Swal.fire({
         icon: status === 'completed' ? 'success' : 'error',
-        title: status === 'completed' ? 'Broadcast Selesai!' : 'Broadcast Gagal',
-        html: `Laporan Pengiriman Latar Belakang:<br>{{ __('Berhasil terkirim:') }} <b>${success}</b><br>{{ __('Gagal terkirim:') }} <b>${failed}</b>`,
+        title: status === 'completed' ? '{{ __('Broadcast Selesai!') }}' : '{{ __('Broadcast Gagal') }}',
+        html: `{{ __('Laporan Pengiriman Latar Belakang:') }}<br>{{ __('Berhasil terkirim:') }} <b>${success}</b><br>{{ __('Gagal terkirim:') }} <b>${failed}</b>`,
         confirmButtonColor: status === 'completed' ? '#198754' : '#dc3545'
     }).then(() => {
         // Reset form
@@ -372,7 +372,7 @@ async function resendBroadcast(jobId) {
                 
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             } else {
-                throw new Error(data.message || 'Gagal mengirim ulang broadcast');
+                throw new Error(data.message || '{{ __('Gagal mengirim ulang broadcast') }}');
             }
         } catch (e) {
             Swal.fire({
@@ -449,7 +449,7 @@ async function startBroadcast() {
         return Swal.fire({
             icon: 'warning',
             title: 'Oops...',
-            text: 'Pesan atau file media tidak boleh kosong!',
+            text: '{{ __('Pesan atau file media tidak boleh kosong!') }}',
             confirmButtonColor: '#3085d6'
         });
     }
@@ -482,7 +482,7 @@ async function startBroadcast() {
         });
         
         const data = await response.json();
-        if (data.status !== 'success') throw new Error(data.message || 'Gagal memulai broadcast');
+        if (data.status !== 'success') throw new Error(data.message || '{{ __('Gagal memulai broadcast') }}');
         
         currentJobId = data.job_id;
                 if (document.getElementById('existingMediaPath')) document.getElementById('existingMediaPath').value = '';
@@ -496,8 +496,8 @@ async function startBroadcast() {
         
         Swal.fire({
             icon: 'info',
-            title: 'Broadcast Dimulai',
-            text: 'Proses pengiriman pesan sekarang berjalan di latar belakang. Anda dapat berpindah halaman dengan aman!',
+            title: '{{ __('Broadcast Dimulai') }}',
+            text: '{{ __('Proses pengiriman pesan sekarang berjalan di latar belakang. Anda dapat berpindah halaman dengan aman!') }}',
             timer: 4000,
             showConfirmButton: true,
             confirmButtonColor: '#0d6efd'
@@ -506,7 +506,7 @@ async function startBroadcast() {
     } catch (error) {
         Swal.fire({
             icon: 'error',
-            title: 'Gagal',
+            title: '{{ __('Gagal') }}',
             text: error.message,
             confirmButtonColor: '#d33'
         });
@@ -521,14 +521,14 @@ async function cancelBroadcast() {
     if (!currentJobId) return;
 
     const result = await Swal.fire({
-        title: '{{ __('Hentikan Broadcast') }}?',
-        text: 'Apakah Anda yakin ingin membatalkan dan menghentikan pengiriman broadcast yang sedang berjalan?',
+        title: '{{ __('Hentikan Broadcast?') }}',
+        text: '{{ __('Apakah Anda yakin ingin membatalkan dan menghentikan pengiriman broadcast yang sedang berjalan?') }}',
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#dc3545',
         cancelButtonColor: '#6c757d',
-        confirmButtonText: 'Ya, Hentikan!',
-        cancelButtonText: 'Batal',
+        confirmButtonText: '{{ __('Ya, Hentikan!') }}',
+        cancelButtonText: '{{ __('Batal') }}',
         customClass: {
             popup: 'rounded-4 border-0 shadow-lg',
             confirmButton: 'btn btn-danger rounded-pill px-4 me-2',
@@ -550,7 +550,7 @@ async function cancelBroadcast() {
             if (data.status === 'success') {
                 Swal.fire({
                     icon: 'success',
-                    title: 'Berhasil Dihentikan',
+                    title: '{{ __('Berhasil Dihentikan') }}',
                     text: data.message,
                     timer: 2000,
                     showConfirmButton: false,
@@ -559,12 +559,12 @@ async function cancelBroadcast() {
                     }
                 });
             } else {
-                throw new Error(data.message || 'Gagal menghentikan broadcast');
+                throw new Error(data.message || '{{ __('Gagal menghentikan broadcast') }}');
             }
         } catch (e) {
             Swal.fire({
                 icon: 'error',
-                title: 'Gagal',
+                title: '{{ __('Gagal') }}',
                 text: e.message,
                 customClass: {
                     popup: 'rounded-4 border-0 shadow-lg'

@@ -448,7 +448,7 @@
                 height: 250,
                 background: 'transparent'
             },
-            labels: ['Sukses', 'Batal/Expired'],
+            labels: ['{{ __('Sukses') }}', '{{ __('Batal/Expired') }}'],
             colors: ['#198754', '#dc3545'],
             theme: chartTheme,
             legend: { show: false },
@@ -461,7 +461,7 @@
                             show: true,
                             total: {
                                 show: true,
-                                label: 'Total Order',
+                                label: '{{ __('Total Order') }}',
                                 color: isDark ? '#a0aec0' : '#4a5568',
                                 formatter: function (w) {
                                     return w.globals.seriesTotals.reduce((a, b) => a + b, 0);

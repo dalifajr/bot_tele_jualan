@@ -185,7 +185,7 @@
                     if (data.success && data.redirect_url) {
                         window.location.href = data.redirect_url;
                     } else {
-                        throw new Error(data.message || "Gagal memulai proses pembersihan.");
+                        throw new Error(data.message || "{{ __('Gagal memulai proses pembersihan.') }}");
                     }
                 })
                 .catch(err => {

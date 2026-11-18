@@ -708,12 +708,12 @@
         const text = input.value;
         if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(text).then(() => {
-                alert(label + ' berhasil disalin ke clipboard!');
+                alert(label + ' ' + '{{ __('berhasil disalin ke clipboard!') }}');
             });
         } else {
             input.select();
             document.execCommand('copy');
-            alert(label + ' berhasil disalin ke clipboard!');
+            alert(label + ' ' + '{{ __('berhasil disalin ke clipboard!') }}');
         }
     }
 
