@@ -990,38 +990,69 @@
         return maxId;
     }
 
+    function escapeHtml(unsafe) {
+        if (unsafe === null || unsafe === undefined) return '';
+        return String(unsafe)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function sanitizeAttachmentUrl(url) {
+        if (!url || typeof url !== 'string') return null;
+        const trimmed = url.trim();
+        if (trimmed.startsWith('/') && !trimmed.startsWith('//')) {
+            return escapeHtml(trimmed);
+        }
+        try {
+            const parsed = new URL(trimmed, window.location.origin);
+            if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+                return escapeHtml(parsed.href);
+            }
+        } catch (e) {}
+        return null;
+    }
+
     function createBubbleHtml(msg) {
+        const safeId = escapeHtml(msg.id);
+        const safeSenderName = escapeHtml(msg.sender_name || '?');
+        const safeSenderRole = escapeHtml((msg.sender_role || '').toUpperCase());
+        const safeMessage = escapeHtml(msg.message || '');
+        const safeTime = escapeHtml(msg.time || '');
         const avatarBg = msg.is_admin ? 'bg-warning text-dark' : (msg.is_mine ? 'bg-primary text-white' : 'bg-secondary-subtle text-secondary');
-        const avatarIcon = msg.is_admin ? '<i class="fas fa-shield-halved"></i>' : (msg.sender_name ? msg.sender_name.charAt(0).toUpperCase() : '?');
+        const avatarIcon = msg.is_admin ? '<i class="fas fa-shield-halved"></i>' : escapeHtml(msg.sender_name ? String(msg.sender_name).charAt(0).toUpperCase() : '?');
         const bubbleClass = msg.is_mine ? 'chat-bubble-me' : (msg.is_admin ? 'chat-bubble-admin' : 'chat-bubble-other');
         const nameClass = msg.is_mine ? 'text-white' : (msg.is_admin ? 'text-warning-emphasis' : 'text-primary');
         const badgeClass = msg.is_mine ? 'bg-white bg-opacity-25 text-white' : (msg.is_admin ? 'bg-warning-subtle text-dark' : 'bg-light text-secondary');
         const timeClass = msg.is_mine ? 'text-white-50' : 'text-muted';
 
         let attachmentHtml = '';
-        if (msg.attachment_url) {
+        const safeAttachmentUrl = sanitizeAttachmentUrl(msg.attachment_url);
+        if (safeAttachmentUrl) {
             if (msg.is_image) {
-                attachmentHtml = `<div class="mt-1.5"><a href="${msg.attachment_url}" target="_blank" class="d-inline-block"><img src="${msg.attachment_url}" alt="Attachment" class="chat-attachment-img shadow-sm border"></a></div>`;
+                attachmentHtml = `<div class="mt-1.5"><a href="${safeAttachmentUrl}" target="_blank" rel="noopener noreferrer" class="d-inline-block"><img src="${safeAttachmentUrl}" alt="Attachment" class="chat-attachment-img shadow-sm border"></a></div>`;
             } else {
                 const linkClass = msg.is_mine ? 'text-white bg-white bg-opacity-25' : 'text-primary bg-light border';
-                attachmentHtml = `<div class="mt-1.5"><a href="${msg.attachment_url}" target="_blank" class="small ${linkClass} text-decoration-none d-inline-flex align-items-center gap-1.5 p-1.5 rounded"><i class="fas fa-file-arrow-down"></i><span>{{ __('Unduh Lampiran File') }}</span></a></div>`;
+                attachmentHtml = `<div class="mt-1.5"><a href="${safeAttachmentUrl}" target="_blank" rel="noopener noreferrer" class="small ${linkClass} text-decoration-none d-inline-flex align-items-center gap-1.5 p-1.5 rounded"><i class="fas fa-file-arrow-down"></i><span>{{ __('Unduh Lampiran File') }}</span></a></div>`;
             }
         }
 
         return `
-            <div class="chat-bubble-wrapper ${msg.is_mine ? 'is-me' : ''}" data-msg-id="${msg.id}">
-                <div class="chat-avatar ${avatarBg}" title="${msg.sender_name} (${(msg.sender_role || '').toUpperCase()})">
+            <div class="chat-bubble-wrapper ${msg.is_mine ? 'is-me' : ''}" data-msg-id="${safeId}">
+                <div class="chat-avatar ${avatarBg}" title="${safeSenderName} (${safeSenderRole})">
                     ${avatarIcon}
                 </div>
                 <div class="chat-bubble ${bubbleClass}">
                     <div class="d-flex align-items-center justify-content-between gap-2 mb-1" style="font-size: 0.7rem;">
-                        <strong class="${nameClass}">${msg.sender_name}</strong>
-                        <span class="badge ${badgeClass}" style="font-size: 0.6rem;">${(msg.sender_role || '').toUpperCase()}</span>
+                        <strong class="${nameClass}">${safeSenderName}</strong>
+                        <span class="badge ${badgeClass}" style="font-size: 0.6rem;">${safeSenderRole}</span>
                     </div>
-                    <p class="mb-1 text-break" style="white-space: pre-wrap;">${msg.message}</p>
+                    <p class="mb-1 text-break" style="white-space: pre-wrap;">${safeMessage}</p>
                     ${attachmentHtml}
                     <div class="text-end ${timeClass} mt-1" style="font-size: 0.65rem;">
-                        ${msg.time}
+                        ${safeTime}
                     </div>
                 </div>
             </div>

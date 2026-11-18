@@ -28,7 +28,8 @@ class AuthController extends Controller
         }
 
         $todayVisitors = \App\Models\Visitor::where('visited_date', now()->toDateString())->count();
-        $announcement = __(\App\Models\BotSetting::where('key', 'web_announcement')->value('value') ?? 'Selamat datang Jurangan!<br>kalau punya akun telegram, langsung saja klik "Login Via Telegram" kalau gak punya, bisa regis dulu.');
+        $rawAnnouncement = __(\App\Models\BotSetting::where('key', 'web_announcement')->value('value') ?? 'Selamat datang Jurangan!<br>kalau punya akun telegram, langsung saja klik "Login Via Telegram" kalau gak punya, bisa regis dulu.');
+        $announcement = $this->sanitizeAnnouncementHtml($rawAnnouncement);
         $maintenanceMode = \App\Models\BotSetting::where('key', 'maintenance_mode')->value('value') === '1';
         $maintenanceMessage = __(\App\Models\BotSetting::where('key', 'maintenance_message')->value('value')
             ?: 'Website sedang dalam pemeliharaan sistem (Maintenance). Hanya Admin yang dapat login.');
@@ -124,6 +125,15 @@ class AuthController extends Controller
         if (Auth::attempt([$loginType => $request->login, 'password' => $request->password], $remember)) {
             $user = Auth::user();
 
+            // Cek blokir IP tingkat per-user (yang diatur pemilik akun dari riwayat login)
+            if ($user->role !== 'admin' && \Illuminate\Support\Facades\Cache::has('blocked_user_ip:' . $user->id . ':' . $request->ip())) {
+                Auth::logout();
+                $this->recordLoginLog($request, $request->login, false);
+                return back()->withErrors([
+                    'login' => __('Akses ke akun ini dari alamat IP Anda telah diblokir.'),
+                ])->onlyInput('login');
+            }
+
             // Check if Maintenance Mode is active and user is not admin
             $isMaintenance = \App\Models\BotSetting::where('key', 'maintenance_mode')->value('value') === '1';
             if ($isMaintenance && $user->role !== 'admin') {
@@ -212,7 +222,6 @@ class AuthController extends Controller
             'full_name' => 'required|string|max:255',
             'username' => 'required|string|max:255|unique:users',
             'email' => 'nullable|string|email|max:255|unique:users',
-            'telegram_id' => 'nullable|integer|unique:users',
             'password' => ['required', 'string', \Illuminate\Validation\Rules\Password::min(8)->letters()->numbers()->symbols(), 'confirmed'],
         ];
 
@@ -278,10 +287,10 @@ class AuthController extends Controller
             'full_name' => $request->full_name,
             'username' => $request->username,
             'email' => $request->email,
-            'telegram_id' => $request->telegram_id,
             'password' => Hash::make($request->password),
             'registration_ip' => $ip,
             'last_seen_at' => now(),
+            'has_custom_password' => true,
         ]);
         
         $user->role = 'customer';
@@ -303,11 +312,24 @@ class AuthController extends Controller
      */
     public function updatePassword(Request $request)
     {
-        $request->validate([
-            'password' => ['required', 'string', \Illuminate\Validation\Rules\Password::min(8)->letters()->numbers()->symbols(), 'confirmed'],
-        ]);
-
         $user = Auth::user();
+
+        $rules = [
+            'password' => ['required', 'string', \Illuminate\Validation\Rules\Password::min(8)->letters()->numbers()->symbols(), 'confirmed'],
+        ];
+
+        if ((bool) $user->has_custom_password) {
+            $rules['current_password'] = ['required', 'string'];
+        }
+
+        $request->validate($rules);
+
+        if ((bool) $user->has_custom_password && !Hash::check($request->input('current_password'), (string) $user->password)) {
+            return redirect()->back()->withErrors([
+                'current_password' => __('Kata sandi saat ini tidak sesuai.'),
+            ]);
+        }
+
         $user->password = Hash::make($request->password);
         $user->has_custom_password = true;
         $user->dismiss_set_password_prompt = true;
@@ -342,20 +364,48 @@ class AuthController extends Controller
             return redirect()->route('login')->with('error', __('Sesi verifikasi 2FA sudah berakhir.'));
         }
 
+        $attemptKey = '2fa_attempts:' . $userId . '|' . $request->ip();
+        if (RateLimiter::tooManyAttempts($attemptKey, 5)) {
+            $user = User::find($userId);
+            if ($user) {
+                $user->update([
+                    'two_factor_code' => null,
+                    'two_factor_expires_at' => null,
+                ]);
+            }
+            $request->session()->forget(['2fa_user_id', '2fa_remember']);
+            return redirect()->route('login')->with('error', __('Terlalu banyak percobaan kode 2FA yang salah. Silakan login ulang untuk meminta kode baru.'));
+        }
+
         $user = User::find($userId);
         if (!$user) {
             $request->session()->forget(['2fa_user_id', '2fa_remember']);
             return redirect()->route('login')->with('error', __('Pengguna tidak ditemukan.'));
         }
 
-        if ($user->two_factor_code !== $request->code) {
-            return back()->withErrors(['code' => 'Kode verifikasi salah.']);
-        }
-
         if ($user->two_factor_expires_at && $user->two_factor_expires_at->isPast()) {
+            $user->update([
+                'two_factor_code' => null,
+                'two_factor_expires_at' => null,
+            ]);
             $request->session()->forget(['2fa_user_id', '2fa_remember']);
             return redirect()->route('login')->with('error', __('Kode verifikasi sudah kedaluwarsa. Silakan login ulang.'));
         }
+
+        if (empty($user->two_factor_code) || !hash_equals((string) $user->two_factor_code, (string) $request->code)) {
+            RateLimiter::hit($attemptKey, 300);
+            if (RateLimiter::tooManyAttempts($attemptKey, 5)) {
+                $user->update([
+                    'two_factor_code' => null,
+                    'two_factor_expires_at' => null,
+                ]);
+                $request->session()->forget(['2fa_user_id', '2fa_remember']);
+                return redirect()->route('login')->with('error', __('Terlalu banyak percobaan kode 2FA yang salah. Silakan login ulang untuk meminta kode baru.'));
+            }
+            return back()->withErrors(['code' => __('Kode verifikasi salah.')]);
+        }
+
+        RateLimiter::clear($attemptKey);
 
         // Clear 2FA code
         $user->update([
@@ -424,5 +474,21 @@ class AuthController extends Controller
         $user->update([
             'last_login_country' => $country
         ]);
+    }
+
+    /**
+     * Sanitasi HTML pengumuman login (hanya izinkan tag format teks aman & link http/https).
+     */
+    protected function sanitizeAnnouncementHtml(string $html): string
+    {
+        // Hapus total blok script/style beserta isinya sebelum strip_tags
+        $clean = preg_replace('/<(script|style)\b[^>]*>.*?<\/\1>/is', '', $html) ?? $html;
+        $clean = strip_tags($clean, '<br><p><b><strong><i><em><u><ul><ol><li><a><span>');
+        // Hapus semua atribut event handler (on*) dan skema berbahaya pada href/src/style
+        $clean = preg_replace('/\s+on[a-z]+\s*=\s*(?:"[^"]*"|\'[^\']*\'|[^\s>]+)/i', '', $clean) ?? $clean;
+        $clean = preg_replace('/\b(href|src)\s*=\s*(?:"\s*(?:javascript|vbscript|data):[^"]*"|\'\s*(?:javascript|vbscript|data):[^\']*\'|(?:javascript|vbscript|data):[^\s>]+)/i', 'href="#"', $clean) ?? $clean;
+        $clean = preg_replace('/\s+style\s*=\s*(?:"[^"]*"|\'[^\']*\')/i', '', $clean) ?? $clean;
+
+        return $clean;
     }
 }

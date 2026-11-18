@@ -239,9 +239,23 @@ class EscrowController extends Controller
         return $this->processDepositUpload($request, $transaction, $user->display_name, $user->id);
     }
 
+    /**
+     * Tentukan peran pihak eksternal (pemegang public_token) berdasarkan creator_role.
+     * Jika pembuat transaksi adalah buyer, maka pihak publik adalah seller, dan sebaliknya.
+     */
+    protected function resolvePublicRole(EscrowTransaction $transaction): string
+    {
+        return $transaction->creator_role === 'buyer' ? 'seller' : 'buyer';
+    }
+
     public function uploadDepositPublic(Request $request, string $token)
     {
         $transaction = EscrowTransaction::where('public_token', $token)->firstOrFail();
+
+        if ($this->resolvePublicRole($transaction) !== 'buyer') {
+            abort(403, __('Tautan publik ini hanya memiliki akses sebagai penjual, bukan pembeli.'));
+        }
+
         return $this->processDepositUpload($request, $transaction, $transaction->buyer_name, null);
     }
 
@@ -290,6 +304,11 @@ class EscrowController extends Controller
     public function uploadDeliveryPublic(Request $request, string $token)
     {
         $transaction = EscrowTransaction::where('public_token', $token)->firstOrFail();
+
+        if ($this->resolvePublicRole($transaction) !== 'seller') {
+            abort(403, __('Tautan publik ini hanya memiliki akses sebagai pembeli, bukan penjual.'));
+        }
+
         return $this->processDeliveryUpload($request, $transaction, $transaction->seller_name, null);
     }
 
@@ -319,9 +338,15 @@ class EscrowController extends Controller
             'status' => EscrowTransaction::STATUS_DELIVERED,
         ];
 
-        if ($request->filled('seller_bank_name')) $updateData['seller_bank_name'] = $request->input('seller_bank_name');
-        if ($request->filled('seller_account_number')) $updateData['seller_account_number'] = $request->input('seller_account_number');
-        if ($request->filled('seller_account_holder')) $updateData['seller_account_holder'] = $request->input('seller_account_holder');
+        // Izinkan pengisian rekening penjual hanya saat penyerahan pertama (STATUS_FUNDS_HELD)
+        // atau jika informasi rekening sebelumnya masih kosong agar tidak bisa diubah diam-diam pasca-kirim.
+        $canSetBankInfo = $transaction->status === EscrowTransaction::STATUS_FUNDS_HELD
+            || empty($transaction->seller_account_number);
+        if ($canSetBankInfo) {
+            if ($request->filled('seller_bank_name')) $updateData['seller_bank_name'] = $request->input('seller_bank_name');
+            if ($request->filled('seller_account_number')) $updateData['seller_account_number'] = $request->input('seller_account_number');
+            if ($request->filled('seller_account_holder')) $updateData['seller_account_holder'] = $request->input('seller_account_holder');
+        }
 
         $transaction->update($updateData);
 
@@ -356,6 +381,11 @@ class EscrowController extends Controller
     public function confirmCompletePublic(Request $request, string $token)
     {
         $transaction = EscrowTransaction::where('public_token', $token)->firstOrFail();
+
+        if ($this->resolvePublicRole($transaction) !== 'buyer') {
+            abort(403, __('Tautan publik ini hanya memiliki akses sebagai penjual, tidak dapat mengonfirmasi penyelesaian atas nama pembeli.'));
+        }
+
         return $this->processComplete($transaction, $transaction->buyer_name, null);
     }
 

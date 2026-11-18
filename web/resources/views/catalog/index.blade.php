@@ -25,16 +25,26 @@
             </div>
         </div>
         <div class="d-flex align-items-center gap-2">
+            @php
+                $activeSort = $sort ?? request('sort', 'bestselling');
+                $sortLabels = [
+                    'bestselling' => __('Terlaris'),
+                    'price_asc' => __('Harga Terendah'),
+                    'price_desc' => __('Harga Tertinggi'),
+                    'latest' => __('Terbaru'),
+                ];
+                $activeSortLabel = $sortLabels[$activeSort] ?? __('Terlaris');
+            @endphp
             <div class="dropdown">
-                <button class="btn btn-outline-secondary rounded-pill px-3 py-2 d-inline-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="font-size: 0.8125rem; font-weight: 600; border-color: var(--outline-variant); color: var(--on-surface);">
-                    <span>{{ __('Urutkan: Terlaris') }}</span>
+                <button class="btn btn-outline-secondary rounded-pill px-3 py-2 d-inline-flex align-items-center gap-2" type="button" id="catalogSortBtn" data-bs-toggle="dropdown" aria-expanded="false" style="font-size: 0.8125rem; font-weight: 600; border-color: var(--outline-variant); color: var(--on-surface);">
+                    <span id="catalogSortLabel">{{ __('Urutkan:') }} {{ $activeSortLabel }}</span>
                     <i class="fas fa-chevron-down small text-secondary"></i>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end shadow-sm" style="border-radius: var(--radius-md);">
-                    <li><a class="dropdown-item active" href="javascript:void(0)">{{ __('Terlaris') }}</a></li>
-                    <li><a class="dropdown-item" href="javascript:void(0)">{{ __('Harga Terendah') }}</a></li>
-                    <li><a class="dropdown-item" href="javascript:void(0)">{{ __('Harga Tertinggi') }}</a></li>
-                    <li><a class="dropdown-item" href="javascript:void(0)">{{ __('Terbaru') }}</a></li>
+                    <li><button type="button" class="dropdown-item catalog-sort-option {{ $activeSort === 'bestselling' ? 'active' : '' }}" data-sort="bestselling" data-label="{{ __('Terlaris') }}">{{ __('Terlaris') }}</button></li>
+                    <li><button type="button" class="dropdown-item catalog-sort-option {{ $activeSort === 'price_asc' ? 'active' : '' }}" data-sort="price_asc" data-label="{{ __('Harga Terendah') }}">{{ __('Harga Terendah') }}</button></li>
+                    <li><button type="button" class="dropdown-item catalog-sort-option {{ $activeSort === 'price_desc' ? 'active' : '' }}" data-sort="price_desc" data-label="{{ __('Harga Tertinggi') }}">{{ __('Harga Tertinggi') }}</button></li>
+                    <li><button type="button" class="dropdown-item catalog-sort-option {{ $activeSort === 'latest' ? 'active' : '' }}" data-sort="latest" data-label="{{ __('Terbaru') }}">{{ __('Terbaru') }}</button></li>
                 </ul>
             </div>
         </div>
@@ -86,8 +96,11 @@
         <div class="col-6 col-md-4 col-xl-3 product-item-col" 
              data-name="{{ strtolower($product->name) }}" 
              data-is-vpn="{{ $product->is_vpn ? '1' : '0' }}" 
-             data-has-stock="{{ $product->stock_count > 0 ? '1' : '0' }}">
-            <div class="card product-card h-100 position-relative clickable-product-card" data-href="{{ route('catalog.show', $product->id) }}" style="border-radius: var(--radius-lg, 18px) !important; background: var(--surface-container-low); border: 1px solid var(--outline-variant) !important; cursor: pointer;">
+             data-has-stock="{{ $product->stock_count > 0 ? '1' : '0' }}"
+             data-price="{{ (int) $product->price }}"
+             data-sales="{{ (int) ($product->sales_count ?? 0) }}"
+             data-id="{{ (int) $product->id }}">
+            <div class="card product-card h-100 position-relative clickable-product-card" data-href="{{ route('catalog.show', $product->id) }}" tabindex="0" role="link" aria-label="{{ $product->name }}" style="border-radius: var(--radius-lg, 18px) !important; background: var(--surface-container-low); border: 1px solid var(--outline-variant) !important; cursor: pointer;">
                 {{-- Stock Badge (Figma M3 Style) --}}
                 <div class="product-badge" style="top: 8px; left: 8px; position: absolute; z-index: 5;">
                     @if($product->stock_count > 0)
@@ -124,11 +137,7 @@
 
                     <div class="d-flex align-items-center mb-2 small text-secondary" style="font-size: 0.7rem;">
                         @php
-                            $storeSellerId = $product->creator_id;
-                            if (!$storeSellerId) {
-                                $adminUser = \App\Models\User::where('role', 'admin')->first();
-                                $storeSellerId = $adminUser ? $adminUser->id : 1;
-                            }
+                            $storeSellerId = $product->creator_id ?: ($defaultOfficialSellerId ?? 1);
                         @endphp
                         @if($product->creator)
                             <a href="{{ route('sellers.show', $storeSellerId) }}" class="btn-stop-prop text-decoration-none text-secondary hover-primary text-truncate d-inline-flex align-items-center" style="max-width: 90%; font-size: 0.7rem;" title="{{ __('Kunjungi Toko') }}">
@@ -156,8 +165,8 @@
                                     data-product-name="{{ $product->name }}"
                                     data-product-price="{{ $product->price }}"
                                     data-formatted-price="{{ $product->formatted_price }}"
-                                    title="{{ __('Tambah ke Keranjang') }}" style="width: 32px; height: 32px;">
-                                <i class="fas fa-shopping-cart" style="font-size: 0.78rem;"></i>
+                                    title="{{ __('Tambah ke Keranjang') }}" aria-label="{{ __('Tambah ke Keranjang') }}" style="width: 40px; height: 40px;">
+                                <i class="fas fa-shopping-cart" style="font-size: 0.85rem;"></i>
                             </button>
                             @endif
                         </div>
@@ -289,7 +298,57 @@
             applyFilter();
         };
 
-        // Clickable Product Card Navigation
+        // Sort Handler (Client-side instant sort + URL state sync)
+        const sortOptions = document.querySelectorAll('.catalog-sort-option');
+        const sortLabelEl = document.getElementById('catalogSortLabel');
+        const sortPrefix = "{{ __('Urutkan:') }} ";
+
+        function applySort(sortMode) {
+            if (!productsRow) return;
+            const cols = Array.from(productsRow.querySelectorAll('.product-item-col'));
+            cols.sort((a, b) => {
+                const aStock = a.getAttribute('data-has-stock') === '1' ? 1 : 0;
+                const bStock = b.getAttribute('data-has-stock') === '1' ? 1 : 0;
+                if (aStock !== bStock) return bStock - aStock;
+
+                const aPrice = parseInt(a.getAttribute('data-price') || '0', 10);
+                const bPrice = parseInt(b.getAttribute('data-price') || '0', 10);
+                const aSales = parseInt(a.getAttribute('data-sales') || '0', 10);
+                const bSales = parseInt(b.getAttribute('data-sales') || '0', 10);
+                const aId = parseInt(a.getAttribute('data-id') || '0', 10);
+                const bId = parseInt(b.getAttribute('data-id') || '0', 10);
+
+                if (sortMode === 'price_asc') return (aPrice - bPrice) || (bId - aId);
+                if (sortMode === 'price_desc') return (bPrice - aPrice) || (bId - aId);
+                if (sortMode === 'latest') return bId - aId;
+                return (bSales - aSales) || (bId - aId);
+            });
+            cols.forEach(col => productsRow.appendChild(col));
+        }
+
+        sortOptions.forEach(opt => {
+            opt.addEventListener('click', function() {
+                const sortMode = this.getAttribute('data-sort') || 'bestselling';
+                const label = this.getAttribute('data-label') || '';
+                sortOptions.forEach(o => o.classList.remove('active'));
+                this.classList.add('active');
+                if (sortLabelEl && label) {
+                    sortLabelEl.textContent = sortPrefix + label;
+                }
+                applySort(sortMode);
+                try {
+                    const url = new URL(window.location.href);
+                    if (sortMode === 'bestselling') {
+                        url.searchParams.delete('sort');
+                    } else {
+                        url.searchParams.set('sort', sortMode);
+                    }
+                    window.history.replaceState({}, '', url.toString());
+                } catch (e) {}
+            });
+        });
+
+        // Clickable Product Card Navigation (Mouse + Keyboard Accessibility)
         document.addEventListener('click', function(e) {
             if (e.target.closest('.btn-stop-prop') || e.target.closest('button') || e.target.closest('a') || e.target.closest('input')) {
                 return;
@@ -300,6 +359,17 @@
                 if (href) {
                     window.location.href = href;
                 }
+            }
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key !== 'Enter' && e.key !== ' ') return;
+            const card = e.target.closest('.clickable-product-card');
+            if (!card || e.target.closest('button') || e.target.closest('a')) return;
+            e.preventDefault();
+            const href = card.getAttribute('data-href');
+            if (href) {
+                window.location.href = href;
             }
         });
 

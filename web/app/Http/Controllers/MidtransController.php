@@ -21,21 +21,28 @@ class MidtransController extends Controller
      */
     public function callback(Request $request)
     {
-        $serverKey = env('MIDTRANS_SERVER_KEY', 'SB-Mid-server-lhY1q8Z9-wI3jL5pG1Wf5pG1');
+        $serverKey = trim((string) (config('services.midtrans.server_key') ?: env('MIDTRANS_SERVER_KEY', '')));
+        if ($serverKey === '') {
+            Log::error('Midtrans callback rejected: MIDTRANS_SERVER_KEY is not configured.');
+            return response()->json(['message' => 'Payment gateway not configured'], 503);
+        }
         
-        $signatureKey = $request->input('signature_key');
-        $orderId = $request->input('order_id');
-        $statusCode = $request->input('status_code');
-        $grossAmount = $request->input('gross_amount');
+        $signatureKey = (string) $request->input('signature_key', '');
+        $orderId = (string) $request->input('order_id', '');
+        $statusCode = (string) $request->input('status_code', '');
+        $grossAmount = (string) $request->input('gross_amount', '');
 
-        // Verify signature to secure the webhook
+        if ($signatureKey === '' || $orderId === '' || $statusCode === '' || $grossAmount === '') {
+            return response()->json(['message' => 'Incomplete callback payload'], 400);
+        }
+
+        // Verify signature using constant-time comparison to secure the webhook
         $localSignature = hash('sha512', $orderId . $statusCode . $grossAmount . $serverKey);
         
-        if ($localSignature !== $signatureKey) {
+        if (!hash_equals($localSignature, $signatureKey)) {
             Log::warning('Midtrans callback signature verification failed.', [
                 'order_id' => $orderId,
-                'signature_received' => $signatureKey,
-                'signature_local' => $localSignature
+                'client_ip' => $request->ip(),
             ]);
             return response()->json(['message' => 'Invalid signature'], 400);
         }
@@ -50,6 +57,15 @@ class MidtransController extends Controller
         }
 
         if ($transactionStatus === 'capture' || $transactionStatus === 'settlement') {
+            if (!is_numeric($grossAmount) || abs((float) $grossAmount - (float) $order->total_amount) > 0.01) {
+                Log::warning('Midtrans callback amount mismatch.', [
+                    'order_id' => $orderId,
+                    'expected_amount' => $order->total_amount,
+                    'received_gross_amount' => $grossAmount,
+                ]);
+                return response()->json(['message' => 'Amount mismatch'], 400);
+            }
+
             if ($order->status === 'pending_payment') {
                 try {
                     $this->orderService->confirmPayment($order, null);

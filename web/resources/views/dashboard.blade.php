@@ -96,12 +96,12 @@
                         {{ __('Promo & info terkini') }}
                     </h2>
                 </div>
-                <div class="d-flex align-items-center gap-1">
-                    <button type="button" id="promoScrollPrev" class="btn btn-sm btn-icon rounded-circle d-flex align-items-center justify-content-center p-0" style="width: 32px; height: 32px; background: var(--surface-container-high); border: 1px solid var(--outline-variant); color: var(--on-surface);" aria-label="{{ __('Geser ke kiri') }}" title="{{ __('Sebelumnya') }}">
-                        <i class="fas fa-chevron-left" style="font-size: 0.72rem;"></i>
+                <div class="d-flex align-items-center gap-1.5">
+                    <button type="button" id="promoScrollPrev" class="btn btn-sm btn-icon rounded-circle d-flex align-items-center justify-content-center p-0" style="width: 40px; height: 40px; background: var(--surface-container-high); border: 1px solid var(--outline-variant); color: var(--on-surface);" aria-label="{{ __('Geser ke kiri') }}" title="{{ __('Sebelumnya') }}">
+                        <i class="fas fa-chevron-left" style="font-size: 0.78rem;"></i>
                     </button>
-                    <button type="button" id="promoScrollNext" class="btn btn-sm btn-icon rounded-circle d-flex align-items-center justify-content-center p-0" style="width: 32px; height: 32px; background: var(--surface-container-high); border: 1px solid var(--outline-variant); color: var(--on-surface);" aria-label="{{ __('Geser ke kanan') }}" title="{{ __('Berikutnya') }}">
-                        <i class="fas fa-chevron-right" style="font-size: 0.72rem;"></i>
+                    <button type="button" id="promoScrollNext" class="btn btn-sm btn-icon rounded-circle d-flex align-items-center justify-content-center p-0" style="width: 40px; height: 40px; background: var(--surface-container-high); border: 1px solid var(--outline-variant); color: var(--on-surface);" aria-label="{{ __('Geser ke kanan') }}" title="{{ __('Berikutnya') }}">
+                        <i class="fas fa-chevron-right" style="font-size: 0.78rem;"></i>
                     </button>
                 </div>
             </div>
@@ -197,13 +197,13 @@
                     @foreach($recentOrders as $order)
                         @php
                             $statusMap = [
-                                'pending_payment' => [__('Menunggu'), 'warning', 'style="background: #ffd8e4; color: #633b48;"'],
-                                'paid' => [__('Dibayar'), 'info', 'style="background: #eaddff; color: #21005d;"'],
-                                'delivered' => [__('Selesai'), 'success', 'style="background: #c4eed0; color: #072711;"'],
-                                'cancelled' => [__('Dibatalkan'), 'danger', 'style="background: #ffdad6; color: #410002;"'],
-                                'expired' => [__('Kedaluwarsa'), 'secondary', 'style="background: #e6e0e9; color: #49454f;"'],
+                                'pending_payment' => [__('Menunggu'), 'bg-warning-subtle text-warning-emphasis'],
+                                'paid' => [__('Dibayar'), 'bg-primary-subtle text-primary'],
+                                'delivered' => [__('Selesai'), 'bg-success-subtle text-success'],
+                                'cancelled' => [__('Dibatalkan'), 'bg-danger-subtle text-danger'],
+                                'expired' => [__('Kedaluwarsa'), 'bg-secondary-subtle text-secondary'],
                             ];
-                            [$label, $badgeClass, $inlineStyle] = $statusMap[$order->status] ?? [$order->status, 'secondary', ''];
+                            [$label, $badgeClass] = $statusMap[$order->status] ?? [$order->status, 'bg-secondary-subtle text-secondary'];
                         @endphp
                         <a href="{{ route('orders.show', $order->id) }}" class="m3-order-row-card">
                             <div class="d-flex flex-column pe-3">
@@ -220,7 +220,7 @@
                                 <span class="fw-bold text-body" style="font-size: 0.95rem;">
                                     Rp {{ number_format($order->total_price ?? 0, 0, ',', '.') }}
                                 </span>
-                                <span class="badge rounded-pill px-3 py-1.5 fw-semibold" {!! $inlineStyle !!} style="font-size: 0.75rem;">
+                                <span class="badge rounded-pill px-3 py-1.5 fw-semibold {{ $badgeClass }}" style="font-size: 0.75rem;">
                                     {{ $label }}
                                 </span>
                             </div>

@@ -28,10 +28,16 @@ class ProfileController extends Controller
 
         $request->validate($rules);
 
+        // Keamanan: Cegah klaim atau pengubahan manual telegram_id tanpa verifikasi Bot Telegram.
+        if ($request->filled('telegram_id') && (string) $request->input('telegram_id') !== (string) $user->telegram_id) {
+            return redirect()->back()
+                ->withErrors(['telegram_id' => __('Penautan atau perubahan ID Telegram hanya dapat dilakukan melalui verifikasi Bot Telegram.')])
+                ->withInput();
+        }
+
         $data = [
             'full_name' => $request->full_name,
             'email' => $request->email,
-            'telegram_id' => $request->telegram_id,
         ];
 
         if ($request->hasFile('avatar')) {
@@ -90,13 +96,13 @@ class ProfileController extends Controller
         if ($existingUser) {
             return response()->json([
                 'available' => false,
-                'message' => "ID Telegram ini sudah tertaut dengan akun @" . $existingUser->username
+                'message' => __('ID Telegram ini sudah tertaut dengan akun lain.')
             ]);
         }
 
         return response()->json([
             'available' => true,
-            'message' => "ID Telegram tersedia!"
+            'message' => __('ID Telegram tersedia!')
         ]);
     }
 
@@ -125,7 +131,17 @@ class ProfileController extends Controller
     public function unlinkTelegram()
     {
         $user = Auth::user();
-        $user->update(['telegram_id' => null]);
+
+        if (!$user->has_custom_password) {
+            return redirect()->back()->with('error', __('Atur kata sandi akun terlebih dahulu sebelum melepas tautan Telegram agar Anda tidak kehilangan akses akun.'));
+        }
+
+        $user->update([
+            'telegram_id' => null,
+            'two_factor_enabled' => false,
+            'two_factor_code' => null,
+            'two_factor_expires_at' => null,
+        ]);
 
         return redirect()->back()->with('success', __('Akun Telegram berhasil dilepas.'));
     }
@@ -153,10 +169,35 @@ class ProfileController extends Controller
     {
         $request->validate([
             'ip_address' => 'required|ip',
-            'duration' => 'required|integer|in:1,7,30,365'
+            'duration' => 'nullable|integer|in:1,7,30,365'
         ]);
+        $user = Auth::user();
         $ip = $request->ip_address;
-        $duration = (int)$request->duration;
+        $duration = (int) ($request->duration ?? 7);
+
+        // Non-admin hanya boleh memblokir IP yang benar-benar tercatat di riwayat login / notifikasi miliknya
+        // dan blokir disimpan per-user agar tidak dapat disalahgunakan untuk DoS global.
+        if ($user->role !== 'admin') {
+            $hasLog = \App\Models\LoginLog::where('ip_address', $ip)
+                ->where(function ($q) use ($user) {
+                    $q->where('user_id', $user->id);
+                    if (!empty($user->username)) {
+                        $q->orWhere('username_or_email', $user->username);
+                    }
+                    if (!empty($user->email)) {
+                        $q->orWhere('username_or_email', $user->email);
+                    }
+                })->exists();
+
+            $hasNotif = $user->notifications()
+                ->where('data->type', 'login_gagal')
+                ->where('data->ip_address', $ip)
+                ->exists();
+
+            if (!$hasLog && !$hasNotif) {
+                abort(403, __('Anda hanya dapat memblokir alamat IP yang tercatat pada riwayat akun Anda.'));
+            }
+        }
         
         $durationText = '';
         if ($duration === 1) {
@@ -176,7 +217,11 @@ class ProfileController extends Controller
             $durationText = __('1 hari');
         }
         
-        \Illuminate\Support\Facades\Cache::put('blocked_ip:' . $ip, true, $expire);
+        if ($user->role === 'admin') {
+            \Illuminate\Support\Facades\Cache::put('blocked_ip:' . $ip, true, $expire);
+        } else {
+            \Illuminate\Support\Facades\Cache::put('blocked_user_ip:' . $user->id . ':' . $ip, true, $expire);
+        }
         
         return back()->with('success', __("IP Address :ip telah diblokir selama :durationText.", ["ip" => $ip, "durationText" => $durationText]));
     }
@@ -189,20 +234,59 @@ class ProfileController extends Controller
             'duration' => 'required|integer|in:1,7,30,365'
         ]);
 
+        $user = Auth::user();
         $fp = $request->device_fingerprint;
         $deviceId = $request->device_id;
         $duration = (int)$request->duration;
+
+        if (!$fp && !$deviceId) {
+            return back()->with('error', __('Data perangkat tidak valid.'));
+        }
+
+        if ($user->role !== 'admin') {
+            $hasLog = \App\Models\LoginLog::where(function ($q) use ($user) {
+                    $q->where('user_id', $user->id);
+                    if (!empty($user->username)) {
+                        $q->orWhere('username_or_email', $user->username);
+                    }
+                    if (!empty($user->email)) {
+                        $q->orWhere('username_or_email', $user->email);
+                    }
+                })
+                ->where(function ($q) use ($fp, $deviceId) {
+                    if ($fp) {
+                        $q->orWhere('device_fingerprint', $fp);
+                    }
+                    if ($deviceId) {
+                        $q->orWhere('device_id', $deviceId);
+                    }
+                })
+                ->exists();
+
+            if (!$hasLog) {
+                abort(403, __('Anda hanya dapat memblokir perangkat yang tercatat pada riwayat akun Anda.'));
+            }
+        }
 
         $expire = now()->addDays($duration);
         if ($duration === 365) {
             $expire = now()->addYear();
         }
 
-        if ($fp) {
-            \Illuminate\Support\Facades\Cache::put('blocked_device_fp:' . $fp, true, $expire);
-        }
-        if ($deviceId) {
-            \Illuminate\Support\Facades\Cache::put('blocked_device_id:' . $deviceId, true, $expire);
+        if ($user->role === 'admin') {
+            if ($fp) {
+                \Illuminate\Support\Facades\Cache::put('blocked_device_fp:' . $fp, true, $expire);
+            }
+            if ($deviceId) {
+                \Illuminate\Support\Facades\Cache::put('blocked_device_id:' . $deviceId, true, $expire);
+            }
+        } else {
+            if ($fp) {
+                \Illuminate\Support\Facades\Cache::put('blocked_user_device_fp:' . $user->id . ':' . $fp, true, $expire);
+            }
+            if ($deviceId) {
+                \Illuminate\Support\Facades\Cache::put('blocked_user_device_id:' . $user->id . ':' . $deviceId, true, $expire);
+            }
         }
 
         return back()->with('success', __('Perangkat berhasil diblokir.'));

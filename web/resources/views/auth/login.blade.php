@@ -187,7 +187,7 @@
 
                   {{-- Cloudflare Turnstile --}}
                   <div class="d-flex justify-content-center my-3">
-                      <div class="cf-turnstile" data-sitekey="{{ config('services.turnstile.site_key') }}" data-theme="light"></div>
+                      <div class="cf-turnstile" data-sitekey="{{ config('services.turnstile.site_key') }}" data-theme="{{ request()->cookie('jualan-theme', 'light') === 'dark' ? 'dark' : 'light' }}"></div>
                   </div>
 
                   <button type="submit" class="btn btn-primary rounded-pill py-2.5 w-100 fw-bold shadow-none">
@@ -239,12 +239,10 @@
                   </div>
 
                   <div class="mb-3">
-                      <label class="form-label text-muted small fw-semibold">{{ __('ID Telegram (Opsional)') }}</label>
-                      <div class="input-group">
-                          <span class="input-group-text"><i class="fab fa-telegram-plane"></i></span>
-                          <input type="number" name="telegram_id" id="telegram_id_reg" class="form-control" placeholder="123456789" value="{{ old('telegram_id') }}" />
+                      <div class="small text-secondary px-3 py-2 rounded-3" style="background: var(--surface-container-low); border: 1px solid var(--outline-variant); font-size: 0.78rem;">
+                          <i class="fab fa-telegram-plane text-primary me-1.5"></i>
+                          {{ __('Akun Telegram dapat ditautkan secara aman melalui verifikasi Bot setelah Anda masuk di menu Profil.') }}
                       </div>
-                      <div id="telegram_id_feedback" class="text-secondary mt-1 ms-1" style="font-size: 0.75rem;">{{ __('Agar bisa otomatis login dengan Telegram nantinya.') }}</div>
                   </div>
 
                   <div class="row g-2 mb-3">
@@ -266,7 +264,7 @@
 
                   {{-- Cloudflare Turnstile --}}
                   <div class="d-flex justify-content-center my-3">
-                      <div class="cf-turnstile" data-sitekey="{{ config('services.turnstile.site_key') }}" data-theme="light"></div>
+                      <div class="cf-turnstile" data-sitekey="{{ config('services.turnstile.site_key') }}" data-theme="{{ request()->cookie('jualan-theme', 'light') === 'dark' ? 'dark' : 'light' }}"></div>
                   </div>
 
                   <button type="submit" id="btn-register" class="btn btn-primary rounded-pill py-2.5 w-100 fw-bold shadow-none">

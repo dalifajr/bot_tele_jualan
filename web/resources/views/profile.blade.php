@@ -220,9 +220,14 @@
                                 <input type="email" name="email" class="form-control rounded-3" value="{{ old('email', Auth::user()->email) }}">
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label small fw-semibold text-muted">{{ __('Telegram ID') }}</label>
-                                <input type="number" name="telegram_id" id="telegram_id_input" class="form-control rounded-3" value="{{ old('telegram_id', Auth::user()->telegram_id) }}">
-                                <div id="telegram_id_feedback" class="form-text small mt-1"></div>
+                                <label class="form-label small fw-semibold text-muted">
+                                    {{ __('Telegram ID') }}
+                                    <span class="badge rounded-pill bg-secondary-subtle text-secondary ms-1" style="font-size: 0.65rem;">
+                                        <i class="fas fa-shield-alt me-1"></i>{{ __('Via Bot') }}
+                                    </span>
+                                </label>
+                                <input type="text" class="form-control rounded-3 bg-body-tertiary text-muted" value="{{ Auth::user()->telegram_id ?: __('Belum terhubung') }}" readonly disabled>
+                                <div class="form-text small mt-1">{{ __('Tautkan atau lepas akun Telegram melalui tab Integrasi Telegram.') }}</div>
                             </div>
                             <div class="col-12 mt-4 d-flex gap-2">
                                 <button type="submit" id="btn-save-profile" class="btn btn-primary rounded-pill px-4 fw-semibold">
@@ -253,9 +258,15 @@
                         <form action="{{ route('profile.password.update') }}" method="POST">
                             @csrf
                             <div class="row g-3">
+                                @if(Auth::user()->has_custom_password)
+                                <div class="col-12">
+                                    <label class="form-label small fw-semibold text-muted">{{ __('Kata Sandi Saat Ini') }}</label>
+                                    <input type="password" name="current_password" class="form-control rounded-3" required placeholder="{{ __('Masukkan kata sandi saat ini...') }}">
+                                </div>
+                                @endif
                                 <div class="col-md-6">
                                     <label class="form-label small fw-semibold text-muted">{{ __('Kata Sandi Baru') }}</label>
-                                    <input type="password" name="password" class="form-control rounded-3" required placeholder="{{ __('Minimal 6 karakter') }}">
+                                    <input type="password" name="password" class="form-control rounded-3" required placeholder="{{ __('Minimal 8 karakter (huruf, angka, simbol)') }}">
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label small fw-semibold text-muted">{{ __('Ulangi Kata Sandi') }}</label>

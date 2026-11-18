@@ -17,13 +17,15 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('tokens:clean')->daily();
     })
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->trustProxies(at: '*');
+        $trustedProxies = env('TRUSTED_PROXIES', '127.0.0.1,::1');
+        $middleware->trustProxies(at: $trustedProxies === '*' ? '*' : array_map('trim', explode(',', $trustedProxies)));
         $middleware->validateCsrfTokens(except: [
             'api/payment/midtrans/callback',
             'listener/*',
         ]);
         $middleware->web(
             append: [
+                \App\Http\Middleware\SecurityHeaders::class,
                 \App\Http\Middleware\SetLocale::class,
                 \App\Http\Middleware\BlockBannedIps::class,
                 \App\Http\Middleware\UpdateUserLastSeen::class,

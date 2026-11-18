@@ -20,21 +20,44 @@ class DashboardPromoController extends Controller
         return view('admin.promos.create');
     }
 
-    public function store(Request $request)
+    protected function promoValidationRules(bool $isUpdate = false): array
     {
-        $validated = $request->validate([
+        $rules = [
             'title' => 'required|string|max:255',
             'badge_text' => 'nullable|string|max:50',
-            'badge_color' => 'required|string|max:30',
+            'badge_color' => ['required', 'string', 'max:30', 'regex:/^#([a-fA-F0-9]{6}|[a-fA-F0-9]{3})$/'],
             'description' => 'nullable|string|max:500',
-            'icon' => 'required|string|max:100',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp,svg|max:4096',
+            'icon' => ['required', 'string', 'max:100', 'regex:/^[a-zA-Z0-9\s\-_]+$/'],
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:4096',
             'button_text' => 'required|string|max:50',
-            'button_url' => 'required|string|max:255',
+            'button_url' => [
+                'required',
+                'string',
+                'max:255',
+                function ($attribute, $value, $fail) {
+                    $trimmed = trim((string) $value);
+                    $isRelative = str_starts_with($trimmed, '/') && !str_starts_with($trimmed, '//');
+                    $isHttp = (bool) preg_match('/^https?:\/\/.+/i', $trimmed);
+                    if (!$isRelative && !$isHttp) {
+                        $fail(__('URL tombol harus diawali dengan /, http://, atau https://.'));
+                    }
+                },
+            ],
             'gradient_theme' => 'required|in:blue,green,cyan,purple,amber,red',
             'order_index' => 'required|integer|min:0|max:999',
             'is_active' => 'sometimes|boolean',
-        ]);
+        ];
+
+        if ($isUpdate) {
+            $rules['remove_image'] = 'nullable|boolean';
+        }
+
+        return $rules;
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate($this->promoValidationRules(false));
 
         $validated['is_active'] = $request->has('is_active');
 
@@ -55,20 +78,7 @@ class DashboardPromoController extends Controller
 
     public function update(Request $request, DashboardPromo $promo)
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'badge_text' => 'nullable|string|max:50',
-            'badge_color' => 'required|string|max:30',
-            'description' => 'nullable|string|max:500',
-            'icon' => 'required|string|max:100',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp,svg|max:4096',
-            'remove_image' => 'nullable|boolean',
-            'button_text' => 'required|string|max:50',
-            'button_url' => 'required|string|max:255',
-            'gradient_theme' => 'required|in:blue,green,cyan,purple,amber,red',
-            'order_index' => 'required|integer|min:0|max:999',
-            'is_active' => 'sometimes|boolean',
-        ]);
+        $validated = $request->validate($this->promoValidationRules(true));
 
         $validated['is_active'] = $request->has('is_active');
 

@@ -531,7 +531,7 @@
 </div>
 
 @if(session()->has('admin_impersonator_id'))
-<div class="bg-warning text-warning-emphasis py-2 px-4 d-flex justify-content-between align-items-center position-fixed w-100 shadow-sm" style="z-index: 1060; top: 0; left: 0; font-size: 0.9rem; height: 40px;">
+<div class="bg-warning text-warning-emphasis py-2 px-4 d-flex justify-content-between align-items-center position-fixed w-100 shadow-sm" style="z-index: 1045; top: 0; left: 0; font-size: 0.9rem; height: 40px;">
     <div class="d-flex align-items-center gap-2">
         <i class="fas fa-user-secret"></i> 
         <span>{{ __('Anda sedang login sebagai') }} <strong>{{ Auth::user()->full_name ?? Auth::user()->username }}</strong> ({{ __('Sesi Admin') }})</span>
@@ -608,7 +608,7 @@
             
             $blockedUserIpsCount = 0;
             foreach ($userIps as $ip) {
-                if (\Illuminate\Support\Facades\Cache::has('blocked_ip:' . $ip)) {
+                if (\Illuminate\Support\Facades\Cache::has('blocked_ip:' . $ip) || \Illuminate\Support\Facades\Cache::has('blocked_user_ip:' . $auth->id . ':' . $ip)) {
                     $blockedUserIpsCount++;
                 }
             }
@@ -624,7 +624,7 @@
 @endphp
 
 @if($globalMaintenanceActive && Auth::check() && Auth::user()->role === 'admin' && !session()->has('admin_impersonator_id'))
-<div class="bg-danger text-white py-1 px-4 d-flex justify-content-between align-items-center position-fixed w-100 shadow-sm" style="z-index: 1060; top: 0; left: 0; font-size: 0.85rem; height: 38px;">
+<div class="bg-danger text-white py-1 px-4 d-flex justify-content-between align-items-center position-fixed w-100 shadow-sm" style="z-index: 1045; top: 0; left: 0; font-size: 0.85rem; height: 38px;">
     <div class="d-flex align-items-center gap-2">
         <i class="fas fa-exclamation-triangle"></i> 
         <span><strong>{{ __('MODE MAINTENANCE AKTIF:') }}</strong> {{ __('Pengguna non-admin diblokir dari login dan akses web.') }}</span>

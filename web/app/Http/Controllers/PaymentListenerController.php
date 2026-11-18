@@ -28,25 +28,26 @@ class PaymentListenerController extends Controller
 
     /**
      * Dapatkan shared secret yang dikonfigurasi untuk Android Listener.
-     * Prioritas: Database BotSetting > config() > web/.env > root .env > 'change-me'
+     * Prioritas: Database BotSetting > config() > web/.env > root .env.
+     * Mengembalikan null jika belum dikonfigurasi (fail-closed, tidak ada default hardcoded).
      */
-    protected function getSharedSecret(): string
+    protected function getSharedSecret(): ?string
     {
         // 1. Cek dari BotSetting (Pengaturan Admin Panel di Database)
         $dbSecret = $this->cleanSecret(BotSetting::where('key', 'listener_shared_secret')->value('value'));
-        if (!empty($dbSecret)) {
+        if (!empty($dbSecret) && $dbSecret !== 'change-me') {
             return $dbSecret;
         }
 
         // 2. Cek dari config services Laravel
         $configSecret = $this->cleanSecret(config('services.listener.secret'));
-        if (!empty($configSecret)) {
+        if (!empty($configSecret) && $configSecret !== 'change-me') {
             return $configSecret;
         }
 
         // 3. Cek dari env Laravel (web/.env)
         $envSecret = $this->cleanSecret(env('LISTENER_SHARED_SECRET'));
-        if (!empty($envSecret)) {
+        if (!empty($envSecret) && $envSecret !== 'change-me') {
             return $envSecret;
         }
 
@@ -56,13 +57,13 @@ class PaymentListenerController extends Controller
             $rootEnv = @file_get_contents($rootEnvPath);
             if ($rootEnv && preg_match('/^LISTENER_SHARED_SECRET=(.*)$/m', $rootEnv, $matches)) {
                 $parsed = $this->cleanSecret($matches[1]);
-                if (!empty($parsed)) {
+                if (!empty($parsed) && $parsed !== 'change-me') {
                     return $parsed;
                 }
             }
         }
 
-        return 'change-me';
+        return null;
     }
 
     /**
@@ -70,6 +71,12 @@ class PaymentListenerController extends Controller
      */
     protected function verifySignature(Request $request): ?\Illuminate\Http\JsonResponse
     {
+        $secret = $this->getSharedSecret();
+        if (empty($secret)) {
+            Log::error('[PaymentListener] Shared secret belum dikonfigurasi dengan aman.');
+            return response()->json(['detail' => 'Listener shared secret belum dikonfigurasi'], 503);
+        }
+
         $signature = trim((string)$request->header('X-Signature', ''));
         $timestamp = trim((string)$request->header('X-Timestamp', ''));
         $rawBody = $request->getContent();
@@ -88,20 +95,19 @@ class PaymentListenerController extends Controller
             return response()->json(['detail' => 'X-Timestamp kedaluwarsa'], 401);
         }
 
-        $secret = $this->getSharedSecret();
         $message = $timestamp . '.' . $rawBody;
         $expected = hash_hmac('sha256', $message, $secret);
 
         if (!hash_equals($expected, $signature)) {
-            // Cek juga fallback jika secret di payload cocok (Legacy JSON payload secret)
-            $payload = json_decode($rawBody, true);
-            if (!empty($payload['secret']) && hash_equals($secret, (string)$payload['secret'])) {
-                return null;
+            // Legacy JSON payload secret hanya diaktifkan jika secara eksplisit diizinkan melalui env
+            if (filter_var(env('LISTENER_ALLOW_LEGACY_PAYLOAD_SECRET', false), FILTER_VALIDATE_BOOLEAN)) {
+                $payload = json_decode($rawBody, true);
+                if (!empty($payload['secret']) && hash_equals($secret, (string)$payload['secret'])) {
+                    return null;
+                }
             }
 
             Log::warning("[PaymentListener] Signature mismatch", [
-                'received_sig' => $signature,
-                'expected_sig' => $expected,
                 'timestamp' => $timestamp,
                 'secret_len' => strlen($secret),
                 'client_ip' => $request->ip()

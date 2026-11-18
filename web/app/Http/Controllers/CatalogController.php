@@ -9,8 +9,13 @@ use Illuminate\Http\Request;
 
 class CatalogController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $sort = $request->query('sort', 'bestselling');
+        if (!in_array($sort, ['bestselling', 'price_asc', 'price_desc', 'latest'], true)) {
+            $sort = 'bestselling';
+        }
+
         $readyStockCounts = StockUnit::selectRaw('product_id, count(*) as count')
             ->where('is_sold', false)
             ->where('stock_status', 'ready')
@@ -29,6 +34,8 @@ class CatalogController extends Controller
             ->groupBy('product_id')
             ->pluck('total', 'product_id');
 
+        $defaultOfficialSellerId = \App\Models\User::where('role', 'admin')->value('id') ?: 1;
+
         $products = Product::with('creator')
             ->where('is_suspended', false)
             ->get()
@@ -45,7 +52,7 @@ class CatalogController extends Controller
 
                 return $product;
             })
-            ->sort(function ($a, $b) {
+            ->sort(function ($a, $b) use ($sort) {
                 // 1. Ready stock first (stock_count > 0 comes before stock_count == 0)
                 $aHasStock = $a->stock_count > 0 ? 1 : 0;
                 $bHasStock = $b->stock_count > 0 ? 1 : 0;
@@ -53,17 +60,27 @@ class CatalogController extends Controller
                     return $bHasStock <=> $aHasStock;
                 }
 
-                // 2. Penjualan terbanyak (highest sales_count first)
+                if ($sort === 'price_asc') {
+                    return ($a->price <=> $b->price) ?: ($b->id <=> $a->id);
+                }
+                if ($sort === 'price_desc') {
+                    return ($b->price <=> $a->price) ?: ($b->id <=> $a->id);
+                }
+                if ($sort === 'latest') {
+                    return $b->id <=> $a->id;
+                }
+
+                // Default (bestselling): Penjualan terbanyak (highest sales_count first)
                 if ($a->sales_count !== $b->sales_count) {
                     return $b->sales_count <=> $a->sales_count;
                 }
 
-                // 3. Newest product ID first
+                // Tie-breaker: Newest product ID first
                 return $b->id <=> $a->id;
             })
             ->values();
 
-        return view('catalog.index', compact('products'));
+        return view('catalog.index', compact('products', 'sort', 'defaultOfficialSellerId'));
     }
 
     public function show($id)

@@ -45,6 +45,20 @@ class BlockBannedIps
             $isBlocked = true;
         }
 
+        // 4. Check per-user IP/Device blocks (scoped to the authenticated user only)
+        if (!$isBlocked && Auth::check()) {
+            $user = Auth::user();
+            if ($user) {
+                if ($ip && Cache::has('blocked_user_ip:' . $user->id . ':' . $ip)) {
+                    $isBlocked = true;
+                } elseif ($deviceFp && Cache::has('blocked_user_device_fp:' . $user->id . ':' . $deviceFp)) {
+                    $isBlocked = true;
+                } elseif ($deviceId && Cache::has('blocked_user_device_id:' . $user->id . ':' . $deviceId)) {
+                    $isBlocked = true;
+                }
+            }
+        }
+
         // 5. Check User Account Suspension if logged in
         if (!$isBlocked && Auth::check()) {
             $user = Auth::user();
