@@ -19,11 +19,13 @@ Route::get('/', function () {
 });
 
 // Public Showcase & Catalog Routes (Accessible to Guest & Authenticated Users)
-Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-Route::get('/catalog', [CatalogController::class, 'index'])->name('catalog.index');
-Route::get('/catalog/{id}', [CatalogController::class, 'show'])->name('catalog.show');
+Route::middleware(\App\Http\Middleware\TrackVisitor::class)->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/catalog', [CatalogController::class, 'index'])->name('catalog.index');
+    Route::get('/catalog/{id}', [CatalogController::class, 'show'])->name('catalog.show');
+    Route::get('/sellers/{user}', [\App\Http\Controllers\SellerProfileController::class, 'show'])->name('sellers.show');
+});
 Route::get('/catalog/{id}/vcc-info', [CatalogController::class, 'vccInfo'])->name('catalog.vcc-info');
-Route::get('/sellers/{user}', [\App\Http\Controllers\SellerProfileController::class, 'show'])->name('sellers.show');
 
 Route::post('/api/payment/midtrans/callback', [\App\Http\Controllers\MidtransController::class, 'callback'])->name('payment.midtrans.callback');
 
@@ -240,7 +242,7 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         
         Route::get('/stock', [\App\Http\Controllers\AdminController::class, 'stock'])->name('stock.index');
         Route::get('/stock/search-customers', [\App\Http\Controllers\AdminController::class, 'searchCustomers'])->name('stock.search-customers');
-        Route::match(['get', 'post'], '/stock/export', [\App\Http\Controllers\AdminController::class, 'exportStock'])->name('stock.export');
+        Route::post('/stock/export', [\App\Http\Controllers\AdminController::class, 'exportStock'])->name('stock.export');
         Route::post('/stock', [\App\Http\Controllers\AdminController::class, 'storeStock'])->name('stock.store');
         Route::post('/stock/checkout', [\App\Http\Controllers\AdminController::class, 'checkoutStocks'])->name('stock.checkout');
         Route::post('/stock/bulk-move', [\App\Http\Controllers\AdminController::class, 'bulkMoveStock'])->name('stock.bulkMove');
@@ -262,7 +264,7 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         Route::get('/users', [\App\Http\Controllers\AdminController::class, 'users'])->name('users.index');
         Route::get('/sellers', [\App\Http\Controllers\AdminController::class, 'sellers'])->name('sellers.index');
         Route::get('/sellers/{id}/report-pdf', [\App\Http\Controllers\AdminController::class, 'exportSellerReportPdf'])->name('sellers.report-pdf');
-        Route::match(['get', 'post'], '/users/export', [\App\Http\Controllers\AdminController::class, 'exportUsers'])->name('users.export');
+        Route::post('/users/export', [\App\Http\Controllers\AdminController::class, 'exportUsers'])->name('users.export');
         Route::put('/users/{id}', [\App\Http\Controllers\AdminController::class, 'updateUser'])->name('users.update');
         Route::delete('/users/{id}', [\App\Http\Controllers\AdminController::class, 'deleteUser'])->name('users.destroy');
         Route::post('/users/{id}/suspend', [\App\Http\Controllers\AdminController::class, 'suspendUser'])->name('users.suspend');

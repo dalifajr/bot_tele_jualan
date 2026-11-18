@@ -3,6 +3,46 @@
 @section('title', __('Notifikasi Login Web'))
 @section('page_subtitle', __('IAM & Security Command Center'))
 
+@push('styles')
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+<style>
+    #visitorGeoMap {
+        height: 410px;
+        width: 100%;
+        border-radius: var(--radius-md, 16px);
+        z-index: 1;
+        background: var(--surface-container);
+        border: 1px solid var(--outline-variant);
+    }
+    @media (max-width: 767.98px) {
+        #visitorGeoMap {
+            height: 320px;
+        }
+    }
+    .geo-location-row {
+        cursor: pointer;
+        transition: background-color 0.15s ease, border-color 0.15s ease;
+    }
+    .geo-location-row:hover {
+        background-color: var(--surface-container-high) !important;
+        border-color: var(--primary) !important;
+    }
+    .leaflet-popup-content-wrapper {
+        border-radius: 14px !important;
+        background: var(--surface-container-lowest, #ffffff) !important;
+        color: var(--on-surface, #1d1b20) !important;
+        border: 1px solid var(--outline-variant, #cac4d0);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16) !important;
+    }
+    .leaflet-popup-tip {
+        background: var(--surface-container-lowest, #ffffff) !important;
+    }
+    .leaflet-container a.leaflet-popup-close-button {
+        color: var(--on-surface-variant) !important;
+    }
+</style>
+@endpush
+
 @section('action_bar_buttons')
     @if(request()->filled('search') || request()->filled('status') || request()->filled('device_type'))
         <a href="{{ route('admin.logins.index') }}" class="cm-btn-outline">
@@ -161,6 +201,165 @@
                         <i class="fas fa-shield-alt text-secondary me-1"></i>{{ __('Tidak ada akun yang menjadi target kegagalan berulang.') }}
                     </div>
                 @endif
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Peta Sebaran Lokasi Pengunjung Website & Percobaan Login (Interactive Leaflet Geo-Analytics) --}}
+<div class="card mb-4 overflow-hidden">
+    <div class="card-header bg-transparent pt-3 pb-3 px-4 d-flex flex-column flex-xl-row justify-content-between align-items-xl-center gap-3">
+        <div>
+            <h5 class="fw-bold mb-1 text-body">
+                <i class="fas fa-map-marked-alt text-primary me-2"></i>{{ __('Peta Sebaran Lokasi Pengunjung & Percobaan Login') }}
+            </h5>
+            <span class="text-muted small">
+                {{ __('Pemetaan geografis pengunjung website (30 hari terakhir) serta percobaan autentikasi berdasarkan lokasi IP') }}
+            </span>
+        </div>
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            <div class="btn-group btn-group-sm" role="group" aria-label="{{ __('Filter Layer Peta') }}">
+                <button type="button" class="btn btn-primary geo-layer-btn active" data-layer="all">{{ __('Semua') }}</button>
+                <button type="button" class="btn btn-outline-secondary geo-layer-btn" data-layer="visitors">{{ __('Pengunjung') }}</button>
+                <button type="button" class="btn btn-outline-secondary geo-layer-btn" data-layer="login_success">{{ __('Login Sukses') }}</button>
+                <button type="button" class="btn btn-outline-secondary geo-layer-btn" data-layer="login_failed">{{ __('Login Gagal') }}</button>
+            </div>
+            <div class="btn-group btn-group-sm" role="group" aria-label="{{ __('Fokus Wilayah Peta') }}">
+                <button type="button" class="btn btn-outline-primary" id="btnGeoFocusIndonesia" title="{{ __('Fokus ke Indonesia') }}">
+                    <i class="fas fa-crosshairs me-1"></i>{{ __('Indonesia') }}
+                </button>
+                <button type="button" class="btn btn-outline-secondary" id="btnGeoFocusWorld" title="{{ __('Tampilan Peta Dunia') }}">
+                    <i class="fas fa-globe-asia me-1"></i>{{ __('Dunia') }}
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="card-body px-4 pt-2 pb-4">
+        {{-- Mini Strip Statistik Geografis --}}
+        <div class="row g-2 mb-3">
+            <div class="col-6 col-md-3">
+                <div class="p-2.5 m3-tonal-item d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-muted text-uppercase fw-bold" style="font-size: 0.66rem; letter-spacing: 0.04em;">{{ __('Pengunjung Hari Ini') }}</div>
+                        <div class="fw-bold text-body fs-6">{{ number_format($geoMapSummary['visitors_today'] ?? 0, 0, ',', '.') }}</div>
+                    </div>
+                    <i class="fas fa-users text-primary opacity-75"></i>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="p-2.5 m3-tonal-item d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-muted text-uppercase fw-bold" style="font-size: 0.66rem; letter-spacing: 0.04em;">{{ __('Pengunjung (30 Hari)') }}</div>
+                        <div class="fw-bold text-body fs-6">{{ number_format($geoMapSummary['visitors_30d'] ?? 0, 0, ',', '.') }}</div>
+                    </div>
+                    <i class="fas fa-chart-area text-info opacity-75"></i>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="p-2.5 m3-tonal-item d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-muted text-uppercase fw-bold" style="font-size: 0.66rem; letter-spacing: 0.04em;">{{ __('Titik Kota Terpetakan') }}</div>
+                        <div class="fw-bold text-body fs-6">{{ number_format($geoMapSummary['mapped_locations'] ?? 0, 0, ',', '.') }}</div>
+                    </div>
+                    <i class="fas fa-map-pin text-success opacity-75"></i>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="p-2.5 m3-tonal-item d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-muted text-uppercase fw-bold" style="font-size: 0.66rem; letter-spacing: 0.04em;">{{ __('Negara Terdeteksi') }}</div>
+                        <div class="fw-bold text-body fs-6">{{ number_format($geoMapSummary['unique_countries'] ?? 0, 0, ',', '.') }}</div>
+                    </div>
+                    <i class="fas fa-flag text-warning opacity-75"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3 align-items-stretch">
+            {{-- Kolom Kiri: Kanvas Peta Interaktif --}}
+            <div class="col-12 col-lg-8">
+                <div class="position-relative">
+                    <div id="visitorGeoMap" aria-label="{{ __('Peta Sebaran Lokasi Pengunjung & Percobaan Login') }}"></div>
+                    @if(empty($geoMapPoints))
+                        <div class="position-absolute top-50 start-50 translate-middle text-center p-3 rounded-4 shadow-sm" style="z-index: 400; background: var(--surface-container-lowest); border: 1px solid var(--outline-variant); max-width: 340px;">
+                            <i class="fas fa-map-marker-alt text-primary fa-2x mb-2 opacity-75"></i>
+                            <div class="fw-bold text-body small mb-1">{{ __('Belum Ada Koordinat Publik Tercatat') }}</div>
+                            <div class="text-muted" style="font-size: 0.75rem;">{{ __('Kunjungan atau percobaan login dari IP publik akan otomatis dipetakan di sini.') }}</div>
+                        </div>
+                    @endif
+                </div>
+                <div class="d-flex flex-wrap align-items-center gap-3 mt-2 small text-muted" style="font-size: 0.74rem;">
+                    <span class="d-inline-flex align-items-center gap-1.5">
+                        <span class="rounded-circle d-inline-block" style="width: 10px; height: 10px; background: #0b57d0;"></span>
+                        {{ __('Pengunjung Website') }}
+                    </span>
+                    <span class="d-inline-flex align-items-center gap-1.5">
+                        <span class="rounded-circle d-inline-block" style="width: 10px; height: 10px; background: #0b8043;"></span>
+                        {{ __('Login Berhasil Dominan') }}
+                    </span>
+                    <span class="d-inline-flex align-items-center gap-1.5">
+                        <span class="rounded-circle d-inline-block" style="width: 10px; height: 10px; background: #d50000;"></span>
+                        {{ __('Anomali / Login Gagal') }}
+                    </span>
+                </div>
+            </div>
+
+            {{-- Kolom Kanan: Daftar Top Lokasi Teraktif --}}
+            <div class="col-12 col-lg-4 d-flex flex-column">
+                <div class="p-3 m3-tonal-item h-100 d-flex flex-column">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="text-uppercase text-muted fw-bold mb-0" style="font-size: 0.72rem; letter-spacing: 0.04em;">
+                            <i class="fas fa-ranking-star text-primary me-1"></i>{{ __('Top Lokasi Pengunjung & Login') }}
+                        </h6>
+                        <span class="badge bg-primary-subtle text-primary rounded-pill" style="font-size: 0.68rem;">{{ count($geoMapSummary['top_locations'] ?? []) }} {{ __('lokasi') }}</span>
+                    </div>
+
+                    @php
+                        $topLocations = $geoMapSummary['top_locations'] ?? [];
+                        $maxLocationActivity = !empty($topLocations) ? max(1, (int) ($topLocations[0]['total_activity'] ?? 1)) : 1;
+                    @endphp
+
+                    @if(!empty($topLocations))
+                        <div class="d-flex flex-column gap-2 overflow-auto" style="max-height: 360px;">
+                            @foreach($topLocations as $locIdx => $loc)
+                                @php
+                                    $pct = min(100, round((($loc['total_activity'] ?? 0) / $maxLocationActivity) * 100));
+                                    $barColor = ($loc['risk_level'] ?? 'normal') === 'high' ? 'bg-danger' : (($loc['login_success'] ?? 0) > 0 && ($loc['visitors_count'] ?? 0) === 0 ? 'bg-success' : 'bg-primary');
+                                @endphp
+                                <div class="p-2.5 rounded-3 border geo-location-row"
+                                     data-geo-index="{{ $locIdx }}"
+                                     data-lat="{{ $loc['lat'] }}"
+                                     data-lng="{{ $loc['lng'] }}"
+                                     style="background: var(--surface-container-lowest); border-color: var(--outline-variant) !important;">
+                                    <div class="d-flex justify-content-between align-items-start gap-2 mb-1">
+                                        <div class="text-truncate">
+                                            <span class="badge bg-secondary-subtle text-secondary me-1 font-monospace" style="font-size: 0.65rem;">{{ $loc['country_code'] }}</span>
+                                            <span class="fw-bold text-body" style="font-size: 0.82rem;">{{ $loc['label'] }}</span>
+                                        </div>
+                                        <span class="fw-bold text-primary font-monospace" style="font-size: 0.8rem;">{{ number_format($loc['total_activity'], 0, ',', '.') }}</span>
+                                    </div>
+                                    <div class="progress mb-1.5" style="height: 4px;">
+                                        <div class="progress-bar {{ $barColor }}" role="progressbar" style="width: {{ $pct }}%"></div>
+                                    </div>
+                                    <div class="d-flex flex-wrap gap-2 text-muted" style="font-size: 0.7rem;">
+                                        <span><i class="fas fa-eye text-primary me-1"></i>{{ $loc['visitors_count'] }} {{ __('kunjungan') }}</span>
+                                        <span><i class="fas fa-check text-success me-1"></i>{{ $loc['login_success'] }}</span>
+                                        @if($loc['login_failed'] > 0)
+                                            <span class="text-danger fw-semibold"><i class="fas fa-times me-1"></i>{{ $loc['login_failed'] }} {{ __('gagal') }}</span>
+                                        @endif
+                                        <span class="ms-auto">{{ $loc['unique_ips'] }} IP</span>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="my-auto text-center py-4 text-muted">
+                            <i class="fas fa-globe fa-2x mb-2 opacity-50"></i>
+                            <p class="small mb-0">{{ __('Belum ada data sebaran lokasi publik yang tercatat.') }}</p>
+                        </div>
+                    @endif
+                </div>
             </div>
         </div>
     </div>
@@ -726,10 +925,190 @@
         });
     }
 </script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+
+    // === 0. Interactive Visitor & Login Geolocation Map (Leaflet + CartoDB Light/Dark) ===
+    const geoMapContainer = document.getElementById('visitorGeoMap');
+    const geoPoints = @json($geoMapPoints ?? []);
+    const loginsBaseUrl = @json(route('admin.logins.index'));
+
+    function escapeGeoHtml(str) {
+        if (str === null || str === undefined) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    if (geoMapContainer && typeof L !== 'undefined') {
+        const defaultCenter = [-2.5, 118.0]; // Fokus awal Indonesia
+        const geoMap = L.map('visitorGeoMap', {
+            center: defaultCenter,
+            zoom: 4,
+            minZoom: 2,
+            maxZoom: 14,
+            scrollWheelZoom: false,
+            worldCopyJump: true
+        });
+
+        const lightTileUrl = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+        const darkTileUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+        const tileAttribution = '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>';
+
+        let activeTileLayer = L.tileLayer(isDark ? darkTileUrl : lightTileUrl, {
+            attribution: tileAttribution,
+            subdomains: 'abcd',
+            maxZoom: 19
+        }).addTo(geoMap);
+
+        const markersLayer = L.layerGroup().addTo(geoMap);
+        const markerByCoords = {};
+        let currentLayerFilter = 'all';
+
+        function getPointMetricForLayer(p, layer) {
+            if (layer === 'visitors') return p.visitors_count || 0;
+            if (layer === 'login_success') return p.login_success || 0;
+            if (layer === 'login_failed') return p.login_failed || 0;
+            return p.total_activity || 0;
+        }
+
+        function getPointColor(p, layer) {
+            if (layer === 'login_failed') return '#d50000';
+            if (layer === 'login_success') return '#0b8043';
+            if (layer === 'visitors') return '#0b57d0';
+            if (p.login_failed > 0 && p.login_failed >= p.login_success) return '#d50000';
+            if (p.login_success > 0 && p.visitors_count === 0) return '#0b8043';
+            return '#0b57d0';
+        }
+
+        function renderGeoMarkers(layer) {
+            markersLayer.clearLayers();
+            Object.keys(markerByCoords).forEach(k => delete markerByCoords[k]);
+
+            const visibleBounds = [];
+            geoPoints.forEach((p, idx) => {
+                const metric = getPointMetricForLayer(p, layer);
+                if (metric <= 0) return;
+
+                const color = getPointColor(p, layer);
+                const radius = Math.min(26, Math.max(7, 6 + Math.sqrt(metric) * 3.2));
+
+                const marker = L.circleMarker([p.lat, p.lng], {
+                    radius: radius,
+                    fillColor: color,
+                    color: '#ffffff',
+                    weight: 2,
+                    opacity: 0.95,
+                    fillOpacity: 0.78
+                });
+
+                const filterUrl = loginsBaseUrl + '?search=' + encodeURIComponent(p.filter_query || p.city || p.country || '');
+                const popupHtml = `
+                    <div style="min-width: 210px; font-size: 0.8rem;">
+                        <div class="fw-bold mb-1 d-flex align-items-center justify-content-between gap-2">
+                            <span>${escapeGeoHtml(p.label)}</span>
+                            <span class="badge bg-secondary-subtle text-secondary font-monospace" style="font-size: 0.66rem;">${escapeGeoHtml(p.country_code)}</span>
+                        </div>
+                        <div class="d-flex flex-column gap-1 mb-2" style="font-size: 0.76rem;">
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted">{{ __('Pengunjung Website') }}:</span>
+                                <strong>${Number(p.visitors_count || 0)} (${Number(p.visitor_hits || 0)} hits)</strong>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted">{{ __('Login Berhasil') }}:</span>
+                                <strong class="text-success">${Number(p.login_success || 0)}</strong>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted">{{ __('Login Gagal') }}:</span>
+                                <strong class="text-danger">${Number(p.login_failed || 0)}</strong>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted">{{ __('IP Unik') }}:</span>
+                                <strong>${Number(p.unique_ips || 0)}</strong>
+                            </div>
+                        </div>
+                        <a href="${escapeGeoHtml(filterUrl)}" class="btn btn-sm btn-primary rounded-pill w-100 py-1 fw-semibold" style="font-size: 0.72rem;">
+                            <i class="fas fa-filter me-1"></i>{{ __('Filter Log Lokasi Ini') }}
+                        </a>
+                    </div>
+                `;
+
+                marker.bindPopup(popupHtml);
+                marker.addTo(markersLayer);
+                markerByCoords[idx] = marker;
+                visibleBounds.push([p.lat, p.lng]);
+            });
+
+            return visibleBounds;
+        }
+
+        const initialBounds = renderGeoMarkers('all');
+        if (initialBounds.length === 1) {
+            geoMap.setView(initialBounds[0], 7);
+        } else if (initialBounds.length > 1) {
+            geoMap.fitBounds(initialBounds, { padding: [36, 36], maxZoom: 7 });
+        }
+
+        // Layer Filter Buttons
+        document.querySelectorAll('.geo-layer-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                document.querySelectorAll('.geo-layer-btn').forEach(b => {
+                    b.classList.remove('btn-primary', 'active');
+                    b.classList.add('btn-outline-secondary');
+                });
+                this.classList.remove('btn-outline-secondary');
+                this.classList.add('btn-primary', 'active');
+                currentLayerFilter = this.getAttribute('data-layer') || 'all';
+                renderGeoMarkers(currentLayerFilter);
+            });
+        });
+
+        // Quick Viewport Focus Buttons
+        const btnFocusId = document.getElementById('btnGeoFocusIndonesia');
+        if (btnFocusId) {
+            btnFocusId.addEventListener('click', () => geoMap.flyTo([-2.5, 118.0], 5, { duration: 0.7 }));
+        }
+        const btnFocusWorld = document.getElementById('btnGeoFocusWorld');
+        if (btnFocusWorld) {
+            btnFocusWorld.addEventListener('click', () => geoMap.flyTo([15.0, 20.0], 2, { duration: 0.7 }));
+        }
+
+        // Top Locations Click-to-Fly
+        document.querySelectorAll('.geo-location-row').forEach(row => {
+            row.addEventListener('click', function () {
+                const lat = parseFloat(this.getAttribute('data-lat'));
+                const lng = parseFloat(this.getAttribute('data-lng'));
+                const idx = parseInt(this.getAttribute('data-geo-index'), 10);
+                if (!isNaN(lat) && !isNaN(lng)) {
+                    geoMap.flyTo([lat, lng], 8, { duration: 0.75 });
+                    if (markerByCoords[idx]) {
+                        setTimeout(() => markerByCoords[idx].openPopup(), 450);
+                    }
+                }
+            });
+        });
+
+        // Sinkronisasi otomatis tile peta saat Dark/Light mode diubah tanpa reload
+        const themeObserver = new MutationObserver(() => {
+            const nowDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+            const targetUrl = nowDark ? darkTileUrl : lightTileUrl;
+            if (activeTileLayer._url !== targetUrl) {
+                geoMap.removeLayer(activeTileLayer);
+                activeTileLayer = L.tileLayer(targetUrl, {
+                    attribution: tileAttribution,
+                    subdomains: 'abcd',
+                    maxZoom: 19
+                }).addTo(geoMap);
+            }
+        });
+        themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme'] });
+    }
 
     // 1. Login Trend Multi-Area Chart (Berhasil vs Gagal — Google Cloud Console Semantic Palette)
     const loginTrendOptions = {

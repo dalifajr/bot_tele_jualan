@@ -20,6 +20,17 @@ class LoginLog extends Model
         'device_fingerprint',
         'device_id',
         'location',
+        'country',
+        'country_code',
+        'region',
+        'city',
+        'latitude',
+        'longitude',
+    ];
+
+    protected $casts = [
+        'latitude' => 'float',
+        'longitude' => 'float',
     ];
 
     public function user()

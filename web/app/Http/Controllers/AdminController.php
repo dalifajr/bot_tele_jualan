@@ -451,12 +451,10 @@ class AdminController extends Controller
 
     public function exportStock(Request $request)
     {
-        // Validate admin password before export
-        if ($request->isMethod('post') || $request->has('password')) {
-            $request->validate(['password' => 'required|string']);
-            if (!\Illuminate\Support\Facades\Hash::check($request->password, \Illuminate\Support\Facades\Auth::user()->password)) {
-                return redirect()->back()->with('error', __('Password salah. Ekspor data dibatalkan.'));
-            }
+        // Always require admin password verification before exporting sensitive credentials
+        $request->validate(['password' => 'required|string']);
+        if (!\Illuminate\Support\Facades\Hash::check($request->password, \Illuminate\Support\Facades\Auth::user()->password)) {
+            return redirect()->back()->with('error', __('Password salah. Ekspor data dibatalkan.'));
         }
 
         // Audit log
@@ -2051,12 +2049,10 @@ class AdminController extends Controller
 
     public function exportUsers(Request $request)
     {
-        // Validate admin password before export
-        if ($request->isMethod('post') || $request->has('password')) {
-            $request->validate(['password' => 'required|string']);
-            if (!\Illuminate\Support\Facades\Hash::check($request->password, \Illuminate\Support\Facades\Auth::user()->password)) {
-                return redirect()->back()->with('error', __('Password salah. Ekspor data dibatalkan.'));
-            }
+        // Always require admin password verification before exporting user database
+        $request->validate(['password' => 'required|string']);
+        if (!\Illuminate\Support\Facades\Hash::check($request->password, \Illuminate\Support\Facades\Auth::user()->password)) {
+            return redirect()->back()->with('error', __('Password salah. Ekspor data dibatalkan.'));
         }
 
         // Audit log
@@ -2459,6 +2455,172 @@ class AdminController extends Controller
             ];
         }
 
+        // 10. Agregasi Peta Sebaran Lokasi Pengunjung Website (30 Hari) & Percobaan Login
+        $geoBuckets = [];
+        $registerGeoPoint = function (
+            ?string $city,
+            ?string $country,
+            ?string $countryCode,
+            ?float $lat,
+            ?float $lng,
+            ?string $fallbackLocation,
+            ?string $ip,
+            string $source,
+            bool $isSuccess = true,
+            int $hits = 1
+        ) use (&$geoBuckets) {
+            if ($lat === null || $lng === null) {
+                $resolved = \App\Services\GeoIpService::resolveFromLocationText($fallbackLocation);
+                if (!$resolved) {
+                    return;
+                }
+                $city = $city ?: $resolved['city'];
+                $country = $country ?: $resolved['country'];
+                $countryCode = $countryCode ?: $resolved['country_code'];
+                $lat = (float) $resolved['latitude'];
+                $lng = (float) $resolved['longitude'];
+            }
+
+            $cityClean = trim((string) ($city ?: ''));
+            $countryClean = trim((string) ($country ?: ''));
+            $codeClean = strtoupper(trim((string) ($countryCode ?: '')));
+            $label = trim(implode(', ', array_unique(array_filter([$cityClean, $countryClean]))));
+            if ($label === '') {
+                $label = trim((string) $fallbackLocation) ?: 'Unknown';
+            }
+
+            $bucketKey = strtolower($codeClean . '|' . $cityClean . '|' . round($lat, 2) . '|' . round($lng, 2));
+            if (!isset($geoBuckets[$bucketKey])) {
+                $geoBuckets[$bucketKey] = [
+                    'label' => $label,
+                    'city' => $cityClean ?: $countryClean ?: $label,
+                    'country' => $countryClean ?: $label,
+                    'country_code' => $codeClean ?: '--',
+                    'lat' => round($lat, 5),
+                    'lng' => round($lng, 5),
+                    'visitors_count' => 0,
+                    'visitor_hits' => 0,
+                    'login_total' => 0,
+                    'login_success' => 0,
+                    'login_failed' => 0,
+                    'ips' => [],
+                    'filter_query' => $cityClean ?: $countryClean ?: $label,
+                ];
+            }
+
+            if ($ip) {
+                $geoBuckets[$bucketKey]['ips'][$ip] = true;
+            }
+
+            if ($source === 'visitor') {
+                $geoBuckets[$bucketKey]['visitors_count']++;
+                $geoBuckets[$bucketKey]['visitor_hits'] += max(1, $hits);
+            } else {
+                $geoBuckets[$bucketKey]['login_total']++;
+                if ($isSuccess) {
+                    $geoBuckets[$bucketKey]['login_success']++;
+                } else {
+                    $geoBuckets[$bucketKey]['login_failed']++;
+                }
+            }
+        };
+
+        // Kumpulkan data dari login_logs (mengikuti filter aktif)
+        $geoLoginRows = (clone $analyticsBase)
+            ->select('ip_address', 'is_successful', 'location', 'country', 'country_code', 'city', 'latitude', 'longitude')
+            ->orderByDesc('id')
+            ->limit(2000)
+            ->get();
+
+        foreach ($geoLoginRows as $row) {
+            $registerGeoPoint(
+                $row->city,
+                $row->country,
+                $row->country_code,
+                $row->latitude !== null ? (float) $row->latitude : null,
+                $row->longitude !== null ? (float) $row->longitude : null,
+                $row->location,
+                $row->ip_address,
+                'login',
+                (bool) $row->is_successful
+            );
+        }
+
+        // Kumpulkan data dari visitors (30 hari terakhir)
+        $visitors30dQuery = \App\Models\Visitor::where('visited_date', '>=', now()->subDays(30)->toDateString());
+        if ($request->filled('search')) {
+            $searchVal = $request->search;
+            $visitors30dQuery->where(function ($q) use ($searchVal) {
+                $q->where('ip_address', 'like', "%{$searchVal}%")
+                  ->orWhere('location', 'like', "%{$searchVal}%")
+                  ->orWhere('city', 'like', "%{$searchVal}%")
+                  ->orWhere('country', 'like', "%{$searchVal}%");
+            });
+        }
+
+        $visitorRows = (clone $visitors30dQuery)
+            ->select('ip_address', 'location', 'country', 'country_code', 'city', 'latitude', 'longitude', 'hits_count')
+            ->orderByDesc('id')
+            ->limit(2000)
+            ->get();
+
+        foreach ($visitorRows as $vRow) {
+            $registerGeoPoint(
+                $vRow->city,
+                $vRow->country,
+                $vRow->country_code,
+                $vRow->latitude !== null ? (float) $vRow->latitude : null,
+                $vRow->longitude !== null ? (float) $vRow->longitude : null,
+                $vRow->location,
+                $vRow->ip_address,
+                'visitor',
+                true,
+                (int) ($vRow->hits_count ?? 1)
+            );
+        }
+
+        $geoMapPoints = [];
+        $uniqueCountriesSet = [];
+        foreach ($geoBuckets as $bucket) {
+            $totalActivity = $bucket['visitors_count'] + $bucket['login_total'];
+            $riskLevel = $bucket['login_failed'] >= 5 ? 'high' : ($bucket['login_failed'] >= 2 ? 'medium' : 'normal');
+            if ($bucket['country'] !== '' && $bucket['country'] !== 'Unknown') {
+                $uniqueCountriesSet[$bucket['country']] = true;
+            }
+            $geoMapPoints[] = [
+                'label' => $bucket['label'],
+                'city' => $bucket['city'],
+                'country' => $bucket['country'],
+                'country_code' => $bucket['country_code'],
+                'lat' => $bucket['lat'],
+                'lng' => $bucket['lng'],
+                'visitors_count' => $bucket['visitors_count'],
+                'visitor_hits' => $bucket['visitor_hits'],
+                'login_total' => $bucket['login_total'],
+                'login_success' => $bucket['login_success'],
+                'login_failed' => $bucket['login_failed'],
+                'unique_ips' => count($bucket['ips']),
+                'total_activity' => $totalActivity,
+                'risk_level' => $riskLevel,
+                'filter_query' => $bucket['filter_query'],
+            ];
+        }
+
+        usort($geoMapPoints, fn ($a, $b) => $b['total_activity'] <=> $a['total_activity']);
+
+        $visitorsTodayCount = \App\Models\Visitor::where('visited_date', now()->toDateString())->count();
+        $visitors30dCount = (clone $visitors30dQuery)->count();
+        $visitorHits30dCount = (int) (clone $visitors30dQuery)->sum('hits_count');
+
+        $geoMapSummary = [
+            'mapped_locations' => count($geoMapPoints),
+            'unique_countries' => count($uniqueCountriesSet),
+            'visitors_today' => $visitorsTodayCount,
+            'visitors_30d' => $visitors30dCount,
+            'visitor_hits_30d' => $visitorHits30dCount,
+            'top_locations' => array_slice($geoMapPoints, 0, 8),
+        ];
+
         return view('admin.logins.index', compact(
             'loginTokens',
             'loginLogs',
@@ -2493,7 +2655,9 @@ class AdminController extends Controller
             'securityScore',
             'securityStatus',
             'securityBadgeColor',
-            'loginAnalysisInsights'
+            'loginAnalysisInsights',
+            'geoMapPoints',
+            'geoMapSummary'
         ));
     }
 

@@ -787,41 +787,76 @@ class BackupService
     }
 
     /**
-     * Restore media files from ZIP backup.
+     * Restore media files from ZIP backup with strict Zip Slip & extension validation.
      */
     protected static function restoreMediaFromZip(ZipArchive $zip)
     {
         $basePublicPath = storage_path('app/public');
+        File::ensureDirectoryExists($basePublicPath);
+        $realBasePath = realpath($basePublicPath);
+        if (!$realBasePath) {
+            return;
+        }
+        $normalizedBase = rtrim($realBasePath, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+
         $baseBotPath = base_path('../src/data');
+        $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'pdf', 'zip', 'txt', 'mp4', 'mov', 'webm'];
 
         for ($i = 0; $i < $zip->numFiles; $i++) {
             $filename = $zip->getNameIndex($i);
-            if (strpos($filename, 'media/') === 0) {
-                $relativePath = substr($filename, 6); // Remove 'media/'
-                if (empty($relativePath)) continue;
+            if (!is_string($filename) || strpos($filename, 'media/') !== 0) {
+                continue;
+            }
 
-                $fileData = $zip->getFromIndex($i);
-                $destPath = storage_path("app/public/{$relativePath}");
-                
-                // Prevent Zip Slip vulnerability
-                File::ensureDirectoryExists(dirname($destPath));
-                $realDestPath = realpath(dirname($destPath));
-                $realBasePath = realpath($basePublicPath);
-                
-                if ($realDestPath && $realBasePath && strpos($realDestPath, $realBasePath) === 0) {
-                    File::put($destPath, $fileData);
-                }
+            $relativePath = substr($filename, 6); // Remove 'media/'
+            $relativePath = str_replace('\\', '/', $relativePath);
 
-                if ($relativePath === 'bot_qris.png' || $relativePath === 'qris/qris_latest.png') {
-                    $botQris = base_path('../src/data/qris.png');
-                    
-                    File::ensureDirectoryExists(dirname($botQris));
-                    $realQrisPath = realpath(dirname($botQris));
-                    $realBotPath = realpath($baseBotPath);
+            // Reject empty, directory entries, null bytes, absolute paths, drive letters, or traversal segments BEFORE touching filesystem
+            if (
+                $relativePath === '' ||
+                str_ends_with($relativePath, '/') ||
+                str_contains($relativePath, "\0") ||
+                str_starts_with($relativePath, '/') ||
+                preg_match('/^[a-zA-Z]:/', $relativePath) ||
+                preg_match('#(^|/)\.\.(/|$)#', $relativePath)
+            ) {
+                continue;
+            }
 
-                    if ($realQrisPath && $realBotPath && strpos($realQrisPath, $realBotPath) === 0) {
-                        File::put($botQris, $fileData);
-                    }
+            $extension = strtolower(pathinfo($relativePath, PATHINFO_EXTENSION));
+            if ($extension === '' || !in_array($extension, $allowedExtensions, true)) {
+                continue;
+            }
+
+            $destPath = $realBasePath . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relativePath);
+            $destDir = dirname($destPath);
+            File::ensureDirectoryExists($destDir);
+            $realDestDir = realpath($destDir);
+
+            // Strict containment check with trailing DIRECTORY_SEPARATOR
+            $isInsideBase = $realDestDir && (
+                $realDestDir === $realBasePath ||
+                str_starts_with($realDestDir . DIRECTORY_SEPARATOR, $normalizedBase)
+            );
+            if (!$isInsideBase) {
+                continue;
+            }
+
+            $fileData = $zip->getFromIndex($i);
+            if ($fileData === false) {
+                continue;
+            }
+
+            File::put($realDestDir . DIRECTORY_SEPARATOR . basename($destPath), $fileData);
+
+            if ($relativePath === 'bot_qris.png' || $relativePath === 'qris/qris_latest.png') {
+                $botQris = base_path('../src/data/qris.png');
+                File::ensureDirectoryExists(dirname($botQris));
+                $realQrisDir = realpath(dirname($botQris));
+                $realBotPath = realpath($baseBotPath);
+
+                if ($realQrisDir && $realBotPath && ($realQrisDir === $realBotPath || str_starts_with($realQrisDir . DIRECTORY_SEPARATOR, rtrim($realBotPath, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR))) {
+                    File::put($botQris, $fileData);
                 }
             }
         }

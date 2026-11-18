@@ -35,17 +35,8 @@ trait LogsLogin
             $browser = 'Safari';
         }
 
-        $location = 'Local / Unknown';
-        if ($ip && $ip !== '127.0.0.1' && $ip !== '::1' && !str_starts_with($ip, '192.168.') && !str_starts_with($ip, '10.')) {
-            try {
-                $response = Http::timeout(2)->get("http://ip-api.com/json/{$ip}");
-                if ($response->successful() && $response->json('status') === 'success') {
-                    $location = ($response->json('city') ?? '') . ', ' . ($response->json('country') ?? 'Unknown');
-                }
-            } catch (\Exception $e) {
-                // ignore
-            }
-        }
+        $geo = \App\Services\GeoIpService::resolve($ip, $request->header('CF-IPCountry'));
+        $location = $geo['location'] ?? 'Local / Unknown';
 
         if (!$userId) {
             if (Auth::check()) {
@@ -69,6 +60,12 @@ trait LogsLogin
             'device_fingerprint' => $deviceFingerprint,
             'device_id' => $deviceId,
             'location' => trim($location, ', '),
+            'country' => $geo['country'] ?? null,
+            'country_code' => $geo['country_code'] ?? null,
+            'region' => $geo['region'] ?? null,
+            'city' => $geo['city'] ?? null,
+            'latitude' => $geo['latitude'] ?? null,
+            'longitude' => $geo['longitude'] ?? null,
         ]);
     }
 }

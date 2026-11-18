@@ -152,7 +152,9 @@ class UserToolAccessTest extends TestCase
             'password' => bcrypt('password'),
         ]);
 
-        $response = $this->actingAs($admin)->get(route('admin.users.export'));
+        $response = $this->actingAs($admin)->post(route('admin.users.export'), [
+            'password' => 'password',
+        ]);
         $response->assertStatus(200);
         $response->assertHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     }
@@ -175,7 +177,9 @@ class UserToolAccessTest extends TestCase
             'stock_status' => 'ready'
         ]);
 
-        $response = $this->actingAs($admin)->get(route('admin.stock.export'));
+        $response = $this->actingAs($admin)->post(route('admin.stock.export'), [
+            'password' => 'password',
+        ]);
         $response->assertStatus(200);
         $response->assertHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     }

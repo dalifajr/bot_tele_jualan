@@ -1327,7 +1327,16 @@ function confirmExportStock() {
         let form = document.createElement('form');
         form.method = 'POST';
         form.action = "{{ route('admin.stock.export', request()->all()) }}";
-        form.innerHTML = '@csrf<input type="hidden" name="password" value="' + result.value + '">';
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = '_token';
+        csrfInput.value = "{{ csrf_token() }}";
+        const pwdInput = document.createElement('input');
+        pwdInput.type = 'hidden';
+        pwdInput.name = 'password';
+        pwdInput.value = result.value;
+        form.appendChild(csrfInput);
+        form.appendChild(pwdInput);
         document.body.appendChild(form);
         form.submit();
     });

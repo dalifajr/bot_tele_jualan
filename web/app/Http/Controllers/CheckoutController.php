@@ -238,7 +238,7 @@ class CheckoutController extends Controller
             $couponCode = strtoupper(trim($request->input('coupon_code', '')));
             $discount = 0;
             if ($couponCode) {
-                $coupon = \App\Models\Coupon::where('code', $couponCode)->first();
+                $coupon = \App\Models\Coupon::where('code', $couponCode)->lockForUpdate()->first();
                 if ($coupon && $coupon->isValidFor($subtotal, $user->id) && $coupon->appliesToProduct($product)) {
                     $discount = $coupon->calculateDiscount($subtotal);
                     $coupon->increment('used_qty');

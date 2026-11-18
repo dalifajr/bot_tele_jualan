@@ -41,7 +41,13 @@ class CartController extends Controller
      */
     public function add(Request $request, Product $product)
     {
-        $quantity = $request->input('quantity', 1);
+        if (!$product->is_vcc) {
+            $request->validate([
+                'quantity' => 'nullable|integer|min:1|max:100',
+            ]);
+        }
+
+        $quantity = max(1, (int) $request->input('quantity', 1));
 
         if ($product->is_suspended) {
             return back()->with('error', __('Produk ini sedang tidak aktif.'));
@@ -321,8 +327,12 @@ class CartController extends Controller
             // 1. Verify stock availability for all products in cart
             foreach ($cartItems as $item) {
                 $product = $item->product;
-                if ($product->is_suspended) {
-                    throw new \Exception("Produk '{$product->name}' sedang tidak aktif.");
+                if (!$product || $product->is_suspended) {
+                    throw new \Exception(__('Produk tidak tersedia atau sedang tidak aktif.'));
+                }
+
+                if ((int) $item->quantity < 1) {
+                    throw new \Exception(__('Jumlah produk di keranjang tidak valid.'));
                 }
 
                 if ($product->is_vcc && !empty($item->vcc_services)) {
@@ -363,7 +373,7 @@ class CartController extends Controller
             $coupon = null;
 
             if ($couponCode) {
-                $coupon = Coupon::where('code', $couponCode)->first();
+                $coupon = Coupon::where('code', $couponCode)->lockForUpdate()->first();
                 if ($coupon && $coupon->is_active && (!$coupon->expires_at || !$coupon->expires_at->isPast()) && ($coupon->qty == 0 || $coupon->used_qty < $coupon->qty)) {
                     $hasUsed = DB::table('coupon_user')->where('coupon_id', $coupon->id)->where('user_id', $user->id)->exists();
                     if (!$hasUsed) {
