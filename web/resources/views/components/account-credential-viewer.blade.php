@@ -10,7 +10,7 @@
     <div class="px-3 py-2 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2" style="background: var(--surface-container-high); border-color: var(--outline-color) !important;">
         <div class="d-flex align-items-center gap-2">
             <span class="small fw-semibold font-monospace" style="color: var(--on-surface-variant); font-size: 0.75rem;">
-                <i class="fas fa-terminal me-1 text-primary"></i>KREDENSIAL AKUN
+                <i class="fas fa-terminal me-1 text-primary"></i>{{ __('KREDENSIAL AKUN') }}
             </span>
             @if($has2fa)
                 <span class="badge bg-success-subtle text-success small py-1 px-2 rounded-pill" style="font-size: 0.7rem;">

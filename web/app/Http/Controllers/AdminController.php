@@ -317,11 +317,11 @@ class AdminController extends Controller
         }
 
         $periodLabel = match($period) {
-            '24_hours' => '24 jam terakhir',
-            '7_days' => '7 hari terakhir',
-            '30_days' => '30 hari terakhir',
-            '6_months' => '6 bulan terakhir',
-            'all_time' => 'Sepanjang waktu',
+            '24_hours' => __('24 jam terakhir'),
+            '7_days' => __('7 hari terakhir'),
+            '30_days' => __('30 hari terakhir'),
+            '6_months' => __('6 bulan terakhir'),
+            'all_time' => __('Sepanjang waktu'),
         };
 
         $products = \App\Models\Product::orderBy('name')->get();
@@ -2347,7 +2347,7 @@ class AdminController extends Controller
 
         $topFailedIps = $topFailedIpsRaw->map(function ($item) {
             $item->is_blocked = \Illuminate\Support\Facades\Cache::has('blocked_ip:' . $item->ip_address);
-            $item->risk_badge = $item->failed_count >= 5 ? 'Tinggi' : ($item->failed_count >= 3 ? 'Sedang' : 'Rendah');
+            $item->risk_badge = $item->failed_count >= 5 ? __('Tinggi') : ($item->failed_count >= 3 ? __('Sedang') : __('Rendah'));
             return $item;
         });
 
@@ -2390,33 +2390,40 @@ class AdminController extends Controller
         $securityScore = max(10, min(100, $securityScore));
 
         if ($securityScore >= 80) {
-            $securityStatus = 'Aman & Terkendali';
+            $securityStatus = __('Aman & Terkendali');
             $securityBadgeColor = 'success';
         } elseif ($securityScore >= 55) {
-            $securityStatus = 'Waspada (Anomali Terdeteksi)';
+            $securityStatus = __('Waspada (Anomali Terdeteksi)');
             $securityBadgeColor = 'warning';
         } else {
-            $securityStatus = 'Risiko Tinggi (Indikasi Brute-Force)';
+            $securityStatus = __('Risiko Tinggi (Indikasi Brute-Force)');
             $securityBadgeColor = 'danger';
         }
 
-        $dominantDevice = !empty($deviceLabels) ? $deviceLabels[0] : 'Belum ada data';
-        $dominantBrowser = !empty($browserLabels) ? $browserLabels[0] : 'Belum ada data';
+        $dominantDevice = !empty($deviceLabels) ? $deviceLabels[0] : __('Belum ada data');
+        $dominantBrowser = !empty($browserLabels) ? $browserLabels[0] : __('Belum ada data');
 
         $loginAnalysisInsights = [];
         if ($totalLoginAttempts === 0) {
             $loginAnalysisInsights[] = [
                 'icon' => 'fa-info-circle',
                 'color' => 'secondary',
-                'title' => 'Belum Ada Aktivitas Login',
-                'desc' => 'Sistem belum mencatat riwayat autentikasi pada filter saat ini.'
+                'title' => __('Belum Ada Aktivitas Login'),
+                'desc' => __('Sistem belum mencatat riwayat autentikasi pada filter saat ini.')
             ];
         } else {
             $loginAnalysisInsights[] = [
                 'icon' => $failureRate > 30 ? 'fa-exclamation-triangle' : 'fa-shield-alt',
                 'color' => $failureRate > 30 ? 'danger' : 'success',
-                'title' => 'Rasio Keberhasilan & Kegagalan Autentikasi',
-                'desc' => "Dari {$totalLoginAttempts} percobaan login ({$uniqueIpCount} IP unik), sebesar {$successRate}% berhasil dan {$failureRate}% gagal ({$failedLoginCount} kejadian dari {$uniqueFailedIpCount} IP)."
+                'title' => __('Rasio Keberhasilan & Kegagalan Autentikasi'),
+                'desc' => __('Dari :total percobaan login (:ips IP unik), sebesar :success% berhasil dan :failure% gagal (:failed kejadian dari :failedIps IP).', [
+                    'total' => $totalLoginAttempts,
+                    'ips' => $uniqueIpCount,
+                    'success' => $successRate,
+                    'failure' => $failureRate,
+                    'failed' => $failedLoginCount,
+                    'failedIps' => $uniqueFailedIpCount,
+                ])
             ];
 
             if ($maxIpFailures >= 3) {
@@ -2424,23 +2431,31 @@ class AdminController extends Controller
                 $loginAnalysisInsights[] = [
                     'icon' => 'fa-user-secret',
                     'color' => 'warning',
-                    'title' => 'Deteksi Percobaan Gagal Berulang per IP',
-                    'desc' => "IP {$topBadIp->ip_address} (" . ($topBadIp->last_location ?: 'Unknown') . ") tercatat gagal login sebanyak {$topBadIp->failed_count} kali. " . ($topBadIp->is_blocked ? 'IP ini sudah dalam status diblokir.' : 'Disarankan untuk meninjau atau memblokir IP & perangkat tersebut.')
+                    'title' => __('Deteksi Percobaan Gagal Berulang per IP'),
+                    'desc' => __('IP :ip (:location) tercatat gagal login sebanyak :count kali.', [
+                        'ip' => $topBadIp->ip_address,
+                        'location' => $topBadIp->last_location ?: 'Unknown',
+                        'count' => $topBadIp->failed_count,
+                    ]) . ' ' . ($topBadIp->is_blocked ? __('IP ini sudah dalam status diblokir.') : __('Disarankan untuk meninjau atau memblokir IP & perangkat tersebut.'))
                 ];
             } else {
                 $loginAnalysisInsights[] = [
                     'icon' => 'fa-check-double',
                     'color' => 'info',
-                    'title' => 'Tidak Ditemukan Serangan Brute-Force Aktif',
-                    'desc' => 'Tidak ada alamat IP tunggal yang melampaui ambang batas kegagalan berulang (≥ 3 kali gagal).'
+                    'title' => __('Tidak Ditemukan Serangan Brute-Force Aktif'),
+                    'desc' => __('Tidak ada alamat IP tunggal yang melampaui ambang batas kegagalan berulang (≥ 3 kali gagal).')
                 ];
             }
 
             $loginAnalysisInsights[] = [
                 'icon' => 'fa-laptop-code',
                 'color' => 'primary',
-                'title' => 'Profil Perangkat & Jam Puncak Akses',
-                'desc' => "Mayoritas pengguna mengakses melalui perangkat {$dominantDevice} dengan peramban {$dominantBrowser}. Waktu aktivitas tertinggi berada pada rentang pukul {$peakTimeWindow}."
+                'title' => __('Profil Perangkat & Jam Puncak Akses'),
+                'desc' => __('Mayoritas pengguna mengakses melalui perangkat :device dengan peramban :browser. Waktu aktivitas tertinggi berada pada rentang pukul :peak.', [
+                    'device' => $dominantDevice,
+                    'browser' => $dominantBrowser,
+                    'peak' => $peakTimeWindow,
+                ])
             ];
         }
 

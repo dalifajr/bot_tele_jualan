@@ -246,7 +246,7 @@
             </div>
             <div class="modal-body p-4 text-center">
                 @if($withdrawal->proof_image_path)
-                    <img src="{{ asset($withdrawal->proof_image_path) }}" alt="Bukti Transfer Payout" class="img-fluid rounded-3 shadow-sm mb-3" style="max-height: 400px; object-fit: contain;">
+                    <img src="{{ asset($withdrawal->proof_image_path) }}" alt="{{ __('Bukti Transfer Payout') }}" class="img-fluid rounded-3 shadow-sm mb-3" style="max-height: 400px; object-fit: contain;">
                 @else
                     <p class="text-muted">{{ __('Bukti transfer belum diunggah oleh admin.') }}</p>
                 @endif

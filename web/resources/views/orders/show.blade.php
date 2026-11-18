@@ -172,7 +172,7 @@
                     <div class="d-flex flex-column gap-3">
                         @php $groupedUnits = $order->stockUnits->groupBy('product_id'); @endphp
                         @foreach($groupedUnits as $productId => $units)
-                            @php $productName = $units->first()->product->name ?? 'Produk'; @endphp
+                            @php $productName = $units->first()->product->name ?? __('Produk'); @endphp
                             <div class="mb-1">
                                 <span class="badge bg-primary-subtle text-primary mb-2 fw-bold" style="font-size: 0.85rem;">{{ $productName }}</span>
                                 <div class="d-flex flex-column gap-2">
@@ -213,7 +213,7 @@
                                 </div>
                                 <hr>
                                 <span class="text-muted small d-block mb-2">{{ __('Konfigurasi Output / Link:') }}</span>
-                                <div class="m3-tonal-item p-3 text-break font-monospace" style="max-height: 250px; overflow-y: auto; white-space: pre-wrap; font-size: 0.85rem;">{{ $vpn->config_link ?: 'Tidak ada konfigurasi ditemukan.' }}</div>
+                                <div class="m3-tonal-item p-3 text-break font-monospace" style="max-height: 250px; overflow-y: auto; white-space: pre-wrap; font-size: 0.85rem;">{{ $vpn->config_link ?: __('Tidak ada konfigurasi ditemukan.') }}</div>
                             </div>
                         </div>
                     @endforeach
@@ -233,10 +233,11 @@
                                 </h6>
                                 @php
                                     $statusBadge = match($order->complaintCase->status) {
-                                        'new' => ['bg' => 'danger-subtle', 'text' => 'danger', 'label' => 'Baru'],
-                                        'review' => ['bg' => 'warning-subtle', 'text' => 'warning', 'label' => 'Ditinjau'],
-                                        'done' => ['bg' => 'success-subtle', 'text' => 'success', 'label' => 'Selesai'],
-                                        'rejected' => ['bg' => 'secondary-subtle', 'text' => 'secondary', 'label' => 'Ditolak'],
+                                        'new' => ['bg' => 'danger-subtle', 'text' => 'danger', 'label' => __('Baru')],
+                                        'review' => ['bg' => 'warning-subtle', 'text' => 'warning', 'label' => __('Ditinjau')],
+                                        'done' => ['bg' => 'success-subtle', 'text' => 'success', 'label' => __('Selesai')],
+                                        'rejected' => ['bg' => 'secondary-subtle', 'text' => 'secondary', 'label' => __('Ditolak')],
+                                        'refund_requested' => ['bg' => 'info-subtle', 'text' => 'info', 'label' => __('Proses Refund')],
                                         default => ['bg' => 'secondary-subtle', 'text' => 'secondary', 'label' => $order->complaintCase->status]
                                     };
                                 @endphp

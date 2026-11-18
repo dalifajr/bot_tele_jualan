@@ -121,7 +121,7 @@
                 if (percent === 100 || status === 'completed') {
                     progressBar.classList.remove('progress-bar-animated', 'progress-bar-striped');
                     progressBar.classList.add('bg-success');
-                    statusText.innerText = "Pemulihan Selesai!";
+                    statusText.innerText = "{{ __('Pemulihan Selesai!') }}";
                     statusText.className = "text-success";
                     restoreIcon.className = "fas fa-check-circle text-success";
                     btnDone.classList.remove('d-none');

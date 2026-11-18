@@ -109,7 +109,7 @@
 
 {{-- Section 2: Products Worked By Me --}}
 <div class="mb-4">
-    <h5 class="fw-bold mb-3 text-info"><i class="fas fa-briefcase me-2"></i>Katalog Kerja Saya (Sebagai Worker)</h5>
+    <h5 class="fw-bold mb-3 text-info"><i class="fas fa-briefcase me-2"></i>{{ __('Katalog Kerja Saya (Sebagai Worker)') }}</h5>
     
     @if($workedProducts->count() > 0)
     <div class="row g-4">

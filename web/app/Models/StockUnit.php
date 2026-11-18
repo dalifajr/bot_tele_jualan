@@ -68,4 +68,22 @@ class StockUnit extends Model
         $diffInDays = (int) $date->diffInDays(now());
         return $diffInDays . ' hari yang lalu';
     }
+
+    public function getLocalizedUmurAkunAttribute()
+    {
+        $date = $this->github_joined_at ? \Carbon\Carbon::parse($this->github_joined_at) : $this->created_at;
+        $diffInMinutes = (int) $date->diffInMinutes(now());
+
+        if ($diffInMinutes < 60) {
+            return $diffInMinutes . ' ' . __('menit yang lalu');
+        }
+
+        $diffInHours = (int) $date->diffInHours(now());
+        if ($diffInHours < 24) {
+            return $diffInHours . ' ' . __('jam yang lalu');
+        }
+
+        $diffInDays = (int) $date->diffInDays(now());
+        return $diffInDays . ' ' . __('hari yang lalu');
+    }
 }

@@ -24,15 +24,15 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <h5 class="fw-bold mb-0">
                         <i class="fas fa-toolbox text-warning me-2"></i>
-                        Tiket Komplain #{{ $complaint->complaint_ref }}
+                        {{ __('Tiket Komplain #') }}{{ $complaint->complaint_ref }}
                     </h5>
                     @php
                         $statusBadge = match($complaint->status) {
-                            'new' => ['bg' => 'danger-subtle', 'text' => 'danger', 'label' => 'Baru'],
-                            'review' => ['bg' => 'warning-subtle', 'text' => 'warning', 'label' => 'Ditinjau'],
-                            'done' => ['bg' => 'success-subtle', 'text' => 'success', 'label' => 'Selesai'],
-                            'rejected' => ['bg' => 'secondary-subtle', 'text' => 'secondary', 'label' => 'Ditolak'],
-                            'refund_requested' => ['bg' => 'info-subtle', 'text' => 'info', 'label' => 'Proses Refund'],
+                            'new' => ['bg' => 'danger-subtle', 'text' => 'danger', 'label' => __('Baru')],
+                            'review' => ['bg' => 'warning-subtle', 'text' => 'warning', 'label' => __('Ditinjau')],
+                            'done' => ['bg' => 'success-subtle', 'text' => 'success', 'label' => __('Selesai')],
+                            'rejected' => ['bg' => 'secondary-subtle', 'text' => 'secondary', 'label' => __('Ditolak')],
+                            'refund_requested' => ['bg' => 'info-subtle', 'text' => 'info', 'label' => __('Proses Refund')],
                             default => ['bg' => 'secondary-subtle', 'text' => 'secondary', 'label' => $complaint->status]
                         };
                     @endphp

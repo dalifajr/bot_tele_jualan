@@ -2,7 +2,7 @@
 
 @section('title', __('Dashboard'))
 @section('page_subtitle', __('Ruang Belanja Anda'))
-@section('meta_description', 'Dashboard akun Anda — jelajahi katalog produk digital dan pantau pesanan Anda')
+@section('meta_description', __('Dashboard akun Anda — jelajahi katalog produk digital dan pantau pesanan Anda'))
 
 @section('content')
 <div class="d-flex flex-column gap-4">
@@ -119,15 +119,15 @@
                         <div class="m3-promo-content">
                             <div>
                                 <div class="d-flex align-items-center justify-content-between mb-2">
-                                    <span class="badge rounded-pill fw-bold" style="background: {{ $promo->badge_color }}; color: #ffffff; font-size: 0.72rem; letter-spacing: 0.03em;">{{ $promo->badge_text ?: 'INFO' }}</span>
+                                    <span class="badge rounded-pill fw-bold" style="background: {{ $promo->badge_color }}; color: #ffffff; font-size: 0.72rem; letter-spacing: 0.03em;">{{ __($promo->badge_text ?: 'INFO') }}</span>
                                     <i class="{{ $promo->icon }} text-primary opacity-50 fs-5"></i>
                                 </div>
-                                <h3 class="fw-bold text-body mb-1 promo-title-overlap" style="font-size: 1.05rem; line-height: 1.35;">{{ $promo->title }}</h3>
-                                <p class="text-secondary small mb-3 promo-desc-overlap" style="font-size: 0.825rem; line-height: 1.45;">{{ $promo->description }}</p>
+                                <h3 class="fw-bold text-body mb-1 promo-title-overlap" style="font-size: 1.05rem; line-height: 1.35;">{{ __($promo->title) }}</h3>
+                                <p class="text-secondary small mb-3 promo-desc-overlap" style="font-size: 0.825rem; line-height: 1.45;">{{ __($promo->description) }}</p>
                             </div>
                             <div>
                                 <a href="{{ $promo->button_url }}" class="btn btn-sm btn-primary rounded-pill px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5" style="font-size: 0.8125rem;">
-                                    <span>{{ $promo->button_text }}</span>
+                                    <span>{{ __($promo->button_text) }}</span>
                                     <i class="fas fa-arrow-right" style="font-size: 0.7rem;"></i>
                                 </a>
                             </div>
@@ -138,7 +138,7 @@
                         <div class="m3-promo-content">
                             <div>
                                 <div class="d-flex align-items-center justify-content-between mb-2">
-                                    <span class="badge rounded-pill fw-bold" style="background: var(--primary); color: #ffffff; font-size: 0.72rem; letter-spacing: 0.03em;">PROMO SPESIAL</span>
+                                    <span class="badge rounded-pill fw-bold" style="background: var(--primary); color: #ffffff; font-size: 0.72rem; letter-spacing: 0.03em;">{{ __('PROMO SPESIAL') }}</span>
                                     <i class="fas fa-tags text-primary opacity-50 fs-5"></i>
                                 </div>
                                 <h3 class="fw-bold text-body mb-1 promo-title-overlap" style="font-size: 1.05rem; line-height: 1.35;">{{ __('Diskon Lisensi s/d 30%') }}</h3>

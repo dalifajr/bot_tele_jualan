@@ -69,7 +69,7 @@
                 <select id="stock-product-select" class="form-select">
                     <option value="">{{ __('-- Pilih Produk Gmail --') }}</option>
                     @foreach($products as $product)
-                        <option value="{{ $product->id }}">{{ $product->name }} ({{ $product->stock_units_count }} stok)</option>
+                        <option value="{{ $product->id }}">{{ $product->name }} ({{ __(':stock stok', ['stock' => $product->stock_units_count]) }})</option>
                     @endforeach
                 </select>
             </div>

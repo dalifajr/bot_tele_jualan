@@ -40,7 +40,7 @@
     </li>
     <li class="nav-item">
         <a class="nav-link active fw-bold text-primary" href="{{ route('admin.backup.restore.show') }}" style="border-bottom: 3px solid var(--bs-primary); margin-bottom: -2px;">
-            <i class="fas fa-undo me-1"></i> Pemulihan Data (Restore)
+            <i class="fas fa-undo me-1"></i> {{ __('Pemulihan Data (Restore)') }}
         </a>
     </li>
     <li class="nav-item">
@@ -53,13 +53,13 @@
 {{-- Restore Card --}}
 <div class="card border-0 shadow-sm" style="border-radius: 16px;">
     <div class="card-body p-4">
-        <h5 class="fw-bold mb-2"><i class="fas fa-upload text-danger me-2"></i>Pemulihan Data (Restore)</h5>
+        <h5 class="fw-bold mb-2"><i class="fas fa-upload text-danger me-2"></i>{{ __('Pemulihan Data (Restore)') }}</h5>
         <p class="text-muted small mb-4">{{ __('Pulihkan database dari file ZIP cadangan yang telah diunduh sebelumnya.') }}</p>
         
         <form action="{{ route('admin.backup.restore') }}" method="POST" enctype="multipart/form-data" id="formRestore">
             @csrf
             <div class="mb-4">
-                <label class="form-label fw-bold small text-muted">FILE CADANGAN (ZIP)</label>
+                <label class="form-label fw-bold small text-muted">{{ __('FILE CADANGAN (ZIP)') }}</label>
                 <input type="file" name="backup_file" class="form-control form-control-lg" accept=".zip" required style="border-radius: 10px;">
             </div>
 
@@ -154,8 +154,8 @@
                         document.getElementById('uploadProgressBar').style.width = percentComplete + '%';
                         document.getElementById('uploadProgressPercent').innerText = percentComplete + '%';
                         if (percentComplete === 100) {
-                            document.querySelector('#uploadProgressModal h5').innerText = "Memproses Berkas...";
-                            document.querySelector('#uploadProgressModal p').innerText = "Menyiapkan laman pemulihan...";
+                            document.querySelector('#uploadProgressModal h5').innerText = "{{ __('Memproses Berkas...') }}";
+                            document.querySelector('#uploadProgressModal p').innerText = "{{ __('Menyiapkan laman pemulihan...') }}";
                         }
                     }
                 });
@@ -191,7 +191,7 @@
 
                 xhr.onerror = function() {
                     uploadModal.hide();
-                    Swal.fire('Error', 'Koneksi jaringan terputus.', 'error');
+                    Swal.fire('Error', '{{ __('Koneksi jaringan terputus.') }}', 'error');
                 };
 
                 xhr.send(formData);

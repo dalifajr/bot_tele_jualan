@@ -21,12 +21,12 @@
                 <form id="broadcastForm" class="no-loader" onsubmit="event.preventDefault(); startBroadcast();">
                     @csrf
                     <div class="mb-4">
-                        <label class="form-label fw-bold text-muted small">Pesan Broadcast (Mendukung Format HTML)</label>
-                        <textarea id="broadcastMessage" name="message" class="form-control" rows="8" placeholder="<b>{{ __('Halo Pelanggan Setia!') }}</b><br>Dapatkan promo menarik hari ini..."></textarea>
+                        <label class="form-label fw-bold text-muted small">{{ __('Pesan Broadcast (Mendukung Format HTML)') }}</label>
+                        <textarea id="broadcastMessage" name="message" class="form-control" rows="8" placeholder="<b>{{ __('Halo Pelanggan Setia!') }}</b><br>{{ __('Dapatkan promo menarik hari ini...') }}"></textarea>
                     </div>
 
                     <div class="mb-4">
-                        <label class="form-label fw-bold text-muted small">Attachment Media (Opsional)</label>
+                        <label class="form-label fw-bold text-muted small">{{ __('Attachment Media (Opsional)') }}</label>
                         <input type="file" id="mediaFile" name="media_file" class="form-control" accept="image/*,video/mp4,.pdf,.doc,.docx,.zip">
                         <div class="form-text">{{ __('Maksimal 50MB. Format didukung: Foto (JPG/PNG), Video (MP4), Dokumen (PDF/DOC/ZIP).') }}</div>
                     </div>
@@ -258,9 +258,9 @@ function updateProgressUI(current, total, success, failed, job) {
             const etaSeconds = Math.round(remaining / speed);
             document.getElementById('etaTime').innerText = formatDuration(etaSeconds);
         } else if (remaining === 0) {
-            document.getElementById('etaTime').innerText = 'Selesai';
+            document.getElementById('etaTime').innerText = '{{ __('Selesai') }}';
         } else {
-            document.getElementById('etaTime').innerText = 'Menghitung...';
+            document.getElementById('etaTime').innerText = '{{ __('Menghitung...') }}';
         }
     } else {
         document.getElementById('elapsedTime').innerText = '-';

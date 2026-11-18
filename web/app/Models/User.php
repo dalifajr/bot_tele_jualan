@@ -82,25 +82,25 @@ class User extends Authenticatable
     public function getLastActiveLabelAttribute()
     {
         if ($this->isOnline()) {
-            return 'Online';
+            return __('Online');
         }
 
         if (!$this->last_seen_at) {
-            return 'Offline';
+            return __('Offline');
         }
 
         $lastSeen = $this->last_seen_at;
 
         if ($lastSeen->isToday()) {
-            return 'Aktif hari ini pukul ' . $lastSeen->format('H:i');
+            return __('Aktif hari ini pukul :time', ['time' => $lastSeen->format('H:i')]);
         }
 
         if ($lastSeen->isYesterday()) {
-            return 'Aktif kemarin pukul ' . $lastSeen->format('H:i');
+            return __('Aktif kemarin pukul :time', ['time' => $lastSeen->format('H:i')]);
         }
 
         // Return day name and date
-        return 'Aktif ' . $lastSeen->translatedFormat('l, d M Y H:i');
+        return __('Aktif :date', ['date' => $lastSeen->translatedFormat('l, d M Y H:i')]);
     }
 
     /**

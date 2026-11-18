@@ -28,10 +28,10 @@ class AuthController extends Controller
         }
 
         $todayVisitors = \App\Models\Visitor::where('visited_date', now()->toDateString())->count();
-        $announcement = \App\Models\BotSetting::where('key', 'web_announcement')->value('value') ?? 'Selamat datang Jurangan!<br>kalau punya akun telegram, langsung saja klik "Login Via Telegram" kalau gak punya, bisa regis dulu.';
+        $announcement = __(\App\Models\BotSetting::where('key', 'web_announcement')->value('value') ?? 'Selamat datang Jurangan!<br>kalau punya akun telegram, langsung saja klik "Login Via Telegram" kalau gak punya, bisa regis dulu.');
         $maintenanceMode = \App\Models\BotSetting::where('key', 'maintenance_mode')->value('value') === '1';
-        $maintenanceMessage = \App\Models\BotSetting::where('key', 'maintenance_message')->value('value')
-            ?: 'Website sedang dalam pemeliharaan sistem (Maintenance). Hanya Admin yang dapat login.';
+        $maintenanceMessage = __(\App\Models\BotSetting::where('key', 'maintenance_message')->value('value')
+            ?: 'Website sedang dalam pemeliharaan sistem (Maintenance). Hanya Admin yang dapat login.');
         $companyName = \App\Models\BotSetting::where('key', 'company_name')->value('value') ?? 'PT BANGUN JAYA KASIH';
 
         return view('auth.login', compact('todayVisitors', 'announcement', 'maintenanceMode', 'maintenanceMessage', 'companyName'));
@@ -117,7 +117,7 @@ class AuthController extends Controller
             $seconds = RateLimiter::availableIn($throttleKey);
             $this->recordLoginLog($request, $request->login, false);
             return back()->withErrors([
-                'login' => 'Terlalu banyak percobaan login. Akun Anda diblokir sementara selama ' . ceil($seconds / 60) . ' menit.',
+                'login' => __('Terlalu banyak percobaan login. Akun Anda diblokir sementara selama :minutes menit.', ['minutes' => ceil($seconds / 60)]),
             ])->onlyInput('login');
         }
 
@@ -128,8 +128,8 @@ class AuthController extends Controller
             $isMaintenance = \App\Models\BotSetting::where('key', 'maintenance_mode')->value('value') === '1';
             if ($isMaintenance && $user->role !== 'admin') {
                 Auth::logout();
-                $maintenanceMessage = \App\Models\BotSetting::where('key', 'maintenance_message')->value('value')
-                    ?: 'Website sedang dalam pemeliharaan sistem (Maintenance). Hanya Admin yang dapat login.';
+                $maintenanceMessage = __(\App\Models\BotSetting::where('key', 'maintenance_message')->value('value')
+                    ?: 'Website sedang dalam pemeliharaan sistem (Maintenance). Hanya Admin yang dapat login.');
 
                 return back()->withErrors([
                     'login' => $maintenanceMessage,
@@ -191,7 +191,7 @@ class AuthController extends Controller
         }
 
         return back()->withErrors([
-            'login' => 'Username/Email atau password salah.',
+            'login' => __('Username/Email atau password salah.'),
         ])->onlyInput('login');
     }
 
@@ -202,8 +202,8 @@ class AuthController extends Controller
     {
         $isMaintenance = \App\Models\BotSetting::where('key', 'maintenance_mode')->value('value') === '1';
         if ($isMaintenance) {
-            $maintenanceMessage = \App\Models\BotSetting::where('key', 'maintenance_message')->value('value')
-                ?: 'Website sedang dalam pemeliharaan sistem (Maintenance). Pendaftaran akun baru ditutup sementara.';
+            $maintenanceMessage = __(\App\Models\BotSetting::where('key', 'maintenance_message')->value('value')
+                ?: 'Website sedang dalam pemeliharaan sistem (Maintenance). Pendaftaran akun baru ditutup sementara.');
 
             return back()->withErrors(['full_name' => $maintenanceMessage])->withInput();
         }

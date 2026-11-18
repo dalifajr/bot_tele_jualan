@@ -16,14 +16,16 @@ class SetLocale
      */
     public function handle(Request $request, Closure $next): Response
     {
+        $targetLocale = 'id';
         if (session()->has('locale')) {
             $locale = session()->get('locale');
             if (in_array($locale, ['id', 'en'])) {
-                App::setLocale($locale);
+                $targetLocale = $locale;
             }
-        } else {
-            App::setLocale('id'); // Fallback to Indonesian
         }
+
+        App::setLocale($targetLocale);
+        \Carbon\Carbon::setLocale($targetLocale);
 
         return $next($request);
     }

@@ -35,10 +35,10 @@
                                 </div>
                                 <div class="min-w-0 flex-grow-1">
                                     <h6 class="mb-0.5 fw-bold text-truncate {{ $notification->read_at ? 'text-secondary' : 'text-dark' }}" style="font-size: 0.88rem;">
-                                        {{ $notification->data['title'] ?? 'Notifikasi' }}
+                                        {{ __($notification->data['title'] ?? 'Notifikasi') }}
                                     </h6>
                                     <p class="mb-1 {{ $notification->read_at ? 'text-muted' : 'text-body' }}" style="font-size: 0.83rem; line-height: 1.38;">
-                                        {{ $notification->data['message'] ?? '' }}
+                                        {{ __($notification->data['message'] ?? '') }}
                                     </p>
                                     
                                     @if(($notification->data['type'] ?? '') === 'login_gagal' && isset($notification->data['ip_address']))
@@ -47,7 +47,7 @@
                                             @csrf
                                             <input type="hidden" name="ip_address" value="{{ $notification->data['ip_address'] }}">
                                             <button type="submit" class="btn btn-xs btn-danger rounded-pill px-2.5 py-1" style="font-size: 0.72rem;">
-                                                <i class="fas fa-ban me-1"></i>Bukan Saya (Blokir IP)
+                                                <i class="fas fa-ban me-1"></i>{{ __('Bukan Saya (Blokir IP)') }}
                                             </button>
                                         </form>
                                     </div>

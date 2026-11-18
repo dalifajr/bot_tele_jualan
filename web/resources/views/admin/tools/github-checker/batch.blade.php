@@ -87,7 +87,7 @@
     <div class="card-body p-4">
         <div class="d-flex justify-content-between align-items-center mb-2">
             <h6 class="fw-bold mb-0">
-                <i class="fas fa-tasks text-info me-2"></i>Status Pengecekan
+                <i class="fas fa-tasks text-info me-2"></i>{{ __('Status Pengecekan') }}
                 @php
                     $statusBadge = match($batch->status) {
                         'completed' => 'bg-success-subtle text-success',
@@ -96,7 +96,7 @@
                         default => 'bg-secondary-subtle text-secondary',
                     };
                 @endphp
-                <span class="badge {{ $statusBadge }} ms-2" id="progress-status">{{ ucfirst($batch->status === 'completed' ? 'Selesai' : $batch->status) }}</span>
+                <span class="badge {{ $statusBadge }} ms-2" id="progress-status">{{ $batch->status === 'completed' ? __('Selesai') : ucfirst($batch->status) }}</span>
             </h6>
             <span class="fw-bold" id="progress-text">{{ $batch->checked_count }} / {{ $batch->total_accounts }}</span>
         </div>
@@ -443,10 +443,10 @@
 
         const progressStatus = document.getElementById('progress-status');
         if (status === 'stopped') {
-            progressStatus.textContent = 'Dihentikan';
+            progressStatus.textContent = '{{ __('Dihentikan') }}';
             progressStatus.className = 'badge bg-warning-subtle text-warning ms-2';
         } else {
-            progressStatus.textContent = 'Selesai';
+            progressStatus.textContent = '{{ __('Selesai') }}';
             progressStatus.className = 'badge bg-success-subtle text-success ms-2';
         }
 
@@ -459,7 +459,7 @@
         if (status !== 'stopped') {
             Swal.fire({
                 icon: 'success',
-                title: 'Pengecekan Selesai!',
+                title: '{{ __('Pengecekan Selesai!') }}',
                 html: `<div class="text-start">
                     <p class="mb-1">{{ __('✅ Approved:') }} <strong>${counts.approved}</strong></p>
                     <p class="mb-1">{{ __('⚠️ Revoked:') }} <strong>${counts.not_approved}</strong></p>

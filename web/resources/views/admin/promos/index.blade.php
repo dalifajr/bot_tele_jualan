@@ -72,16 +72,16 @@
                         </div>
                     </td>
                     <td>
-                        <div class="fw-bold text-body" style="font-size: 0.9rem;">{{ $promo->title }}</div>
+                        <div class="fw-bold text-body" style="font-size: 0.9rem;">{{ __($promo->title) }}</div>
                         <div class="d-flex align-items-center gap-2 mt-1">
                             <span class="badge rounded-pill" style="background: {{ $promo->badge_color }}; color: #ffffff; font-size: 0.7rem;">
-                                {{ $promo->badge_text }}
+                                {{ __($promo->badge_text) }}
                             </span>
-                            <small class="text-secondary"><i class="{{ $promo->icon }} me-1"></i>Tema: {{ ucfirst($promo->gradient_theme) }}</small>
+                            <small class="text-secondary"><i class="{{ $promo->icon }} me-1"></i>{{ __('Tema:') }} {{ ucfirst($promo->gradient_theme) }}</small>
                         </div>
                     </td>
                     <td>
-                        <div class="fw-medium text-body" style="font-size: 0.85rem;">{{ $promo->button_text }}</div>
+                        <div class="fw-medium text-body" style="font-size: 0.85rem;">{{ __($promo->button_text) }}</div>
                         <small class="text-secondary text-truncate d-block" style="max-width: 200px;">{{ $promo->button_url }}</small>
                     </td>
                     <td class="text-center">

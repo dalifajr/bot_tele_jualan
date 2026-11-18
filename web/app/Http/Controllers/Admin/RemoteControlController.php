@@ -194,7 +194,7 @@ class RemoteControlController extends Controller
         $isInstalled = false;
         $isRunning = false;
         $isNginxConfigured = false;
-        $serviceDetail = 'Tidak terdeteksi';
+        $serviceDetail = __('Tidak terdeteksi');
 
         // 1. Cek apakah Uvicorn Relay Gateway aktif merespon HTTP Health
         try {
@@ -202,7 +202,7 @@ class RemoteControlController extends Controller
             if ($res->successful()) {
                 $isRunning = true;
                 $isInstalled = true;
-                $serviceDetail = 'Daemon Uvicorn Relay Aktif (Port ' . $port . ')';
+                $serviceDetail = __('Daemon Uvicorn Relay Aktif (Port :port)', ['port' => $port]);
             }
         } catch (\Exception $e) {
             // Service belum aktif di port tersebut

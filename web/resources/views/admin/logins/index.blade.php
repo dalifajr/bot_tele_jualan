@@ -83,7 +83,7 @@
                     <span class="text-muted small">{{ __('Diagnosis otomatis pola autentikasi, potensi serangan brute-force, dan rekomendasi mitigasi') }}</span>
                 </div>
                 <span class="badge bg-{{ $securityBadgeColor ?? 'success' }}-subtle text-{{ $securityBadgeColor ?? 'success' }} rounded-pill px-3 py-1.5 fw-semibold">
-                    <i class="fas fa-heartbeat me-1"></i>{{ $securityStatus ?? 'Aman & Terkendali' }} ({{ $securityScore ?? 100 }}/100)
+                    <i class="fas fa-heartbeat me-1"></i>{{ $securityStatus ?? __('Aman & Terkendali') }} ({{ $securityScore ?? 100 }}/100)
                 </span>
             </div>
             <div class="card-body px-4 pt-3 pb-3">

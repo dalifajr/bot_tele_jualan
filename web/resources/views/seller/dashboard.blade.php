@@ -164,7 +164,7 @@
             <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <div>
                     <h5 class="fw-bold mb-1 text-body"><i class="fas fa-chart-line text-primary me-2"></i>{{ __('Tren Pendapatan Harian') }}</h5>
-                    <p class="text-muted small mb-0">{{ __('Statistik omzet penjualan dalam :days', ['days' => $days == 180 ? '6 bulan terakhir' : ($days == 365 ? '1 tahun terakhir' : ($days === 'all' ? 'sepanjang waktu' : $days . ' hari terakhir'))]) }}</p>
+                    <p class="text-muted small mb-0">{{ __('Statistik omzet penjualan dalam :days', ['days' => $days == 180 ? __('6 bulan terakhir') : ($days == 365 ? __('1 tahun terakhir') : ($days === 'all' ? __('sepanjang waktu') : __(':count hari terakhir', ['count' => $days])))]) }}</p>
                 </div>
                 <div>
                     <select class="form-select form-select-sm px-3 fw-semibold rounded-pill" style="width: auto; border: 1px solid var(--outline-variant) !important; background-color: var(--surface-container-low) !important; color: var(--on-surface);" onchange="let params = new URLSearchParams(window.location.search); params.set('days', this.value); window.location.href = '{{ route('seller.dashboard') }}?' + params.toString()">
@@ -272,28 +272,28 @@
                     <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px; flex-shrink: 0;">1</div>
                     <div>
                         <h6 class="fw-bold mb-1 text-body">{{ __('Miliki atau Ikut Serta dalam Katalog Produk') }}</h6>
-                        <p class="text-muted small mb-0">{!! 'Anda dapat membuat produk baru secara mandiri di halaman <strong>{{ __(\'Produk Saya\') }}</strong>{{ __(\', atau ditambahkan sebagai\') }} <strong>{{ __(\'Worker\') }}</strong> oleh Admin pada produk global.' !!}</p>
+                        <p class="text-muted small mb-0">{!! __('Anda dapat membuat produk baru secara mandiri di halaman <strong>Produk Saya</strong>, atau ditambahkan sebagai <strong>Worker</strong> oleh Admin pada produk global.') !!}</p>
                     </div>
                 </div>
                 <div class="d-flex gap-3 align-items-start">
                     <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px; flex-shrink: 0;">2</div>
                     <div>
                         <h6 class="fw-bold mb-1 text-body">{{ __('Unggah Stok Akun Digital Anda') }}</h6>
-                        <p class="text-muted small mb-0">{!! 'Unggah akun/stok Anda secara massal di menu <strong>{{ __(\'Stok Akun\') }}</strong>{{ __(\'. Akun yang baru diunggah akan masuk ke status\') }} <strong>{{ __(\'Karantina (*Simpan Akun*)\') }}</strong>.' !!}</p>
+                        <p class="text-muted small mb-0">{!! __('Unggah akun/stok Anda secara massal di menu <strong>Stok Akun</strong>. Akun yang baru diunggah akan masuk ke status <strong>Karantina (Simpan Akun)</strong>.') !!}</p>
                     </div>
                 </div>
                 <div class="d-flex gap-3 align-items-start">
                     <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px; flex-shrink: 0;">3</div>
                     <div>
                         <h6 class="fw-bold mb-1 text-body">{{ __('Pindah Otomatis ke Status Ready') }}</h6>
-                        <p class="text-muted small mb-0">{!! 'Stok Anda akan otomatis berpindah ke status <strong>{{ __(\'Ready\') }}</strong> {{ __(\'setelah jam cooldown karantina habis. Anda dapat mengatur jam karantina tersendiri di menu\') }} <strong>{{ __(\'Pengaturan\') }}</strong>.' !!}</p>
+                        <p class="text-muted small mb-0">{!! __('Stok Anda akan otomatis berpindah ke status <strong>Ready</strong> setelah jam cooldown karantina habis. Anda dapat mengatur jam karantina tersendiri di menu <strong>Pengaturan</strong>.') !!}</p>
                     </div>
                 </div>
                 <div class="d-flex gap-3 align-items-start">
                     <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px; flex-shrink: 0;">4</div>
                     <div>
                         <h6 class="fw-bold mb-1 text-body">{{ __('Terima Komisi & Tarik Saldo Ke Rekening') }}</h6>
-                        <p class="text-muted small mb-0">{!! 'Setiap pembeli membeli stok Anda, Anda menerima notifikasi Telegram dan dana masuk ke saldo Dompet setelah dipotong platform fee. Anda dapat mengajukan pencairan dana di menu <strong>{{ __(\'Dompet & Keuangan\') }}</strong>.' !!}</p>
+                        <p class="text-muted small mb-0">{!! __('Setiap pembeli membeli stok Anda, Anda menerima notifikasi Telegram dan dana masuk ke saldo Dompet setelah dipotong platform fee. Anda dapat mengajukan pencairan dana di menu <strong>Dompet & Keuangan</strong>.') !!}</p>
                     </div>
                 </div>
             </div>

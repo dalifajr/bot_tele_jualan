@@ -43,7 +43,7 @@
                     <div>
                         <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
                             <h2 class="h4 fw-bold mb-0 text-body">
-                                {{ Auth::user()->full_name ?? Auth::user()->username ?? 'Pengguna' }}
+                                {{ Auth::user()->full_name ?? Auth::user()->username ?? __('Pengguna') }}
                             </h2>
                             <span class="badge rounded-pill bg-primary-subtle text-primary fw-semibold px-2.5 py-1" style="font-size: 0.72rem;">
                                 <i class="fas fa-user-tag me-1"></i>{{ strtoupper(Auth::user()->role ?? 'CUSTOMER') }}
@@ -82,11 +82,11 @@
                         </span>
                         @if(Auth::user()->telegram_id)
                             <span class="badge rounded-pill bg-success-subtle text-success px-2 py-0.5" style="font-size: 0.72rem;">
-                                <i class="fas fa-check me-1"></i>Terhubung
+                                <i class="fas fa-check me-1"></i>{{ __('Terhubung') }}
                             </span>
                         @else
                             <span class="badge rounded-pill bg-warning-subtle text-warning px-2 py-0.5" style="font-size: 0.72rem;">
-                                <i class="fas fa-exclamation me-1"></i>Belum
+                                <i class="fas fa-exclamation me-1"></i>{{ __('Belum') }}
                             </span>
                         @endif
                     </div>
@@ -150,7 +150,7 @@
                                         <i class="fas fa-at me-1.5 text-primary"></i>{{ __('Username') }}
                                     </div>
                                     <span class="badge rounded-pill bg-secondary-subtle text-secondary" style="font-size: 0.68rem;">
-                                        <i class="fas fa-lock me-1"></i>Permanen
+                                        <i class="fas fa-lock me-1"></i>{{ __('Permanen') }}
                                     </span>
                                 </div>
                                 <div class="fw-semibold text-body">{{ Auth::user()->username }}</div>
@@ -173,7 +173,7 @@
                                     <span>{{ Auth::user()->telegram_id ?: '-' }}</span>
                                     @if(Auth::user()->telegram_id)
                                         <span class="badge rounded-pill bg-success-subtle text-success" style="font-size: 0.72rem;">
-                                            <i class="fas fa-check-circle me-1"></i>Tertaut
+                                            <i class="fas fa-check-circle me-1"></i>{{ __('Tertaut') }}
                                         </span>
                                     @endif
                                 </div>
@@ -200,7 +200,7 @@
                             <div class="col-12">
                                 <label class="form-label small fw-semibold text-muted">{{ __('Foto Profil (Avatar)') }}</label>
                                 <input type="file" name="avatar" class="form-control rounded-3" accept="image/*">
-                                <div class="form-text small text-muted"><i class="fas fa-info-circle me-1"></i>Format: JPG, PNG, WEBP, GIF. Maks: 2MB.</div>
+                                <div class="form-text small text-muted"><i class="fas fa-info-circle me-1"></i>{{ __('Format: JPG, PNG, WEBP, GIF. Maks: 2MB.') }}</div>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label small fw-semibold text-muted">{{ __('Nama Lengkap') }}</label>
@@ -210,7 +210,7 @@
                                 <label class="form-label small fw-semibold text-muted">
                                     {{ __('Username') }}
                                     <span class="badge rounded-pill bg-secondary-subtle text-secondary ms-1" style="font-size: 0.65rem;">
-                                        <i class="fas fa-lock me-1"></i>Permanen
+                                        <i class="fas fa-lock me-1"></i>{{ __('Permanen') }}
                                     </span>
                                 </label>
                                 <input type="text" class="form-control rounded-3 bg-body-tertiary text-muted" value="{{ Auth::user()->username }}" readonly disabled>
@@ -319,7 +319,7 @@
                             <i class="fab fa-telegram fa-2x text-primary"></i>
                             <div>
                                 <div class="fw-bold text-success">{{ __('Akun Telegram Terhubung') }}</div>
-                                <div class="small text-secondary">ID Telegram: <strong>{{ Auth::user()->telegram_id }}</strong></div>
+                                <div class="small text-secondary">{{ __('ID Telegram:') }} <strong>{{ Auth::user()->telegram_id }}</strong></div>
                             </div>
                         </div>
                     </div>
@@ -364,13 +364,13 @@
                     <div class="col-sm-6">
                         <div class="m3-data-row-card">
                             <small class="text-muted d-block fw-semibold mb-1">{{ __('IP Pendaftaran:') }}</small>
-                            <strong class="text-body">{{ Auth::user()->registration_ip ?: 'Tidak tercatat' }}</strong>
+                            <strong class="text-body">{{ Auth::user()->registration_ip ?: __('Tidak tercatat') }}</strong>
                         </div>
                     </div>
                     <div class="col-sm-6">
                         <div class="m3-data-row-card">
                             <small class="text-muted d-block fw-semibold mb-1">{{ __('Negara Asal (IP Terakhir):') }}</small>
-                            <strong class="text-primary">{{ Auth::user()->last_login_country ?: 'Indonesia (Lokal)' }}</strong>
+                            <strong class="text-primary">{{ Auth::user()->last_login_country ?: __('Indonesia (Lokal)') }}</strong>
                         </div>
                     </div>
                 </div>
@@ -401,12 +401,12 @@
                 @php
                     $currentPalette = Auth::user()->theme_color ?: '#65558f';
                     $presets = [
-                        ['name' => 'Lavender & Purple (Default M3)', 'color' => '#65558f'],
-                        ['name' => 'Google Android Blue', 'color' => '#0b57d0'],
-                        ['name' => 'Emerald Mint (Hijau Segar)', 'color' => '#00875a'],
-                        ['name' => 'Ocean Cyan (Biru Langit)', 'color' => '#0288d1'],
-                        ['name' => 'Sunset Amber (Oranye Senja)', 'color' => '#e65100'],
-                        ['name' => 'Rose Crimson (Merah Elegan)', 'color' => '#b3261e'],
+                        ['name' => __('Lavender & Purple (Default M3)'), 'color' => '#65558f'],
+                        ['name' => __('Google Android Blue'), 'color' => '#0b57d0'],
+                        ['name' => __('Emerald Mint (Hijau Segar)'), 'color' => '#00875a'],
+                        ['name' => __('Ocean Cyan (Biru Langit)'), 'color' => '#0288d1'],
+                        ['name' => __('Sunset Amber (Oranye Senja)'), 'color' => '#e65100'],
+                        ['name' => __('Rose Crimson (Merah Elegan)'), 'color' => '#b3261e'],
                     ];
                 @endphp
 

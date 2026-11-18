@@ -69,7 +69,7 @@
                                 <i class="fas fa-box-open" style="font-size: 2.5rem;"></i>
                             @endif
                         </div>
-                        <div class="small fw-semibold font-monospace" style="color: var(--on-surface-variant);">PRODUK DIGITAL &bull; SKU #{{ $product->id }}</div>
+                        <div class="small fw-semibold font-monospace" style="color: var(--on-surface-variant);">{{ __('PRODUK DIGITAL') }} &bull; SKU #{{ $product->id }}</div>
                     </div>
                 @endif
 
@@ -146,7 +146,7 @@
                         }
                         $sellerId = $seller ? $seller->id : 1;
                         $sellerChatUrl = route('chat.index', ['contact_id' => $sellerId]);
-                        $sellerJoinDate = $seller && $seller->created_at ? $seller->created_at->translatedFormat('F Y') : 'Mei 2024';
+                        $sellerJoinDate = $seller && $seller->created_at ? $seller->created_at->translatedFormat('F Y') : __('Mei 2024');
                     @endphp
 
                     {{-- Store / Seller Profile Card --}}

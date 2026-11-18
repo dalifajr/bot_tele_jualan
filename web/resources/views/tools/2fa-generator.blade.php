@@ -52,7 +52,7 @@
                         <div class="mb-3">
                             <label class="form-label text-muted small fw-bold">{{ __('Secret Key atau Link otpauth://') }}</label>
                             <div class="input-group">
-                                <input type="text" id="single-secret-input" class="form-control form-control-lg font-monospace" placeholder="Contoh: JBSWY3DPEHPK3PXP" autocomplete="off" spellcheck="false">
+                                <input type="text" id="single-secret-input" class="form-control form-control-lg font-monospace" placeholder="{{ __('Contoh: JBSWY3DPEHPK3PXP') }}" autocomplete="off" spellcheck="false">
                                 <button class="btn btn-outline-secondary" type="button" onclick="pasteSecretInput()" title="{{ __('Tempel dari Clipboard') }}">
                                     <i class="fas fa-paste"></i>
                                 </button>
@@ -147,7 +147,7 @@
 
                 <div class="mb-3">
                     <label class="form-label text-muted small fw-bold">{{ __('Data Akun (1 baris per akun)') }}</label>
-                    <textarea id="batch-input" class="form-control font-monospace" rows="6" placeholder="Contoh format:&#10;user1@gmail.com|pass123|JBSWY3DPEHPK3PXP&#10;user2@gmail.com|pass456|HXDMVJECJJWSRB3HWIZR4IFUGFTMXBOZ&#10;F2A: JBSWY3DPEHPK3PXP"></textarea>
+                    <textarea id="batch-input" class="form-control font-monospace" rows="6" placeholder="{{ __('Contoh format:') }}&#10;user1@gmail.com|pass123|JBSWY3DPEHPK3PXP&#10;user2@gmail.com|pass456|HXDMVJECJJWSRB3HWIZR4IFUGFTMXBOZ&#10;F2A: JBSWY3DPEHPK3PXP"></textarea>
                 </div>
 
                 <div class="d-flex justify-content-between align-items-center">

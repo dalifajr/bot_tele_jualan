@@ -2,7 +2,7 @@
 
 @section('title', ($seller->full_name ?? $seller->username) . ' - ' . __('Profil Seller'))
 @section('page_subtitle', __('Profil Seller'))
-@section('meta_description', 'Lihat profil toko dan katalog produk dari ' . ($seller->full_name ?? $seller->username))
+@section('meta_description', __('Lihat profil toko dan katalog produk dari :seller', ['seller' => $seller->full_name ?? $seller->username]))
 
 @push('styles')
 <style>
@@ -376,7 +376,7 @@
             btnShare.addEventListener('click', function() {
                 if (navigator.share) {
                     navigator.share({
-                        title: "{{ $seller->full_name ?? $seller->username }} - Profil Seller",
+                        title: "{{ $seller->full_name ?? $seller->username }} - {{ __('Profil Seller') }}",
                         url: window.location.href
                     }).catch(() => {});
                 } else if (navigator.clipboard) {

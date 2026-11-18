@@ -2,7 +2,7 @@
 
 @section('title', __('Katalog Produk'))
 @section('page_subtitle', __(':count produk tersedia', ['count' => $products->count()]))
-@section('meta_description', 'Lihat semua produk digital yang tersedia untuk dibeli')
+@section('meta_description', __('Lihat semua produk digital yang tersedia untuk dibeli'))
 
 @section('content')
 <div class="d-flex flex-column gap-3">

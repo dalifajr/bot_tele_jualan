@@ -15,7 +15,7 @@
             } catch (e) {}
         })();
     </script>
-    <title>Verifikasi Dua Langkah (2FA) — {{ config('app.name', 'Dzulfikrialifajri Store') }}</title>
+    <title>{{ __('Verifikasi Dua Langkah (2FA)') }} — {{ config('app.name', 'Dzulfikrialifajri Store') }}</title>
     
     {{-- Poppins Font Family from Google Fonts --}}
     <link rel="preconnect" href="https://fonts.googleapis.com">

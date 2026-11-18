@@ -134,7 +134,7 @@
                     <div class="col-md-6">
                         <label class="form-label fw-semibold text-body" style="font-size: 0.88rem;">{{ __('Urutan Tampilan') }}</label>
                         <input type="number" name="order_index" class="form-control rounded-3" value="{{ old('order_index', $promo->order_index) }}" min="0" max="999">
-                        <small class="text-secondary" style="font-size: 0.72rem;">Angka lebih kecil tampil lebih dulu (misal: 1, 2, 3...)</small>
+                        <small class="text-secondary" style="font-size: 0.72rem;">{{ __('Angka lebih kecil tampil lebih dulu (misal: 1, 2, 3...)') }}</small>
                     </div>
 
                     {{-- Status Aktif --}}

@@ -145,7 +145,7 @@
                         @else
                             <div class="alert alert-danger border-0 d-flex align-items-center gap-2 mb-0" style="border-radius: 12px;">
                                 <i class="fas fa-exclamation-circle fs-5"></i>
-                                <div>{{ $couponError ?: 'Kupon tidak valid.' }}</div>
+                                <div>{{ $couponError ?: __('Kupon tidak valid.') }}</div>
                             </div>
                         @endif
                     </div>

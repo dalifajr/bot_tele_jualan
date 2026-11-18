@@ -175,7 +175,7 @@
                             <select id="stock-product-select" class="form-select" onchange="loadStockUsernames()">
                                 <option value="">{{ __('-- Pilih Produk --') }}</option>
                                 @foreach($products as $product)
-                                    <option value="{{ $product->id }}">{{ $product->name }} ({{ $product->stock_units_count }} stok)</option>
+                                    <option value="{{ $product->id }}">{{ $product->name }} ({{ __(':stock stok', ['stock' => $product->stock_units_count]) }})</option>
                                 @endforeach
                             </select>
                         </div>
@@ -230,8 +230,8 @@
                     <input type="range" class="form-range" id="delay-slider" min="1" max="10" value="2" step="1"
                            oninput="document.getElementById('delay-value').textContent = this.value">
                     <div class="d-flex justify-content-between">
-                        <small class="text-muted">1s (cepat)</small>
-                        <small class="text-muted">10s (aman)</small>
+                        <small class="text-muted">{{ __('1s (cepat)') }}</small>
+                        <small class="text-muted">{{ __('10s (aman)') }}</small>
                     </div>
                 </div>
 
@@ -288,7 +288,7 @@
                                     default => 'bg-secondary-subtle text-secondary',
                                 };
                             @endphp
-                            <span class="badge {{ $batchBadge }} rounded-pill px-3">{{ ucfirst($batch->status === 'completed' ? 'Selesai' : $batch->status) }}</span>
+                            <span class="badge {{ $batchBadge }} rounded-pill px-3">{{ $batch->status === 'completed' ? __('Selesai') : ucfirst($batch->status) }}</span>
                         </td>
                         <td class="text-end">
                             <a href="{{ route('admin.tools.github-checker.batch', $batch->id) }}" class="btn btn-sm btn-light rounded-pill px-3">
@@ -319,13 +319,13 @@
         const cookieInput = document.getElementById('github-cookie-input');
         const cookie = cookieInput.value.trim();
         if (!cookie || cookie.includes('•')) {
-            Swal.fire({ icon: 'warning', title: 'Input Cookie', text: 'Masukkan cookie value yang valid.', confirmButtonColor: '#0d6efd' });
+            Swal.fire({ icon: 'warning', title: '{{ __('Input Cookie') }}', text: '{{ __('Masukkan cookie value yang valid.') }}', confirmButtonColor: '#0d6efd' });
             return;
         }
 
         const btn = document.getElementById('btn-validate-cookie');
         btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Validasi...';
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>{{ __('Validasi...') }}';
 
         fetch('{{ route("admin.tools.github-checker.set-cookie") }}', {
             method: 'POST',
@@ -486,7 +486,7 @@
 
             // Count parsed usernames
             const lines = content.split('\n').filter(l => l.trim());
-            document.getElementById('parsed-count-file').textContent = lines.length + ' baris';
+            document.getElementById('parsed-count-file').textContent = lines.length + ' ' + '{{ __('baris') }}';
         };
         reader.readAsText(file);
     }
@@ -511,7 +511,7 @@
     function startChecking() {
         const input = collectUsernames();
         if (!input.trim()) {
-            Swal.fire({ icon: 'warning', title: 'Input Kosong', text: 'Masukkan daftar username terlebih dahulu.' });
+            Swal.fire({ icon: 'warning', title: '{{ __('Input Kosong') }}', text: '{{ __('Masukkan daftar username terlebih dahulu.') }}' });
             return;
         }
 
@@ -519,7 +519,7 @@
         const btn = document.getElementById('btn-start-check');
 
         btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Memulai...';
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>{{ __('Memulai...') }}';
 
         // Filter stockMap to only include selected usernames if in stock tab
         const activeTab = document.querySelector('#inputTabs .nav-link.active');

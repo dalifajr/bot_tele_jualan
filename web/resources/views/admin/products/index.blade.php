@@ -128,7 +128,7 @@
                         @endif
 
                         @if($product->is_vcc)
-                            <span class="badge bg-success-subtle text-success rounded-pill px-2 py-0.5"><i class="fas fa-credit-card me-1"></i>VCC ({{ count((array)($product->vcc_services ?? [])) }} Layanan)</span>
+                            <span class="badge bg-success-subtle text-success rounded-pill px-2 py-0.5"><i class="fas fa-credit-card me-1"></i>{{ __('VCC (:count Layanan)', ['count' => count((array)($product->vcc_services ?? []))]) }}</span>
                         @endif
 
                         @if($product->warranty_days > 0)
@@ -143,7 +143,7 @@
                     </div>
 
                     <p class="text-muted mb-2" style="font-size: 0.78rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.2em;" title="{{ $product->description }}">
-                        {{ $product->description ?: 'Tidak ada deskripsi.' }}
+                        {{ $product->description ?: __('Tidak ada deskripsi.') }}
                     </p>
 
                     <div class="bg-light px-2 py-1.5 rounded-3 mb-2 d-flex justify-content-between align-items-center" style="font-size: 0.73rem;">
@@ -213,10 +213,10 @@
                 <div class="modal-body">
                     <ul class="nav nav-pills nav-fill bg-light p-1 rounded-pill mb-3" id="addProductTab" role="tablist">
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link active rounded-pill py-1.5 small fw-bold" id="general-add-tab" data-bs-toggle="tab" data-bs-target="#general-add" type="button" role="tab"><i class="fas fa-info-circle me-1"></i>Informasi Umum</button>
+                            <button class="nav-link active rounded-pill py-1.5 small fw-bold" id="general-add-tab" data-bs-toggle="tab" data-bs-target="#general-add" type="button" role="tab"><i class="fas fa-info-circle me-1"></i>{{ __('Informasi Umum') }}</button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link rounded-pill py-1.5 small fw-bold" id="advanced-add-tab" data-bs-toggle="tab" data-bs-target="#advanced-add" type="button" role="tab"><i class="fas fa-cog me-1"></i>Opsi Lanjutan</button>
+                            <button class="nav-link rounded-pill py-1.5 small fw-bold" id="advanced-add-tab" data-bs-toggle="tab" data-bs-target="#advanced-add" type="button" role="tab"><i class="fas fa-cog me-1"></i>{{ __('Opsi Lanjutan') }}</button>
                         </li>
                     </ul>
                     <div class="tab-content" id="addProductTabContent">
@@ -346,10 +346,10 @@
                 <div class="modal-body">
                     <ul class="nav nav-pills nav-fill bg-light p-1 rounded-pill mb-3" id="editProductTab{{ $product->id }}" role="tablist">
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link active rounded-pill py-1.5 small fw-bold" id="general-edit-tab-{{ $product->id }}" data-bs-toggle="tab" data-bs-target="#general-edit-{{ $product->id }}" type="button" role="tab"><i class="fas fa-info-circle me-1"></i>Informasi Umum</button>
+                            <button class="nav-link active rounded-pill py-1.5 small fw-bold" id="general-edit-tab-{{ $product->id }}" data-bs-toggle="tab" data-bs-target="#general-edit-{{ $product->id }}" type="button" role="tab"><i class="fas fa-info-circle me-1"></i>{{ __('Informasi Umum') }}</button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link rounded-pill py-1.5 small fw-bold" id="advanced-edit-tab-{{ $product->id }}" data-bs-toggle="tab" data-bs-target="#advanced-edit-{{ $product->id }}" type="button" role="tab"><i class="fas fa-cog me-1"></i>Opsi Lanjutan</button>
+                            <button class="nav-link rounded-pill py-1.5 small fw-bold" id="advanced-edit-tab-{{ $product->id }}" data-bs-toggle="tab" data-bs-target="#advanced-edit-{{ $product->id }}" type="button" role="tab"><i class="fas fa-cog me-1"></i>{{ __('Opsi Lanjutan') }}</button>
                         </li>
                     </ul>
                     <div class="tab-content" id="editProductTabContent{{ $product->id }}">

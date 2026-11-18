@@ -208,7 +208,7 @@
                             @endif
                         </div>
                         <p class="text-muted small m-0 mt-1">
-                            {{ $serviceStatus['detail'] ?? 'Memeriksa status daemon di port ' . $relayPort }}
+                            {{ $serviceStatus['detail'] ?? __('Memeriksa status daemon di port :port', ['port' => $relayPort]) }}
                             @if(!($serviceStatus['is_running'] ?? false))
                                 <span class="text-danger fw-semibold"> — {{ __('HP Android akan menerima 404 Handshake sampai service & reverse proxy Nginx diaktifkan.') }}</span>
                             @endif
@@ -291,7 +291,7 @@
                                         <span class="text-muted small font-monospace">ID: {{ $dev['device_id'] }} | IP: {{ $dev['ip'] ?? '-' }}</span>
                                     </div>
                                 </div>
-                                <span class="badge bg-success rounded-pill px-3 py-1.5"><i class="fas fa-link me-1"></i> Hubungkan</span>
+                                <span class="badge bg-success rounded-pill px-3 py-1.5"><i class="fas fa-link me-1"></i> {{ __('Hubungkan') }}</span>
                             </div>
                         @empty
                             <div id="noDevicesAlert" class="text-center py-4 text-muted">
@@ -488,7 +488,7 @@ exec app_process / com.remote.agent.Main --url wss://{{ request()->getHost() }}/
                     <div class="position-relative">
                         <pre class="bg-dark text-warning p-3 rounded-3 small font-monospace m-0" id="cmdSshInstall">{{ $serviceStatus['ssh_command'] ?? 'sudo bash /var/www/bot_tele_jualan/remote_control/scripts/install_vps_service.sh' }}</pre>
                         <button class="btn btn-sm btn-outline-light position-absolute top-0 end-0 m-2" onclick="copyText('cmdSshInstall')">
-                            <i class="fas fa-copy"></i> Salin
+                            <i class="fas fa-copy"></i> {{ __('Salin') }}
                         </button>
                     </div>
                 </div>
@@ -496,7 +496,7 @@ exec app_process / com.remote.agent.Main --url wss://{{ request()->getHost() }}/
                 <div class="mb-2">
                     <label class="form-label fw-bold small text-dark">{{ __('Log Eksekusi Installer:') }}</label>
                     <div class="bg-dark text-light p-3 rounded-3 font-monospace small" style="height: 180px; overflow-y: auto;" id="installerLogBox">
-                        <span class="text-muted">// Menunggu instruksi pemasangan atau restart...</span>
+                        <span class="text-muted">// {{ __('Menunggu instruksi pemasangan atau restart...') }}</span>
                     </div>
                 </div>
             </div>

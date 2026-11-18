@@ -6,7 +6,7 @@
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h4 class="fw-bold mb-1">Manajemen Penarikan Dana (Payouts)</h4>
+        <h4 class="fw-bold mb-1">{{ __('Manajemen Penarikan Dana (Payouts)') }}</h4>
         <p class="text-muted mb-0">{{ __('Verifikasi dan proses penarikan dana dari dompet saldo para seller mitra') }}</p>
     </div>
 </div>
@@ -175,7 +175,7 @@
             </div>
             <div class="modal-body p-4 text-center">
                 @if($withdrawal->proof_image_path)
-                    <img src="{{ asset($withdrawal->proof_image_path) }}" alt="Bukti Transfer Payout" class="img-fluid rounded-4 shadow-sm mb-3" style="max-height: 400px; object-fit: contain;">
+                    <img src="{{ asset($withdrawal->proof_image_path) }}" alt="{{ __('Bukti Transfer Payout') }}" class="img-fluid rounded-4 shadow-sm mb-3" style="max-height: 400px; object-fit: contain;">
                 @else
                     <p class="text-muted">{{ __('Bukti transfer tidak tersedia.') }}</p>
                 @endif
@@ -212,7 +212,7 @@
             <div class="modal-body p-4">
                 <div class="bg-danger-subtle text-danger p-3 rounded-4 mb-3">
                     <div class="fw-bold mb-1 small">{{ __('Alasan Ditolak:') }}</div>
-                    <div class="lh-sm">{{ $withdrawal->rejection_reason ?? 'Tidak ada alasan penolakan yang dicantumkan.' }}</div>
+                    <div class="lh-sm">{{ $withdrawal->rejection_reason ?? __('Tidak ada alasan penolakan yang dicantumkan.') }}</div>
                 </div>
                 <div class="bg-light p-3 rounded-4 text-start">
                     <div class="row small py-1">

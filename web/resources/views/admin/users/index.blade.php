@@ -484,7 +484,7 @@ function confirmExport() {
             }
         },
         inputValidator: (value) => {
-            if (!value) return 'Password wajib diisi!';
+            if (!value) return '{{ __('Password wajib diisi!') }}';
         }
     }).then((result) => {
         if (!result.isConfirmed) {

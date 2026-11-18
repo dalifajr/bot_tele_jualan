@@ -171,8 +171,8 @@
     </script>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="server-time" content="{{ time() }}">
-    <title>@yield('title', 'Dashboard') — {{ config('app.name', 'Dzulfikrialifajri Store') }}</title>
-    <meta name="description" content="@yield('meta_description', 'Platform jual beli produk digital terpercaya')">
+    <title>@yield('title', __('Dashboard')) — {{ config('app.name', 'Dzulfikrialifajri Store') }}</title>
+    <meta name="description" content="@yield('meta_description', __('Platform jual beli produk digital terpercaya'))">
 
     {{-- PWA Manifest & Mobile Meta Tags --}}
     <link rel="manifest" href="{{ asset('manifest.json') }}">
@@ -706,8 +706,8 @@
                                 <i class="{{ $notification->data['icon'] ?? 'fas fa-bell' }}"></i>
                             </div>
                             <div class="flex-grow-1 overflow-hidden">
-                                <div class="fw-semibold mb-0.5" style="font-size: 0.85rem; color: var(--on-surface);">{{ $notification->data['title'] ?? __('Notifikasi') }}</div>
-                                <div class="text-secondary small" style="font-size: 0.8rem; line-height: 1.35;">{{ $notification->data['message'] ?? '' }}</div>
+                                <div class="fw-semibold mb-0.5" style="font-size: 0.85rem; color: var(--on-surface);">{{ __($notification->data['title'] ?? 'Notifikasi') }}</div>
+                                <div class="text-secondary small" style="font-size: 0.8rem; line-height: 1.35;">{{ __($notification->data['message'] ?? '') }}</div>
                                 
                                 @if(($notification->data['type'] ?? '') === 'login_gagal' && isset($notification->data['ip_address']))
                                 <div class="mt-2" onclick="event.stopPropagation(); event.preventDefault();">
@@ -1686,7 +1686,7 @@
                             <div class="mb-3 text-start">
                                 <label class="form-label fw-semibold small text-muted">{{ __('Unggah Foto Profil Baru') }} <span class="text-danger">*</span></label>
                                 <input type="file" class="form-control" name="avatar" accept="image/jpeg,image/png,image/webp,image/gif" required>
-                                <div class="form-text" style="font-size: 0.75rem;">Maksimal 2MB. Format: JPG, PNG, WEBP, GIF.</div>
+                                <div class="form-text" style="font-size: 0.75rem;">{{ __('Maksimal 2MB. Format: JPG, PNG, WEBP, GIF.') }}</div>
                             </div>
                         </div>
                         <div class="modal-footer border-0 bg-light p-3">

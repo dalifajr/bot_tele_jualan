@@ -108,12 +108,12 @@ class Order extends Model
     public function getStatusLabelAttribute(): string
     {
         return match($this->status) {
-            'pending_payment' => 'Menunggu Pembayaran',
-            'paid' => 'Dibayar',
-            'delivered' => 'Selesai',
-            'cancelled' => 'Dibatalkan',
-            'expired' => 'Kedaluwarsa',
-            default => 'Unknown'
+            'pending_payment' => __('Menunggu Pembayaran'),
+            'paid' => __('Dibayar'),
+            'delivered' => __('Selesai'),
+            'cancelled' => __('Dibatalkan'),
+            'expired' => __('Kedaluwarsa'),
+            default => __('Unknown')
         };
     }
 

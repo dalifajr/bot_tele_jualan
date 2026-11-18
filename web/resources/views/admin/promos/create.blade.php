@@ -117,7 +117,7 @@
                     <div class="col-md-6">
                         <label class="form-label fw-semibold text-body" style="font-size: 0.88rem;">{{ __('Urutan Tampilan') }}</label>
                         <input type="number" name="order_index" class="form-control rounded-3" value="{{ old('order_index', 0) }}" min="0" max="999">
-                        <small class="text-secondary" style="font-size: 0.72rem;">Angka lebih kecil tampil lebih dulu (misal: 1, 2, 3...)</small>
+                        <small class="text-secondary" style="font-size: 0.72rem;">{{ __('Angka lebih kecil tampil lebih dulu (misal: 1, 2, 3...)') }}</small>
                     </div>
 
                     {{-- Status Aktif --}}
@@ -135,7 +135,7 @@
                     </a>
                     <button type="submit" class="btn btn-primary rounded-pill px-4 py-2 fw-semibold">
                         <i class="fas fa-save me-1.5"></i>{{ __('Simpan Promo') }}
-                    </button>
+                    </a>
                 </div>
             </form>
         </div>
@@ -159,7 +159,7 @@
                 <div class="p-3.5 d-flex flex-column justify-content-between w-100 position-relative" style="z-index: 3;">
                     <div>
                         <div class="d-flex align-items-center justify-content-between mb-2">
-                            <span class="badge rounded-pill fw-bold" id="previewBadge" style="background: #0b57d0; color: #ffffff; font-size: 0.72rem; letter-spacing: 0.03em;">PROMO SPESIAL</span>
+                            <span class="badge rounded-pill fw-bold" id="previewBadge" style="background: #0b57d0; color: #ffffff; font-size: 0.72rem; letter-spacing: 0.03em;">{{ __('PROMO SPESIAL') }}</span>
                             <i class="fas fa-tags text-primary opacity-50 fs-5" id="previewIcon"></i>
                         </div>
                         <h3 class="fw-bold text-body mb-1 promo-title-overlap" id="previewTitle" style="font-size: 1rem; line-height: 1.35; max-width: 82%;">{{ __('Judul Promo') }}</h3>

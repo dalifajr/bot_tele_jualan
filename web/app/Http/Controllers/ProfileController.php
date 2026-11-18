@@ -161,19 +161,19 @@ class ProfileController extends Controller
         $durationText = '';
         if ($duration === 1) {
             $expire = now()->addDay();
-            $durationText = '1 hari';
+            $durationText = __('1 hari');
         } elseif ($duration === 7) {
             $expire = now()->addDays(7);
-            $durationText = '7 hari';
+            $durationText = __('7 hari');
         } elseif ($duration === 30) {
             $expire = now()->addDays(30);
-            $durationText = '30 hari';
+            $durationText = __('30 hari');
         } elseif ($duration === 365) {
             $expire = now()->addYear();
-            $durationText = '1 tahun';
+            $durationText = __('1 tahun');
         } else {
             $expire = now()->addDay();
-            $durationText = '1 hari';
+            $durationText = __('1 hari');
         }
         
         \Illuminate\Support\Facades\Cache::put('blocked_ip:' . $ip, true, $expire);

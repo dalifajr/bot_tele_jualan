@@ -197,9 +197,9 @@
                         <td class="fw-medium text-dark">{{ Str::limit($extractedUsername, 20) }}</td>
                         <td>
                             @if($unit->github_joined_at)
-                                <span class="text-dark fw-semibold" title="{{ __('Berdasarkan check GitHub') }}">{{ $unit->umur_akun }}</span>
+                                <span class="text-dark fw-semibold" title="{{ __('Berdasarkan check GitHub') }}">{{ $unit->localized_umur_akun }}</span>
                             @else
-                                <span class="text-muted small" title="{{ __('Tanggal input stok') }}">{{ $unit->umur_akun }}</span>
+                                <span class="text-muted small" title="{{ __('Tanggal input stok') }}">{{ $unit->localized_umur_akun }}</span>
                             @endif
                         </td>
                         
@@ -357,7 +357,7 @@
                             <label class="form-label text-muted small fw-bold mb-0 d-flex align-items-center gap-1.5">
                                 <i class="fas fa-key text-warning"></i>
                                 <span>{{ __('Data Kredensial Akun') }}</span>
-                                <span class="badge bg-secondary-subtle text-secondary rounded-pill fw-normal px-2" style="font-size: 0.7rem;">Multi-Baris</span>
+                                <span class="badge bg-secondary-subtle text-secondary rounded-pill fw-normal px-2" style="font-size: 0.7rem;">{{ __('Multi-Baris') }}</span>
                             </label>
                             <span id="stock-draft-status" class="small text-muted d-inline-flex align-items-center gap-1" style="font-size: 0.75rem;">
                                 <i class="fas fa-cloud text-secondary"></i>
@@ -373,7 +373,7 @@
                                 <i class="fas fa-info-circle text-primary"></i>
                                 <span>{{ __('Pisahkan antar akun dengan') }} <kbd class="bg-light text-dark border px-1 py-0.5 rounded shadow-xs" style="font-size: 0.72rem;">Enter 2x</kbd> {{ __('jika ingin menginput banyak akun sekaligus.') }}</span>
                             </div>
-                            <div id="stock-line-counter" class="text-muted fw-medium" style="font-size: 0.75rem;">0 baris / 0 karakter</div>
+                            <div id="stock-line-counter" class="text-muted fw-medium" style="font-size: 0.75rem;">0 {{ __('baris') }} / 0 {{ __('karakter') }}</div>
                         </div>
 
                         {{-- Live Preview Parser --}}
@@ -833,7 +833,7 @@
                 // Update line & character counter
                 if (lineCounter) {
                     const linesCount = trimmed ? trimmed.split('\n').length : 0;
-                    lineCounter.textContent = `${linesCount} baris / ${text.length} karakter`;
+                    lineCounter.textContent = `${linesCount} {{ __('baris') }} / ${text.length} {{ __('karakter') }}`;
                 }
 
                 // Debounced auto-save
@@ -869,7 +869,8 @@
                     if (!cleanBlock) return;
 
                     validCount++;
-                    let username = 'Tidak Terdeteksi';
+                    const notDetectedLabel = '{{ __('Tidak Terdeteksi') }}';
+                    let username = notDetectedLabel;
                     let lines = cleanBlock.split('\n');
                     let details = [];
 
@@ -884,7 +885,7 @@
                         } else {
                             let parts = line.split(':');
                             let keyLower = parts[0].trim().toLowerCase();
-                            if (parts.length === 2 && username === 'Tidak Terdeteksi' && (['username', 'user', 'email', 'login', 'akun'].includes(keyLower) || parts[1].includes('@'))) {
+                            if (parts.length === 2 && username === notDetectedLabel && (['username', 'user', 'email', 'login', 'akun'].includes(keyLower) || parts[1].includes('@'))) {
                                 username = parts[1].trim();
                             } else {
                                 // Check if this detail line contains a 2FA secret
@@ -900,7 +901,7 @@
                     });
 
                     // Fallback to colon or pipe split if no username was explicitly matched
-                    if (username === 'Tidak Terdeteksi' && lines.length > 0) {
+                    if (username === notDetectedLabel && lines.length > 0) {
                         let firstLine = lines[0].trim();
                         let parts = firstLine.split(/[|:]/);
                         if (parts.length >= 2) {

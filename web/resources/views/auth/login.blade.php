@@ -310,7 +310,7 @@
 
         <div class="d-flex justify-content-between align-items-center">
             <span class="badge bg-secondary-subtle text-secondary py-1.5 px-3" style="font-size: 0.75rem;">
-                <i class="fas fa-users me-1 text-primary"></i> Pengunjung Hari Ini: {{ $todayVisitors ?? 0 }}
+                <i class="fas fa-users me-1 text-primary"></i> {{ __('Pengunjung Hari Ini:') }} {{ $todayVisitors ?? 0 }}
             </span>
         </div>
       </div>
@@ -363,7 +363,7 @@
           if (!telegramInput) return;
           
           let feedbackElem = document.getElementById('telegram_id_feedback');
-          let defaultFeedback = 'Agar bisa otomatis login dengan Telegram nantinya.';
+          let defaultFeedback = '{{ __('Agar bisa otomatis login dengan Telegram nantinya.') }}';
           let saveBtn = document.getElementById('btn-register');
           let checkTimeout;
 

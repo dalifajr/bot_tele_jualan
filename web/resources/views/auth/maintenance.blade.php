@@ -37,7 +37,7 @@
                     <div class="d-flex align-items-start gap-2 text-body">
                         <i class="fas fa-info-circle text-primary mt-1 flex-shrink-0"></i>
                         <div class="small fw-medium" style="line-height: 1.6;">
-                            {!! nl2br(e($maintenanceMessage ?? 'Website sedang dalam pemeliharaan sistem (Maintenance). Silakan kembali beberapa saat lagi.')) !!}
+                            {!! nl2br(e(__($maintenanceMessage ?? 'Website sedang dalam pemeliharaan sistem (Maintenance). Silakan kembali beberapa saat lagi.'))) !!}
                         </div>
                     </div>
                 </div>

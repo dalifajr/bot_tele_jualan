@@ -20,7 +20,7 @@
                     {{ __('Status:') }} <span id="statusText" class="text-danger">{{ __('Sedang memproses pembersihan data...') }}</span>
                 </h5>
                 <p class="text-muted small mb-0">
-                    {{ __('Tindakan:') }} <strong class="text-danger">Wipe Database (Mengosongkan Tabel)</strong>
+                    {{ __('Tindakan:') }} <strong class="text-danger">{{ __('Wipe Database (Mengosongkan Tabel)') }}</strong>
                 </p>
             </div>
             <div class="fs-4 fw-bold text-danger" id="wipePercent">5%</div>
@@ -121,7 +121,7 @@
                 if (percent === 100 || status === 'completed') {
                     progressBar.classList.remove('progress-bar-animated', 'progress-bar-striped');
                     progressBar.classList.add('bg-success');
-                    statusText.innerText = "Pembersihan Selesai!";
+                    statusText.innerText = "{{ __('Pembersihan Selesai!') }}";
                     statusText.className = "text-success";
                     wipeIcon.className = "fas fa-check-circle text-success";
                     btnDone.classList.remove('d-none');

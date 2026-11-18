@@ -140,7 +140,7 @@
                                     <span class="badge bg-danger ms-2" style="font-size: 0.65rem;">{{ __('BARU') }}</span>
                                 </div>
                                 <div class="d-flex justify-content-between align-items-center">
-                                    <small class="text-dark fw-bold text-truncate d-inline-block w-75">{{ $contact->last_message ?: 'Kirim pesan pertama Anda...' }}</small>
+                                    <small class="text-dark fw-bold text-truncate d-inline-block w-75">{{ $contact->last_message ?: __('Kirim pesan pertama Anda...') }}</small>
                                     @if($contact->last_message_time)
                                         <span class="text-muted" style="font-size: 0.7rem;">{{ $contact->last_message_time->format('H:i') }}</span>
                                     @endif
@@ -172,7 +172,7 @@
                                     @endif
                                 </div>
                                 <div class="d-flex justify-content-between align-items-center">
-                                    <small class="text-secondary text-truncate d-inline-block w-100">{{ $contact->last_message ?: 'Kirim pesan pertama Anda...' }}</small>
+                                    <small class="text-secondary text-truncate d-inline-block w-100">{{ $contact->last_message ?: __('Kirim pesan pertama Anda...') }}</small>
                                 </div>
                             </div>
                         </a>

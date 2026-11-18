@@ -139,7 +139,7 @@
                 <div class="d-flex flex-column gap-3 mt-1">
                     @php $groupedUnits = $order->stockUnits->groupBy('product_id'); @endphp
                     @foreach($groupedUnits as $productId => $units)
-                        @php $productName = $units->first()->product->name ?? 'Produk'; @endphp
+                        @php $productName = $units->first()->product->name ?? __('Produk'); @endphp
                         <div class="mb-1">
                             <span class="badge bg-primary-subtle text-primary mb-2 fw-bold" style="font-size: 0.85rem;">{{ $productName }}</span>
                             <div class="d-flex flex-column gap-2">
