@@ -112,7 +112,7 @@
                     <div class="m3-promo-card" style="background: {{ $promo->gradient_style }};">
                         @if($promo->image)
                             <div class="m3-promo-img-right">
-                                <img src="{{ $promo->image_url }}" alt="{{ $promo->title }}" loading="lazy">
+                                <img src="{{ $promo->image_url }}" alt="{{ __($promo->title) }}" loading="lazy">
                                 <div class="m3-promo-gradient-mask-right" style="background: linear-gradient(to left, rgba({{ $promo->theme_rgb }}, 0.04) 0%, rgba({{ $promo->theme_rgb }}, 0.35) 45%, rgba({{ $promo->theme_rgb }}, 0.8) 75%, var(--surface-container) 98%);"></div>
                             </div>
                         @endif

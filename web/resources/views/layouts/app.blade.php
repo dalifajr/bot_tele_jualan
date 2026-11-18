@@ -661,7 +661,7 @@
         {{-- Notification Bell for Mobile (< 768px): Direct Link to Notifications Page (Poin 10) --}}
         <div class="d-md-none">
             <a href="{{ Auth::check() ? route('notifications.index') : route('login') }}" 
-               @guest data-guest-modal="true" data-feature-name="notifikasi" @endguest 
+               @guest data-guest-modal="true" data-feature-name="{{ __('notifikasi') }}" @endguest 
                class="btn btn-link link-body-emphasis m3-icon-btn position-relative" 
                title="{{ __('Notifikasi') }}">
                 <i class="fas fa-bell" style="font-size: 0.95rem;"></i>

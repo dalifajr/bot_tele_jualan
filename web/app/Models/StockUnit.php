@@ -54,6 +54,9 @@ class StockUnit extends Model
     public function getUmurAkunAttribute()
     {
         $date = $this->github_joined_at ? \Carbon\Carbon::parse($this->github_joined_at) : $this->created_at;
+        if (!$date) {
+            return '-';
+        }
         $diffInMinutes = (int) $date->diffInMinutes(now());
 
         if ($diffInMinutes < 60) {
@@ -72,6 +75,9 @@ class StockUnit extends Model
     public function getLocalizedUmurAkunAttribute()
     {
         $date = $this->github_joined_at ? \Carbon\Carbon::parse($this->github_joined_at) : $this->created_at;
+        if (!$date) {
+            return '-';
+        }
         $diffInMinutes = (int) $date->diffInMinutes(now());
 
         if ($diffInMinutes < 60) {

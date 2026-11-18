@@ -1806,15 +1806,15 @@ class AdminController extends Controller
 
             foreach ($stocks as $stock) {
                 if ($stock->is_sold || $stock->sold_order_id) {
-                    throw new \Exception(__("Stok ID #{$stock->id} sudah dibeli atau tidak tersedia."));
+                    throw new \Exception(__('Stok ID #:id sudah dibeli atau tidak tersedia.', ['id' => $stock->id]));
                 }
                 if (!in_array($stock->stock_status, ['ready', 'awaiting_benefits', 'saved_for_verification'])) {
-                    throw new \Exception(__("Stok ID #{$stock->id} memiliki status yang tidak valid untuk dicheckout."));
+                    throw new \Exception(__('Stok ID #:id memiliki status yang tidak valid untuk dicheckout.', ['id' => $stock->id]));
                 }
 
                 $product = $stock->product;
                 if (!$product || $product->is_suspended) {
-                    throw new \Exception(__("Produk untuk stok ID #{$stock->id} tidak aktif."));
+                    throw new \Exception(__('Produk untuk stok ID #:id tidak aktif.', ['id' => $stock->id]));
                 }
 
                 $subtotal += $product->price;

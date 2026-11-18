@@ -641,7 +641,7 @@
                 // Add to cart via AJAX
                 const origHtml = btnProceed.innerHTML;
                 btnProceed.disabled = true;
-                btnProceed.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
+                btnProceed.innerHTML = '<i class="fas fa-spinner fa-spin"></i> {{ __("Menyimpan...") }}';
 
                 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                 fetch(`/cart/add/${pId}`, {

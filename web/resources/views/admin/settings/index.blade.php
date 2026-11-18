@@ -441,7 +441,7 @@
                                 <label class="form-label fw-bold small text-muted">{{ __('SHARED SECRET KEY (HMAC SHA-256 SIGNATURE)') }}</label>
                                 <div class="input-group">
                                     <span class="input-group-text bg-light border-end-0"><i class="fas fa-key text-warning"></i></span>
-                                    <input type="password" id="listenerSharedSecretInput" name="settings[listener_shared_secret]" class="form-control font-monospace" value="{{ $settings['listener_shared_secret'] ?? env('LISTENER_SHARED_SECRET', 'change-me') }}" placeholder="Masukkan Secret Key..." required>
+                                    <input type="password" id="listenerSharedSecretInput" name="settings[listener_shared_secret]" class="form-control font-monospace" value="{{ $settings['listener_shared_secret'] ?? env('LISTENER_SHARED_SECRET', 'change-me') }}" placeholder="{{ __('Masukkan Secret Key...') }}" required>
                                     <button type="button" class="btn btn-outline-secondary" onclick="toggleSecretVisibility('listenerSharedSecretInput', 'eyeIconSecret')">
                                         <i class="fas fa-eye" id="eyeIconSecret"></i>
                                     </button>

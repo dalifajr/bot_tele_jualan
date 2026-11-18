@@ -963,7 +963,7 @@
                         selectStatus.value = draft.stock_status;
                     }
                     rawTextArea.dispatchEvent(new Event('input'));
-                    updateDraftStatus(`Draft dipulihkan (${draft.timeString || 'sebelumnya'})`, 'fa-history text-primary');
+                    updateDraftStatus(`{{ __('Draft dipulihkan') }} (${draft.timeString || '{{ __('sebelumnya') }}'})`, 'fa-history text-primary');
                     if (btnDiscardDraft) {
                         btnDiscardDraft.classList.remove('d-none');
                     }

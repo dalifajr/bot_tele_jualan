@@ -149,7 +149,7 @@
         
         Swal.fire({
             title: '{{ __('Buka Blokir IP') }}',
-            html: `IP Anda <b>${ip}</b> {{ __('saat ini terblokir.') }}<br>{{ __('Silakan hubungi administrator untuk membuka blokir ini.') }}`,
+            html: `{{ __('IP Anda') }} <b>${ip}</b> {{ __('saat ini terblokir.') }}<br>{{ __('Silakan hubungi administrator untuk membuka blokir ini.') }}`,
             icon: 'info',
             showCancelButton: true,
             confirmButtonColor: '#0d6efd',

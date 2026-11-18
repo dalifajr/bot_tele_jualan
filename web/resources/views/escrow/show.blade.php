@@ -1004,7 +1004,7 @@
                 attachmentHtml = `<div class="mt-1.5"><a href="${msg.attachment_url}" target="_blank" class="d-inline-block"><img src="${msg.attachment_url}" alt="Attachment" class="chat-attachment-img shadow-sm border"></a></div>`;
             } else {
                 const linkClass = msg.is_mine ? 'text-white bg-white bg-opacity-25' : 'text-primary bg-light border';
-                attachmentHtml = `<div class="mt-1.5"><a href="${msg.attachment_url}" target="_blank" class="small ${linkClass} text-decoration-none d-inline-flex align-items-center gap-1.5 p-1.5 rounded"><i class="fas fa-file-arrow-down"></i><span>Unduh Lampiran File</span></a></div>`;
+                attachmentHtml = `<div class="mt-1.5"><a href="${msg.attachment_url}" target="_blank" class="small ${linkClass} text-decoration-none d-inline-flex align-items-center gap-1.5 p-1.5 rounded"><i class="fas fa-file-arrow-down"></i><span>{{ __('Unduh Lampiran File') }}</span></a></div>`;
             }
         }
 
