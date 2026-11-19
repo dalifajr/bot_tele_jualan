@@ -2028,7 +2028,7 @@ class AdminController extends Controller
             'commission_per_product' => 'nullable|boolean',
             'seller_save_hours' => 'required|integer|min:0',
             'allowed_tools' => 'nullable|array',
-            'allowed_tools.*' => 'string|in:github_checker,gmail_checker,2fa_generator,rekber',
+            'allowed_tools.*' => 'string|in:github_checker,gmail_checker,2fa_generator,rekber,reseller_api',
         ]);
 
         $oldRole = $user->role;

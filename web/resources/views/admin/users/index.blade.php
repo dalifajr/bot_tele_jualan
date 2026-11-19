@@ -327,6 +327,10 @@
                             <input class="form-check-input" type="checkbox" name="allowed_tools[]" value="rekber" id="tool_rekber_{{ $user->id }}" {{ $user->canUseRekber() ? 'checked' : '' }}>
                             <label class="form-check-label small" for="tool_rekber_{{ $user->id }}">{{ __('Layanan Rekber (Escrow)') }}</label>
                         </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" name="allowed_tools[]" value="reseller_api" id="tool_reseller_api_{{ $user->id }}" {{ is_array($user->allowed_tools) && in_array('reseller_api', $user->allowed_tools) ? 'checked' : '' }}>
+                            <label class="form-check-label small" for="tool_reseller_api_{{ $user->id }}">{{ __('API Reseller (H2H)') }}</label>
+                        </div>
                     </div>
 
                     {{-- Hidden fallbacks if not seller to prevent validation failure --}}

@@ -54,29 +54,45 @@
                         isDark = root.getAttribute('data-bs-theme') === 'dark';
                     }
 
-                    // 1. Primary Tokens
+                    // 1. Primary Tokens & WCAG Auto-Contrast On-Primary
+                    var luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+                    var onPrimary = luminance > 0.62 ? '#111318' : '#ffffff';
+
                     root.style.setProperty('--primary', c);
+                    root.style.setProperty('--primary-color', c);
+                    root.style.setProperty('--on-primary', onPrimary);
                     root.style.setProperty('--bs-primary', c);
+                    root.style.setProperty('--bs-link-color', c);
                     root.style.setProperty('--primary-rgb', r + ', ' + g + ', ' + b);
                     root.style.setProperty('--bs-primary-rgb', r + ', ' + g + ', ' + b);
                     root.style.setProperty('--cm-sys-color-primary', c);
+                    root.style.setProperty('--cm-sys-color-on-primary', onPrimary);
 
                     var tertH = (h + 50) % 360;
 
                     if (isDark) {
                         // Dark Mode M3 Tonal System (Tinted Surfaces)
                         var bgVal = 'hsl(' + h + ', 18%, 8.5%)';
-                        var cardBg = 'hsl(' + h + ', 18%, 11%)';
-                        var onSurface = 'hsl(' + h + ', 25%, 92%)';
+                        var cardBg = 'hsl(' + h + ', 18%, 11.5%)';
+                        var onSurface = 'hsl(' + h + ', 22%, 92%)';
+                        var primaryHover = 'hsl(' + h + ', ' + Math.min(85, Math.max(45, hsl.s)) + '%, ' + Math.min(88, Math.max(72, hsl.l + 10)) + '%)';
+                        var primaryActive = 'hsl(' + h + ', ' + Math.min(85, Math.max(45, hsl.s)) + '%, ' + Math.min(92, Math.max(76, hsl.l + 14)) + '%)';
 
-                        root.style.setProperty('--primary-container', 'hsl(' + h + ', 55%, 30%)');
-                        root.style.setProperty('--on-primary-container', 'hsl(' + h + ', 85%, 90%)');
+                        root.style.setProperty('--primary-hover', primaryHover);
+                        root.style.setProperty('--primary-active', primaryActive);
+                        root.style.setProperty('--bs-link-hover-color', primaryHover);
+                        root.style.setProperty('--active', 'rgba(' + r + ', ' + g + ', ' + b + ', 0.16)');
+
+                        root.style.setProperty('--primary-container', 'hsl(' + h + ', 52%, 28%)');
+                        root.style.setProperty('--on-primary-container', 'hsl(' + h + ', 85%, 92%)');
+                        root.style.setProperty('--primary-light', 'hsl(' + h + ', 52%, 28%)');
+                        root.style.setProperty('--secondary', 'hsl(' + h + ', 32%, 78%)');
                         root.style.setProperty('--secondary-container', 'hsl(' + h + ', 26%, 22%)');
-                        root.style.setProperty('--on-secondary-container', 'hsl(' + h + ', 35%, 88%)');
+                        root.style.setProperty('--on-secondary-container', 'hsl(' + h + ', 35%, 90%)');
 
                         root.style.setProperty('--tertiary', 'hsl(' + tertH + ', 50%, 75%)');
                         root.style.setProperty('--on-tertiary', 'hsl(' + tertH + ', 60%, 15%)');
-                        root.style.setProperty('--tertiary-container', 'hsl(' + tertH + ', 50%, 28%)');
+                        root.style.setProperty('--tertiary-container', 'hsl(' + tertH + ', 48%, 26%)');
                         root.style.setProperty('--on-tertiary-container', 'hsl(' + tertH + ', 85%, 92%)');
 
                         root.style.setProperty('--background', bgVal);
@@ -85,8 +101,8 @@
                         root.style.setProperty('--surface-container-lowest', 'hsl(' + h + ', 18%, 6.5%)');
                         root.style.setProperty('--surface-container-low', cardBg);
                         root.style.setProperty('--surface-container', 'hsl(' + h + ', 18%, 14%)');
-                        root.style.setProperty('--surface-container-high', 'hsl(' + h + ', 18%, 17%)');
-                        root.style.setProperty('--surface-container-highest', 'hsl(' + h + ', 18%, 21%)');
+                        root.style.setProperty('--surface-container-high', 'hsl(' + h + ', 18%, 17.5%)');
+                        root.style.setProperty('--surface-container-highest', 'hsl(' + h + ', 18%, 21.5%)');
                         root.style.setProperty('--surface-variant', 'hsl(' + h + ', 18%, 26%)');
                         root.style.setProperty('--outline', 'hsl(' + h + ', 10%, 58%)');
                         root.style.setProperty('--outline-variant', 'hsl(' + h + ', 12%, 27%)');
@@ -101,17 +117,26 @@
                         root.style.setProperty('--bs-secondary-bg', cardBg);
                         root.style.setProperty('--bs-border-color', 'hsl(' + h + ', 12%, 27%)');
                     } else {
-                        // Light Mode M3 Tonal System (Tinted Surfaces)
-                        var bgVal = 'hsl(' + h + ', 35%, 97.2%)';
-                        var cardBg = 'hsl(' + h + ', 30%, 99.4%)';
-                        var onSurface = 'hsl(' + h + ', 35%, 12%)';
+                        // Light Mode M3 Tonal System (Tinted Canvas vs Pure Lowest Card)
+                        var bgVal = 'hsl(' + h + ', 36%, 96.8%)';
+                        var cardBg = '#ffffff';
+                        var onSurface = 'hsl(' + h + ', 30%, 12%)';
+                        var primaryHover = 'hsl(' + h + ', ' + Math.min(90, Math.max(40, hsl.s)) + '%, ' + Math.max(24, hsl.l - 8) + '%)';
+                        var primaryActive = 'hsl(' + h + ', ' + Math.min(90, Math.max(40, hsl.s)) + '%, ' + Math.max(18, hsl.l - 14) + '%)';
 
-                        root.style.setProperty('--primary-container', 'hsl(' + h + ', 70%, 92%)');
-                        root.style.setProperty('--on-primary-container', 'hsl(' + h + ', 85%, 22%)');
-                        root.style.setProperty('--secondary-container', 'hsl(' + h + ', 42%, 91%)');
-                        root.style.setProperty('--on-secondary-container', 'hsl(' + h + ', 50%, 18%)');
+                        root.style.setProperty('--primary-hover', primaryHover);
+                        root.style.setProperty('--primary-active', primaryActive);
+                        root.style.setProperty('--bs-link-hover-color', primaryHover);
+                        root.style.setProperty('--active', 'rgba(' + r + ', ' + g + ', ' + b + ', 0.12)');
 
-                        root.style.setProperty('--tertiary', 'hsl(' + tertH + ', 50%, 42%)');
+                        root.style.setProperty('--primary-container', 'hsl(' + h + ', 72%, 91%)');
+                        root.style.setProperty('--on-primary-container', 'hsl(' + h + ', 82%, 20%)');
+                        root.style.setProperty('--primary-light', 'hsl(' + h + ', 72%, 91%)');
+                        root.style.setProperty('--secondary', 'hsl(' + h + ', 30%, 40%)');
+                        root.style.setProperty('--secondary-container', 'hsl(' + h + ', 44%, 90%)');
+                        root.style.setProperty('--on-secondary-container', 'hsl(' + h + ', 52%, 17%)');
+
+                        root.style.setProperty('--tertiary', 'hsl(' + tertH + ', 50%, 40%)');
                         root.style.setProperty('--on-tertiary', '#ffffff');
                         root.style.setProperty('--tertiary-container', 'hsl(' + tertH + ', 65%, 90%)');
                         root.style.setProperty('--on-tertiary-container', 'hsl(' + tertH + ', 85%, 16%)');
@@ -120,32 +145,34 @@
                         root.style.setProperty('--surface', bgVal);
                         root.style.setProperty('--surface-bg', bgVal);
                         root.style.setProperty('--surface-container-lowest', cardBg);
-                        root.style.setProperty('--surface-container-low', 'hsl(' + h + ', 30%, 95.2%)');
-                        root.style.setProperty('--surface-container', 'hsl(' + h + ', 30%, 92.5%)');
-                        root.style.setProperty('--surface-container-high', 'hsl(' + h + ', 30%, 88.5%)');
-                        root.style.setProperty('--surface-container-highest', 'hsl(' + h + ', 30%, 84.5%)');
-                        root.style.setProperty('--surface-variant', 'hsl(' + h + ', 25%, 90.5%)');
-                        root.style.setProperty('--outline', 'hsl(' + h + ', 18%, 52%)');
-                        root.style.setProperty('--outline-variant', 'hsl(' + h + ', 22%, 82%)');
+                        root.style.setProperty('--surface-container-low', 'hsl(' + h + ', 32%, 94.6%)');
+                        root.style.setProperty('--surface-container', 'hsl(' + h + ', 30%, 91.8%)');
+                        root.style.setProperty('--surface-container-high', 'hsl(' + h + ', 28%, 88.2%)');
+                        root.style.setProperty('--surface-container-highest', 'hsl(' + h + ', 26%, 84.5%)');
+                        root.style.setProperty('--surface-variant', 'hsl(' + h + ', 25%, 90.2%)');
+                        root.style.setProperty('--outline', 'hsl(' + h + ', 16%, 50%)');
+                        root.style.setProperty('--outline-variant', 'hsl(' + h + ', 20%, 82%)');
                         root.style.setProperty('--on-surface', onSurface);
-                        root.style.setProperty('--on-surface-variant', 'hsl(' + h + ', 20%, 30%)');
+                        root.style.setProperty('--on-surface-variant', 'hsl(' + h + ', 18%, 32%)');
 
                         // Bootstrap Variables
                         root.style.setProperty('--bs-body-bg', bgVal);
                         root.style.setProperty('--bs-body-color', onSurface);
                         root.style.setProperty('--bs-card-bg', cardBg);
-                        root.style.setProperty('--bs-tertiary-bg', 'hsl(' + h + ', 30%, 92.5%)');
-                        root.style.setProperty('--bs-secondary-bg', 'hsl(' + h + ', 30%, 95.2%)');
-                        root.style.setProperty('--bs-border-color', 'hsl(' + h + ', 22%, 82%)');
+                        root.style.setProperty('--bs-tertiary-bg', 'hsl(' + h + ', 30%, 91.8%)');
+                        root.style.setProperty('--bs-secondary-bg', 'hsl(' + h + ', 32%, 94.6%)');
+                        root.style.setProperty('--bs-border-color', 'hsl(' + h + ', 20%, 82%)');
                     }
 
                     if (document.body) {
-                        document.body.style.backgroundColor = isDark ? 'hsl(' + h + ', 18%, 8.5%)' : 'hsl(' + h + ', 35%, 97.2%)';
-                        document.body.style.color = isDark ? 'hsl(' + h + ', 25%, 92%)' : 'hsl(' + h + ', 35%, 12%)';
+                        document.body.style.backgroundColor = bgVal;
+                        document.body.style.color = onSurface;
                     }
 
-                    // 2. Legacy / Derivative Tokens
-                    root.style.setProperty('--cm-sys-color-surface', root.style.getPropertyValue('--surface-container-lowest'));
+                    // 2. Legacy / Derivative Tokens (Keep canvas --surface distinct from card --surface-container-lowest)
+                    root.style.setProperty('--cm-sys-color-container-primary', root.style.getPropertyValue('--primary-container'));
+                    root.style.setProperty('--cm-sys-color-primary-on-container', root.style.getPropertyValue('--on-primary-container'));
+                    root.style.setProperty('--cm-sys-color-surface', bgVal);
                     root.style.setProperty('--cm-sys-color-surface-variant', root.style.getPropertyValue('--surface-container-low'));
                     root.style.setProperty('--cm-sys-color-container', root.style.getPropertyValue('--surface-container-low'));
                     root.style.setProperty('--cm-sys-color-container-high', root.style.getPropertyValue('--surface-container'));
@@ -770,7 +797,7 @@
                 </span>
                 @endif
             </button>
-            <div class="dropdown-menu dropdown-menu-end mt-2 p-0" style="width: 360px; z-index: 1050; border-radius: var(--radius-xl, 24px); border: 1px solid var(--outline-variant); background: var(--surface-container-low); box-shadow: 0 12px 36px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04); overflow: hidden;">
+            <div class="dropdown-menu dropdown-menu-end mt-2 p-0 m3-notif-popover" style="width: 360px; z-index: 1050; border-radius: var(--radius-xl, 24px); border: 1px solid var(--outline-variant); background: var(--surface-container-high); box-shadow: var(--elevate3, 0 8px 24px rgba(0, 0, 0, 0.12)); overflow: hidden;">
                 {{-- M3 Popover Header --}}
                 <div class="px-3.5 py-3 border-bottom d-flex justify-content-between align-items-center" style="border-color: var(--outline-variant) !important; background: var(--surface-container-low);">
                     <div class="d-flex align-items-center gap-2">
@@ -1086,14 +1113,25 @@
                     </div>
                 </div>
 
-                @if(Auth::check() && $canAccess2fa && Auth::user()->role === 'customer')
+                @php
+                    $canAccessResellerApi = Auth::check() && Auth::user()->canUseResellerApi();
+                @endphp
+                @if(Auth::check() && (($canAccess2fa && Auth::user()->role === 'customer') || $canAccessResellerApi))
                 <div class="menu-group mt-2">
                     <div class="menu-header px-3 text-success"><i class="fas fa-tools me-1"></i> {{ __('TOOL') }}</div>
                     <div class="menu-items-grid">
+                        @if($canAccess2fa && Auth::user()->role === 'customer')
                         <a href="{{ route('tools.2fa-generator') }}" class="menu-item {{ request()->routeIs('tools.2fa-generator*') ? 'active' : '' }}">
                             <div class="menu-icon-box"><i class="fas fa-key text-success"></i></div>
                             <span class="menu-label-text">{{ __('Generator Kode 2FA') }}</span>
                         </a>
+                        @endif
+                        @if($canAccessResellerApi)
+                        <a href="{{ route('developer.api.index') }}" class="menu-item {{ request()->routeIs('developer.api.*') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fas fa-code text-primary"></i></div>
+                            <span class="menu-label-text">{{ __('API Reseller (H2H)') }}</span>
+                        </a>
+                        @endif
                     </div>
                 </div>
                 @endif
@@ -1154,6 +1192,10 @@
                             <div class="menu-icon-box"><i class="fas fa-coins text-primary"></i></div>
                             <span class="menu-label-text">{{ __('Top-Up Dompet') }}</span>
                         </a>
+                        <a href="{{ route('admin.finance.reports') }}" class="menu-item {{ request()->routeIs('admin.finance.*') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fas fa-file-invoice-dollar text-success"></i></div>
+                            <span class="menu-label-text">{{ __('Laporan Keuangan (P&L)') }}</span>
+                        </a>
                         <a href="{{ route('admin.coupons.index') }}" class="menu-item {{ request()->routeIs('admin.coupons.*') ? 'active' : '' }}">
                             <div class="menu-icon-box"><i class="fas fa-ticket text-danger"></i></div>
                             <span class="menu-label-text">{{ __('Kelola Kupon') }}</span>
@@ -1191,6 +1233,10 @@
                         <a href="{{ route('tools.2fa-generator') }}" class="menu-item {{ request()->routeIs('tools.2fa-generator*') || request()->routeIs('admin.tools.2fa-generator*') ? 'active' : '' }}">
                             <div class="menu-icon-box"><i class="fas fa-key text-success"></i></div>
                             <span class="menu-label-text">{{ __('Generator Kode 2FA') }}</span>
+                        </a>
+                        <a href="{{ route('developer.api.index') }}" class="menu-item {{ request()->routeIs('developer.api.*') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fas fa-code text-primary"></i></div>
+                            <span class="menu-label-text">{{ __('API Reseller (H2H)') }}</span>
                         </a>
                     </div>
                 </div>

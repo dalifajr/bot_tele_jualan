@@ -202,6 +202,18 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
     Route::get('/wallet/topup/{id}/status', [\App\Http\Controllers\WalletController::class, 'topupStatus'])->name('wallet.topup.status');
     Route::post('/wallet/topup/{id}/cancel', [\App\Http\Controllers\WalletController::class, 'cancelTopup'])->name('wallet.topup.cancel');
 
+    // Reseller H2H Developer API Portal
+    Route::prefix('developer/api')->name('developer.api.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\ResellerApiPortalController::class, 'index'])->name('index');
+        Route::post('/keys', [\App\Http\Controllers\ResellerApiPortalController::class, 'storeKey'])->name('keys.store');
+        Route::put('/keys/{id}', [\App\Http\Controllers\ResellerApiPortalController::class, 'updateKey'])->whereNumber('id')->name('keys.update');
+        Route::post('/keys/{id}/toggle', [\App\Http\Controllers\ResellerApiPortalController::class, 'toggleKey'])->whereNumber('id')->name('keys.toggle');
+        Route::post('/keys/{id}/rotate', [\App\Http\Controllers\ResellerApiPortalController::class, 'rotateKey'])->whereNumber('id')->name('keys.rotate');
+        Route::delete('/keys/{id}', [\App\Http\Controllers\ResellerApiPortalController::class, 'destroyKey'])->whereNumber('id')->name('keys.destroy');
+        Route::post('/admin/access-mode', [\App\Http\Controllers\ResellerApiPortalController::class, 'adminUpdateAccessMode'])->name('admin.access-mode');
+        Route::post('/admin/keys/{id}/revoke', [\App\Http\Controllers\ResellerApiPortalController::class, 'adminRevokeKey'])->whereNumber('id')->name('admin.keys.revoke');
+    });
+
     Route::get('/wishlist', [\App\Http\Controllers\WishlistController::class, 'index'])->name('wishlist.index');
     Route::post('/wishlist/toggle/{productId}', [\App\Http\Controllers\WishlistController::class, 'toggle'])->name('wishlist.toggle');
     Route::post('/wishlist/restock-alert/{productId}', [\App\Http\Controllers\WishlistController::class, 'toggleRestockAlert'])->name('wishlist.restock-alert');
@@ -399,6 +411,11 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         Route::post('/wallet/manual-credit', [\App\Http\Controllers\WalletController::class, 'adminManualCredit'])->name('wallet.manual-credit');
         Route::post('/wallet/topup/{id}/confirm', [\App\Http\Controllers\WalletController::class, 'adminConfirmTopup'])->name('wallet.topup.confirm');
         Route::post('/wallet/topup/{id}/reject', [\App\Http\Controllers\WalletController::class, 'adminRejectTopup'])->name('wallet.topup.reject');
+
+        // Financial Reports & Profit/Loss (P&L)
+        Route::get('/finance/reports', [\App\Http\Controllers\Admin\FinancialReportController::class, 'index'])->name('finance.reports');
+        Route::get('/finance/reports/export-csv', [\App\Http\Controllers\Admin\FinancialReportController::class, 'exportCsv'])->name('finance.reports.export-csv');
+        Route::get('/finance/reports/export-pdf', [\App\Http\Controllers\Admin\FinancialReportController::class, 'exportPdf'])->name('finance.reports.export-pdf');
 
         // System Health Monitor & VPS Control Center
         Route::get('/system/health', [\App\Http\Controllers\Admin\SystemHealthController::class, 'index'])->name('system.health');

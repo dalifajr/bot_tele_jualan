@@ -87,7 +87,10 @@
     --shadow: none;
     --scrim: #000000;
     --active: rgba(101, 85, 143, 0.12);
-    --overlay: rgba(0, 0, 0, 0.38);
+    --overlay: rgba(0, 0, 0, 0.42);
+    --elevate1: none;
+    --elevate2: 0 2px 10px rgba(0, 0, 0, 0.06);
+    --elevate3: 0 8px 24px rgba(0, 0, 0, 0.11);
 
     /* Legacy Variable Compatibility */
     --cm-sys-color-primary: var(--primary);
@@ -210,6 +213,10 @@
     --outline: #938f99;
     --outline-variant: #49454f;
     --active: rgba(208, 188, 255, 0.14);
+    --overlay: rgba(0, 0, 0, 0.62);
+    --elevate1: none;
+    --elevate2: 0 4px 14px rgba(0, 0, 0, 0.28);
+    --elevate3: 0 10px 28px rgba(0, 0, 0, 0.42);
 
     --cm-sys-color-primary: var(--primary);
     --cm-sys-color-on-primary: var(--on-primary);
@@ -292,8 +299,8 @@ body {
     line-height: 1.5;    /* 21px */
     letter-spacing: 0.005em;
     overflow-x: hidden;
-    background-color: var(--cm-sys-color-surface) !important;
-    color: var(--cm-sys-color-on-surface) !important;
+    background-color: var(--surface) !important;
+    color: var(--on-surface) !important;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
@@ -2660,27 +2667,48 @@ ul.nav-pills,
     border: 1px solid transparent !important;
 }
 
-/* === DROPDOWN MENUS (M3 SURFACE CONTAINER 16PX) === */
+/* === DROPDOWN MENUS (M3 SURFACE CONTAINER HIGH + EXPRESSIVE REVEAL) === */
 .dropdown-menu {
-    background-color: var(--surface-container-lowest) !important;
+    background-color: var(--surface-container-high) !important;
     border: 1px solid var(--outline-variant) !important;
     border-radius: var(--radius-md) !important;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08) !important;
+    box-shadow: var(--elevate2) !important;
     padding: 6px !important;
+    transform-origin: top center;
+}
+
+.dropdown-menu.dropdown-menu-end {
+    transform-origin: top right;
+}
+
+.dropdown-menu.show {
+    animation: m3MenuReveal 180ms var(--md-sys-motion-easing-emphasized-decelerate) both;
+}
+
+@keyframes m3MenuReveal {
+    0% {
+        opacity: 0;
+        transform: translateY(-6px) scale(0.96);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
 .dropdown-item {
-    border-radius: var(--radius-xs) !important;
-    padding: 8px 16px !important;
+    border-radius: var(--radius-sm) !important;
+    padding: 8px 14px !important;
     font: var(--cm-sys-type-body-medium) !important;
     color: var(--on-surface) !important;
-    transition: background-color 0.1s ease, color 0.1s ease;
+    transition: background-color var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard),
+                color var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard);
 }
 
 .dropdown-item:hover,
 .dropdown-item:focus {
-    background-color: var(--surface-container) !important;
-    color: var(--primary) !important;
+    background-color: var(--secondary-container) !important;
+    color: var(--on-secondary-container) !important;
 }
 
 /* === ALERTS (FLAT TONAL 16PX M3 CONTAINER) === */
@@ -2710,12 +2738,16 @@ ul.nav-pills,
     border-color: transparent !important;
 }
 
-/* === MODALS (M3 DIALOG 24PX/28PX SQUIRCLE) === */
+/* === MODALS (M3 FLAT SCRIM — ZERO HEAVY BLUR FOR 60FPS MOBILE) === */
 .modal-backdrop {
-    background-color: rgba(15, 23, 42, 0.6) !important;
-    backdrop-filter: blur(6px) !important;
-    -webkit-backdrop-filter: blur(6px) !important;
-    transition: opacity 0.25s cubic-bezier(0.2, 0, 0, 1) !important;
+    background-color: var(--overlay, rgba(15, 17, 23, 0.44)) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    transition: opacity var(--md-sys-motion-duration-medium1) var(--md-sys-motion-easing-standard) !important;
+}
+
+.modal-backdrop.show {
+    opacity: 1 !important;
 }
 
 .modal-header {
@@ -2735,81 +2767,7 @@ ul.nav-pills,
     background-color: transparent !important;
 }
 
-/* ==========================================================================
-   Material Design 3 / Flat Material You Confirmation Dialog (Android 17 M3)
-   ========================================================================== */
-.swal2-popup:not(.swal2-toast) {
-    font-family: var(--font-poppins) !important;
-    border-radius: 28px !important;
-    border: 1px solid var(--outline-variant) !important;
-    background: var(--surface-container-high) !important;
-    color: var(--on-surface) !important;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(0, 0, 0, 0.05) !important;
-    padding: 24px !important;
-}
-
-.swal2-popup:not(.swal2-toast) .swal2-title {
-    font-family: var(--font-poppins) !important;
-    color: var(--on-surface) !important;
-    font-size: 1.25rem !important;
-    font-weight: 700 !important;
-    margin-bottom: 8px !important;
-}
-
-.swal2-popup:not(.swal2-toast) .swal2-html-container {
-    font-family: var(--font-poppins) !important;
-    color: var(--on-surface-variant) !important;
-    font-size: 0.9rem !important;
-    line-height: 1.5 !important;
-    margin: 0 0 16px 0 !important;
-}
-
-.swal2-popup:not(.swal2-toast) .swal2-actions {
-    gap: 12px !important;
-    margin-top: 1.25rem !important;
-}
-
-.swal2-popup:not(.swal2-toast) .swal2-confirm {
-    border-radius: var(--radius-pill, 9999px) !important;
-    background: var(--primary) !important;
-    color: var(--on-primary) !important;
-    font-family: var(--font-poppins) !important;
-    font-weight: 600 !important;
-    font-size: 0.875rem !important;
-    padding: 10px 24px !important;
-    box-shadow: none !important;
-    border: none !important;
-    transition: filter 0.15s ease;
-}
-
-.swal2-popup:not(.swal2-toast) .swal2-confirm:hover {
-    filter: brightness(1.08) !important;
-}
-
-.swal2-popup:not(.swal2-toast) .swal2-cancel {
-    border-radius: var(--radius-pill, 9999px) !important;
-    background: var(--surface-container) !important;
-    color: var(--on-surface) !important;
-    font-family: var(--font-poppins) !important;
-    font-weight: 600 !important;
-    font-size: 0.875rem !important;
-    padding: 10px 24px !important;
-    border: 1px solid var(--outline-variant) !important;
-    box-shadow: none !important;
-    transition: background-color 0.15s ease;
-}
-
-.swal2-popup:not(.swal2-toast) .swal2-cancel:hover {
-    background: var(--surface-container-highest) !important;
-}
-
-/* === CARD SURFACE STANDARDIZATION (FLAT 16PX) === */
-.card {
-    border-radius: var(--radius-md) !important;
-    background-color: var(--surface-container-lowest) !important;
-    border: 1px solid var(--outline-variant) !important;
-    box-shadow: none !important;
-}
+/* Note: Unified M3 SweetAlert2 Dialog & Card Surface rules live in single-source blocks */
 
 /* === HIDE SCROLLBAR ON SIDEBAR (FIGMA M3 SEAMLESS DRAWER) === */
 .sidebar::-webkit-scrollbar,
@@ -2849,27 +2807,44 @@ ul.nav-pills,
     border: 3px solid rgba(255,255,255,0.3);
 }
 
-/* === ANIMATIONS === */
-.card, .stat-card, .quick-action-btn, .product-card {
-    animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+/* === M3 EXPRESSIVE ENTRANCE MOTION (EXCLUDING NESTED OVERLAY CARDS) === */
+.stat-card,
+.quick-action-btn,
+.product-card,
+.main-content > .container-fluid > .card,
+.main-content > .container-fluid > .row > div > .card {
+    animation: m3CardReveal 260ms var(--md-sys-motion-easing-emphasized-decelerate) both;
 }
 
-@keyframes fadeInUp {
+.modal .card,
+.dropdown-menu .card,
+.collapse .card,
+.swal2-container .card {
+    animation: none !important;
+}
+
+@keyframes m3CardReveal {
     from {
         opacity: 0;
-        transform: translateY(16px);
+        transform: translateY(8px) scale(0.992);
     }
     to {
         opacity: 1;
-        transform: translateY(0);
+        transform: translateY(0) scale(1);
     }
 }
 
-/* stagger animation */
-.row > div:nth-child(2) .stat-card { animation-delay: 0.05s; }
-.row > div:nth-child(3) .stat-card { animation-delay: 0.1s; }
-.row > div:nth-child(4) .stat-card { animation-delay: 0.15s; }
-.row > div:nth-child(5) .stat-card { animation-delay: 0.2s; }
+/* Subtle M3 stagger for top summary grids */
+.row > div:nth-child(2) .stat-card,
+.row > div:nth-child(2) > .card { animation-delay: 35ms; }
+.row > div:nth-child(3) .stat-card,
+.row > div:nth-child(3) > .card { animation-delay: 70ms; }
+.row > div:nth-child(4) .stat-card,
+.row > div:nth-child(4) > .card { animation-delay: 105ms; }
+.row > div:nth-child(5) .stat-card,
+.row > div:nth-child(5) > .card { animation-delay: 140ms; }
+.row > div:nth-child(6) .stat-card,
+.row > div:nth-child(6) > .card { animation-delay: 175ms; }
 
 /* Modal Z-Index Fix */
 .modal {
@@ -3248,7 +3223,6 @@ ul.nav-pills,
     .has-mobile-action-bar {
         padding-bottom: calc(160px + env(safe-area-inset-bottom)) !important;
     }
-}
 
     /* Product card 2-column mobile optimization */
     .product-card {
@@ -4587,21 +4561,24 @@ body.swal2-shown:not(.swal2-toast-shown) .swal2-container:not(.swal2-toast-conta
 /* === BOOTSTRAP MODAL AS M3 DIALOG (DESKTOP) & M3 BOTTOM SHEET DRAWER (MOBILE) === */
 @media (min-width: 768px) {
     .modal.fade .modal-dialog {
-        transform: scale(0.92) !important;
+        transform: scale(0.92) translateY(6px) !important;
         opacity: 0 !important;
-        transition: transform 0.25s cubic-bezier(0.2, 0, 0, 1), opacity 0.25s cubic-bezier(0.2, 0, 0, 1) !important;
+        transition: transform var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-emphasized-accelerate),
+                    opacity var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-emphasized-accelerate) !important;
     }
 
     .modal.fade.show .modal-dialog {
-        transform: scale(1) !important;
+        transform: scale(1) translateY(0) !important;
         opacity: 1 !important;
+        transition: transform var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-emphasized-decelerate),
+                    opacity var(--md-sys-motion-duration-medium1) var(--md-sys-motion-easing-emphasized-decelerate) !important;
     }
 
     .modal-content {
         background-color: var(--surface-container-high) !important;
-        border-radius: 28px !important;
+        border-radius: var(--radius-xl, 28px) !important;
         border: 1px solid var(--outline-variant) !important;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(0, 0, 0, 0.05) !important;
+        box-shadow: var(--elevate3) !important;
         padding: 16px 20px !important;
         animation: none !important;
         overflow: hidden !important;
@@ -4627,11 +4604,12 @@ body.swal2-shown:not(.swal2-toast-shown) .swal2-container:not(.swal2-toast-conta
         flex-direction: column !important;
         justify-content: flex-end !important;
         transform: translateY(100%) !important;
-        transition: transform 0.3s cubic-bezier(0.2, 0, 0, 1) !important;
+        transition: transform var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-emphasized-accelerate) !important;
     }
 
     .modal.fade.show .modal-dialog {
         transform: translateY(0) !important;
+        transition: transform var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-emphasized-decelerate) !important;
     }
 
     .modal-content {
@@ -4641,10 +4619,10 @@ body.swal2-shown:not(.swal2-toast-shown) .swal2-container:not(.swal2-toast-conta
         border-top: 1px solid var(--outline-variant) !important;
         border-left: 1px solid var(--outline-variant) !important;
         border-right: 1px solid var(--outline-variant) !important;
-        box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.25) !important;
+        box-shadow: var(--elevate3) !important;
         max-height: 88vh !important;
         overflow-y: auto !important;
-        padding: 12px 20px 24px !important;
+        padding: 12px 20px calc(24px + env(safe-area-inset-bottom, 0px)) !important;
         animation: none !important;
     }
 
@@ -4659,8 +4637,8 @@ body.swal2-shown:not(.swal2-toast-shown) .swal2-container:not(.swal2-toast-conta
         top: 8px !important;
         left: 50% !important;
         transform: translateX(-50%) !important;
-        width: 38px !important;
-        height: 4.5px !important;
+        width: 36px !important;
+        height: 4px !important;
         background: var(--outline-variant, #cbd5e1) !important;
         border-radius: 9999px !important;
     }
@@ -4701,18 +4679,29 @@ body.swal2-shown:not(.swal2-toast-shown) .swal2-container:not(.swal2-toast-conta
     background: var(--outline-variant, #49454f) !important;
 }
 
-/* === M3 FORM CONTROLS (TEXT FIELD & SELECT ALIGNED TO REFERENCE DESIGN) === */
-.form-control,
-.form-select {
-    border-radius: 12px !important;
+/* === M3 FORM CONTROLS (SINGLE SOURCE — PRESERVING SM/LG VARIANTS) === */
+.form-control:not(.form-control-sm):not(.form-control-lg),
+.form-select:not(.form-select-sm):not(.form-select-lg) {
+    border-radius: var(--radius-sm, 12px) !important;
     border: 1px solid var(--outline-variant) !important;
-    background-color: var(--surface-container-lowest) !important;
+    background-color: var(--surface-container-low) !important;
     color: var(--on-surface) !important;
-    padding: 10px 14px !important;
-    font-size: 0.92rem !important;
+    padding: 0.52rem 0.9rem !important;
+    font-size: 0.9rem !important;
     transition: border-color var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard),
                 box-shadow var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard),
                 background-color var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard) !important;
+}
+
+.form-control-sm,
+.form-select-sm {
+    border-radius: 10px !important;
+    border: 1px solid var(--outline-variant) !important;
+    background-color: var(--surface-container-low) !important;
+    color: var(--on-surface) !important;
+    padding: 0.32rem 0.72rem !important;
+    min-height: 34px !important;
+    font-size: 0.82rem !important;
 }
 
 .form-control:focus,
@@ -4723,7 +4712,7 @@ body.swal2-shown:not(.swal2-toast-shown) .swal2-container:not(.swal2-toast-conta
     color: var(--on-surface) !important;
 }
 
-/* === M3 SWITCH (ALIGNED TO REFERENCE DESIGN SWITCH.MD) === */
+/* === M3 SWITCH (WCAG AAA CONTRAST FOR BOTH LIGHT & DARK MODE) === */
 .form-switch .form-check-input {
     width: 48px !important;
     height: 28px !important;
@@ -4745,17 +4734,29 @@ body.swal2-shown:not(.swal2-toast-shown) .swal2-container:not(.swal2-toast-conta
     background-position: right center !important;
 }
 
-/* === M3 LINEAR PROGRESS (ALIGNED TO REFERENCE DESIGN PROGRESS.MD) === */
+[data-bs-theme="dark"] .form-switch .form-check-input {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23cac4d0'/%3e%3c/svg%3e") !important;
+}
+
+[data-bs-theme="dark"] .form-switch .form-check-input:checked {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3.5' fill='%231d1b20'/%3e%3c/svg%3e") !important;
+}
+
+/* === M3 LINEAR PROGRESS (SLIM 4PX DEFAULT, PRESERVING LABELED PROGRESS BARS) === */
 .progress {
-    height: 4px !important;
-    border-radius: 2px !important;
+    height: 4px;
+    border-radius: var(--radius-pill, 9999px) !important;
     background-color: var(--surface-container-highest) !important;
     overflow: hidden !important;
 }
 
+.progress.progress-labeled {
+    height: 20px;
+}
+
 .progress-bar {
     background-color: var(--primary) !important;
-    border-radius: 2px !important;
+    border-radius: var(--radius-pill, 9999px) !important;
     transition: width var(--md-sys-motion-duration-medium3) var(--md-sys-motion-easing-emphasized) !important;
 }
 
@@ -5051,16 +5052,16 @@ body.swal2-shown:not(.swal2-toast-shown) .swal2-container:not(.swal2-toast-conta
 }
 
 .m3-cmd-modal .modal-content {
-    background: var(--surface-container-lowest, #ffffff) !important;
+    background: var(--surface-container-high) !important;
     border: 1px solid var(--outline-variant) !important;
-    border-radius: 24px !important;
+    border-radius: var(--radius-xl, 28px) !important;
     padding: 0 !important;
     overflow: hidden !important;
-    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.22), 0 4px 16px rgba(0, 0, 0, 0.08) !important;
+    box-shadow: var(--elevate3) !important;
 }
 
 [data-bs-theme="dark"] .m3-cmd-modal .modal-content {
-    background: var(--surface-container-low, #1d1b20) !important;
+    background: var(--surface-container-high, #2b2930) !important;
 }
 
 .m3-cmd-input-wrap {
@@ -5174,6 +5175,131 @@ body.swal2-shown:not(.swal2-toast-shown) .swal2-container:not(.swal2-toast-conta
 
 [data-bs-theme="dark"] .m3-cmd-footer {
     background: var(--surface-container);
+}
+
+/* ==========================================================================
+   BEERCSS & FLAT MATERIAL YOU (ANDROID 17 / M3 EXPRESSIVE) POLISH LAYER
+   Concentric Cards, Tonal Tab Strip, Tactile State Layers & Reduced Motion
+   ========================================================================== */
+
+/* 1. Concentric Tonal Card & Sub-Card Helpers (Zero-Shadow Hierarchy) */
+.card.m3-card-tonal {
+    background-color: var(--surface-container-low) !important;
+    border: 1px solid var(--outline-variant) !important;
+    border-radius: var(--radius-lg, 20px) !important;
+    box-shadow: var(--elevate1, none) !important;
+}
+
+.card.m3-card-primary {
+    background-color: var(--primary-container) !important;
+    color: var(--on-primary-container) !important;
+    border: 1px solid rgba(var(--primary-rgb), 0.28) !important;
+    border-radius: var(--radius-lg, 20px) !important;
+    box-shadow: var(--elevate1, none) !important;
+}
+
+.m3-subcard {
+    background-color: var(--surface-container);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--radius-sm, 12px);
+    transition: border-color var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard),
+                background-color var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard);
+}
+
+.m3-subcard:hover {
+    border-color: var(--outline);
+}
+
+/* 2. Unified M3 Pill Tab Strip (Android 17 Segmented / Pill Track) */
+.m3-tab-strip {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    padding: 5px;
+    border-radius: var(--radius-xl, 28px);
+    background-color: var(--surface-container);
+    border: 1px solid var(--outline-variant);
+    max-width: 100%;
+}
+
+.m3-tab-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 15px;
+    border-radius: var(--radius-pill, 9999px);
+    font-size: 0.825rem;
+    font-weight: 600;
+    color: var(--on-surface-variant);
+    background-color: transparent;
+    border: 1px solid transparent;
+    text-decoration: none !important;
+    cursor: pointer;
+    transition: background-color var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard),
+                color var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard),
+                transform var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
+}
+
+.m3-tab-pill:hover:not(.active) {
+    background-color: var(--surface-container-high);
+    color: var(--on-surface);
+}
+
+.m3-tab-pill.active {
+    background-color: var(--primary-container);
+    color: var(--on-primary-container);
+}
+
+.m3-tab-pill:active {
+    transform: scale(0.975);
+}
+
+/* 3. M3 Expressive Tactile Feedback & State Layer Physics */
+.btn {
+    transition: background-color var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard),
+                border-color var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard),
+                color var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard),
+                transform var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
+}
+
+.btn:active:not(:disabled):not(.disabled) {
+    transform: scale(0.98) !important;
+}
+
+.product-card {
+    transition: border-color var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard),
+                background-color var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard),
+                transform var(--md-sys-motion-duration-medium1) var(--md-sys-motion-easing-emphasized);
+}
+
+.product-card:hover {
+    border-color: var(--primary) !important;
+    transform: translateY(-2px) !important;
+}
+
+/* 4. Unify SweetAlert2 Non-Toast Dialog Shadow to Flat M3 Elevate3 */
+.swal2-popup:not(.swal2-toast) {
+    box-shadow: var(--elevate3) !important;
+    border: 1px solid var(--outline-variant) !important;
+}
+
+.swal2-container.swal2-backdrop-show {
+    background: var(--overlay, rgba(15, 17, 23, 0.44)) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+/* 5. Accessibility: Respect OS Reduced Motion Preference Globally */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
 }
 
 

@@ -151,6 +151,32 @@ class User extends Authenticatable
         return $this->hasMany(SavedTwoFactorAccount::class);
     }
 
+    public function resellerApiKeys()
+    {
+        return $this->hasMany(ResellerApiKey::class, 'user_id');
+    }
+
+    /**
+     * Check if user is permitted to use the Reseller H2H REST API.
+     */
+    public function canUseResellerApi(): bool
+    {
+        if ($this->is_suspended) {
+            return false;
+        }
+
+        if ($this->role === 'admin') {
+            return true;
+        }
+
+        $accessMode = BotSetting::where('key', 'reseller_api_access_mode')->value('value') ?? 'all';
+        if ($accessMode === 'all') {
+            return true;
+        }
+
+        return is_array($this->allowed_tools) && in_array('reseller_api', $this->allowed_tools, true);
+    }
+
     /**
      * Get display name (prefer full_name, fallback to username).
      */
