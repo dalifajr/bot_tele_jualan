@@ -868,11 +868,11 @@
 
         // Render TOTP QR Code 100% locally in browser (secret never leaves device to third-party QR APIs)
         const qrCanvas = document.getElementById('totpQrCanvas');
-        if (qrCanvas && qrCanvas.dataset.otpauth && window.QRCode && typeof window.QRCode.toCanvas === 'function') {
-            window.QRCode.toCanvas(qrCanvas, qrCanvas.dataset.otpauth, {
-                width: 180,
-                margin: 1,
-                color: { dark: '#111827', light: '#ffffff' }
+        if (qrCanvas && qrCanvas.dataset.otpauth && typeof window.renderLocalQrToCanvas === 'function') {
+            window.renderLocalQrToCanvas(qrCanvas, qrCanvas.dataset.otpauth, 180, {
+                dark: '#111827',
+                light: '#ffffff',
+                margin: 1
             }).catch(function(err) { console.error('QR render failed:', err); });
         }
 

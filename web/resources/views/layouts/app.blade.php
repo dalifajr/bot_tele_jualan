@@ -195,7 +195,131 @@
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
         <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     @endif
+
+    {{-- Universal local QR renderer (supports both Vite qrcode.toCanvas and CDN qrcodejs) --}}
+    <script nonce="{{ $cspNonce ?? '' }}">
+        window.renderLocalQrToCanvas = function(canvas, text, size, options) {
+            if (!canvas || !text) return Promise.resolve(false);
+            const targetSize = Number(size) || Number(canvas.getAttribute('width')) || 210;
+            const opts = options || {};
+            const dark = opts.dark || '#000000';
+            const light = opts.light || '#ffffff';
+
+            const drawViaToCanvas = (lib) => {
+                return lib.toCanvas(canvas, text, {
+                    width: targetSize,
+                    margin: opts.margin !== undefined ? opts.margin : 1,
+                    errorCorrectionLevel: opts.errorCorrectionLevel || 'M',
+                    color: { dark: dark, light: light }
+                }).then(() => true);
+            };
+
+            const drawViaQrcodeJs = () => new Promise((resolve, reject) => {
+                const tmp = document.createElement('div');
+                tmp.style.position = 'fixed';
+                tmp.style.left = '-9999px';
+                tmp.style.top = '-9999px';
+                document.body.appendChild(tmp);
+
+                const pad = 8;
+                const innerSize = Math.max(64, targetSize - (pad * 2));
+                const levels = [];
+                if (window.QRCode && window.QRCode.CorrectLevel) {
+                    levels.push(window.QRCode.CorrectLevel.M, window.QRCode.CorrectLevel.L);
+                } else {
+                    levels.push(0);
+                }
+
+                let created = false;
+                for (let i = 0; i < levels.length; i++) {
+                    try {
+                        tmp.innerHTML = '';
+                        new window.QRCode(tmp, {
+                            text: text,
+                            width: innerSize,
+                            height: innerSize,
+                            colorDark: dark,
+                            colorLight: light,
+                            correctLevel: levels[i]
+                        });
+                        created = true;
+                        break;
+                    } catch (e) {
+                        // Retry with lower error correction level (fixes qrcodejs 1.0.0 length overflow bug)
+                    }
+                }
+
+                if (!created) {
+                    tmp.remove();
+                    return reject(new Error('QRCodeJS failed to generate matrix'));
+                }
+
+                const paintToTarget = (src) => {
+                    canvas.width = targetSize;
+                    canvas.height = targetSize;
+                    const ctx = canvas.getContext('2d');
+                    ctx.fillStyle = light;
+                    ctx.fillRect(0, 0, targetSize, targetSize);
+                    ctx.imageSmoothingEnabled = false;
+                    ctx.drawImage(src, pad, pad, innerSize, innerSize);
+                    tmp.remove();
+                    resolve(true);
+                };
+
+                const qrCanvas = tmp.querySelector('canvas');
+                if (qrCanvas && qrCanvas.width > 0) {
+                    return paintToTarget(qrCanvas);
+                }
+
+                const qrImg = tmp.querySelector('img');
+                if (qrImg) {
+                    if (qrImg.complete && qrImg.naturalWidth > 0) {
+                        return paintToTarget(qrImg);
+                    }
+                    qrImg.onload = () => paintToTarget(qrImg);
+                    qrImg.onerror = () => { tmp.remove(); reject(new Error('QRCodeJS image load failed')); };
+                    return;
+                }
+
+                tmp.remove();
+                reject(new Error('QRCodeJS produced empty output'));
+            });
+
+            if (window.ViteQRCode && typeof window.ViteQRCode.toCanvas === 'function') {
+                return drawViaToCanvas(window.ViteQRCode);
+            }
+            if (window.QRCode && typeof window.QRCode.toCanvas === 'function') {
+                return drawViaToCanvas(window.QRCode);
+            }
+            if (typeof window.QRCode === 'function') {
+                return drawViaQrcodeJs();
+            }
+
+            // Last-resort lazy load of qrcodejs CDN
+            return new Promise((resolve, reject) => {
+                let script = document.getElementById('fallbackQrcodeJsScript');
+                if (!script) {
+                    script = document.createElement('script');
+                    script.id = 'fallbackQrcodeJsScript';
+                    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+                    document.head.appendChild(script);
+                }
+                const onReady = () => {
+                    if (typeof window.QRCode === 'function') {
+                        drawViaQrcodeJs().then(resolve).catch(reject);
+                    } else if (window.QRCode && typeof window.QRCode.toCanvas === 'function') {
+                        drawViaToCanvas(window.QRCode).then(resolve).catch(reject);
+                    } else {
+                        reject(new Error('QRCode library unavailable'));
+                    }
+                };
+                script.addEventListener('load', onReady, { once: true });
+                script.addEventListener('error', () => reject(new Error('Failed to load QRCode library')), { once: true });
+            });
+        };
+    </script>
 
     {{-- Custom SIMAK-style CSS --}}
     <link href="{{ asset('css/app.css') }}?v={{ filemtime(public_path('css/app.css')) }}" rel="stylesheet">

@@ -208,24 +208,26 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Render dynamic QRIS locally on canvas via Vite bundled QRCode
+    // Render dynamic QRIS locally on canvas (supports Vite bundle & CDN fallback seamlessly)
     function renderAllQris() {
         document.querySelectorAll('.wallet-qris-canvas').forEach(canvas => {
             const payload = canvas.dataset.qris;
             if (!payload || canvas.dataset.rendered === '1') return;
-            if (window.QRCode && typeof window.QRCode.toCanvas === 'function') {
+            if (typeof window.renderLocalQrToCanvas === 'function') {
                 canvas.dataset.rendered = '1';
-                window.QRCode.toCanvas(canvas, payload, {
-                    width: 210,
-                    margin: 1,
-                    errorCorrectionLevel: 'M',
-                    color: { dark: '#000000', light: '#ffffff' }
-                }).catch(err => console.error('QRIS canvas render failed:', err));
+                window.renderLocalQrToCanvas(canvas, payload, 210, {
+                    dark: '#000000',
+                    light: '#ffffff',
+                    margin: 1
+                }).catch(err => {
+                    canvas.dataset.rendered = '0';
+                    console.error('QRIS canvas render failed:', err);
+                });
             }
         });
     }
     renderAllQris();
-    setTimeout(renderAllQris, 350);
+    setTimeout(renderAllQris, 400);
 
     // Download QRIS PNG
     document.querySelectorAll('.btn-download-qris').forEach(btn => {

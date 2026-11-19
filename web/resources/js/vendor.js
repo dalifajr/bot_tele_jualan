@@ -4,4 +4,7 @@ import QRCode from 'qrcode';
 
 window.bootstrap = bootstrap;
 window.Swal = Swal;
-window.QRCode = QRCode;
+window.ViteQRCode = QRCode;
+if (typeof window.QRCode === 'undefined') {
+    window.QRCode = QRCode;
+}
