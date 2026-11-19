@@ -186,8 +186,13 @@ class CheckoutController extends Controller
 
         if ($product->is_vpn) {
             $request->validate([
-                'vpn_username' => 'required|string|alpha_dash|max:30',
-                'vpn_password' => $product->vpn_protocol === 'ssh' ? 'required|string|min:4|max:30' : 'nullable|string',
+                'vpn_username' => ['required', 'string', 'min:3', 'max:32', 'regex:/^[a-zA-Z0-9_-]+$/'],
+                'vpn_password' => $product->vpn_protocol === 'ssh'
+                    ? ['required', 'string', 'min:4', 'max:30', 'regex:/^[a-zA-Z0-9@#$%^&*_+=!-]+$/']
+                    : ['nullable', 'string', 'max:30'],
+            ], [
+                'vpn_username.regex' => __('Username VPN hanya boleh berisi huruf, angka, garis bawah (_), atau tanda hubung (-).'),
+                'vpn_password.regex' => __('Password VPN hanya boleh berisi huruf, angka, atau simbol aman (@#$%^&*_+=!-) tanpa spasi.'),
             ]);
         }
 

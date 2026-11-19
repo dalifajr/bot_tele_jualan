@@ -310,6 +310,128 @@
                         </form>
                     </div>
                 </div>
+
+                {{-- TOTP Authenticator App 2FA (RFC 6238) + Recovery Codes --}}
+                <div class="col-12">
+                    <div class="m3-profile-section-card">
+                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="fas fa-mobile-screen-button text-primary fa-lg"></i>
+                                <h5 class="fw-bold mb-0 text-body">{{ __('Authenticator App 2FA (TOTP)') }}</h5>
+                            </div>
+                            <span class="badge rounded-pill px-3 py-1.5 {{ Auth::user()->totp_enabled ? 'bg-success' : 'bg-secondary' }}">
+                                {{ Auth::user()->totp_enabled ? __('Aktif') : __('Nonaktif') }}
+                            </span>
+                        </div>
+                        <p class="small text-secondary mb-3">
+                            {{ __('Gunakan Google Authenticator, Authy, atau 1Password untuk verifikasi login yang tetap bekerja offline meski Bot Telegram sedang gangguan.') }}
+                        </p>
+
+                        @if(session('totp_recovery_codes_once'))
+                            @php $onceCodes = session('totp_recovery_codes_once'); @endphp
+                            <div class="p-3 rounded-4 border border-warning bg-warning bg-opacity-10 mb-3">
+                                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                                    <div class="fw-bold text-body small">
+                                        <i class="fas fa-triangle-exclamation text-warning me-1"></i>
+                                        {{ __('Simpan Kode Pemulihan Ini Sekarang (Hanya Ditampilkan Sekali)') }}
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1 fw-semibold" id="btnCopyRecoveryCodes">
+                                        <i class="fas fa-copy me-1"></i>{{ __('Salin Semua') }}
+                                    </button>
+                                </div>
+                                <div class="row g-2" id="totpRecoveryCodesGrid">
+                                    @foreach($onceCodes as $rc)
+                                        <div class="col-6 col-sm-3">
+                                            <div class="p-2 rounded-3 text-center fw-bold font-monospace small border" style="background: var(--surface-container-lowest); border-color: var(--outline-variant) !important;">{{ $rc }}</div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
+
+                        @if(!Auth::user()->totp_enabled)
+                            @if(!empty($pendingTotpSecret) && !empty($pendingTotpUri))
+                                <div class="p-3.5 rounded-4 border mb-3" style="background: var(--surface-container-low); border-color: var(--outline-variant) !important;">
+                                    <div class="row g-3 align-items-center">
+                                        <div class="col-md-4 text-center">
+                                            <div class="d-inline-flex p-2.5 rounded-4 bg-white border shadow-sm">
+                                                <canvas id="totpQrCanvas" data-otpauth="{{ $pendingTotpUri }}" width="180" height="180"></canvas>
+                                            </div>
+                                            <div class="small text-muted mt-1.5">{{ __('Pindai dengan Authenticator App') }}</div>
+                                        </div>
+                                        <div class="col-md-8">
+                                            <div class="fw-semibold text-body small mb-1">{{ __('Atau masukkan kunci rahasia (Base32) secara manual:') }}</div>
+                                            <div class="input-group mb-3">
+                                                <input type="text" class="form-control font-monospace fw-semibold" id="pendingTotpSecretInput" value="{{ $pendingTotpSecret }}" readonly>
+                                                <button type="button" class="btn btn-outline-primary" id="btnCopyTotpSecret">
+                                                    <i class="fas fa-copy"></i>
+                                                </button>
+                                            </div>
+
+                                            <form action="{{ route('profile.totp.confirm') }}" method="POST" class="d-flex flex-wrap gap-2 align-items-end">
+                                                @csrf
+                                                <div class="flex-grow-1">
+                                                    <label class="form-label small fw-semibold text-muted mb-1">{{ __('Masukkan kode 6 digit dari aplikasi untuk mengaktifkan') }}</label>
+                                                    <input type="text" name="totp_code" class="form-control font-monospace fw-bold" placeholder="000000" maxlength="6" pattern="[0-9]{6}" required>
+                                                </div>
+                                                <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold">
+                                                    <i class="fas fa-check me-1"></i>{{ __('Verifikasi & Aktifkan') }}
+                                                </button>
+                                            </form>
+
+                                            <form action="{{ route('profile.totp.cancel') }}" method="POST" class="mt-2">
+                                                @csrf
+                                                <button type="submit" class="btn btn-link btn-sm text-secondary text-decoration-none p-0">
+                                                    {{ __('Batalkan penyiapan') }}
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            @else
+                                <form action="{{ route('profile.totp.init') }}" method="POST">
+                                    @csrf
+                                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold">
+                                        <i class="fas fa-qrcode me-1.5"></i>{{ __('Siapkan Authenticator App (TOTP)') }}
+                                    </button>
+                                </form>
+                            @endif
+                        @else
+                            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 p-3 rounded-4 border mb-3" style="background: var(--surface-container-low); border-color: var(--outline-variant) !important;">
+                                <div>
+                                    <div class="fw-semibold text-body small">{{ __('Sisa Kode Pemulihan (Recovery Codes)') }}</div>
+                                    <small class="text-secondary">{{ __(':count kode pemulihan masih tersedia untuk login darurat.', ['count' => $recoveryCodesRemaining ?? 0]) }}</small>
+                                </div>
+                                <span class="badge rounded-pill bg-primary-subtle text-primary px-3 py-1.5 fw-bold">{{ $recoveryCodesRemaining ?? 0 }} / 8</span>
+                            </div>
+
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <form action="{{ route('profile.totp.recovery-codes') }}" method="POST" class="p-3 rounded-4 border h-100" style="border-color: var(--outline-variant) !important;">
+                                        @csrf
+                                        <div class="fw-semibold small text-body mb-1">{{ __('Buat Ulang Kode Pemulihan') }}</div>
+                                        <small class="text-muted d-block mb-2">{{ __('Masukkan kode 6 digit Authenticator untuk membuat 8 kode baru.') }}</small>
+                                        <div class="input-group input-group-sm">
+                                            <input type="text" name="verification_code" class="form-control font-monospace" placeholder="000000" maxlength="6" required>
+                                            <button type="submit" class="btn btn-outline-primary fw-semibold">{{ __('Buat Ulang') }}</button>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div class="col-md-6">
+                                    <form action="{{ route('profile.totp.disable') }}" method="POST" class="p-3 rounded-4 border h-100" style="border-color: var(--outline-variant) !important;">
+                                        @csrf
+                                        <div class="fw-semibold small text-danger mb-1">{{ __('Nonaktifkan Authenticator App') }}</div>
+                                        <small class="text-muted d-block mb-2">{{ __('Masukkan kode 6 digit atau kode pemulihan untuk menonaktifkan.') }}</small>
+                                        <div class="input-group input-group-sm">
+                                            <input type="text" name="verification_code" class="form-control font-monospace" placeholder="000000 / XXXX-XXXX" maxlength="20" required>
+                                            <button type="submit" class="btn btn-outline-danger fw-semibold">{{ __('Nonaktifkan') }}</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -386,7 +508,7 @@
                     </div>
                 </div>
 
-                <div class="m3-data-row-card d-flex justify-content-between align-items-center">
+                <div class="m3-data-row-card d-flex justify-content-between align-items-center mb-4">
                     <div>
                         <div class="fw-semibold text-body mb-0.5">{{ __('Riwayat Sesi Login') }}</div>
                         <small class="text-muted">{{ __('Lihat daftar perangkat aktif dan log akses akun Anda.') }}</small>
@@ -394,6 +516,63 @@
                     <a href="{{ route('profile.logins') }}" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-semibold text-nowrap">
                         <i class="fas fa-history me-1"></i> {{ __('Lihat Log Sesi') }}
                     </a>
+                </div>
+
+                {{-- Manajemen Sesi Aktif ("Keluar dari Semua Perangkat Lain") --}}
+                <div class="pt-3 border-top" style="border-color: var(--outline-variant) !important;">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                        <div>
+                            <h6 class="fw-bold mb-0.5 text-body">
+                                <i class="fas fa-laptop-code text-primary me-1.5"></i>{{ __('Perangkat & Sesi Aktif') }}
+                            </h6>
+                            <small class="text-secondary">{{ __('Cabut sesi mencurigakan atau keluar dari seluruh perangkat lain sekaligus.') }}</small>
+                        </div>
+                        @if(isset($activeSessions) && $activeSessions->count() > 1)
+                            <form action="{{ route('profile.sessions.revoke-others') }}" method="POST" class="m-0">
+                                @csrf
+                                <button type="submit" class="btn btn-sm btn-danger rounded-pill px-3 py-1.5 fw-semibold">
+                                    <i class="fas fa-right-from-bracket me-1"></i>{{ __('Keluar dari Semua Perangkat Lain') }}
+                                </button>
+                            </form>
+                        @endif
+                    </div>
+
+                    <div class="d-flex flex-column gap-2">
+                        @forelse($activeSessions ?? collect() as $sess)
+                            @php $isCurrentSess = isset($currentSessionId) && $sess->isCurrent($currentSessionId); @endphp
+                            <div class="m3-data-row-card d-flex flex-wrap justify-content-between align-items-center gap-2">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="rounded-circle d-inline-flex align-items-center justify-content-center flex-shrink-0" style="width: 38px; height: 38px; background: var(--primary-container); color: var(--primary);">
+                                        <i class="fas {{ str_contains((string) $sess->device_label, 'Android') || str_contains((string) $sess->device_label, 'iOS') ? 'fa-mobile-screen' : 'fa-desktop' }}"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-semibold text-body small d-flex align-items-center gap-2">
+                                            <span>{{ $sess->device_label ?: __('Perangkat Tidak Dikenal') }}</span>
+                                            @if($isCurrentSess)
+                                                <span class="badge bg-success-subtle text-success rounded-pill" style="font-size: 0.68rem;">{{ __('Perangkat Ini') }}</span>
+                                            @endif
+                                        </div>
+                                        <div class="small text-secondary" style="font-size: 0.78rem;">
+                                            <i class="fas fa-network-wired me-1"></i>{{ $sess->ip_address ?: '-' }}
+                                            · <i class="fas fa-location-dot me-1"></i>{{ $sess->location_label ?: __('Tidak diketahui') }}
+                                            · <i class="far fa-clock me-1"></i>{{ optional($sess->last_active_at)->diffForHumans() ?: '-' }}
+                                        </div>
+                                    </div>
+                                </div>
+                                @if(!$isCurrentSess)
+                                    <form action="{{ route('profile.sessions.revoke', $sess->id) }}" method="POST" class="m-0">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3 py-1 fw-semibold" style="font-size: 0.76rem;">
+                                            <i class="fas fa-ban me-1"></i>{{ __('Cabut') }}
+                                        </button>
+                                    </form>
+                                @endif
+                            </div>
+                        @empty
+                            <div class="text-muted small py-2">{{ __('Sesi perangkat Anda akan tercatat otomatis pada aktivitas berikutnya.') }}</div>
+                        @endforelse
+                    </div>
                 </div>
             </div>
         </div>
@@ -677,6 +856,49 @@
                 const tab = new bootstrap.Tab(temaTabBtn);
                 tab.show();
             }
+        }
+
+        if (hash === '#tab-geolokasi' || urlParams.get('tab') === 'sessions') {
+            const geoTabBtn = document.getElementById('tab-geolokasi-btn');
+            if (geoTabBtn) {
+                const tab = new bootstrap.Tab(geoTabBtn);
+                tab.show();
+            }
+        }
+
+        // Render TOTP QR Code 100% locally in browser (secret never leaves device to third-party QR APIs)
+        const qrCanvas = document.getElementById('totpQrCanvas');
+        if (qrCanvas && qrCanvas.dataset.otpauth && window.QRCode && typeof window.QRCode.toCanvas === 'function') {
+            window.QRCode.toCanvas(qrCanvas, qrCanvas.dataset.otpauth, {
+                width: 180,
+                margin: 1,
+                color: { dark: '#111827', light: '#ffffff' }
+            }).catch(function(err) { console.error('QR render failed:', err); });
+        }
+
+        const btnCopyTotpSecret = document.getElementById('btnCopyTotpSecret');
+        if (btnCopyTotpSecret) {
+            btnCopyTotpSecret.addEventListener('click', function() {
+                const input = document.getElementById('pendingTotpSecretInput');
+                if (input && navigator.clipboard) {
+                    navigator.clipboard.writeText(input.value);
+                    btnCopyTotpSecret.innerHTML = '<i class="fas fa-check text-success"></i>';
+                    setTimeout(() => { btnCopyTotpSecret.innerHTML = '<i class="fas fa-copy"></i>'; }, 1600);
+                }
+            });
+        }
+
+        const btnCopyRecoveryCodes = document.getElementById('btnCopyRecoveryCodes');
+        if (btnCopyRecoveryCodes) {
+            btnCopyRecoveryCodes.addEventListener('click', function() {
+                const grid = document.getElementById('totpRecoveryCodesGrid');
+                if (grid && navigator.clipboard) {
+                    const text = Array.from(grid.querySelectorAll('.font-monospace')).map(el => el.textContent.trim()).join('\n');
+                    navigator.clipboard.writeText(text);
+                    btnCopyRecoveryCodes.innerHTML = '<i class="fas fa-check me-1"></i>{{ __('Tersalin') }}';
+                    setTimeout(() => { btnCopyRecoveryCodes.innerHTML = '<i class="fas fa-copy me-1"></i>{{ __('Salin Semua') }}'; }, 1800);
+                }
+            });
         }
     });
 </script>

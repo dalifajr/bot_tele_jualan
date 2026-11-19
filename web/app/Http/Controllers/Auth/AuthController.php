@@ -150,27 +150,28 @@ class AuthController extends Controller
 
             $this->recordLoginLog($request, $request->login, true);
 
-            // Check if 2FA is enabled
-            if ($user->two_factor_enabled && $user->telegram_id) {
-                // Generate 6-digit OTP
-                $code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-                $user->update([
-                    'two_factor_code' => $code,
-                    'two_factor_expires_at' => now()->addMinutes(5),
-                ]);
+            // Check if 2FA (TOTP Authenticator or Telegram OTP) is enabled
+            if ($user->hasAnyTwoFactorEnabled()) {
+                if ($user->two_factor_enabled && $user->telegram_id) {
+                    // Generate 6-digit OTP for Telegram
+                    $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+                    $user->update([
+                        'two_factor_code' => $code,
+                        'two_factor_expires_at' => now()->addMinutes(5),
+                    ]);
 
-                // Send OTP via Telegram Bot
-                $botToken = config('telegram.bot_token');
-                if ($botToken) {
-                    try {
-                        Http::post("https://api.telegram.org/bot{$botToken}/sendMessage", [
-                            'chat_id' => $user->telegram_id,
-                            'text' => "🔐 Kode Verifikasi 2FA\n\nKode Anda: *{$code}*\n\nKode ini berlaku selama 5 menit. Jangan bagikan kode ini kepada siapapun.",
-                            'parse_mode' => 'Markdown',
-                        ]);
-                    } catch (\Exception $e) {
-                        // Log but don't block login
-                        \Illuminate\Support\Facades\Log::warning('Failed to send 2FA code via Telegram', ['error' => $e->getMessage()]);
+                    // Send OTP via Telegram Bot
+                    $botToken = config('telegram.bot_token');
+                    if ($botToken) {
+                        try {
+                            Http::post("https://api.telegram.org/bot{$botToken}/sendMessage", [
+                                'chat_id' => $user->telegram_id,
+                                'text' => "🔐 Kode Verifikasi 2FA\n\nKode Anda: *{$code}*\n\nKode ini berlaku selama 5 menit. Jangan bagikan kode ini kepada siapapun.",
+                                'parse_mode' => 'Markdown',
+                            ]);
+                        } catch (\Exception $e) {
+                            \Illuminate\Support\Facades\Log::warning('Failed to send 2FA code via Telegram', ['error' => $e->getMessage()]);
+                        }
                     }
                 }
 
@@ -343,20 +344,30 @@ class AuthController extends Controller
      */
     public function showTwoFactor(Request $request)
     {
-        if (!$request->session()->has('2fa_user_id')) {
+        $userId = $request->session()->get('2fa_user_id');
+        if (!$userId) {
             return redirect()->route('login');
         }
 
-        return view('auth.two-factor');
+        $user = User::find($userId);
+        if (!$user) {
+            $request->session()->forget(['2fa_user_id', '2fa_remember']);
+            return redirect()->route('login');
+        }
+
+        $hasTotp = (bool) ($user->totp_enabled && !empty($user->totp_secret));
+        $hasTelegramOtp = (bool) ($user->two_factor_enabled && !empty($user->telegram_id));
+
+        return view('auth.two-factor', compact('hasTotp', 'hasTelegramOtp'));
     }
 
     /**
-     * Verifikasi kode 2FA.
+     * Verifikasi kode 2FA (TOTP Authenticator, Recovery Code, atau OTP Telegram).
      */
     public function verifyTwoFactor(Request $request)
     {
         $request->validate([
-            'code' => 'required|string|size:6',
+            'code' => 'required|string|min:6|max:20',
         ]);
 
         $userId = $request->session()->get('2fa_user_id');
@@ -383,16 +394,43 @@ class AuthController extends Controller
             return redirect()->route('login')->with('error', __('Pengguna tidak ditemukan.'));
         }
 
-        if ($user->two_factor_expires_at && $user->two_factor_expires_at->isPast()) {
-            $user->update([
-                'two_factor_code' => null,
-                'two_factor_expires_at' => null,
-            ]);
-            $request->session()->forget(['2fa_user_id', '2fa_remember']);
-            return redirect()->route('login')->with('error', __('Kode verifikasi sudah kedaluwarsa. Silakan login ulang.'));
+        $inputCode = trim((string) $request->input('code'));
+        $verified = false;
+        $usedRecoveryCode = false;
+
+        // 1. Cek TOTP Authenticator App (6 digit) atau Recovery Code (XXXX-XXXX)
+        if ($user->totp_enabled && !empty($user->totp_secret)) {
+            if (\App\Services\TwoFactorService::verifyOtp((string) $user->totp_secret, $inputCode)) {
+                $verified = true;
+            } elseif (is_array($user->totp_recovery_codes) && count($user->totp_recovery_codes) > 0) {
+                $remainingCodes = \App\Services\TwoFactorService::consumeRecoveryCode($user->totp_recovery_codes, $inputCode);
+                if ($remainingCodes !== null) {
+                    $user->totp_recovery_codes = $remainingCodes;
+                    $user->save();
+                    $verified = true;
+                    $usedRecoveryCode = true;
+                }
+            }
         }
 
-        if (empty($user->two_factor_code) || !hash_equals((string) $user->two_factor_code, (string) $request->code)) {
+        // 2. Cek Telegram OTP (jika belum lolos TOTP dan metode Telegram aktif)
+        if (!$verified && $user->two_factor_enabled && !empty($user->telegram_id)) {
+            $isExpired = $user->two_factor_expires_at && $user->two_factor_expires_at->isPast();
+            if ($isExpired && !$user->totp_enabled) {
+                $user->update([
+                    'two_factor_code' => null,
+                    'two_factor_expires_at' => null,
+                ]);
+                $request->session()->forget(['2fa_user_id', '2fa_remember']);
+                return redirect()->route('login')->with('error', __('Kode verifikasi sudah kedaluwarsa. Silakan login ulang.'));
+            }
+
+            if (!$isExpired && !empty($user->two_factor_code) && hash_equals((string) $user->two_factor_code, $inputCode)) {
+                $verified = true;
+            }
+        }
+
+        if (!$verified) {
             RateLimiter::hit($attemptKey, 300);
             if (RateLimiter::tooManyAttempts($attemptKey, 5)) {
                 $user->update([
@@ -407,7 +445,7 @@ class AuthController extends Controller
 
         RateLimiter::clear($attemptKey);
 
-        // Clear 2FA code
+        // Clear Telegram OTP code
         $user->update([
             'two_factor_code' => null,
             'two_factor_expires_at' => null,
@@ -417,13 +455,19 @@ class AuthController extends Controller
         $remember = $request->session()->get('2fa_remember', false);
         $request->session()->forget(['2fa_user_id', '2fa_remember']);
         Auth::login($user, $remember);
-        
+
         // Record login IP country
         $this->recordLoginCountry($user, $request);
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard'));
+        $redirect = redirect()->intended(route('dashboard'));
+        if ($usedRecoveryCode) {
+            $remainingCount = is_array($user->totp_recovery_codes) ? count($user->totp_recovery_codes) : 0;
+            $redirect->with('success', __('Berhasil masuk menggunakan kode pemulihan 2FA. Sisa kode pemulihan Anda: :count.', ['count' => $remainingCount]));
+        }
+
+        return $redirect;
     }
 
     /**

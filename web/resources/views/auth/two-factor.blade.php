@@ -22,15 +22,18 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&display=swap" rel="stylesheet">
     
-    {{-- Bootstrap 5.3 & Font Awesome --}}
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    {{-- Local Vite Vendor Bundle with CDN fallback --}}
+    @if(file_exists(public_path('build/manifest.json')))
+        @vite(['resources/css/vendor.css', 'resources/js/vendor.js'])
+    @else
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    @endif
     
     {{-- Design System Stylesheets --}}
     <link href="{{ asset('css/app.css') }}?v={{ filemtime(public_path('css/app.css')) }}" rel="stylesheet">
     <link href="{{ asset('css/auth.css') }}?v={{ filemtime(public_path('css/auth.css')) }}" rel="stylesheet">
-    
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body style="cursor: default;">
 
@@ -64,7 +67,13 @@
 
       <div class="text-center mb-4">
         <p class="small text-secondary mb-0">
-          {{ __('Kami telah mengirimkan kode verifikasi 6 digit ke akun Telegram Anda yang tertaut. Silakan masukkan kode di bawah ini.') }}
+          @if(!empty($hasTotp) && !empty($hasTelegramOtp))
+            {{ __('Masukkan kode 6 digit dari Authenticator App, kode OTP Telegram Anda, atau kode pemulihan (XXXX-XXXX).') }}
+          @elseif(!empty($hasTotp))
+            {{ __('Buka aplikasi Authenticator (Google Authenticator / Authy) lalu masukkan kode 6 digit atau kode pemulihan Anda.') }}
+          @else
+            {{ __('Kami telah mengirimkan kode verifikasi 6 digit ke akun Telegram Anda yang tertaut. Silakan masukkan kode di bawah ini.') }}
+          @endif
         </p>
       </div>
 
@@ -85,10 +94,12 @@
       <form action="{{ route('auth.two-factor.verify') }}" method="POST">
           @csrf
           <div class="mb-4 text-start">
-              <label class="form-label text-muted small fw-semibold">{{ __('Kode Verifikasi 6-Digit') }}</label>
+              <label class="form-label text-muted small fw-semibold">
+                  {{ !empty($hasTotp) ? __('Kode Verifikasi 6-Digit / Kode Pemulihan') : __('Kode Verifikasi 6-Digit') }}
+              </label>
               <div class="input-group">
                   <span class="input-group-text"><i class="fas fa-key"></i></span>
-                  <input type="text" name="code" class="form-control text-center fw-bold fs-4 tracking-widest" placeholder="000000" maxlength="6" pattern="[0-9]{6}" required autofocus />
+                  <input type="text" name="code" class="form-control text-center fw-bold fs-4 tracking-widest" placeholder="{{ !empty($hasTotp) ? '000000 / XXXX-XXXX' : '000000' }}" maxlength="20" autocomplete="one-time-code" required autofocus />
               </div>
           </div>
 
@@ -104,7 +115,9 @@
     </div>
   </div>
 
+  @if(!file_exists(public_path('build/manifest.json')))
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  @endif
   <script src="{{ asset('js/app.js') }}?v={{ filemtime(public_path('js/app.js')) }}"></script>
   <script>
       window.addEventListener('load', function() {

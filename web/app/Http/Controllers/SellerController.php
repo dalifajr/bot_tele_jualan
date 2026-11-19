@@ -1057,28 +1057,46 @@ class SellerController extends Controller
     public function requestWithdrawal(Request $request)
     {
         $sellerId = Auth::id();
-        $user = Auth::user();
 
         $request->validate([
             'amount' => 'required|integer|min:10000',
             'bank_account_id' => 'required|exists:seller_bank_accounts,id',
         ]);
 
-        if ($user->wallet_balance < $request->amount) {
-            return redirect()->back()->with('error', __('Saldo wallet Anda tidak mencukupi untuk melakukan penarikan.'));
-        }
-
         // Get bank account and verify it belongs to this seller
         $bankAccount = \App\Models\SellerBankAccount::where('user_id', $sellerId)->findOrFail($request->bank_account_id);
 
-        WithdrawalRequest::create([
-            'seller_id' => $sellerId,
-            'amount' => $request->amount,
-            'bank_name' => $bankAccount->bank_name,
-            'account_number' => $bankAccount->account_number,
-            'account_holder' => $bankAccount->account_holder,
-            'status' => 'pending',
-        ]);
+        $errorMessage = null;
+        DB::transaction(function () use ($sellerId, $request, $bankAccount, &$errorMessage) {
+            $lockedUser = User::where('id', $sellerId)->lockForUpdate()->firstOrFail();
+
+            $pendingAmount = (int) WithdrawalRequest::where('seller_id', $sellerId)
+                ->where('status', 'pending')
+                ->lockForUpdate()
+                ->sum('amount');
+
+            $availableBalance = max(0, (int) ($lockedUser->wallet_balance ?? 0) - $pendingAmount);
+
+            if ($availableBalance < (int) $request->amount) {
+                $errorMessage = $pendingAmount > 0
+                    ? __('Saldo tersedia Anda tidak mencukupi karena masih ada penarikan tertunda sebesar Rp:pending.', ['pending' => number_format($pendingAmount, 0, ',', '.')])
+                    : __('Saldo wallet Anda tidak mencukupi untuk melakukan penarikan.');
+                return;
+            }
+
+            WithdrawalRequest::create([
+                'seller_id' => $sellerId,
+                'amount' => (int) $request->amount,
+                'bank_name' => $bankAccount->bank_name,
+                'account_number' => $bankAccount->account_number,
+                'account_holder' => $bankAccount->account_holder,
+                'status' => 'pending',
+            ]);
+        });
+
+        if ($errorMessage !== null) {
+            return redirect()->back()->with('error', $errorMessage);
+        }
 
         return redirect()->route('seller.finance.index')->with('success', __('Pengajuan penarikan dana berhasil dikirim dan sedang menunggu verifikasi admin.'));
     }

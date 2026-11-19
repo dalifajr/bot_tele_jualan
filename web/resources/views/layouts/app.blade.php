@@ -188,18 +188,21 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
-    {{-- Bootstrap 5.3 --}}
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-
-    {{-- Font Awesome 6 --}}
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    {{-- Local Vite Vendor Bundle (Bootstrap 5.3, Font Awesome 6, SweetAlert2, QRCode) with CDN fallback --}}
+    @if(file_exists(public_path('build/manifest.json')))
+        @vite(['resources/css/vendor.css', 'resources/js/vendor.js'])
+    @else
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    @endif
 
     {{-- Custom SIMAK-style CSS --}}
     <link href="{{ asset('css/app.css') }}?v={{ filemtime(public_path('css/app.css')) }}" rel="stylesheet">
 
     {{-- Telegram WebApp SDK --}}
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script>
+    <script nonce="{{ $cspNonce ?? '' }}">
         window.isAuthenticated = @json(auth()->check());
         
         document.addEventListener('DOMContentLoaded', function() {
@@ -228,12 +231,13 @@
         });
     </script>
 
-    {{-- SweetAlert2 --}}
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script>
+    {{-- SweetAlert2 M3 Wrapper --}}
+    <script nonce="{{ $cspNonce ?? '' }}">
         // Material Design 3 Alert Dialog & Toast System (Google Material Web Specification)
-        if (typeof Swal !== 'undefined') {
-            const originalSwalFire = Swal.fire.bind(Swal);
+        function initM3SwalWrapper() {
+            if (typeof window.Swal === 'undefined' || window.Swal.__m3Wrapped) return;
+            window.Swal.__m3Wrapped = true;
+            const originalSwalFire = window.Swal.fire.bind(window.Swal);
             window.Swal.fire = function(...args) {
                 let opts = {};
                 if (args.length === 1 && typeof args[0] === 'object' && args[0] !== null) {
@@ -359,6 +363,8 @@
                 return originalSwalFire(opts);
             };
         }
+        initM3SwalWrapper();
+        document.addEventListener('DOMContentLoaded', initM3SwalWrapper);
 
         function confirmAction(event, message, title = '{{ __('Konfirmasi Aksi') }}') {
             event.preventDefault();
@@ -551,76 +557,19 @@
 @endif
 
 @php
-    $globalMaintenanceActive = \App\Models\BotSetting::where('key', 'maintenance_mode')->value('value') === '1';
     $hideSidebar = View::hasSection('no_sidebar') || ($noSidebar ?? false);
     $hideBottomNav = View::hasSection('no_bottom_nav') || ($noBottomNav ?? false);
-
-    $auth = Auth::user();
-    $unreadChatsCount = 0;
-    $adminComplaintsCount = 0;
-    $sellerComplaintsCount = 0;
-    $customerComplaintsCount = 0;
-    $adminOrdersCount = 0;
-    $sellerOrdersCount = 0;
-    $pendingPayoutsCount = 0;
-    $pendingLoginsCount = 0;
-    $customerLoginBadgeCount = 0;
-    $canAccess2fa = false;
-
-    if ($auth) {
-        $unreadChatsCount = \App\Models\ChatMessage::where('receiver_id', $auth->id)->where('is_read', false)->count();
-        
-        if ($auth->role === 'admin') {
-            $adminComplaintsCount = \App\Models\ComplaintCase::whereIn('status', ['open', 'customer_replied'])->count();
-            $adminOrdersCount = \App\Models\Order::whereIn('status', ['pending_payment', 'paid'])->count();
-            $pendingPayoutsCount = \App\Models\WithdrawalRequest::where('status', 'pending')->count();
-            $pendingLoginsCount = \App\Models\TelegramLoginToken::where('status', 'pending')->count();
-        } elseif ($auth->role === 'seller') {
-            $sellerComplaintsCount = \App\Models\ComplaintCase::whereIn('status', ['open', 'customer_replied'])
-                ->whereHas('order.items.product', function($q) use ($auth) {
-                    $q->where('creator_id', $auth->id);
-                })->count();
-            $sellerOrdersCount = \App\Models\Order::whereIn('status', ['pending_payment', 'paid'])
-                ->whereHas('items.product', function($q) use ($auth) {
-                    $q->where('creator_id', $auth->id);
-                })->count();
-        } else {
-            $customerComplaintsCount = \App\Models\ComplaintCase::where('customer_id', $auth->id)
-                ->whereIn('status', ['seller_replied'])
-                ->count();
-                
-            $customerPendingLogins = 0;
-            if ($auth->telegram_id) {
-                $customerPendingLogins = \App\Models\TelegramLoginToken::where('telegram_id', $auth->telegram_id)
-                    ->where('status', 'pending')
-                    ->count();
-            }
-            
-            $userIps = \App\Models\LoginLog::where(function($q) use ($auth) {
-                $q->where('user_id', $auth->id);
-                if (!empty($auth->username)) {
-                    $q->orWhere('username_or_email', $auth->username);
-                }
-                if (!empty($auth->email)) {
-                    $q->orWhere('username_or_email', $auth->email);
-                }
-            })->pluck('ip_address')->unique();
-            
-            $blockedUserIpsCount = 0;
-            foreach ($userIps as $ip) {
-                if (\Illuminate\Support\Facades\Cache::has('blocked_ip:' . $ip) || \Illuminate\Support\Facades\Cache::has('blocked_user_ip:' . $auth->id . ':' . $ip)) {
-                    $blockedUserIpsCount++;
-                }
-            }
-            
-            $customerLoginBadgeCount = $customerPendingLogins + $blockedUserIpsCount;
-        }
-
-        $tool2faAccessMode = \App\Models\BotSetting::where('key', 'tool_2fa_access_mode')->value('value') ?? 'all';
-        $canAccess2fa = $auth->role === 'admin' 
-            || $tool2faAccessMode === 'all' 
-            || (is_array($auth->allowed_tools) && in_array('2fa_generator', $auth->allowed_tools));
-    }
+    $globalMaintenanceActive = $globalMaintenanceActive ?? false;
+    $unreadChatsCount = $unreadChatsCount ?? 0;
+    $adminComplaintsCount = $adminComplaintsCount ?? 0;
+    $sellerComplaintsCount = $sellerComplaintsCount ?? 0;
+    $customerComplaintsCount = $customerComplaintsCount ?? 0;
+    $adminOrdersCount = $adminOrdersCount ?? 0;
+    $sellerOrdersCount = $sellerOrdersCount ?? 0;
+    $pendingPayoutsCount = $pendingPayoutsCount ?? 0;
+    $pendingLoginsCount = $pendingLoginsCount ?? 0;
+    $customerLoginBadgeCount = $customerLoginBadgeCount ?? 0;
+    $canAccess2fa = $canAccess2fa ?? false;
 @endphp
 
 @if($globalMaintenanceActive && Auth::check() && Auth::user()->role === 'admin' && !session()->has('admin_impersonator_id'))
@@ -652,6 +601,20 @@
     </div>
 
     <div class="ms-auto d-flex align-items-center gap-1">
+        @auth
+        @unless($hideSidebar)
+        {{-- Global Quick Search Trigger (Ctrl+K) --}}
+        <button type="button" class="m3-quick-search-trigger d-none d-md-inline-flex me-1" id="openQuickSearchBtn" title="{{ __('Pencarian Cepat (Ctrl+K)') }}" aria-label="{{ __('Pencarian Cepat') }}">
+            <i class="fas fa-search" style="font-size: 0.8rem;"></i>
+            <span>{{ __('Cari cepat...') }}</span>
+            <span class="m3-quick-search-kbd">Ctrl K</span>
+        </button>
+        <button type="button" class="btn btn-link link-body-emphasis m3-icon-btn d-md-none" id="openQuickSearchMobileBtn" title="{{ __('Pencarian Cepat') }}" aria-label="{{ __('Pencarian Cepat') }}">
+            <i class="fas fa-search" style="font-size: 0.95rem;"></i>
+        </button>
+        @endunless
+        @endauth
+
         @unless($hideSidebar)
         {{-- Notification Bell (All Authenticated Users) --}}
         @php
@@ -1393,11 +1356,10 @@
 
 {{-- Floating Help Button moved into Sidebar --}}
 
-{{-- Bootstrap JS --}}
+{{-- Bootstrap JS (only fallback when Vite local bundle is not built) --}}
+@if(!file_exists(public_path('build/manifest.json')))
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
-{{-- SweetAlert2 --}}
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+@endif
 
 {{-- Custom JS --}}
 <script src="{{ asset('js/app.js') }}?v={{ filemtime(public_path('js/app.js')) }}"></script>
@@ -1801,6 +1763,158 @@
 </script>
 
 @include('partials.vcc-service-selector-modal')
+
+@auth
+{{-- Global Command Search Modal (Ctrl+K) --}}
+<div class="modal fade m3-cmd-modal" id="globalQuickSearchModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 600px;">
+        <div class="modal-content">
+            <div class="m3-cmd-input-wrap">
+                <i class="fas fa-search text-primary"></i>
+                <input type="text" class="m3-cmd-input" id="globalQuickSearchInput" placeholder="{{ __('Cari produk, nomor pesanan, rekber, atau menu...') }}" autocomplete="off">
+                <span class="m3-quick-search-kbd">ESC</span>
+            </div>
+            <div class="m3-cmd-results" id="globalQuickSearchResults">
+                <div class="text-center text-muted small py-4">{{ __('Ketik untuk mencari...') }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    (function() {
+        const modalEl = document.getElementById('globalQuickSearchModal');
+        const inputEl = document.getElementById('globalQuickSearchInput');
+        const resultsEl = document.getElementById('globalQuickSearchResults');
+        const desktopBtn = document.getElementById('openQuickSearchBtn');
+        const mobileBtn = document.getElementById('openQuickSearchMobileBtn');
+        if (!modalEl || !inputEl || !resultsEl) return;
+
+        let searchTimer = null;
+        let selectedIndex = -1;
+        let currentLinks = [];
+        const endpoint = @json(route('api.quick-search'));
+        const emptyText = @json(__('Tidak ada hasil yang cocok.'));
+        const loadingText = @json(__('Mencari...'));
+
+        function openModal() {
+            const inst = bootstrap.Modal.getOrCreateInstance(modalEl);
+            inst.show();
+        }
+
+        function renderResults(groups) {
+            resultsEl.innerHTML = '';
+            currentLinks = [];
+            selectedIndex = -1;
+
+            if (!Array.isArray(groups) || groups.length === 0) {
+                const emptyDiv = document.createElement('div');
+                emptyDiv.className = 'text-center text-muted small py-4';
+                emptyDiv.textContent = emptyText;
+                resultsEl.appendChild(emptyDiv);
+                return;
+            }
+
+            groups.forEach(group => {
+                const title = document.createElement('div');
+                title.className = 'm3-cmd-group-title';
+                title.textContent = group.label || '';
+                resultsEl.appendChild(title);
+
+                (group.items || []).forEach(item => {
+                    const a = document.createElement('a');
+                    a.className = 'm3-cmd-item';
+                    a.href = item.url || '#';
+
+                    const iconWrap = document.createElement('div');
+                    iconWrap.className = 'm3-cmd-icon';
+                    const i = document.createElement('i');
+                    i.className = item.icon || 'fas fa-arrow-right';
+                    iconWrap.appendChild(i);
+
+                    const body = document.createElement('div');
+                    body.className = 'flex-grow-1 overflow-hidden';
+                    const t = document.createElement('div');
+                    t.className = 'fw-semibold text-truncate';
+                    t.style.fontSize = '0.88rem';
+                    t.textContent = item.title || '';
+                    const sub = document.createElement('div');
+                    sub.className = 'small opacity-75 text-truncate';
+                    sub.style.fontSize = '0.76rem';
+                    sub.textContent = item.subtitle || '';
+                    body.appendChild(t);
+                    body.appendChild(sub);
+
+                    a.appendChild(iconWrap);
+                    a.appendChild(body);
+                    resultsEl.appendChild(a);
+                    currentLinks.push(a);
+                });
+            });
+
+            if (currentLinks.length > 0) {
+                selectedIndex = 0;
+                currentLinks[0].classList.add('is-selected');
+            }
+        }
+
+        function runSearch(query) {
+            resultsEl.innerHTML = '';
+            const loadDiv = document.createElement('div');
+            loadDiv.className = 'text-center text-muted small py-4';
+            loadDiv.textContent = loadingText;
+            resultsEl.appendChild(loadDiv);
+
+            fetch(endpoint + '?q=' + encodeURIComponent(query), {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(r => r.ok ? r.json() : { groups: [] })
+            .then(data => renderResults(data.groups || []))
+            .catch(() => renderResults([]));
+        }
+
+        if (desktopBtn) desktopBtn.addEventListener('click', openModal);
+        if (mobileBtn) mobileBtn.addEventListener('click', openModal);
+
+        modalEl.addEventListener('shown.bs.modal', function() {
+            inputEl.focus();
+            inputEl.select();
+            runSearch(inputEl.value.trim());
+        });
+
+        inputEl.addEventListener('input', function() {
+            clearTimeout(searchTimer);
+            const val = this.value.trim();
+            searchTimer = setTimeout(() => runSearch(val), 180);
+        });
+
+        inputEl.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowDown' && currentLinks.length > 0) {
+                e.preventDefault();
+                if (selectedIndex >= 0) currentLinks[selectedIndex].classList.remove('is-selected');
+                selectedIndex = (selectedIndex + 1) % currentLinks.length;
+                currentLinks[selectedIndex].classList.add('is-selected');
+                currentLinks[selectedIndex].scrollIntoView({ block: 'nearest' });
+            } else if (e.key === 'ArrowUp' && currentLinks.length > 0) {
+                e.preventDefault();
+                if (selectedIndex >= 0) currentLinks[selectedIndex].classList.remove('is-selected');
+                selectedIndex = (selectedIndex - 1 + currentLinks.length) % currentLinks.length;
+                currentLinks[selectedIndex].classList.add('is-selected');
+                currentLinks[selectedIndex].scrollIntoView({ block: 'nearest' });
+            } else if (e.key === 'Enter' && selectedIndex >= 0 && currentLinks[selectedIndex]) {
+                e.preventDefault();
+                window.location.href = currentLinks[selectedIndex].href;
+            }
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+                e.preventDefault();
+                openModal();
+            }
+        });
+    })();
+</script>
+@endauth
 
 @stack('modals')
 

@@ -25,6 +25,7 @@ class AppServiceProvider extends ServiceProvider
 
         \Illuminate\Pagination\Paginator::useBootstrapFive();
         \Illuminate\Support\Facades\View::composer('layouts.app', \App\Http\View\Composers\NotificationComposer::class);
+        \Illuminate\Support\Facades\View::composer('layouts.app', \App\Http\View\Composers\NavigationBadgeComposer::class);
 
         // Dynamic App Name Configuration
         try {

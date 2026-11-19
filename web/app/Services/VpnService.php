@@ -49,6 +49,70 @@ class VpnService
     }
 
     /**
+     * Validate VPN username and password against shell injection / control characters.
+     */
+    public function validateCredentials(string $protocol, string $username, ?string $password = null): void
+    {
+        if (!preg_match('/^[a-zA-Z0-9_-]{3,32}$/', $username)) {
+            throw new \InvalidArgumentException('Format username VPN tidak valid (hanya huruf, angka, _ atau -, 3-32 karakter).');
+        }
+
+        if ($protocol === 'ssh') {
+            if ($password === null || !preg_match('/^[a-zA-Z0-9@#$%^&*_+=!-]{4,64}$/', $password)) {
+                throw new \InvalidArgumentException('Format password VPN SSH tidak valid (4-64 karakter ASCII aman tanpa spasi atau metakarakter shell).');
+            }
+        }
+    }
+
+    /**
+     * Build a safely escaped shell command for VPN account provisioning.
+     */
+    public function buildProvisionCommand(string $protocol, string $username, ?string $password, int $durationDays, int $quota = 0, int $ipLimit = 0): string
+    {
+        $this->validateCredentials($protocol, $username, $password);
+
+        $durationDays = max(1, $durationDays);
+        $quota = max(0, $quota);
+        $ipLimit = max(0, $ipLimit);
+        $sni = 'bug.com';
+
+        if ($protocol === 'ssh') {
+            $expiryDate = escapeshellarg(date('Y-m-d', strtotime("+{$durationDays} days")));
+            $usernameEsc = escapeshellarg($username);
+            $credentialPairEsc = escapeshellarg($username . ':' . $password);
+
+            $command = "useradd -e {$expiryDate} -s /bin/false -M {$usernameEsc} && printf '%s\\n' {$credentialPairEsc} | chpasswd";
+            if ($ipLimit > 0) {
+                $command .= " && mkdir -p /etc/kyt/limit/ssh/ip && printf '%d\\n' {$ipLimit} > /etc/kyt/limit/ssh/ip/{$usernameEsc}";
+            }
+
+            return $command;
+        }
+
+        $cmdMap = [
+            'vmess' => 'addws',
+            'vless' => 'addvless',
+            'trojan' => 'addtr',
+            'shadowsocks' => 'addss',
+        ];
+
+        if (!array_key_exists($protocol, $cmdMap)) {
+            throw new \InvalidArgumentException("Protokol {$protocol} tidak valid.");
+        }
+
+        $bashCmd = $cmdMap[$protocol];
+        $argsEsc = array_map('escapeshellarg', [
+            $sni,
+            $username,
+            (string) $durationDays,
+            (string) $quota,
+            (string) $ipLimit,
+        ]);
+
+        return "printf '%s\\n' " . implode(' ', $argsEsc) . " | {$bashCmd}";
+    }
+
+    /**
      * @return array ['success' => bool, 'output' => string]
      */
     public function createVpnAccount($protocol, $username, $password, $durationDays, $quota = 0, $ipLimit = 0)
@@ -58,38 +122,26 @@ class VpnService
         }
 
         try {
-            $sni = "bug.com"; // Placeholder SNI
-            $command = "";
+            $protocolStr = (string) $protocol;
+            $usernameStr = (string) $username;
+            $passwordStr = $password !== null ? (string) $password : null;
 
-            if ($protocol === 'ssh') {
-                $expiryDate = date('Y-m-d', strtotime("+$durationDays days"));
-                $usernameEsc = escapeshellarg($username);
-                $passwordEsc = escapeshellarg($password);
-                $command = "useradd -e $expiryDate -s /bin/false -M $usernameEsc && echo \"$username:$password\" | chpasswd";
-                if ($ipLimit > 0) {
-                    $command .= " && mkdir -p /etc/kyt/limit/ssh/ip && echo $ipLimit > /etc/kyt/limit/ssh/ip/$usernameEsc";
-                }
-            } else {
-                // Xray protocols (addws, addvless, addtr, addss)
-                $cmdMap = [
-                    'vmess' => 'addws',
-                    'vless' => 'addvless',
-                    'trojan' => 'addtr',
-                    'shadowsocks' => 'addss'
-                ];
+            $command = $this->buildProvisionCommand(
+                $protocolStr,
+                $usernameStr,
+                $passwordStr,
+                (int) $durationDays,
+                (int) $quota,
+                (int) $ipLimit
+            );
 
-                if (!array_key_exists($protocol, $cmdMap)) {
-                    return ['success' => false, 'output' => "Protokol $protocol tidak valid."];
-                }
+            Log::info('Executing VPN SSH provisioning command', [
+                'protocol' => $protocolStr,
+                'username' => $usernameStr,
+                'duration_days' => max(1, (int) $durationDays),
+                'ip_limit' => max(0, (int) $ipLimit),
+            ]);
 
-                $bashCmd = $cmdMap[$protocol];
-                // As per documentation: piping args through stdin: SNI, username, hari, kuota, limit IP
-                $args = "$sni\n$username\n$durationDays\n$quota\n$ipLimit\n";
-                $command = "echo -e " . escapeshellarg($args) . " | $bashCmd";
-            }
-
-            Log::info("Executing VPN SSH Command: " . $command);
-            
             $process = $this->ssh->execute($command);
 
             $output = $process->getOutput();
@@ -97,13 +149,16 @@ class VpnService
 
             if ($process->isSuccessful()) {
                 return ['success' => true, 'output' => $output];
-            } else {
-                Log::error("VPN SSH Failed: " . escapeshellarg($errorOutput));
-                return ['success' => false, 'output' => $errorOutput];
             }
 
+            Log::error('VPN SSH Failed', ['protocol' => $protocolStr, 'username' => $usernameStr, 'error' => $errorOutput]);
+            return ['success' => false, 'output' => $errorOutput];
+
+        } catch (\InvalidArgumentException $e) {
+            Log::warning('VPN Provisioning rejected due to invalid input: ' . $e->getMessage());
+            return ['success' => false, 'output' => $e->getMessage()];
         } catch (\Exception $e) {
-            Log::error("VPN SSH Exception: " . $e->getMessage());
+            Log::error('VPN SSH Exception: ' . $e->getMessage());
             return ['success' => false, 'output' => $e->getMessage()];
         }
     }

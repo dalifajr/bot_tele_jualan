@@ -48,10 +48,15 @@ class CouponController extends Controller
     {
         $sellerId = Auth::id();
 
+        $valueRules = ['required', 'integer', 'min:1'];
+        if ($request->input('type') === 'percent') {
+            $valueRules[] = 'max:100';
+        }
+
         $validated = $request->validate([
             'code' => 'required|string|max:64|unique:coupons,code',
             'type' => 'required|in:fixed,percent',
-            'value' => 'required|integer|min:1',
+            'value' => $valueRules,
             'min_spend' => 'required|integer|min:0',
             'max_discount' => 'nullable|integer|min:1',
             'qty' => 'required|integer|min:0',
@@ -109,10 +114,15 @@ class CouponController extends Controller
         $sellerId = Auth::id();
         $coupon = Coupon::where('user_id', $sellerId)->findOrFail($id);
 
+        $valueRules = ['required', 'integer', 'min:1'];
+        if ($request->input('type') === 'percent') {
+            $valueRules[] = 'max:100';
+        }
+
         $validated = $request->validate([
             'code' => 'required|string|max:64|unique:coupons,code,' . $coupon->id,
             'type' => 'required|in:fixed,percent',
-            'value' => 'required|integer|min:1',
+            'value' => $valueRules,
             'min_spend' => 'required|integer|min:0',
             'max_discount' => 'nullable|integer|min:1',
             'qty' => 'required|integer|min:0',

@@ -3894,57 +3894,78 @@ class AdminController extends Controller
 
     public function approveWithdrawal(Request $request, $id)
     {
-        $withdrawal = \App\Models\WithdrawalRequest::findOrFail($id);
-        
         $request->validate([
             'proof_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        if ($withdrawal->status !== 'pending') {
-            return redirect()->back()->with('error', __('Permintaan penarikan ini sudah diproses sebelumnya.'));
-        }
-
-        $seller = $withdrawal->seller;
-        if ($seller->wallet_balance < $withdrawal->amount) {
-            return redirect()->back()->with('error', __('Saldo wallet seller tidak mencukupi untuk penarikan ini.'));
-        }
-
-        // Upload proof image
         $image = $request->file('proof_image');
-        $fileName = 'proof_' . $withdrawal->id . '_' . time() . '.' . $image->getClientOriginalExtension();
-        
-        // Store on public storage disk under 'proofs' folder
-        $path = \Illuminate\Support\Facades\Storage::disk('public')->putFileAs('proofs', $image, $fileName);
-        
-        $withdrawal->proof_image_path = 'storage/' . $path;
+        $fileName = 'proof_' . (int) $id . '_' . time() . '_' . \Illuminate\Support\Str::random(6) . '.' . $image->getClientOriginalExtension();
+        $storedPath = \Illuminate\Support\Facades\Storage::disk('public')->putFileAs('proofs', $image, $fileName);
 
-        // Deduct balance and update status
-        $seller->wallet_balance -= $withdrawal->amount;
-        $seller->save();
+        $errorMessage = null;
+        try {
+            \Illuminate\Support\Facades\DB::transaction(function () use ($id, $storedPath, &$errorMessage) {
+                $withdrawal = \App\Models\WithdrawalRequest::where('id', $id)->lockForUpdate()->firstOrFail();
 
-        $withdrawal->status = 'approved';
-        $withdrawal->processed_at = now();
-        $withdrawal->save();
+                if ($withdrawal->status !== 'pending') {
+                    $errorMessage = __('Permintaan penarikan ini sudah diproses sebelumnya.');
+                    return;
+                }
+
+                $seller = \App\Models\User::where('id', $withdrawal->seller_id)->lockForUpdate()->firstOrFail();
+                if ((int) ($seller->wallet_balance ?? 0) < (int) $withdrawal->amount) {
+                    $errorMessage = __('Saldo wallet seller tidak mencukupi untuk penarikan ini.');
+                    return;
+                }
+
+                $seller->decrement('wallet_balance', (int) $withdrawal->amount);
+
+                $withdrawal->proof_image_path = 'storage/' . $storedPath;
+                $withdrawal->status = 'approved';
+                $withdrawal->processed_at = now();
+                $withdrawal->save();
+            });
+        } catch (\Throwable $e) {
+            if ($storedPath) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($storedPath);
+            }
+            throw $e;
+        }
+
+        if ($errorMessage !== null) {
+            if ($storedPath) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($storedPath);
+            }
+            return redirect()->back()->with('error', $errorMessage);
+        }
 
         return redirect()->back()->with('success', __('Permintaan penarikan berhasil disetujui.'));
     }
 
     public function rejectWithdrawal(Request $request, $id)
     {
-        $withdrawal = \App\Models\WithdrawalRequest::findOrFail($id);
-        
         $request->validate([
             'rejection_reason' => 'required|string|max:500',
         ]);
 
-        if ($withdrawal->status !== 'pending') {
-            return redirect()->back()->with('error', __('Permintaan penarikan ini sudah diproses sebelumnya.'));
-        }
+        $errorMessage = null;
+        \Illuminate\Support\Facades\DB::transaction(function () use ($id, $request, &$errorMessage) {
+            $withdrawal = \App\Models\WithdrawalRequest::where('id', $id)->lockForUpdate()->firstOrFail();
 
-        $withdrawal->status = 'rejected';
-        $withdrawal->rejection_reason = $request->rejection_reason;
-        $withdrawal->processed_at = now();
-        $withdrawal->save();
+            if ($withdrawal->status !== 'pending') {
+                $errorMessage = __('Permintaan penarikan ini sudah diproses sebelumnya.');
+                return;
+            }
+
+            $withdrawal->status = 'rejected';
+            $withdrawal->rejection_reason = $request->rejection_reason;
+            $withdrawal->processed_at = now();
+            $withdrawal->save();
+        });
+
+        if ($errorMessage !== null) {
+            return redirect()->back()->with('error', $errorMessage);
+        }
 
         return redirect()->back()->with('success', __('Permintaan penarikan berhasil ditolak.'));
     }

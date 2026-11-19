@@ -16,28 +16,30 @@ class OrderService
      */
     public function cancelOrder(Order $order, string $reason, $actorId): bool
     {
-        if ($order->status !== 'pending_payment') {
-            throw new Exception("Hanya pesanan pending yang dapat dibatalkan.");
-        }
-
         try {
             DB::beginTransaction();
 
+            $lockedOrder = Order::where('id', $order->id)->lockForUpdate()->first();
+            if (!$lockedOrder || $lockedOrder->status !== 'pending_payment') {
+                DB::rollBack();
+                throw new Exception("Hanya pesanan pending yang dapat dibatalkan.");
+            }
+
             // 1. Update Order
-            $order->status = 'cancelled';
-            $order->cancelled_at = now();
-            $order->cancel_reason = $reason;
-            $order->save();
+            $lockedOrder->status = 'cancelled';
+            $lockedOrder->cancelled_at = now();
+            $lockedOrder->cancel_reason = $reason;
+            $lockedOrder->save();
 
             // 2. Update Payment
-            $payment = $order->payment;
+            $payment = $lockedOrder->payment()->lockForUpdate()->first();
             if ($payment && $payment->status === 'pending') {
                 $payment->status = 'cancelled';
                 $payment->save();
             }
 
             // 3. Release Reserved Stock
-            StockUnit::where('sold_order_id', $order->id)
+            StockUnit::where('sold_order_id', $lockedOrder->id)
                 ->where('stock_status', 'reserved_checkout')
                 ->where('is_sold', false)
                 ->update([
@@ -50,23 +52,28 @@ class OrderService
                 'action' => 'order_cancelled',
                 'actor_id' => $actorId,
                 'entity_type' => 'order',
-                'entity_id' => $order->id,
-                'detail' => \App\Models\AuditLog::maskSensitiveData("order_ref={$order->order_ref}; reason={$reason}"),
+                'entity_id' => $lockedOrder->id,
+                'detail' => \App\Models\AuditLog::maskSensitiveData("order_ref={$lockedOrder->order_ref}; reason={$reason}"),
                 'created_at' => now(),
             ]);
 
-            // 5. Notify customer & admin via Telegram
+            DB::commit();
+
+            $order->refresh();
+
+            // 5. Notify customer & admin via Telegram (after commit)
             try {
-                \App\Services\TelegramService::notifyCustomerOrderCancelled($order, $reason);
-                \App\Services\TelegramService::updateAdminOrderMessage($order);
+                \App\Services\TelegramService::notifyCustomerOrderCancelled($lockedOrder, $reason);
+                \App\Services\TelegramService::updateAdminOrderMessage($lockedOrder);
             } catch (\Exception $e) {
                 \Log::error("Gagal mengirim notifikasi pembatalan ke pelanggan/admin: " . $e->getMessage());
             }
 
-            DB::commit();
             return true;
         } catch (Exception $e) {
-            DB::rollBack();
+            if (DB::transactionLevel() > 0) {
+                DB::rollBack();
+            }
             throw $e;
         }
     }
@@ -76,12 +83,16 @@ class OrderService
      */
     public function confirmPayment(Order $order, $adminId = null): bool
     {
-        if ($order->status !== 'pending_payment' && $order->status !== 'paid') {
-            throw new Exception("Hanya pesanan pending atau paid yang dapat dikonfirmasi/diselesaikan.");
-        }
-
         try {
             DB::beginTransaction();
+
+            $lockedOrder = Order::where('id', $order->id)->lockForUpdate()->first();
+            if (!$lockedOrder || ($lockedOrder->status !== 'pending_payment' && $lockedOrder->status !== 'paid')) {
+                DB::rollBack();
+                throw new Exception("Hanya pesanan pending atau paid yang dapat dikonfirmasi/diselesaikan.");
+            }
+
+            $order = $lockedOrder;
 
             // 1. Update Order
             $order->status = 'delivered';
@@ -91,7 +102,7 @@ class OrderService
 
             // 2. Update Payment
             $sourceAppStr = is_string($adminId) ? $adminId : ($adminId ? 'WEB_ADMIN:' . $adminId : 'AUTO_PAYMENT');
-            $payment = $order->payment;
+            $payment = $order->payment()->lockForUpdate()->first();
             if ($payment) {
                 $payment->status = 'paid';
                 $payment->matched_at = $payment->matched_at ?? now();
@@ -101,7 +112,7 @@ class OrderService
             }
 
             // 3. Consume Stock
-            $reservedStock = StockUnit::where('sold_order_id', $order->id)->get();
+            $reservedStock = StockUnit::where('sold_order_id', $order->id)->lockForUpdate()->get();
 
             foreach ($reservedStock as $unit) {
                 $unit->stock_status = 'ready';
@@ -149,7 +160,7 @@ class OrderService
             }
 
             foreach ($sellerSales as $sellerId => $units) {
-                $seller = User::find($sellerId);
+                $seller = User::where('id', $sellerId)->lockForUpdate()->first();
                 if ($seller) {
                     $totalWalletAdded = 0;
 
@@ -178,7 +189,6 @@ class OrderService
 
                         $warrantyDays = $product->warranty_days ?? 0;
                         if ($warrantyDays > 0) {
-                            // Insert into held_funds
                             DB::table('held_funds')->insert([
                                 'seller_id' => $sellerId,
                                 'order_id' => $order->id,
@@ -195,15 +205,14 @@ class OrderService
                     }
 
                     if ($totalWalletAdded > 0) {
-                        $seller->wallet_balance = ($seller->wallet_balance ?? 0) + $totalWalletAdded;
-                        $seller->save();
+                        $seller->increment('wallet_balance', $totalWalletAdded);
                     }
                 }
             }
 
             // Process seller VPN commissions (if any)
             foreach ($sellerVpnItems as $sellerId => $items) {
-                $seller = User::find($sellerId);
+                $seller = User::where('id', $sellerId)->lockForUpdate()->first();
                 if ($seller) {
                     $totalWalletAdded = 0;
                     foreach ($items as $item) {
@@ -244,8 +253,7 @@ class OrderService
                     }
 
                     if ($totalWalletAdded > 0) {
-                        $seller->wallet_balance = ($seller->wallet_balance ?? 0) + $totalWalletAdded;
-                        $seller->save();
+                        $seller->increment('wallet_balance', $totalWalletAdded);
                     }
                 }
             }
@@ -285,9 +293,6 @@ class OrderService
                 }
             }
 
-            \App\Services\TelegramService::notifyCustomerOrderDelivered($order, $reservedStock, $vpnDetails);
-            \App\Services\TelegramService::updateAdminOrderMessage($order);
-
             // 6. Audit Log
             $actorId = is_numeric($adminId) ? (int)$adminId : null;
             DB::table('audit_logs')->insert([
@@ -300,10 +305,19 @@ class OrderService
             ]);
 
             DB::commit();
+
+            try {
+                \App\Services\TelegramService::notifyCustomerOrderDelivered($order, $reservedStock, $vpnDetails);
+                \App\Services\TelegramService::updateAdminOrderMessage($order);
+            } catch (\Exception $e) {
+                \Log::error("Gagal mengirim notifikasi pengiriman pesanan ke pelanggan/admin: " . $e->getMessage());
+            }
             
             return true;
         } catch (Exception $e) {
-            DB::rollBack();
+            if (DB::transactionLevel() > 0) {
+                DB::rollBack();
+            }
             throw $e;
         }
     }

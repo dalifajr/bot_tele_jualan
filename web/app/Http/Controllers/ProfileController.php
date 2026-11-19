@@ -10,9 +10,41 @@ use Illuminate\Support\Str;
 
 class ProfileController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return view('profile', ['user' => Auth::user()]);
+        $user = Auth::user();
+        $currentSessionId = $request->session()->getId();
+
+        $activeSessions = collect();
+        if (\Illuminate\Support\Facades\Schema::hasTable('user_sessions')) {
+            $activeSessions = \App\Models\UserSession::where('user_id', $user->id)
+                ->whereNull('revoked_at')
+                ->orderByDesc('last_active_at')
+                ->limit(15)
+                ->get();
+        }
+
+        $pendingTotpSecret = $request->session()->get('totp_setup_secret');
+        $pendingTotpUri = null;
+        if ($pendingTotpSecret) {
+            $accountLabel = $user->email ?: ($user->username ?: ('user_' . $user->id));
+            $pendingTotpUri = \App\Services\TwoFactorService::buildOtpAuthUri(
+                config('app.name', 'Dzulfikrialifajri Store'),
+                $accountLabel,
+                $pendingTotpSecret
+            );
+        }
+
+        $recoveryCodesRemaining = is_array($user->totp_recovery_codes) ? count($user->totp_recovery_codes) : 0;
+
+        return view('profile', compact(
+            'user',
+            'activeSessions',
+            'currentSessionId',
+            'pendingTotpSecret',
+            'pendingTotpUri',
+            'recoveryCodesRemaining'
+        ));
     }
 
     public function update(Request $request)
@@ -345,5 +377,224 @@ class ProfileController extends Controller
         }
 
         return response()->json(['success' => true]);
+    }
+
+    /**
+     * Mulai proses pendaftaran TOTP Authenticator App (Google Authenticator / Authy).
+     */
+    public function initTotpSetup(Request $request)
+    {
+        $user = Auth::user();
+
+        if (!$user->has_custom_password && !$user->password) {
+            return redirect()->to(route('profile') . '#tab-keamanan')
+                ->with('error', __('Atur kata sandi akun terlebih dahulu sebelum mengaktifkan Authenticator App (TOTP).'));
+        }
+
+        $secret = \App\Services\TwoFactorService::generateBase32Secret(32);
+        $request->session()->put('totp_setup_secret', $secret);
+
+        return redirect()->to(route('profile') . '#tab-keamanan')
+            ->with('success', __('Secret key Authenticator dibuat. Pindai QR atau salin kunci lalu masukkan kode 6 digit untuk konfirmasi.'));
+    }
+
+    /**
+     * Batalkan proses pendaftaran TOTP yang belum selesai.
+     */
+    public function cancelTotpSetup(Request $request)
+    {
+        $request->session()->forget('totp_setup_secret');
+        return redirect()->to(route('profile') . '#tab-keamanan');
+    }
+
+    /**
+     * Konfirmasi aktivasi TOTP Authenticator App dan hasilkan Recovery Codes.
+     */
+    public function confirmTotpSetup(Request $request)
+    {
+        $request->validate([
+            'totp_code' => 'required|string|regex:/^\d{6}$/',
+        ]);
+
+        $secret = (string) $request->session()->get('totp_setup_secret', '');
+        if ($secret === '') {
+            return redirect()->to(route('profile') . '#tab-keamanan')
+                ->with('error', __('Sesi penyiapan Authenticator sudah berakhir. Silakan mulai ulang.'));
+        }
+
+        if (!\App\Services\TwoFactorService::verifyOtp($secret, (string) $request->input('totp_code'))) {
+            return redirect()->to(route('profile') . '#tab-keamanan')
+                ->with('error', __('Kode Authenticator 6 digit tidak cocok. Pastikan waktu perangkat Anda sinkron dan coba lagi.'));
+        }
+
+        $user = Auth::user();
+        $plainRecoveryCodes = \App\Services\TwoFactorService::generateRecoveryCodes(8);
+        $hashedRecoveryCodes = \App\Services\TwoFactorService::hashRecoveryCodes($plainRecoveryCodes);
+
+        $user->update([
+            'totp_secret' => $secret,
+            'totp_enabled' => true,
+            'totp_recovery_codes' => $hashedRecoveryCodes,
+            'totp_confirmed_at' => now(),
+        ]);
+
+        $request->session()->forget('totp_setup_secret');
+
+        if (class_exists(\App\Models\AuditLog::class)) {
+            \App\Models\AuditLog::create([
+                'actor_id' => $user->id,
+                'action' => 'totp_enabled',
+                'entity_type' => 'user',
+                'entity_id' => $user->id,
+                'detail' => 'User enabled TOTP Authenticator 2FA',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
+        }
+
+        return redirect()->to(route('profile') . '#tab-keamanan')
+            ->with('success', __('Authenticator App (TOTP 2FA) berhasil diaktifkan! Simpan kode pemulihan di tempat yang aman.'))
+            ->with('totp_recovery_codes_once', $plainRecoveryCodes);
+    }
+
+    /**
+     * Buat ulang seluruh Recovery Codes TOTP.
+     */
+    public function regenerateTotpRecoveryCodes(Request $request)
+    {
+        $request->validate([
+            'verification_code' => 'required|string|min:6|max:20',
+        ]);
+
+        $user = Auth::user();
+        if (!$user->totp_enabled || empty($user->totp_secret)) {
+            return redirect()->to(route('profile') . '#tab-keamanan')
+                ->with('error', __('Authenticator App belum aktif pada akun Anda.'));
+        }
+
+        if (!\App\Services\TwoFactorService::verifyOtp((string) $user->totp_secret, (string) $request->input('verification_code'))) {
+            return redirect()->to(route('profile') . '#tab-keamanan')
+                ->with('error', __('Kode 6 digit dari Authenticator App tidak valid.'));
+        }
+
+        $plainRecoveryCodes = \App\Services\TwoFactorService::generateRecoveryCodes(8);
+        $user->update([
+            'totp_recovery_codes' => \App\Services\TwoFactorService::hashRecoveryCodes($plainRecoveryCodes),
+        ]);
+
+        return redirect()->to(route('profile') . '#tab-keamanan')
+            ->with('success', __('Kode pemulihan baru berhasil dibuat. Kode lama kini tidak lagi berlaku.'))
+            ->with('totp_recovery_codes_once', $plainRecoveryCodes);
+    }
+
+    /**
+     * Nonaktifkan TOTP Authenticator App.
+     */
+    public function disableTotp(Request $request)
+    {
+        $request->validate([
+            'verification_code' => 'required|string|min:6|max:20',
+        ]);
+
+        $user = Auth::user();
+        if (!$user->totp_enabled || empty($user->totp_secret)) {
+            return redirect()->to(route('profile') . '#tab-keamanan')
+                ->with('error', __('Authenticator App memang sedang nonaktif.'));
+        }
+
+        $input = trim((string) $request->input('verification_code'));
+        $validTotp = \App\Services\TwoFactorService::verifyOtp((string) $user->totp_secret, $input);
+        $validRecovery = !$validTotp && is_array($user->totp_recovery_codes)
+            && \App\Services\TwoFactorService::consumeRecoveryCode($user->totp_recovery_codes, $input) !== null;
+
+        if (!$validTotp && !$validRecovery) {
+            return redirect()->to(route('profile') . '#tab-keamanan')
+                ->with('error', __('Kode Authenticator atau kode pemulihan tidak valid untuk menonaktifkan 2FA.'));
+        }
+
+        $user->update([
+            'totp_secret' => null,
+            'totp_enabled' => false,
+            'totp_recovery_codes' => null,
+            'totp_confirmed_at' => null,
+        ]);
+
+        if (class_exists(\App\Models\AuditLog::class)) {
+            \App\Models\AuditLog::create([
+                'actor_id' => $user->id,
+                'action' => 'totp_disabled',
+                'entity_type' => 'user',
+                'entity_id' => $user->id,
+                'detail' => 'User disabled TOTP Authenticator 2FA',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
+        }
+
+        return redirect()->to(route('profile') . '#tab-keamanan')
+            ->with('success', __('Authenticator App (TOTP 2FA) berhasil dinonaktifkan.'));
+    }
+
+    /**
+     * Cabut satu sesi aktif tertentu milik pengguna.
+     */
+    public function revokeSession(Request $request, $id)
+    {
+        $user = Auth::user();
+        $currentSessionId = $request->session()->getId();
+
+        $sessionRecord = \App\Models\UserSession::where('user_id', $user->id)->findOrFail($id);
+
+        if ($sessionRecord->isCurrent($currentSessionId)) {
+            return redirect()->to(route('profile') . '#tab-geolokasi')
+                ->with('error', __('Gunakan tombol Keluar untuk mengakhiri sesi perangkat yang sedang Anda gunakan.'));
+        }
+
+        $sessionRecord->update(['revoked_at' => now()]);
+
+        if (config('session.driver') === 'database' && \Illuminate\Support\Facades\Schema::hasTable('sessions')) {
+            \Illuminate\Support\Facades\DB::table('sessions')
+                ->where('id', $sessionRecord->session_id)
+                ->delete();
+        }
+
+        return redirect()->to(route('profile') . '#tab-geolokasi')
+            ->with('success', __('Sesi perangkat tersebut berhasil diakhiri.'));
+    }
+
+    /**
+     * Cabut semua sesi aktif di perangkat lain ("Keluar dari Semua Perangkat Lain").
+     */
+    public function revokeOtherSessions(Request $request)
+    {
+        $user = Auth::user();
+        $currentSessionId = $request->session()->getId();
+
+        $revokedCount = \App\Models\UserSession::where('user_id', $user->id)
+            ->where('session_id', '!=', $currentSessionId)
+            ->whereNull('revoked_at')
+            ->update(['revoked_at' => now()]);
+
+        if (config('session.driver') === 'database' && \Illuminate\Support\Facades\Schema::hasTable('sessions')) {
+            \Illuminate\Support\Facades\DB::table('sessions')
+                ->where('user_id', $user->id)
+                ->where('id', '!=', $currentSessionId)
+                ->delete();
+        }
+
+        if (class_exists(\App\Models\AuditLog::class)) {
+            \App\Models\AuditLog::create([
+                'actor_id' => $user->id,
+                'action' => 'sessions_revoked_others',
+                'entity_type' => 'user',
+                'entity_id' => $user->id,
+                'detail' => "Revoked {$revokedCount} other active sessions",
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
+        }
+
+        return redirect()->to(route('profile') . '#tab-geolokasi')
+            ->with('success', __('Semua sesi di perangkat lain (:count sesi) berhasil diakhiri.', ['count' => $revokedCount]));
     }
 }

@@ -210,6 +210,14 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
     Route::post('/profile/telegram-link', [\App\Http\Controllers\ProfileController::class, 'generateTelegramLink'])->name('profile.telegram.link');
     Route::post('/profile/telegram-unlink', [\App\Http\Controllers\ProfileController::class, 'unlinkTelegram'])->name('profile.telegram.unlink');
     Route::post('/profile/2fa/toggle', [\App\Http\Controllers\Auth\AuthController::class, 'toggleTwoFactor'])->name('profile.2fa.toggle');
+    Route::post('/profile/totp/init', [\App\Http\Controllers\ProfileController::class, 'initTotpSetup'])->name('profile.totp.init');
+    Route::post('/profile/totp/cancel', [\App\Http\Controllers\ProfileController::class, 'cancelTotpSetup'])->name('profile.totp.cancel');
+    Route::post('/profile/totp/confirm', [\App\Http\Controllers\ProfileController::class, 'confirmTotpSetup'])->name('profile.totp.confirm')->middleware('throttle:10,1');
+    Route::post('/profile/totp/recovery-codes', [\App\Http\Controllers\ProfileController::class, 'regenerateTotpRecoveryCodes'])->name('profile.totp.recovery-codes')->middleware('throttle:5,1');
+    Route::post('/profile/totp/disable', [\App\Http\Controllers\ProfileController::class, 'disableTotp'])->name('profile.totp.disable')->middleware('throttle:5,1');
+    Route::delete('/profile/sessions/{id}', [\App\Http\Controllers\ProfileController::class, 'revokeSession'])->name('profile.sessions.revoke');
+    Route::post('/profile/sessions/revoke-others', [\App\Http\Controllers\ProfileController::class, 'revokeOtherSessions'])->name('profile.sessions.revoke-others');
+    Route::get('/api/quick-search', [\App\Http\Controllers\QuickSearchController::class, 'search'])->name('api.quick-search')->middleware('throttle:60,1');
     Route::get('/profile/logins', [\App\Http\Controllers\ProfileController::class, 'loginHistory'])->name('profile.logins');
     Route::post('/profile/logins/block-ip', [\App\Http\Controllers\ProfileController::class, 'blockIp'])->name('profile.logins.block-ip');
     Route::post('/profile/logins/block-device', [\App\Http\Controllers\ProfileController::class, 'blockDevice'])->name('profile.logins.block-device');

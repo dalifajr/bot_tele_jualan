@@ -81,6 +81,114 @@ class TwoFactorService
     }
 
     /**
+     * Generate a cryptographically secure Base32 TOTP secret (RFC 4648).
+     */
+    public static function generateBase32Secret(int $length = 32): string
+    {
+        $secret = '';
+        $maxIndex = strlen(self::BASE32_ALPHABET) - 1;
+        for ($i = 0; $i < $length; $i++) {
+            $secret .= self::BASE32_ALPHABET[random_int(0, $maxIndex)];
+        }
+        return $secret;
+    }
+
+    /**
+     * Verify a 6-digit TOTP code against a Base32 secret with optional clock-skew window (±steps).
+     */
+    public static function verifyOtp(string $secret, string $code, int $window = 1, int $period = 30, int $digits = 6, ?int $timestamp = null): bool
+    {
+        $normalizedCode = preg_replace('/\s+/', '', trim($code));
+        if (!preg_match('/^\d{' . $digits . '}$/', $normalizedCode)) {
+            return false;
+        }
+
+        $now = $timestamp ?? time();
+        for ($offset = -$window; $offset <= $window; $offset++) {
+            $candidate = self::generateOtp($secret, $now + ($offset * $period), $period, $digits);
+            if ($candidate !== null && hash_equals($candidate, $normalizedCode)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Build standard otpauth://totp URI compatible with Google Authenticator, Authy, 1Password, etc.
+     */
+    public static function buildOtpAuthUri(string $issuer, string $accountName, string $secret): string
+    {
+        $cleanIssuer = trim($issuer) ?: 'Store';
+        $cleanAccount = trim($accountName) ?: 'account';
+        $label = rawurlencode($cleanIssuer . ':' . $cleanAccount);
+
+        return sprintf(
+            'otpauth://totp/%s?secret=%s&issuer=%s&algorithm=SHA1&digits=6&period=30',
+            $label,
+            rawurlencode($secret),
+            rawurlencode($cleanIssuer)
+        );
+    }
+
+    /**
+     * Generate human-readable single-use recovery codes (format: XXXX-XXXX).
+     */
+    public static function generateRecoveryCodes(int $count = 8): array
+    {
+        $alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        $max = strlen($alphabet) - 1;
+        $codes = [];
+
+        for ($i = 0; $i < $count; $i++) {
+            $partA = '';
+            $partB = '';
+            for ($j = 0; $j < 4; $j++) {
+                $partA .= $alphabet[random_int(0, $max)];
+                $partB .= $alphabet[random_int(0, $max)];
+            }
+            $codes[] = "{$partA}-{$partB}";
+        }
+
+        return $codes;
+    }
+
+    /**
+     * Hash recovery codes with HMAC-SHA256 keyed by APP_KEY for safe database storage.
+     */
+    public static function hashRecoveryCodes(array $plainCodes): array
+    {
+        $key = (string) config('app.key', 'fallback-app-key');
+        return array_values(array_map(function (string $code) use ($key) {
+            $normalized = strtoupper(preg_replace('/[^A-Z0-9]/i', '', trim($code)));
+            return hash_hmac('sha256', $normalized, $key);
+        }, $plainCodes));
+    }
+
+    /**
+     * Verify and consume a single-use recovery code. Returns remaining hashed codes if valid, or null if invalid.
+     */
+    public static function consumeRecoveryCode(array $hashedCodes, string $inputCode): ?array
+    {
+        $normalized = strtoupper(preg_replace('/[^A-Z0-9]/i', '', trim($inputCode)));
+        if (strlen($normalized) < 8) {
+            return null;
+        }
+
+        $key = (string) config('app.key', 'fallback-app-key');
+        $candidateHash = hash_hmac('sha256', $normalized, $key);
+
+        foreach ($hashedCodes as $index => $storedHash) {
+            if (is_string($storedHash) && hash_equals($storedHash, $candidateHash)) {
+                unset($hashedCodes[$index]);
+                return array_values($hashedCodes);
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Get remaining seconds for the current 30s window.
      */
     public static function getRemainingSeconds(?int $timestamp = null, int $period = 30): int

@@ -22,6 +22,10 @@ class User extends Authenticatable
         'two_factor_enabled',
         'two_factor_code',
         'two_factor_expires_at',
+        'totp_secret',
+        'totp_enabled',
+        'totp_recovery_codes',
+        'totp_confirmed_at',
         'dismiss_set_password_prompt',
         'has_custom_password',
         'avatar',
@@ -32,6 +36,9 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'two_factor_code',
+        'totp_secret',
+        'totp_recovery_codes',
     ];
 
     protected $casts = [
@@ -40,11 +47,26 @@ class User extends Authenticatable
         'allowed_tools' => 'array',
         'two_factor_enabled' => 'boolean',
         'two_factor_expires_at' => 'datetime',
+        'totp_secret' => 'encrypted',
+        'totp_enabled' => 'boolean',
+        'totp_recovery_codes' => 'array',
+        'totp_confirmed_at' => 'datetime',
         'last_seen_at' => 'datetime',
         'dismiss_set_password_prompt' => 'boolean',
         'has_custom_password' => 'boolean',
         'commission_per_product' => 'boolean',
     ];
+
+    public function hasAnyTwoFactorEnabled(): bool
+    {
+        return ($this->totp_enabled && !empty($this->totp_secret))
+            || ($this->two_factor_enabled && !empty($this->telegram_id));
+    }
+
+    public function userSessions()
+    {
+        return $this->hasMany(UserSession::class, 'user_id');
+    }
 
     protected static function booted()
     {
