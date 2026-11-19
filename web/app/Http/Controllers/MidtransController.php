@@ -53,6 +53,46 @@ class MidtransController extends Controller
 
         $order = Order::where('order_ref', $orderId)->first();
         if (!$order) {
+            // Cek apakah order_id adalah referensi Top-Up Dompet Saldo (TOP...)
+            if (\Illuminate\Support\Facades\Schema::hasTable('wallet_topups')) {
+                $topup = \App\Models\WalletTopup::where('topup_ref', $orderId)->first();
+                if ($topup) {
+                    if ($transactionStatus === 'capture' || $transactionStatus === 'settlement') {
+                        if (!is_numeric($grossAmount) || abs((float) $grossAmount - (float) $topup->total_pay) > 0.01) {
+                            Log::warning('Midtrans wallet topup callback amount mismatch.', [
+                                'topup_ref' => $orderId,
+                                'expected_amount' => $topup->total_pay,
+                                'received_gross_amount' => $grossAmount,
+                            ]);
+                            return response()->json(['message' => 'Amount mismatch'], 400);
+                        }
+
+                        if ($topup->status === 'pending') {
+                            try {
+                                app(\App\Services\WalletService::class)->confirmTopup(
+                                    $topup->id,
+                                    null,
+                                    'MIDTRANS_WEBHOOK',
+                                    'Verified via Midtrans settlement',
+                                    false
+                                );
+                                Log::info("Wallet topup {$orderId} confirmed via Midtrans settlement.");
+                            } catch (\Throwable $e) {
+                                Log::error("Failed to confirm wallet topup {$orderId} via Midtrans: " . $e->getMessage());
+                            }
+                        }
+                    } elseif (in_array($transactionStatus, ['cancel', 'deny', 'expire'])) {
+                        if ($topup->status === 'pending') {
+                            $topup->update([
+                                'status' => $transactionStatus === 'expire' ? 'expired' : 'cancelled',
+                            ]);
+                        }
+                    }
+
+                    return response()->json(['message' => 'Wallet topup callback processed successfully']);
+                }
+            }
+
             return response()->json(['message' => 'Order not found'], 404);
         }
 

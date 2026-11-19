@@ -316,4 +316,134 @@ class Phase4NewMenusAndFeaturesTest extends TestCase
             ->get(route('dashboard'))
             ->assertOk();
     }
+
+    public function test_wallet_topup_qris_webhooks_and_admin_manual_override(): void
+    {
+        $admin = $this->makeUser('admin_qris4', 'admin');
+        $customer = $this->makeUser('cust_qris4', 'customer', ['customer_wallet_balance' => 0]);
+
+        // Configure static QRIS & listener shared secret
+        $staticQris = '00020101021126570011ID.DANA.WWW011893600915300000000002090000000000303UMI51440014ID.CO.QRIS.WWW0215ID10200000000000303UMI5204549953033605802ID5910TEST STORE6007JAKARTA6105123456304ABCD';
+        \App\Models\BotSetting::updateOrCreate(['key' => 'qris_static_payload'], ['value' => $staticQris]);
+        \App\Models\BotSetting::updateOrCreate(['key' => 'listener_shared_secret'], ['value' => 'super-secret-listener-key-2026']);
+
+        // 1. Create Topup & verify dynamic QRIS canvas renders on /wallet
+        $this->actingAs($customer)->post(route('wallet.topup.store'), ['amount' => 50000])
+            ->assertRedirect(route('wallet.index'));
+
+        $topup1 = WalletTopup::where('user_id', $customer->id)->firstOrFail();
+        $this->actingAs($customer)->get(route('wallet.index'))
+            ->assertOk()
+            ->assertSee('wallet-qris-canvas')
+            ->assertSee($topup1->topup_ref);
+
+        // 2. Android Listener Webhook auto-confirms wallet topup by exact total_pay
+        $payload = json_encode([
+            'amount' => $topup1->total_pay,
+            'source_app' => 'gopay_merchant',
+            'raw_text' => 'Pembayaran QRIS masuk Rp' . $topup1->total_pay,
+        ]);
+        $ts = (string) time();
+        $sig = hash_hmac('sha256', $ts . '.' . $payload, 'super-secret-listener-key-2026');
+
+        $webhookRes = $this->call(
+            'POST',
+            route('listener.payment'),
+            [],
+            [],
+            [],
+            [
+                'CONTENT_TYPE' => 'application/json',
+                'HTTP_X_SIGNATURE' => $sig,
+                'HTTP_X_TIMESTAMP' => $ts,
+                'HTTP_X_IDEMPOTENCY_KEY' => 'idem-topup-' . $topup1->id,
+            ],
+            $payload
+        );
+        $webhookRes->assertOk()->assertJsonFragment([
+            'status' => 'paid',
+            'matched_type' => 'wallet_topup',
+            'topup_ref' => $topup1->topup_ref,
+        ]);
+
+        $customer->refresh();
+        $topup1->refresh();
+        $this->assertEquals('paid', $topup1->status);
+        $this->assertEquals(50000, (int) $customer->customer_wallet_balance);
+
+        // Polling endpoint reflects paid status & updated balance
+        $this->actingAs($customer)->getJson(route('wallet.topup.status', $topup1->id))
+            ->assertOk()
+            ->assertJsonFragment(['status' => 'paid', 'balance' => 50000]);
+
+        // 3. Midtrans Webhook auto-confirms a second topup
+        config(['services.midtrans.server_key' => 'SB-Mid-server-TESTKEY123']);
+        $topup2 = WalletTopup::create([
+            'user_id' => $customer->id,
+            'topup_ref' => 'TOPMIDTRANS001',
+            'amount' => 30000,
+            'unique_code' => 77,
+            'total_pay' => 30077,
+            'payment_method' => 'qris',
+            'status' => 'pending',
+            'expires_at' => now()->addMinutes(30),
+        ]);
+        $midSig = hash('sha512', 'TOPMIDTRANS001' . '200' . '30077.00' . 'SB-Mid-server-TESTKEY123');
+        $this->postJson(route('payment.midtrans.callback'), [
+            'order_id' => 'TOPMIDTRANS001',
+            'status_code' => '200',
+            'gross_amount' => '30077.00',
+            'signature_key' => $midSig,
+            'transaction_status' => 'settlement',
+        ])->assertOk();
+
+        $customer->refresh();
+        $topup2->refresh();
+        $this->assertEquals('paid', $topup2->status);
+        $this->assertEquals('MIDTRANS_WEBHOOK', $topup2->verified_source);
+        $this->assertEquals(80000, (int) $customer->customer_wallet_balance);
+
+        // 4. Admin Manual Override on EXPIRED topup (QRIS trouble scenario)
+        $expiredTopup = WalletTopup::create([
+            'user_id' => $customer->id,
+            'topup_ref' => 'TOPEXPIRED001',
+            'amount' => 25000,
+            'unique_code' => 45,
+            'total_pay' => 25045,
+            'payment_method' => 'qris',
+            'status' => 'expired',
+            'expires_at' => now()->subMinutes(10),
+        ]);
+
+        $this->actingAs($admin)->get(route('admin.wallet.index'))
+            ->assertOk()
+            ->assertSee('TOPEXPIRED001')
+            ->assertSee('Konfirmasi Manual');
+
+        $this->actingAs($admin)->post(route('admin.wallet.topup.confirm', $expiredTopup->id), [
+            'admin_note' => 'Dana QRIS telat masuk, diverifikasi mutasi manual',
+        ])->assertSessionHas('success');
+
+        $customer->refresh();
+        $expiredTopup->refresh();
+        $this->assertEquals('paid', $expiredTopup->status);
+        $this->assertEquals('ADMIN_MANUAL', $expiredTopup->verified_source);
+        $this->assertEquals(105000, (int) $customer->customer_wallet_balance);
+
+        // Cannot confirm again once already paid
+        $this->actingAs($admin)->post(route('admin.wallet.topup.confirm', $expiredTopup->id))
+            ->assertSessionHas('error');
+        $customer->refresh();
+        $this->assertEquals(105000, (int) $customer->customer_wallet_balance);
+
+        // 5. Admin Direct Manual Credit (customer had QRIS issue and transferred manually)
+        $this->actingAs($admin)->post(route('admin.wallet.manual-credit'), [
+            'user_id' => $customer->id,
+            'amount' => 15000,
+            'note' => 'Transfer manual BCA kendala QRIS',
+        ])->assertRedirect(route('admin.wallet.index'));
+
+        $customer->refresh();
+        $this->assertEquals(120000, (int) $customer->customer_wallet_balance);
+    }
 }

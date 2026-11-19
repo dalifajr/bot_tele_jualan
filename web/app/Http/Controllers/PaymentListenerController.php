@@ -320,11 +320,84 @@ class PaymentListenerController extends Controller
             }
         }
 
+        // =========================================================================
+        // 3. CEK TOP-UP DOMPET SALDO PELANGGAN (WALLET TOPUPS VIA QRIS / BANK)
+        // =========================================================================
+        if (\Illuminate\Support\Facades\Schema::hasTable('wallet_topups')) {
+            $topupQuery = \App\Models\WalletTopup::with('user')
+                ->where('status', 'pending')
+                ->where(function ($q) {
+                    $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
+                });
+
+            $topup = null;
+            if (!empty($reference)) {
+                $candidate = (clone $topupQuery)->where('topup_ref', $reference)->first();
+                if ($candidate && (int) $candidate->total_pay === $amount) {
+                    $topup = $candidate;
+                }
+            }
+
+            if (!$topup) {
+                $candidates = (clone $topupQuery)->where('total_pay', $amount)->get();
+                if ($candidates->count() === 1) {
+                    $topup = $candidates->first();
+                } elseif ($candidates->count() > 1) {
+                    return response()->json([
+                        'status' => 'ambiguous',
+                        'message' => 'Nominal top-up dompet cocok ke beberapa permintaan aktif. Kirim reference topup_ref.',
+                    ], 409);
+                }
+            }
+
+            if ($topup) {
+                try {
+                    app(\App\Services\WalletService::class)->confirmTopup(
+                        $topup->id,
+                        null,
+                        'ANDROID_LISTENER:' . $sourceApp,
+                        $rawText !== '' ? ('Mutasi: ' . substr($rawText, 0, 200)) : null,
+                        false
+                    );
+
+                    \Illuminate\Support\Facades\DB::table('audit_logs')->insert([
+                        'action' => 'wallet_topup_auto_confirmed',
+                        'actor_id' => null,
+                        'entity_type' => 'wallet_topup',
+                        'entity_id' => $topup->id,
+                        'detail' => "ref={$topup->topup_ref}; amount={$topup->amount}; source=ANDROID_LISTENER:{$sourceApp}",
+                        'created_at' => now(),
+                    ]);
+                } catch (\Throwable $e) {
+                    Log::error("[PaymentListener] Gagal mengonfirmasi wallet topup {$topup->topup_ref}: " . $e->getMessage());
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => $e->getMessage(),
+                    ], 409);
+                }
+
+                $responsePayload = [
+                    'status' => 'paid',
+                    'matched_type' => 'wallet_topup',
+                    'topup_ref' => $topup->topup_ref,
+                    'amount' => $amount,
+                    'credited_amount' => (int) $topup->amount,
+                    'message' => 'Top-up dompet saldo berhasil diverifikasi otomatis oleh Android Listener',
+                ];
+
+                if (!empty($idempotencyKey)) {
+                    Cache::put('listener_event_' . md5($idempotencyKey), $responsePayload, now()->addDays(7));
+                }
+
+                return response()->json($responsePayload);
+            }
+        }
+
         // Tidak ada kecocokan
         return response()->json([
             'status' => 'not_found',
             'amount' => $amount,
-            'message' => 'Tidak ditemukan transaksi rekber maupun pesanan toko pending dengan nominal ini.',
+            'message' => 'Tidak ditemukan transaksi rekber, pesanan toko, maupun top-up dompet pending dengan nominal ini.',
         ], 404);
     }
 }

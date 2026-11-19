@@ -199,6 +199,7 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
     // Customer Wallet, Wishlist & Warranty Center
     Route::get('/wallet', [\App\Http\Controllers\WalletController::class, 'index'])->name('wallet.index');
     Route::post('/wallet/topup', [\App\Http\Controllers\WalletController::class, 'createTopup'])->name('wallet.topup.store')->middleware('throttle:10,1');
+    Route::get('/wallet/topup/{id}/status', [\App\Http\Controllers\WalletController::class, 'topupStatus'])->name('wallet.topup.status');
     Route::post('/wallet/topup/{id}/cancel', [\App\Http\Controllers\WalletController::class, 'cancelTopup'])->name('wallet.topup.cancel');
 
     Route::get('/wishlist', [\App\Http\Controllers\WishlistController::class, 'index'])->name('wishlist.index');
@@ -395,6 +396,7 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
 
         // Admin Customer Wallet Top-ups
         Route::get('/wallet', [\App\Http\Controllers\WalletController::class, 'adminIndex'])->name('wallet.index');
+        Route::post('/wallet/manual-credit', [\App\Http\Controllers\WalletController::class, 'adminManualCredit'])->name('wallet.manual-credit');
         Route::post('/wallet/topup/{id}/confirm', [\App\Http\Controllers\WalletController::class, 'adminConfirmTopup'])->name('wallet.topup.confirm');
         Route::post('/wallet/topup/{id}/reject', [\App\Http\Controllers\WalletController::class, 'adminRejectTopup'])->name('wallet.topup.reject');
 
