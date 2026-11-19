@@ -1767,15 +1767,22 @@
 @auth
 {{-- Global Command Search Modal (Ctrl+K) --}}
 <div class="modal fade m3-cmd-modal" id="globalQuickSearchModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" style="max-width: 600px;">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 580px;">
         <div class="modal-content">
             <div class="m3-cmd-input-wrap">
                 <i class="fas fa-search text-primary"></i>
                 <input type="text" class="m3-cmd-input" id="globalQuickSearchInput" placeholder="{{ __('Cari produk, nomor pesanan, rekber, atau menu...') }}" autocomplete="off">
-                <span class="m3-quick-search-kbd">ESC</span>
+                <button type="button" class="m3-cmd-esc-btn" data-bs-dismiss="modal" aria-label="{{ __('Tutup') }}">ESC</button>
             </div>
             <div class="m3-cmd-results" id="globalQuickSearchResults">
                 <div class="text-center text-muted small py-4">{{ __('Ketik untuk mencari...') }}</div>
+            </div>
+            <div class="m3-cmd-footer d-none d-sm-flex">
+                <div class="d-flex align-items-center gap-3">
+                    <span><span class="m3-quick-search-kbd me-1">↑↓</span>{{ __('Navigasi') }}</span>
+                    <span><span class="m3-quick-search-kbd me-1">↵</span>{{ __('Buka') }}</span>
+                </div>
+                <span><span class="m3-quick-search-kbd me-1">ESC</span>{{ __('Tutup') }}</span>
             </div>
         </div>
     </div>

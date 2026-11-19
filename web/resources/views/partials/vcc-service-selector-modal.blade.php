@@ -19,11 +19,11 @@
 
         {{-- Dialog Body --}}
         <div class="vcc-dialog-body">
-            <div class="d-flex align-items-center justify-content-between mb-2">
+            <div class="d-flex align-items-center justify-content-between gap-2 mb-2 flex-shrink-0">
                 <span class="small text-secondary fw-semibold">
                     <i class="fas fa-list-check text-primary me-1"></i>{{ __('Pilih Layanan & Atur Kuantitas:') }}
                 </span>
-                <span class="badge bg-light text-muted border small fw-normal" style="font-size: 0.7rem;">
+                <span class="vcc-info-pill">
                     {{ __('1 layanan = 1 stok') }}
                 </span>
             </div>
@@ -38,7 +38,7 @@
             </div>
 
             {{-- Dynamic Price & Service Summary Box --}}
-            <div class="vcc-summary-box p-3 rounded-4 mb-3">
+            <div class="vcc-summary-box p-3 rounded-4 mb-3 flex-shrink-0">
                 <div class="d-flex justify-content-between align-items-center small text-secondary mb-1">
                     <span>{{ __('Total Kuantitas') }}</span>
                     <span class="fw-bold text-body" id="vccSelectedCountText">{{ __(':qty unit kartu', ['qty' => 0]) }}</span>
@@ -49,9 +49,9 @@
                 </div>
                 <div id="vccSelectedBreakdownRow" class="small text-secondary mb-2 d-none">
                     <span class="d-block mb-1 text-muted" style="font-size: 0.72rem;">{{ __('Rincian Layanan:') }}</span>
-                    <div id="vccSelectedBreakdownList" class="d-flex flex-wrap gap-1"></div>
+                    <div id="vccSelectedBreakdownList" class="d-flex flex-wrap gap-1.5"></div>
                 </div>
-                <div class="border-top pt-2 d-flex justify-content-between align-items-center">
+                <div class="border-top pt-2 d-flex justify-content-between align-items-center" style="border-color: var(--outline-variant) !important;">
                     <span class="fw-bold text-body small">{{ __('Total Harga Bayar:') }}</span>
                     <span class="fw-bold text-primary fs-5" id="vccTotalAmountText">Rp 0</span>
                 </div>
@@ -59,8 +59,8 @@
         </div>
 
         {{-- Dialog Footer Actions --}}
-        <div class="vcc-dialog-footer d-flex gap-2">
-            <button type="button" class="btn btn-outline-secondary rounded-pill py-2.5 px-3 fw-bold flex-grow-1" id="btnVccCancel">
+        <div class="vcc-dialog-footer d-flex gap-2 flex-shrink-0">
+            <button type="button" class="btn btn-tonal rounded-pill py-2.5 px-3 fw-bold flex-grow-1" id="btnVccCancel">
                 {{ __('Batal') }}
             </button>
             <button type="button" class="btn btn-primary rounded-pill py-2.5 px-3 fw-bold flex-grow-1 d-flex align-items-center justify-content-center gap-1.5 shadow-sm" id="btnVccProceed" disabled>
@@ -165,11 +165,54 @@
     background: var(--primary-container, #dbeafe);
 }
 
+/* Dialog Header & Body Flex Discipline (Prevents First-Item Clipping on Mobile) */
+.vcc-dialog-header {
+    flex-shrink: 0;
+}
+
+.vcc-dialog-body {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.vcc-info-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.65rem;
+    border-radius: 9999px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    background: var(--surface-container-lowest, #ffffff);
+    color: var(--on-surface-variant, #475569);
+    border: 1px solid var(--outline-variant, #cbd5e1);
+    white-space: nowrap;
+}
+
 /* Scrollable Service List */
 .vcc-service-list {
-    max-height: 250px;
+    flex: 1 1 auto;
+    min-height: 120px;
+    max-height: 270px;
     overflow-y: auto;
-    padding-right: 4px;
+    padding: 2px 4px 2px 0;
+    scrollbar-width: thin;
+    scrollbar-color: var(--outline-variant) transparent;
+}
+
+.vcc-service-list::-webkit-scrollbar {
+    width: 5px;
+}
+
+.vcc-service-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.vcc-service-list::-webkit-scrollbar-thumb {
+    background: var(--outline-variant);
+    border-radius: 9999px;
 }
 
 /* Service Item Card */
@@ -177,13 +220,17 @@
     background: var(--surface-container-lowest, #ffffff);
     border: 1.5px solid var(--outline-variant, #e2e8f0);
     border-radius: 16px;
-    padding: 10px 14px;
+    padding: 11px 14px;
     margin-bottom: 8px;
-    transition: all 0.2s ease;
+    transition: border-color 0.18s ease, background-color 0.18s ease;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 8px;
+    gap: 10px;
+}
+
+.vcc-service-tile:last-child {
+    margin-bottom: 0;
 }
 
 .vcc-service-tile:hover {
@@ -192,11 +239,11 @@
 
 .vcc-service-tile.is-selected {
     border-color: var(--primary, #0284c7);
-    background: rgba(var(--primary-rgb, 2, 132, 199), 0.06);
+    background: rgba(var(--primary-rgb, 2, 132, 199), 0.08);
 }
 
 .vcc-service-tile.is-disabled {
-    opacity: 0.5;
+    opacity: 0.52;
     background: var(--surface-container-low, #f1f5f9);
     cursor: not-allowed;
     border-color: var(--outline-variant, #e2e8f0);
@@ -209,52 +256,94 @@
     accent-color: var(--primary, #0284c7);
     border-radius: 6px;
     flex-shrink: 0;
+    margin: 0;
 }
 
-/* Stepper Kuantitas per Layanan */
-.vcc-qty-stepper {
-    display: flex;
-    align-items: center;
-    background: var(--surface-container-low, #f1f5f9);
-    border: 1px solid var(--outline-variant, #cbd5e1);
-    border-radius: 9999px;
-    padding: 2px 4px;
-}
-
-.vcc-btn-step {
-    width: 26px;
-    height: 26px;
-    padding: 0;
-    border-radius: 50% !important;
+/* Stock Badge: Harmonized with Active Material You Primary Theme */
+.vcc-stock-badge {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.75rem;
-    font-weight: bold;
-    color: var(--on-surface, #1e293b);
-    background: #ffffff;
+    padding: 0.28rem 0.7rem;
+    border-radius: 9999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1.2;
+    background: var(--primary-container, #dbeafe);
+    color: var(--on-primary-container, #0c4a6e);
+    white-space: nowrap;
+}
+
+.vcc-stock-badge-empty {
+    background: rgba(220, 38, 38, 0.12);
+    color: #dc2626;
+}
+
+/* Stepper Kuantitas per Layanan — True Circular 28x28 Buttons */
+.vcc-qty-stepper {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--surface-container-lowest, #ffffff);
     border: 1px solid var(--outline-variant, #cbd5e1);
-    transition: background 0.15s ease;
+    border-radius: 9999px;
+    padding: 3px;
+}
+
+.vcc-btn-step {
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    min-height: 28px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    line-height: 1 !important;
+    border-radius: 50% !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+    font-size: 0.7rem !important;
+    font-weight: 700 !important;
+    color: var(--on-surface, #1e293b);
+    background: var(--surface-container-high, #f1f5f9);
+    border: 1px solid var(--outline-variant, #cbd5e1);
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
 .vcc-btn-step:hover:not(:disabled) {
     background: var(--primary, #0284c7);
-    color: #ffffff;
+    color: var(--on-primary, #ffffff);
     border-color: var(--primary, #0284c7);
 }
 
 .vcc-btn-step:disabled {
-    opacity: 0.35;
+    opacity: 0.38;
     cursor: not-allowed;
 }
 
 .vcc-qty-number {
-    min-width: 22px;
+    min-width: 24px;
     text-align: center;
     font-weight: 700;
     font-size: 0.85rem;
+    line-height: 1;
     color: var(--on-surface, #1e293b);
     user-select: none;
+}
+
+.vcc-breakdown-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 9999px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    background: var(--surface-container-lowest, #ffffff);
+    color: var(--on-surface, #1e293b);
+    border: 1px solid var(--outline-variant, #cbd5e1);
 }
 
 /* Summary Box */
@@ -263,33 +352,34 @@
     border: 1px solid var(--outline-variant, #e2e8f0);
 }
 
-/* Dark Mode Adjustments */
+/* Dark Mode Adjustments — Material You Dynamic Tokens */
 [data-bs-theme="dark"] .vcc-selector-container {
-    background: #1e293b;
-    border-color: #334155;
+    background: var(--surface-container-low, #1d1b20);
+    border-color: var(--outline-variant, #49454f);
 }
 [data-bs-theme="dark"] .vcc-service-tile {
-    background: #0f172a;
-    border-color: #334155;
+    background: var(--surface-container-lowest, #141218);
+    border-color: var(--outline-variant, #49454f);
 }
 [data-bs-theme="dark"] .vcc-summary-box {
-    background: #0f172a;
-    border-color: #334155;
+    background: var(--surface-container, #211f26);
+    border-color: var(--outline-variant, #49454f);
 }
 [data-bs-theme="dark"] .vcc-service-tile.is-disabled {
-    background: #1e293b;
+    background: var(--surface-container, #211f26);
 }
 [data-bs-theme="dark"] .vcc-qty-stepper {
-    background: #1e293b;
-    border-color: #475569;
+    background: var(--surface-container, #211f26);
+    border-color: var(--outline-variant, #49454f);
 }
 [data-bs-theme="dark"] .vcc-btn-step {
-    background: #334155;
-    color: #f8fafc;
-    border-color: #475569;
+    background: var(--surface-container-high, #2b2930);
+    color: var(--on-surface, #e6e0e9);
+    border-color: var(--outline-variant, #49454f);
 }
-[data-bs-theme="dark"] .vcc-qty-number {
-    color: #f8fafc;
+[data-bs-theme="dark"] .vcc-stock-badge-empty {
+    background: rgba(248, 113, 113, 0.16);
+    color: #fca5a5;
 }
 </style>
 
@@ -337,7 +427,7 @@
             if (item.qty > 0) {
                 totalQty += item.qty;
                 breakdownHtml += `
-                    <span class="badge bg-white border text-body py-1 px-2 fw-semibold" style="font-size: 0.72rem;">
+                    <span class="vcc-breakdown-chip">
                         ${srvName}: <strong class="text-primary">${item.qty} {{ __('unit') }}</strong>
                     </span>
                 `;
@@ -400,20 +490,20 @@
                     <div class="d-flex align-items-center gap-2 flex-shrink-0">
                         {{-- Stepper Kuantitas (Muncul setelah diceklis) --}}
                         <div class="vcc-qty-stepper ${isChecked ? '' : 'd-none'}" id="stepper_${idx}">
-                            <button type="button" class="btn vcc-btn-step vcc-step-minus" data-service="${encodeURIComponent(srv.name)}" ${currentQty <= 1 ? 'disabled' : ''} title="{{ __('Kurangi Kuantitas') }}">
-                                <i class="fas fa-minus" style="font-size: 0.6rem;"></i>
+                            <button type="button" class="vcc-btn-step vcc-step-minus" data-service="${encodeURIComponent(srv.name)}" ${currentQty <= 1 ? 'disabled' : ''} title="{{ __('Kurangi Kuantitas') }}">
+                                <i class="fas fa-minus" style="font-size: 0.62rem;"></i>
                             </button>
-                            <span class="vcc-qty-number px-1.5" id="qty_num_${idx}">${currentQty}</span>
-                            <button type="button" class="btn vcc-btn-step vcc-step-plus" data-service="${encodeURIComponent(srv.name)}" ${currentQty >= srv.stock ? 'disabled' : ''} title="{{ __('Tambah Kuantitas') }}">
-                                <i class="fas fa-plus" style="font-size: 0.6rem;"></i>
+                            <span class="vcc-qty-number" id="qty_num_${idx}">${currentQty}</span>
+                            <button type="button" class="vcc-btn-step vcc-step-plus" data-service="${encodeURIComponent(srv.name)}" ${currentQty >= srv.stock ? 'disabled' : ''} title="{{ __('Tambah Kuantitas') }}">
+                                <i class="fas fa-plus" style="font-size: 0.62rem;"></i>
                             </button>
                         </div>
 
                         {{-- Default Stock Badge saat belum diceklis --}}
                         <div class="vcc-stock-badge-wrap ${isChecked ? 'd-none' : ''}" id="stock_badge_${idx}">
                             ${isAvailable 
-                                ? `<span class="badge bg-success-subtle text-success rounded-pill px-2.5 py-1 fw-bold" style="font-size: 0.72rem;">${srv.stock} {{ __('stok') }}</span>`
-                                : `<span class="badge bg-danger-subtle text-danger rounded-pill px-2.5 py-1 fw-bold" style="font-size: 0.72rem;">{{ __('Habis') }}</span>`
+                                ? `<span class="vcc-stock-badge">${srv.stock} {{ __('stok') }}</span>`
+                                : `<span class="vcc-stock-badge vcc-stock-badge-empty">{{ __('Habis') }}</span>`
                             }
                         </div>
                     </div>
@@ -422,6 +512,7 @@
         });
 
         serviceList.innerHTML = html;
+        serviceList.scrollTop = 0;
 
         // Attach Click & Stepper Listeners
         serviceList.querySelectorAll('.vcc-service-tile').forEach((tile, idx) => {
