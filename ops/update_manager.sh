@@ -184,11 +184,36 @@ check_update() {
 
 backup_before_update() {
   cd "${PROJECT_DIR}"
-  local ts archive
+  local ts archive free_kb
   ts="$(date +%Y%m%d_%H%M%S)"
   archive="${BACKUP_DIR}/update_${ts}.tar.gz"
 
-  tar \
+  mkdir -p "${BACKUP_DIR}"
+
+  # Hapus file tar yang rusak/berukuran 0 jika ada
+  find "${BACKUP_DIR}" -maxdepth 1 -name "update_*.tar.gz" -size 0 -delete 2>/dev/null || true
+
+  # Cek sisa ruang disk di partisi target backup (dalam KB)
+  free_kb=$(df -k "${BACKUP_DIR}" 2>/dev/null | awk 'NR==2 {print $4}' || echo "1000000")
+
+  git rev-parse HEAD > "${LAST_COMMIT_FILE}"
+  echo "Previous commit: $(cat "${LAST_COMMIT_FILE}")"
+
+  # Jika ruang disk menipis (< 400 MB / 409600 KB) atau SKIP_BACKUP aktif, buat backup ringan darurat
+  if [[ "${SKIP_BACKUP:-0}" == "1" || "${free_kb}" -lt 409600 ]]; then
+    log_step "PERINGATAN: Sisa disk menipis (${free_kb} KB) atau SKIP_BACKUP aktif. Membuat backup ringan (hanya berkas konfigurasi penting)..."
+    local cfg_backup="${BACKUP_DIR}/update_cfg_${ts}.tar.gz"
+    tar -czf "${cfg_backup}" \
+      --exclude='.git' \
+      --exclude='web/vendor' \
+      --exclude='web/node_modules' \
+      .env web/.env user_role.txt 2>/dev/null || true
+    echo "Lightweight config backup created: ${cfg_backup}"
+    return 0
+  fi
+
+  # Coba buat backup penuh dengan pengecualian direktori berat
+  if tar \
     --exclude='.venv' \
     --exclude='.git' \
     --exclude='.gradle' \
@@ -200,17 +225,18 @@ backup_before_update() {
     --exclude='web/storage/logs' \
     --exclude='web/storage/app/backups' \
     -czf "${archive}" \
-    .
+    . 2>/dev/null; then
+    echo "Backup created: ${archive}"
+  else
+    log_step "PERINGATAN: Gagal membuat full archive backup (ruang disk tidak cukup). Melanjutkan proses update tanpa full archive..."
+    rm -f "${archive}" 2>/dev/null || true
+  fi
 
-  # Keep only latest 3 update snapshots to protect limited VPS disk space
-  mapfile -t old_updates < <(ls -1t "${BACKUP_DIR}"/update_*.tar.gz 2>/dev/null | tail -n +4 || true)
+  # Simpan maksimal 2 arsip backup update terbaru agar tidak membebani kapasitas disk VPS
+  mapfile -t old_updates < <(ls -1t "${BACKUP_DIR}"/update_*.tar.gz 2>/dev/null | tail -n +3 || true)
   if (( ${#old_updates[@]} > 0 )); then
     rm -f "${old_updates[@]}" 2>/dev/null || true
   fi
-
-  git rev-parse HEAD > "${LAST_COMMIT_FILE}"
-  echo "Backup created: ${archive}"
-  echo "Previous commit: $(cat "${LAST_COMMIT_FILE}")"
 }
 
 install_requirements() {
