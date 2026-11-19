@@ -122,6 +122,7 @@
                             <option value="">{{ __('-- Pilih Keputusan --') }}</option>
                             <option value="review" {{ $complaint->status === 'review' ? 'selected' : '' }}>{{ __('Ditinjau (In Review)') }}</option>
                             <option value="replacement" {{ $complaint->status === 'replacement' ? 'selected' : '' }}>{{ __('Kirim Akun Pengganti') }}</option>
+                            <option value="refund_wallet" {{ $complaint->refunded_to_wallet_at ? 'disabled' : '' }}>{{ __('Auto-Refund 100% ke Dompet Saldo Pembeli') }}</option>
                             <option value="refund" {{ $complaint->status === 'refund' ? 'selected' : '' }}>{{ __('Refund') }}</option>
                             <option value="done" {{ $complaint->status === 'done' ? 'selected' : '' }}>{{ __('Selesai (Tanpa Ganti Rugi Lain)') }}</option>
                             <option value="rejected" {{ $complaint->status === 'rejected' ? 'selected' : '' }}>{{ __('Tolak Klaim (Rejected)') }}</option>
@@ -233,6 +234,8 @@
             } else if (val === 'done' || val === 'refund') {
                 refundBlock.classList.remove('d-none');
                 refundInput.setAttribute('required', 'true');
+            } else if (val === 'refund_wallet') {
+                refundBlock.classList.remove('d-none');
             } else if (val === 'replacement') {
                 replacementBlock.classList.remove('d-none');
                 if(replacementInput) {

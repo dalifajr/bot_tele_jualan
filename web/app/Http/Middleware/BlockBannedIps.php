@@ -67,6 +67,43 @@ class BlockBannedIps
             }
         }
 
+        // 6. Check Persistent Firewall Rules (IP, Subnet CIDR, Telegram ID)
+        if (!$isBlocked && $ip) {
+            try {
+                if (\Illuminate\Support\Facades\Schema::hasTable('firewall_rules')) {
+                    $rules = Cache::remember('firewall:effective_rules', 30, function () {
+                        return \App\Models\FirewallRule::effective()
+                            ->get(['id', 'type', 'value', 'reason'])
+                            ->toArray();
+                    });
+
+                    $authTelegramId = Auth::check() ? (string) (Auth::user()->telegram_id ?? '') : '';
+
+                    foreach ($rules as $rule) {
+                        $matched = false;
+                        if ($rule['type'] === 'ip' && $ip === $rule['value']) {
+                            $matched = true;
+                        } elseif ($rule['type'] === 'subnet' && \App\Models\FirewallRule::ipMatchesCidr($ip, $rule['value'])) {
+                            $matched = true;
+                        } elseif ($rule['type'] === 'telegram_id' && $authTelegramId !== '' && $authTelegramId === (string) $rule['value']) {
+                            $matched = true;
+                        }
+
+                        if ($matched) {
+                            $isBlocked = true;
+                            if (!empty($rule['reason'])) {
+                                $reason = $rule['reason'];
+                            }
+                            \App\Models\FirewallRule::where('id', $rule['id'])->increment('hit_count');
+                            break;
+                        }
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Fail-open if firewall table is unavailable during migration
+            }
+        }
+
         if ($isBlocked) {
             if (Auth::check()) {
                 Auth::logout();

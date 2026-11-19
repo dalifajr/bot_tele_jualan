@@ -26,6 +26,9 @@ class QuickSearchController extends Controller
         $shortcuts = [
             ['title' => __('Dashboard'), 'subtitle' => __('Ringkasan utama akun'), 'url' => route('dashboard'), 'icon' => 'fas fa-home'],
             ['title' => __('Katalog Produk'), 'subtitle' => __('Jelajahi produk digital'), 'url' => route('catalog.index'), 'icon' => 'fas fa-store'],
+            ['title' => __('Dompet Saldo'), 'subtitle' => __('Top-up saldo & checkout 1-klik'), 'url' => route('wallet.index'), 'icon' => 'fas fa-wallet'],
+            ['title' => __('Favorit & Alert Stok'), 'subtitle' => __('Wishlist produk & pengingat restok'), 'url' => route('wishlist.index'), 'icon' => 'fas fa-heart'],
+            ['title' => __('Pusat Garansi & Lisensi'), 'subtitle' => __('Pantau masa aktif garansi produk'), 'url' => route('warranties.index'), 'icon' => 'fas fa-shield-check'],
             ['title' => __('Pesanan Saya'), 'subtitle' => __('Riwayat transaksi belanja'), 'url' => route('orders.index'), 'icon' => 'fas fa-receipt'],
             ['title' => __('Profil & Keamanan'), 'subtitle' => __('Kata sandi, TOTP 2FA & sesi aktif'), 'url' => route('profile') . '#tab-keamanan', 'icon' => 'fas fa-shield-halved'],
             ['title' => __('Obrolan'), 'subtitle' => __('Pesan dengan penjual / admin'), 'url' => route('chat.index'), 'icon' => 'fas fa-comments'],
@@ -35,14 +38,18 @@ class QuickSearchController extends Controller
             $shortcuts = array_merge($shortcuts, [
                 ['title' => __('Dashboard Admin'), 'subtitle' => __('Analitik & ringkasan toko'), 'url' => route('admin.dashboard'), 'icon' => 'fas fa-chart-line'],
                 ['title' => __('Kelola Pesanan (Admin)'), 'subtitle' => __('Konfirmasi pembayaran & pengiriman'), 'url' => route('admin.orders.index'), 'icon' => 'fas fa-cart-shopping'],
+                ['title' => __('Top-Up Dompet Pelanggan'), 'subtitle' => __('Konfirmasi deposit saldo pembeli'), 'url' => route('admin.wallet.index'), 'icon' => 'fas fa-coins'],
                 ['title' => __('Kelola Pelanggan'), 'subtitle' => __('Daftar akun & kontrol pengguna'), 'url' => route('admin.users.index'), 'icon' => 'fas fa-users'],
                 ['title' => __('Percobaan Login & Peta'), 'subtitle' => __('Peta sebaran lokasi & keamanan login'), 'url' => route('admin.logins.index'), 'icon' => 'fas fa-map-location-dot'],
+                ['title' => __('Firewall & Anti-Fraud'), 'subtitle' => __('Blokir IP, subnet CIDR & ID Telegram'), 'url' => route('admin.security.firewall'), 'icon' => 'fas fa-shield-virus'],
+                ['title' => __('Kesehatan Sistem'), 'subtitle' => __('Monitor DB, disk, Telegram & antrean'), 'url' => route('admin.system.health'), 'icon' => 'fas fa-heart-pulse'],
                 ['title' => __('Kelola Rekber'), 'subtitle' => __('Transaksi escrow aktif'), 'url' => route('admin.escrow.index'), 'icon' => 'fas fa-handshake'],
                 ['title' => __('Permintaan Payout'), 'subtitle' => __('Persetujuan penarikan saldo seller'), 'url' => route('admin.withdrawals.index'), 'icon' => 'fas fa-money-bill-wave'],
             ]);
         } elseif ($user->role === 'seller') {
             $shortcuts = array_merge($shortcuts, [
                 ['title' => __('Dashboard Seller'), 'subtitle' => __('Ringkasan pendapatan & stok'), 'url' => route('seller.dashboard'), 'icon' => 'fas fa-chart-pie'],
+                ['title' => __('Analitik Penjualan Seller'), 'subtitle' => __('Tren omzet, jam ramai & kualitas stok'), 'url' => route('seller.analytics'), 'icon' => 'fas fa-chart-area'],
                 ['title' => __('Produk Saya'), 'subtitle' => __('Kelola katalog toko Anda'), 'url' => route('seller.products.index'), 'icon' => 'fas fa-box-open'],
                 ['title' => __('Pesanan Toko'), 'subtitle' => __('Pesanan masuk pelanggan'), 'url' => route('seller.orders.index'), 'icon' => 'fas fa-receipt'],
                 ['title' => __('Keuangan & Penarikan'), 'subtitle' => __('Saldo wallet & ajukan payout'), 'url' => route('seller.finance.index'), 'icon' => 'fas fa-wallet'],

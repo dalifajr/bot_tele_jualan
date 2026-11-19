@@ -1668,6 +1668,13 @@ class AdminController extends Controller
                 }
             }
         }
+        if ($request->stock_status === 'ready' && $count > 0) {
+            try {
+                \App\Services\RestockAlertService::notifySubscribers($product, $count);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('Restock alert notify error: ' . $e->getMessage());
+            }
+        }
         return redirect()->route('admin.stock.index')->with('success', __(":count stok berhasil ditambahkan.", ["count" => $count]));
     }
 
@@ -2980,10 +2987,10 @@ class AdminController extends Controller
 
     public function updateComplaintStatus(Request $request, $id)
     {
-        $complaint = \App\Models\ComplaintCase::findOrFail($id);
+        $complaint = \App\Models\ComplaintCase::with('order')->findOrFail($id);
         
         $request->validate([
-            'status' => 'required|string|in:review,done,rejected,refund,replacement',
+            'status' => 'required|string|in:review,done,rejected,refund,replacement,refund_wallet',
             'rejected_reason' => 'required_if:status,rejected|nullable|string|max:500',
             'refund_note' => 'required_if:status,done,refund|nullable|string|max:500',
             'replacement_data' => 'nullable|string',
@@ -2997,6 +3004,81 @@ class AdminController extends Controller
             if (!$request->filled('replacement_stock_id') && !$request->filled('replacement_data')) {
                 return back()->withErrors(['replacement_data' => 'Data akun pengganti wajib diisi jika tidak ada stok otomatis.']);
             }
+        }
+
+        if ($request->status === 'refund_wallet') {
+            $refundError = null;
+            $refundAmount = 0;
+
+            \Illuminate\Support\Facades\DB::transaction(function () use ($id, $request, &$refundError, &$refundAmount, &$complaint) {
+                $locked = \App\Models\ComplaintCase::with('order')->where('id', $id)->lockForUpdate()->firstOrFail();
+                if ($locked->refunded_to_wallet_at !== null) {
+                    $refundError = __('Komplain ini sudah pernah di-refund ke Dompet Saldo pelanggan.');
+                    return;
+                }
+
+                $order = $locked->order;
+                if (!$order) {
+                    $refundError = __('Pesanan terkait komplain tidak ditemukan.');
+                    return;
+                }
+
+                $refundAmount = max(0, (int) $order->total_amount - (int) ($order->unique_code ?? 0));
+                if ($refundAmount <= 0) {
+                    $refundAmount = (int) $order->total_amount;
+                }
+
+                if ($refundAmount > 0) {
+                    app(\App\Services\WalletService::class)->credit(
+                        (int) $locked->customer_id,
+                        $refundAmount,
+                        'refund',
+                        $locked->complaint_ref ?: ('CMP-' . $locked->id),
+                        __('Auto-Refund komplain pesanan #:ref', ['ref' => $order->order_ref]),
+                        ['complaint_id' => $locked->id, 'order_id' => $order->id]
+                    );
+                }
+
+                $customNote = trim((string) $request->input('refund_note', ''));
+                $noteText = __('Dana sebesar Rp:amount telah dikembalikan otomatis ke Dompet Saldo Anda.', [
+                    'amount' => number_format($refundAmount, 0, ',', '.'),
+                ]);
+                if ($customNote !== '') {
+                    $noteText .= "\n" . $customNote;
+                }
+
+                $locked->update([
+                    'status' => 'done',
+                    'refund_note' => $noteText,
+                    'refunded_to_wallet_at' => now(),
+                    'closed_at' => now(),
+                ]);
+
+                $complaint = $locked;
+            });
+
+            if ($refundError !== null) {
+                return redirect()->back()->with('error', $refundError);
+            }
+
+            \App\Services\TelegramService::notifyComplaintStatusUpdate($complaint);
+            $customer = \App\Models\User::find($complaint->customer_id);
+            if ($customer) {
+                $customer->notify(new \App\Notifications\ComplaintNotification($complaint, 'status_update'));
+            }
+
+            \Illuminate\Support\Facades\DB::table('audit_logs')->insert([
+                'action' => 'complaint_refund_wallet',
+                'actor_id' => \Illuminate\Support\Facades\Auth::id(),
+                'entity_type' => 'complaint_case',
+                'entity_id' => $complaint->id,
+                'detail' => "refund_wallet={$refundAmount}; ref={$complaint->complaint_ref}",
+                'created_at' => now(),
+            ]);
+
+            return redirect()->back()->with('success', __('Komplain diselesaikan! Auto-refund Rp:amount berhasil masuk ke Dompet Saldo pelanggan.', [
+                'amount' => number_format($refundAmount, 0, ',', '.'),
+            ]));
         }
 
         $updateData = [

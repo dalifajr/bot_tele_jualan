@@ -249,6 +249,34 @@
                         @endforeach
                     @endif
 
+                    @php
+                        $walletBalance = (int) (Auth::user()->customer_wallet_balance ?? 0);
+                        $walletExactTotal = max(0, (int) $subtotal - (int) $discount);
+                        $canPayWithWallet = $walletBalance >= $walletExactTotal && $walletExactTotal > 0;
+                    @endphp
+                    <div class="p-3 rounded-4 border mb-3" style="background: var(--surface-container-low); border-color: var(--outline-variant) !important;">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="small fw-bold text-body"><i class="fas fa-wallet text-primary me-1.5"></i>{{ __('Metode Pembayaran') }}</span>
+                            <a href="{{ route('wallet.index') }}" class="small text-decoration-none fw-semibold">{{ __('Isi Saldo') }}</a>
+                        </div>
+                        <div class="form-check mb-1.5">
+                            <input class="form-check-input" type="radio" name="payment_method" id="payMethodTransfer" value="transfer" checked>
+                            <label class="form-check-label small fw-semibold text-body" for="payMethodTransfer">
+                                {{ __('QRIS / Transfer Otomatis') }}
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="payment_method" id="payMethodWallet" value="wallet" {{ $canPayWithWallet ? '' : 'disabled' }}>
+                            <label class="form-check-label small fw-semibold {{ $canPayWithWallet ? 'text-primary' : 'text-muted' }}" for="payMethodWallet">
+                                {{ __('Dompet Saldo Instan (1-Klik)') }}
+                                <span class="d-block fw-normal" style="font-size: 0.72rem;">
+                                    {{ __('Saldo Anda: Rp:bal', ['bal' => number_format($walletBalance, 0, ',', '.')]) }}
+                                    @if($canPayWithWallet) · {{ __('Tanpa kode unik') }} @else · {{ __('Saldo belum cukup') }} @endif
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+
                     <button type="submit" id="btnConfirmPay" class="btn btn-primary btn-lg w-100 rounded-pill fw-bold shadow-sm py-3 d-flex align-items-center justify-content-center gap-2 lift-hover btn-buy-now">
                         <i class="fas fa-lock btn-buy-icon"></i>
                         <span class="btn-buy-text">{{ __('Konfirmasi & Bayar Sekarang') }}</span>

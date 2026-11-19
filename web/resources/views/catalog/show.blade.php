@@ -336,13 +336,37 @@
                             @endif
                         </div>
                     </form>
+                    @auth
+                        @php
+                            $userWish = \App\Models\ProductWishlist::where('user_id', Auth::id())->where('product_id', $product->id)->first();
+                        @endphp
+                        <form action="{{ route('wishlist.toggle', $product->id) }}" method="POST" class="mt-2.5">
+                            @csrf
+                            <button type="submit" class="btn btn-tonal w-100 rounded-pill py-2 fw-semibold d-flex align-items-center justify-content-center gap-1.5">
+                                <i class="{{ $userWish ? 'fas fa-heart text-danger' : 'far fa-heart' }}"></i>
+                                <span>{{ $userWish ? __('Tersimpan di Favorit') : __('Simpan ke Favorit') }}</span>
+                            </button>
+                        </form>
+                    @endauth
                     @else
                     <div class="text-center py-4">
                         <div class="rounded-circle bg-danger-subtle text-danger d-inline-flex align-items-center justify-content-center p-3 mb-3" style="width: 64px; height: 64px;">
                             <i class="fas fa-store-slash fs-3"></i>
                         </div>
                         <h6 class="fw-bold text-body mb-1">{{ __('Stok Sedang Habis') }}</h6>
-                        <p class="text-muted small mb-4">{{ __('Produk ini saat ini belum tersedia. Silakan cek kembali dalam waktu dekat.') }}</p>
+                        <p class="text-muted small mb-3">{{ __('Produk ini saat ini belum tersedia. Silakan cek kembali dalam waktu dekat.') }}</p>
+                        @auth
+                            @php
+                                $userWishAlert = \App\Models\ProductWishlist::where('user_id', Auth::id())->where('product_id', $product->id)->where('notify_restock', true)->exists();
+                            @endphp
+                            <form action="{{ route('wishlist.restock-alert', $product->id) }}" method="POST" class="mb-2">
+                                @csrf
+                                <button type="submit" class="btn {{ $userWishAlert ? 'btn-primary' : 'btn-outline-primary' }} rounded-pill px-4 py-2 w-100 fw-semibold">
+                                    <i class="fas {{ $userWishAlert ? 'fa-bell' : 'fa-bell-concierge' }} me-1.5"></i>
+                                    {{ $userWishAlert ? __('Pengingat Restok Aktif') : __('Kabari Saya Saat Stok Ready') }}
+                                </button>
+                            </form>
+                        @endauth
                         <a href="{{ route('catalog.index') }}" class="btn btn-outline-secondary rounded-pill px-4 py-2 w-100 fw-semibold">
                             <i class="fas fa-arrow-left me-1"></i> {{ __('Lihat Produk Lainnya') }}
                         </a>

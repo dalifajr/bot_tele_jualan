@@ -431,6 +431,14 @@ class SellerController extends Controller
             }
         }
 
+        if ($stockStatus === 'ready' && $count > 0) {
+            try {
+                \App\Services\RestockAlertService::notifySubscribers($product, $count);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('Seller restock alert error: ' . $e->getMessage());
+            }
+        }
+
         return redirect()->route('seller.stock.index')->with('success', __(":count stok berhasil diunggah.", ["count" => $count]));
     }
 
@@ -1374,5 +1382,133 @@ class SellerController extends Controller
         ]);
 
         return redirect()->route('seller.complaints.index')->with('success', __('Status komplain berhasil diperbarui.'));
+    }
+
+    // ==========================================
+    // SELLER ANALYTICS & INSIGHTS
+    // ==========================================
+    public function analytics(Request $request)
+    {
+        $sellerId = Auth::id();
+        $days = (int) $request->query('days', 30);
+        if (!in_array($days, [7, 30, 90], true)) {
+            $days = 30;
+        }
+
+        $startDate = now()->subDays($days - 1)->startOfDay();
+
+        $orders = Order::where('status', 'delivered')
+            ->where('created_at', '>=', $startDate)
+            ->whereHas('items.product', fn ($q) => $q->where('creator_id', $sellerId))
+            ->with(['items' => function ($q) use ($sellerId) {
+                $q->whereHas('product', fn ($pq) => $pq->where('creator_id', $sellerId))->with('product');
+            }])
+            ->get();
+
+        // Daily revenue trend
+        $dailyLabels = [];
+        $dailyRevenue = [];
+        $dailyOrders = [];
+        for ($i = $days - 1; $i >= 0; $i--) {
+            $dateKey = now()->subDays($i)->format('Y-m-d');
+            $dailyLabels[] = now()->subDays($i)->format('d M');
+            $dailyRevenue[$dateKey] = 0;
+            $dailyOrders[$dateKey] = 0;
+        }
+
+        // Peak hour buckets (per 4 hours)
+        $hourBuckets = [
+            '00-03' => 0,
+            '04-07' => 0,
+            '08-11' => 0,
+            '12-15' => 0,
+            '16-19' => 0,
+            '20-23' => 0,
+        ];
+
+        $productStats = [];
+        $totalRevenue = 0;
+        $totalUnitsSold = 0;
+
+        foreach ($orders as $order) {
+            $dateKey = $order->created_at ? $order->created_at->format('Y-m-d') : null;
+            $hour = $order->created_at ? (int) $order->created_at->format('H') : 0;
+            $bucketIdx = (int) floor($hour / 4);
+            $bucketKeys = array_keys($hourBuckets);
+            if (isset($bucketKeys[$bucketIdx])) {
+                $hourBuckets[$bucketKeys[$bucketIdx]]++;
+            }
+
+            $orderSellerRev = 0;
+            foreach ($order->items as $item) {
+                $lineTotal = max(0, ((int) $item->unit_price * (int) $item->quantity) - (int) ($item->discount_amount ?? 0));
+                $orderSellerRev += $lineTotal;
+                $totalUnitsSold += (int) $item->quantity;
+
+                $pid = $item->product_id;
+                if (!isset($productStats[$pid])) {
+                    $productStats[$pid] = [
+                        'id' => $pid,
+                        'name' => $item->product?->name ?? __('Produk Terhapus'),
+                        'units_sold' => 0,
+                        'revenue' => 0,
+                        'complaints' => 0,
+                    ];
+                }
+                $productStats[$pid]['units_sold'] += (int) $item->quantity;
+                $productStats[$pid]['revenue'] += $lineTotal;
+            }
+
+            $totalRevenue += $orderSellerRev;
+            if ($dateKey && array_key_exists($dateKey, $dailyRevenue)) {
+                $dailyRevenue[$dateKey] += $orderSellerRev;
+                $dailyOrders[$dateKey]++;
+            }
+        }
+
+        // Complaint ratio per product (Quality Health Score)
+        $complaints = \App\Models\ComplaintCase::where('created_at', '>=', $startDate)
+            ->whereHas('order.items.product', fn ($q) => $q->where('creator_id', $sellerId))
+            ->with('order.items.product')
+            ->get();
+
+        foreach ($complaints as $cmp) {
+            $firstSellerItem = $cmp->order?->items?->first(fn ($it) => $it->product && (int) $it->product->creator_id === (int) $sellerId);
+            if ($firstSellerItem && isset($productStats[$firstSellerItem->product_id])) {
+                $productStats[$firstSellerItem->product_id]['complaints']++;
+            }
+        }
+
+        $topProducts = collect($productStats)
+            ->map(function ($row) {
+                $sold = max(1, $row['units_sold']);
+                $complaintRate = round(($row['complaints'] / $sold) * 100, 1);
+                $row['health_score'] = max(0, min(100, round(100 - $complaintRate, 1)));
+                return $row;
+            })
+            ->sortByDesc('revenue')
+            ->take(8)
+            ->values();
+
+        $totalOrdersCount = $orders->count();
+        $totalComplaintsCount = $complaints->count();
+        $overallHealthScore = $totalOrdersCount > 0
+            ? max(0, min(100, round(100 - (($totalComplaintsCount / $totalOrdersCount) * 100), 1)))
+            : 100.0;
+
+        return view('seller.analytics', [
+            'days' => $days,
+            'totalRevenue' => $totalRevenue,
+            'totalOrdersCount' => $totalOrdersCount,
+            'totalUnitsSold' => $totalUnitsSold,
+            'totalComplaintsCount' => $totalComplaintsCount,
+            'overallHealthScore' => $overallHealthScore,
+            'dailyLabels' => $dailyLabels,
+            'dailyRevenueValues' => array_values($dailyRevenue),
+            'dailyOrderValues' => array_values($dailyOrders),
+            'hourBucketLabels' => array_keys($hourBuckets),
+            'hourBucketValues' => array_values($hourBuckets),
+            'topProducts' => $topProducts,
+        ]);
     }
 }

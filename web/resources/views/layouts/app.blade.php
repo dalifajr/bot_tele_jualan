@@ -907,6 +907,18 @@
                             <div class="menu-icon-box"><i class="fas fa-receipt text-success"></i></div>
                             <span class="menu-label-text">{{ __('Riwayat Pesanan') }}</span>
                         </a>
+                        <a href="{{ route('wallet.index') }}" @guest data-guest-modal="true" data-feature-name="{{ __('dompet saldo') }}" @endguest class="menu-item {{ request()->routeIs('wallet.*') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fas fa-wallet text-primary"></i></div>
+                            <span class="menu-label-text">{{ __('Dompet Saldo') }}</span>
+                        </a>
+                        <a href="{{ route('wishlist.index') }}" @guest data-guest-modal="true" data-feature-name="{{ __('produk favorit') }}" @endguest class="menu-item {{ request()->routeIs('wishlist.*') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fas fa-heart text-danger"></i></div>
+                            <span class="menu-label-text">{{ __('Favorit & Alert') }}</span>
+                        </a>
+                        <a href="{{ route('warranties.index') }}" @guest data-guest-modal="true" data-feature-name="{{ __('pusat garansi') }}" @endguest class="menu-item {{ request()->routeIs('warranties.*') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fas fa-shield-halved text-success"></i></div>
+                            <span class="menu-label-text">{{ __('Pusat Garansi') }}</span>
+                        </a>
                         <a href="{{ route('customer.complaints.index') }}" @guest data-guest-modal="true" data-feature-name="{{ __('kelola komplain') }}" @endguest class="menu-item {{ request()->routeIs('customer.complaints.*') ? 'active' : '' }}">
                             <div class="menu-icon-box"><i class="fas fa-headset text-warning"></i></div>
                             <span class="menu-label-text">{{ __('Kelola Komplain') }}</span>
@@ -1014,6 +1026,10 @@
                                 <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.7rem;">{{ $pendingPayoutsCount }}</span>
                             @endif
                         </a>
+                        <a href="{{ route('admin.wallet.index') }}" class="menu-item {{ request()->routeIs('admin.wallet.*') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fas fa-coins text-primary"></i></div>
+                            <span class="menu-label-text">{{ __('Top-Up Dompet') }}</span>
+                        </a>
                         <a href="{{ route('admin.coupons.index') }}" class="menu-item {{ request()->routeIs('admin.coupons.*') ? 'active' : '' }}">
                             <div class="menu-icon-box"><i class="fas fa-ticket text-danger"></i></div>
                             <span class="menu-label-text">{{ __('Kelola Kupon') }}</span>
@@ -1081,6 +1097,14 @@
                             <div class="menu-icon-box"><i class="fas fa-database text-info"></i></div>
                             <span class="menu-label-text">{{ __('Backup & Restore') }}</span>
                         </a>
+                        <a href="{{ route('admin.security.firewall') }}" class="menu-item {{ request()->routeIs('admin.security.firewall*') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fas fa-shield-virus text-danger"></i></div>
+                            <span class="menu-label-text">{{ __('Firewall & Anti-Fraud') }}</span>
+                        </a>
+                        <a href="{{ route('admin.system.health') }}" class="menu-item {{ request()->routeIs('admin.system.health*') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fas fa-heart-pulse text-success"></i></div>
+                            <span class="menu-label-text">{{ __('Kesehatan Sistem') }}</span>
+                        </a>
                     </div>
                 </div>
             </div>
@@ -1094,6 +1118,10 @@
                         <a href="{{ route('seller.dashboard') }}" class="menu-item {{ request()->routeIs('seller.dashboard') ? 'active' : '' }}">
                             <div class="menu-icon-box"><i class="fas fa-chart-pie text-info"></i></div>
                             <span class="menu-label-text">{{ __('Dashboard Seller') }}</span>
+                        </a>
+                        <a href="{{ route('seller.analytics') }}" class="menu-item {{ request()->routeIs('seller.analytics') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fas fa-chart-area text-primary"></i></div>
+                            <span class="menu-label-text">{{ __('Analitik Penjualan') }}</span>
                         </a>
                         <a href="{{ route('seller.products.index') }}" class="menu-item {{ request()->routeIs('seller.products.*') ? 'active' : '' }}">
                             <div class="menu-icon-box"><i class="fas fa-box-open text-primary"></i></div>

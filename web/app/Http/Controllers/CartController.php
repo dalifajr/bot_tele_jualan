@@ -403,13 +403,24 @@ class CartController extends Controller
                 }
             }
 
-            $uniqueCode = rand(1, 200);
+            $payWithWallet = $request->input('payment_method') === 'wallet';
+            $uniqueCode = $payWithWallet ? 0 : rand(1, 200);
             $totalAmount = max(0, $subtotal - $discount) + $uniqueCode;
 
             // Generate Order Ref
             $timestamp = now()->format('ymdHis');
             $randomHex = strtoupper(substr(md5(uniqid()), 0, 5));
             $orderRef = 'ORD' . $timestamp . $randomHex;
+
+            if ($payWithWallet && $totalAmount > 0) {
+                app(\App\Services\WalletService::class)->debit(
+                    $user->id,
+                    (int) $totalAmount,
+                    'checkout',
+                    $orderRef,
+                    __('Pembayaran instan keranjang #:ref', ['ref' => $orderRef])
+                );
+            }
 
             $expiryMinutes = (int)(BotSetting::where('key', 'checkout_expiry_minutes')->value('value') ?? 15);
             $expiresAt = now()->addMinutes($expiryMinutes);
@@ -539,6 +550,12 @@ class CartController extends Controller
             ]);
 
             DB::commit();
+
+            if ($payWithWallet) {
+                app(\App\Services\OrderService::class)->confirmPayment($order, 'CUSTOMER_WALLET');
+                return redirect()->route('orders.show', $order->id)
+                    ->with('success', __('Pembayaran instan via Dompet Saldo berhasil! Pesanan keranjang Anda telah langsung dikirim.'));
+            }
 
             // Send notification to Admin
             try {

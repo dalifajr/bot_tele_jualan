@@ -196,6 +196,17 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         Route::delete('/tools/2fa-generator/accounts/{id}', [\App\Http\Controllers\TwoFactorController::class, 'destroyAccount'])->name('tools.2fa-generator.accounts.destroy');
     });
 
+    // Customer Wallet, Wishlist & Warranty Center
+    Route::get('/wallet', [\App\Http\Controllers\WalletController::class, 'index'])->name('wallet.index');
+    Route::post('/wallet/topup', [\App\Http\Controllers\WalletController::class, 'createTopup'])->name('wallet.topup.store')->middleware('throttle:10,1');
+    Route::post('/wallet/topup/{id}/cancel', [\App\Http\Controllers\WalletController::class, 'cancelTopup'])->name('wallet.topup.cancel');
+
+    Route::get('/wishlist', [\App\Http\Controllers\WishlistController::class, 'index'])->name('wishlist.index');
+    Route::post('/wishlist/toggle/{productId}', [\App\Http\Controllers\WishlistController::class, 'toggle'])->name('wishlist.toggle');
+    Route::post('/wishlist/restock-alert/{productId}', [\App\Http\Controllers\WishlistController::class, 'toggleRestockAlert'])->name('wishlist.restock-alert');
+
+    Route::get('/warranties', [\App\Http\Controllers\WarrantyController::class, 'index'])->name('warranties.index');
+
     // Customer Complaints
     Route::get('/customer/complaints', [\App\Http\Controllers\ComplaintController::class, 'index'])->name('customer.complaints.index');
     Route::get('/customer/complaints/{id}', [\App\Http\Controllers\ComplaintController::class, 'show'])->name('customer.complaints.show');
@@ -382,6 +393,20 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
             Route::post('/settings', [\App\Http\Controllers\Admin\EscrowAdminController::class, 'updateSettings'])->name('settings');
         });
 
+        // Admin Customer Wallet Top-ups
+        Route::get('/wallet', [\App\Http\Controllers\WalletController::class, 'adminIndex'])->name('wallet.index');
+        Route::post('/wallet/topup/{id}/confirm', [\App\Http\Controllers\WalletController::class, 'adminConfirmTopup'])->name('wallet.topup.confirm');
+        Route::post('/wallet/topup/{id}/reject', [\App\Http\Controllers\WalletController::class, 'adminRejectTopup'])->name('wallet.topup.reject');
+
+        // System Health Monitor & Firewall Anti-Fraud Center
+        Route::get('/system/health', [\App\Http\Controllers\Admin\SystemHealthController::class, 'index'])->name('system.health');
+        Route::post('/system/health/ping-telegram', [\App\Http\Controllers\Admin\SystemHealthController::class, 'pingTelegram'])->name('system.health.ping-telegram');
+        Route::post('/system/health/flush-cache', [\App\Http\Controllers\Admin\SystemHealthController::class, 'flushCaches'])->name('system.health.flush-cache');
+
+        Route::get('/security/firewall', [\App\Http\Controllers\Admin\FirewallController::class, 'index'])->name('security.firewall');
+        Route::post('/security/firewall', [\App\Http\Controllers\Admin\FirewallController::class, 'store'])->name('security.firewall.store');
+        Route::delete('/security/firewall/{id}', [\App\Http\Controllers\Admin\FirewallController::class, 'destroy'])->name('security.firewall.destroy');
+
     });
 
     // Tools (accessible by admin and authorized sellers)
@@ -420,6 +445,7 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
     */
     Route::middleware('seller')->prefix('seller')->name('seller.')->group(function () {
         Route::get('/', [\App\Http\Controllers\SellerController::class, 'dashboard'])->name('dashboard');
+        Route::get('/analytics', [\App\Http\Controllers\SellerController::class, 'analytics'])->name('analytics');
         
         Route::get('/stock', [\App\Http\Controllers\SellerController::class, 'stock'])->name('stock.index');
         Route::post('/stock', [\App\Http\Controllers\SellerController::class, 'storeStock'])->name('stock.store');

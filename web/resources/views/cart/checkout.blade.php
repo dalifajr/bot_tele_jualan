@@ -194,6 +194,29 @@
                     @if($coupon && !$couponError)
                         <input type="hidden" name="coupon_code" value="{{ $coupon->code }}">
                     @endif
+
+                    @php
+                        $cartWalletBal = (int) (Auth::user()->customer_wallet_balance ?? 0);
+                        $cartWalletNeed = max(0, (int) $subtotal - (int) $discount);
+                        $canCartWallet = $cartWalletBal >= $cartWalletNeed && $cartWalletNeed > 0;
+                    @endphp
+                    <div class="p-3 rounded-4 border mb-3" style="background: var(--surface-container-low); border-color: var(--outline-variant) !important;">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="small fw-bold text-body"><i class="fas fa-wallet text-primary me-1.5"></i>{{ __('Metode Pembayaran') }}</span>
+                            <a href="{{ route('wallet.index') }}" class="small text-decoration-none fw-semibold">{{ __('Isi Saldo') }}</a>
+                        </div>
+                        <div class="form-check mb-1.5">
+                            <input class="form-check-input" type="radio" name="payment_method" id="cartPayTransfer" value="transfer" checked>
+                            <label class="form-check-label small fw-semibold text-body" for="cartPayTransfer">{{ __('QRIS / Transfer Otomatis') }}</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="payment_method" id="cartPayWallet" value="wallet" {{ $canCartWallet ? '' : 'disabled' }}>
+                            <label class="form-check-label small fw-semibold {{ $canCartWallet ? 'text-primary' : 'text-muted' }}" for="cartPayWallet">
+                                {{ __('Dompet Saldo Instan (1-Klik)') }}
+                                <span class="d-block fw-normal" style="font-size: 0.72rem;">{{ __('Saldo Anda: Rp:bal', ['bal' => number_format($cartWalletBal, 0, ',', '.')]) }}</span>
+                            </label>
+                        </div>
+                    </div>
                     
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-success rounded-pill py-3 fw-bold btn-lg d-none d-md-block">

@@ -84,6 +84,11 @@ class Order extends Model
         return $this->hasOne(ComplaintCase::class, 'order_id');
     }
 
+    public function complaints()
+    {
+        return $this->hasMany(ComplaintCase::class, 'order_id');
+    }
+
     public function vpnAccounts()
     {
         return $this->hasMany(VpnAccount::class);
