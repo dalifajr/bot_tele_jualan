@@ -7,38 +7,220 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
 <style>
     #visitorGeoMap {
-        height: 410px;
+        height: 440px;
         width: 100%;
         border-radius: var(--radius-md, 16px);
         z-index: 1;
         background: var(--surface-container);
         border: 1px solid var(--outline-variant);
+        overflow: hidden;
     }
-    @media (max-width: 767.98px) {
+    [data-bs-theme="dark"] #visitorGeoMap.geo-basemap-roadmap .leaflet-tile-pane {
+        filter: invert(100%) hue-rotate(180deg) brightness(92%) contrast(90%);
+    }
+    @media (max-width: 991.98px) {
         #visitorGeoMap {
-            height: 320px;
+            height: 360px;
         }
     }
-    .geo-location-row {
+    @media (max-width: 575.98px) {
+        #visitorGeoMap {
+            height: 300px;
+        }
+    }
+
+    /* M3 Segmented Pill Controls for Map Header */
+    .geo-controls-wrap {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+    }
+    .geo-segmented-bar {
+        display: inline-flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 4px;
+        padding: 4px;
+        border-radius: 9999px;
+        background: var(--surface-container-high, #ece6f0);
+        border: 1px solid var(--outline-variant, #cac4d0);
+    }
+    .geo-seg-btn {
+        appearance: none;
+        border: none !important;
+        background: transparent;
+        color: var(--on-surface-variant, #49454f);
+        font-size: 0.78rem;
+        font-weight: 600;
+        line-height: 1;
+        height: 32px;
+        padding: 0 14px;
+        border-radius: 9999px !important;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
         cursor: pointer;
-        transition: background-color 0.15s ease, border-color 0.15s ease;
+        white-space: nowrap;
+        transition: background-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+    }
+    .geo-seg-btn:hover:not(.active) {
+        background: rgba(var(--primary-rgb, 101, 85, 143), 0.1);
+        color: var(--primary);
+    }
+    .geo-seg-btn.active {
+        background: var(--primary) !important;
+        color: var(--on-primary, #ffffff) !important;
+        box-shadow: 0 2px 6px rgba(var(--primary-rgb, 101, 85, 143), 0.25);
+    }
+    .geo-focus-group {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .geo-focus-btn {
+        appearance: none;
+        height: 38px;
+        padding: 0 14px;
+        border-radius: 9999px !important;
+        border: 1px solid var(--outline-variant, #cac4d0) !important;
+        background: var(--surface-container-lowest, #ffffff);
+        color: var(--on-surface, #1d1b20);
+        font-size: 0.78rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+    }
+    .geo-focus-btn:hover {
+        background: var(--primary-container);
+        border-color: var(--primary) !important;
+        color: var(--on-primary-container);
+    }
+
+    /* Mini Stat Strip Cards */
+    .geo-stat-card {
+        padding: 12px 16px;
+        border-radius: 14px;
+        background: var(--surface-container-low, #f3edf7);
+        border: 1px solid var(--outline-variant, #cac4d0);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        height: 100%;
+    }
+    .geo-stat-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 12px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        font-size: 0.95rem;
+    }
+
+    /* Right Side Top Locations Panel */
+    .geo-location-panel {
+        padding: 16px;
+        border-radius: var(--radius-md, 16px);
+        background: var(--surface-container-low, #f3edf7);
+        border: 1px solid var(--outline-variant, #cac4d0);
+        height: 440px;
+        display: flex;
+        flex-direction: column;
+    }
+    @media (max-width: 991.98px) {
+        .geo-location-panel {
+            height: auto;
+            max-height: 380px;
+        }
+    }
+    .geo-location-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        overflow-y: auto;
+        padding-right: 4px;
+        flex: 1 1 auto;
+    }
+    .geo-location-row {
+        padding: 12px 14px;
+        border-radius: 12px;
+        background: var(--surface-container-lowest, #ffffff);
+        border: 1px solid var(--outline-variant, #cac4d0);
+        cursor: pointer;
+        transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
     }
     .geo-location-row:hover {
         background-color: var(--surface-container-high) !important;
         border-color: var(--primary) !important;
     }
+    .geo-legend-bar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 16px;
+        margin-top: 12px;
+        font-size: 0.76rem;
+        color: var(--on-surface-variant);
+    }
+    .geo-legend-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        font-weight: 500;
+    }
+    .geo-legend-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        display: inline-block;
+        flex-shrink: 0;
+    }
+
+    /* M3 Leaflet Zoom Controls & Popup */
+    #visitorGeoMap .leaflet-control-zoom {
+        border: 1px solid var(--outline-variant, #cac4d0) !important;
+        border-radius: 12px !important;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
+    }
+    #visitorGeoMap .leaflet-control-zoom a {
+        background: var(--surface-container-lowest, #ffffff) !important;
+        color: var(--on-surface, #1d1b20) !important;
+        border-bottom-color: var(--outline-variant, #cac4d0) !important;
+        width: 34px !important;
+        height: 34px !important;
+        line-height: 34px !important;
+        font-weight: 700;
+    }
+    #visitorGeoMap .leaflet-control-zoom a:hover {
+        background: var(--surface-container-high, #e6e0e9) !important;
+        color: var(--primary) !important;
+    }
     .leaflet-popup-content-wrapper {
-        border-radius: 14px !important;
+        border-radius: 16px !important;
         background: var(--surface-container-lowest, #ffffff) !important;
         color: var(--on-surface, #1d1b20) !important;
         border: 1px solid var(--outline-variant, #cac4d0);
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16) !important;
+        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18) !important;
+    }
+    .leaflet-popup-content {
+        margin: 14px 16px !important;
     }
     .leaflet-popup-tip {
         background: var(--surface-container-lowest, #ffffff) !important;
     }
     .leaflet-container a.leaflet-popup-close-button {
         color: var(--on-surface-variant) !important;
+        top: 8px !important;
+        right: 8px !important;
     }
 </style>
 @endpush
@@ -206,113 +388,139 @@
     </div>
 </div>
 
-{{-- Peta Sebaran Lokasi Pengunjung Website & Percobaan Login (Interactive Leaflet Geo-Analytics) --}}
+{{-- Peta Sebaran Lokasi Pengunjung Website & Percobaan Login (Google Maps Basemap + M3 Controls) --}}
 <div class="card mb-4 overflow-hidden">
-    <div class="card-header bg-transparent pt-3 pb-3 px-4 d-flex flex-column flex-xl-row justify-content-between align-items-xl-center gap-3">
-        <div>
-            <h5 class="fw-bold mb-1 text-body">
-                <i class="fas fa-map-marked-alt text-primary me-2"></i>{{ __('Peta Sebaran Lokasi Pengunjung & Percobaan Login') }}
-            </h5>
-            <span class="text-muted small">
-                {{ __('Pemetaan geografis pengunjung website (30 hari terakhir) serta percobaan autentikasi berdasarkan lokasi IP') }}
-            </span>
-        </div>
-        <div class="d-flex flex-wrap align-items-center gap-2">
-            <div class="btn-group btn-group-sm" role="group" aria-label="{{ __('Filter Layer Peta') }}">
-                <button type="button" class="btn btn-primary geo-layer-btn active" data-layer="all">{{ __('Semua') }}</button>
-                <button type="button" class="btn btn-outline-secondary geo-layer-btn" data-layer="visitors">{{ __('Pengunjung') }}</button>
-                <button type="button" class="btn btn-outline-secondary geo-layer-btn" data-layer="login_success">{{ __('Login Sukses') }}</button>
-                <button type="button" class="btn btn-outline-secondary geo-layer-btn" data-layer="login_failed">{{ __('Login Gagal') }}</button>
-            </div>
-            <div class="btn-group btn-group-sm" role="group" aria-label="{{ __('Fokus Wilayah Peta') }}">
-                <button type="button" class="btn btn-outline-primary" id="btnGeoFocusIndonesia" title="{{ __('Fokus ke Indonesia') }}">
-                    <i class="fas fa-crosshairs me-1"></i>{{ __('Indonesia') }}
-                </button>
-                <button type="button" class="btn btn-outline-secondary" id="btnGeoFocusWorld" title="{{ __('Tampilan Peta Dunia') }}">
-                    <i class="fas fa-globe-asia me-1"></i>{{ __('Dunia') }}
-                </button>
+    <div class="card-header bg-transparent pt-4 pb-3 px-4">
+        <div class="d-flex flex-column gap-3">
+            <div class="d-flex flex-column flex-xl-row justify-content-between align-items-xl-center gap-3">
+                <div>
+                    <h5 class="fw-bold mb-1 text-body">
+                        <i class="fas fa-map-marked-alt text-primary me-2"></i>{{ __('Peta Sebaran Lokasi Pengunjung & Percobaan Login') }}
+                    </h5>
+                    <span class="text-muted small">
+                        {{ __('Pemetaan geografis pengunjung website (30 hari terakhir) serta percobaan autentikasi berdasarkan lokasi IP') }}
+                    </span>
+                </div>
+
+                <div class="geo-controls-wrap">
+                    {{-- M3 Segmented Filter Layer --}}
+                    <div class="geo-segmented-bar" role="group" aria-label="{{ __('Filter Layer Peta') }}">
+                        <button type="button" class="geo-seg-btn geo-layer-btn active" data-layer="all">{{ __('Semua') }}</button>
+                        <button type="button" class="geo-seg-btn geo-layer-btn" data-layer="visitors">{{ __('Pengunjung') }}</button>
+                        <button type="button" class="geo-seg-btn geo-layer-btn" data-layer="login_success">{{ __('Login Sukses') }}</button>
+                        <button type="button" class="geo-seg-btn geo-layer-btn" data-layer="login_failed">{{ __('Login Gagal') }}</button>
+                    </div>
+
+                    {{-- M3 Segmented Basemap Switch (Google Roadmap / Satellite) --}}
+                    <div class="geo-segmented-bar" role="group" aria-label="{{ __('Gaya Peta') }}">
+                        <button type="button" class="geo-seg-btn geo-basemap-btn active" data-basemap="roadmap" title="{{ __('Tampilan Peta Jalan Google') }}">
+                            <i class="fas fa-map"></i><span>{{ __('Peta') }}</span>
+                        </button>
+                        <button type="button" class="geo-seg-btn geo-basemap-btn" data-basemap="hybrid" title="{{ __('Tampilan Satelit Google') }}">
+                            <i class="fas fa-satellite"></i><span>{{ __('Satelit') }}</span>
+                        </button>
+                    </div>
+
+                    {{-- Quick Viewport Focus Buttons --}}
+                    <div class="geo-focus-group" role="group" aria-label="{{ __('Fokus Wilayah Peta') }}">
+                        <button type="button" class="geo-focus-btn" id="btnGeoFocusIndonesia" title="{{ __('Fokus ke Indonesia') }}">
+                            <i class="fas fa-crosshairs text-primary"></i><span>{{ __('Indonesia') }}</span>
+                        </button>
+                        <button type="button" class="geo-focus-btn" id="btnGeoFocusWorld" title="{{ __('Tampilan Peta Dunia') }}">
+                            <i class="fas fa-globe-asia text-secondary"></i><span>{{ __('Dunia') }}</span>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="card-body px-4 pt-2 pb-4">
+    <div class="card-body px-4 pt-3 pb-4">
         {{-- Mini Strip Statistik Geografis --}}
-        <div class="row g-2 mb-3">
+        <div class="row g-3 mb-3">
             <div class="col-6 col-md-3">
-                <div class="p-2.5 m3-tonal-item d-flex align-items-center justify-content-between">
-                    <div>
-                        <div class="text-muted text-uppercase fw-bold" style="font-size: 0.66rem; letter-spacing: 0.04em;">{{ __('Pengunjung Hari Ini') }}</div>
-                        <div class="fw-bold text-body fs-6">{{ number_format($geoMapSummary['visitors_today'] ?? 0, 0, ',', '.') }}</div>
+                <div class="geo-stat-card">
+                    <div class="overflow-hidden">
+                        <div class="text-muted text-uppercase fw-bold text-truncate mb-1" style="font-size: 0.68rem; letter-spacing: 0.04em;">{{ __('Pengunjung Hari Ini') }}</div>
+                        <div class="fw-bold text-body fs-5 lh-1">{{ number_format($geoMapSummary['visitors_today'] ?? 0, 0, ',', '.') }}</div>
                     </div>
-                    <i class="fas fa-users text-primary opacity-75"></i>
+                    <div class="geo-stat-icon bg-primary-subtle text-primary">
+                        <i class="fas fa-users"></i>
+                    </div>
                 </div>
             </div>
             <div class="col-6 col-md-3">
-                <div class="p-2.5 m3-tonal-item d-flex align-items-center justify-content-between">
-                    <div>
-                        <div class="text-muted text-uppercase fw-bold" style="font-size: 0.66rem; letter-spacing: 0.04em;">{{ __('Pengunjung (30 Hari)') }}</div>
-                        <div class="fw-bold text-body fs-6">{{ number_format($geoMapSummary['visitors_30d'] ?? 0, 0, ',', '.') }}</div>
+                <div class="geo-stat-card">
+                    <div class="overflow-hidden">
+                        <div class="text-muted text-uppercase fw-bold text-truncate mb-1" style="font-size: 0.68rem; letter-spacing: 0.04em;">{{ __('Pengunjung (30 Hari)') }}</div>
+                        <div class="fw-bold text-body fs-5 lh-1">{{ number_format($geoMapSummary['visitors_30d'] ?? 0, 0, ',', '.') }}</div>
                     </div>
-                    <i class="fas fa-chart-area text-info opacity-75"></i>
+                    <div class="geo-stat-icon bg-info-subtle text-info">
+                        <i class="fas fa-chart-area"></i>
+                    </div>
                 </div>
             </div>
             <div class="col-6 col-md-3">
-                <div class="p-2.5 m3-tonal-item d-flex align-items-center justify-content-between">
-                    <div>
-                        <div class="text-muted text-uppercase fw-bold" style="font-size: 0.66rem; letter-spacing: 0.04em;">{{ __('Titik Kota Terpetakan') }}</div>
-                        <div class="fw-bold text-body fs-6">{{ number_format($geoMapSummary['mapped_locations'] ?? 0, 0, ',', '.') }}</div>
+                <div class="geo-stat-card">
+                    <div class="overflow-hidden">
+                        <div class="text-muted text-uppercase fw-bold text-truncate mb-1" style="font-size: 0.68rem; letter-spacing: 0.04em;">{{ __('Titik Kota Terpetakan') }}</div>
+                        <div class="fw-bold text-body fs-5 lh-1">{{ number_format($geoMapSummary['mapped_locations'] ?? 0, 0, ',', '.') }}</div>
                     </div>
-                    <i class="fas fa-map-pin text-success opacity-75"></i>
+                    <div class="geo-stat-icon bg-success-subtle text-success">
+                        <i class="fas fa-map-pin"></i>
+                    </div>
                 </div>
             </div>
             <div class="col-6 col-md-3">
-                <div class="p-2.5 m3-tonal-item d-flex align-items-center justify-content-between">
-                    <div>
-                        <div class="text-muted text-uppercase fw-bold" style="font-size: 0.66rem; letter-spacing: 0.04em;">{{ __('Negara Terdeteksi') }}</div>
-                        <div class="fw-bold text-body fs-6">{{ number_format($geoMapSummary['unique_countries'] ?? 0, 0, ',', '.') }}</div>
+                <div class="geo-stat-card">
+                    <div class="overflow-hidden">
+                        <div class="text-muted text-uppercase fw-bold text-truncate mb-1" style="font-size: 0.68rem; letter-spacing: 0.04em;">{{ __('Negara Terdeteksi') }}</div>
+                        <div class="fw-bold text-body fs-5 lh-1">{{ number_format($geoMapSummary['unique_countries'] ?? 0, 0, ',', '.') }}</div>
                     </div>
-                    <i class="fas fa-flag text-warning opacity-75"></i>
+                    <div class="geo-stat-icon bg-warning-subtle text-warning-emphasis">
+                        <i class="fas fa-flag"></i>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="row g-3 align-items-stretch">
-            {{-- Kolom Kiri: Kanvas Peta Interaktif --}}
+        <div class="row g-3 align-items-start">
+            {{-- Kolom Kiri: Kanvas Peta Interaktif Google Maps --}}
             <div class="col-12 col-lg-8">
                 <div class="position-relative">
-                    <div id="visitorGeoMap" aria-label="{{ __('Peta Sebaran Lokasi Pengunjung & Percobaan Login') }}"></div>
+                    <div id="visitorGeoMap" class="geo-basemap-roadmap" aria-label="{{ __('Peta Sebaran Lokasi Pengunjung & Percobaan Login') }}"></div>
                     @if(empty($geoMapPoints))
-                        <div class="position-absolute top-50 start-50 translate-middle text-center p-3 rounded-4 shadow-sm" style="z-index: 400; background: var(--surface-container-lowest); border: 1px solid var(--outline-variant); max-width: 340px;">
+                        <div class="position-absolute top-50 start-50 translate-middle text-center p-4 rounded-4 shadow-sm" style="z-index: 400; background: var(--surface-container-lowest); border: 1px solid var(--outline-variant); max-width: 340px;">
                             <i class="fas fa-map-marker-alt text-primary fa-2x mb-2 opacity-75"></i>
                             <div class="fw-bold text-body small mb-1">{{ __('Belum Ada Koordinat Publik Tercatat') }}</div>
-                            <div class="text-muted" style="font-size: 0.75rem;">{{ __('Kunjungan atau percobaan login dari IP publik akan otomatis dipetakan di sini.') }}</div>
+                            <div class="text-muted" style="font-size: 0.76rem;">{{ __('Kunjungan atau percobaan login dari IP publik akan otomatis dipetakan di sini.') }}</div>
                         </div>
                     @endif
                 </div>
-                <div class="d-flex flex-wrap align-items-center gap-3 mt-2 small text-muted" style="font-size: 0.74rem;">
-                    <span class="d-inline-flex align-items-center gap-1.5">
-                        <span class="rounded-circle d-inline-block" style="width: 10px; height: 10px; background: #0b57d0;"></span>
-                        {{ __('Pengunjung Website') }}
+                <div class="geo-legend-bar">
+                    <span class="geo-legend-item">
+                        <span class="geo-legend-dot" style="background: #0b57d0;"></span>
+                        <span>{{ __('Pengunjung Website') }}</span>
                     </span>
-                    <span class="d-inline-flex align-items-center gap-1.5">
-                        <span class="rounded-circle d-inline-block" style="width: 10px; height: 10px; background: #0b8043;"></span>
-                        {{ __('Login Berhasil Dominan') }}
+                    <span class="geo-legend-item">
+                        <span class="geo-legend-dot" style="background: #0b8043;"></span>
+                        <span>{{ __('Login Berhasil Dominan') }}</span>
                     </span>
-                    <span class="d-inline-flex align-items-center gap-1.5">
-                        <span class="rounded-circle d-inline-block" style="width: 10px; height: 10px; background: #d50000;"></span>
-                        {{ __('Anomali / Login Gagal') }}
+                    <span class="geo-legend-item">
+                        <span class="geo-legend-dot" style="background: #d50000;"></span>
+                        <span>{{ __('Anomali / Login Gagal') }}</span>
                     </span>
                 </div>
             </div>
 
             {{-- Kolom Kanan: Daftar Top Lokasi Teraktif --}}
-            <div class="col-12 col-lg-4 d-flex flex-column">
-                <div class="p-3 m3-tonal-item h-100 d-flex flex-column">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
+            <div class="col-12 col-lg-4">
+                <div class="geo-location-panel">
+                    <div class="d-flex justify-content-between align-items-center mb-3 flex-shrink-0">
                         <h6 class="text-uppercase text-muted fw-bold mb-0" style="font-size: 0.72rem; letter-spacing: 0.04em;">
                             <i class="fas fa-ranking-star text-primary me-1"></i>{{ __('Top Lokasi Pengunjung & Login') }}
                         </h6>
-                        <span class="badge bg-primary-subtle text-primary rounded-pill" style="font-size: 0.68rem;">{{ count($geoMapSummary['top_locations'] ?? []) }} {{ __('lokasi') }}</span>
+                        <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-1" style="font-size: 0.68rem;">{{ count($geoMapSummary['top_locations'] ?? []) }} {{ __('lokasi') }}</span>
                     </div>
 
                     @php
@@ -321,34 +529,33 @@
                     @endphp
 
                     @if(!empty($topLocations))
-                        <div class="d-flex flex-column gap-2 overflow-auto" style="max-height: 360px;">
+                        <div class="geo-location-list">
                             @foreach($topLocations as $locIdx => $loc)
                                 @php
                                     $pct = min(100, round((($loc['total_activity'] ?? 0) / $maxLocationActivity) * 100));
                                     $barColor = ($loc['risk_level'] ?? 'normal') === 'high' ? 'bg-danger' : (($loc['login_success'] ?? 0) > 0 && ($loc['visitors_count'] ?? 0) === 0 ? 'bg-success' : 'bg-primary');
                                 @endphp
-                                <div class="p-2.5 rounded-3 border geo-location-row"
+                                <div class="geo-location-row"
                                      data-geo-index="{{ $locIdx }}"
                                      data-lat="{{ $loc['lat'] }}"
-                                     data-lng="{{ $loc['lng'] }}"
-                                     style="background: var(--surface-container-lowest); border-color: var(--outline-variant) !important;">
-                                    <div class="d-flex justify-content-between align-items-start gap-2 mb-1">
-                                        <div class="text-truncate">
-                                            <span class="badge bg-secondary-subtle text-secondary me-1 font-monospace" style="font-size: 0.65rem;">{{ $loc['country_code'] }}</span>
-                                            <span class="fw-bold text-body" style="font-size: 0.82rem;">{{ $loc['label'] }}</span>
+                                     data-lng="{{ $loc['lng'] }}">
+                                    <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
+                                        <div class="d-flex align-items-center gap-2 overflow-hidden">
+                                            <span class="badge bg-secondary-subtle text-secondary font-monospace flex-shrink-0" style="font-size: 0.66rem; padding: 3px 6px;">{{ $loc['country_code'] }}</span>
+                                            <span class="fw-bold text-body text-truncate" style="font-size: 0.84rem;" title="{{ $loc['label'] }}">{{ $loc['label'] }}</span>
                                         </div>
-                                        <span class="fw-bold text-primary font-monospace" style="font-size: 0.8rem;">{{ number_format($loc['total_activity'], 0, ',', '.') }}</span>
+                                        <span class="fw-bold text-primary font-monospace flex-shrink-0" style="font-size: 0.82rem;">{{ number_format($loc['total_activity'], 0, ',', '.') }}</span>
                                     </div>
-                                    <div class="progress mb-1.5" style="height: 4px;">
+                                    <div class="progress mb-2" style="height: 5px;">
                                         <div class="progress-bar {{ $barColor }}" role="progressbar" style="width: {{ $pct }}%"></div>
                                     </div>
-                                    <div class="d-flex flex-wrap gap-2 text-muted" style="font-size: 0.7rem;">
+                                    <div class="d-flex flex-wrap align-items-center gap-2 text-muted" style="font-size: 0.72rem;">
                                         <span><i class="fas fa-eye text-primary me-1"></i>{{ $loc['visitors_count'] }} {{ __('kunjungan') }}</span>
                                         <span><i class="fas fa-check text-success me-1"></i>{{ $loc['login_success'] }}</span>
                                         @if($loc['login_failed'] > 0)
                                             <span class="text-danger fw-semibold"><i class="fas fa-times me-1"></i>{{ $loc['login_failed'] }} {{ __('gagal') }}</span>
                                         @endif
-                                        <span class="ms-auto">{{ $loc['unique_ips'] }} IP</span>
+                                        <span class="ms-auto fw-medium">{{ $loc['unique_ips'] }} IP</span>
                                     </div>
                                 </div>
                             @endforeach
@@ -931,10 +1138,11 @@
 document.addEventListener("DOMContentLoaded", function () {
     const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
 
-    // === 0. Interactive Visitor & Login Geolocation Map (Leaflet + CartoDB Light/Dark) ===
+    // === 0. Interactive Visitor & Login Geolocation Map (Google Maps Basemap) ===
     const geoMapContainer = document.getElementById('visitorGeoMap');
     const geoPoints = @json($geoMapPoints ?? []);
     const loginsBaseUrl = @json(route('admin.logins.index'));
+    const mapLang = @json(app()->getLocale() === 'en' ? 'en' : 'id');
 
     function escapeGeoHtml(str) {
         if (str === null || str === undefined) return '';
@@ -952,24 +1160,47 @@ document.addEventListener("DOMContentLoaded", function () {
             center: defaultCenter,
             zoom: 4,
             minZoom: 2,
-            maxZoom: 14,
+            maxZoom: 18,
             scrollWheelZoom: false,
             worldCopyJump: true
         });
 
-        const lightTileUrl = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
-        const darkTileUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-        const tileAttribution = '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>';
+        const googleBasemaps = {
+            roadmap: {
+                url: `https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}&hl=${mapLang}`,
+                attribution: '&copy; Google Maps'
+            },
+            hybrid: {
+                url: `https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}&hl=${mapLang}`,
+                attribution: '&copy; Google Maps Satellite'
+            }
+        };
 
-        let activeTileLayer = L.tileLayer(isDark ? darkTileUrl : lightTileUrl, {
-            attribution: tileAttribution,
-            subdomains: 'abcd',
-            maxZoom: 19
+        let currentBasemap = 'roadmap';
+        let activeTileLayer = L.tileLayer(googleBasemaps.roadmap.url, {
+            attribution: googleBasemaps.roadmap.attribution,
+            subdomains: ['0', '1', '2', '3'],
+            maxZoom: 20
         }).addTo(geoMap);
 
         const markersLayer = L.layerGroup().addTo(geoMap);
         const markerByCoords = {};
         let currentLayerFilter = 'all';
+
+        function setBasemap(mode) {
+            const spec = googleBasemaps[mode] || googleBasemaps.roadmap;
+            currentBasemap = mode;
+            if (activeTileLayer) {
+                geoMap.removeLayer(activeTileLayer);
+            }
+            activeTileLayer = L.tileLayer(spec.url, {
+                attribution: spec.attribution,
+                subdomains: ['0', '1', '2', '3'],
+                maxZoom: 20
+            }).addTo(geoMap);
+
+            geoMapContainer.classList.toggle('geo-basemap-roadmap', mode === 'roadmap');
+        }
 
         function getPointMetricForLayer(p, layer) {
             if (layer === 'visitors') return p.visitors_count || 0;
@@ -1005,35 +1236,35 @@ document.addEventListener("DOMContentLoaded", function () {
                     color: '#ffffff',
                     weight: 2,
                     opacity: 0.95,
-                    fillOpacity: 0.78
+                    fillOpacity: 0.82
                 });
 
                 const filterUrl = loginsBaseUrl + '?search=' + encodeURIComponent(p.filter_query || p.city || p.country || '');
                 const popupHtml = `
-                    <div style="min-width: 210px; font-size: 0.8rem;">
-                        <div class="fw-bold mb-1 d-flex align-items-center justify-content-between gap-2">
+                    <div style="min-width: 220px; font-size: 0.8rem;">
+                        <div class="fw-bold mb-2 d-flex align-items-center justify-content-between gap-2 pe-3">
                             <span>${escapeGeoHtml(p.label)}</span>
                             <span class="badge bg-secondary-subtle text-secondary font-monospace" style="font-size: 0.66rem;">${escapeGeoHtml(p.country_code)}</span>
                         </div>
-                        <div class="d-flex flex-column gap-1 mb-2" style="font-size: 0.76rem;">
-                            <div class="d-flex justify-content-between">
+                        <div class="d-flex flex-column gap-1 mb-3" style="font-size: 0.77rem;">
+                            <div class="d-flex justify-content-between gap-3">
                                 <span class="text-muted">{{ __('Pengunjung Website') }}:</span>
                                 <strong>${Number(p.visitors_count || 0)} (${Number(p.visitor_hits || 0)} hits)</strong>
                             </div>
-                            <div class="d-flex justify-content-between">
+                            <div class="d-flex justify-content-between gap-3">
                                 <span class="text-muted">{{ __('Login Berhasil') }}:</span>
                                 <strong class="text-success">${Number(p.login_success || 0)}</strong>
                             </div>
-                            <div class="d-flex justify-content-between">
+                            <div class="d-flex justify-content-between gap-3">
                                 <span class="text-muted">{{ __('Login Gagal') }}:</span>
                                 <strong class="text-danger">${Number(p.login_failed || 0)}</strong>
                             </div>
-                            <div class="d-flex justify-content-between">
+                            <div class="d-flex justify-content-between gap-3">
                                 <span class="text-muted">{{ __('IP Unik') }}:</span>
                                 <strong>${Number(p.unique_ips || 0)}</strong>
                             </div>
                         </div>
-                        <a href="${escapeGeoHtml(filterUrl)}" class="btn btn-sm btn-primary rounded-pill w-100 py-1 fw-semibold" style="font-size: 0.72rem;">
+                        <a href="${escapeGeoHtml(filterUrl)}" class="btn btn-sm btn-primary rounded-pill w-100 py-1 fw-semibold text-white text-decoration-none" style="font-size: 0.74rem;">
                             <i class="fas fa-filter me-1"></i>{{ __('Filter Log Lokasi Ini') }}
                         </a>
                     </div>
@@ -1058,14 +1289,20 @@ document.addEventListener("DOMContentLoaded", function () {
         // Layer Filter Buttons
         document.querySelectorAll('.geo-layer-btn').forEach(btn => {
             btn.addEventListener('click', function () {
-                document.querySelectorAll('.geo-layer-btn').forEach(b => {
-                    b.classList.remove('btn-primary', 'active');
-                    b.classList.add('btn-outline-secondary');
-                });
-                this.classList.remove('btn-outline-secondary');
-                this.classList.add('btn-primary', 'active');
+                document.querySelectorAll('.geo-layer-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
                 currentLayerFilter = this.getAttribute('data-layer') || 'all';
                 renderGeoMarkers(currentLayerFilter);
+            });
+        });
+
+        // Google Basemap Switcher (Roadmap / Hybrid Satellite)
+        document.querySelectorAll('.geo-basemap-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                document.querySelectorAll('.geo-basemap-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                const mode = this.getAttribute('data-basemap') || 'roadmap';
+                setBasemap(mode);
             });
         });
 
@@ -1093,21 +1330,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
             });
         });
-
-        // Sinkronisasi otomatis tile peta saat Dark/Light mode diubah tanpa reload
-        const themeObserver = new MutationObserver(() => {
-            const nowDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
-            const targetUrl = nowDark ? darkTileUrl : lightTileUrl;
-            if (activeTileLayer._url !== targetUrl) {
-                geoMap.removeLayer(activeTileLayer);
-                activeTileLayer = L.tileLayer(targetUrl, {
-                    attribution: tileAttribution,
-                    subdomains: 'abcd',
-                    maxZoom: 19
-                }).addTo(geoMap);
-            }
-        });
-        themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme'] });
     }
 
     // 1. Login Trend Multi-Area Chart (Berhasil vs Gagal — Google Cloud Console Semantic Palette)

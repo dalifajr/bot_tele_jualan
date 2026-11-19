@@ -3079,5 +3079,10 @@
     "kunjungan": "visits",
     "Belum ada data sebaran lokasi publik yang tercatat.": "No public location distribution data recorded yet.",
     "IP Unik": "Unique IPs",
-    "Filter Log Lokasi Ini": "Filter Logs for This Location"
+    "Filter Log Lokasi Ini": "Filter Logs for This Location",
+    "Gaya Peta": "Map Style",
+    "Peta": "Map",
+    "Satelit": "Satellite",
+    "Tampilan Peta Jalan Google": "Google Road Map View",
+    "Tampilan Satelit Google": "Google Satellite View"
 }
