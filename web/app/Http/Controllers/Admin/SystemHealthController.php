@@ -32,6 +32,17 @@ class SystemHealthController extends Controller
                 if ($dbPath && file_exists($dbPath)) {
                     $dbSizeLabel = $this->formatBytes((int) filesize($dbPath));
                 }
+            } elseif (in_array($dbDriver, ['mysql', 'mariadb'], true)) {
+                $dbName = config("database.connections.{$dbDriver}.database");
+                if ($dbName) {
+                    $sizeRow = DB::selectOne(
+                        'SELECT SUM(data_length + index_length) AS size_bytes FROM information_schema.TABLES WHERE table_schema = ?',
+                        [$dbName]
+                    );
+                    if ($sizeRow && !empty($sizeRow->size_bytes)) {
+                        $dbSizeLabel = $this->formatBytes((int) $sizeRow->size_bytes);
+                    }
+                }
             }
         } catch (\Throwable $e) {
             $dbConnected = false;

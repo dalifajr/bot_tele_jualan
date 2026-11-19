@@ -228,6 +228,55 @@ class Phase4NewMenusAndFeaturesTest extends TestCase
         $this->actingAs($customer)->get(route('admin.system.health'))
             ->assertRedirect();
 
+        // Populate failed login logs (using real `is_successful` column) & suspended user
+        for ($i = 0; $i < 6; $i++) {
+            \App\Models\LoginLog::create([
+                'ip_address' => '198.51.100.77',
+                'username_or_email' => 'target_user',
+                'is_successful' => false,
+                'location' => 'Jakarta, Indonesia',
+                'country' => 'Indonesia',
+            ]);
+        }
+        $suspendedUser = $this->makeUser('spammer_u4', 'customer', [
+            'is_suspended' => true,
+            'suspension_reason' => 'Spam test',
+            'registration_ip' => '198.51.100.88',
+        ]);
+        $this->makeUser('spammer_u4b', 'customer', [
+            'registration_ip' => '198.51.100.88',
+        ]);
+
+        // Firewall Center index page renders cleanly with full telemetry & zero SQL errors
+        $this->actingAs($admin)->get(route('admin.security.firewall'))
+            ->assertOk()
+            ->assertSee('198.51.100.77')
+            ->assertSee('target_user')
+            ->assertSee('198.51.100.88')
+            ->assertSee('spammer_u4');
+
+        // Auto-block aggressive IPs (>= 5 failed logins in 24h)
+        $this->actingAs($admin)->post(route('admin.security.firewall.auto-block'), [
+            'threshold' => 5,
+            'duration_days' => 7,
+        ])->assertRedirect(route('admin.security.firewall'));
+        $this->assertDatabaseHas('firewall_rules', [
+            'type' => 'ip',
+            'value' => '198.51.100.77',
+            'is_active' => true,
+        ]);
+
+        // Unsuspend user & update anti-spam threshold policy directly from Firewall Center
+        $this->actingAs($admin)->post(route('admin.security.firewall.unsuspend', $suspendedUser->id))
+            ->assertRedirect(route('admin.security.firewall'));
+        $suspendedUser->refresh();
+        $this->assertFalse((bool) $suspendedUser->is_suspended);
+
+        $this->actingAs($admin)->post(route('admin.security.firewall.policy'), [
+            'spam_registration_threshold' => 8,
+        ])->assertRedirect(route('admin.security.firewall'));
+        $this->assertEquals('8', \App\Models\BotSetting::where('key', 'spam_registration_threshold')->value('value'));
+
         // Admin adds CIDR subnet block rule in Firewall Center
         $resRule = $this->actingAs($admin)->post(route('admin.security.firewall.store'), [
             'type' => 'subnet',
@@ -248,7 +297,17 @@ class Phase4NewMenusAndFeaturesTest extends TestCase
             ->get(route('dashboard'))
             ->assertForbidden();
 
-        // Removing rule immediately restores access
+        // Pausing (toggling) rule immediately allows traffic without deleting rule
+        $this->actingAs($admin)->post(route('admin.security.firewall.toggle', $rule->id))
+            ->assertRedirect(route('admin.security.firewall'));
+        $this->actingAs($customer)
+            ->withServerVariables(['REMOTE_ADDR' => '203.0.113.42'])
+            ->get(route('dashboard'))
+            ->assertOk();
+
+        // Re-enabling then deleting rule works cleanly
+        $this->actingAs($admin)->post(route('admin.security.firewall.toggle', $rule->id))
+            ->assertRedirect(route('admin.security.firewall'));
         $this->actingAs($admin)->delete(route('admin.security.firewall.destroy', $rule->id))
             ->assertRedirect(route('admin.security.firewall'));
 

@@ -405,6 +405,11 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
 
         Route::get('/security/firewall', [\App\Http\Controllers\Admin\FirewallController::class, 'index'])->name('security.firewall');
         Route::post('/security/firewall', [\App\Http\Controllers\Admin\FirewallController::class, 'store'])->name('security.firewall.store');
+        Route::post('/security/firewall/{id}/toggle', [\App\Http\Controllers\Admin\FirewallController::class, 'toggle'])->name('security.firewall.toggle');
+        Route::post('/security/firewall/auto-block', [\App\Http\Controllers\Admin\FirewallController::class, 'autoBlockAggressive'])->name('security.firewall.auto-block');
+        Route::post('/security/firewall/policy', [\App\Http\Controllers\Admin\FirewallController::class, 'updatePolicy'])->name('security.firewall.policy');
+        Route::post('/security/firewall/sessions/{id}/revoke', [\App\Http\Controllers\Admin\FirewallController::class, 'revokeUserSession'])->name('security.firewall.revoke-session');
+        Route::post('/security/firewall/users/{id}/unsuspend', [\App\Http\Controllers\Admin\FirewallController::class, 'unsuspendUser'])->name('security.firewall.unsuspend');
         Route::delete('/security/firewall/{id}', [\App\Http\Controllers\Admin\FirewallController::class, 'destroy'])->name('security.firewall.destroy');
 
     });
