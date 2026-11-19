@@ -25,6 +25,29 @@
             </div>
         </div>
 
+        @if(!$bridgeStatus['available'])
+            <div class="p-3 rounded-4 border mb-3 d-flex flex-column gap-2" style="background: var(--surface-container-low); border-color: var(--outline-variant) !important;">
+                <div class="d-flex align-items-start gap-2.5 small">
+                    <i class="fas fa-lock text-warning mt-0.5"></i>
+                    <div>
+                        <div class="fw-bold text-body">{{ __('Tombol "Terapkan Update" & "Rollback" memerlukan VPS Ops Bridge') }}</div>
+                        <div class="text-secondary" style="font-size: 0.76rem;">
+                            {{ __('Jalankan perintah sekali pakai di terminal VPS sebagai root (atau jalankan "sudo jualan update" / "sudo jualan repair" sekali) agar pembaruan 1-klik dari web langsung aktif:') }}
+                        </div>
+                        @if(!empty($bridgeStatus['reason']))
+                            <div class="text-danger font-monospace mt-1" style="font-size: 0.72rem;">{{ $bridgeStatus['reason'] }}</div>
+                        @endif
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-2 flex-wrap ps-4">
+                    <code class="px-2.5 py-1 rounded-3 bg-dark text-light user-select-all" style="font-size: 0.75rem;" id="updateBridgeInstallCmd">{{ $bridgeStatus['install_command'] }}</code>
+                    <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-semibold" onclick="copyTextValue('updateBridgeInstallCmd', this)">
+                        <i class="fas fa-copy me-1"></i>{{ __('Salin') }}
+                    </button>
+                </div>
+            </div>
+        @endif
+
         <div class="row g-3 small mb-3">
             <div class="col-md-3">
                 <div class="p-3 rounded-4 border h-100" style="background: var(--surface-container-low); border-color: var(--outline-variant) !important;">

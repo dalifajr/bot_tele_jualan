@@ -119,7 +119,14 @@
                                 </div>
                             </div>
                         </td>
-                        <td class="text-muted small">{{ $user->email ?? '-' }}</td>
+                        <td class="text-muted small">
+                            <div>{{ $user->email ?? '-' }}</div>
+                            <div class="mt-0.5">
+                                <span class="badge bg-primary-subtle text-primary rounded-pill fw-semibold" style="font-size: 0.7rem;">
+                                    <i class="fas fa-wallet me-1"></i>Rp {{ number_format((int) ($user->customer_wallet_balance ?? 0), 0, ',', '.') }}
+                                </span>
+                            </div>
+                        </td>
                         <td>
                             <div class="mb-1">
                                 @if($user->is_suspended)
@@ -143,6 +150,15 @@
                                     <li>
                                         <button class="dropdown-item py-2" data-bs-toggle="modal" data-bs-target="#editUserModal{{ $user->id }}">
                                             <i class="fas fa-user-shield me-2 text-primary"></i> {{ __('Ubah Detail Akses') }}
+                                        </button>
+                                    </li>
+                                    <li>
+                                        <button type="button"
+                                                class="dropdown-item py-2 text-success btn-open-user-inject"
+                                                data-user-id="{{ $user->id }}"
+                                                data-user-label="{{ ($user->full_name ?: $user->username) . ($user->username ? ' (@' . $user->username . ')' : '') }}"
+                                                data-balance="Rp {{ number_format((int) ($user->customer_wallet_balance ?? 0), 0, ',', '.') }}">
+                                            <i class="fas fa-bolt me-2"></i> {{ __('Injeksi / Kelola Saldo') }}
                                         </button>
                                     </li>
                                     <li>
@@ -188,7 +204,13 @@
                                 </ul>
                             </div>
                             @else
-                            <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" disabled>{{ __('Ini Anda') }}</button>
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-semibold btn-open-user-inject"
+                                    data-user-id="{{ $user->id }}"
+                                    data-user-label="{{ ($user->full_name ?: $user->username) . ($user->username ? ' (@' . $user->username . ')' : '') }}"
+                                    data-balance="Rp {{ number_format((int) ($user->customer_wallet_balance ?? 0), 0, ',', '.') }}">
+                                <i class="fas fa-bolt me-1"></i>{{ __('Injeksi Saldo') }}
+                            </button>
                             @endif
                         </td>
                     </tr>
@@ -324,6 +346,71 @@
 </div>
 @endif
 @endforeach
+
+{{-- Modal Injeksi / Potong Saldo User Langsung dari Kelola Pelanggan --}}
+<div class="modal fade" id="injectBalanceUserModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 16px; border: none;">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="fw-bold"><i class="fas fa-bolt text-primary me-1.5"></i>{{ __('Injeksi / Kelola Saldo User') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ __('Tutup') }}"></button>
+            </div>
+            <form action="{{ route('admin.wallet.manual-credit') }}" method="POST">
+                @csrf
+                <input type="hidden" name="user_id" id="uInjUserId">
+                <input type="hidden" name="redirect_to" value="back">
+                <div class="modal-body p-4">
+                    <div class="p-3 rounded-4 border mb-3 small" style="background: var(--surface-container-low); border-color: var(--outline-variant) !important;">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="text-muted">{{ __('Target Akun') }}</span>
+                            <strong class="text-body" id="uInjUserLabel">-</strong>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">{{ __('Saldo Dompet Saat Ini') }}</span>
+                            <strong class="text-primary" id="uInjBalance">Rp 0</strong>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">{{ __('Jenis Aksi') }}</label>
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="action_type" id="uInjCredit" value="credit" checked autocomplete="off">
+                            <label class="btn btn-sm btn-outline-primary fw-semibold py-2" for="uInjCredit">
+                                <i class="fas fa-plus-circle me-1"></i>{{ __('Injeksi Saldo (+)') }}
+                            </label>
+                            <input type="radio" class="btn-check" name="action_type" id="uInjDebit" value="debit" autocomplete="off">
+                            <label class="btn btn-sm btn-outline-danger fw-semibold py-2" for="uInjDebit">
+                                <i class="fas fa-minus-circle me-1"></i>{{ __('Potong Saldo (-)') }}
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">{{ __('Nominal Saldo (Rp)') }}</label>
+                        <input type="number" name="amount" class="form-control fw-bold" min="1000" max="50000000" step="1000" placeholder="50000" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">{{ __('Catatan / Alasan') }}</label>
+                        <input type="text" name="note" class="form-control" placeholder="{{ __('Bonus / Kompensasi / Transfer manual') }}" required>
+                    </div>
+
+                    <div class="form-check">
+                        <input type="hidden" name="notify_telegram" value="0">
+                        <input class="form-check-input" type="checkbox" name="notify_telegram" value="1" id="uInjNotifyTg" checked>
+                        <label class="form-check-label small text-secondary" for="uInjNotifyTg">{{ __('Kirim notifikasi Telegram ke user') }}</label>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">{{ __('Batal') }}</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold">
+                        <i class="fas fa-check me-1"></i>{{ __('Proses Sekarang') }}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 @endpush
 
 @push('scripts')
@@ -507,6 +594,23 @@ function confirmExport() {
         form.submit();
     });
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    const injModalEl = document.getElementById('injectBalanceUserModal');
+    const injUserId = document.getElementById('uInjUserId');
+    const injUserLabel = document.getElementById('uInjUserLabel');
+    const injBalance = document.getElementById('uInjBalance');
+
+    document.querySelectorAll('.btn-open-user-inject').forEach(btn => {
+        btn.addEventListener('click', function() {
+            if (!injModalEl) return;
+            if (injUserId) injUserId.value = this.dataset.userId || '';
+            if (injUserLabel) injUserLabel.textContent = this.dataset.userLabel || '-';
+            if (injBalance) injBalance.textContent = this.dataset.balance || 'Rp 0';
+            bootstrap.Modal.getOrCreateInstance(injModalEl).show();
+        });
+    });
+});
 </script>
 @endpush
 @endsection

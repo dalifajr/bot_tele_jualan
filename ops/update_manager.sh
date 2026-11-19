@@ -15,6 +15,10 @@ LAST_COMMIT_FILE="${BACKUP_DIR}/.last_commit"
 ENV_FILE="${PROJECT_DIR}/.env"
 RUNTIME_PRESERVE_FILES=(".env" "user_role.txt")
 
+export GIT_CONFIG_COUNT=1
+export GIT_CONFIG_KEY_0="safe.directory"
+export GIT_CONFIG_VALUE_0="${PROJECT_DIR}"
+
 PRESERVE_DIR=""
 LOCAL_PATCH_FILE=""
 AUTOSTASH_NAME=""
@@ -186,10 +190,23 @@ backup_before_update() {
 
   tar \
     --exclude='.venv' \
+    --exclude='.git' \
+    --exclude='.gradle' \
+    --exclude='.pub_cache' \
     --exclude='ops/backups' \
     --exclude='reference design' \
+    --exclude='web/vendor' \
+    --exclude='web/node_modules' \
+    --exclude='web/storage/logs' \
+    --exclude='web/storage/app/backups' \
     -czf "${archive}" \
     .
+
+  # Keep only latest 3 update snapshots to protect limited VPS disk space
+  mapfile -t old_updates < <(ls -1t "${BACKUP_DIR}"/update_*.tar.gz 2>/dev/null | tail -n +4 || true)
+  if (( ${#old_updates[@]} > 0 )); then
+    rm -f "${old_updates[@]}" 2>/dev/null || true
+  fi
 
   git rev-parse HEAD > "${LAST_COMMIT_FILE}"
   echo "Backup created: ${archive}"
@@ -310,6 +327,12 @@ update_website() {
     sudo systemctl restart "php${php_ver}-fpm" 2>/dev/null || true
   fi
   sudo systemctl reload nginx 2>/dev/null || true
+
+  # Otomatis pasang/perbarui VPS Ops Bridge sudoers agar fitur update & kontrol VPS di web aktif 1-klik
+  if [[ -f "${PROJECT_DIR}/ops/install_web_sudoers.sh" && "$(id -u)" -eq 0 ]]; then
+    log_step "memasang/memperbarui VPS Ops Bridge sudoers..."
+    bash "${PROJECT_DIR}/ops/install_web_sudoers.sh" || true
+  fi
 }
 
 restart_services() {

@@ -5,11 +5,17 @@
 # ==============================================================================
 set -euo pipefail
 
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:${PATH:-}"
+
 SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
 PROJECT_DIR="$(cd "$(dirname "${SCRIPT_PATH}")/.." && pwd)"
 WEB_DIR="${PROJECT_DIR}/web"
 TASK_LOG="${WEB_DIR}/storage/logs/vps_ops_task.log"
 ENV_FILE="${PROJECT_DIR}/.env"
+
+export GIT_CONFIG_COUNT=1
+export GIT_CONFIG_KEY_0="safe.directory"
+export GIT_CONFIG_VALUE_0="${PROJECT_DIR}"
 
 detect_php_fpm_unit() {
   local cand

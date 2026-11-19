@@ -223,8 +223,14 @@ class WalletController extends Controller
 
         $customers = User::orderBy('full_name')
             ->orderBy('username')
-            ->limit(250)
-            ->get(['id', 'username', 'full_name', 'customer_wallet_balance']);
+            ->limit(500)
+            ->get(['id', 'username', 'full_name', 'email', 'role', 'customer_wallet_balance']);
+
+        $recentAdjustments = WalletTransaction::with('user')
+            ->where('category', 'admin_adjust')
+            ->orderByDesc('id')
+            ->limit(15)
+            ->get();
 
         return view('admin.wallet.index', compact(
             'topups',
@@ -234,12 +240,13 @@ class WalletController extends Controller
             'expiredCount',
             'totalCustomerBalance',
             'totalPaidTopup',
-            'customers'
+            'customers',
+            'recentAdjustments'
         ));
     }
 
     /**
-     * Admin konfirmasi manual top-up (mendukung status pending, expired, maupun cancelled jika QRIS terkendala).
+     * Admin konfirmasi manual top-up (khusus permintaan berstatus pending; expired/cancelled ditolak).
      */
     public function adminConfirmTopup(Request $request, $id, WalletService $walletService)
     {
@@ -254,7 +261,7 @@ class WalletController extends Controller
                 Auth::id(),
                 'ADMIN_MANUAL',
                 $note !== '' ? $note : __('Konfirmasi manual oleh Admin'),
-                true
+                false
             );
 
             DB::table('audit_logs')->insert([
@@ -276,56 +283,102 @@ class WalletController extends Controller
     }
 
     /**
-     * Admin kredit saldo manual langsung ke pelanggan (saat pelanggan terkendala QRIS / transfer manual langsung).
+     * Admin injeksi / penyesuaian saldo dompet langsung ke user (tambah saldo atau potong saldo).
      */
     public function adminManualCredit(Request $request, WalletService $walletService)
     {
         $request->validate([
             'user_id' => 'required|exists:users,id',
+            'action_type' => 'nullable|in:credit,debit',
             'amount' => 'required|integer|min:1000|max:50000000',
             'note' => 'required|string|max:255',
+            'notify_telegram' => 'nullable|boolean',
         ]);
 
         $targetUser = User::findOrFail($request->input('user_id'));
+        $actionType = (string) $request->input('action_type', 'credit');
         $amount = (int) $request->input('amount');
         $note = trim((string) $request->input('note'));
-        $ref = 'MAN' . now()->format('ymdHis') . strtoupper(substr(md5(uniqid('', true)), 0, 4));
+        $shouldNotify = $request->has('notify_telegram') ? $request->boolean('notify_telegram') : true;
 
-        $tx = $walletService->credit(
-            $targetUser->id,
-            $amount,
-            'admin_adjust',
-            $ref,
-            __('Top-up manual Admin: :note', ['note' => $note]),
-            ['actor_id' => Auth::id(), 'manual_credit' => true]
-        );
+        try {
+            if ($actionType === 'debit') {
+                $ref = 'ADJ' . now()->format('ymdHis') . strtoupper(substr(md5(uniqid('', true)), 0, 4));
+                $tx = $walletService->debit(
+                    $targetUser->id,
+                    $amount,
+                    'admin_adjust',
+                    $ref,
+                    __('Penyesuaian/Potong saldo Admin: :note', ['note' => $note]),
+                    ['actor_id' => Auth::id(), 'manual_adjust' => 'debit']
+                );
+                $auditAction = 'wallet_balance_deducted';
+            } else {
+                $ref = 'INJ' . now()->format('ymdHis') . strtoupper(substr(md5(uniqid('', true)), 0, 4));
+                $tx = $walletService->credit(
+                    $targetUser->id,
+                    $amount,
+                    'admin_adjust',
+                    $ref,
+                    __('Injeksi saldo Admin: :note', ['note' => $note]),
+                    ['actor_id' => Auth::id(), 'manual_credit' => true, 'manual_adjust' => 'credit']
+                );
+                $auditAction = 'wallet_manual_credit';
+            }
+        } catch (\Throwable $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
 
         DB::table('audit_logs')->insert([
-            'action' => 'wallet_manual_credit',
+            'action' => $auditAction,
             'actor_id' => Auth::id(),
             'entity_type' => 'wallet_transaction',
             'entity_id' => $tx->id,
-            'detail' => "ref={$ref}; user_id={$targetUser->id}; amount={$amount}; note={$note}",
+            'detail' => "type={$actionType}; ref={$ref}; user_id={$targetUser->id}; amount={$amount}; note={$note}",
             'created_at' => now(),
         ]);
 
-        try {
-            if (!empty($targetUser->telegram_id)) {
-                $targetUser->refresh();
-                TelegramService::sendMessage(
-                    $targetUser->telegram_id,
-                    "✅ <b>Saldo Dompet Ditambahkan oleh Admin</b>\n\nReferensi: <code>{$ref}</code>\nNominal: <b>Rp " . number_format($amount, 0, ',', '.') . "</b>\nCatatan: " . e($note) . "\nSaldo Sekarang: <b>Rp " . number_format((int) $targetUser->customer_wallet_balance, 0, ',', '.') . "</b>"
-                );
+        if ($shouldNotify) {
+            try {
+                if (!empty($targetUser->telegram_id)) {
+                    $targetUser->refresh();
+                    $balanceFmt = number_format((int) $targetUser->customer_wallet_balance, 0, ',', '.');
+                    $amountFmt = number_format($amount, 0, ',', '.');
+                    if ($actionType === 'debit') {
+                        TelegramService::sendMessage(
+                            $targetUser->telegram_id,
+                            "ℹ️ <b>Penyesuaian Saldo Dompet oleh Admin</b>\n\nReferensi: <code>{$ref}</code>\nPotongan: <b>-Rp {$amountFmt}</b>\nCatatan: " . e($note) . "\nSaldo Sekarang: <b>Rp {$balanceFmt}</b>"
+                        );
+                    } else {
+                        TelegramService::sendMessage(
+                            $targetUser->telegram_id,
+                            "✅ <b>Saldo Dompet Ditambahkan oleh Admin</b>\n\nReferensi: <code>{$ref}</code>\nNominal: <b>+Rp {$amountFmt}</b>\nCatatan: " . e($note) . "\nSaldo Sekarang: <b>Rp {$balanceFmt}</b>"
+                        );
+                    }
+                }
+            } catch (\Throwable $e) {
+                Log::warning('Telegram notify error on admin wallet inject/adjust: ' . $e->getMessage());
             }
-        } catch (\Throwable $e) {
-            Log::warning('Telegram notify error on manual wallet credit: ' . $e->getMessage());
         }
 
-        return redirect()->route('admin.wallet.index')
-            ->with('success', __('Saldo manual Rp:amount berhasil ditambahkan ke akun :user.', [
+        $targetLabel = $targetUser->username ?: $targetUser->full_name;
+        $successMsg = $actionType === 'debit'
+            ? __('Saldo sebesar Rp:amount berhasil dipotong dari akun :user (Saldo akhir: Rp:balance).', [
                 'amount' => number_format($amount, 0, ',', '.'),
-                'user' => $targetUser->username ?: $targetUser->full_name,
-            ]));
+                'user' => $targetLabel,
+                'balance' => number_format((int) $tx->balance_after, 0, ',', '.'),
+            ])
+            : __('Injeksi saldo Rp:amount berhasil ditambahkan ke akun :user (Saldo akhir: Rp:balance).', [
+                'amount' => number_format($amount, 0, ',', '.'),
+                'user' => $targetLabel,
+                'balance' => number_format((int) $tx->balance_after, 0, ',', '.'),
+            ]);
+
+        if ($request->input('redirect_to') === 'back') {
+            return redirect()->back()->with('success', $successMsg);
+        }
+
+        return redirect()->route('admin.wallet.index')->with('success', $successMsg);
     }
 
     public function adminRejectTopup($id)

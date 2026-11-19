@@ -25,6 +25,11 @@ chown root:root "${BRIDGE_SCRIPT}"
 chmod 755 "${BRIDGE_SCRIPT}"
 chmod +x "${PROJECT_DIR}/ops/update_manager.sh" "${PROJECT_DIR}/ops/backup_manager.sh" "${PROJECT_DIR}/ops/repair_system_and_bot.sh" 2>/dev/null || true
 
+# Pastikan Git mempercayai direktori proyek untuk semua user (mencegah dubious ownership error)
+if command -v git >/dev/null 2>&1; then
+  git config --system --add safe.directory "${PROJECT_DIR}" 2>/dev/null || true
+fi
+
 # Pastikan file .env root & web/.env dapat dibaca & diubah oleh group www-data (untuk toggle bot commands & Turnstile)
 for env_target in "${PROJECT_DIR}/.env" "${PROJECT_DIR}/web/.env"; do
   if [[ -f "${env_target}" ]]; then
@@ -33,12 +38,18 @@ for env_target in "${PROJECT_DIR}/.env" "${PROJECT_DIR}/web/.env"; do
   fi
 done
 
+# Deteksi user PHP-FPM aktif selain www-data (jika berbeda)
+FPM_USER="$(ps -eo user,comm 2>/dev/null | awk '$2 ~ /php-fpm/ && $1 != "root" { print $1; exit }' || true)"
+
 TMP_SUDOERS="$(mktemp)"
 cat > "${TMP_SUDOERS}" <<EOF
 # Managed by bot_tele_jualan/ops/install_web_sudoers.sh
-# Least-privilege: www-data may only execute the whitelisted ops bridge script
-www-data ALL=(root) NOPASSWD: ${BRIDGE_SCRIPT}
+# Least-privilege: web server user may only execute the whitelisted ops bridge script
+www-data ALL=(root) NOPASSWD: ${BRIDGE_SCRIPT}, ${BRIDGE_SCRIPT} *
 EOF
+if [[ -n "${FPM_USER}" && "${FPM_USER}" != "www-data" ]]; then
+  echo "${FPM_USER} ALL=(root) NOPASSWD: ${BRIDGE_SCRIPT}, ${BRIDGE_SCRIPT} *" >> "${TMP_SUDOERS}"
+fi
 
 if visudo -cf "${TMP_SUDOERS}" >/dev/null 2>&1; then
   install -m 0440 -o root -g root "${TMP_SUDOERS}" "${SUDOERS_FILE}"

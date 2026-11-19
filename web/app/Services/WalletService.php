@@ -107,7 +107,7 @@ class WalletService
             }
 
             if (!$allowManualOverride && $locked->status !== 'pending') {
-                throw new \RuntimeException(__('Permintaan top-up ini sudah diproses sebelumnya.'));
+                throw new \RuntimeException(__('Permintaan top-up yang sudah kedaluwarsa atau dibatalkan tidak dapat dikonfirmasi manual. Gunakan fitur Injeksi Saldo bila dana sudah diterima.'));
             }
 
             $source = $verifiedSource ?: ($actorId ? 'ADMIN_MANUAL' : 'AUTO_WEBHOOK');

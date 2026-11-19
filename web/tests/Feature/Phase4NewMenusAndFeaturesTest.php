@@ -422,7 +422,7 @@ class Phase4NewMenusAndFeaturesTest extends TestCase
         $this->assertEquals('MIDTRANS_WEBHOOK', $topup2->verified_source);
         $this->assertEquals(80000, (int) $customer->customer_wallet_balance);
 
-        // 4. Admin Manual Override on EXPIRED topup (QRIS trouble scenario)
+        // 4. Expired & Cancelled topups do NOT show manual confirmation button and reject manual confirm POST
         $expiredTopup = WalletTopup::create([
             'user_id' => $customer->id,
             'topup_ref' => 'TOPEXPIRED001',
@@ -433,36 +433,93 @@ class Phase4NewMenusAndFeaturesTest extends TestCase
             'status' => 'expired',
             'expires_at' => now()->subMinutes(10),
         ]);
+        $cancelledTopup = WalletTopup::create([
+            'user_id' => $customer->id,
+            'topup_ref' => 'TOPCANCELLED001',
+            'amount' => 25000,
+            'unique_code' => 46,
+            'total_pay' => 25046,
+            'payment_method' => 'qris',
+            'status' => 'cancelled',
+            'expires_at' => now()->addMinutes(10),
+        ]);
 
+        // With only expired/cancelled/paid rows, admin wallet page must NOT render Konfirmasi Manual button for expired/cancelled rows
         $this->actingAs($admin)->get(route('admin.wallet.index'))
             ->assertOk()
             ->assertSee('TOPEXPIRED001')
-            ->assertSee('Konfirmasi Manual');
+            ->assertSee('TOPCANCELLED001')
+            ->assertDontSee('data-ref="TOPEXPIRED001"', false)
+            ->assertDontSee('data-ref="TOPCANCELLED001"', false);
 
-        $this->actingAs($admin)->post(route('admin.wallet.topup.confirm', $expiredTopup->id), [
-            'admin_note' => 'Dana QRIS telat masuk, diverifikasi mutasi manual',
-        ])->assertSessionHas('success');
+        // Attempting to POST confirm on expired or cancelled topup is rejected
+        $this->actingAs($admin)->post(route('admin.wallet.topup.confirm', $expiredTopup->id))
+            ->assertSessionHas('error');
+        $this->actingAs($admin)->post(route('admin.wallet.topup.confirm', $cancelledTopup->id))
+            ->assertSessionHas('error');
 
         $customer->refresh();
         $expiredTopup->refresh();
-        $this->assertEquals('paid', $expiredTopup->status);
-        $this->assertEquals('ADMIN_MANUAL', $expiredTopup->verified_source);
+        $this->assertEquals('expired', $expiredTopup->status);
+        $this->assertEquals(80000, (int) $customer->customer_wallet_balance);
+
+        // Pending topup CAN still be confirmed manually by Admin
+        $pendingTopup = WalletTopup::create([
+            'user_id' => $customer->id,
+            'topup_ref' => 'TOPPENDING001',
+            'amount' => 25000,
+            'unique_code' => 47,
+            'total_pay' => 25047,
+            'payment_method' => 'qris',
+            'status' => 'pending',
+            'expires_at' => now()->addMinutes(20),
+        ]);
+
+        $this->actingAs($admin)->get(route('admin.wallet.index'))
+            ->assertOk()
+            ->assertSee('data-ref="TOPPENDING001"', false);
+
+        $this->actingAs($admin)->post(route('admin.wallet.topup.confirm', $pendingTopup->id), [
+            'admin_note' => 'Dana QRIS terverifikasi manual',
+        ])->assertSessionHas('success');
+
+        $customer->refresh();
+        $pendingTopup->refresh();
+        $this->assertEquals('paid', $pendingTopup->status);
+        $this->assertEquals('ADMIN_MANUAL', $pendingTopup->verified_source);
         $this->assertEquals(105000, (int) $customer->customer_wallet_balance);
 
         // Cannot confirm again once already paid
-        $this->actingAs($admin)->post(route('admin.wallet.topup.confirm', $expiredTopup->id))
+        $this->actingAs($admin)->post(route('admin.wallet.topup.confirm', $pendingTopup->id))
             ->assertSessionHas('error');
         $customer->refresh();
         $this->assertEquals(105000, (int) $customer->customer_wallet_balance);
 
-        // 5. Admin Direct Manual Credit (customer had QRIS issue and transferred manually)
+        // 5. Admin Balance Injection (credit) & Deduction (debit)
         $this->actingAs($admin)->post(route('admin.wallet.manual-credit'), [
             'user_id' => $customer->id,
+            'action_type' => 'credit',
             'amount' => 15000,
-            'note' => 'Transfer manual BCA kendala QRIS',
-        ])->assertRedirect(route('admin.wallet.index'));
+            'note' => 'Injeksi saldo bonus pelanggan',
+            'notify_telegram' => 0,
+        ])->assertRedirect(route('admin.wallet.index'))
+            ->assertSessionHas('success');
 
         $customer->refresh();
         $this->assertEquals(120000, (int) $customer->customer_wallet_balance);
+
+        // Debit (potong saldo) works atomically and logs audit
+        $this->actingAs($admin)->post(route('admin.wallet.manual-credit'), [
+            'user_id' => $customer->id,
+            'action_type' => 'debit',
+            'amount' => 20000,
+            'note' => 'Koreksi penyesuaian saldo',
+            'notify_telegram' => 0,
+        ])->assertRedirect(route('admin.wallet.index'))
+            ->assertSessionHas('success');
+
+        $customer->refresh();
+        $this->assertEquals(100000, (int) $customer->customer_wallet_balance);
+        $this->assertDatabaseHas('audit_logs', ['action' => 'wallet_balance_deducted']);
     }
 }

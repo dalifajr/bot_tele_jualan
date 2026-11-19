@@ -790,22 +790,38 @@ class SystemHealthService
 
         $root = $this->projectRoot();
         try {
-            $fetch = Process::path($root)->timeout(15)->run(['git', 'fetch', 'origin']);
-            $branch = trim(Process::path($root)->timeout(5)->run(['git', 'symbolic-ref', '--quiet', '--short', 'HEAD'])->output()) ?: 'main';
-            $local = trim(Process::path($root)->timeout(5)->run(['git', 'rev-parse', 'HEAD'])->output());
-            $remote = trim(Process::path($root)->timeout(5)->run(['git', 'rev-parse', "origin/{$branch}"])->output());
-            $commitsBehind = trim(Process::path($root)->timeout(5)->run(['git', 'log', '--oneline', '-n', '15', "HEAD..origin/{$branch}"])->output());
+            $env = ['PATH' => '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:' . (getenv('PATH') ?: '')];
+            $branch = trim(Process::path($root)->env($env)->timeout(5)->run($this->gitCmd(['symbolic-ref', '--quiet', '--short', 'HEAD']))->output()) ?: 'main';
+            $local = trim(Process::path($root)->env($env)->timeout(5)->run($this->gitCmd(['rev-parse', 'HEAD']))->output());
 
-            $upToDate = ($local !== '' && $local === $remote);
-            $summary = "Branch: {$branch}\nLocal : {$local}\nRemote: {$remote}\nStatus: " . ($upToDate ? 'up-to-date' : 'update available');
-            if ($commitsBehind !== '') {
-                $summary .= "\n\nCommit baru tersedia:\n" . $commitsBehind;
+            // Use read-only ls-remote so www-data can check remote GitHub commit even without write access to .git/FETCH_HEAD
+            $lsRemote = Process::path($root)->env($env)->timeout(15)->run($this->gitCmd(['ls-remote', 'origin', "refs/heads/{$branch}"]));
+            if (!$lsRemote->successful()) {
+                return [
+                    'ok' => false,
+                    'output' => trim($lsRemote->errorOutput() ?: $lsRemote->output() ?: __('Gagal menghubungi remote origin GitHub.')),
+                    'git' => $this->collectGitInfo(),
+                ];
+            }
+
+            $remoteLine = trim($lsRemote->output());
+            $remote = $remoteLine !== '' ? preg_split('/\s+/', $remoteLine)[0] : '';
+            $upToDate = ($local !== '' && $remote !== '' && $local === $remote);
+
+            $summary = "Repo  : {$root}\n"
+                . "Branch: {$branch}\n"
+                . "Local : " . ($local ?: '-') . "\n"
+                . "Remote: " . ($remote ?: '-') . "\n"
+                . "Status: " . ($upToDate ? 'up-to-date' : 'update available');
+
+            if (!$upToDate && $remote !== '') {
+                $summary .= "\n\n" . __('Tersedia pembaruan baru di GitHub. Aktifkan VPS Ops Bridge (sudo bash ops/install_web_sudoers.sh) untuk menerapkan update 1-klik dari web, atau jalankan "sudo jualan update" di VPS.');
             }
 
             return [
-                'ok' => $fetch->successful(),
+                'ok' => true,
                 'up_to_date' => $upToDate,
-                'output' => $fetch->successful() ? $summary : trim($fetch->errorOutput() ?: $fetch->output()),
+                'output' => $summary,
                 'git' => $this->collectGitInfo(),
             ];
         } catch (\Throwable $e) {
@@ -1094,22 +1110,34 @@ class SystemHealthService
         return round($bytes / (1024 ** $pow), 2) . ' ' . $units[$pow];
     }
 
+    protected function gitCmd(array $args): array
+    {
+        return array_merge(['git', '-c', 'safe.directory=' . $this->projectRoot()], $args);
+    }
+
     protected function detectBridgeStatus(): array
     {
         $isLinux = $this->isLinux();
         $script = $this->bridgeScriptPath();
         $exists = file_exists($script);
         $available = false;
+        $reason = '';
 
         if ($isLinux && $exists && !app()->runningUnitTests()) {
             $res = $this->runBridge(['ping'], 4);
             $available = $res['ok'] && str_contains($res['output'], 'BRIDGE_OK');
+            if (!$available) {
+                $reason = $res['output'] ?: __('Izin sudoers belum dipasang untuk user web server.');
+            }
+        } elseif ($isLinux && !$exists) {
+            $reason = __('Skrip ops/web_ops_bridge.sh tidak ditemukan.');
         }
 
         return [
             'is_linux' => $isLinux,
             'script_exists' => $exists,
             'available' => $available,
+            'reason' => $reason,
             'install_command' => 'sudo bash ' . $this->projectRoot() . '/ops/install_web_sudoers.sh',
         ];
     }
@@ -1126,8 +1154,10 @@ class SystemHealthService
         }
 
         try {
-            $cmd = array_merge(['sudo', '-n', $script], $args);
-            $proc = Process::timeout($timeout)->run($cmd);
+            $sudoBin = is_executable('/usr/bin/sudo') ? '/usr/bin/sudo' : 'sudo';
+            $env = ['PATH' => '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:' . (getenv('PATH') ?: '')];
+            $cmd = array_merge([$sudoBin, '-n', $script], $args);
+            $proc = Process::env($env)->timeout($timeout)->run($cmd);
             return [
                 'ok' => $proc->successful(),
                 'output' => trim($proc->output() ?: $proc->errorOutput()),
@@ -1342,9 +1372,10 @@ class SystemHealthService
         }
 
         try {
-            $branch = trim(Process::path($root)->timeout(3)->run(['git', 'symbolic-ref', '--quiet', '--short', 'HEAD'])->output());
-            $logLine = trim(Process::path($root)->timeout(3)->run(['git', 'log', '-1', '--format=%H|%h|%s|%ci'])->output());
-            $status = trim(Process::path($root)->timeout(3)->run(['git', 'status', '--porcelain'])->output());
+            $env = ['PATH' => '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:' . (getenv('PATH') ?: '')];
+            $branch = trim(Process::path($root)->env($env)->timeout(3)->run($this->gitCmd(['symbolic-ref', '--quiet', '--short', 'HEAD']))->output());
+            $logLine = trim(Process::path($root)->env($env)->timeout(3)->run($this->gitCmd(['log', '-1', '--format=%H|%h|%s|%ci']))->output());
+            $status = trim(Process::path($root)->env($env)->timeout(3)->run($this->gitCmd(['status', '--porcelain']))->output());
 
             if ($logLine !== '') {
                 $parts = explode('|', $logLine, 4);
