@@ -1327,7 +1327,8 @@
                 </div>
 
                 @php
-                    $sellerHasTools = (is_array(Auth::user()->allowed_tools) && count(Auth::user()->allowed_tools) > 0) || $canAccess2fa;
+                    $sellerCanAccessResellerApi = Auth::check() && Auth::user()->canUseResellerApi();
+                    $sellerHasTools = (is_array(Auth::user()->allowed_tools) && count(Auth::user()->allowed_tools) > 0) || $canAccess2fa || $sellerCanAccessResellerApi;
                 @endphp
                 @if($sellerHasTools)
                 <div class="menu-group mt-2">
@@ -1349,6 +1350,12 @@
                         <a href="{{ route('tools.2fa-generator') }}" class="menu-item {{ request()->routeIs('tools.2fa-generator*') ? 'active' : '' }}">
                             <div class="menu-icon-box"><i class="fas fa-key text-success"></i></div>
                             <span class="menu-label-text">{{ __('Generator Kode 2FA') }}</span>
+                        </a>
+                        @endif
+                        @if($sellerCanAccessResellerApi)
+                        <a href="{{ route('developer.api.index') }}" class="menu-item {{ request()->routeIs('developer.api.*') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fas fa-code text-primary"></i></div>
+                            <span class="menu-label-text">{{ __('API Reseller (H2H)') }}</span>
                         </a>
                         @endif
                     </div>

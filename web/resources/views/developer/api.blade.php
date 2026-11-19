@@ -503,8 +503,9 @@ hash_equals($expected, $_SERVER['HTTP_X_RESELLER_SIGNATURE']);</pre>
                         @csrf
                         <div class="mb-3">
                             <select name="access_mode" class="form-select">
-                                <option value="all" {{ $adminData['access_mode'] === 'all' ? 'selected' : '' }}>{{ __('Semua Pengguna Aktif (Default)') }}</option>
-                                <option value="selected" {{ $adminData['access_mode'] === 'selected' ? 'selected' : '' }}>{{ __('Hanya Pengguna Terpilih (via Kelola Pelanggan)') }}</option>
+                                <option value="seller_admin" {{ $adminData['access_mode'] === 'seller_admin' ? 'selected' : '' }}>{{ __('Hanya Admin, Seller & Customer Terpilih (Default)') }}</option>
+                                <option value="selected" {{ $adminData['access_mode'] === 'selected' ? 'selected' : '' }}>{{ __('Ketat — Hanya Admin & Pengguna Terpilih') }}</option>
+                                <option value="all" {{ $adminData['access_mode'] === 'all' ? 'selected' : '' }}>{{ __('Terbuka — Semua Pengguna Aktif') }}</option>
                             </select>
                         </div>
                         <button type="submit" class="btn btn-primary w-100 rounded-pill fw-semibold">{{ __('Simpan Kebijakan') }}</button>

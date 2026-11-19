@@ -53,7 +53,7 @@ class ResellerApiPortalController extends Controller
         $adminData = null;
         if ($isAdmin) {
             $adminData = [
-                'access_mode' => BotSetting::where('key', 'reseller_api_access_mode')->value('value') ?? 'all',
+                'access_mode' => BotSetting::where('key', 'reseller_api_access_mode')->value('value') ?? 'seller_admin',
                 'all_keys' => ResellerApiKey::with('user')
                     ->whereNull('revoked_at')
                     ->orderByDesc('last_used_at')
@@ -259,7 +259,7 @@ class ResellerApiPortalController extends Controller
         }
 
         $validated = $request->validate([
-            'access_mode' => ['required', 'in:all,selected'],
+            'access_mode' => ['required', 'in:seller_admin,selected,all'],
         ]);
 
         BotSetting::updateOrCreate(

@@ -158,6 +158,8 @@ class User extends Authenticatable
 
     /**
      * Check if user is permitted to use the Reseller H2H REST API.
+     * Default policy ('seller_admin'): OFF for customers unless explicitly granted in allowed_tools,
+     * ON by default for sellers and admins.
      */
     public function canUseResellerApi(): bool
     {
@@ -169,8 +171,13 @@ class User extends Authenticatable
             return true;
         }
 
-        $accessMode = BotSetting::where('key', 'reseller_api_access_mode')->value('value') ?? 'all';
+        $accessMode = BotSetting::where('key', 'reseller_api_access_mode')->value('value') ?? 'seller_admin';
+
         if ($accessMode === 'all') {
+            return true;
+        }
+
+        if ($accessMode === 'seller_admin' && $this->role === 'seller') {
             return true;
         }
 

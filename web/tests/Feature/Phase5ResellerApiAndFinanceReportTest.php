@@ -46,15 +46,29 @@ class Phase5ResellerApiAndFinanceReportTest extends TestCase
     public function test_reseller_api_portal_key_lifecycle_and_admin_access_policy(): void
     {
         $admin = $this->makeUser('admin');
+        $seller = $this->makeUser('seller', ['customer_wallet_balance' => 150000]);
         $customer = $this->makeUser('customer', ['customer_wallet_balance' => 150000]);
 
-        // Customer opens portal & creates API key
+        // Default policy ('seller_admin'): OFF for normal customers, ON for seller & admin
+        $this->assertFalse($customer->canUseResellerApi());
+        $this->assertTrue($seller->canUseResellerApi());
+        $this->assertTrue($admin->canUseResellerApi());
+
         $this->actingAs($customer)
+            ->get(route('developer.api.index'))
+            ->assertRedirect(route('dashboard'));
+
+        $this->actingAs($customer)
+            ->post(route('developer.api.keys.store'), ['name' => 'Unauthorized Key'])
+            ->assertStatus(403);
+
+        // Seller can open portal & create API key by default
+        $this->actingAs($seller)
             ->get(route('developer.api.index'))
             ->assertStatus(200)
             ->assertSee('API Reseller (H2H)');
 
-        $createResp = $this->actingAs($customer)
+        $createResp = $this->actingAs($seller)
             ->post(route('developer.api.keys.store'), [
                 'name' => 'Bot Reseller Utama',
                 'allowed_ips' => '127.0.0.1, 10.20.30.0/24',
@@ -66,37 +80,46 @@ class Phase5ResellerApiAndFinanceReportTest extends TestCase
         $this->assertNotEmpty($plainKey);
         $this->assertStringStartsWith('rsk_live_', $plainKey);
 
-        $key = ResellerApiKey::where('user_id', $customer->id)->firstOrFail();
+        $key = ResellerApiKey::where('user_id', $seller->id)->firstOrFail();
         $this->assertSame(hash('sha256', $plainKey), $key->key_hash);
         $this->assertSame(['127.0.0.1', '10.20.30.0/24'], $key->allowed_ips);
         $this->assertSame(45, $key->rate_limit_per_minute);
 
         // Rotate key invalidates old hash
         $oldHash = $key->key_hash;
-        $this->actingAs($customer)
+        $this->actingAs($seller)
             ->post(route('developer.api.keys.rotate', $key->id))
             ->assertRedirect(route('developer.api.index', ['tab' => 'keys']));
         $key->refresh();
         $this->assertNotSame($oldHash, $key->key_hash);
 
-        // Admin switches global mode to 'selected' -> customer without allowed_tools loses portal access
+        // Granting 'reseller_api' in allowed_tools enables customer even under default seller_admin mode
+        $customer->allowed_tools = ['reseller_api'];
+        $customer->save();
+        $this->assertTrue($customer->canUseResellerApi());
+
+        $this->actingAs($customer)
+            ->get(route('developer.api.index'))
+            ->assertStatus(200);
+
+        // Admin switches global mode to 'selected' -> seller without allowed_tools loses access
         $this->actingAs($admin)
             ->post(route('developer.api.admin.access-mode'), ['access_mode' => 'selected'])
             ->assertRedirect(route('developer.api.index', ['tab' => 'admin']));
 
         $this->assertSame('selected', BotSetting::where('key', 'reseller_api_access_mode')->value('value'));
+        $this->assertFalse($seller->fresh()->canUseResellerApi());
 
-        $this->actingAs($customer)
+        $this->actingAs($seller)
             ->get(route('developer.api.index'))
             ->assertRedirect(route('dashboard'));
 
-        // Granting 'reseller_api' in allowed_tools restores access
-        $customer->allowed_tools = ['reseller_api'];
-        $customer->save();
-
-        $this->actingAs($customer)
-            ->get(route('developer.api.index'))
-            ->assertStatus(200);
+        // Admin switches global mode to 'all' -> regular customer without allowed_tools gains access
+        $customer2 = $this->makeUser('customer');
+        $this->actingAs($admin)
+            ->post(route('developer.api.admin.access-mode'), ['access_mode' => 'all'])
+            ->assertRedirect(route('developer.api.index', ['tab' => 'admin']));
+        $this->assertTrue($customer2->canUseResellerApi());
 
         // Admin revokes key
         $this->actingAs($admin)
@@ -110,7 +133,25 @@ class Phase5ResellerApiAndFinanceReportTest extends TestCase
 
     public function test_reseller_rest_api_auth_whitelist_instant_order_and_idempotency(): void
     {
-        $reseller = $this->makeUser('customer', ['customer_wallet_balance' => 100000]);
+        $unauthorizedCustomer = $this->makeUser('customer', ['customer_wallet_balance' => 100000]);
+        $unauthPair = ResellerApiKey::generateKeyPair();
+        ResellerApiKey::create([
+            'user_id' => $unauthorizedCustomer->id,
+            'name' => 'Legacy Customer Key',
+            'key_prefix' => $unauthPair['prefix'],
+            'key_hash' => $unauthPair['hash'],
+            'is_active' => true,
+        ]);
+
+        // Even if a key row exists for a normal customer, REST API denies with 403 by default
+        $this->getJson('/api/v1/ping', ['Authorization' => 'Bearer ' . $unauthPair['plain']])
+            ->assertStatus(403)
+            ->assertJsonPath('error', 'access_denied');
+
+        $reseller = $this->makeUser('customer', [
+            'customer_wallet_balance' => 100000,
+            'allowed_tools' => ['reseller_api'],
+        ]);
         $seller = $this->makeUser('seller', ['platform_fee_percent' => 10]);
 
         $product = Product::create([
