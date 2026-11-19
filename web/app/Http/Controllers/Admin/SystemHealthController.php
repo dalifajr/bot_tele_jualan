@@ -3,163 +3,240 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\BotSetting;
-use App\Models\Order;
-use App\Models\User;
-use App\Models\WalletTopup;
+use App\Services\SystemHealthService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Hash;
 
 class SystemHealthController extends Controller
 {
-    public function index()
+    public function __construct(protected SystemHealthService $healthService)
     {
-        $dbStart = microtime(true);
-        $dbConnected = false;
-        $dbLatencyMs = 0;
-        $dbDriver = config('database.default');
-        $dbSizeLabel = '-';
+    }
 
-        try {
-            DB::select('SELECT 1');
-            $dbConnected = true;
-            $dbLatencyMs = round((microtime(true) - $dbStart) * 1000, 2);
-
-            if ($dbDriver === 'sqlite') {
-                $dbPath = config('database.connections.sqlite.database');
-                if ($dbPath && file_exists($dbPath)) {
-                    $dbSizeLabel = $this->formatBytes((int) filesize($dbPath));
-                }
-            } elseif (in_array($dbDriver, ['mysql', 'mariadb'], true)) {
-                $dbName = config("database.connections.{$dbDriver}.database");
-                if ($dbName) {
-                    $sizeRow = DB::selectOne(
-                        'SELECT SUM(data_length + index_length) AS size_bytes FROM information_schema.TABLES WHERE table_schema = ?',
-                        [$dbName]
-                    );
-                    if ($sizeRow && !empty($sizeRow->size_bytes)) {
-                        $dbSizeLabel = $this->formatBytes((int) $sizeRow->size_bytes);
-                    }
-                }
-            }
-        } catch (\Throwable $e) {
-            $dbConnected = false;
-        }
-
-        $storagePath = storage_path();
-        $diskFree = @disk_free_space($storagePath) ?: 0;
-        $diskTotal = @disk_total_space($storagePath) ?: 0;
-        $diskUsedPercent = $diskTotal > 0 ? round((($diskTotal - $diskFree) / $diskTotal) * 100, 1) : 0;
-
-        $pendingOrdersCount = Order::where('status', 'pending_payment')->count();
-        $expiredStuckOrders = Order::where('status', 'pending_payment')
-            ->whereNotNull('expires_at')
-            ->where('expires_at', '<=', now())
-            ->count();
-
-        $readyHeldFundsCount = Schema::hasTable('held_funds')
-            ? DB::table('held_funds')->where('status', 'held')->where('release_at', '<=', now())->count()
-            : 0;
-
-        $pendingTopupsCount = Schema::hasTable('wallet_topups')
-            ? WalletTopup::where('status', 'pending')->count()
-            : 0;
-
-        $vpnConfigured = !empty(BotSetting::where('key', 'vpn_server_ip')->value('value'))
-            && !empty(BotSetting::where('key', 'vpn_server_ssh_key_raw')->value('value'));
-
-        $telegramConfigured = !empty(config('telegram.bot_token'));
-        $maintenanceActive = BotSetting::where('key', 'maintenance_mode')->value('value') === '1';
-
-        $logPath = storage_path('logs/laravel.log');
-        $logSizeLabel = file_exists($logPath) ? $this->formatBytes((int) filesize($logPath)) : '0 B';
-
-        $metrics = [
-            'php_version' => PHP_VERSION,
-            'laravel_version' => app()->version(),
-            'app_env' => config('app.env'),
-            'app_debug' => (bool) config('app.debug'),
-            'cache_driver' => config('cache.default'),
-            'session_driver' => config('session.driver'),
-            'queue_driver' => config('queue.default'),
-            'db_driver' => $dbDriver,
-            'db_connected' => $dbConnected,
-            'db_latency_ms' => $dbLatencyMs,
-            'db_size_label' => $dbSizeLabel,
-            'disk_free_label' => $this->formatBytes((int) $diskFree),
-            'disk_total_label' => $this->formatBytes((int) $diskTotal),
-            'disk_used_percent' => $diskUsedPercent,
-            'log_size_label' => $logSizeLabel,
-            'vite_bundle_built' => file_exists(public_path('build/manifest.json')),
-            'telegram_configured' => $telegramConfigured,
-            'vpn_configured' => $vpnConfigured,
-            'maintenance_active' => $maintenanceActive,
-            'pending_orders' => $pendingOrdersCount,
-            'expired_stuck_orders' => $expiredStuckOrders,
-            'ready_held_funds' => $readyHeldFundsCount,
-            'pending_topups' => $pendingTopupsCount,
-            'total_users' => User::count(),
-        ];
-
-        return view('admin.system.health', compact('metrics'));
+    public function index(Request $request)
+    {
+        $data = $this->healthService->buildDashboardData($request);
+        return view('admin.system.health', $data);
     }
 
     public function pingTelegram()
     {
-        $botToken = config('telegram.bot_token');
-        if (!$botToken) {
-            return response()->json([
-                'ok' => false,
-                'message' => __('TELEGRAM_BOT_TOKEN belum dikonfigurasi.'),
-            ], 422);
-        }
-
-        $start = microtime(true);
-        try {
-            $res = Http::timeout(4)->get("https://api.telegram.org/bot{$botToken}/getMe");
-            $latency = round((microtime(true) - $start) * 1000, 1);
-
-            if ($res->successful() && $res->json('ok')) {
-                $botUsername = $res->json('result.username') ?? 'unknown';
-                return response()->json([
-                    'ok' => true,
-                    'latency_ms' => $latency,
-                    'message' => __('Terhubung ke Bot @:bot (:ms ms).', ['bot' => $botUsername, 'ms' => $latency]),
-                ]);
-            }
-
-            return response()->json([
-                'ok' => false,
-                'latency_ms' => $latency,
-                'message' => __('API Telegram mengembalikan status gagal (HTTP :code).', ['code' => $res->status()]),
-            ], 502);
-        } catch (\Throwable $e) {
-            return response()->json([
-                'ok' => false,
-                'message' => __('Gagal menjangkau API Telegram: :err', ['err' => $e->getMessage()]),
-            ], 502);
-        }
+        $res = $this->healthService->pingTelegram();
+        return response()->json([
+            'ok' => $res['ok'],
+            'latency_ms' => $res['latency_ms'] ?? null,
+            'message' => $res['message'],
+        ], $res['status'] ?? 200);
     }
 
-    public function flushCaches()
+    public function pingVpn()
+    {
+        $res = $this->healthService->pingVpn();
+        return response()->json([
+            'ok' => $res['ok'],
+            'latency_ms' => $res['latency_ms'] ?? null,
+            'message' => $res['message'],
+        ], $res['status'] ?? 200);
+    }
+
+    public function flushCaches(Request $request)
     {
         Cache::forget('nav:global_settings');
         Cache::forget('firewall:effective_rules');
 
-        return redirect()->route('admin.system.health')
+        return $this->redirectToTab($request)
             ->with('success', __('Cache navigasi & aturan firewall berhasil disegarkan.'));
     }
 
-    private function formatBytes(int $bytes): string
+    public function runArtisan(Request $request)
     {
-        if ($bytes <= 0) {
-            return '0 B';
+        $validated = $request->validate([
+            'action' => 'required|string|in:' . implode(',', array_keys(SystemHealthService::ARTISAN_ACTIONS)),
+        ]);
+
+        $res = $this->healthService->runArtisanAction($validated['action']);
+
+        if ($request->expectsJson()) {
+            return response()->json($res, $res['ok'] ? 200 : 500);
         }
-        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
-        $pow = (int) floor(log($bytes, 1024));
-        $pow = min($pow, count($units) - 1);
-        return round($bytes / (1024 ** $pow), 2) . ' ' . $units[$pow];
+
+        return $this->redirectToTab($request, 'pemeliharaan')
+            ->with($res['ok'] ? 'success' : 'error', $res['message'])
+            ->with('artisan_output', $res['output'] ?? '');
+    }
+
+    public function clearLogs(Request $request)
+    {
+        $res = $this->healthService->clearLaravelLogs();
+
+        return $this->redirectToTab($request, 'pemeliharaan')
+            ->with($res['ok'] ? 'success' : 'error', $res['message']);
+    }
+
+    public function downloadLog()
+    {
+        $logPath = storage_path('logs/laravel.log');
+        if (!file_exists($logPath)) {
+            return redirect()->route('admin.system.health', ['tab' => 'log'])
+                ->with('error', __('File laravel.log tidak ditemukan.'));
+        }
+
+        return response()->download($logPath, 'laravel-' . now()->format('Ymd-His') . '.log');
+    }
+
+    public function fetchLogs(Request $request)
+    {
+        $source = (string) $request->query('source', 'laravel');
+        $lines = (int) $request->query('lines', 100);
+        $level = (string) $request->query('level', 'all');
+
+        return response()->json($this->healthService->readLogSource($source, $lines, $level));
+    }
+
+    public function pruneBackups(Request $request)
+    {
+        $validated = $request->validate([
+            'keep' => 'required|integer|min:1|max:100',
+        ]);
+
+        $res = $this->healthService->pruneOpsBackups((int) $validated['keep']);
+
+        return $this->redirectToTab($request, 'pemeliharaan')
+            ->with($res['ok'] ? 'success' : 'error', $res['message']);
+    }
+
+    public function toggleMaintenance(Request $request)
+    {
+        $res = $this->healthService->toggleMaintenanceMode();
+
+        return $this->redirectToTab($request, 'pemeliharaan')
+            ->with('success', $res['message']);
+    }
+
+    public function serviceAction(Request $request)
+    {
+        $validated = $request->validate([
+            'unit' => 'required|string|in:' . implode(',', array_keys(SystemHealthService::SERVICE_CATALOG)),
+            'action' => 'required|string|in:' . implode(',', SystemHealthService::ALLOWED_SERVICE_ACTIONS),
+        ]);
+
+        $res = $this->healthService->runServiceAction($validated['unit'], $validated['action']);
+
+        if ($request->expectsJson()) {
+            return response()->json($res, $res['ok'] ? 200 : 422);
+        }
+
+        return $this->redirectToTab($request, 'layanan')
+            ->with($res['ok'] ? 'success' : 'error', $res['message']);
+    }
+
+    public function websiteRestart(Request $request)
+    {
+        $res = $this->healthService->triggerVpsBackgroundTask('website-restart');
+
+        return $this->redirectToTab($request, 'layanan')
+            ->with($res['ok'] ? 'success' : 'error', $res['message']);
+    }
+
+    public function toggleBotCommands(Request $request)
+    {
+        $validated = $request->validate([
+            'mode' => 'required|string|in:disable,enable',
+        ]);
+
+        $res = $this->healthService->toggleBotCommands($validated['mode'] === 'disable');
+
+        return $this->redirectToTab($request, 'layanan')
+            ->with($res['ok'] ? 'success' : 'error', $res['message']);
+    }
+
+    public function checkUpdate()
+    {
+        $res = $this->healthService->checkGitUpdate();
+        return response()->json($res, $res['ok'] ? 200 : 500);
+    }
+
+    public function runUpdate(Request $request)
+    {
+        $res = $this->healthService->triggerVpsBackgroundTask('update');
+
+        return $this->redirectToTab($request, 'pembaruan')
+            ->with($res['ok'] ? 'success' : 'error', $res['message']);
+    }
+
+    public function runRollback(Request $request)
+    {
+        $validated = $request->validate([
+            'current_password' => 'required|string',
+        ]);
+
+        $admin = Auth::user();
+        if (!$admin || !Hash::check($validated['current_password'], (string) $admin->password)) {
+            return $this->redirectToTab($request, 'pembaruan')
+                ->with('error', __('Verifikasi kata sandi admin gagal. Rollback dibatalkan.'));
+        }
+
+        $res = $this->healthService->triggerVpsBackgroundTask('rollback');
+
+        return $this->redirectToTab($request, 'pembaruan')
+            ->with($res['ok'] ? 'success' : 'error', $res['message']);
+    }
+
+    public function runRepair(Request $request)
+    {
+        $res = $this->healthService->triggerVpsBackgroundTask('repair');
+
+        return $this->redirectToTab($request, 'layanan')
+            ->with($res['ok'] ? 'success' : 'error', $res['message']);
+    }
+
+    public function taskStatus()
+    {
+        return response()->json($this->healthService->readTaskStatus());
+    }
+
+    public function updateTurnstile(Request $request)
+    {
+        $validated = $request->validate([
+            'site_key' => 'required|string|min:6|max:200',
+            'secret_key' => 'required|string|min:6|max:200',
+        ]);
+
+        $res = $this->healthService->updateTurnstileKeys($validated['site_key'], $validated['secret_key']);
+
+        return $this->redirectToTab($request, 'pembaruan')
+            ->with($res['ok'] ? 'success' : 'error', $res['message']);
+    }
+
+    public function resetAdminPassword(Request $request)
+    {
+        $validated = $request->validate([
+            'current_password' => 'required|string',
+            'target_admin_id' => 'required|integer|exists:users,id',
+            'new_password' => 'required|string|min:8|confirmed',
+        ]);
+
+        $admin = Auth::user();
+        if (!$admin || !Hash::check($validated['current_password'], (string) $admin->password)) {
+            return $this->redirectToTab($request, 'pembaruan')
+                ->with('error', __('Kata sandi admin Anda saat ini tidak cocok.'));
+        }
+
+        $res = $this->healthService->resetAdminPassword((int) $validated['target_admin_id'], $validated['new_password']);
+
+        return $this->redirectToTab($request, 'pembaruan')
+            ->with($res['ok'] ? 'success' : 'error', $res['message']);
+    }
+
+    private function redirectToTab(Request $request, ?string $fallbackTab = null)
+    {
+        $tab = (string) $request->input('active_tab', $fallbackTab ?? '');
+        if ($tab !== '' && in_array($tab, SystemHealthService::VALID_TABS, true)) {
+            return redirect()->route('admin.system.health', ['tab' => $tab]);
+        }
+
+        return redirect()->route('admin.system.health');
     }
 }

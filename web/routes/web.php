@@ -400,10 +400,27 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         Route::post('/wallet/topup/{id}/confirm', [\App\Http\Controllers\WalletController::class, 'adminConfirmTopup'])->name('wallet.topup.confirm');
         Route::post('/wallet/topup/{id}/reject', [\App\Http\Controllers\WalletController::class, 'adminRejectTopup'])->name('wallet.topup.reject');
 
-        // System Health Monitor & Firewall Anti-Fraud Center
+        // System Health Monitor & VPS Control Center
         Route::get('/system/health', [\App\Http\Controllers\Admin\SystemHealthController::class, 'index'])->name('system.health');
         Route::post('/system/health/ping-telegram', [\App\Http\Controllers\Admin\SystemHealthController::class, 'pingTelegram'])->name('system.health.ping-telegram');
+        Route::post('/system/health/ping-vpn', [\App\Http\Controllers\Admin\SystemHealthController::class, 'pingVpn'])->name('system.health.ping-vpn');
         Route::post('/system/health/flush-cache', [\App\Http\Controllers\Admin\SystemHealthController::class, 'flushCaches'])->name('system.health.flush-cache');
+        Route::post('/system/health/artisan', [\App\Http\Controllers\Admin\SystemHealthController::class, 'runArtisan'])->name('system.health.artisan');
+        Route::post('/system/health/logs/clear', [\App\Http\Controllers\Admin\SystemHealthController::class, 'clearLogs'])->name('system.health.logs.clear');
+        Route::get('/system/health/logs/download', [\App\Http\Controllers\Admin\SystemHealthController::class, 'downloadLog'])->name('system.health.logs.download');
+        Route::get('/system/health/logs/fetch', [\App\Http\Controllers\Admin\SystemHealthController::class, 'fetchLogs'])->name('system.health.logs.fetch');
+        Route::post('/system/health/backups/prune', [\App\Http\Controllers\Admin\SystemHealthController::class, 'pruneBackups'])->name('system.health.backups.prune');
+        Route::post('/system/health/maintenance', [\App\Http\Controllers\Admin\SystemHealthController::class, 'toggleMaintenance'])->name('system.health.maintenance');
+        Route::post('/system/health/service-action', [\App\Http\Controllers\Admin\SystemHealthController::class, 'serviceAction'])->name('system.health.service-action');
+        Route::post('/system/health/website-restart', [\App\Http\Controllers\Admin\SystemHealthController::class, 'websiteRestart'])->name('system.health.website-restart');
+        Route::post('/system/health/bot-commands', [\App\Http\Controllers\Admin\SystemHealthController::class, 'toggleBotCommands'])->name('system.health.bot-commands');
+        Route::post('/system/health/check-update', [\App\Http\Controllers\Admin\SystemHealthController::class, 'checkUpdate'])->name('system.health.check-update');
+        Route::post('/system/health/update', [\App\Http\Controllers\Admin\SystemHealthController::class, 'runUpdate'])->name('system.health.update');
+        Route::post('/system/health/rollback', [\App\Http\Controllers\Admin\SystemHealthController::class, 'runRollback'])->name('system.health.rollback');
+        Route::post('/system/health/repair', [\App\Http\Controllers\Admin\SystemHealthController::class, 'runRepair'])->name('system.health.repair');
+        Route::get('/system/health/task-status', [\App\Http\Controllers\Admin\SystemHealthController::class, 'taskStatus'])->name('system.health.task-status');
+        Route::post('/system/health/turnstile', [\App\Http\Controllers\Admin\SystemHealthController::class, 'updateTurnstile'])->name('system.health.turnstile');
+        Route::post('/system/health/reset-admin-password', [\App\Http\Controllers\Admin\SystemHealthController::class, 'resetAdminPassword'])->name('system.health.reset-admin-password');
 
         Route::get('/security/firewall', [\App\Http\Controllers\Admin\FirewallController::class, 'index'])->name('security.firewall');
         Route::post('/security/firewall', [\App\Http\Controllers\Admin\FirewallController::class, 'store'])->name('security.firewall.store');

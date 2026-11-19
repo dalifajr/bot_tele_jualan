@@ -108,6 +108,7 @@ chmod -R 775 "${WEB_DIR}/storage" "${WEB_DIR}/bootstrap/cache"
 # Izinkan Nginx membaca parent folder
 chmod o+x /root 2>/dev/null || true
 chmod o+x "${PROJECT_DIR}" 2>/dev/null || true
+chmod 755 "${PROJECT_DIR}/ops/web_ops_bridge.sh" "${PROJECT_DIR}/ops/install_web_sudoers.sh" 2>/dev/null || true
 
 echo -e "${GREEN}[OK] Hak akses database dan storage berhasil diperbaiki.${NC}"
 

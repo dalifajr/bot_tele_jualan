@@ -44,7 +44,9 @@ class QuickSearchController extends Controller
                 ['title' => __('Firewall & Aturan Blokir'), 'subtitle' => __('Blokir IP, subnet CIDR & ID Telegram'), 'url' => route('admin.security.firewall', ['tab' => 'firewall']), 'icon' => 'fas fa-shield-virus'],
                 ['title' => __('Intelijen Ancaman & Anti-Spam'), 'subtitle' => __('IP agresif, target akun & multi-akun spam'), 'url' => route('admin.security.firewall', ['tab' => 'ancaman']), 'icon' => 'fas fa-crosshairs'],
                 ['title' => __('Sesi Aktif & Postur Keamanan'), 'subtitle' => __('Pengawasan perangkat online & kebijakan anti-spam'), 'url' => route('admin.security.firewall', ['tab' => 'sesi-audit']), 'icon' => 'fas fa-laptop-medical'],
-                ['title' => __('Kesehatan Sistem'), 'subtitle' => __('Monitor DB, disk, Telegram & antrean'), 'url' => route('admin.system.health'), 'icon' => 'fas fa-heart-pulse'],
+                ['title' => __('Kesehatan Sistem & Kontrol VPS'), 'subtitle' => __('Monitor CPU/RAM/Disk, layanan VPS, update Git & log'), 'url' => route('admin.system.health', ['tab' => 'ringkasan']), 'icon' => 'fas fa-heart-pulse'],
+                ['title' => __('Layanan VPS & Mode Bot'), 'subtitle' => __('Start/Restart Bot, Nginx, PHP-FPM & migrasi bot'), 'url' => route('admin.system.health', ['tab' => 'layanan']), 'icon' => 'fas fa-gears'],
+                ['title' => __('Log Sistem Real-Time'), 'subtitle' => __('Baca laravel.log, journalctl bot & Nginx error'), 'url' => route('admin.system.health', ['tab' => 'log']), 'icon' => 'fas fa-file-lines'],
                 ['title' => __('Kelola Rekber'), 'subtitle' => __('Transaksi escrow aktif'), 'url' => route('admin.escrow.index'), 'icon' => 'fas fa-handshake'],
                 ['title' => __('Permintaan Payout'), 'subtitle' => __('Persetujuan penarikan saldo seller'), 'url' => route('admin.withdrawals.index'), 'icon' => 'fas fa-money-bill-wave'],
             ]);
