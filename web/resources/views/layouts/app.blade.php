@@ -1038,13 +1038,6 @@
                             <div class="menu-icon-box"><i class="fas fa-bullhorn text-warning"></i></div>
                             <span class="menu-label-text">{{ __('Promo Dashboard') }}</span>
                         </a>
-                        <a href="{{ route('admin.logins.index') }}" class="menu-item {{ request()->routeIs('admin.logins.*') ? 'active' : '' }}">
-                            <div class="menu-icon-box"><i class="fas fa-right-to-bracket text-secondary"></i></div>
-                            <span class="menu-label-text">{{ __('Percobaan Login') }}</span>
-                            @if($pendingLoginsCount > 0)
-                                <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.7rem;">{{ $pendingLoginsCount }}</span>
-                            @endif
-                        </a>
                         <a href="{{ route('admin.escrow.index') }}" class="menu-item {{ request()->routeIs('admin.escrow.*') ? 'active' : '' }}">
                             <div class="menu-icon-box"><i class="fas fa-handshake text-info"></i></div>
                             <span class="menu-label-text">{{ __('Kelola Rekber') }}</span>
@@ -1097,9 +1090,12 @@
                             <div class="menu-icon-box"><i class="fas fa-database text-info"></i></div>
                             <span class="menu-label-text">{{ __('Backup & Restore') }}</span>
                         </a>
-                        <a href="{{ route('admin.security.firewall') }}" class="menu-item {{ request()->routeIs('admin.security.firewall*') ? 'active' : '' }}">
+                        <a href="{{ route('admin.logins.index') }}" class="menu-item {{ request()->routeIs('admin.logins.*') || request()->routeIs('admin.security.firewall*') ? 'active' : '' }}">
                             <div class="menu-icon-box"><i class="fas fa-shield-virus text-danger"></i></div>
-                            <span class="menu-label-text">{{ __('Firewall & Anti-Fraud') }}</span>
+                            <span class="menu-label-text">{{ __('Keamanan & Firewall') }}</span>
+                            @if($pendingLoginsCount > 0)
+                                <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.7rem;">{{ $pendingLoginsCount }}</span>
+                            @endif
                         </a>
                         <a href="{{ route('admin.system.health') }}" class="menu-item {{ request()->routeIs('admin.system.health*') ? 'active' : '' }}">
                             <div class="menu-icon-box"><i class="fas fa-heart-pulse text-success"></i></div>

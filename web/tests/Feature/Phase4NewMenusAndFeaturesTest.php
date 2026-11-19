@@ -247,13 +247,32 @@ class Phase4NewMenusAndFeaturesTest extends TestCase
             'registration_ip' => '198.51.100.88',
         ]);
 
-        // Firewall Center index page renders cleanly with full telemetry & zero SQL errors
+        // Firewall Center index page renders cleanly as Unified Security Hub with default firewall tab & zero SQL errors
         $this->actingAs($admin)->get(route('admin.security.firewall'))
             ->assertOk()
+            ->assertViewHas('activeTab', 'firewall')
+            ->assertSee('sec-pane-peta', false)
+            ->assertSee('sec-pane-analitik', false)
+            ->assertSee('sec-pane-riwayat', false)
+            ->assertSee('sec-pane-firewall', false)
+            ->assertSee('sec-pane-ancaman', false)
+            ->assertSee('sec-pane-sesi-audit', false)
             ->assertSee('198.51.100.77')
             ->assertSee('target_user')
             ->assertSee('198.51.100.88')
             ->assertSee('spammer_u4');
+
+        // Unified Security Hub via /admin/logins defaults to 'peta' and supports explicit ?tab= selection
+        $this->actingAs($admin)->get(route('admin.logins.index'))
+            ->assertOk()
+            ->assertViewHas('activeTab', 'peta')
+            ->assertSee('sec-tab-peta', false);
+        $this->actingAs($admin)->get(route('admin.logins.index', ['tab' => 'ancaman']))
+            ->assertOk()
+            ->assertViewHas('activeTab', 'ancaman');
+        $this->actingAs($admin)->get(route('admin.security.firewall', ['tab' => 'sesi-audit']))
+            ->assertOk()
+            ->assertViewHas('activeTab', 'sesi-audit');
 
         // Auto-block aggressive IPs (>= 5 failed logins in 24h)
         $this->actingAs($admin)->post(route('admin.security.firewall.auto-block'), [

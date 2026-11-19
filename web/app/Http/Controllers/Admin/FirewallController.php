@@ -8,6 +8,7 @@ use App\Models\FirewallRule;
 use App\Models\LoginLog;
 use App\Models\User;
 use App\Models\UserSession;
+use App\Services\SecurityHubService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -16,203 +17,20 @@ use Illuminate\Support\Facades\Schema;
 
 class FirewallController extends Controller
 {
-    public function index(Request $request)
+    protected function redirectBackToTab(Request $request)
     {
-        $typeFilter = $request->query('type', 'all');
-        $search = trim((string) $request->query('search', ''));
-
-        $rulesQuery = FirewallRule::with('creator')
-            ->orderByDesc('is_active')
-            ->orderByDesc('id');
-
-        if (in_array($typeFilter, ['ip', 'subnet', 'telegram_id'], true)) {
-            $rulesQuery->where('type', $typeFilter);
+        $tab = trim((string) $request->input('active_tab', ''));
+        if ($tab !== '' && in_array($tab, SecurityHubService::VALID_TABS, true)) {
+            return redirect()->route('admin.security.firewall', ['tab' => $tab]);
         }
 
-        if ($search !== '') {
-            $rulesQuery->where(function ($q) use ($search) {
-                $q->where('value', 'like', "%{$search}%")
-                    ->orWhere('reason', 'like', "%{$search}%");
-            });
-        }
+        return redirect()->route('admin.security.firewall');
+    }
 
-        $rules = $rulesQuery->paginate(15)->withQueryString();
-
-        // Core KPI metrics
-        $activeRulesCount = FirewallRule::effective()->count();
-        $totalBlockedHits = (int) FirewallRule::sum('hit_count');
-
-        $failedLogins24h = LoginLog::where('is_successful', false)
-            ->where('created_at', '>=', now()->subHours(24))
-            ->count();
-
-        $successLogins24h = LoginLog::where('is_successful', true)
-            ->where('created_at', '>=', now()->subHours(24))
-            ->count();
-
-        $totalLogins24h = $failedLogins24h + $successLogins24h;
-        $failRate24h = $totalLogins24h > 0 ? round(($failedLogins24h / $totalLogins24h) * 100, 1) : 0.0;
-
-        $threatLevel = 'low';
-        if ($failedLogins24h >= 50 || $failRate24h >= 40) {
-            $threatLevel = 'high';
-        } elseif ($failedLogins24h >= 15 || $failRate24h >= 20) {
-            $threatLevel = 'medium';
-        }
-
-        $suspendedUsersCount = User::where('is_suspended', true)->count();
-        $totalUsersCount = max(1, User::count());
-        $twoFactorUsersCount = User::where(function ($q) {
-            $q->where('two_factor_enabled', true)->orWhere('totp_enabled', true);
-        })->count();
-        $twoFactorAdoptionRate = round(($twoFactorUsersCount / $totalUsersCount) * 100, 1);
-
-        $activeSessionsCount = Schema::hasTable('user_sessions')
-            ? UserSession::whereNull('revoked_at')->where('last_active_at', '>=', now()->subHours(24))->count()
-            : 0;
-
-        // 7-day Attack vs Legitimate Login Trend
-        $trendLabels = [];
-        $trendFailed = [];
-        $trendSuccess = [];
-        $logs7d = LoginLog::where('created_at', '>=', now()->subDays(6)->startOfDay())
-            ->get(['is_successful', 'created_at']);
-
-        $byDay = [];
-        for ($i = 6; $i >= 0; $i--) {
-            $key = now()->subDays($i)->format('Y-m-d');
-            $trendLabels[] = now()->subDays($i)->format('d M');
-            $byDay[$key] = ['failed' => 0, 'success' => 0];
-        }
-        foreach ($logs7d as $log) {
-            $d = $log->created_at ? $log->created_at->format('Y-m-d') : null;
-            if ($d && isset($byDay[$d])) {
-                if ($log->is_successful) {
-                    $byDay[$d]['success']++;
-                } else {
-                    $byDay[$d]['failed']++;
-                }
-            }
-        }
-        foreach ($byDay as $vals) {
-            $trendFailed[] = $vals['failed'];
-            $trendSuccess[] = $vals['success'];
-        }
-
-        // Top aggressive / suspicious IPs (7 days) with unique targets & geo snapshot
-        $existingBlockedIps = FirewallRule::effective()
-            ->where('type', 'ip')
-            ->pluck('value')
-            ->flip();
-
-        $topSuspiciousIps = LoginLog::where('is_successful', false)
-            ->where('created_at', '>=', now()->subDays(7))
-            ->whereNotNull('ip_address')
-            ->selectRaw('ip_address, COUNT(*) as fail_count, COUNT(DISTINCT username_or_email) as unique_targets, MAX(location) as last_location, MAX(country) as last_country, MAX(created_at) as last_seen')
-            ->groupBy('ip_address')
-            ->orderByDesc('fail_count')
-            ->limit(10)
-            ->get()
-            ->map(function ($row) use ($existingBlockedIps) {
-                $row->is_blocked = $existingBlockedIps->has($row->ip_address) || Cache::has('blocked_ip:' . $row->ip_address);
-                $row->subnet_24 = filter_var($row->ip_address, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)
-                    ? preg_replace('/\.\d+$/', '.0/24', $row->ip_address)
-                    : null;
-                return $row;
-            });
-
-        // Most targeted accounts (credential stuffing / brute-force targets)
-        $targetedAccounts = LoginLog::where('is_successful', false)
-            ->where('created_at', '>=', now()->subDays(7))
-            ->whereNotNull('username_or_email')
-            ->where('username_or_email', '!=', '')
-            ->selectRaw('username_or_email, COUNT(*) as fail_count, COUNT(DISTINCT ip_address) as unique_ips, MAX(created_at) as last_attempt')
-            ->groupBy('username_or_email')
-            ->orderByDesc('fail_count')
-            ->limit(8)
-            ->get();
-
-        // Multi-account registration IP anomaly detection (Anti-Spam)
-        $multiAccountIps = User::whereNotNull('registration_ip')
-            ->where('registration_ip', '!=', '')
-            ->selectRaw('registration_ip, COUNT(*) as account_count, SUM(CASE WHEN is_suspended = 1 THEN 1 ELSE 0 END) as suspended_count, MAX(created_at) as latest_reg')
-            ->groupBy('registration_ip')
-            ->havingRaw('COUNT(*) >= 2')
-            ->orderByDesc('account_count')
-            ->limit(8)
-            ->get()
-            ->map(function ($row) use ($existingBlockedIps) {
-                $row->is_blocked = $existingBlockedIps->has($row->registration_ip) || Cache::has('blocked_ip:' . $row->registration_ip);
-                return $row;
-            });
-
-        // Recent active user sessions for live security supervision
-        $recentSessions = Schema::hasTable('user_sessions')
-            ? UserSession::with('user')
-                ->whereNull('revoked_at')
-                ->orderByDesc('last_active_at')
-                ->limit(10)
-                ->get()
-            : collect();
-
-        // Recently suspended users
-        $suspendedUsers = User::where('is_suspended', true)
-            ->orderByDesc('updated_at')
-            ->limit(8)
-            ->get(['id', 'username', 'full_name', 'registration_ip', 'suspension_reason', 'updated_at']);
-
-        // Recent security audit trail
-        $recentSecurityEvents = Schema::hasTable('audit_logs')
-            ? DB::table('audit_logs')
-                ->where(function ($q) {
-                    $q->where('action', 'like', 'firewall_%')
-                        ->orWhere('action', 'like', 'totp_%')
-                        ->orWhere('action', 'like', 'sessions_%')
-                        ->orWhere('action', 'user_role_change')
-                        ->orWhere('action', 'like', '%block%');
-                })
-                ->orderByDesc('created_at')
-                ->limit(10)
-                ->get()
-            : collect();
-
-        // Current Security Posture Checklist
-        $spamThreshold = (int) (BotSetting::where('key', 'spam_registration_threshold')->value('value') ?? 5);
-        $securityPosture = [
-            'turnstile_active' => !empty(config('services.turnstile.site_key'))
-                && !empty(config('services.turnstile.secret_key'))
-                && config('services.turnstile.site_key') !== '1x00000000000000000000AA',
-            'admin_2fa_enabled' => (bool) (Auth::user()?->hasAnyTwoFactorEnabled()),
-            'maintenance_active' => BotSetting::where('key', 'maintenance_mode')->value('value') === '1',
-            'spam_threshold' => $spamThreshold,
-            'app_debug_off' => !config('app.debug'),
-        ];
-
-        return view('admin.security.firewall', compact(
-            'rules',
-            'typeFilter',
-            'search',
-            'activeRulesCount',
-            'totalBlockedHits',
-            'failedLogins24h',
-            'successLogins24h',
-            'failRate24h',
-            'threatLevel',
-            'suspendedUsersCount',
-            'twoFactorUsersCount',
-            'twoFactorAdoptionRate',
-            'activeSessionsCount',
-            'trendLabels',
-            'trendFailed',
-            'trendSuccess',
-            'topSuspiciousIps',
-            'targetedAccounts',
-            'multiAccountIps',
-            'recentSessions',
-            'suspendedUsers',
-            'recentSecurityEvents',
-            'securityPosture'
-        ));
+    public function index(Request $request, SecurityHubService $hubService)
+    {
+        $data = $hubService->buildHubData($request, 'firewall');
+        return view('admin.security.hub', $data);
     }
 
     public function store(Request $request)
@@ -273,11 +91,11 @@ class FirewallController extends Controller
             'created_at' => now(),
         ]);
 
-        return redirect()->route('admin.security.firewall')
+        return $this->redirectBackToTab($request)
             ->with('success', __('Aturan firewall (:value) berhasil diterapkan.', ['value' => $value]));
     }
 
-    public function toggle($id)
+    public function toggle(Request $request, $id)
     {
         $rule = FirewallRule::findOrFail($id);
         $newState = !$rule->is_active;
@@ -301,7 +119,7 @@ class FirewallController extends Controller
             'created_at' => now(),
         ]);
 
-        return redirect()->route('admin.security.firewall')
+        return $this->redirectBackToTab($request)
             ->with('success', $newState
                 ? __('Aturan firewall (:value) diaktifkan kembali.', ['value' => $rule->value])
                 : __('Aturan firewall (:value) dijeda sementara.', ['value' => $rule->value]));
@@ -360,13 +178,13 @@ class FirewallController extends Controller
             ]);
         }
 
-        return redirect()->route('admin.security.firewall')
+        return $this->redirectBackToTab($request)
             ->with('success', $blockedCount > 0
                 ? __('Auto-blokir selesai: :count IP agresif berhasil ditambahkan ke firewall.', ['count' => $blockedCount])
                 : __('Tidak ditemukan IP agresif baru di atas ambang :threshold kali gagal login dalam 24 jam.', ['threshold' => $threshold]));
     }
 
-    public function revokeUserSession($id)
+    public function revokeUserSession(Request $request, $id)
     {
         $session = UserSession::findOrFail($id);
         $session->update(['revoked_at' => now()]);
@@ -384,11 +202,11 @@ class FirewallController extends Controller
             'created_at' => now(),
         ]);
 
-        return redirect()->route('admin.security.firewall')
+        return $this->redirectBackToTab($request)
             ->with('success', __('Sesi perangkat pengguna berhasil dicabut paksa.'));
     }
 
-    public function unsuspendUser($id)
+    public function unsuspendUser(Request $request, $id)
     {
         $user = User::findOrFail($id);
         $user->is_suspended = false;
@@ -404,7 +222,7 @@ class FirewallController extends Controller
             'created_at' => now(),
         ]);
 
-        return redirect()->route('admin.security.firewall')
+        return $this->redirectBackToTab($request)
             ->with('success', __('Akun :name berhasil dipulihkan dari penangguhan.', ['name' => $user->username ?: $user->full_name]));
     }
 
@@ -419,11 +237,11 @@ class FirewallController extends Controller
             ['value' => (string) $request->input('spam_registration_threshold')]
         );
 
-        return redirect()->route('admin.security.firewall')
+        return $this->redirectBackToTab($request)
             ->with('success', __('Kebijakan batas deteksi spam registrasi berhasil diperbarui.'));
     }
 
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
         $rule = FirewallRule::findOrFail($id);
         $value = $rule->value;
@@ -445,7 +263,7 @@ class FirewallController extends Controller
             'created_at' => now(),
         ]);
 
-        return redirect()->route('admin.security.firewall')
+        return $this->redirectBackToTab($request)
             ->with('success', __('Aturan firewall (:value) telah dihapus.', ['value' => $value]));
     }
 }
