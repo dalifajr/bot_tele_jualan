@@ -72,22 +72,23 @@
 </div>
 
 <style>
-/* Backdrop Overlay - z-index 10050 di atas loader global */
+/* Backdrop Overlay - z-index 10050 di atas loader global (Flat M3 Scrim, 60fps) */
 .vcc-selector-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(15, 23, 42, 0.6);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
+    background: var(--overlay, rgba(15, 17, 23, 0.44));
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     z-index: 10050;
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.25s cubic-bezier(0.2, 0, 0, 1), visibility 0.25s cubic-bezier(0.2, 0, 0, 1);
+    transition: opacity 200ms cubic-bezier(0.3, 0, 0.8, 0.15), visibility 200ms cubic-bezier(0.3, 0, 0.8, 0.15);
 }
 
 .vcc-selector-backdrop.show {
     opacity: 1;
     visibility: visible;
+    transition: opacity 260ms cubic-bezier(0.05, 0.7, 0.1, 1), visibility 260ms cubic-bezier(0.05, 0.7, 0.1, 1);
 }
 
 /* Modal Box - Desktop (Material 3 Alert Dialog) */
@@ -99,13 +100,13 @@
         transform: translate(-50%, -50%) scale(0.92);
         width: 92%;
         max-width: 500px;
-        background: var(--surface-container-high, #f8fafc);
-        border: 1px solid var(--outline-variant, #e2e8f0);
-        border-radius: 28px;
-        padding: 28px 24px;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(0, 0, 0, 0.05);
+        background: var(--surface-container-high, #ece6f0);
+        border: 1px solid var(--outline-variant, #cac4d0);
+        border-radius: var(--radius-xl, 28px);
+        padding: 26px 24px;
+        box-shadow: var(--elevate3, 0 8px 24px rgba(0, 0, 0, 0.12));
         opacity: 0;
-        transition: transform 0.25s cubic-bezier(0.2, 0, 0, 1), opacity 0.25s cubic-bezier(0.2, 0, 0, 1);
+        transition: transform 180ms cubic-bezier(0.3, 0, 0.8, 0.15), opacity 180ms cubic-bezier(0.3, 0, 0.8, 0.15);
         max-height: 90vh;
         display: flex;
         flex-direction: column;
@@ -114,6 +115,7 @@
     .vcc-selector-backdrop.show .vcc-selector-container {
         transform: translate(-50%, -50%) scale(1);
         opacity: 1;
+        transition: transform 280ms cubic-bezier(0.05, 0.7, 0.1, 1), opacity 240ms cubic-bezier(0.05, 0.7, 0.1, 1);
     }
 }
 
@@ -125,20 +127,21 @@
         left: 0;
         right: 0;
         width: 100%;
-        background: var(--surface-container-high, #f8fafc);
-        border-top: 1px solid var(--outline-variant, #e2e8f0);
+        background: var(--surface-container-high, #ece6f0);
+        border-top: 1px solid var(--outline-variant, #cac4d0);
         border-radius: 28px 28px 0 0;
-        padding: 12px 20px 24px;
-        box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.25);
+        padding: 12px 20px calc(24px + env(safe-area-inset-bottom, 0px));
+        box-shadow: var(--elevate3, 0 -8px 24px rgba(0, 0, 0, 0.18));
         transform: translateY(100%);
-        transition: transform 0.3s cubic-bezier(0.2, 0, 0, 1);
-        max-height: 85vh;
+        transition: transform 200ms cubic-bezier(0.3, 0, 0.8, 0.15);
+        max-height: 86vh;
         display: flex;
         flex-direction: column;
     }
 
     .vcc-selector-backdrop.show .vcc-selector-container {
         transform: translateY(0);
+        transition: transform 300ms cubic-bezier(0.05, 0.7, 0.1, 1);
     }
 }
 

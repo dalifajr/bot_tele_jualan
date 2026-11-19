@@ -2854,17 +2854,17 @@ ul.nav-pills,
     z-index: 1050 !important;
 }
 
-/* === TOP PROGRESS BAR === */
+/* === TOP PROGRESS BAR (M3 LINEAR PROGRESS SYNCED TO DYNAMIC PALETTE) === */
 .top-loading-bar {
     position: fixed;
     top: 0;
     left: 0;
-    height: 3px;
+    height: 3.5px;
     width: 0;
-    background: linear-gradient(90deg, var(--primary-color) 0%, #a855f7 100%);
+    background: linear-gradient(90deg, var(--primary) 0%, var(--tertiary, var(--primary)) 100%);
     z-index: 99999;
-    transition: width 0.4s cubic-bezier(0.1, 0.8, 0.3, 1), opacity 0.2s ease;
-    box-shadow: 0 0 8px rgba(var(--primary-rgb), 0.5);
+    transition: width 360ms var(--md-sys-motion-easing-emphasized-decelerate), opacity 180ms ease;
+    box-shadow: none;
     opacity: 0;
 }
 .top-loading-bar.start {
@@ -2951,7 +2951,7 @@ ul.nav-pills,
     border-radius: 4px;
 }
 
-/* Page Loader Overlay: Material You Android 17 Spinning Card */
+/* Page Loader Overlay: Material You Android 17 Spinning Card (Flat M3 Scrim, Zero Heavy Blur) */
 #pageLoader {
     position: fixed;
     top: 0;
@@ -2962,9 +2962,9 @@ ul.nav-pills,
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: rgba(0, 0, 0, 0.32);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
+    background-color: var(--overlay, rgba(15, 17, 23, 0.36));
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     opacity: 1;
     visibility: visible;
     transition: opacity 0.25s cubic-bezier(0.2, 0, 0, 1), visibility 0.25s cubic-bezier(0.2, 0, 0, 1);
@@ -3159,7 +3159,7 @@ ul.nav-pills,
     }
 }
 
-/* === MOBILE BOTTOM DOCK (SEAMLESS ACTION BAR + BOTTOM NAV DOCK) === */
+/* === MOBILE BOTTOM DOCK (ANDROID 17 FLAT MATERIAL YOU BOTTOM NAVIGATION) === */
 @media (max-width: 991.98px) {
     .mobile-bottom-wrapper {
         position: fixed !important;
@@ -3170,9 +3170,9 @@ ul.nav-pills,
         z-index: 1045 !important;
         display: flex !important;
         flex-direction: column !important;
-        background: var(--surface-bg) !important;
+        background: var(--surface-container) !important;
         border-top: 1px solid var(--outline-variant) !important;
-        box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.12) !important;
+        box-shadow: none !important;
         margin: 0 !important;
         padding: 0 !important;
         pointer-events: auto !important;
@@ -3187,7 +3187,7 @@ ul.nav-pills,
         right: auto !important;
         width: 100% !important;
         margin: 0 !important;
-        background: var(--surface-bg) !important;
+        background: var(--surface-container-low) !important;
         border: none !important;
         border-bottom: 1px solid var(--outline-variant) !important;
         box-shadow: none !important;
@@ -3208,11 +3208,11 @@ ul.nav-pills,
         width: 100% !important;
         margin: 0 !important;
         height: auto !important;
-        min-height: 58px !important;
+        min-height: 66px !important;
         border: none !important;
         border-top: none !important;
         box-shadow: none !important;
-        background: var(--surface-bg) !important;
+        background: var(--surface-container) !important;
         padding-bottom: env(safe-area-inset-bottom) !important;
         display: flex !important;
         align-items: stretch !important;
@@ -5290,17 +5290,118 @@ body.swal2-shown:not(.swal2-toast-shown) .swal2-container:not(.swal2-toast-conta
     -webkit-backdrop-filter: none !important;
 }
 
-/* 5. Accessibility: Respect OS Reduced Motion Preference Globally */
-@media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-        scroll-behavior: auto !important;
+    /* 5. Accessibility: Respect OS Reduced Motion Preference Globally */
+    @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+            scroll-behavior: auto !important;
+        }
     }
-}
+
+    /* 6. Android 17 Bottom Navigation Bar Pill Indicator (56x32px Expressive Expand) */
+    @media (max-width: 991.98px) {
+        .mobile-nav-item i {
+            width: 56px !important;
+            height: 32px !important;
+            border-radius: 16px !important;
+        }
+
+        .mobile-nav-item.active i {
+            background: var(--secondary-container) !important;
+            color: var(--on-secondary-container) !important;
+            animation: m3NavPillExpand 220ms var(--md-sys-motion-easing-emphasized-decelerate) both;
+        }
+    }
+
+    @keyframes m3NavPillExpand {
+        0% {
+            transform: scaleX(0.55);
+            opacity: 0.7;
+        }
+        100% {
+            transform: scaleX(1);
+            opacity: 1;
+        }
+    }
+
+    /* 7. Adaptive Catalog Stock Badges (Light & Dark Mode Safe) */
+    .m3-stock-badge-ready {
+        background-color: var(--surface-container-lowest) !important;
+        color: var(--cm-sys-color-status-success, #146c2e) !important;
+        border: 1px solid var(--outline-variant) !important;
+        box-shadow: none !important;
+    }
+
+    [data-bs-theme="dark"] .m3-stock-badge-ready {
+        background-color: var(--surface-container-high) !important;
+        color: #6dd58c !important;
+    }
+
+    .m3-stock-badge-empty {
+        background-color: var(--error-container, #ffdad6) !important;
+        color: var(--on-error-container, #410002) !important;
+        border: 1px solid transparent !important;
+        box-shadow: none !important;
+    }
+
+    /* 8. Smart Flat-Tonal Bootstrap Bridge across 99 Blade Views (Zero-Shadow & Dark Mode Safe) */
+    .card.shadow-sm,
+    .card.shadow,
+    .card.shadow-lg,
+    .btn.shadow-sm,
+    .btn.shadow,
+    .badge.shadow-sm,
+    .alert.shadow-sm {
+        box-shadow: none !important;
+    }
+
+    .modal-footer.bg-light,
+    .card-header.bg-light,
+    .card-header.bg-white,
+    .card-footer.bg-light,
+    .card-footer.bg-white {
+        background-color: transparent !important;
+        color: var(--on-surface) !important;
+    }
+
+    [data-bs-theme="dark"] .bg-light:not(.badge) {
+        background-color: var(--surface-container) !important;
+        color: var(--on-surface) !important;
+    }
+
+    [data-bs-theme="dark"] .card .bg-white:not(.badge):not([data-keep-white]):not(canvas) {
+        background-color: var(--surface-container-low) !important;
+        color: var(--on-surface) !important;
+    }
+
+    /* 9. M3 Expressive Data Table Hierarchy inside Cards */
+    .card .table > thead > tr > th {
+        background-color: var(--surface-container-low);
+        color: var(--on-surface-variant);
+        font-weight: 600;
+        font-size: 0.78rem;
+        letter-spacing: 0.02em;
+        border-bottom: 1px solid var(--outline-variant) !important;
+        padding-top: 0.7rem;
+        padding-bottom: 0.7rem;
+    }
+
+    .card .table-hover > tbody > tr {
+        transition: background-color 140ms var(--md-sys-motion-easing-standard);
+    }
+
+    .card .table-hover > tbody > tr:hover > * {
+        background-color: rgba(var(--primary-rgb), 0.05) !important;
+        --bs-table-hover-bg: rgba(var(--primary-rgb), 0.05);
+    }
+
+    .product-card:hover .product-icon-wrapper img {
+        transform: scale(1.035);
+    }
 
 
 

@@ -1630,7 +1630,7 @@
 
 @stack('scripts')
 
-{{-- Global SweetAlert2 Session Flash --}}
+{{-- Global SweetAlert2 Session Flash (Aligned to M3 Alert Dialog) --}}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         @if(session('swal_error'))
@@ -1639,12 +1639,9 @@
                 title: '{{ __('Gagal') }}',
                 text: "{{ session('swal_error') }}",
                 confirmButtonText: '{{ __('Tutup') }}',
-                confirmButtonColor: '#dc3545',
                 customClass: {
-                    popup: 'rounded-4 border-0 shadow-lg',
-                    confirmButton: 'btn btn-danger rounded-pill px-4'
-                },
-                buttonsStyling: false
+                    confirmButton: 'm3-btn-destructive'
+                }
             });
         @endif
         @if(session('swal_success'))
@@ -1652,13 +1649,7 @@
                 icon: 'success',
                 title: '{{ __('Berhasil') }}',
                 text: "{{ session('swal_success') }}",
-                confirmButtonText: 'OK',
-                confirmButtonColor: '#198754',
-                customClass: {
-                    popup: 'rounded-4 border-0 shadow-lg',
-                    confirmButton: 'btn btn-success rounded-pill px-4'
-                },
-                buttonsStyling: false
+                confirmButtonText: 'OK'
             });
         @endif
     });
@@ -1733,43 +1724,39 @@
         @php
             session()->forget('logged_in_via_telegram');
         @endphp
-        <!-- Telegram Welcome Password Prompt Modal -->
+        <!-- Telegram Welcome Password Prompt Modal (M3 Alert Dialog) -->
         <div class="modal fade" id="telegramWelcomePasswordModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="telegramWelcomePasswordModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
-                    <div class="modal-header border-0 text-white p-4" style="background: linear-gradient(135deg, #0d47a1 0%, #1565c0 50%, #1e88e5 100%);">
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="rounded-circle bg-white bg-opacity-20 p-3 d-flex align-items-center justify-content-center text-warning" style="width: 48px; height: 48px; font-size: 1.5rem;">
-                                <i class="fas fa-key"></i>
-                            </div>
-                            <div>
-                                <h5 class="modal-title fw-bold mb-0 text-white" id="telegramWelcomePasswordModalLabel">
-                                    {{ __('Selamat Datang!') }} 👋
-                                </h5>
-                                <p class="small text-white-50 mb-0">{{ __('Atur kata sandi untuk kemudahan akses akun Anda') }}</p>
-                            </div>
+                <div class="modal-content">
+                    <div class="modal-header border-0 pb-0 pt-3 px-3 justify-content-center">
+                        <div class="rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 52px; height: 52px; background: var(--primary-container); color: var(--on-primary-container); font-size: 1.35rem;">
+                            <i class="fas fa-key"></i>
                         </div>
                     </div>
-                    <div class="modal-body p-4">
-                        <p class="text-body mb-3">
+                    <div class="modal-body px-3 pt-2 pb-3 text-center">
+                        <h5 class="modal-title fw-bold mb-1" id="telegramWelcomePasswordModalLabel">
+                            {{ __('Selamat Datang!') }}
+                        </h5>
+                        <p class="small text-secondary mb-3">{{ __('Atur kata sandi untuk kemudahan akses akun Anda') }}</p>
+                        <p class="text-body small mb-3">
                             {{ __('Anda berhasil masuk menggunakan akun Telegram') }} <strong>({{ Auth::user()->full_name ?? Auth::user()->username }})</strong>.
                         </p>
-                        <div class="alert alert-info-subtle border-0 rounded-3 p-3 mb-3" style="font-size: 0.9rem;">
-                            <i class="fas fa-info-circle text-primary me-2"></i>
+                        <div class="m3-subcard p-3 mb-3 text-start small">
+                            <i class="fas fa-info-circle text-primary me-1.5"></i>
                             {{ __('Agar Anda dapat masuk secara langsung menggunakan Username & Kata Sandi tanpa harus via Telegram di lain waktu, silakan atur kata sandi akun Anda.') }}
                         </div>
-                        <div class="form-check mt-3">
-                            <input class="form-check-input" type="checkbox" id="chkDismissPasswordPrompt">
-                            <label class="form-check-label small text-muted cursor-pointer" for="chkDismissPasswordPrompt">
+                        <div class="form-check d-inline-flex align-items-center gap-2 mt-1">
+                            <input class="form-check-input m-0" type="checkbox" id="chkDismissPasswordPrompt">
+                            <label class="form-check-label small text-secondary cursor-pointer" for="chkDismissPasswordPrompt">
                                 {{ __('Jangan tampilkan peringatan ini lagi') }}
                             </label>
                         </div>
                     </div>
-                    <div class="modal-footer border-0 bg-light p-3 d-flex justify-content-between">
-                        <button type="button" class="btn btn-outline-secondary rounded-pill px-4 fw-semibold" id="btnClosePasswordPrompt">
+                    <div class="modal-footer border-0 pt-0 px-3 pb-2 d-flex justify-content-between">
+                        <button type="button" class="btn btn-tonal rounded-pill px-4 fw-semibold" id="btnClosePasswordPrompt">
                             {{ __('Nanti Saja') }}
                         </button>
-                        <a href="{{ route('profile') }}?tab=password#tab-keamanan" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm" id="btnGoToSetPassword">
+                        <a href="{{ route('profile') }}?tab=password#tab-keamanan" class="btn btn-primary rounded-pill px-4 fw-semibold" id="btnGoToSetPassword">
                             <i class="fas fa-key me-1"></i> {{ __('Atur Kata Sandi Sekarang') }}
                         </a>
                     </div>
@@ -1819,21 +1806,13 @@
     @endif
 
     @if(Auth::user()->role === 'seller' && empty(Auth::user()->avatar))
-        <!-- Force Avatar Modal untuk Seller -->
+        <!-- Force Avatar Modal untuk Seller (M3 Alert Dialog) -->
         <div class="modal fade" id="forceAvatarModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="forceAvatarModalLabel" aria-hidden="true" style="z-index: 1070;">
             <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
-                    <div class="modal-header border-0 text-white p-4" style="background: linear-gradient(135deg, #0d47a1 0%, #1565c0 50%, #1e88e5 100%);">
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="rounded-circle bg-white bg-opacity-20 p-3 d-flex align-items-center justify-content-center text-warning" style="width: 48px; height: 48px; font-size: 1.5rem;">
-                                <i class="fas fa-camera"></i>
-                            </div>
-                            <div>
-                                <h5 class="modal-title fw-bold mb-0 text-white" id="forceAvatarModalLabel">
-                                    {{ __('Atur Foto Profil Toko') }}
-                                </h5>
-                                <p class="small text-white-50 mb-0">{{ __('Tingkatkan kepercayaan pelanggan Anda') }}</p>
-                            </div>
+                <div class="modal-content">
+                    <div class="modal-header border-0 pb-0 pt-3 px-3 justify-content-center">
+                        <div class="rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 52px; height: 52px; background: var(--primary-container); color: var(--on-primary-container); font-size: 1.35rem;">
+                            <i class="fas fa-camera"></i>
                         </div>
                     </div>
                     <form action="{{ route('profile.update') }}" method="POST" enctype="multipart/form-data">
@@ -1842,18 +1821,22 @@
                         <input type="hidden" name="email" value="{{ Auth::user()->email }}">
                         <input type="hidden" name="telegram_id" value="{{ Auth::user()->telegram_id }}">
                         
-                        <div class="modal-body p-4 text-center">
-                            <p class="text-body mb-3">
+                        <div class="modal-body px-3 pt-2 pb-3 text-center">
+                            <h5 class="modal-title fw-bold mb-1" id="forceAvatarModalLabel">
+                                {{ __('Atur Foto Profil Toko') }}
+                            </h5>
+                            <p class="small text-secondary mb-3">{{ __('Tingkatkan kepercayaan pelanggan Anda') }}</p>
+                            <p class="text-body small mb-3">
                                 {{ __('Sebagai penjual mitra, Anda diwajibkan untuk mengunggah foto profil toko sebelum dapat melanjutkan aktivitas. Hal ini bertujuan untuk meningkatkan kepercayaan pelanggan dan keamanan platform.') }}
                             </p>
-                            <div class="mb-3 text-start">
-                                <label class="form-label fw-semibold small text-muted">{{ __('Unggah Foto Profil Baru') }} <span class="text-danger">*</span></label>
+                            <div class="m3-subcard p-3 text-start">
+                                <label class="form-label fw-semibold small text-secondary">{{ __('Unggah Foto Profil Baru') }} <span class="text-danger">*</span></label>
                                 <input type="file" class="form-control" name="avatar" accept="image/jpeg,image/png,image/webp,image/gif" required>
                                 <div class="form-text" style="font-size: 0.75rem;">{{ __('Maksimal 2MB. Format: JPG, PNG, WEBP, GIF.') }}</div>
                             </div>
                         </div>
-                        <div class="modal-footer border-0 bg-light p-3">
-                            <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm w-100">
+                        <div class="modal-footer border-0 pt-0 px-3 pb-2">
+                            <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold w-100">
                                 <i class="fas fa-upload me-1"></i> {{ __('Simpan Foto Profil') }}
                             </button>
                         </div>
@@ -1874,25 +1857,25 @@
     @endif
 @endauth
 
-{{-- Guest Authentication Modal --}}
+{{-- Guest Authentication Modal (M3 Alert Dialog) --}}
 <div class="modal fade" id="guestAuthModal" tabindex="-1" aria-labelledby="guestAuthModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg rounded-2 overflow-hidden">
-            <div class="modal-header border-0 pb-0 pt-4 px-4 position-relative">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0 pt-3 px-3 position-relative">
                 <button type="button" class="btn-close position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body text-center px-4 pt-2 pb-4">
+            <div class="modal-body text-center px-3 pt-1 pb-3">
                 <div class="guest-modal-icon-wrapper mb-3 mx-auto d-flex align-items-center justify-content-center">
-                    <div class="avatar-circle-lg bg-primary-subtle text-primary shadow-sm rounded-circle d-flex align-items-center justify-content-center" style="width: 72px; height: 72px; font-size: 2rem;">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 56px; height: 56px; font-size: 1.5rem; background: var(--primary-container); color: var(--on-primary-container);">
                         <i class="fas fa-user-lock"></i>
                     </div>
                 </div>
                 <h4 class="modal-title fw-bold text-body mb-2" id="guestAuthModalLabel">{{ __('Masuk untuk Melanjutkan') }}</h4>
-                <p class="text-muted small mb-4 px-2" id="guestAuthModalDesc">
+                <p class="text-secondary small mb-3 px-2" id="guestAuthModalDesc">
                     {{ __('Fitur ini memerlukan akun. Nikmati riwayat transaksi yang tersimpan rapi, notifikasi pesanan real-time, serta kemudahan klaim garansi.') }}
                 </p>
 
-                <div class="bg-body-tertiary rounded-2 p-3 mb-4 text-start border border-dashed">
+                <div class="m3-subcard p-3 mb-4 text-start">
                     <div class="d-flex align-items-center mb-2">
                         <i class="fas fa-check-circle text-success me-2"></i>
                         <span class="small fw-semibold text-secondary">{{ __('Riwayat belanja & serial key tersimpan aman') }}</span>
@@ -1908,13 +1891,13 @@
                 </div>
 
                 <div class="d-grid gap-2">
-                    <a href="{{ route('login') }}" id="guestModalLoginBtn" class="btn btn-primary btn-lg rounded-pill fw-bold shadow-sm">
+                    <a href="{{ route('login') }}" id="guestModalLoginBtn" class="btn btn-primary rounded-pill py-2.5 fw-semibold">
                         <i class="fas fa-sign-in-alt me-2"></i>{{ __('Masuk Sekarang') }}
                     </a>
-                    <a href="{{ route('register') }}" class="btn btn-outline-primary btn-lg rounded-pill fw-semibold">
+                    <a href="{{ route('register') }}" class="btn btn-tonal rounded-pill py-2.5 fw-semibold">
                         <i class="fas fa-user-plus me-2"></i>{{ __('Daftar Akun Baru') }}
                     </a>
-                    <button type="button" class="btn btn-link text-muted text-decoration-none btn-sm mt-1" data-bs-dismiss="modal">
+                    <button type="button" class="btn btn-link text-secondary text-decoration-none btn-sm mt-1" data-bs-dismiss="modal">
                         {{ __('Nanti Saja') }}
                     </button>
                 </div>

@@ -5,6 +5,7 @@
  */
 
 function initAll() {
+    initM3SweetAlertInterceptor();
     initThemeToggle();
     initSidebar();
     initPageLoader();
@@ -12,6 +13,71 @@ function initAll() {
     initTelegramWebApp();
     initSweetAlertConfirms();
     initStockDetailNavigator();
+}
+
+/* === GLOBAL M3 SWEETALERT2 NORMALIZER (UNIFIES 118+ SWAL CALLS TO ANDROID 17 M3 DIALOG) === */
+function initM3SweetAlertInterceptor() {
+    if (typeof window.Swal === 'undefined' || window.Swal.__m3Intercepted) return;
+
+    const normalizeOptions = (args) => {
+        if (!args || args.length === 0) return args;
+
+        let opts = {};
+        if (typeof args[0] === 'string') {
+            opts = {
+                title: args[0] || '',
+                text: args[1] || '',
+                icon: args[2] || undefined,
+            };
+        } else if (typeof args[0] === 'object' && args[0] !== null) {
+            opts = { ...args[0] };
+        } else {
+            return args;
+        }
+
+        if (opts.toast) {
+            return [opts];
+        }
+
+        const confirmColor = String(opts.confirmButtonColor || '').toLowerCase();
+        const isDestructive =
+            confirmColor.includes('d33') ||
+            confirmColor.includes('dc3545') ||
+            confirmColor.includes('ef4444') ||
+            confirmColor.includes('b91c1c') ||
+            confirmColor.includes('ba1a1a');
+
+        delete opts.confirmButtonColor;
+        delete opts.cancelButtonColor;
+
+        const existingCustom = opts.customClass || {};
+        const cleanPopupClass = String(existingCustom.popup || '')
+            .replace(/\b(shadow-lg|shadow-sm|shadow|rounded-4|rounded-3)\b/g, '')
+            .trim();
+
+        const confirmClasses = [existingCustom.confirmButton || '', isDestructive ? 'm3-btn-destructive' : '']
+            .join(' ')
+            .replace(/\b(btn|btn-danger|btn-success|btn-primary|shadow-sm)\b/g, '')
+            .trim();
+
+        opts.customClass = {
+            ...existingCustom,
+            popup: ('m3-dialog-popup ' + cleanPopupClass).trim(),
+            confirmButton: confirmClasses || 'm3-dialog-btn-confirm',
+        };
+
+        if (opts.buttonsStyling === false) {
+            delete opts.buttonsStyling;
+        }
+
+        return [opts];
+    };
+
+    const origFire = window.Swal.fire.bind(window.Swal);
+    window.Swal.fire = function (...args) {
+        return origFire(...normalizeOptions(args));
+    };
+    window.Swal.__m3Intercepted = true;
 }
 
 if (document.readyState === 'loading') {
@@ -44,16 +110,17 @@ function initThemeToggle() {
         localStorage.setItem('jualan-theme', next);
         document.cookie = "jualan-theme=" + next + ";path=/;max-age=31536000;SameSite=Lax";
         
-        const themeColorMeta = document.getElementById('themeColorMeta');
-        if (themeColorMeta) {
-            themeColorMeta.setAttribute('content', next === 'dark' ? '#1f1f1f' : '#3367d6');
-        }
-
         updateThemeIcon(icon, next);
-        
+
         const userPalette = localStorage.getItem('user_primary_palette');
         if (userPalette && typeof window.applyMaterialYouTheme === 'function') {
             window.applyMaterialYouTheme(userPalette, next === 'dark');
+        }
+
+        const themeColorMeta = document.getElementById('themeColorMeta');
+        if (themeColorMeta) {
+            const computedSurface = getComputedStyle(html).getPropertyValue('--surface').trim();
+            themeColorMeta.setAttribute('content', computedSurface || (next === 'dark' ? '#141218' : '#fef7ff'));
         }
 
         setTimeout(() => html.classList.remove('theme-transitioning'), 300);
@@ -88,8 +155,11 @@ function initSidebar() {
         sidebar.classList.remove('is-dragging');
 
         if (animate) {
-            sidebar.style.transition = 'transform 0.35s cubic-bezier(0.2, 0, 0, 1), height 0.35s cubic-bezier(0.2, 0, 0, 1)';
-            if (overlay) overlay.style.transition = 'opacity 0.3s cubic-bezier(0.2, 0, 0, 1)';
+            const curve = state === 'closed'
+                ? '200ms cubic-bezier(0.3, 0, 0.8, 0.15)'
+                : '320ms cubic-bezier(0.05, 0.7, 0.1, 1)';
+            sidebar.style.transition = `transform ${curve}, height ${curve}`;
+            if (overlay) overlay.style.transition = `opacity ${state === 'closed' ? '180ms' : '260ms'} cubic-bezier(0.2, 0, 0, 1)`;
         } else {
             sidebar.style.transition = 'none';
             if (overlay) overlay.style.transition = 'none';
@@ -432,43 +502,69 @@ function finishTopLoadingBar() {
     }, 300);
 }
 
-/* === PAGE LOADER === */
+/* === PAGE LOADER (M3 SMART NON-BLOCKING TOP PROGRESS + DELAYED OVERLAY) === */
 function initPageLoader() {
     const pageLoader = document.getElementById('pageLoader');
+    let loaderDelayTimer = null;
 
-    // Hide loader immediately on DOMContentLoaded (which is now)
-    if (pageLoader) {
-        pageLoader.classList.add('fade-out');
-    }
-
-    // Show loader on navigation
-    document.querySelectorAll('a[href]:not([target="_blank"]):not([href^="#"]):not([href^="javascript"])').forEach(link => {
-        link.addEventListener('click', (e) => {
-            if (e.ctrlKey || e.metaKey || e.shiftKey) return;
-            startTopLoadingBar();
-            if (pageLoader) {
-                pageLoader.classList.remove('fade-out');
-            }
-        });
-    });
-
-    // Show loader on form submit
-    document.querySelectorAll('form:not(.no-loader)').forEach(form => {
-        form.addEventListener('submit', (e) => {
-            if (e.defaultPrevented) return;
-            startTopLoadingBar();
-            if (pageLoader) {
-                pageLoader.classList.remove('fade-out');
-            }
-        });
-    });
-
-    // Hide on page load (back/forward cache)
-    window.addEventListener('pageshow', () => {
-        finishTopLoadingBar();
+    const hideLoader = () => {
+        if (loaderDelayTimer) {
+            clearTimeout(loaderDelayTimer);
+            loaderDelayTimer = null;
+        }
         if (pageLoader) {
             pageLoader.classList.add('fade-out');
         }
+    };
+
+    const scheduleLoaderOverlay = () => {
+        if (loaderDelayTimer) clearTimeout(loaderDelayTimer);
+        loaderDelayTimer = setTimeout(() => {
+            if (pageLoader) {
+                pageLoader.classList.remove('fade-out');
+            }
+        }, 380);
+    };
+
+    // Hide loader immediately on DOMContentLoaded
+    hideLoader();
+
+    // Show top progress bar on navigation (skip downloads, modals, tabs, and prevented clicks)
+    document.querySelectorAll('a[href]:not([target="_blank"]):not([href^="#"]):not([href^="javascript"]):not([download]):not([data-bs-toggle]):not([data-guest-modal]):not([data-confirm]):not(.no-loader)').forEach(link => {
+        link.addEventListener('click', (e) => {
+            if (e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0) return;
+            const href = link.getAttribute('href') || '';
+            if (/(\/export|\/download|report-pdf|export-csv|export-pdf|export-unsold)/i.test(href)) {
+                return;
+            }
+            setTimeout(() => {
+                if (e.defaultPrevented) return;
+                startTopLoadingBar();
+                scheduleLoaderOverlay();
+            }, 0);
+        });
+    });
+
+    // Show loader on form submit (skip export/download or prevented forms)
+    document.querySelectorAll('form:not(.no-loader)').forEach(form => {
+        form.addEventListener('submit', (e) => {
+            if (e.defaultPrevented) return;
+            const action = form.getAttribute('action') || '';
+            if (/(\/export|\/download|report-pdf|export-csv|export-pdf)/i.test(action)) {
+                return;
+            }
+            setTimeout(() => {
+                if (e.defaultPrevented) return;
+                startTopLoadingBar();
+                scheduleLoaderOverlay();
+            }, 0);
+        });
+    });
+
+    // Hide on page load / back-forward cache / visibility restore
+    window.addEventListener('pageshow', () => {
+        finishTopLoadingBar();
+        hideLoader();
     });
 }
 

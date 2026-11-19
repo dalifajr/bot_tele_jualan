@@ -101,16 +101,16 @@
              data-sales="{{ (int) ($product->sales_count ?? 0) }}"
              data-id="{{ (int) $product->id }}">
             <div class="card product-card h-100 position-relative clickable-product-card" data-href="{{ route('catalog.show', $product->id) }}" tabindex="0" role="link" aria-label="{{ $product->name }}" style="border-radius: var(--radius-lg, 18px) !important; background: var(--surface-container-low); border: 1px solid var(--outline-variant) !important; cursor: pointer;">
-                {{-- Stock Badge (Figma M3 Style) --}}
+                {{-- Stock Badge (Flat M3 Tonal Pill — Adaptive Light & Dark Mode) --}}
                 <div class="product-badge" style="top: 8px; left: 8px; position: absolute; z-index: 5;">
                     @if($product->stock_count > 0)
-                        <span class="badge bg-white text-dark rounded-pill px-2 py-0.5 fw-bold shadow-sm d-inline-flex align-items-center gap-1" style="font-size: 0.68rem; color: #1D1B20 !important;">
-                            <span class="rounded-circle" style="width: 5px; height: 5px; background: #146C2E;"></span>
+                        <span class="badge m3-stock-badge-ready rounded-pill px-2 py-0.5 fw-bold d-inline-flex align-items-center gap-1" style="font-size: 0.68rem;">
+                            <span class="rounded-circle" style="width: 5px; height: 5px; background: currentColor;"></span>
                             <span>{{ $product->stock_count }} <span class="d-none d-sm-inline">{{ __('stok') }}</span></span>
                         </span>
                     @else
-                        <span class="badge rounded-pill px-2 py-0.5 fw-bold shadow-sm d-inline-flex align-items-center gap-1" style="background: #ffdad6; color: #410002; font-size: 0.68rem;">
-                            <span class="rounded-circle" style="width: 5px; height: 5px; background: #BA1A1A;"></span>
+                        <span class="badge m3-stock-badge-empty rounded-pill px-2 py-0.5 fw-bold d-inline-flex align-items-center gap-1" style="font-size: 0.68rem;">
+                            <span class="rounded-circle" style="width: 5px; height: 5px; background: currentColor;"></span>
                             <span>{{ __('Habis') }}</span>
                         </span>
                     @endif

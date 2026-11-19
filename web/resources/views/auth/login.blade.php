@@ -12,6 +12,56 @@
                 if (!document.cookie.includes('jualan-theme=' + savedTheme)) {
                     document.cookie = "jualan-theme=" + savedTheme + ";path=/;max-age=31536000;SameSite=Lax";
                 }
+
+                window.applyMaterialYouTheme = function(hexColor, isDark) {
+                    if (!hexColor || !/^#([a-fA-F0-9]{6}|[a-fA-F0-9]{3})$/.test(hexColor)) return;
+                    var c = hexColor;
+                    if (c.length === 4) c = '#' + c[1] + c[1] + c[2] + c[2] + c[3] + c[3];
+                    var r = parseInt(c.slice(1, 3), 16), g = parseInt(c.slice(3, 5), 16), b = parseInt(c.slice(5, 7), 16);
+                    var rN = r / 255, gN = g / 255, bN = b / 255;
+                    var max = Math.max(rN, gN, bN), min = Math.min(rN, gN, bN), h = 0, s = 0, l = (max + min) / 2;
+                    if (max !== min) {
+                        var d = max - min;
+                        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                        switch (max) {
+                            case rN: h = (gN - bN) / d + (gN < bN ? 6 : 0); break;
+                            case gN: h = (bN - rN) / d + 2; break;
+                            case bN: h = (rN - gN) / d + 4; break;
+                        }
+                        h = Math.round((h / 6) * 360);
+                    }
+                    var root = document.documentElement;
+                    if (typeof isDark === 'undefined') isDark = root.getAttribute('data-bs-theme') === 'dark';
+                    var luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+                    var onPrimary = luminance > 0.62 ? '#111318' : '#ffffff';
+                    root.style.setProperty('--primary', c);
+                    root.style.setProperty('--primary-color', c);
+                    root.style.setProperty('--on-primary', onPrimary);
+                    root.style.setProperty('--bs-primary', c);
+                    root.style.setProperty('--primary-rgb', r + ', ' + g + ', ' + b);
+                    root.style.setProperty('--bs-primary-rgb', r + ', ' + g + ', ' + b);
+                    if (isDark) {
+                        root.style.setProperty('--primary-container', 'hsl(' + h + ', 52%, 28%)');
+                        root.style.setProperty('--on-primary-container', 'hsl(' + h + ', 85%, 92%)');
+                        root.style.setProperty('--secondary-container', 'hsl(' + h + ', 26%, 22%)');
+                        root.style.setProperty('--on-secondary-container', 'hsl(' + h + ', 35%, 90%)');
+                        root.style.setProperty('--surface', 'hsl(' + h + ', 18%, 8.5%)');
+                        root.style.setProperty('--surface-container-lowest', 'hsl(' + h + ', 18%, 6.5%)');
+                        root.style.setProperty('--surface-container-low', 'hsl(' + h + ', 18%, 11.5%)');
+                        root.style.setProperty('--surface-container', 'hsl(' + h + ', 18%, 14%)');
+                    } else {
+                        root.style.setProperty('--primary-container', 'hsl(' + h + ', 72%, 91%)');
+                        root.style.setProperty('--on-primary-container', 'hsl(' + h + ', 82%, 20%)');
+                        root.style.setProperty('--secondary-container', 'hsl(' + h + ', 44%, 90%)');
+                        root.style.setProperty('--on-secondary-container', 'hsl(' + h + ', 52%, 17%)');
+                        root.style.setProperty('--surface', 'hsl(' + h + ', 36%, 96.8%)');
+                        root.style.setProperty('--surface-container-lowest', '#ffffff');
+                        root.style.setProperty('--surface-container-low', 'hsl(' + h + ', 32%, 94.6%)');
+                        root.style.setProperty('--surface-container', 'hsl(' + h + ', 30%, 91.8%)');
+                    }
+                };
+                var savedPalette = localStorage.getItem('user_primary_palette');
+                if (savedPalette) window.applyMaterialYouTheme(savedPalette, savedTheme === 'dark');
             } catch (e) {}
         })();
     </script>

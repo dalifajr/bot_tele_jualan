@@ -74,7 +74,7 @@
 
         {{-- Card 4: Menunggu --}}
         <div class="col-xl-3 col-md-6 col-6">
-            <a href="{{ Auth::check() ? route('orders.index', ['status' => 'pending_payment']) : route('login') }}" @guest data-guest-modal="true" data-feature-name="{{ __('pesanan menunggu') }}" @endguest class="m3-dash-metric-card d-block" style="background: var(--surface-container-high);">
+            <a href="{{ Auth::check() ? route('orders.index', ['status' => 'pending_payment']) : route('login') }}" @guest data-guest-modal="true" data-feature-name="{{ __('pesanan menunggu') }}" @endguest class="m3-dash-metric-card d-block">
                 <div class="d-flex justify-content-between align-items-center">
                     <span class="text-secondary small fw-medium">{{ __('Menunggu') }}</span>
                     <i class="far fa-clock text-danger opacity-75"></i>
