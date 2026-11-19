@@ -6,14 +6,13 @@
 @push('styles')
 <style>
     .lift-hover {
-        transition: transform 0.25s ease, box-shadow 0.25s ease;
+        transition: border-color 180ms cubic-bezier(0.2, 0, 0, 1), background-color 180ms cubic-bezier(0.2, 0, 0, 1);
     }
     .lift-hover:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08) !important;
+        border-color: var(--primary) !important;
     }
     .btn-buy-now {
-        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: all 200ms cubic-bezier(0.2, 0, 0, 1);
         position: relative;
     }
     .btn-buy-now:active:not(:disabled) {
@@ -78,7 +77,7 @@
                                 </span>
                                 <div class="d-flex flex-wrap gap-1">
                                     @foreach($groupedServices as $srvName => $srvQty)
-                                        <span class="badge bg-white border text-body" style="font-size: 0.72rem;">
+                                        <span class="badge m3-subcard text-body fw-semibold px-2 py-1" style="font-size: 0.72rem;">
                                             {{ $srvName }} @if($srvQty > 1)<strong class="text-primary">&times;{{ $srvQty }}</strong>@endif
                                         </span>
                                     @endforeach

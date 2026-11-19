@@ -15,7 +15,7 @@
 @endphp
 
 <style>
-    /* Floating Action Button (FAB) Chat Rekber Modern */
+    /* Floating Action Button (FAB) Chat Rekber — Android 17 M3 Squircle FAB */
     .escrow-chat-fab-container {
         position: fixed;
         bottom: 24px;
@@ -26,64 +26,65 @@
         align-items: flex-end;
     }
     .escrow-chat-fab {
-        width: 62px;
-        height: 62px;
-        border-radius: 50% !important;
-        background: linear-gradient(135deg, #0d6efd 0%, #004ecc 100%);
-        border: 2px solid rgba(255, 255, 255, 0.6);
-        box-shadow: 0 10px 25px -4px rgba(13, 110, 253, 0.5), 0 4px 12px rgba(0, 0, 0, 0.12);
+        width: 56px;
+        height: 56px;
+        border-radius: 16px !important;
+        background: var(--primary-container);
+        border: 1px solid rgba(var(--primary-rgb), 0.28);
+        box-shadow: var(--elevate2, 0 2px 10px rgba(0, 0, 0, 0.08));
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #ffffff;
+        color: var(--on-primary-container);
         cursor: pointer;
         position: relative;
-        transition: all 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        transition: transform 220ms cubic-bezier(0.2, 0, 0, 1), background-color 180ms ease, box-shadow 220ms ease;
     }
     .escrow-chat-fab:hover {
-        transform: translateY(-4px) scale(1.06);
-        box-shadow: 0 16px 32px -4px rgba(13, 110, 253, 0.65), 0 6px 16px rgba(0, 0, 0, 0.18);
-        color: #ffffff;
+        transform: translateY(-2px) scale(1.04);
+        background: var(--primary);
+        color: var(--on-primary);
+        box-shadow: var(--elevate3, 0 8px 24px rgba(0, 0, 0, 0.14));
     }
     .escrow-chat-fab:active {
-        transform: scale(0.92);
+        transform: scale(0.95);
     }
     .escrow-chat-fab .fab-badge {
         position: absolute;
-        top: -3px;
-        right: -3px;
+        top: -5px;
+        right: -5px;
         min-width: 22px;
         height: 22px;
         padding: 0 6px;
-        border-radius: 11px;
-        background-color: #dc3545;
-        color: #ffffff;
+        border-radius: 9999px;
+        background-color: var(--error, #ba1a1a);
+        color: var(--on-error, #ffffff);
         font-size: 0.72rem;
         font-weight: 700;
         display: flex;
         align-items: center;
         justify-content: center;
-        border: 2px solid #ffffff;
-        box-shadow: 0 2px 6px rgba(220, 53, 69, 0.4);
+        border: 2px solid var(--surface);
+        box-shadow: none;
     }
     .escrow-chat-fab .fab-pulse {
         position: absolute;
         width: 100%;
         height: 100%;
-        border-radius: 50%;
-        border: 2px solid #0d6efd;
-        opacity: 0.8;
+        border-radius: 16px;
+        border: 2px solid var(--primary);
+        opacity: 0.65;
         animation: escrowPulse 2.4s infinite cubic-bezier(0.24, 0, 0.38, 1);
         pointer-events: none;
     }
     @keyframes escrowPulse {
-        0% { transform: scale(1); opacity: 0.8; }
-        70% { transform: scale(1.35); opacity: 0; }
-        100% { transform: scale(1.35); opacity: 0; }
+        0% { transform: scale(1); opacity: 0.65; }
+        70% { transform: scale(1.28); opacity: 0; }
+        100% { transform: scale(1.28); opacity: 0; }
     }
     @media (max-width: 768px) {
         .escrow-chat-fab-container {
-            bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+            bottom: calc(80px + env(safe-area-inset-bottom, 0px));
             right: 16px;
         }
         .escrow-chat-fab {

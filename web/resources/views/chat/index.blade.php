@@ -28,9 +28,9 @@
             display: none !important;
         }
 
-        /* Pastikan body padding-bottom pas dengan tinggi navbar bawah */
+        /* Pastikan body padding-bottom pas dengan tinggi Android 17 bottom nav (66px) */
         body {
-            padding-bottom: calc(62px + env(safe-area-inset-bottom, 0px)) !important;
+            padding-bottom: calc(66px + env(safe-area-inset-bottom, 0px)) !important;
             overflow-y: hidden;
         }
 
@@ -41,12 +41,12 @@
             box-shadow: none !important;
             margin: 0 !important;
             width: 100% !important;
-            height: calc(100vh - var(--total-header-height) - 62px - env(safe-area-inset-bottom, 0px)) !important;
-            height: calc(100dvh - var(--total-header-height) - 62px - env(safe-area-inset-bottom, 0px)) !important;
-            min-height: calc(100vh - var(--total-header-height) - 62px - env(safe-area-inset-bottom, 0px)) !important;
-            min-height: calc(100dvh - var(--total-header-height) - 62px - env(safe-area-inset-bottom, 0px)) !important;
-            max-height: calc(100vh - var(--total-header-height) - 62px - env(safe-area-inset-bottom, 0px)) !important;
-            max-height: calc(100dvh - var(--total-header-height) - 62px - env(safe-area-inset-bottom, 0px)) !important;
+            height: calc(100vh - var(--total-header-height) - 66px - env(safe-area-inset-bottom, 0px)) !important;
+            height: calc(100dvh - var(--total-header-height) - 66px - env(safe-area-inset-bottom, 0px)) !important;
+            min-height: calc(100vh - var(--total-header-height) - 66px - env(safe-area-inset-bottom, 0px)) !important;
+            min-height: calc(100dvh - var(--total-header-height) - 66px - env(safe-area-inset-bottom, 0px)) !important;
+            max-height: calc(100vh - var(--total-header-height) - 66px - env(safe-area-inset-bottom, 0px)) !important;
+            max-height: calc(100dvh - var(--total-header-height) - 66px - env(safe-area-inset-bottom, 0px)) !important;
         }
 
         /* Header Obrolan Saya & Header Chat Box dipepetkan ke header fixed toko */
@@ -65,11 +65,11 @@
             padding: 12px 14px !important;
         }
 
-        /* Kolom Chat (input bar) dipepetkan ke navbar bawah */
+        /* Kolom Chat (input bar) dipepetkan ke navbar bawah dengan Flat M3 Surface */
         .chat-form-footer {
             padding: 8px 12px !important;
             border-bottom: none !important;
-            background-color: var(--bs-body-bg) !important;
+            background-color: var(--surface-container-low) !important;
         }
 
         .chat-form-footer form {
