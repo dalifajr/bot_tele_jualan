@@ -91,6 +91,8 @@
     --elevate1: none;
     --elevate2: 0 2px 10px rgba(0, 0, 0, 0.06);
     --elevate3: 0 8px 24px rgba(0, 0, 0, 0.11);
+    --scrollbar-thumb: #6f6a75;
+    --scrollbar-track: #ece6f0;
 
     /* Legacy Variable Compatibility */
     --cm-sys-color-primary: var(--primary);
@@ -217,6 +219,8 @@
     --elevate1: none;
     --elevate2: 0 4px 14px rgba(0, 0, 0, 0.28);
     --elevate3: 0 10px 28px rgba(0, 0, 0, 0.42);
+    --scrollbar-thumb: #938f99;
+    --scrollbar-track: #211f26;
 
     --cm-sys-color-primary: var(--primary);
     --cm-sys-color-on-primary: var(--on-primary);
@@ -5427,6 +5431,212 @@ body.swal2-shown:not(.swal2-toast-shown) .swal2-container:not(.swal2-toast-conta
         background-color: var(--secondary-container) !important;
         color: var(--on-secondary-container) !important;
         border-color: var(--outline-variant) !important;
+    }
+
+    /* ==========================================================================
+       MODERN WEB PLATFORM LAYER (GOOGLE CHROME MODERN-WEB-GUIDANCE × M3)
+       V10: MPA View Transitions, Modal Scroll Containment, @starting-style
+       V11: Typography (balance/pretty), accent-color, :user-invalid, Scrollbars
+       V12: Card Keyboard Accessibility, Choice Cards & Below-the-Fold Deferral
+       ========================================================================== */
+
+    /* V10.1 Cross-Document MPA View Transitions (Progressive Enhancement) */
+    @media (prefers-reduced-motion: no-preference) {
+        @view-transition {
+            navigation: auto;
+        }
+
+        ::view-transition-old(root) {
+            animation: m3PageFadeOut 140ms var(--md-sys-motion-easing-emphasized-accelerate) both;
+        }
+
+        ::view-transition-new(root) {
+            animation: m3PageFadeIn 200ms var(--md-sys-motion-easing-emphasized-decelerate) both;
+        }
+    }
+
+    @keyframes m3PageFadeOut {
+        from { opacity: 1; }
+        to { opacity: 0.92; }
+    }
+
+    @keyframes m3PageFadeIn {
+        from { opacity: 0.92; }
+        to { opacity: 1; }
+    }
+
+    @media (min-width: 992px) {
+        .navbar.fixed-top,
+        .top-navbar {
+            view-transition-name: m3-top-navbar;
+        }
+
+        #sidebar {
+            view-transition-name: m3-sidebar;
+        }
+    }
+
+    /* V10.2 Prevent Page Scroll Under Modal Dialogs & Overlays (No Scroll Chaining) */
+    dialog:modal,
+    .modal,
+    .modal-content,
+    .vcc-selector-container,
+    #sidebar {
+        overscroll-behavior: contain;
+    }
+
+    dialog::backdrop,
+    .modal-backdrop,
+    .vcc-selector-backdrop {
+        overflow: hidden;
+        overscroll-behavior: contain;
+    }
+
+    /* V10.3 Declarative Entry/Exit Transition (@starting-style + allow-discrete) */
+    .m3-reveal-panel {
+        display: block;
+        opacity: 1;
+        translate: 0 0;
+        transition:
+            display 200ms,
+            opacity 200ms var(--md-sys-motion-easing-emphasized-decelerate),
+            translate 200ms var(--md-sys-motion-easing-emphasized-decelerate);
+        /* Kept separate after shorthand so older browsers don't drop the whole transition */
+        transition-behavior: allow-discrete;
+    }
+
+    @starting-style {
+        .m3-reveal-panel {
+            opacity: 0;
+            translate: 0 -8px;
+        }
+    }
+
+    .m3-reveal-panel[hidden] {
+        display: none;
+        opacity: 0;
+        translate: 0 -8px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .m3-reveal-panel,
+        .m3-reveal-panel[hidden] {
+            translate: none;
+        }
+
+        @starting-style {
+            .m3-reveal-panel {
+                translate: none;
+            }
+        }
+    }
+
+    /* V11.1 Typography: Targeted text-wrap balance (headings) & pretty (body copy) */
+    h1, h2, h3, h4,
+    .h1, .h2, .h3, .h4,
+    .m3-dash-headline,
+    .m3-page-title,
+    .modal-title {
+        text-wrap: balance;
+    }
+
+    p,
+    blockquote,
+    .alert,
+    .modal-body p {
+        text-wrap: pretty;
+    }
+
+    /* V11.2 Brand-Consistent Native Form Controls & Post-Interaction Validation */
+    body {
+        accent-color: var(--primary);
+    }
+
+    .form-control:user-invalid,
+    .form-select:user-invalid {
+        border-color: var(--error, #ba1a1a) !important;
+        background-color: color-mix(in srgb, var(--error-container, #ffdad6) 24%, var(--surface-container-low)) !important;
+    }
+
+    .form-control:user-invalid:focus,
+    .form-select:user-invalid:focus {
+        box-shadow: 0 0 0 2px rgba(186, 26, 26, 0.24) !important;
+    }
+
+    /* V11.3 WCAG 1.4.11 Standard Scrollbars with Safe @supports Fallback */
+    .table-responsive,
+    .custom-scrollbar,
+    .m3-cmd-results,
+    .modal-body,
+    .notification-list {
+        scrollbar-width: thin;
+        scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+    }
+
+    @supports not (scrollbar-color: auto) {
+        .table-responsive,
+        .custom-scrollbar,
+        .m3-cmd-results,
+        .modal-body,
+        .notification-list {
+            scrollbar-width: auto;
+        }
+
+        .table-responsive::-webkit-scrollbar,
+        .custom-scrollbar::-webkit-scrollbar,
+        .m3-cmd-results::-webkit-scrollbar,
+        .modal-body::-webkit-scrollbar,
+        .notification-list::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        .table-responsive::-webkit-scrollbar-thumb,
+        .custom-scrollbar::-webkit-scrollbar-thumb,
+        .m3-cmd-results::-webkit-scrollbar-thumb,
+        .modal-body::-webkit-scrollbar-thumb,
+        .notification-list::-webkit-scrollbar-thumb {
+            background: var(--scrollbar-thumb);
+            border-radius: 9999px;
+        }
+
+        .table-responsive::-webkit-scrollbar-track,
+        .custom-scrollbar::-webkit-scrollbar-track,
+        .m3-cmd-results::-webkit-scrollbar-track,
+        .modal-body::-webkit-scrollbar-track,
+        .notification-list::-webkit-scrollbar-track {
+            background: var(--scrollbar-track);
+        }
+    }
+
+    /* V12.1 Card Keyboard Accessibility & Zero-Jump Choice Cards */
+    .product-card:focus-visible,
+    .clickable-product-card:focus-visible,
+    .m3-dash-metric-card:focus-visible,
+    .m3-choice-card:has(:focus-visible) {
+        outline: 2px solid var(--primary) !important;
+        outline-offset: 2px !important;
+    }
+
+    .m3-choice-card {
+        border: 2px solid transparent !important;
+        border-radius: var(--radius-md, 16px);
+        background-color: var(--surface-container-low);
+        transition: border-color 160ms var(--md-sys-motion-easing-standard),
+                    background-color 160ms var(--md-sys-motion-easing-standard);
+        cursor: pointer;
+    }
+
+    .m3-choice-card:has(> :checked) {
+        border-color: var(--primary) !important;
+        background-color: var(--primary-container) !important;
+        color: var(--on-primary-container) !important;
+    }
+
+    /* V12.2 Off-Screen Rendering Deferral (Applied strictly to below-the-fold items) */
+    .m3-deferred-card {
+        content-visibility: auto;
+        contain-intrinsic-size: auto none auto 280px;
     }
 
 
