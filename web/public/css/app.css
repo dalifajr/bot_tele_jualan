@@ -2688,17 +2688,19 @@ ul.nav-pills,
 }
 
 .dropdown-menu.show {
-    animation: m3MenuReveal 180ms var(--md-sys-motion-easing-emphasized-decelerate) both;
+    animation: m3MenuReveal 160ms var(--md-sys-motion-easing-emphasized-decelerate);
+    will-change: opacity, scale;
 }
 
+/* Uses independent CSS `scale` property (never touches `transform`) so Popper.js translate3d(x,y,0) stays 100% intact */
 @keyframes m3MenuReveal {
     0% {
         opacity: 0;
-        transform: translateY(-6px) scale(0.96);
+        scale: 0.96;
     }
     100% {
         opacity: 1;
-        transform: translateY(0) scale(1);
+        scale: 1;
     }
 }
 
@@ -2816,12 +2818,13 @@ ul.nav-pills,
 }
 
 /* === M3 EXPRESSIVE ENTRANCE MOTION (EXCLUDING NESTED OVERLAY CARDS) === */
+/* Uses `backwards` + `transform: none` at completion so parent cards never trap `position: fixed` dropdowns/modals */
 .stat-card,
 .quick-action-btn,
 .product-card,
 .main-content > .container-fluid > .card,
 .main-content > .container-fluid > .row > div > .card {
-    animation: m3CardReveal 260ms var(--md-sys-motion-easing-emphasized-decelerate) both;
+    animation: m3CardReveal 240ms var(--md-sys-motion-easing-emphasized-decelerate) backwards;
 }
 
 .modal .card,
@@ -2838,7 +2841,7 @@ ul.nav-pills,
     }
     to {
         opacity: 1;
-        transform: translateY(0) scale(1);
+        transform: none;
     }
 }
 
