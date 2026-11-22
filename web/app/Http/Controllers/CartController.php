@@ -259,14 +259,16 @@ class CartController extends Controller
             if ($coupon) {
                 if (!$coupon->is_active || ($coupon->expires_at && $coupon->expires_at->isPast()) || ($coupon->qty > 0 && $coupon->used_qty >= $coupon->qty)) {
                     $couponError = __('Kupon tidak valid, kuota habis, atau sudah kedaluwarsa.');
-                } elseif (Auth::check() && DB::table('coupon_user')->where('coupon_id', $coupon->id)->where('user_id', Auth::id())->exists()) {
-                    $couponError = __('Anda sudah pernah menggunakan kupon ini.');
+                } elseif (Auth::check() && $coupon->hasReachedUserLimit((int) Auth::id())) {
+                    $couponError = $coupon->getUserLimitErrorMessage();
                 } else {
-                    // Calculate eligible subtotal for this coupon
+                    // Calculate eligible subtotal & items for this coupon
                     $eligibleSubtotal = 0;
+                    $eligibleItems = [];
                     foreach ($cartItems as $item) {
                         if ($coupon->appliesToProduct($item->product)) {
                             $eligibleSubtotal += $item->product->price * $item->quantity;
+                            $eligibleItems[] = $item;
                         }
                     }
 
@@ -282,7 +284,8 @@ class CartController extends Controller
                             'subtotal' => number_format($eligibleSubtotal, 0, ',', '.')
                         ]);
                     } else {
-                        $discount = $coupon->calculateDiscount($eligibleSubtotal);
+                        $calc = $coupon->calculateDiscountForItems($eligibleItems);
+                        $discount = $calc['total_discount'];
                     }
                 }
             } else {
@@ -371,21 +374,25 @@ class CartController extends Controller
             $couponCode = strtoupper($request->input('coupon_code', ''));
             $discount = 0;
             $coupon = null;
+            $itemDiscounts = [];
 
             if ($couponCode) {
                 $coupon = Coupon::where('code', $couponCode)->lockForUpdate()->first();
                 if ($coupon && $coupon->is_active && (!$coupon->expires_at || !$coupon->expires_at->isPast()) && ($coupon->qty == 0 || $coupon->used_qty < $coupon->qty)) {
-                    $hasUsed = DB::table('coupon_user')->where('coupon_id', $coupon->id)->where('user_id', $user->id)->exists();
-                    if (!$hasUsed) {
+                    if (!$coupon->hasReachedUserLimit((int) $user->id)) {
                         $eligibleSubtotal = 0;
+                        $eligibleItems = [];
                         foreach ($cartItems as $item) {
                             if ($coupon->appliesToProduct($item->product)) {
                                 $eligibleSubtotal += $item->product->price * $item->quantity;
+                                $eligibleItems[] = $item;
                             }
                         }
 
                         if ($eligibleSubtotal > 0 && $eligibleSubtotal >= $coupon->min_spend) {
-                            $discount = $coupon->calculateDiscount($eligibleSubtotal);
+                            $calc = $coupon->calculateDiscountForItems($eligibleItems);
+                            $discount = $calc['total_discount'];
+                            $itemDiscounts = $calc['item_discounts'];
                             $coupon->increment('used_qty');
                             DB::table('coupon_user')->insert([
                                 'coupon_id' => $coupon->id,
@@ -430,7 +437,7 @@ class CartController extends Controller
                 'order_ref' => $orderRef,
                 'customer_id' => $user->id,
                 'subtotal' => $subtotal,
-                'coupon_code' => $coupon ? $coupon->code : null,
+                'coupon_code' => $couponCode ?: null,
                 'discount_amount' => $discount,
                 'unique_code' => $uniqueCode,
                 'total_amount' => $totalAmount,
@@ -439,30 +446,6 @@ class CartController extends Controller
             ]);
 
             $reservedIds = [];
-
-            // Calculate proportional discount per cart item if coupon used
-            $itemDiscounts = [];
-            $remainingDiscount = $discount;
-            if ($discount > 0 && isset($eligibleSubtotal) && $eligibleSubtotal > 0) {
-                $eligibleItems = [];
-                foreach ($cartItems as $item) {
-                    if ($coupon && $coupon->appliesToProduct($item->product)) {
-                        $eligibleItems[] = $item;
-                    }
-                }
-                $eligibleCount = count($eligibleItems);
-                foreach ($eligibleItems as $idx => $item) {
-                    if ($idx === $eligibleCount - 1) {
-                        $itemDiscounts[$item->id] = max(0, $remainingDiscount);
-                    } else {
-                        $itemSubtotal = $item->product->price * $item->quantity;
-                        $calcDiscount = (int) round(($itemSubtotal / $eligibleSubtotal) * $discount);
-                        $calcDiscount = min($calcDiscount, $remainingDiscount);
-                        $itemDiscounts[$item->id] = $calcDiscount;
-                        $remainingDiscount -= $calcDiscount;
-                    }
-                }
-            }
 
             // 4. Create OrderItems & Reserve Stock
             foreach ($cartItems as $item) {

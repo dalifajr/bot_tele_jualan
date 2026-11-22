@@ -117,10 +117,10 @@ class CheckoutController extends Controller
                     }
                 } elseif ($subtotal < $coupon->min_spend) {
                     $couponError = __('Minimum belanja untuk kupon ini adalah Rp:min.', ['min' => number_format($coupon->min_spend, 0, ',', '.')]);
-                } elseif ($user && \Illuminate\Support\Facades\DB::table('coupon_user')->where('coupon_id', $coupon->id)->where('user_id', $user->id)->exists()) {
-                    $couponError = __('Anda sudah pernah menggunakan kupon ini.');
+                } elseif ($user && $coupon->hasReachedUserLimit((int) $user->id)) {
+                    $couponError = $coupon->getUserLimitErrorMessage();
                 } else {
-                    $discount = $coupon->calculateDiscount($subtotal);
+                    $discount = $coupon->calculateDiscountForUnits((int) $product->price, (int) $quantity);
                 }
             } else {
                 $couponError = __('Kode kupon tidak terdaftar.');
@@ -245,7 +245,7 @@ class CheckoutController extends Controller
             if ($couponCode) {
                 $coupon = \App\Models\Coupon::where('code', $couponCode)->lockForUpdate()->first();
                 if ($coupon && $coupon->isValidFor($subtotal, $user->id) && $coupon->appliesToProduct($product)) {
-                    $discount = $coupon->calculateDiscount($subtotal);
+                    $discount = $coupon->calculateDiscountForUnits((int) $product->price, (int) $quantity);
                     $coupon->increment('used_qty');
                     DB::table('coupon_user')->insert([
                         'coupon_id' => $coupon->id,

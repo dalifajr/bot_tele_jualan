@@ -4079,5 +4079,18 @@
     "Lihat Notifikasi": "View Notifications",
     "Pengaturan akun & 2FA": "Account settings & 2FA",
     "Buka Profil": "Open Profile",
-    "Toko Penjual": "Seller Store"
+    "Toko Penjual": "Seller Store",
+    "Anda telah mencapai batas pemakaian kupon ini (maksimal :limit kali per akun).": "You have reached the usage limit for this coupon (maximum :limit times per account).",
+    "Per Produk": "Per Product",
+    "Maks :n× / akun": "Max :n× / account",
+    "Berulang (∞ / akun)": "Repeatable (∞ / account)",
+    "1× / akun": "1× / account",
+    "Izinkan Pemakaian Berulang": "Allow Multiple Uses",
+    "Limit Pemakaian per Akun": "Usage Limit per Account",
+    "0 / kosong = Tanpa batas per akun": "0 / empty = Unlimited per account",
+    "Kosongkan atau isi 0 untuk tanpa batas per akun (tetap mengikuti kuota total).": "Leave empty or enter 0 for unlimited per account (still subject to total quota).",
+    "Nonaktif: setiap akun hanya dapat menggunakan kupon ini 1 kali.": "Disabled: each account can only use this coupon once.",
+    "Terapkan Potongan Per Produk (Unit)": "Apply Discount Per Product (Unit)",
+    "Mode Total Belanja: diskon dihitung 1× dari total akumulasi belanja.": "Cart Total Mode: discount is applied once to the accumulated eligible total.",
+    "Mode Per Produk (Unit): diskon mengurangi harga setiap unit produk (misal beli 3 unit = 3× potongan).": "Per Product (Unit) Mode: discount reduces each eligible unit price (e.g. buy 3 units = 3× discount)."
 }

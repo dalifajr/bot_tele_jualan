@@ -4,10 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class Coupon extends Model
 {
     use HasFactory;
+
+    public const APPLY_PER_ORDER = 'per_order';
+    public const APPLY_PER_ITEM = 'per_item';
 
     protected $fillable = [
         'user_id',
@@ -18,6 +22,9 @@ class Coupon extends Model
         'max_discount',
         'qty',
         'used_qty',
+        'allow_multiple_uses',
+        'max_uses_per_user',
+        'apply_mode',
         'expires_at',
         'is_active',
     ];
@@ -29,6 +36,8 @@ class Coupon extends Model
         'max_discount' => 'integer',
         'qty' => 'integer',
         'used_qty' => 'integer',
+        'allow_multiple_uses' => 'boolean',
+        'max_uses_per_user' => 'integer',
         'expires_at' => 'datetime',
         'is_active' => 'boolean',
     ];
@@ -55,6 +64,77 @@ class Coupon extends Model
     public function isRestrictedToProducts(): bool
     {
         return $this->products()->exists();
+    }
+
+    /**
+     * Determine if discount applies per product unit instead of once per order total.
+     */
+    public function isPerItemMode(): bool
+    {
+        return ($this->apply_mode ?: self::APPLY_PER_ORDER) === self::APPLY_PER_ITEM;
+    }
+
+    /**
+     * How many times the given user has already redeemed this coupon.
+     */
+    public function getUserUsageCount(?int $userId): int
+    {
+        if (!$userId) {
+            return 0;
+        }
+
+        return (int) DB::table('coupon_user')
+            ->where('coupon_id', $this->id)
+            ->where('user_id', $userId)
+            ->count();
+    }
+
+    /**
+     * Effective per-account usage cap:
+     * - 1 when allow_multiple_uses is OFF
+     * - null (unlimited per user) when allow_multiple_uses is ON and max_uses_per_user is null/0
+     * - N (> 0) when allow_multiple_uses is ON and max_uses_per_user = N
+     */
+    public function getEffectiveMaxUsesPerUser(): ?int
+    {
+        if (!$this->allow_multiple_uses) {
+            return 1;
+        }
+
+        $limit = (int) ($this->max_uses_per_user ?? 0);
+        return $limit > 0 ? $limit : null;
+    }
+
+    /**
+     * Whether the given user has reached their personal redemption limit for this coupon.
+     */
+    public function hasReachedUserLimit(?int $userId): bool
+    {
+        if (!$userId) {
+            return false;
+        }
+
+        $maxPerUser = $this->getEffectiveMaxUsesPerUser();
+        if ($maxPerUser === null) {
+            return false;
+        }
+
+        return $this->getUserUsageCount($userId) >= $maxPerUser;
+    }
+
+    /**
+     * Human-readable error message when user hits personal redemption limit.
+     */
+    public function getUserLimitErrorMessage(): string
+    {
+        $maxPerUser = $this->getEffectiveMaxUsesPerUser();
+        if ($maxPerUser !== null && $maxPerUser > 1) {
+            return __('Anda telah mencapai batas pemakaian kupon ini (maksimal :limit kali per akun).', [
+                'limit' => $maxPerUser,
+            ]);
+        }
+
+        return __('Anda sudah pernah menggunakan kupon ini.');
     }
 
     /**
@@ -105,22 +185,15 @@ class Coupon extends Model
             return false;
         }
 
-        if ($userId) {
-            // Check if user has already used this coupon
-            $used = \Illuminate\Support\Facades\DB::table('coupon_user')
-                ->where('coupon_id', $this->id)
-                ->where('user_id', $userId)
-                ->exists();
-            if ($used) {
-                return false;
-            }
+        if ($userId && $this->hasReachedUserLimit((int) $userId)) {
+            return false;
         }
 
         return true;
     }
 
     /**
-     * Calculate discount amount.
+     * Calculate discount amount for a single base amount (total order or single unit).
      */
     public function calculateDiscount($subtotal): int
     {
@@ -137,5 +210,79 @@ class Coupon extends Model
 
         // Fixed coupon
         return max(0, min((int) $this->value, $subtotalInt));
+    }
+
+    /**
+     * Calculate discount for direct checkout of a single product with quantity.
+     */
+    public function calculateDiscountForUnits(int $unitPrice, int $quantity): int
+    {
+        $safePrice = max(0, $unitPrice);
+        $safeQty = max(1, $quantity);
+
+        if ($this->isPerItemMode()) {
+            return $this->calculateDiscount($safePrice) * $safeQty;
+        }
+
+        return $this->calculateDiscount($safePrice * $safeQty);
+    }
+
+    /**
+     * Calculate total discount and per-item discount breakdown for eligible cart items.
+     *
+     * @param  array<int, object>  $eligibleItems  Each item must have ->id, ->quantity, ->product->price
+     * @return array{total_discount: int, item_discounts: array<int, int>}
+     */
+    public function calculateDiscountForItems(array $eligibleItems): array
+    {
+        $itemDiscounts = [];
+        if (empty($eligibleItems)) {
+            return ['total_discount' => 0, 'item_discounts' => []];
+        }
+
+        if ($this->isPerItemMode()) {
+            $totalDiscount = 0;
+            foreach ($eligibleItems as $item) {
+                $unitPrice = max(0, (int) ($item->product->price ?? 0));
+                $qty = max(1, (int) $item->quantity);
+                $lineDiscount = $this->calculateDiscount($unitPrice) * $qty;
+                $itemDiscounts[$item->id] = $lineDiscount;
+                $totalDiscount += $lineDiscount;
+            }
+
+            return [
+                'total_discount' => $totalDiscount,
+                'item_discounts' => $itemDiscounts,
+            ];
+        }
+
+        // Mode: per_order (aggregate eligible subtotal, then distribute proportionally)
+        $eligibleSubtotal = 0;
+        foreach ($eligibleItems as $item) {
+            $eligibleSubtotal += max(0, (int) ($item->product->price ?? 0)) * max(1, (int) $item->quantity);
+        }
+
+        $totalDiscount = $this->calculateDiscount($eligibleSubtotal);
+        $remainingDiscount = $totalDiscount;
+        $count = count($eligibleItems);
+
+        foreach (array_values($eligibleItems) as $idx => $item) {
+            if ($idx === $count - 1) {
+                $itemDiscounts[$item->id] = max(0, $remainingDiscount);
+            } else {
+                $lineSubtotal = max(0, (int) ($item->product->price ?? 0)) * max(1, (int) $item->quantity);
+                $share = $eligibleSubtotal > 0
+                    ? (int) round(($lineSubtotal / $eligibleSubtotal) * $totalDiscount)
+                    : 0;
+                $share = min($share, $remainingDiscount);
+                $itemDiscounts[$item->id] = $share;
+                $remainingDiscount -= $share;
+            }
+        }
+
+        return [
+            'total_discount' => $totalDiscount,
+            'item_discounts' => $itemDiscounts,
+        ];
     }
 }

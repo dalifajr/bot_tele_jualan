@@ -106,12 +106,27 @@
                             </span>
                         </td>
                         <td>
-                            @if($coupon->type === 'percent')
-                                <span class="fw-bold text-success">{{ $coupon->value }}%</span> 
-                                <span class="text-muted small">({{ __('Maks') }} Rp{{ number_format($coupon->max_discount, 0, ',', '.') }})</span>
-                            @else
-                                <span class="fw-bold text-success">Rp{{ number_format($coupon->value, 0, ',', '.') }}</span>
-                            @endif
+                            <div>
+                                @if($coupon->type === 'percent')
+                                    <span class="fw-bold text-success">{{ $coupon->value }}%</span> 
+                                    @if($coupon->max_discount)
+                                    <span class="text-muted small">({{ __('Maks') }} Rp{{ number_format($coupon->max_discount, 0, ',', '.') }})</span>
+                                    @endif
+                                @else
+                                    <span class="fw-bold text-success">Rp{{ number_format($coupon->value, 0, ',', '.') }}</span>
+                                @endif
+                            </div>
+                            <div class="mt-1">
+                                @if($coupon->isPerItemMode())
+                                    <span class="badge bg-primary-subtle text-primary rounded-pill" style="font-size: 0.68rem;">
+                                        <i class="fas fa-cubes me-1"></i>{{ __('Per Produk') }}
+                                    </span>
+                                @else
+                                    <span class="badge bg-secondary-subtle text-secondary rounded-pill" style="font-size: 0.68rem;">
+                                        <i class="fas fa-shopping-cart me-1"></i>{{ __('Total Belanja') }}
+                                    </span>
+                                @endif
+                            </div>
                         </td>
                         <td>
                             @if($coupon->creator)
@@ -148,7 +163,16 @@
                                 @endphp
                                 <div class="progress-bar bg-success" role="progressbar" style="width: {{ $percent }}%"></div>
                             </div>
-                            <span class="small text-muted">{{ $coupon->used_qty }} / {{ $coupon->qty > 0 ? $coupon->qty : '∞' }}</span>
+                            <span class="small text-muted d-block">{{ $coupon->used_qty }} / {{ $coupon->qty > 0 ? $coupon->qty : '∞' }}</span>
+                            @if($coupon->allow_multiple_uses)
+                                <span class="badge bg-info-subtle text-info rounded-pill mt-1" style="font-size: 0.66rem;">
+                                    <i class="fas fa-redo me-1"></i>{{ $coupon->max_uses_per_user > 0 ? __('Maks :n× / akun', ['n' => $coupon->max_uses_per_user]) : __('Berulang (∞ / akun)') }}
+                                </span>
+                            @else
+                                <span class="badge bg-secondary-subtle text-secondary rounded-pill mt-1" style="font-size: 0.66rem;">
+                                    <i class="fas fa-user me-1"></i>{{ __('1× / akun') }}
+                                </span>
+                            @endif
                         </td>
                         <td>
                             @if($coupon->expires_at)
@@ -268,6 +292,35 @@
                             <div class="form-check form-switch mt-3">
                                 <input class="form-check-input" type="checkbox" name="is_active" id="createIsActive" value="1" checked>
                                 <label class="form-check-label small fw-bold" for="createIsActive">{{ __('Aktifkan Kupon Ini') }}</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Repeat Usage & Apply Mode Rules --}}
+                    <div class="p-3 rounded-4 border mb-3" style="background: var(--surface-container, var(--bs-tertiary-bg)); border-color: var(--outline-variant, var(--bs-border-color)) !important;">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="form-check form-switch mb-2">
+                                    <input class="form-check-input" type="checkbox" role="switch" name="allow_multiple_uses" id="createAllowMultiple" value="1" onchange="togglePerUserLimit('create', this.checked)">
+                                    <label class="form-check-label small fw-bold" for="createAllowMultiple">{{ __('Izinkan Pemakaian Berulang') }}</label>
+                                </div>
+                                <div id="createPerUserLimitBox" class="d-none">
+                                    <label class="form-label small text-muted mb-1">{{ __('Limit Pemakaian per Akun') }}</label>
+                                    <input type="number" name="max_uses_per_user" class="form-control form-control-sm" min="0" max="10000" placeholder="{{ __('0 / kosong = Tanpa batas per akun') }}">
+                                    <span class="text-muted" style="font-size: 0.72rem;">{{ __('Kosongkan atau isi 0 untuk tanpa batas per akun (tetap mengikuti kuota total).') }}</span>
+                                </div>
+                                <div id="createSingleUseHint" class="text-muted" style="font-size: 0.72rem;">
+                                    {{ __('Nonaktif: setiap akun hanya dapat menggunakan kupon ini 1 kali.') }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check form-switch mb-1">
+                                    <input class="form-check-input" type="checkbox" role="switch" name="apply_per_item" id="createApplyPerItem" value="1" onchange="updateApplyModeHint('create', this.checked)">
+                                    <label class="form-check-label small fw-bold" for="createApplyPerItem">{{ __('Terapkan Potongan Per Produk (Unit)') }}</label>
+                                </div>
+                                <div id="createApplyModeHint" class="text-muted" style="font-size: 0.72rem;">
+                                    {{ __('Mode Total Belanja: diskon dihitung 1× dari total akumulasi belanja.') }}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -397,6 +450,35 @@
                         </div>
                     </div>
 
+                    {{-- Repeat Usage & Apply Mode Rules (Edit) --}}
+                    <div class="p-3 rounded-4 border mb-3" style="background: var(--surface-container, var(--bs-tertiary-bg)); border-color: var(--outline-variant, var(--bs-border-color)) !important;">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="form-check form-switch mb-2">
+                                    <input class="form-check-input" type="checkbox" role="switch" name="allow_multiple_uses" id="editAllowMultiple-{{ $coupon->id }}" value="1" {{ $coupon->allow_multiple_uses ? 'checked' : '' }} onchange="togglePerUserLimit('edit-{{ $coupon->id }}', this.checked)">
+                                    <label class="form-check-label small fw-bold" for="editAllowMultiple-{{ $coupon->id }}">{{ __('Izinkan Pemakaian Berulang') }}</label>
+                                </div>
+                                <div id="edit-{{ $coupon->id }}PerUserLimitBox" class="{{ $coupon->allow_multiple_uses ? '' : 'd-none' }}">
+                                    <label class="form-label small text-muted mb-1">{{ __('Limit Pemakaian per Akun') }}</label>
+                                    <input type="number" name="max_uses_per_user" class="form-control form-control-sm" min="0" max="10000" value="{{ $coupon->max_uses_per_user ?? '' }}" placeholder="{{ __('0 / kosong = Tanpa batas per akun') }}">
+                                    <span class="text-muted" style="font-size: 0.72rem;">{{ __('Kosongkan atau isi 0 untuk tanpa batas per akun (tetap mengikuti kuota total).') }}</span>
+                                </div>
+                                <div id="edit-{{ $coupon->id }}SingleUseHint" class="text-muted {{ $coupon->allow_multiple_uses ? 'd-none' : '' }}" style="font-size: 0.72rem;">
+                                    {{ __('Nonaktif: setiap akun hanya dapat menggunakan kupon ini 1 kali.') }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check form-switch mb-1">
+                                    <input class="form-check-input" type="checkbox" role="switch" name="apply_per_item" id="editApplyPerItem-{{ $coupon->id }}" value="1" {{ $coupon->isPerItemMode() ? 'checked' : '' }} onchange="updateApplyModeHint('edit-{{ $coupon->id }}', this.checked)">
+                                    <label class="form-check-label small fw-bold" for="editApplyPerItem-{{ $coupon->id }}">{{ __('Terapkan Potongan Per Produk (Unit)') }}</label>
+                                </div>
+                                <div id="edit-{{ $coupon->id }}ApplyModeHint" class="text-muted" style="font-size: 0.72rem;">
+                                    {{ $coupon->isPerItemMode() ? __('Mode Per Produk (Unit): diskon mengurangi harga setiap unit produk (misal beli 3 unit = 3× potongan).') : __('Mode Total Belanja: diskon dihitung 1× dari total akumulasi belanja.') }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <hr class="my-3">
 
                     {{-- Product Scope Selection for Edit --}}
@@ -468,6 +550,21 @@
                 box.classList.add('d-none');
             }
         }
+    }
+
+    function togglePerUserLimit(prefix, enabled) {
+        const box = document.getElementById(prefix + 'PerUserLimitBox');
+        const hint = document.getElementById(prefix + 'SingleUseHint');
+        if (box) box.classList.toggle('d-none', !enabled);
+        if (hint) hint.classList.toggle('d-none', enabled);
+    }
+
+    function updateApplyModeHint(prefix, perItem) {
+        const hint = document.getElementById(prefix + 'ApplyModeHint');
+        if (!hint) return;
+        hint.textContent = perItem
+            ? @json(__('Mode Per Produk (Unit): diskon mengurangi harga setiap unit produk (misal beli 3 unit = 3× potongan).'))
+            : @json(__('Mode Total Belanja: diskon dihitung 1× dari total akumulasi belanja.'));
     }
 
     function toggleAllCheckboxes(className, check) {

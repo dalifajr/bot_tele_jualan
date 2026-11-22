@@ -60,6 +60,10 @@ class CouponController extends Controller
             'min_spend' => 'required|integer|min:0',
             'max_discount' => 'nullable|integer|min:1',
             'qty' => 'required|integer|min:0',
+            'allow_multiple_uses' => 'nullable|boolean',
+            'max_uses_per_user' => 'nullable|integer|min:0|max:10000',
+            'apply_mode' => 'nullable|in:per_order,per_item',
+            'apply_per_item' => 'nullable|boolean',
             'expires_at' => 'nullable|date',
             'is_active' => 'nullable|boolean',
             'scope' => 'required|in:all,specific',
@@ -82,6 +86,18 @@ class CouponController extends Controller
 
         $validated['code'] = strtoupper($validated['code']);
         $validated['is_active'] = $request->has('is_active') ? true : false;
+        $allowMultiple = $request->boolean('allow_multiple_uses');
+        $validated['allow_multiple_uses'] = $allowMultiple;
+        $rawPerUser = isset($validated['max_uses_per_user']) ? (int) $validated['max_uses_per_user'] : 0;
+        $validated['max_uses_per_user'] = ($allowMultiple && $rawPerUser > 0) ? $rawPerUser : null;
+        if (!empty($validated['apply_mode'])) {
+            $validated['apply_mode'] = $validated['apply_mode'];
+        } else {
+            $validated['apply_mode'] = $request->boolean('apply_per_item')
+                ? Coupon::APPLY_PER_ITEM
+                : Coupon::APPLY_PER_ORDER;
+        }
+        unset($validated['apply_per_item']);
         $validated['user_id'] = $sellerId;
 
         $coupon = Coupon::create($validated);
@@ -126,6 +142,10 @@ class CouponController extends Controller
             'min_spend' => 'required|integer|min:0',
             'max_discount' => 'nullable|integer|min:1',
             'qty' => 'required|integer|min:0',
+            'allow_multiple_uses' => 'nullable|boolean',
+            'max_uses_per_user' => 'nullable|integer|min:0|max:10000',
+            'apply_mode' => 'nullable|in:per_order,per_item',
+            'apply_per_item' => 'nullable|boolean',
             'expires_at' => 'nullable|date',
             'is_active' => 'nullable|boolean',
             'scope' => 'required|in:all,specific',
@@ -148,6 +168,18 @@ class CouponController extends Controller
 
         $validated['code'] = strtoupper($validated['code']);
         $validated['is_active'] = $request->has('is_active') ? true : false;
+        $allowMultiple = $request->boolean('allow_multiple_uses');
+        $validated['allow_multiple_uses'] = $allowMultiple;
+        $rawPerUser = isset($validated['max_uses_per_user']) ? (int) $validated['max_uses_per_user'] : 0;
+        $validated['max_uses_per_user'] = ($allowMultiple && $rawPerUser > 0) ? $rawPerUser : null;
+        if (!empty($validated['apply_mode'])) {
+            $validated['apply_mode'] = $validated['apply_mode'];
+        } else {
+            $validated['apply_mode'] = $request->boolean('apply_per_item')
+                ? Coupon::APPLY_PER_ITEM
+                : Coupon::APPLY_PER_ORDER;
+        }
+        unset($validated['apply_per_item']);
 
         $coupon->update($validated);
 
