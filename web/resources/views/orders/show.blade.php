@@ -303,18 +303,43 @@
     <div class="col-lg-4">
         <div class="card">
             <div class="card-body p-4">
-                <h6 class="fw-bold mb-3 text-body">{{ __('Ringkasan') }}</h6>
+                @php
+                    $displaySubtotal = ($order->subtotal > 0)
+                        ? (int) $order->subtotal
+                        : (int) $order->items->sum(fn($i) => $i->unit_price * $i->quantity);
+                    $hasVoucher = ($order->discount_amount > 0) || !empty($order->coupon_code);
+                @endphp
+                <h6 class="fw-bold mb-3 text-body">{{ __('Ringkasan Pembayaran') }}</h6>
                 <div class="d-flex justify-content-between mb-2">
-                    <span class="text-muted">{{ __('Harga Satuan') }}</span>
-                    <span class="text-body">Rp {{ number_format(($order->total_price / max(1, $order->quantity)), 0, ',', '.') }}</span>
+                    <span class="text-muted">{{ __('Subtotal') }}</span>
+                    <span class="text-body fw-semibold">Rp {{ number_format($displaySubtotal, 0, ',', '.') }}</span>
                 </div>
                 <div class="d-flex justify-content-between mb-2">
-                    <span class="text-muted">{{ __('Jumlah') }}</span>
+                    <span class="text-muted">{{ __('Jumlah Item') }}</span>
                     <span class="text-body">× {{ $order->quantity }}</span>
                 </div>
+                @if($hasVoucher)
+                <div class="d-flex justify-content-between align-items-center mb-2 gap-2">
+                    <span class="text-muted d-inline-flex align-items-center flex-wrap gap-1.5">
+                        <span>{{ __('Diskon Voucher') }}</span>
+                        @if($order->coupon_code)
+                        <span class="badge bg-success-subtle text-success rounded-pill px-2 py-1 font-monospace" style="font-size: 0.72rem;">
+                            <i class="fas fa-tag me-1"></i>{{ $order->coupon_code }}
+                        </span>
+                        @endif
+                    </span>
+                    <span class="text-success fw-semibold text-nowrap">- Rp {{ number_format((int) $order->discount_amount, 0, ',', '.') }}</span>
+                </div>
+                @endif
+                @if($order->unique_code > 0)
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">{{ __('Kode Unik') }}</span>
+                    <span class="text-body">+ Rp {{ number_format((int) $order->unique_code, 0, ',', '.') }}</span>
+                </div>
+                @endif
                 <hr>
                 <div class="d-flex justify-content-between align-items-baseline">
-                    <span class="fw-bold text-body">{{ __('Total') }}</span>
+                    <span class="fw-bold text-body">{{ __('Total Pembayaran') }}</span>
                     <span class="fw-bold product-price">{{ $order->formatted_total }}</span>
                 </div>
             </div>

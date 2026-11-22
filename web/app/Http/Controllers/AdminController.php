@@ -2679,7 +2679,10 @@ class AdminController extends Controller
     {
         $request->validate([
             'message' => 'nullable|string',
-            'media_file' => 'nullable|file|max:51200' // max 50MB
+            'media_file' => 'nullable|file|max:51200', // max 50MB
+            'enable_read_button' => 'nullable|boolean',
+            'cta_label' => 'nullable|string|max:80',
+            'cta_url' => ['nullable', 'url', 'max:500', 'regex:/^https?:\/\//i'],
         ]);
 
         if (empty($request->message) && !$request->hasFile('media_file') && empty($request->existing_media_path)) {
@@ -2720,28 +2723,43 @@ class AdminController extends Controller
             $mediaType = $request->existing_media_type;
         }
 
+        $enableReadButton = $request->has('enable_read_button')
+            ? $request->boolean('enable_read_button')
+            : true;
+        $ctaUrl = trim((string) $request->input('cta_url', '')) ?: null;
+        $ctaLabel = $ctaUrl ? (trim((string) $request->input('cta_label', '')) ?: '🔗 Buka Tautan') : null;
+
+        $allUsers = \App\Models\User::all();
+
         // Create the background job record
         $job = \App\Models\BroadcastJob::create([
             'message' => $request->message ?? '',
             'media_type' => $mediaType,
             'media_path' => $mediaPath,
             'total_targets' => count($targets),
+            'web_target_count' => $allUsers->count(),
             'sent_count' => 0,
             'failed_count' => 0,
+            'read_count' => 0,
+            'web_read_count' => 0,
+            'telegram_read_count' => 0,
             'status' => 'pending',
             'admin_id' => \Illuminate\Support\Facades\Auth::id(),
             'is_read' => false,
+            'enable_read_button' => $enableReadButton,
+            'cta_label' => $ctaLabel,
+            'cta_url' => $ctaUrl,
         ]);
 
         // Send Website Announcement Notification to all registered users
         try {
-            $allUsers = \App\Models\User::all();
             if ($allUsers->isNotEmpty()) {
                 $broadcastNotification = new \App\Notifications\BroadcastAnnouncementNotification(
                     $request->message ?? 'Ada pengumuman baru dari Admin.',
                     $request->title ?? 'Pengumuman Penting dari Admin',
                     $mediaPath,
-                    $mediaType
+                    $mediaType,
+                    (int) $job->id
                 );
                 \Illuminate\Support\Facades\Notification::send($allUsers, $broadcastNotification);
             }
@@ -2800,6 +2818,9 @@ class AdminController extends Controller
             'message' => $oldJob->message,
             'existing_media_path' => $oldJob->media_path,
             'existing_media_type' => $oldJob->media_type,
+            'enable_read_button' => $oldJob->enable_read_button,
+            'cta_label' => $oldJob->cta_label,
+            'cta_url' => $oldJob->cta_url,
         ]);
 
         return $this->startBroadcast($request);
@@ -2816,127 +2837,73 @@ class AdminController extends Controller
         ignore_user_abort(true);
         set_time_limit(0);
 
-        $job = \App\Models\BroadcastJob::find($jobId);
-        if (!$job) {
+        $result = app(\App\Services\BroadcastDeliveryService::class)->deliver((int) $jobId);
+
+        if ($result['status'] === 'not_found') {
             return response()->json(['status' => 'not_found'], 404);
         }
 
-        // Atomic update check to avoid duplicate running
-        $updated = \App\Models\BroadcastJob::where('id', $jobId)
-            ->where('status', 'pending')
-            ->update(['status' => 'processing']);
-
-        if (!$updated) {
+        if ($result['status'] === 'already_started') {
             return response()->json(['status' => 'already_started']);
         }
 
-        $targets = \App\Models\User::whereNotNull('telegram_id')
-            ->where('role', 'customer')
-            ->pluck('telegram_id')
-            ->toArray();
-
-        $token = config('telegram.bot_token');
-        if (!$token) {
-            \App\Models\BroadcastJob::where('id', $jobId)->update(['status' => 'failed']);
-            return response()->json(['status' => 'failed', 'reason' => 'no_token'], 422);
+        if ($result['status'] === 'failed') {
+            return response()->json(['status' => 'failed', 'reason' => $result['reason'] ?? 'failed'], 422);
         }
 
-        $success = 0;
-        $failed = 0;
-
-        foreach ($targets as $targetId) {
-            // Check if job was manually updated/cancelled
-            $currentJob = \App\Models\BroadcastJob::find($jobId);
-            if (!$currentJob || in_array($currentJob->status, ['failed', 'completed'])) {
-                break;
-            }
-
-            $retry = 0;
-            $maxRetries = 3;
-            $sentSuccessfully = false;
-
-            while ($retry < $maxRetries) {
-                try {
-                    if ($job->media_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($job->media_path)) {
-                        $mediaFullPath = storage_path('app/public/' . $job->media_path);
-                        $mediaData = fopen($mediaFullPath, 'r');
-                        $filename = basename($mediaFullPath);
-                        
-                        if ($job->media_type === 'photo') {
-                            $response = \Illuminate\Support\Facades\Http::timeout(15)
-                                ->attach('photo', $mediaData, $filename)
-                                ->post("https://api.telegram.org/bot{$token}/sendPhoto", [
-                                    'chat_id' => $targetId,
-                                    'caption' => $job->message,
-                                    'parse_mode' => 'HTML'
-                                ]);
-                        } elseif ($job->media_type === 'video') {
-                            $response = \Illuminate\Support\Facades\Http::timeout(15)
-                                ->attach('video', $mediaData, $filename)
-                                ->post("https://api.telegram.org/bot{$token}/sendVideo", [
-                                    'chat_id' => $targetId,
-                                    'caption' => $job->message,
-                                    'parse_mode' => 'HTML'
-                                ]);
-                        } else {
-                            $response = \Illuminate\Support\Facades\Http::timeout(15)
-                                ->attach('document', $mediaData, $filename)
-                                ->post("https://api.telegram.org/bot{$token}/sendDocument", [
-                                    'chat_id' => $targetId,
-                                    'caption' => $job->message,
-                                    'parse_mode' => 'HTML'
-                                ]);
-                        }
-                    } else {
-                        $response = \Illuminate\Support\Facades\Http::timeout(10)->post("https://api.telegram.org/bot{$token}/sendMessage", [
-                            'chat_id' => $targetId,
-                            'text' => $job->message,
-                            'parse_mode' => 'HTML'
-                        ]);
-                    }
-
-                    if ($response->status() === 429) {
-                        $retryAfter = $response->json('parameters.retry_after') ?? 2;
-                        sleep($retryAfter);
-                        $retry++;
-                        continue;
-                    }
-
-                    if ($response->successful()) {
-                        $success++;
-                        $sentSuccessfully = true;
-                    } else {
-                        $failed++;
-                    }
-                    break;
-                } catch (\Exception $e) {
-                    sleep(1);
-                    $retry++;
-                }
-            }
-
-            if (!$sentSuccessfully && $retry === $maxRetries) {
-                $failed++;
-            }
-
-            // Batch update database progress every 5 targets
-            if (($success + $failed) % 5 === 0) {
-                \App\Models\BroadcastJob::where('id', $jobId)->update([
-                    'sent_count' => $success,
-                    'failed_count' => $failed,
-                ]);
-            }
-
-            // Small delay to prevent hitting rate limits aggressively
-            usleep(25000); // 25ms
-        }
-
-        \App\Models\BroadcastJob::where('id', $jobId)->update([
-            'sent_count' => $success,
-            'failed_count' => $failed,
-            'status' => 'completed'
-        ]);
         return response()->json(['status' => 'success']);
+    }
+
+    public function getBroadcastAnalytics($jobId, \App\Services\BroadcastReadAnalyticsService $analytics)
+    {
+        $job = \App\Models\BroadcastJob::findOrFail($jobId);
+
+        if ($job->status === 'completed' && $job->last_read_calculated_at === null) {
+            $job = $analytics->recalculateJob($job);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'analytics' => $analytics->buildAnalyticsPayload($job),
+        ]);
+    }
+
+    public function recalculateBroadcastAnalytics($jobId, \App\Services\BroadcastReadAnalyticsService $analytics)
+    {
+        $job = \App\Models\BroadcastJob::findOrFail($jobId);
+        $job = $analytics->recalculateJob($job);
+
+        return response()->json([
+            'status' => 'success',
+            'analytics' => $analytics->buildAnalyticsPayload($job),
+        ]);
+    }
+
+    public function trackBroadcastClick(Request $request, $jobId, $userId, $sig, \App\Services\BroadcastReadAnalyticsService $analytics)
+    {
+        $jobId = (int) $jobId;
+        $userId = (int) $userId;
+
+        if (!$analytics->verifyTrackSignature($jobId, $userId, (string) $sig)) {
+            abort(403, 'Invalid tracking signature.');
+        }
+
+        $job = \App\Models\BroadcastJob::findOrFail($jobId);
+        $user = \App\Models\User::find($userId);
+
+        $analytics->recordRead(
+            $jobId,
+            $user ? (int) $user->id : null,
+            $user && $user->telegram_id ? (string) $user->telegram_id : null,
+            'telegram_link'
+        );
+
+        $targetUrl = trim((string) $job->cta_url);
+        if ($targetUrl === '' || !preg_match('/^https?:\/\//i', $targetUrl)) {
+            return redirect()->route('dashboard');
+        }
+
+        return redirect()->away($targetUrl);
     }
 
     public function getBroadcastStatus($jobId)

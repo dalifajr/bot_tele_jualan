@@ -34,6 +34,7 @@ Route::post('/listener/payment', [\App\Http\Controllers\PaymentListenerControlle
 Route::post('/listener/test-connection', [\App\Http\Controllers\PaymentListenerController::class, 'testConnection'])->name('listener.test-connection');
 
 Route::get('/admin/broadcast/run-bg/{jobId}', [\App\Http\Controllers\AdminController::class, 'runBroadcastBackground'])->name('admin.broadcast.run-bg');
+Route::get('/bc/t/{jobId}/{userId}/{sig}', [\App\Http\Controllers\AdminController::class, 'trackBroadcastClick'])->name('broadcast.track-click');
 
 // Public Downloads untuk Remote Control Binaries (Failsafe Handler)
 Route::get('/downloads/{filename}', function ($filename) {
@@ -327,6 +328,8 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         Route::post('/broadcast/mark-read/{jobId}', [\App\Http\Controllers\AdminController::class, 'markBroadcastRead'])->name('broadcast.mark-read');
         Route::post('/broadcast/cancel/{jobId}', [\App\Http\Controllers\AdminController::class, 'cancelBroadcast'])->name('broadcast.cancel');
         Route::post('/broadcast/resend/{jobId}', [\App\Http\Controllers\AdminController::class, 'resendBroadcast'])->name('broadcast.resend');
+        Route::get('/broadcast/analytics/{jobId}', [\App\Http\Controllers\AdminController::class, 'getBroadcastAnalytics'])->name('broadcast.analytics');
+        Route::post('/broadcast/analytics/{jobId}/recalculate', [\App\Http\Controllers\AdminController::class, 'recalculateBroadcastAnalytics'])->name('broadcast.analytics.recalculate');
 
         
         Route::get('/settings', [\App\Http\Controllers\AdminController::class, 'settings'])->name('settings.index');
@@ -348,8 +351,10 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         Route::get('/promos', [\App\Http\Controllers\Admin\DashboardPromoController::class, 'index'])->name('promos.index');
         Route::get('/promos/create', [\App\Http\Controllers\Admin\DashboardPromoController::class, 'create'])->name('promos.create');
         Route::post('/promos', [\App\Http\Controllers\Admin\DashboardPromoController::class, 'store'])->name('promos.store');
+        Route::post('/promos/reorder', [\App\Http\Controllers\Admin\DashboardPromoController::class, 'reorder'])->name('promos.reorder');
         Route::get('/promos/{promo}/edit', [\App\Http\Controllers\Admin\DashboardPromoController::class, 'edit'])->name('promos.edit');
         Route::put('/promos/{promo}', [\App\Http\Controllers\Admin\DashboardPromoController::class, 'update'])->name('promos.update');
+        Route::post('/promos/{promo}/move', [\App\Http\Controllers\Admin\DashboardPromoController::class, 'move'])->name('promos.move');
         Route::post('/promos/{promo}/toggle', [\App\Http\Controllers\Admin\DashboardPromoController::class, 'toggleStatus'])->name('promos.toggle');
         Route::delete('/promos/{promo}', [\App\Http\Controllers\Admin\DashboardPromoController::class, 'destroy'])->name('promos.destroy');
         

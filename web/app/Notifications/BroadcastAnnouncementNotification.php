@@ -13,13 +13,20 @@ class BroadcastAnnouncementNotification extends Notification
     public $message;
     public $mediaPath;
     public $mediaType;
+    public ?int $broadcastJobId;
 
-    public function __construct(string $message, ?string $title = null, ?string $mediaPath = null, ?string $mediaType = null)
-    {
+    public function __construct(
+        string $message,
+        ?string $title = null,
+        ?string $mediaPath = null,
+        ?string $mediaType = null,
+        ?int $broadcastJobId = null
+    ) {
         $this->message = $message;
         $this->title = $title ?: 'Pengumuman Penting dari Admin';
         $this->mediaPath = $mediaPath;
         $this->mediaType = $mediaType;
+        $this->broadcastJobId = $broadcastJobId;
     }
 
     public function via($notifiable): array
@@ -31,12 +38,13 @@ class BroadcastAnnouncementNotification extends Notification
     {
         return [
             'type' => 'broadcast_announcement',
+            'broadcast_job_id' => $this->broadcastJobId,
             'title' => $this->title,
             'message' => $this->message,
             'media_path' => $this->mediaPath,
             'media_type' => $this->mediaType,
             'url' => route('notifications.index'),
-            'icon' => 'fas fa-bullhorn text-warning'
+            'icon' => 'fas fa-bullhorn text-warning',
         ];
     }
 }

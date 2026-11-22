@@ -3782,6 +3782,90 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             await _send_bot_commands_disabled_notice(update, context)
             return
 
+    if data.startswith("bc_read_done:"):
+        await query.answer("✅ Pesan ini sudah ditandai dibaca.", show_alert=False)
+        return
+
+    if data.startswith("bc_read:"):
+        raw_job_id = data.split(":", maxsplit=1)[1].strip()
+        if raw_job_id.isdigit():
+            bc_job_id = int(raw_job_id)
+            try:
+                from sqlalchemy import text as sa_text
+                now_str = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+                with get_session() as session:
+                    user_row = session.execute(
+                        sa_text("SELECT id FROM users WHERE telegram_id = :tg_id LIMIT 1"),
+                        {"tg_id": telegram_id},
+                    ).fetchone()
+                    db_user_id = int(user_row[0]) if user_row else None
+
+                    existing = None
+                    if db_user_id is not None:
+                        existing = session.execute(
+                            sa_text(
+                                "SELECT id, via_telegram FROM broadcast_reads "
+                                "WHERE broadcast_job_id = :jid AND user_id = :uid LIMIT 1"
+                            ),
+                            {"jid": bc_job_id, "uid": db_user_id},
+                        ).fetchone()
+                    else:
+                        existing = session.execute(
+                            sa_text(
+                                "SELECT id, via_telegram FROM broadcast_reads "
+                                "WHERE broadcast_job_id = :jid AND telegram_id = :tg_id LIMIT 1"
+                            ),
+                            {"jid": bc_job_id, "tg_id": str(telegram_id)},
+                        ).fetchone()
+
+                    if existing is not None:
+                        if not existing[1]:
+                            session.execute(
+                                sa_text(
+                                    "UPDATE broadcast_reads SET via_telegram = 1, "
+                                    "telegram_id = COALESCE(telegram_id, :tg_id), updated_at = :now "
+                                    "WHERE id = :rid"
+                                ),
+                                {"tg_id": str(telegram_id), "now": now_str, "rid": int(existing[0])},
+                            )
+                    else:
+                        session.execute(
+                            sa_text(
+                                "INSERT INTO broadcast_reads "
+                                "(broadcast_job_id, user_id, telegram_id, source, via_web, via_telegram, read_at, created_at, updated_at) "
+                                "VALUES (:jid, :uid, :tg_id, 'telegram_ack', 0, 1, :now, :now, :now)"
+                            ),
+                            {"jid": bc_job_id, "uid": db_user_id, "tg_id": str(telegram_id), "now": now_str},
+                        )
+            except Exception as exc:
+                logger.warning("Failed to record Telegram broadcast read for job %s: %s", bc_job_id, exc)
+
+            await query.answer("✅ Terima kasih! Pesan ditandai sudah dibaca.", show_alert=False)
+
+            try:
+                if query.message and query.message.reply_markup:
+                    new_rows = []
+                    for row in query.message.reply_markup.inline_keyboard:
+                        new_row = []
+                        for btn in row:
+                            if btn.callback_data == data:
+                                new_row.append(
+                                    InlineKeyboardButton(
+                                        "✅ Sudah Dibaca",
+                                        callback_data=f"bc_read_done:{bc_job_id}",
+                                    )
+                                )
+                            else:
+                                new_row.append(btn)
+                        new_rows.append(new_row)
+                    await query.edit_message_reply_markup(reply_markup=InlineKeyboardMarkup(new_rows))
+            except Exception:
+                pass
+            return
+
+        await query.answer("Terima kasih!", show_alert=False)
+        return
+
     if data.startswith("buy:") or data.startswith("buyall:") or data.startswith("ord:reorder:"):
         await query.answer("⏳ Memproses checkout...", show_alert=False)
     else:

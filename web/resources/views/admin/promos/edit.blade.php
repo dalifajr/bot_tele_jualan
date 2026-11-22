@@ -130,11 +130,13 @@
                 </div>
 
                 <div class="row g-3 mb-4 align-items-center">
-                    {{-- Urutan Tampilan --}}
+                    {{-- Info Posisi Tampilan --}}
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold text-body" style="font-size: 0.88rem;">{{ __('Urutan Tampilan') }}</label>
-                        <input type="number" name="order_index" class="form-control rounded-3" value="{{ old('order_index', $promo->order_index) }}" min="0" max="999">
-                        <small class="text-secondary" style="font-size: 0.72rem;">{{ __('Angka lebih kecil tampil lebih dulu (misal: 1, 2, 3...)') }}</small>
+                        <label class="form-label fw-semibold text-body" style="font-size: 0.88rem;">{{ __('Posisi Tampilan Saat Ini') }}</label>
+                        <div class="d-flex align-items-center gap-2 p-2.5 rounded-3 border" style="background: var(--surface-container, var(--bs-tertiary-bg)); border-color: var(--outline-variant, var(--bs-border-color)) !important;">
+                            <span class="badge bg-primary-subtle text-primary rounded-pill px-2.5 py-1 fw-bold font-monospace">#{{ $currentPosition ?? 1 }}</span>
+                            <span class="small text-secondary">{{ __('dari :total kartu promo. Gunakan panah ▲/▼ di halaman daftar untuk menggeser urutan.', ['total' => $totalPromos ?? 1]) }}</span>
+                        </div>
                     </div>
 
                     {{-- Status Aktif --}}

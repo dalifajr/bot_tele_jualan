@@ -97,14 +97,33 @@
                 </div>
 
                 <div class="border-top mt-3 pt-3">
+                    @php
+                        $displaySubtotal = ($order->subtotal > 0)
+                            ? (int) $order->subtotal
+                            : (int) $order->items->sum(fn($i) => $i->unit_price * $i->quantity);
+                        $hasVoucher = ($order->discount_amount > 0) || !empty($order->coupon_code);
+                    @endphp
                     <div class="d-flex justify-content-between mb-1.5 small text-muted">
                         <span>{{ __('Subtotal') }}</span>
-                        <span class="fw-semibold text-dark">Rp {{ number_format($order->subtotal, 0, ',', '.') }}</span>
+                        <span class="fw-semibold text-body">Rp {{ number_format($displaySubtotal, 0, ',', '.') }}</span>
                     </div>
+                    @if($hasVoucher)
+                    <div class="d-flex justify-content-between align-items-center mb-1.5 small gap-2">
+                        <span class="text-muted d-inline-flex align-items-center flex-wrap gap-1.5">
+                            <span>{{ __('Diskon Voucher') }}</span>
+                            @if($order->coupon_code)
+                            <span class="badge bg-success-subtle text-success rounded-pill px-2 py-1 font-monospace" style="font-size: 0.72rem;">
+                                <i class="fas fa-tag me-1"></i>{{ $order->coupon_code }}
+                            </span>
+                            @endif
+                        </span>
+                        <span class="fw-semibold text-success text-nowrap">- Rp {{ number_format((int) $order->discount_amount, 0, ',', '.') }}</span>
+                    </div>
+                    @endif
                     @if($order->unique_code)
                     <div class="d-flex justify-content-between mb-1.5 small text-muted">
                         <span>{{ __('Kode Unik') }}</span>
-                        <span class="fw-semibold text-dark">Rp {{ $order->unique_code }}</span>
+                        <span class="fw-semibold text-body">+ Rp {{ number_format((int) $order->unique_code, 0, ',', '.') }}</span>
                     </div>
                     @endif
                     <div class="d-flex justify-content-between pt-2 border-top fw-bold fs-6">

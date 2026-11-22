@@ -4,12 +4,62 @@
 @section('page_subtitle', __('Pengaturan Kartu Promo & Info Dashboard'))
 
 @section('content')
+<style>
+    .promo-order-btn {
+        width: 34px;
+        height: 34px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 9999px;
+        border: 1px solid var(--outline-variant, var(--bs-border-color));
+        background: var(--surface-container-lowest, var(--bs-body-bg));
+        color: var(--on-surface, var(--bs-body-color));
+        transition: background-color 160ms ease, border-color 160ms ease, transform 120ms ease, opacity 160ms ease;
+    }
+    .promo-order-btn:hover:not(:disabled) {
+        background: var(--primary-container, rgba(var(--bs-primary-rgb), 0.14));
+        border-color: var(--primary, var(--bs-primary));
+        color: var(--on-primary-container, var(--bs-primary));
+    }
+    .promo-order-btn:active:not(:disabled) {
+        transform: scale(0.94);
+    }
+    .promo-order-btn:disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+    }
+    .promo-drag-handle {
+        cursor: grab;
+        color: var(--on-surface-variant, var(--bs-secondary-color));
+        padding: 0.25rem;
+        border-radius: 8px;
+        user-select: none;
+    }
+    .promo-drag-handle:active {
+        cursor: grabbing;
+    }
+    tr.promo-row-dragging {
+        opacity: 0.45;
+    }
+    tr.promo-row-drop-target > td {
+        border-top: 2px solid var(--primary, var(--bs-primary)) !important;
+    }
+    tr.promo-row-flash > td {
+        background-color: var(--primary-container, rgba(var(--bs-primary-rgb), 0.12)) !important;
+        transition: background-color 420ms ease;
+    }
+</style>
+
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
     <div>
         <h1 class="m3-page-title mb-1">{{ __('Kelola Promo Dashboard') }}</h1>
-        <p class="text-secondary small mb-0" style="font-size: 0.92rem;">{{ __('Atur kartu promosi, pengumuman, dan informasi yang muncul pada carousel dashboard belanja.') }}</p>
+        <p class="text-secondary small mb-0" style="font-size: 0.92rem;">{{ __('Atur kartu promosi dan geser urutan tampilan langsung menggunakan tombol panah atas/bawah atau seret baris.') }}</p>
     </div>
-    <div class="d-flex align-items-center gap-2">
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+        <span id="promoOrderStatusPill" class="badge bg-success-subtle text-success rounded-pill px-3 py-2 d-none" style="font-size: 0.78rem;">
+            <i class="fas fa-check-circle me-1"></i><span>{{ __('Urutan tersimpan') }}</span>
+        </span>
         <a href="{{ route('dashboard') }}" class="btn btn-outline-secondary rounded-pill px-3 py-2 fw-semibold d-inline-flex align-items-center gap-1.5" target="_blank" style="font-size: 0.85rem;">
             <i class="fas fa-eye"></i>
             <span>{{ __('Lihat di Dashboard') }}</span>
@@ -28,28 +78,50 @@
 </div>
 @endif
 
-<div class="card border-0 shadow-sm overflow-hidden" style="border-radius: var(--radius-xl, 24px);">
+<div class="card border overflow-hidden" style="border-radius: var(--radius-xl, 24px); border-color: var(--outline-variant, var(--bs-border-color)) !important;">
     <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
             <thead class="table-light" style="background: var(--surface-container-high);">
                 <tr class="text-secondary small">
-                    <th class="ps-4 py-3" style="width: 60px;">#</th>
-                    <th class="py-3">{{ __('Urutan') }}</th>
+                    <th class="ps-4 py-3" style="width: 170px;">{{ __('Urutan') }}</th>
                     <th class="py-3">{{ __('Preview Card') }}</th>
                     <th class="py-3">{{ __('Badge & Judul') }}</th>
                     <th class="py-3">{{ __('Tombol & Link') }}</th>
                     <th class="py-3 text-center">{{ __('Status') }}</th>
-                    <th class="pe-4 py-3 text-end" style="width: 140px;">{{ __('Aksi') }}</th>
+                    <th class="pe-4 py-3 text-end" style="width: 120px;">{{ __('Aksi') }}</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="promoSortableBody">
                 @forelse($promos as $promo)
-                <tr>
-                    <td class="ps-4 text-secondary small">{{ $loop->iteration }}</td>
-                    <td>
-                        <span class="badge rounded-pill bg-light text-dark border px-2.5 py-1">
-                            #{{ $promo->order_index }}
-                        </span>
+                <tr class="promo-order-row" data-promo-id="{{ $promo->id }}" draggable="true">
+                    <td class="ps-4">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="promo-drag-handle d-none d-sm-inline-flex" title="{{ __('Seret untuk memindahkan urutan') }}" aria-hidden="true">
+                                <i class="fas fa-grip-vertical"></i>
+                            </span>
+                            <span class="badge rounded-pill px-2.5 py-1 fw-bold font-monospace promo-pos-badge"
+                                  style="background: var(--surface-container, var(--bs-tertiary-bg)); color: var(--on-surface, var(--bs-body-color)); border: 1px solid var(--outline-variant, var(--bs-border-color)); min-width: 38px;">
+                                #{{ $loop->iteration }}
+                            </span>
+                            <div class="d-inline-flex align-items-center gap-1">
+                                <button type="button"
+                                        class="promo-order-btn btn-move-up"
+                                        onclick="movePromoRow({{ $promo->id }}, 'up')"
+                                        title="{{ __('Geser ke Atas') }}"
+                                        aria-label="{{ __('Geser ke Atas') }}"
+                                        {{ $loop->first ? 'disabled' : '' }}>
+                                    <i class="fas fa-arrow-up" style="font-size: 0.78rem;"></i>
+                                </button>
+                                <button type="button"
+                                        class="promo-order-btn btn-move-down"
+                                        onclick="movePromoRow({{ $promo->id }}, 'down')"
+                                        title="{{ __('Geser ke Bawah') }}"
+                                        aria-label="{{ __('Geser ke Bawah') }}"
+                                        {{ $loop->last ? 'disabled' : '' }}>
+                                    <i class="fas fa-arrow-down" style="font-size: 0.78rem;"></i>
+                                </button>
+                            </div>
+                        </div>
                     </td>
                     <td>
                         <div class="rounded-3 text-start position-relative overflow-hidden d-flex" style="width: 240px; font-size: 0.75rem; background: {{ $promo->gradient_style }}; border: 1px solid var(--outline-variant); min-height: 70px;">
@@ -110,7 +182,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="7" class="text-center py-5">
+                    <td colspan="6" class="text-center py-5">
                         <div class="d-flex flex-column align-items-center justify-content-center">
                             <i class="fas fa-bullhorn text-secondary opacity-50 mb-3" style="font-size: 2.5rem;"></i>
                             <div class="fw-bold text-body mb-1">{{ __('Belum Ada Kartu Promo') }}</div>
@@ -125,11 +197,188 @@
             </tbody>
         </table>
     </div>
-
-    @if($promos->hasPages())
-    <div class="p-3 border-top" style="border-color: var(--outline-variant) !important;">
-        {{ $promos->links() }}
-    </div>
-    @endif
 </div>
 @endsection
+
+@push('scripts')
+<script>
+(function () {
+    const tbody = document.getElementById('promoSortableBody');
+    const statusPill = document.getElementById('promoOrderStatusPill');
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+    const reorderUrl = @json(route('admin.promos.reorder'));
+    let isSavingOrder = false;
+    let statusTimer = null;
+
+    function showStatus(text, isError = false) {
+        if (!statusPill) return;
+        clearTimeout(statusTimer);
+        statusPill.classList.remove('d-none', 'bg-success-subtle', 'text-success', 'bg-danger-subtle', 'text-danger');
+        if (isError) {
+            statusPill.classList.add('bg-danger-subtle', 'text-danger');
+            statusPill.innerHTML = `<i class="fas fa-exclamation-circle me-1"></i><span>${text}</span>`;
+        } else {
+            statusPill.classList.add('bg-success-subtle', 'text-success');
+            statusPill.innerHTML = `<i class="fas fa-check-circle me-1"></i><span>${text}</span>`;
+        }
+        statusTimer = setTimeout(() => {
+            statusPill.classList.add('d-none');
+        }, 2200);
+    }
+
+    function syncRowNumbersAndButtons() {
+        if (!tbody) return;
+        const rows = Array.from(tbody.querySelectorAll('tr.promo-order-row'));
+        rows.forEach((row, idx) => {
+            const badge = row.querySelector('.promo-pos-badge');
+            if (badge) badge.textContent = '#' + (idx + 1);
+            const upBtn = row.querySelector('.btn-move-up');
+            const downBtn = row.querySelector('.btn-move-down');
+            if (upBtn) upBtn.disabled = isSavingOrder || idx === 0;
+            if (downBtn) downBtn.disabled = isSavingOrder || idx === rows.length - 1;
+        });
+    }
+
+    function flashRow(row) {
+        if (!row) return;
+        row.classList.remove('promo-row-flash');
+        void row.offsetWidth;
+        row.classList.add('promo-row-flash');
+        setTimeout(() => row.classList.remove('promo-row-flash'), 550);
+    }
+
+    window.movePromoRow = async function (promoId, direction) {
+        if (isSavingOrder || !tbody) return;
+        const row = tbody.querySelector(`tr.promo-order-row[data-promo-id="${promoId}"]`);
+        if (!row) return;
+
+        const sibling = direction === 'up' ? row.previousElementSibling : row.nextElementSibling;
+        if (!sibling || !sibling.classList.contains('promo-order-row')) return;
+
+        isSavingOrder = true;
+        syncRowNumbersAndButtons();
+
+        // Optimistic DOM move
+        if (direction === 'up') {
+            tbody.insertBefore(row, sibling);
+        } else {
+            tbody.insertBefore(sibling, row);
+        }
+        flashRow(row);
+
+        try {
+            const res = await fetch(`/admin/promos/${promoId}/move`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                body: JSON.stringify({ direction })
+            });
+            const data = await res.json();
+            if (!res.ok || data.status !== 'success') {
+                throw new Error(data.message || '{{ __('Gagal memperbarui urutan promo.') }}');
+            }
+            showStatus('{{ __('Urutan tersimpan') }}');
+        } catch (err) {
+            // Revert DOM swap on failure
+            if (direction === 'up') {
+                tbody.insertBefore(sibling, row);
+            } else {
+                tbody.insertBefore(row, sibling);
+            }
+            showStatus(err.message || '{{ __('Gagal menyimpan urutan') }}', true);
+        } finally {
+            isSavingOrder = false;
+            syncRowNumbersAndButtons();
+        }
+    };
+
+    // Optional Desktop HTML5 Drag-and-Drop Reorder
+    let draggedRow = null;
+    let orderBeforeDrag = [];
+
+    if (tbody) {
+        tbody.addEventListener('dragstart', (e) => {
+            const row = e.target.closest('tr.promo-order-row');
+            if (!row || isSavingOrder) {
+                e.preventDefault();
+                return;
+            }
+            draggedRow = row;
+            orderBeforeDrag = Array.from(tbody.querySelectorAll('tr.promo-order-row'));
+            row.classList.add('promo-row-dragging');
+            if (e.dataTransfer) {
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', row.dataset.promoId || '');
+            }
+        });
+
+        tbody.addEventListener('dragover', (e) => {
+            if (!draggedRow) return;
+            e.preventDefault();
+            const targetRow = e.target.closest('tr.promo-order-row');
+            tbody.querySelectorAll('.promo-row-drop-target').forEach(el => el.classList.remove('promo-row-drop-target'));
+            if (targetRow && targetRow !== draggedRow) {
+                targetRow.classList.add('promo-row-drop-target');
+            }
+        });
+
+        tbody.addEventListener('drop', async (e) => {
+            if (!draggedRow) return;
+            e.preventDefault();
+            const targetRow = e.target.closest('tr.promo-order-row');
+            tbody.querySelectorAll('.promo-row-drop-target').forEach(el => el.classList.remove('promo-row-drop-target'));
+            if (!targetRow || targetRow === draggedRow) return;
+
+            const rows = Array.from(tbody.querySelectorAll('tr.promo-order-row'));
+            const fromIdx = rows.indexOf(draggedRow);
+            const toIdx = rows.indexOf(targetRow);
+            if (fromIdx < toIdx) {
+                tbody.insertBefore(draggedRow, targetRow.nextSibling);
+            } else {
+                tbody.insertBefore(draggedRow, targetRow);
+            }
+
+            const orderedIds = Array.from(tbody.querySelectorAll('tr.promo-order-row'))
+                .map(r => parseInt(r.dataset.promoId, 10))
+                .filter(Number.isFinite);
+
+            isSavingOrder = true;
+            syncRowNumbersAndButtons();
+            flashRow(draggedRow);
+
+            try {
+                const res = await fetch(reorderUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken
+                    },
+                    body: JSON.stringify({ ordered_ids: orderedIds })
+                });
+                const data = await res.json();
+                if (!res.ok || data.status !== 'success') {
+                    throw new Error(data.message || '{{ __('Gagal menyimpan urutan promo.') }}');
+                }
+                showStatus('{{ __('Urutan tersimpan') }}');
+            } catch (err) {
+                orderBeforeDrag.forEach(r => tbody.appendChild(r));
+                showStatus(err.message || '{{ __('Gagal menyimpan urutan') }}', true);
+            } finally {
+                isSavingOrder = false;
+                syncRowNumbersAndButtons();
+            }
+        });
+
+        tbody.addEventListener('dragend', () => {
+            if (draggedRow) draggedRow.classList.remove('promo-row-dragging');
+            tbody.querySelectorAll('.promo-row-drop-target').forEach(el => el.classList.remove('promo-row-drop-target'));
+            draggedRow = null;
+        });
+    }
+})();
+</script>
+@endpush

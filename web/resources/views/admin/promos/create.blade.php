@@ -113,11 +113,14 @@
                 </div>
 
                 <div class="row g-3 mb-4 align-items-center">
-                    {{-- Urutan Tampilan --}}
+                    {{-- Posisi Tampilan --}}
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold text-body" style="font-size: 0.88rem;">{{ __('Urutan Tampilan') }}</label>
-                        <input type="number" name="order_index" class="form-control rounded-3" value="{{ old('order_index', 0) }}" min="0" max="999">
-                        <small class="text-secondary" style="font-size: 0.72rem;">{{ __('Angka lebih kecil tampil lebih dulu (misal: 1, 2, 3...)') }}</small>
+                        <label class="form-label fw-semibold text-body" style="font-size: 0.88rem;">{{ __('Posisi Awal Tampilan') }}</label>
+                        <select name="placement" class="form-select rounded-3">
+                            <option value="bottom" {{ old('placement', 'bottom') === 'bottom' ? 'selected' : '' }}>{{ __('Taruh di Paling Bawah (Default)') }}</option>
+                            <option value="top" {{ old('placement') === 'top' ? 'selected' : '' }}>{{ __('Taruh di Paling Atas (Urutan #1)') }}</option>
+                        </select>
+                        <small class="text-secondary" style="font-size: 0.72rem;">{{ __('Urutan dapat digeser kapan saja memakai tombol panah ▲/▼ di daftar promo.') }}</small>
                     </div>
 
                     {{-- Status Aktif --}}
@@ -135,7 +138,7 @@
                     </a>
                     <button type="submit" class="btn btn-primary rounded-pill px-4 py-2 fw-semibold">
                         <i class="fas fa-save me-1.5"></i>{{ __('Simpan Promo') }}
-                    </a>
+                    </button>
                 </div>
             </form>
         </div>
