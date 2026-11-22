@@ -53,7 +53,14 @@
                                         </div>
                                         <div>
                                             <h6 class="fw-bold mb-1"><a href="{{ route('catalog.show', $item->product->id) }}" class="text-decoration-none text-body">{{ $item->product->name }}</a></h6>
-                                            <span class="text-primary fw-bold small">{{ $item->product->formatted_price }}</span>
+                                            <div class="d-flex flex-wrap align-items-center gap-2">
+                                                <span class="text-primary fw-bold small">{{ $item->product->formatted_price }}</span>
+                                                @if($item->product->creator)
+                                                <span class="badge bg-secondary-subtle text-body rounded-pill" style="font-size: 0.68rem;">
+                                                    <i class="fas fa-store text-primary me-1"></i>{{ $item->product->creator->display_name }}
+                                                </span>
+                                                @endif
+                                            </div>
                                             @if($item->vcc_services && count($item->vcc_services) > 0)
                                                 @php $groupedServices = array_count_values($item->vcc_services); @endphp
                                                 <div class="mt-1 d-flex flex-wrap gap-1 align-items-center">

@@ -37,12 +37,68 @@
                 <div class="mb-4">
                     <span class="text-muted small fw-semibold text-uppercase d-block mb-2" style="letter-spacing: 0.04em; font-size: 0.72rem;">{{ __('Item Pesanan:') }}</span>
                     <div class="list-group list-group-flush border rounded-3 overflow-hidden mb-3" style="border-color: var(--outline-color) !important;">
+                        @php
+                            $orderComplaints = $order->complaints ?? collect();
+                            $claimableItems = $order->items->filter(function ($it) use ($order, $orderComplaints) {
+                                if (!$order->isWarrantyActiveForItem($it)) {
+                                    return false;
+                                }
+                                $alreadyClaimed = $orderComplaints->contains(function ($cmp) use ($it, $order) {
+                                    if ($cmp->order_item_id) return (int) $cmp->order_item_id === (int) $it->id;
+                                    if ($cmp->product_id) return (int) $cmp->product_id === (int) $it->product_id;
+                                    return $order->items->count() === 1;
+                                });
+                                return !$alreadyClaimed;
+                            })->values();
+                        @endphp
                         @foreach($order->items as $item)
+                        @php
+                            $itemSeller = $item->product?->creator;
+                            $itemWarrantyExpires = $order->getWarrantyExpiresAtForItem($item);
+                            $itemWarrantyActive = $order->isWarrantyActiveForItem($item);
+                            $itemComplaint = $orderComplaints->first(function ($cmp) use ($item, $order) {
+                                if ($cmp->order_item_id) return (int) $cmp->order_item_id === (int) $item->id;
+                                if ($cmp->product_id) return (int) $cmp->product_id === (int) $item->product_id;
+                                return $order->items->count() === 1;
+                            });
+                        @endphp
                         <div class="list-group-item p-3" style="background: var(--surface-bg); border-color: var(--outline-color) !important;">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
+                            <div class="d-flex justify-content-between align-items-start gap-2">
+                                <div class="min-w-0">
                                     <span class="fw-bold text-body">{{ $item->product->name ?? '-' }}</span>
                                     <small class="text-muted d-block">{{ $item->quantity }} &times; Rp {{ number_format($item->unit_price, 0, ',', '.') }}</small>
+                                    <div class="mt-1.5 d-flex flex-wrap align-items-center gap-1.5">
+                                        @if($itemSeller)
+                                            <span class="badge bg-secondary-subtle text-body rounded-pill px-2 py-1" style="font-size: 0.7rem;">
+                                                <i class="fas fa-store text-primary me-1"></i>{{ $itemSeller->display_name }}
+                                            </span>
+                                            @if($itemSeller->id !== Auth::id())
+                                                <a href="{{ route('chat.index', ['contact_id' => $itemSeller->id]) }}"
+                                                   class="btn btn-xs btn-outline-primary rounded-pill px-2 py-0.5 fw-semibold"
+                                                   style="font-size: 0.7rem;">
+                                                    <i class="fas fa-comments me-1"></i>{{ __('Chat Penjual') }}
+                                                </a>
+                                            @endif
+                                        @endif
+                                        @if($order->status === 'delivered' && $itemWarrantyExpires)
+                                            @if($itemComplaint)
+                                                <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill px-2 py-1" style="font-size: 0.68rem;">
+                                                    <i class="fas fa-toolbox me-1"></i>{{ __('Tiket #') }}{{ $itemComplaint->complaint_ref }}
+                                                </span>
+                                            @elseif($itemWarrantyActive)
+                                                <button type="button"
+                                                        class="btn btn-xs btn-outline-warning text-warning-emphasis rounded-pill px-2 py-0.5 fw-semibold"
+                                                        style="font-size: 0.7rem;"
+                                                        onclick="openComplaintModalForItem({{ $item->id }})">
+                                                    <i class="fas fa-shield-alt me-1"></i>{{ __('Klaim Garansi') }}
+                                                </button>
+                                            @else
+                                                <span class="badge bg-secondary-subtle text-muted rounded-pill px-2 py-1" style="font-size: 0.68rem;">
+                                                    {{ __('Garansi Berakhir') }}
+                                                </span>
+                                            @endif
+                                        @endif
+                                    </div>
                                     @if($item->vcc_services && count($item->vcc_services) > 0)
                                         @php $groupedServices = array_count_values($item->vcc_services); @endphp
                                         <div class="mt-1 d-flex flex-wrap gap-1 align-items-center">
@@ -57,7 +113,7 @@
                                         </div>
                                     @endif
                                 </div>
-                                <span class="fw-bold text-body">Rp {{ number_format($item->unit_price * $item->quantity, 0, ',', '.') }}</span>
+                                <span class="fw-bold text-body text-nowrap">Rp {{ number_format($item->unit_price * $item->quantity, 0, ',', '.') }}</span>
                             </div>
 
                             {{-- Product Review Section --}}
@@ -220,79 +276,92 @@
                     @endif
                 @endif
 
-                {{-- Modul Komplain / Garansi --}}
+                {{-- Modul Komplain / Garansi (Multi-Item & Multi-Seller Aware) --}}
                 @if($order->status === 'delivered')
                 <hr>
-                <div class="mt-4">
-                    @if($order->complaintCase)
+                <div class="mt-4 d-flex flex-column gap-3">
+                    @if($orderComplaints->isNotEmpty())
+                        @foreach($orderComplaints as $cmp)
+                        @php
+                            $cmpProduct = $cmp->resolveTargetProduct();
+                            $cmpSeller = $cmp->resolveTargetSeller();
+                            $statusBadge = match($cmp->status) {
+                                'new' => ['bg' => 'danger-subtle', 'text' => 'danger', 'label' => __('Baru')],
+                                'review' => ['bg' => 'warning-subtle', 'text' => 'warning', 'label' => __('Ditinjau')],
+                                'done' => ['bg' => 'success-subtle', 'text' => 'success', 'label' => __('Selesai')],
+                                'rejected' => ['bg' => 'secondary-subtle', 'text' => 'secondary', 'label' => __('Ditolak')],
+                                'refund_requested' => ['bg' => 'info-subtle', 'text' => 'info', 'label' => __('Proses Refund')],
+                                default => ['bg' => 'secondary-subtle', 'text' => 'secondary', 'label' => $cmp->status]
+                            };
+                        @endphp
                         <div class="m3-tonal-item p-3">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
                                 <h6 class="fw-bold mb-0 text-body">
                                     <i class="fas fa-toolbox text-warning me-2"></i>
                                     {{ __('Tiket Komplain & Garansi') }}
                                 </h6>
-                                @php
-                                    $statusBadge = match($order->complaintCase->status) {
-                                        'new' => ['bg' => 'danger-subtle', 'text' => 'danger', 'label' => __('Baru')],
-                                        'review' => ['bg' => 'warning-subtle', 'text' => 'warning', 'label' => __('Ditinjau')],
-                                        'done' => ['bg' => 'success-subtle', 'text' => 'success', 'label' => __('Selesai')],
-                                        'rejected' => ['bg' => 'secondary-subtle', 'text' => 'secondary', 'label' => __('Ditolak')],
-                                        'refund_requested' => ['bg' => 'info-subtle', 'text' => 'info', 'label' => __('Proses Refund')],
-                                        default => ['bg' => 'secondary-subtle', 'text' => 'secondary', 'label' => $order->complaintCase->status]
-                                    };
-                                @endphp
                                 <span class="badge bg-{{ $statusBadge['bg'] }} text-{{ $statusBadge['text'] }} rounded-pill px-3 py-1.5 small">
                                     {{ $statusBadge['label'] }}
                                 </span>
                             </div>
-                            <div class="mb-3">
-                                <span class="text-muted small d-block">{{ __('No Tiket:') }}</span>
-                                <span class="fw-bold text-secondary font-monospace">#{{ $order->complaintCase->complaint_ref }}</span>
-                            </div>
-                            <div class="mb-3">
-                                <span class="text-muted small d-block">{{ __('Detail Masalah:') }}</span>
-                                <p class="mb-0 text-body small bg-body p-2.5 rounded-3 border" style="border-color: var(--outline-color) !important;">{{ $order->complaintCase->complaint_text }}</p>
-                            </div>
-                            @if($order->complaintCase->status === 'rejected' && $order->complaintCase->rejected_reason)
-                            <div class="alert alert-danger mb-0 py-2.5 px-3 rounded-3 mt-2">
-                                <h6 class="fw-bold mb-1 small"><i class="fas fa-times-circle me-1"></i>{{ __('Alasan Penolakan Admin:') }}</h6>
-                                <p class="mb-0 small">{{ $order->complaintCase->rejected_reason }}</p>
-                            </div>
-                            @endif
-                            @if($order->complaintCase->status === 'done' && $order->complaintCase->refund_note)
-                            <div class="alert alert-success mb-0 py-2.5 px-3 rounded-3 mt-2">
-                                <h6 class="fw-bold mb-1 small"><i class="fas fa-check-circle me-1"></i>{{ __('Catatan Resolusi Admin:') }}</h6>
-                                <p class="mb-0 small">{{ $order->complaintCase->refund_note }}</p>
-                            </div>
-                            @endif
-                        </div>
-                    @else
-                        @if($order->is_warranty_active)
-                        <div class="d-flex align-items-center justify-content-between m3-tonal-item p-3 mt-3 flex-wrap gap-2">
-                            <div>
-                                <h6 class="fw-bold mb-1 text-body"><i class="fas fa-shield-alt text-primary me-2"></i>{{ __('Garansi Toko Aktif') }}</h6>
-                                <p class="text-muted small mb-0">{{ __('Batas akhir:') }} <strong>{{ $order->warranty_expires_at->format('d M Y H:i') }}</strong></p>
-                                <p class="text-muted small mb-0 mt-1">{{ __('Apakah akun digital yang Anda beli bermasalah? Ajukan klaim garansi di sini.') }}</p>
-                            </div>
-                            <button type="button" class="btn btn-warning rounded-pill px-4 fw-semibold" data-bs-toggle="modal" data-bs-target="#complaintModal">
-                                <i class="fas fa-toolbox me-2"></i>{{ __('Ajukan Komplain') }}
-                            </button>
-                        </div>
-                        @else
-                        <div class="d-flex align-items-center justify-content-between m3-tonal-item p-3 mt-3 flex-wrap gap-2">
-                            <div>
-                                <h6 class="fw-bold mb-1 text-secondary"><i class="fas fa-shield-alt me-2 text-secondary"></i>{{ __('Garansi Toko Kedaluwarsa') }}</h6>
-                                @if($order->warranty_expires_at)
-                                <p class="text-muted small mb-0">{{ __('Garansi berakhir pada:') }} <strong>{{ $order->warranty_expires_at->format('d M Y H:i') }}</strong></p>
-                                @else
-                                <p class="text-muted small mb-0">{{ __('Produk ini tidak memiliki garansi atau pesanan belum selesai.') }}</p>
+                            <div class="d-flex flex-wrap gap-2 mb-2 small">
+                                <span class="fw-bold text-secondary font-monospace">#{{ $cmp->complaint_ref }}</span>
+                                @if($cmpProduct)
+                                    <span class="badge bg-primary-subtle text-primary rounded-pill px-2.5 py-1">{{ $cmpProduct->name }}</span>
+                                @endif
+                                @if($cmpSeller)
+                                    <span class="badge bg-secondary-subtle text-body rounded-pill px-2.5 py-1">
+                                        <i class="fas fa-store me-1"></i>{{ $cmpSeller->display_name }}
+                                    </span>
                                 @endif
                             </div>
-                            <button type="button" class="btn btn-secondary rounded-pill px-4" disabled>
-                                <i class="fas fa-toolbox me-2"></i>{{ __('Klaim Berakhir') }}
-                            </button>
+                            <div class="mb-2">
+                                <span class="text-muted small d-block">{{ __('Detail Masalah:') }}</span>
+                                <p class="mb-0 text-body small bg-body p-2.5 rounded-3 border" style="border-color: var(--outline-color) !important;">{{ $cmp->complaint_text }}</p>
+                            </div>
+                            @if($cmp->status === 'rejected' && $cmp->rejected_reason)
+                            <div class="alert alert-danger mb-0 py-2.5 px-3 rounded-3 mt-2">
+                                <h6 class="fw-bold mb-1 small"><i class="fas fa-times-circle me-1"></i>{{ __('Alasan Penolakan Admin:') }}</h6>
+                                <p class="mb-0 small">{{ $cmp->rejected_reason }}</p>
+                            </div>
+                            @endif
+                            @if($cmp->status === 'done' && $cmp->refund_note)
+                            <div class="alert alert-success mb-0 py-2.5 px-3 rounded-3 mt-2">
+                                <h6 class="fw-bold mb-1 small"><i class="fas fa-check-circle me-1"></i>{{ __('Catatan Resolusi Admin:') }}</h6>
+                                <p class="mb-0 small" style="white-space: pre-line;">{{ $cmp->refund_note }}</p>
+                            </div>
+                            @endif
                         </div>
-                        @endif
+                        @endforeach
+                    @endif
+
+                    @if($claimableItems->isNotEmpty())
+                    <div class="d-flex align-items-center justify-content-between m3-tonal-item p-3 flex-wrap gap-2">
+                        <div>
+                            <h6 class="fw-bold mb-1 text-body"><i class="fas fa-shield-alt text-primary me-2"></i>{{ __('Garansi Toko Aktif') }}</h6>
+                            @if($order->warranty_expires_at)
+                            <p class="text-muted small mb-0">{{ __('Batas akhir (terpanjang):') }} <strong>{{ $order->warranty_expires_at->format('d M Y H:i') }}</strong></p>
+                            @endif
+                            <p class="text-muted small mb-0 mt-1">{{ __('Ada akun digital yang bermasalah? Pilih produk spesifik dan ajukan klaim garansi langsung ke penjual terkait.') }}</p>
+                        </div>
+                        <button type="button" class="btn btn-warning rounded-pill px-4 fw-semibold" onclick="openComplaintModalForItem({{ $claimableItems->first()->id }})">
+                            <i class="fas fa-toolbox me-2"></i>{{ __('Ajukan Komplain') }}
+                        </button>
+                    </div>
+                    @elseif($orderComplaints->isEmpty())
+                    <div class="d-flex align-items-center justify-content-between m3-tonal-item p-3 flex-wrap gap-2">
+                        <div>
+                            <h6 class="fw-bold mb-1 text-secondary"><i class="fas fa-shield-alt me-2 text-secondary"></i>{{ __('Garansi Toko Kedaluwarsa') }}</h6>
+                            @if($order->warranty_expires_at)
+                            <p class="text-muted small mb-0">{{ __('Garansi berakhir pada:') }} <strong>{{ $order->warranty_expires_at->format('d M Y H:i') }}</strong></p>
+                            @else
+                            <p class="text-muted small mb-0">{{ __('Produk dalam pesanan ini tidak memiliki garansi atau pesanan belum selesai.') }}</p>
+                            @endif
+                        </div>
+                        <button type="button" class="btn btn-secondary rounded-pill px-4" disabled>
+                            <i class="fas fa-toolbox me-2"></i>{{ __('Klaim Berakhir') }}
+                        </button>
+                    </div>
                     @endif
                 </div>
                 @endif
@@ -347,12 +416,46 @@
 
         <div class="mt-3">
             @php
-                $seller = $order->product->creator ?? null;
+                $contactableSellers = $order->getDistinctSellers()
+                    ->filter(fn ($entry) => $entry['seller']->id !== Auth::id())
+                    ->values();
             @endphp
-            @if($seller && $seller->id !== Auth::id())
-                <a href="{{ route('chat.index', ['contact_id' => $seller->id]) }}" class="btn btn-outline-primary w-100 rounded-pill mb-2">
-                    <i class="fas fa-comments me-2"></i>{{ __('Chat dengan Penjual') }}
+            @if($contactableSellers->count() === 1)
+                @php $singleSeller = $contactableSellers->first()['seller']; @endphp
+                <a href="{{ route('chat.index', ['contact_id' => $singleSeller->id]) }}" class="btn btn-outline-primary w-100 rounded-pill mb-2">
+                    <i class="fas fa-comments me-2"></i>{{ __('Chat dengan :name', ['name' => $singleSeller->display_name]) }}
                 </a>
+            @elseif($contactableSellers->count() > 1)
+                <div class="card mb-3">
+                    <div class="card-body p-3">
+                        <h6 class="fw-bold small text-body mb-2">
+                            <i class="fas fa-comments text-primary me-1.5"></i>{{ __('Hubungi Penjual (:count Toko)', ['count' => $contactableSellers->count()]) }}
+                        </h6>
+                        <div class="d-flex flex-column gap-2">
+                            @foreach($contactableSellers as $entry)
+                                @php
+                                    $entrySeller = $entry['seller'];
+                                    $entryItemNames = $entry['items']->map(fn ($it) => $it->product->name ?? '-')->implode(', ');
+                                @endphp
+                                <div class="d-flex align-items-center justify-content-between gap-2 p-2 rounded-3 border" style="background: var(--surface-container, var(--bs-tertiary-bg)); border-color: var(--outline-variant, var(--bs-border-color)) !important;">
+                                    <div class="min-w-0">
+                                        <div class="fw-semibold small text-body text-truncate">
+                                            <i class="fas fa-store text-primary me-1"></i>{{ $entrySeller->display_name }}
+                                        </div>
+                                        <div class="text-muted text-truncate" style="font-size: 0.72rem;" title="{{ $entryItemNames }}">
+                                            {{ $entryItemNames }}
+                                        </div>
+                                    </div>
+                                    <a href="{{ route('chat.index', ['contact_id' => $entrySeller->id]) }}"
+                                       class="btn btn-sm btn-primary rounded-pill px-3 py-1 fw-semibold flex-shrink-0"
+                                       style="font-size: 0.76rem;">
+                                        <i class="fas fa-comments me-1"></i>{{ __('Chat') }}
+                                    </a>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
             @endif
             <a href="{{ route('orders.index') }}" class="btn btn-outline-secondary w-100 rounded-pill mb-2">
                 <i class="fas fa-arrow-left me-2"></i>{{ __('Kembali ke Riwayat') }}
@@ -389,20 +492,30 @@
 @endsection
 @endif
 
-@if($order->status === 'delivered' && !$order->complaintCase)
+@if($order->status === 'delivered' && isset($claimableItems) && $claimableItems->isNotEmpty())
 @push('modals')
 <div class="modal fade" id="complaintModal" tabindex="-1" aria-labelledby="complaintModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
             <div class="modal-header border-0 pb-0">
                 <h5 class="fw-bold" id="complaintModalLabel"><i class="fas fa-toolbox text-warning me-2"></i>{{ __('Ajukan Klaim Garansi') }}</h5>
-                <button type="button" class="btn-close" data-bs-toggle="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form action="{{ route('orders.complaint', $order->id) }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <div class="modal-body p-4">
                     <div class="alert alert-info py-2 px-3 small border-0 mb-3" style="border-radius: var(--radius-md, 16px);">
-                        <i class="fas fa-info-circle me-1"></i> <b>{{ __('Kebijakan Garansi:') }}</b> {{ __('Harap jelaskan kendala yang dialami secara rinci (misal: kredensial salah, pack belum diklaim, dsb).') }}
+                        <i class="fas fa-info-circle me-1"></i> <b>{{ __('Kebijakan Garansi:') }}</b> {{ __('Pilih produk yang bermasalah lalu jelaskan kendala secara rinci. Tiket akan diteruskan langsung ke penjual produk tersebut.') }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="complaint_order_item_id" class="form-label text-muted small fw-bold">{{ __('Produk yang Dikomplain') }} <span class="text-danger">*</span></label>
+                        <select class="form-select" id="complaint_order_item_id" name="order_item_id" required>
+                            @foreach($claimableItems as $cItem)
+                                <option value="{{ $cItem->id }}">
+                                    {{ $cItem->product->name ?? '-' }} ({{ $cItem->quantity }}×) — {{ $cItem->product?->creator?->display_name ?? __('Penjual') }}
+                                </option>
+                            @endforeach
+                        </select>
                     </div>
                     <div class="mb-3">
                         <label for="complaint_text" class="form-label text-muted small fw-bold">{{ __('Deskripsi Masalah / Keluhan') }}</label>
@@ -427,6 +540,16 @@
 
 @push('scripts')
 <script>
+    function openComplaintModalForItem(orderItemId) {
+        const select = document.getElementById('complaint_order_item_id');
+        if (select && orderItemId) {
+            select.value = String(orderItemId);
+        }
+        const modalEl = document.getElementById('complaintModal');
+        if (modalEl && typeof bootstrap !== 'undefined') {
+            bootstrap.Modal.getOrCreateInstance(modalEl).show();
+        }
+    }
     function highlightStars(orderId, productId, rating) {
         for (let i = 1; i <= 5; i++) {
             const starIcon = document.getElementById(`icon-${orderId}-${productId}-${i}`);

@@ -128,12 +128,19 @@ class Order extends Model
             return null;
         }
 
-        $warrantyDays = $this->product->warranty_days ?? 0;
-        if ($warrantyDays <= 0) {
-            return null; // No warranty
+        $maxDays = 0;
+        foreach ($this->items as $item) {
+            $days = (int) ($item->product->warranty_days ?? 0);
+            if ($days > $maxDays) {
+                $maxDays = $days;
+            }
         }
 
-        return $this->delivered_at->copy()->addDays($warrantyDays);
+        if ($maxDays <= 0) {
+            return null;
+        }
+
+        return $this->delivered_at->copy()->addDays($maxDays);
     }
 
     public function getIsWarrantyActiveAttribute(): bool
@@ -144,6 +151,72 @@ class Order extends Model
         }
 
         return now()->lessThanOrEqualTo($expiresAt);
+    }
+
+    /**
+     * Get warranty expiration datetime for a specific OrderItem.
+     */
+    public function getWarrantyExpiresAtForItem(OrderItem $item)
+    {
+        if ($this->status !== 'delivered' || !$this->delivered_at) {
+            return null;
+        }
+
+        $warrantyDays = (int) ($item->product->warranty_days ?? 0);
+        if ($warrantyDays <= 0) {
+            return null;
+        }
+
+        return $this->delivered_at->copy()->addDays($warrantyDays);
+    }
+
+    /**
+     * Determine whether warranty is currently active for a specific OrderItem.
+     */
+    public function isWarrantyActiveForItem(OrderItem $item): bool
+    {
+        $expiresAt = $this->getWarrantyExpiresAtForItem($item);
+        if (!$expiresAt) {
+            return false;
+        }
+
+        return now()->lessThanOrEqualTo($expiresAt);
+    }
+
+    /**
+     * Distinct sellers involved in this order, grouped with their respective items.
+     *
+     * @return \Illuminate\Support\Collection<int, array{seller: \App\Models\User, items: \Illuminate\Support\Collection}>
+     */
+    public function getDistinctSellers(): \Illuminate\Support\Collection
+    {
+        $grouped = collect();
+
+        foreach ($this->items as $item) {
+            $seller = $item->product?->creator;
+            if (!$seller) {
+                continue;
+            }
+
+            if (!$grouped->has($seller->id)) {
+                $grouped->put($seller->id, [
+                    'seller' => $seller,
+                    'items' => collect(),
+                ]);
+            }
+
+            $grouped->get($seller->id)['items']->push($item);
+        }
+
+        return $grouped->values();
+    }
+
+    /**
+     * Whether this order spans products from more than one distinct seller.
+     */
+    public function isMultiSeller(): bool
+    {
+        return $this->getDistinctSellers()->count() > 1;
     }
 
     /**

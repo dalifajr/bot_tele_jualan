@@ -32,16 +32,38 @@
 <div class="row g-3 g-md-4">
     {{-- Main Left Column --}}
     <div class="col-lg-8">
+        {{-- Multi-Seller Isolation Notice --}}
+        @if(!empty($isMultiSellerOrder))
+        <div class="alert alert-info rounded-4 border-0 mb-3 d-flex align-items-start gap-2 small">
+            <i class="fas fa-info-circle mt-1 flex-shrink-0"></i>
+            <div>
+                <strong>{{ __('Pesanan Keranjang Gabungan:') }}</strong>
+                {{ __('Pembeli memesan produk dari beberapa toko dalam satu transaksi. Demi privasi, halaman ini hanya menampilkan item, kredensial stok, dan rincian pendapatan milik toko Anda.') }}
+            </div>
+        </div>
+        @endif
+
         {{-- Product Details Card --}}
         <div class="card border-0 shadow-sm mb-3" style="border-radius: 16px;">
             <div class="card-header bg-transparent border-0 pt-3 pt-md-4 px-3 px-md-4 pb-0">
-                <h6 class="fw-bold text-dark mb-0">
-                    <i class="fas fa-box text-primary me-2"></i>{{ __('Item yang Dipesan') }}
+                <h6 class="fw-bold text-body mb-0">
+                    <i class="fas fa-box text-primary me-2"></i>{{ __('Item Toko Anda yang Dipesan') }}
                 </h6>
             </div>
             <div class="card-body p-3 p-md-4">
+                @php
+                    $itemsToRender = $sellerItems ?? $order->items;
+                    $stocksToRender = $sellerStockUnits ?? $order->stockUnits;
+                    $complaintsToRender = $sellerComplaints ?? ($order->complaintCase ? collect([$order->complaintCase]) : collect());
+                    $displaySubtotal = isset($sellerSubtotal)
+                        ? (int) $sellerSubtotal
+                        : (($order->subtotal > 0) ? (int) $order->subtotal : (int) $itemsToRender->sum(fn($i) => $i->unit_price * $i->quantity));
+                    $displayDiscount = isset($sellerDiscount) ? (int) $sellerDiscount : (int) ($order->discount_amount ?? 0);
+                    $hasVoucher = ($displayDiscount > 0) || (!empty($order->coupon_code) && empty($isMultiSellerOrder));
+                    $displayNetTotal = isset($sellerNetTotal) ? (int) $sellerNetTotal : (int) $order->total_amount;
+                @endphp
                 <div class="list-group list-group-flush border rounded-3 overflow-hidden mt-1">
-                    @foreach($order->items as $item)
+                    @foreach($itemsToRender as $item)
                     <div class="list-group-item p-2.5 p-md-3 bg-light d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-2.5 border-bottom">
                         <div class="d-flex align-items-center gap-2.5 min-w-0 flex-grow-1">
                             <div class="rounded-3 bg-white border p-1.5 d-flex align-items-center justify-content-center text-primary flex-shrink-0" style="width: 50px; height: 50px;">
@@ -52,7 +74,7 @@
                                 @endif
                             </div>
                             <div class="flex-grow-1 min-w-0">
-                                <h6 class="fw-bold text-dark mb-1 text-truncate" style="font-size: 0.92rem;">{{ $item->product->name ?? '-' }}</h6>
+                                <h6 class="fw-bold text-body mb-1 text-truncate" style="font-size: 0.92rem;">{{ $item->product->name ?? '-' }}</h6>
                                 <div class="text-muted small" style="font-size: 0.78rem;">
                                     {{ $item->quantity }} x Rp {{ number_format($item->unit_price, 0, ',', '.') }}
                                 </div>
@@ -60,19 +82,13 @@
                         </div>
                         <div class="text-end d-flex justify-content-between justify-content-sm-end align-items-center pt-2 pt-sm-0 border-top border-sm-top-0 flex-shrink-0">
                             <span class="text-muted small d-sm-none">{{ __('Subtotal:') }}</span>
-                            <span class="fw-bold text-dark fs-6">Rp {{ number_format($item->unit_price * $item->quantity, 0, ',', '.') }}</span>
+                            <span class="fw-bold text-body fs-6">Rp {{ number_format($item->unit_price * $item->quantity, 0, ',', '.') }}</span>
                         </div>
                     </div>
                     @endforeach
                 </div>
 
                 <div class="border-top mt-3 pt-3">
-                    @php
-                        $displaySubtotal = ($order->subtotal > 0)
-                            ? (int) $order->subtotal
-                            : (int) $order->items->sum(fn($i) => $i->unit_price * $i->quantity);
-                        $hasVoucher = ($order->discount_amount > 0) || !empty($order->coupon_code);
-                    @endphp
                     <div class="d-flex justify-content-between mb-1.5 small text-muted">
                         <span>{{ __('Subtotal Produk') }}</span>
                         <span class="fw-semibold text-body">Rp {{ number_format($displaySubtotal, 0, ',', '.') }}</span>
@@ -87,34 +103,34 @@
                             </span>
                             @endif
                         </span>
-                        <span class="fw-semibold text-success text-nowrap">- Rp {{ number_format((int) $order->discount_amount, 0, ',', '.') }}</span>
+                        <span class="fw-semibold text-success text-nowrap">- Rp {{ number_format($displayDiscount, 0, ',', '.') }}</span>
                     </div>
                     @endif
-                    @if($order->unique_code)
+                    @if(empty($isMultiSellerOrder) && $order->unique_code)
                     <div class="d-flex justify-content-between mb-1.5 small text-muted">
                         <span>{{ __('Kode Unik') }}</span>
                         <span class="fw-semibold text-body">+ Rp {{ number_format((int) $order->unique_code, 0, ',', '.') }}</span>
                     </div>
                     @endif
                     <div class="d-flex justify-content-between pt-2 border-top fw-bold fs-6">
-                        <span>{{ __('Total Pendapatan Pesanan') }}</span>
-                        <span class="text-primary">{{ $order->formatted_total }}</span>
+                        <span>{{ !empty($isMultiSellerOrder) ? __('Nilai Porsi Toko Anda') : __('Total Pendapatan Pesanan') }}</span>
+                        <span class="text-primary">Rp {{ number_format(!empty($isMultiSellerOrder) ? $displayNetTotal : (int) $order->total_amount, 0, ',', '.') }}</span>
                     </div>
                 </div>
             </div>
         </div>
 
-        {{-- Sent Stock / Credentials Card --}}
-        @if($order->stockUnits && $order->stockUnits->count() > 0)
+        {{-- Sent Stock / Credentials Card (Strictly Isolated to This Seller) --}}
+        @if($stocksToRender && $stocksToRender->count() > 0)
         <div class="card border-0 shadow-sm mb-3" style="border-radius: 16px;">
             <div class="card-header bg-transparent border-0 pt-3 pt-md-4 px-3 px-md-4 pb-0 d-flex justify-content-between align-items-center">
-                <h6 class="fw-bold text-dark mb-0">
-                    <i class="fas fa-key text-success me-2"></i>{{ __('Data Akun / Lisensi Terkirim') }} ({{ $order->stockUnits->count() }} unit)
+                <h6 class="fw-bold text-body mb-0">
+                    <i class="fas fa-key text-success me-2"></i>{{ __('Data Akun / Lisensi Terkirim (Toko Anda)') }} ({{ $stocksToRender->count() }} unit)
                 </h6>
             </div>
             <div class="card-body p-3 p-md-4">
                 <div class="d-flex flex-column gap-3 mt-1">
-                    @php $groupedUnits = $order->stockUnits->groupBy('product_id'); @endphp
+                    @php $groupedUnits = $stocksToRender->groupBy('product_id'); @endphp
                     @foreach($groupedUnits as $productId => $units)
                         @php $productName = $units->first()->product->name ?? __('Produk'); @endphp
                         <div class="mb-1">
@@ -136,8 +152,8 @@
         </div>
         @endif
 
-        {{-- Complaint Case Card if any --}}
-        @if($order->complaintCase)
+        {{-- Complaint Cases Scoped Strictly to This Seller --}}
+        @foreach($complaintsToRender as $sellerCmp)
         <div class="card border-0 shadow-sm mb-3 border-start border-warning border-4" style="border-radius: 16px;">
             <div class="card-body p-3 p-md-4">
                 <div class="d-flex justify-content-between align-items-center mb-2">
@@ -145,16 +161,19 @@
                         <i class="fas fa-exclamation-triangle me-2"></i>{{ __('Pusat Resolusi / Komplain Aktif') }}
                     </h6>
                     <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill px-3 py-1">
-                        {{ ucfirst($order->complaintCase->status) }}
+                        {{ ucfirst($sellerCmp->status) }}
                     </span>
                 </div>
-                <p class="text-muted small mb-3">{{ $order->complaintCase->reason }}</p>
-                <a href="{{ route('seller.complaints.show', $order->complaintCase->id) }}" class="btn btn-sm btn-outline-warning rounded-pill px-3">
+                @if($sellerCmp->resolveTargetProduct())
+                    <div class="small fw-semibold text-body mb-1">{{ __('Produk:') }} {{ $sellerCmp->resolveTargetProduct()->name }}</div>
+                @endif
+                <p class="text-muted small mb-3">{{ $sellerCmp->complaint_text }}</p>
+                <a href="{{ route('seller.complaints.show', $sellerCmp->id) }}" class="btn btn-sm btn-outline-warning rounded-pill px-3">
                     <i class="fas fa-comments me-1"></i>{{ __('Lihat Ruang Mediasi') }}
                 </a>
             </div>
         </div>
-        @endif
+        @endforeach
     </div>
 
     {{-- Right Side Column --}}
@@ -251,8 +270,8 @@
             </div>
         </div>
 
-        {{-- Action Buttons --}}
-        @if($order->status === 'pending_payment')
+        {{-- Action Buttons (Disabled for Multi-Seller orders to prevent cancelling other sellers' items) --}}
+        @if($order->status === 'pending_payment' && empty($isMultiSellerOrder))
         <div class="card border-0 shadow-sm" style="border-radius: 16px;">
             <div class="card-body p-3">
                 <form action="{{ route('seller.orders.cancel', $order->id) }}" method="POST" class="m-0" onsubmit="confirmAction(event, '{{ __('Apakah Anda yakin ingin membatalkan pesanan ini?') }}');">

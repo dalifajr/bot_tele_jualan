@@ -145,12 +145,9 @@
                     <small class="text-muted">{{ __('Data kredensial yang diserahkan otomatis kepada pembeli') }}</small>
                 </div>
                 @if($order->status === 'delivered')
-                <form action="{{ route('admin.orders.refund', $order->id) }}" method="POST" class="m-0" onsubmit="confirmAction(event, '{{ __('Apakah Anda yakin ingin membatalkan pesanan ini, merefund penuh (stok ditarik ke karantina), dan membatalkan/menghapus saldo tertahan seller?') }}');">
-                    @csrf
-                    <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3">
-                        <i class="fas fa-undo-alt me-1"></i> {{ __('Refund Penuh & Batalkan') }}
-                    </button>
-                </form>
+                <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#adminRefundOrderModal">
+                    <i class="fas fa-undo-alt me-1"></i> {{ __('Refund Penuh & Batalkan') }}
+                </button>
                 @endif
             </div>
             <div class="card-body p-3 p-md-4">
@@ -206,27 +203,40 @@
         </div>
         @endif
 
-        {{-- Complaint Case Card if any --}}
-        @if($order->complaintCase)
+        {{-- Complaint Cases Cards (Supports Multi-Item Complaints) --}}
+        @php
+            $adminOrderComplaints = ($order->complaints && $order->complaints->isNotEmpty())
+                ? $order->complaints
+                : ($order->complaintCase ? collect([$order->complaintCase]) : collect());
+        @endphp
+        @foreach($adminOrderComplaints as $ordCmp)
         <div class="card border-0 shadow-sm mb-3 border-start border-danger border-4" style="border-radius: 16px;">
             <div class="card-body p-3 p-md-4">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <h6 class="fw-bold text-danger mb-0">
-                        <i class="fas fa-shield-alt me-2"></i>{{ __('Pusat Komplain / Dispute') }}
+                        <i class="fas fa-shield-alt me-2"></i>{{ __('Pusat Komplain / Dispute') }} <span class="font-monospace small">#{{ $ordCmp->complaint_ref }}</span>
                     </h6>
                     <span class="badge bg-danger-subtle text-danger rounded-pill px-3 py-1">
-                        {{ ucfirst($order->complaintCase->status) }}
+                        {{ ucfirst($ordCmp->status) }}
                     </span>
                 </div>
-                <p class="text-muted small mb-3">{{ $order->complaintCase->reason }}</p>
+                @if($ordCmp->resolveTargetProduct())
+                <div class="small mb-2 d-flex flex-wrap gap-1.5">
+                    <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-1">{{ $ordCmp->resolveTargetProduct()->name }}</span>
+                    @if($ordCmp->resolveTargetSeller())
+                    <span class="badge bg-secondary-subtle text-body rounded-pill px-2 py-1"><i class="fas fa-store me-1"></i>{{ $ordCmp->resolveTargetSeller()->display_name }}</span>
+                    @endif
+                </div>
+                @endif
+                <p class="text-muted small mb-3">{{ $ordCmp->complaint_text }}</p>
                 @if(Route::has('admin.complaints.show'))
-                <a href="{{ route('admin.complaints.show', $order->complaintCase->id) }}" class="btn btn-sm btn-outline-danger rounded-pill px-3">
+                <a href="{{ route('admin.complaints.show', $ordCmp->id) }}" class="btn btn-sm btn-outline-danger rounded-pill px-3">
                     <i class="fas fa-gavel me-1"></i>{{ __('Tinjau Kasus Komplain') }}
                 </a>
                 @endif
             </div>
         </div>
-        @endif
+        @endforeach
     </div>
 
     {{-- Side Column (Right) --}}
@@ -277,33 +287,47 @@
             </div>
         </div>
 
-        {{-- Seller Info Card --}}
+        {{-- Sellers Info Card (Supports Multi-Seller Cart Orders) --}}
         @php
-            $seller = $order->product?->creator;
+            $involvedSellers = $order->getDistinctSellers();
         @endphp
-        @if($seller)
+        @if($involvedSellers->isNotEmpty())
         <div class="card border-0 shadow-sm mb-3" style="border-radius: 16px;">
-            <div class="card-header bg-transparent border-0 pt-3 pt-md-4 px-3 px-md-4 pb-0">
-                <h6 class="fw-bold text-dark mb-0">
+            <div class="card-header bg-transparent border-0 pt-3 pt-md-4 px-3 px-md-4 pb-0 d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold text-body mb-0">
                     <i class="fas fa-store text-success me-2"></i>{{ __('Penjual / Seller') }}
                 </h6>
+                @if($involvedSellers->count() > 1)
+                <span class="badge bg-primary-subtle text-primary rounded-pill">{{ $involvedSellers->count() }} {{ __('Toko') }}</span>
+                @endif
             </div>
-            <div class="card-body p-3 p-md-4">
-                <div class="d-flex align-items-center gap-3 mb-2 mt-1">
-                    <div class="rounded-circle bg-success-subtle text-success d-flex align-items-center justify-content-center fw-bold fs-5 flex-shrink-0" style="width: 44px; height: 44px;">
-                        {{ strtoupper(substr($seller->full_name ?? $seller->username ?? 'S', 0, 1)) }}
+            <div class="card-body p-3 p-md-4 d-flex flex-column gap-3">
+                @foreach($involvedSellers as $entry)
+                @php
+                    $seller = $entry['seller'];
+                    $sellerItemLabels = $entry['items']->map(fn ($it) => ($it->product->name ?? '-') . ' (' . $it->quantity . '×)')->implode(', ');
+                @endphp
+                <div class="{{ !$loop->first ? 'pt-3 border-top' : '' }}">
+                    <div class="d-flex align-items-center gap-3 mb-2">
+                        <div class="rounded-circle bg-success-subtle text-success d-flex align-items-center justify-content-center fw-bold fs-5 flex-shrink-0" style="width: 44px; height: 44px;">
+                            {{ strtoupper(substr($seller->full_name ?? $seller->username ?? 'S', 0, 1)) }}
+                        </div>
+                        <div class="min-w-0">
+                            <h6 class="fw-bold mb-0 text-body text-truncate">{{ $seller->full_name ?? $seller->username }}</h6>
+                            <small class="text-muted text-truncate d-block">{{ $seller->username ? '@'.$seller->username : '-' }}</small>
+                        </div>
                     </div>
-                    <div class="min-w-0">
-                        <h6 class="fw-bold mb-0 text-dark text-truncate">{{ $seller->full_name ?? $seller->username }}</h6>
-                        <small class="text-muted text-truncate d-block">{{ $seller->username ? '@'.$seller->username : '-' }}</small>
+                    <div class="p-2.5 bg-light rounded-3 small">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="text-muted">{{ __('Telegram ID:') }}</span>
+                            <code>{{ $seller->telegram_id ?? '-' }}</code>
+                        </div>
+                        <div class="text-muted" style="font-size: 0.76rem;">
+                            <strong>{{ __('Item:') }}</strong> {{ $sellerItemLabels }}
+                        </div>
                     </div>
                 </div>
-                <div class="p-2.5 bg-light rounded-3 small">
-                    <div class="d-flex justify-content-between">
-                        <span class="text-muted">{{ __('Telegram ID:') }}</span>
-                        <code>{{ $seller->telegram_id ?? '-' }}</code>
-                    </div>
-                </div>
+                @endforeach
             </div>
         </div>
         @endif
@@ -365,6 +389,62 @@
 @endsection
 
 @push('modals')
+{{-- Full Refund & Cancel Choice Modal --}}
+@if($order->status === 'delivered')
+<div class="modal fade" id="adminRefundOrderModal" tabindex="-1" aria-labelledby="adminRefundOrderModalLabel" aria-hidden="true" style="z-index: 1060;">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border" style="border-radius: 24px;">
+            <div class="modal-header border-0 pb-0 px-4 pt-4">
+                <h5 class="fw-bold text-danger mb-0" id="adminRefundOrderModalLabel">
+                    <i class="fas fa-undo-alt me-2"></i>{{ __('Refund & Batalkan Pesanan') }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ route('admin.orders.refund', $order->id) }}" method="POST">
+                @csrf
+                @php
+                    $orderNetRefundable = max(0, (int) $order->total_amount - (int) ($order->unique_code ?? 0));
+                    if ($orderNetRefundable <= 0) $orderNetRefundable = (int) $order->total_amount;
+                @endphp
+                <div class="modal-body p-4">
+                    <p class="small text-muted mb-3">
+                        {{ __('Pesanan akan dibatalkan, seluruh stok ditarik ke karantina, dan dana tertahan seller dibatalkan. Pilih mekanisme pengembalian dana untuk pembeli:') }}
+                    </p>
+
+                    <div class="d-flex flex-column gap-2.5">
+                        <label class="p-3 rounded-4 border d-flex align-items-start gap-2.5" style="cursor: pointer; background: var(--surface-container, var(--bs-tertiary-bg));">
+                            <input class="form-check-input mt-1 flex-shrink-0" type="radio" name="refund_destination" value="wallet" checked>
+                            <div>
+                                <div class="fw-bold small text-body">{{ __('Kirim Saldo ke Dompet Pembeli + Batalkan') }}</div>
+                                <div class="text-muted" style="font-size: 0.76rem;">
+                                    {{ __('Otomatis mengembalikan dana sebesar Rp:amount ke Dompet Saldo akun pembeli.', ['amount' => number_format($orderNetRefundable, 0, ',', '.')]) }}
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="p-3 rounded-4 border d-flex align-items-start gap-2.5" style="cursor: pointer; background: var(--surface-container, var(--bs-tertiary-bg));">
+                            <input class="form-check-input mt-1 flex-shrink-0" type="radio" name="refund_destination" value="external">
+                            <div>
+                                <div class="fw-bold small text-body">{{ __('Batalkan Saja (Refund Manual di Luar Website)') }}</div>
+                                <div class="text-muted" style="font-size: 0.76rem;">
+                                    {{ __('Saldo dompet pembeli TIDAK ditambah. Gunakan opsi ini bila Admin sudah mentransfer pengembalian dana secara manual di luar website.') }}
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0 px-4 pb-4">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">{{ __('Batal') }}</button>
+                    <button type="submit" class="btn btn-danger rounded-pill px-4 fw-semibold">
+                        <i class="fas fa-check me-1"></i>{{ __('Proses Pembatalan') }}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
+
 {{-- Edit Status Modal (Rendered at Root Body outside container) --}}
 <div class="modal fade" id="editOrderStatusModal" tabindex="-1" aria-labelledby="editOrderStatusModalLabel" aria-hidden="true" style="z-index: 1060;">
     <div class="modal-dialog modal-dialog-centered">
@@ -421,52 +501,72 @@
     }
 
     function submitBulkAction(orderId, actionType) {
-        const checked = document.querySelectorAll(`.stock-checkbox[data-order-id="${orderId}"]`);
+        const checked = document.querySelectorAll(`.stock-checkbox[data-order-id="${orderId}"]:checked`);
         if (checked.length === 0) return;
-        
+
         const ids = Array.from(checked).map(cb => cb.value);
-        
-        let confirmMsg = '';
-        let url = '';
-        
+
         if (actionType === 'replace') {
-            confirmMsg = "{{ __('Apakah Anda yakin ingin mengganti :count akun terpilih dengan stok baru dari seller?') }}".replace(':count', ids.length);
-            url = `/admin/orders/${orderId}/replace-stock-bulk`;
-        } else {
-            confirmMsg = "{{ __('Apakah Anda yakin ingin melakukan refund sebagian untuk :count akun terpilih ini? (Dana tertahan seller akan dikurangi)') }}".replace(':count', ids.length);
-            url = `/admin/orders/${orderId}/refund-bulk`;
+            const confirmMsg = "{{ __('Apakah Anda yakin ingin mengganti :count akun terpilih dengan stok baru dari seller?') }}".replace(':count', ids.length);
+            const url = `/admin/orders/${orderId}/replace-stock-bulk`;
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: '{{ __('Konfirmasi Aksi') }}',
+                    text: confirmMsg,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: '{{ __('Ya, Lanjutkan') }}',
+                    cancelButtonText: '{{ __('Batal') }}'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        executeBulkFormSubmit(url, ids);
+                    }
+                });
+            } else if (confirm(confirmMsg)) {
+                executeBulkFormSubmit(url, ids);
+            }
+            return;
         }
-        
+
+        // Bulk Refund with explicit choice: Wallet vs Manual External Transfer
+        const url = `/admin/orders/${orderId}/refund-bulk`;
         if (typeof Swal !== 'undefined') {
             Swal.fire({
-                title: '{{ __('Konfirmasi Aksi') }}',
-                text: confirmMsg,
+                title: '{{ __('Pilih Metode Refund Sebagian') }}',
+                html: `<p class="small text-muted mb-3">${"{{ __('Akan menarik :count akun terpilih ke karantina dan membatalkan dana tertahan seller terkait.') }}".replace(':count', ids.length)}</p>
+                    <div class="text-start d-flex flex-column gap-2">
+                        <label class="p-2.5 rounded-3 border d-flex align-items-start gap-2" style="cursor:pointer;">
+                            <input type="radio" name="swal_refund_dest" value="wallet" class="form-check-input mt-1" checked>
+                            <span class="small"><strong>{{ __('Kirim ke Dompet Saldo Pembeli') }}</strong><br><span class="text-muted">{{ __('Nilai bersih akun terpilih masuk otomatis ke dompet pembeli.') }}</span></span>
+                        </label>
+                        <label class="p-2.5 rounded-3 border d-flex align-items-start gap-2" style="cursor:pointer;">
+                            <input type="radio" name="swal_refund_dest" value="external" class="form-check-input mt-1">
+                            <span class="small"><strong>{{ __('Batalkan Saja (Refund Manual di Luar Website)') }}</strong><br><span class="text-muted">{{ __('Tanpa menambah saldo dompet pembeli.') }}</span></span>
+                        </label>
+                    </div>`,
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonColor: actionType === 'refund' ? '#dc3545' : '#ffc107',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: '{{ __('Ya, Lanjutkan') }}',
+                confirmButtonText: '{{ __('Proses Refund') }}',
                 cancelButtonText: '{{ __('Batal') }}'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    executeBulkFormSubmit(url, ids);
+                    const selectedDest = document.querySelector('input[name="swal_refund_dest"]:checked')?.value || 'external';
+                    executeBulkFormSubmit(url, ids, selectedDest);
                 }
             });
-        } else {
-            if (confirm(confirmMsg)) {
-                executeBulkFormSubmit(url, ids);
-            }
+        } else if (confirm("{{ __('Proses refund sebagian untuk akun terpilih?') }}")) {
+            executeBulkFormSubmit(url, ids, 'external');
         }
     }
 
-    function executeBulkFormSubmit(url, ids) {
+    function executeBulkFormSubmit(url, ids, refundDestination = null) {
         const loader = document.getElementById('pageLoader');
         if (loader) loader.classList.remove('d-none');
-        
+
         const form = document.createElement('form');
         form.method = 'POST';
         form.action = url;
-        
+
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
         if (csrfToken) {
             const csrfInput = document.createElement('input');
@@ -475,13 +575,21 @@
             csrfInput.value = csrfToken;
             form.appendChild(csrfInput);
         }
-        
+
         const idsInput = document.createElement('input');
         idsInput.type = 'hidden';
         idsInput.name = 'stock_unit_ids';
         idsInput.value = JSON.stringify(ids);
         form.appendChild(idsInput);
-        
+
+        if (refundDestination) {
+            const destInput = document.createElement('input');
+            destInput.type = 'hidden';
+            destInput.name = 'refund_destination';
+            destInput.value = refundDestination;
+            form.appendChild(destInput);
+        }
+
         document.body.appendChild(form);
         form.submit();
     }

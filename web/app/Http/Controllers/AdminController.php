@@ -673,7 +673,7 @@ class AdminController extends Controller
 
     public function showOrder($id)
     {
-        $order = Order::with(['customer', 'items.product.creator', 'stockUnits.seller', 'complaintCase', 'payment', 'vpnAccounts'])
+        $order = Order::with(['customer', 'items.product.creator', 'stockUnits.seller', 'complaintCase', 'complaints.product', 'complaints.seller', 'payment', 'vpnAccounts'])
             ->findOrFail($id);
 
         return view('admin.orders.show', compact('order'));
@@ -2488,11 +2488,14 @@ class AdminController extends Controller
 
     public function showComplaint($id)
     {
-        $complaint = \App\Models\ComplaintCase::with(['customer', 'order.items.product', 'order.stockUnits'])->findOrFail($id);
-        
-        $productId = $complaint->order->items->first()->product_id ?? 0;
-        $sellerId = $complaint->order->items->first()->product->creator_id ?? 0; // for admin, fetch from product's creator
-        
+        $complaint = \App\Models\ComplaintCase::with(['customer', 'product', 'seller', 'orderItem.product.creator', 'order.items.product.creator', 'order.stockUnits.seller'])->findOrFail($id);
+
+        $targetProduct = $complaint->resolveTargetProduct();
+        $targetSeller = $complaint->resolveTargetSeller();
+        $productId = $targetProduct?->id ?? 0;
+        $sellerId = $targetSeller?->id ?? 0;
+        $refundableAmount = $complaint->calculateRefundableAmount();
+
         $availableStocks = \App\Models\StockUnit::where('seller_id', $sellerId)
             ->where('product_id', $productId)
             ->where('is_sold', false)
@@ -2501,23 +2504,24 @@ class AdminController extends Controller
                 $q->where('stock_status', 'ready')->orWhereNull('stock_status');
             })
             ->get();
-            
+
         $availableStockCount = $availableStocks->count();
         $randomStock = $availableStockCount > 0 ? $availableStocks->random() : null;
 
-        return view('admin.complaints.show', compact('complaint', 'availableStockCount', 'randomStock'));
+        return view('admin.complaints.show', compact('complaint', 'availableStockCount', 'randomStock', 'targetProduct', 'targetSeller', 'refundableAmount'));
     }
 
     public function updateComplaintStatus(Request $request, $id)
     {
-        $complaint = \App\Models\ComplaintCase::with('order')->findOrFail($id);
-        
+        $complaint = \App\Models\ComplaintCase::with(['order.items.product', 'orderItem.product', 'product', 'seller'])->findOrFail($id);
+
         $request->validate([
-            'status' => 'required|string|in:review,done,rejected,refund,replacement,refund_wallet',
+            'status' => 'required|string|in:review,done,rejected,refund,replacement,refund_wallet,refund_external',
             'rejected_reason' => 'required_if:status,rejected|nullable|string|max:500',
-            'refund_note' => 'required_if:status,done,refund|nullable|string|max:500',
+            'refund_note' => 'required_if:status,done,refund,refund_external|nullable|string|max:500',
             'replacement_data' => 'nullable|string',
             'replacement_stock_id' => 'nullable|integer',
+            'cancel_order' => 'nullable|boolean',
         ], [
             'rejected_reason.required_if' => 'Alasan penolakan wajib diisi jika status ditolak.',
             'refund_note.required_if' => 'Catatan penyelesaian/refund wajib diisi.',
@@ -2529,13 +2533,19 @@ class AdminController extends Controller
             }
         }
 
-        if ($request->status === 'refund_wallet') {
+        if (in_array($request->status, ['refund_wallet', 'refund_external'], true)) {
             $refundError = null;
             $refundAmount = 0;
+            $isWalletRefund = $request->status === 'refund_wallet';
+            $shouldCancelOrder = $request->boolean('cancel_order');
 
-            \Illuminate\Support\Facades\DB::transaction(function () use ($id, $request, &$refundError, &$refundAmount, &$complaint) {
-                $locked = \App\Models\ComplaintCase::with('order')->where('id', $id)->lockForUpdate()->firstOrFail();
-                if ($locked->refunded_to_wallet_at !== null) {
+            \Illuminate\Support\Facades\DB::transaction(function () use ($id, $request, $isWalletRefund, $shouldCancelOrder, &$refundError, &$refundAmount, &$complaint) {
+                $locked = \App\Models\ComplaintCase::with(['order.items.product', 'orderItem.product', 'product', 'seller'])
+                    ->where('id', $id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
+                if ($isWalletRefund && $locked->refunded_to_wallet_at !== null) {
                     $refundError = __('Komplain ini sudah pernah di-refund ke Dompet Saldo pelanggan.');
                     return;
                 }
@@ -2546,37 +2556,80 @@ class AdminController extends Controller
                     return;
                 }
 
-                $refundAmount = max(0, (int) $order->total_amount - (int) ($order->unique_code ?? 0));
-                if ($refundAmount <= 0) {
-                    $refundAmount = (int) $order->total_amount;
-                }
+                $refundAmount = $locked->calculateRefundableAmount();
+                $targetProduct = $locked->resolveTargetProduct();
+                $targetSeller = $locked->resolveTargetSeller();
 
-                if ($refundAmount > 0) {
+                if ($isWalletRefund && $refundAmount > 0) {
                     app(\App\Services\WalletService::class)->credit(
                         (int) $locked->customer_id,
                         $refundAmount,
                         'refund',
                         $locked->complaint_ref ?: ('CMP-' . $locked->id),
-                        __('Auto-Refund komplain pesanan #:ref', ['ref' => $order->order_ref]),
-                        ['complaint_id' => $locked->id, 'order_id' => $order->id]
+                        __('Auto-Refund komplain :product (pesanan #:ref)', [
+                            'product' => $targetProduct?->name ?? __('Produk'),
+                            'ref' => $order->order_ref,
+                        ]),
+                        [
+                            'complaint_id' => $locked->id,
+                            'order_id' => $order->id,
+                            'order_item_id' => $locked->order_item_id,
+                            'product_id' => $targetProduct?->id,
+                        ]
                     );
                 }
 
-                $customNote = trim((string) $request->input('refund_note', ''));
-                $noteText = __('Dana sebesar Rp:amount telah dikembalikan otomatis ke Dompet Saldo Anda.', [
-                    'amount' => number_format($refundAmount, 0, ',', '.'),
+                // Cancel held funds scoped to the complained product/seller (or whole order for legacy unscoped complaints)
+                $heldQuery = \Illuminate\Support\Facades\DB::table('held_funds')
+                    ->where('order_id', $order->id)
+                    ->where('status', 'held');
+                if ($targetProduct) {
+                    $heldQuery->where('product_id', $targetProduct->id);
+                }
+                if ($targetSeller) {
+                    $heldQuery->where('seller_id', $targetSeller->id);
+                }
+                $heldQuery->update([
+                    'status' => 'cancelled',
+                    'updated_at' => now(),
                 ]);
+
+                // Optional order cancellation (only safe when single-item order or legacy order-wide complaint)
+                if ($shouldCancelOrder && (!$order->isMultiSeller() && $order->items->count() <= 1)) {
+                    $order->status = 'cancelled';
+                    $order->cancelled_at = now();
+                    $order->cancel_reason = $isWalletRefund
+                        ? 'Refund ke Dompet & Dibatalkan via Komplain #' . $locked->complaint_ref
+                        : 'Refund Manual (Luar Website) & Dibatalkan via Komplain #' . $locked->complaint_ref;
+                    $order->save();
+                }
+
+                $customNote = trim((string) $request->input('refund_note', ''));
+                if ($isWalletRefund) {
+                    $noteText = __('Dana sebesar Rp:amount telah dikembalikan otomatis ke Dompet Saldo Anda.', [
+                        'amount' => number_format($refundAmount, 0, ',', '.'),
+                    ]);
+                } else {
+                    $noteText = __('Pengembalian dana (Rp:amount) telah diproses secara manual di luar website oleh Admin (tanpa penambahan saldo dompet).', [
+                        'amount' => number_format($refundAmount, 0, ',', '.'),
+                    ]);
+                }
                 if ($customNote !== '') {
                     $noteText .= "\n" . $customNote;
                 }
 
-                $locked->update([
+                $updatePayload = [
                     'status' => 'done',
                     'refund_note' => $noteText,
-                    'refunded_to_wallet_at' => now(),
                     'closed_at' => now(),
-                ]);
+                ];
+                if ($isWalletRefund) {
+                    $updatePayload['refunded_to_wallet_at'] = now();
+                } else {
+                    $updatePayload['refund_transferred_at'] = now();
+                }
 
+                $locked->update($updatePayload);
                 $complaint = $locked;
             });
 
@@ -2591,17 +2644,21 @@ class AdminController extends Controller
             }
 
             \Illuminate\Support\Facades\DB::table('audit_logs')->insert([
-                'action' => 'complaint_refund_wallet',
+                'action' => $isWalletRefund ? 'complaint_refund_wallet' : 'complaint_refund_external',
                 'actor_id' => \Illuminate\Support\Facades\Auth::id(),
                 'entity_type' => 'complaint_case',
                 'entity_id' => $complaint->id,
-                'detail' => "refund_wallet={$refundAmount}; ref={$complaint->complaint_ref}",
+                'detail' => ($isWalletRefund ? "refund_wallet={$refundAmount}" : "refund_external={$refundAmount}") . "; ref={$complaint->complaint_ref}; cancel_order=" . ($shouldCancelOrder ? '1' : '0'),
                 'created_at' => now(),
             ]);
 
-            return redirect()->back()->with('success', __('Komplain diselesaikan! Auto-refund Rp:amount berhasil masuk ke Dompet Saldo pelanggan.', [
-                'amount' => number_format($refundAmount, 0, ',', '.'),
-            ]));
+            if ($isWalletRefund) {
+                return redirect()->back()->with('success', __('Komplain diselesaikan! Auto-refund Rp:amount berhasil masuk ke Dompet Saldo pelanggan.', [
+                    'amount' => number_format($refundAmount, 0, ',', '.'),
+                ]));
+            }
+
+            return redirect()->back()->with('success', __('Komplain diselesaikan sebagai Refund Manual di Luar Website (saldo dompet tidak ditambah).'));
         }
 
         $updateData = [
@@ -3788,17 +3845,34 @@ class AdminController extends Controller
         }
     }
 
-    public function refundOrder($orderId)
+    public function refundOrder(Request $request, $orderId)
     {
-        $order = \App\Models\Order::findOrFail($orderId);
+        $refundDestination = $request->input('refund_destination', 'external');
+        if (!in_array($refundDestination, ['wallet', 'external'], true)) {
+            $refundDestination = 'external';
+        }
+        $isWalletRefund = $refundDestination === 'wallet';
 
         try {
             \Illuminate\Support\Facades\DB::beginTransaction();
 
+            $order = \App\Models\Order::where('id', $orderId)->lockForUpdate()->firstOrFail();
+            if ($order->status === 'cancelled') {
+                \Illuminate\Support\Facades\DB::rollBack();
+                return redirect()->back()->with('error', __('Pesanan ini sudah pernah dibatalkan sebelumnya.'));
+            }
+
+            $refundAmount = max(0, (int) $order->total_amount - (int) ($order->unique_code ?? 0));
+            if ($refundAmount <= 0) {
+                $refundAmount = (int) $order->total_amount;
+            }
+
             // 1. Update Order & Payment
             $order->status = 'cancelled';
             $order->cancelled_at = now();
-            $order->cancel_reason = 'Refunded & Dibatalkan oleh Admin';
+            $order->cancel_reason = $isWalletRefund
+                ? 'Refund ke Dompet Saldo & Dibatalkan oleh Admin'
+                : 'Dibatalkan oleh Admin (Refund Manual di Luar Website)';
             $order->save();
 
             $payment = $order->payment;
@@ -3807,7 +3881,19 @@ class AdminController extends Controller
                 $payment->save();
             }
 
-            // 2. Pull all stock units back to saved_for_verification (karantina)
+            // 2. Credit customer wallet ONLY if Admin selected wallet refund
+            if ($isWalletRefund && $refundAmount > 0 && $order->customer_id) {
+                app(\App\Services\WalletService::class)->credit(
+                    (int) $order->customer_id,
+                    $refundAmount,
+                    'refund',
+                    $order->order_ref,
+                    __('Refund pembatalan pesanan #:ref ke Dompet Saldo', ['ref' => $order->order_ref]),
+                    ['order_id' => $order->id, 'actor_id' => \Illuminate\Support\Facades\Auth::id()]
+                );
+            }
+
+            // 3. Pull all stock units back to saved_for_verification (karantina)
             $units = \App\Models\StockUnit::where('sold_order_id', $orderId)->get();
             foreach ($units as $unit) {
                 $seller = \App\Models\User::find($unit->seller_id);
@@ -3820,7 +3906,7 @@ class AdminController extends Controller
                 $unit->save();
             }
 
-            // 3. Cancel held funds
+            // 4. Cancel held funds
             \Illuminate\Support\Facades\DB::table('held_funds')
                 ->where('order_id', $orderId)
                 ->where('status', 'held')
@@ -3829,29 +3915,37 @@ class AdminController extends Controller
                     'updated_at' => now()
                 ]);
 
-            // 4. Audit Log
+            // 5. Audit Log
             \Illuminate\Support\Facades\DB::table('audit_logs')->insert([
                 'action' => 'order_refunded',
                 'actor_id' => \Illuminate\Support\Facades\Auth::id(),
                 'entity_type' => 'order',
-                'entity_id' => $orderId,
-                'detail' => "order_ref={$order->order_ref}; held_funds_cancelled",
+                'entity_id' => $order->id,
+                'detail' => "order_ref={$order->order_ref}; destination={$refundDestination}; wallet_credit=" . ($isWalletRefund ? $refundAmount : 0) . "; units=" . $units->count(),
                 'created_at' => now(),
             ]);
 
+            \Illuminate\Support\Facades\DB::commit();
+
             try {
-                \App\Services\TelegramService::notifyCustomerOrderCancelled($order, 'Refunded & Dibatalkan oleh Admin');
+                \App\Services\TelegramService::notifyCustomerOrderCancelled($order, $order->cancel_reason);
                 \App\Services\TelegramService::updateAdminOrderMessage($order);
             } catch (\Exception $e) {
                 \Log::error("Gagal kirim notifikasi Telegram untuk refund order {$order->order_ref}: " . $e->getMessage());
             }
 
-            \Illuminate\Support\Facades\DB::commit();
+            if ($isWalletRefund) {
+                return redirect()->back()->with('success', __('Pesanan dibatalkan & dana Rp:amount telah dikirim ke Dompet Saldo pelanggan.', [
+                    'amount' => number_format($refundAmount, 0, ',', '.'),
+                ]));
+            }
 
-            return redirect()->back()->with('success', __('Pesanan berhasil direfund. Semua stok dikembalikan ke karantina dan saldo tertahan seller dibatalkan.'));
+            return redirect()->back()->with('success', __('Pesanan berhasil dibatalkan (tanpa pengiriman saldo ke dompet — refund manual di luar website).'));
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\DB::rollBack();
-            return redirect()->back()->with('error', 'Gagal memproses refund: ' . $e->getMessage());
+            if (\Illuminate\Support\Facades\DB::transactionLevel() > 0) {
+                \Illuminate\Support\Facades\DB::rollBack();
+            }
+            return redirect()->back()->with('error', __('Gagal memproses pembatalan/refund pesanan: ') . $e->getMessage());
         }
     }
 
@@ -3934,8 +4028,13 @@ class AdminController extends Controller
 
     public function refundBulk(Request $request, $orderId)
     {
-        $order = \App\Models\Order::findOrFail($orderId);
+        $order = \App\Models\Order::with('items')->findOrFail($orderId);
         $stockUnitIds = json_decode($request->input('stock_unit_ids', '[]'), true);
+        $refundDestination = $request->input('refund_destination', 'external');
+        if (!in_array($refundDestination, ['wallet', 'external'], true)) {
+            $refundDestination = 'external';
+        }
+        $isWalletRefund = $refundDestination === 'wallet';
 
         if (!is_array($stockUnitIds) || empty($stockUnitIds)) {
             return redirect()->back()->with('error', __('Tidak ada akun terpilih.'));
@@ -3945,16 +4044,33 @@ class AdminController extends Controller
             \Illuminate\Support\Facades\DB::beginTransaction();
 
             $refundedCount = 0;
+            $walletRefundTotal = 0;
+
+            // Precompute per-unit net price by product_id
+            $netUnitPriceByProduct = [];
+            foreach ($order->items as $ordItem) {
+                $qty = max(1, (int) $ordItem->quantity);
+                $lineGross = (int) $ordItem->unit_price * $qty;
+                $lineDisc = (int) ($ordItem->discount_amount ?? 0);
+                if ($lineDisc <= 0 && (int) ($order->discount_amount ?? 0) > 0 && (int) ($order->subtotal ?? 0) > 0) {
+                    $lineDisc = (int) round(($lineGross / (int) $order->subtotal) * (int) $order->discount_amount);
+                }
+                $netUnitPriceByProduct[$ordItem->product_id] = (int) floor(max(0, $lineGross - $lineDisc) / $qty);
+            }
 
             foreach ($stockUnitIds as $stockUnitId) {
                 $unit = \App\Models\StockUnit::where('id', $stockUnitId)
                     ->where('sold_order_id', $orderId)
                     ->where('is_sold', true)
+                    ->lockForUpdate()
                     ->first();
 
                 if (!$unit) continue;
 
-                $seller = \App\Models\User::find($unit->seller_id);
+                $unitProductId = $unit->product_id;
+                $unitSellerId = $unit->seller_id;
+
+                $seller = \App\Models\User::find($unitSellerId);
                 $saveHours = $seller ? ($seller->seller_save_hours ?? 80) : 80;
 
                 // Pull back stock unit to saved_for_verification (karantina)
@@ -3964,19 +4080,34 @@ class AdminController extends Controller
                 $unit->available_at = now()->addHours($saveHours);
                 $unit->save();
 
+                // Cancel 1 matching held fund SPECIFICALLY for this unit's product & seller
+                $matchingFund = \App\Models\HeldFund::where('order_id', $orderId)
+                    ->where('status', 'held')
+                    ->where('product_id', $unitProductId)
+                    ->when($unitSellerId, fn ($q) => $q->where('seller_id', $unitSellerId))
+                    ->first();
+                if ($matchingFund) {
+                    $matchingFund->status = 'cancelled';
+                    $matchingFund->save();
+                }
+
+                $walletRefundTotal += (int) ($netUnitPriceByProduct[$unitProductId] ?? 0);
                 $refundedCount++;
             }
 
             if ($refundedCount > 0) {
-                // Cancel matching number of held funds
-                $heldFunds = \App\Models\HeldFund::where('order_id', $orderId)
-                    ->where('status', 'held')
-                    ->limit($refundedCount)
-                    ->get();
-
-                foreach ($heldFunds as $fund) {
-                    $fund->status = 'cancelled';
-                    $fund->save();
+                if ($isWalletRefund && $walletRefundTotal > 0 && $order->customer_id) {
+                    app(\App\Services\WalletService::class)->credit(
+                        (int) $order->customer_id,
+                        $walletRefundTotal,
+                        'refund',
+                        $order->order_ref . '-PARTIAL',
+                        __('Refund sebagian (:count unit) pesanan #:ref ke Dompet Saldo', [
+                            'count' => $refundedCount,
+                            'ref' => $order->order_ref,
+                        ]),
+                        ['order_id' => $order->id, 'refunded_units' => $refundedCount]
+                    );
                 }
 
                 // Check if there are any remaining stock units sold in this order
@@ -3987,7 +4118,9 @@ class AdminController extends Controller
                 if ($remainingUnitsCount === 0) {
                     $order->status = 'cancelled';
                     $order->cancelled_at = now();
-                    $order->cancel_reason = 'Refunded & Dibatalkan penuh oleh Admin (Bulk)';
+                    $order->cancel_reason = $isWalletRefund
+                        ? 'Refund ke Dompet & Dibatalkan penuh oleh Admin (Bulk)'
+                        : 'Dibatalkan penuh oleh Admin (Refund Manual di Luar Website)';
                     $order->save();
 
                     $payment = $order->payment;
@@ -3997,7 +4130,7 @@ class AdminController extends Controller
                     }
 
                     try {
-                        \App\Services\TelegramService::notifyCustomerOrderCancelled($order, 'Refunded & Dibatalkan penuh oleh Admin (Bulk)');
+                        \App\Services\TelegramService::notifyCustomerOrderCancelled($order, $order->cancel_reason);
                         \App\Services\TelegramService::updateAdminOrderMessage($order);
                     } catch (\Exception $e) {
                         \Log::error("Gagal kirim notifikasi Telegram untuk bulk refund order {$order->order_ref}: " . $e->getMessage());
@@ -4010,14 +4143,23 @@ class AdminController extends Controller
                     'actor_id' => \Illuminate\Support\Facades\Auth::id(),
                     'entity_type' => 'order',
                     'entity_id' => $orderId,
-                    'detail' => "refunded_count={$refundedCount}; remaining_units={$remainingUnitsCount}",
+                    'detail' => "refunded_count={$refundedCount}; remaining_units={$remainingUnitsCount}; destination={$refundDestination}; wallet_credit=" . ($isWalletRefund ? $walletRefundTotal : 0),
                     'created_at' => now(),
                 ]);
             }
 
             \Illuminate\Support\Facades\DB::commit();
 
-            return redirect()->back()->with('success', __("Berhasil me-refund :refundedCount akun terpilih.", ["refundedCount" => $refundedCount]));
+            if ($isWalletRefund && $walletRefundTotal > 0) {
+                return redirect()->back()->with('success', __('Berhasil me-refund :count akun terpilih & mengirim Rp:amount ke Dompet Saldo pelanggan.', [
+                    'count' => $refundedCount,
+                    'amount' => number_format($walletRefundTotal, 0, ',', '.'),
+                ]));
+            }
+
+            return redirect()->back()->with('success', __('Berhasil membatalkan :count akun terpilih (tanpa pengiriman saldo ke dompet — refund manual di luar website).', [
+                'count' => $refundedCount,
+            ]));
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\DB::rollBack();
             return redirect()->back()->with('error', 'Gagal memproses refund sebagian: ' . $e->getMessage());

@@ -23,13 +23,26 @@ class WarrantyController extends Controller
 
         foreach ($deliveredOrders as $order) {
             $baseDate = $order->delivered_at ?? $order->paid_at ?? $order->created_at;
-            $latestComplaint = $order->complaints->sortByDesc('id')->first();
 
             foreach ($order->items as $item) {
                 $product = $item->product;
                 if (!$product) {
                     continue;
                 }
+
+                // Match complaint specifically targeting this item/product, falling back to legacy unscoped order complaint
+                $itemComplaint = $order->complaints
+                    ->filter(function ($cmp) use ($item) {
+                        if ($cmp->order_item_id) {
+                            return (int) $cmp->order_item_id === (int) $item->id;
+                        }
+                        if ($cmp->product_id) {
+                            return (int) $cmp->product_id === (int) $item->product_id;
+                        }
+                        return true;
+                    })
+                    ->sortByDesc('id')
+                    ->first();
 
                 $warrantyDays = (int) ($product->warranty_days ?? 0);
                 $isVpn = (bool) ($product->is_vpn ?? false);
@@ -59,7 +72,7 @@ class WarrantyController extends Controller
                     'expires_at' => $expiresAt,
                     'days_remaining' => max(0, $daysRemaining),
                     'status' => $status,
-                    'complaint' => $latestComplaint,
+                    'complaint' => $itemComplaint,
                     'is_vpn' => $isVpn,
                 ]);
             }

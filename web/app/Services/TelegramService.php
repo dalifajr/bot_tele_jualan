@@ -533,11 +533,11 @@ class TelegramService
      */
     public static function notifySellerNewComplaint(\App\Models\ComplaintCase $complaint)
     {
-        $sellerId = $complaint->order->items->first()->product->creator_id ?? null;
-        $seller = $sellerId ? User::find($sellerId) : null;
+        $seller = $complaint->resolveTargetSeller();
+        $product = $complaint->resolveTargetProduct();
 
         $customerName = $complaint->customer->full_name ?? $complaint->customer->username ?? '-';
-        $productName = $complaint->order->items->first()->product->name ?? 'Produk';
+        $productName = $product->name ?? 'Produk';
         
         $text = "⚠️ <b>Komplain Baru (Klaim Garansi)</b>\n"
               . "Ref Komplain: <code>{$complaint->complaint_ref}</code>\n"
@@ -570,8 +570,8 @@ class TelegramService
         $customerTelegramId = $complaint->customer_telegram_id ?: ($complaint->customer->telegram_id ?? null);
         if (!$customerTelegramId) return;
 
-        $productName = $complaint->order->items->first()->product->name ?? 'Produk';
-        
+        $productName = $complaint->resolveTargetProduct()?->name ?? 'Produk';
+
         $statusLabel = '';
         if ($complaint->status === 'done') {
             $statusLabel = '✅ Disetujui / Selesai';
@@ -608,7 +608,7 @@ class TelegramService
     public static function notifySellerComplaintReopened(\App\Models\ComplaintCase $complaint, User $seller)
     {
         $customerName = $complaint->customer->full_name ?? $complaint->customer->username ?? '-';
-        $productName = $complaint->order->items->first()->product->name ?? 'Produk';
+        $productName = $complaint->resolveTargetProduct()?->name ?? 'Produk';
         
         $text = "⚠️ <b>Komplain Dibuka Kembali (Reopened)</b>\n"
               . "Ref Komplain: <code>{$complaint->complaint_ref}</code>\n"

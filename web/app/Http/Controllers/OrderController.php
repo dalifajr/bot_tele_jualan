@@ -82,9 +82,12 @@ class OrderController extends Controller
     public function show(Request $request, $id)
     {
         $order = $this->findAuthorizedOrder($request, $id, [
-            'items.product',
-            'stockUnits',
+            'items.product.creator',
+            'stockUnits.product',
             'complaintCase',
+            'complaints.product',
+            'complaints.seller',
+            'complaints.orderItem',
             'vpnAccounts',
         ]);
 
@@ -105,21 +108,46 @@ class OrderController extends Controller
 
     public function submitComplaint(Request $request, $id)
     {
-        $order = $this->findAuthorizedOrder($request, $id, ['complaintCase']);
+        $order = $this->findAuthorizedOrder($request, $id, ['items.product.creator', 'complaints']);
 
         if ($order->status !== 'delivered') {
             return redirect()->back()->with('error', __('Komplain hanya dapat diajukan untuk pesanan yang sudah selesai (delivered).'));
         }
 
-        if ($order->complaintCase) {
-            return redirect()->back()->with('error', __('Klaim garansi / komplain sudah pernah diajukan untuk pesanan ini.'));
+        // Resolve targeted OrderItem (required for multi-item orders; defaults to first item for single-item orders)
+        $requestedItemId = $request->input('order_item_id');
+        if ($requestedItemId) {
+            $targetItem = $order->items->firstWhere('id', (int) $requestedItemId);
+            if (!$targetItem) {
+                return redirect()->back()->with('error', __('Item produk yang dipilih tidak ditemukan dalam pesanan ini.'));
+            }
+        } elseif ($order->items->count() === 1) {
+            $targetItem = $order->items->first();
+        } else {
+            return redirect()->back()->with('error', __('Silakan pilih produk spesifik yang ingin dikomplain.'));
         }
 
-        if (!$order->is_warranty_active) {
-            return redirect()->back()->with('error', __('Garansi toko untuk pesanan ini telah kedaluwarsa atau tidak berlaku.'));
+        // Prevent duplicate complaint for the same item (or legacy unscoped complaint on single-item order)
+        $existingForItem = $order->complaints->first(function ($cmp) use ($targetItem, $order) {
+            if ($cmp->order_item_id) {
+                return (int) $cmp->order_item_id === (int) $targetItem->id;
+            }
+            if ($cmp->product_id) {
+                return (int) $cmp->product_id === (int) $targetItem->product_id;
+            }
+            return $order->items->count() === 1;
+        });
+
+        if ($existingForItem) {
+            return redirect()->back()->with('error', __('Klaim garansi / komplain untuk produk ini sudah pernah diajukan.'));
+        }
+
+        if (!$order->isWarrantyActiveForItem($targetItem)) {
+            return redirect()->back()->with('error', __('Garansi toko untuk produk ini telah kedaluwarsa atau tidak berlaku.'));
         }
 
         $request->validate([
+            'order_item_id' => 'nullable|integer',
             'complaint_text' => 'required|string|min:10|max:1000',
             'attachment' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:10240',
         ], [
@@ -141,6 +169,8 @@ class OrderController extends Controller
         }
 
         $complaintRef = 'CMP-' . date('Ymd') . '-' . strtoupper(\Illuminate\Support\Str::random(4));
+        $targetProductId = $targetItem->product_id;
+        $targetSellerId = $targetItem->product?->creator_id;
 
         $complaint = \App\Models\ComplaintCase::create([
             'complaint_ref' => $complaintRef,
@@ -148,6 +178,9 @@ class OrderController extends Controller
             'customer_telegram_id' => Auth::user()->telegram_id ?: 0,
             'customer_username_snapshot' => Auth::user()->username,
             'order_id' => $order->id,
+            'order_item_id' => $targetItem->id,
+            'product_id' => $targetProductId,
+            'seller_id' => $targetSellerId,
             'order_ref_snapshot' => $order->order_ref,
             'order_created_at_snapshot' => $order->created_at,
             'complaint_text' => $request->complaint_text,
@@ -159,10 +192,9 @@ class OrderController extends Controller
 
         \App\Services\TelegramService::notifySellerNewComplaint($complaint);
 
-        // Notify the seller in the web app
-        $sellerId = $order->items->first()->product->creator_id ?? null;
-        if ($sellerId) {
-            $seller = \App\Models\User::find($sellerId);
+        // Notify ONLY the specific seller who owns the complained product
+        if ($targetSellerId) {
+            $seller = \App\Models\User::find($targetSellerId);
             if ($seller) {
                 $seller->notify(new \App\Notifications\ComplaintNotification($complaint, 'new'));
             }

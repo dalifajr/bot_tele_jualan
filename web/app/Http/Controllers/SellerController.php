@@ -1203,20 +1203,64 @@ class SellerController extends Controller
     public function showOrder($id)
     {
         $sellerId = Auth::id();
-        $order = Order::with(['customer', 'items.product', 'stockUnits', 'complaintCase'])
+        $order = Order::with(['customer', 'items.product.creator', 'stockUnits.product', 'complaints.product'])
             ->whereHas('items.product', function ($q) use ($sellerId) {
                 $q->where('creator_id', $sellerId);
             })
             ->findOrFail($id);
 
-        return view('seller.orders.show', compact('order'));
+        // Strict multi-seller privacy isolation: expose ONLY this seller's items, stocks, and complaints
+        $sellerItems = $order->items->filter(fn ($item) => $item->product && (int) $item->product->creator_id === (int) $sellerId)->values();
+        $sellerProductIds = $sellerItems->pluck('product_id')->all();
+
+        $sellerStockUnits = $order->stockUnits->filter(function ($unit) use ($sellerId, $sellerProductIds) {
+            if ($unit->seller_id) {
+                return (int) $unit->seller_id === (int) $sellerId;
+            }
+            return in_array($unit->product_id, $sellerProductIds, true);
+        })->values();
+
+        $sellerComplaints = $order->complaints->filter(function ($cmp) use ($sellerId, $sellerProductIds) {
+            if ($cmp->seller_id) {
+                return (int) $cmp->seller_id === (int) $sellerId;
+            }
+            if ($cmp->product_id) {
+                return in_array($cmp->product_id, $sellerProductIds, true);
+            }
+            return true;
+        })->values();
+
+        $isMultiSellerOrder = $order->isMultiSeller();
+        $sellerSubtotal = (int) $sellerItems->sum(fn ($item) => (int) $item->unit_price * max(1, (int) $item->quantity));
+        $sellerDiscount = (int) $sellerItems->sum(fn ($item) => (int) ($item->discount_amount ?? 0));
+        if ($sellerDiscount <= 0 && !$isMultiSellerOrder && (int) ($order->discount_amount ?? 0) > 0) {
+            $sellerDiscount = (int) $order->discount_amount;
+        }
+        $sellerNetTotal = max(0, $sellerSubtotal - $sellerDiscount);
+
+        return view('seller.orders.show', compact(
+            'order',
+            'sellerItems',
+            'sellerStockUnits',
+            'sellerComplaints',
+            'isMultiSellerOrder',
+            'sellerSubtotal',
+            'sellerDiscount',
+            'sellerNetTotal'
+        ));
     }
 
     public function cancelOrder($id, \App\Services\OrderService $orderService)
     {
-        $order = Order::whereHas('items.product', function($q) {
-            $q->where('creator_id', Auth::id());
-        })->findOrFail($id);
+        $order = Order::with('items.product.creator')
+            ->whereHas('items.product', function ($q) {
+                $q->where('creator_id', Auth::id());
+            })
+            ->findOrFail($id);
+
+        if ($order->isMultiSeller()) {
+            return redirect()->back()->with('error', __('Pesanan ini merupakan pesanan keranjang gabungan lintas penjual. Hubungi Admin untuk pembatalan agar tidak membatalkan item milik toko lain.'));
+        }
 
         try {
             $orderService->cancelOrder($order, 'cancelled_by_seller', Auth::id());
@@ -1255,10 +1299,16 @@ class SellerController extends Controller
     {
         $sellerId = Auth::id();
 
-        $complaints = \App\Models\ComplaintCase::whereHas('order.stockUnits', function ($query) use ($sellerId) {
-            $query->where('seller_id', $sellerId);
+        $complaints = \App\Models\ComplaintCase::where(function ($q) use ($sellerId) {
+            $q->where('seller_id', $sellerId)
+              ->orWhere(function ($legacy) use ($sellerId) {
+                  $legacy->whereNull('seller_id')
+                         ->whereHas('order.stockUnits', function ($sq) use ($sellerId) {
+                             $sq->where('seller_id', $sellerId);
+                         });
+              });
         })
-        ->with(['customer', 'order'])
+        ->with(['customer', 'order', 'product'])
         ->orderBy('created_at', 'desc')
         ->paginate(15);
 
@@ -1269,16 +1319,23 @@ class SellerController extends Controller
     {
         $sellerId = Auth::id();
 
-        $complaint = \App\Models\ComplaintCase::whereHas('order.stockUnits', function ($query) use ($sellerId) {
-            $query->where('seller_id', $sellerId);
+        $complaint = \App\Models\ComplaintCase::where(function ($q) use ($sellerId) {
+            $q->where('seller_id', $sellerId)
+              ->orWhere(function ($legacy) use ($sellerId) {
+                  $legacy->whereNull('seller_id')
+                         ->whereHas('order.stockUnits', function ($sq) use ($sellerId) {
+                             $sq->where('seller_id', $sellerId);
+                         });
+              });
         })
-        ->with(['customer', 'order.items.product', 'order.stockUnits' => function ($query) use ($sellerId) {
+        ->with(['customer', 'product', 'orderItem.product', 'order.items.product', 'order.stockUnits' => function ($query) use ($sellerId) {
             $query->where('seller_id', $sellerId);
         }])
         ->findOrFail($id);
 
-        $productId = $complaint->order->items->first()->product_id ?? 0;
-        
+        $targetProduct = $complaint->resolveTargetProduct();
+        $productId = $targetProduct?->id ?? 0;
+
         $availableStocks = \App\Models\StockUnit::where('seller_id', $sellerId)
             ->where('product_id', $productId)
             ->where('is_sold', false)
@@ -1287,9 +1344,8 @@ class SellerController extends Controller
                 $q->where('stock_status', 'ready')->orWhereNull('stock_status');
             })
             ->get();
-            
+
         $availableStockCount = $availableStocks->count();
-        // Ambil stok random jika ada
         $randomStock = $availableStockCount > 0 ? $availableStocks->random() : null;
 
         return view('seller.complaints.show', compact('complaint', 'availableStockCount', 'randomStock'));
@@ -1299,8 +1355,14 @@ class SellerController extends Controller
     {
         $sellerId = Auth::id();
 
-        $complaint = \App\Models\ComplaintCase::whereHas('order.stockUnits', function ($query) use ($sellerId) {
-            $query->where('seller_id', $sellerId);
+        $complaint = \App\Models\ComplaintCase::where(function ($q) use ($sellerId) {
+            $q->where('seller_id', $sellerId)
+              ->orWhere(function ($legacy) use ($sellerId) {
+                  $legacy->whereNull('seller_id')
+                         ->whereHas('order.stockUnits', function ($sq) use ($sellerId) {
+                             $sq->where('seller_id', $sellerId);
+                         });
+              });
         })
         ->findOrFail($id);
 
@@ -1346,7 +1408,10 @@ class SellerController extends Controller
             $replacementData = $request->input('replacement_data');
             
             if ($newStockId) {
-                $stock = \App\Models\StockUnit::where('id', $newStockId)->where('is_sold', false)->first();
+                $stock = \App\Models\StockUnit::where('id', $newStockId)
+                    ->where('seller_id', $sellerId)
+                    ->where('is_sold', false)
+                    ->first();
                 if ($stock) {
                     $stock->update([
                         'is_sold' => true,

@@ -63,23 +63,36 @@
                 </div>
                 @endif
 
-                {{-- Associated Order --}}
+                {{-- Associated Order & Targeted Product/Seller --}}
                 @if($complaint->order)
+                @php
+                    $resolvedProd = $targetProduct ?? $complaint->resolveTargetProduct();
+                    $resolvedSeller = $targetSeller ?? $complaint->resolveTargetSeller();
+                    $resolvedItem = $complaint->resolveTargetOrderItem();
+                    $calcRefund = isset($refundableAmount) ? (int) $refundableAmount : $complaint->calculateRefundableAmount();
+                @endphp
                 <hr>
                 <div class="mb-4">
                     <h6 class="fw-bold mb-3"><i class="fas fa-shopping-bag text-primary me-2"></i>{{ __('Pesanan Terkait:') }} {{ $complaint->order->order_ref }}</h6>
                     <div class="row g-3">
-                        <div class="col-md-4">
-                            <span class="text-muted small">{{ __('Produk') }}</span>
-                            <div class="fw-semibold">{{ $complaint->order->product->name ?? '-' }}</div>
+                        <div class="col-md-3">
+                            <span class="text-muted small">{{ __('Produk Dikomplain') }}</span>
+                            <div class="fw-semibold">{{ $resolvedProd->name ?? '-' }}</div>
                         </div>
-                        <div class="col-md-4">
-                            <span class="text-muted small">{{ __('Kuantitas') }}</span>
-                            <div class="fw-semibold">{{ $complaint->order->quantity }} Pcs</div>
+                        <div class="col-md-3">
+                            <span class="text-muted small">{{ __('Penjual Terkait') }}</span>
+                            <div class="fw-semibold">{{ $resolvedSeller?->display_name ?? '-' }}</div>
                         </div>
-                        <div class="col-md-4">
-                            <span class="text-muted small">{{ __('Total Pembayaran') }}</span>
-                            <div class="fw-semibold text-success">{{ $complaint->order->formatted_total }}</div>
+                        <div class="col-md-3">
+                            <span class="text-muted small">{{ __('Kuantitas Item') }}</span>
+                            <div class="fw-semibold">{{ $resolvedItem ? $resolvedItem->quantity : $complaint->order->quantity }} Pcs</div>
+                        </div>
+                        <div class="col-md-3">
+                            <span class="text-muted small">{{ __('Nilai Refund Item') }}</span>
+                            <div class="fw-semibold text-success">Rp {{ number_format($calcRefund, 0, ',', '.') }}</div>
+                            @if($complaint->order->items->count() > 1)
+                            <small class="text-muted" style="font-size: 0.72rem;">{{ __('Total Order:') }} {{ $complaint->order->formatted_total }}</small>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -122,12 +135,25 @@
                             <option value="">{{ __('-- Pilih Keputusan --') }}</option>
                             <option value="review" {{ $complaint->status === 'review' ? 'selected' : '' }}>{{ __('Ditinjau (In Review)') }}</option>
                             <option value="replacement" {{ $complaint->status === 'replacement' ? 'selected' : '' }}>{{ __('Kirim Akun Pengganti') }}</option>
-                            <option value="refund_wallet" {{ $complaint->refunded_to_wallet_at ? 'disabled' : '' }}>{{ __('Auto-Refund 100% ke Dompet Saldo Pembeli') }}</option>
-                            <option value="refund" {{ $complaint->status === 'refund' ? 'selected' : '' }}>{{ __('Refund') }}</option>
+                            <option value="refund_wallet" {{ $complaint->refunded_to_wallet_at ? 'disabled' : '' }}>{{ __('Auto-Refund ke Dompet Saldo Pembeli (Rp:amt)', ['amt' => number_format($calcRefund ?? $complaint->calculateRefundableAmount(), 0, ',', '.')]) }}</option>
+                            <option value="refund_external">{{ __('Refund Manual di Luar Website (Tanpa Tambah Saldo Dompet)') }}</option>
+                            <option value="refund" {{ $complaint->status === 'refund' ? 'selected' : '' }}>{{ __('Proses Refund (Menunggu)') }}</option>
                             <option value="done" {{ $complaint->status === 'done' ? 'selected' : '' }}>{{ __('Selesai (Tanpa Ganti Rugi Lain)') }}</option>
                             <option value="rejected" {{ $complaint->status === 'rejected' ? 'selected' : '' }}>{{ __('Tolak Klaim (Rejected)') }}</option>
                         </select>
                     </div>
+
+                    {{-- Optional cancel order toggle for single-item orders --}}
+                    @if($complaint->order && !$complaint->order->isMultiSeller() && $complaint->order->items->count() <= 1)
+                    <div id="cancel-order-option-block" class="mb-3 d-none p-2.5 rounded-3 border" style="background: var(--surface-container, var(--bs-tertiary-bg));">
+                        <div class="form-check form-switch m-0">
+                            <input class="form-check-input" type="checkbox" role="switch" id="cancel_order" name="cancel_order" value="1">
+                            <label class="form-check-label small fw-semibold" for="cancel_order">
+                                {{ __('Sekaligus tandai pesanan ini sebagai Dibatalkan') }}
+                            </label>
+                        </div>
+                    </div>
+                    @endif
 
                     {{-- Rejected Reason block --}}
                     <div id="rejected-reason-block" class="mb-3 d-none">
@@ -206,7 +232,8 @@
         const rejectedBlock = document.getElementById('rejected-reason-block');
         const refundBlock = document.getElementById('refund-note-block');
         const replacementBlock = document.getElementById('replacement-block');
-        
+        const cancelOrderBlock = document.getElementById('cancel-order-option-block');
+
         const rejectedInput = document.getElementById('rejected_reason');
         const refundInput = document.getElementById('refund_note');
         const replacementInput = document.getElementById('replacement_data');
@@ -216,12 +243,13 @@
 
         function toggleBlocks() {
             const val = select.value;
-            
+
             // Hide all first
             rejectedBlock.classList.add('d-none');
             refundBlock.classList.add('d-none');
             replacementBlock.classList.add('d-none');
-            
+            if (cancelOrderBlock) cancelOrderBlock.classList.add('d-none');
+
             rejectedInput.removeAttribute('required');
             refundInput.removeAttribute('required');
             if(replacementInput) replacementInput.removeAttribute('required');
@@ -231,11 +259,15 @@
             if (val === 'rejected') {
                 rejectedBlock.classList.remove('d-none');
                 rejectedInput.setAttribute('required', 'true');
-            } else if (val === 'done' || val === 'refund') {
+            } else if (val === 'done' || val === 'refund' || val === 'refund_external') {
                 refundBlock.classList.remove('d-none');
                 refundInput.setAttribute('required', 'true');
+                if (val === 'refund_external' && cancelOrderBlock) {
+                    cancelOrderBlock.classList.remove('d-none');
+                }
             } else if (val === 'refund_wallet') {
                 refundBlock.classList.remove('d-none');
+                if (cancelOrderBlock) cancelOrderBlock.classList.remove('d-none');
             } else if (val === 'replacement') {
                 replacementBlock.classList.remove('d-none');
                 if(replacementInput) {

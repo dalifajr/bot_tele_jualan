@@ -22,7 +22,7 @@ class CartController extends Controller
      */
     public function index()
     {
-        $cartItems = CartItem::with('product')
+        $cartItems = CartItem::with('product.creator')
             ->where('user_id', Auth::id())
             ->get();
 
@@ -233,7 +233,7 @@ class CartController extends Controller
      */
     public function checkout(Request $request)
     {
-        $cartItems = CartItem::with('product')
+        $cartItems = CartItem::with('product.creator')
             ->where('user_id', Auth::id())
             ->get();
 

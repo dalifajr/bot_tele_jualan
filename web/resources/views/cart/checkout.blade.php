@@ -44,7 +44,14 @@
                                         </div>
                                         <div>
                                             <h6 class="fw-bold mb-0">{{ $item->product->name }}</h6>
-                                            <small class="text-muted">{{ $item->product->formatted_price }} / {{ __('unit') }}</small>
+                                            <div class="d-flex flex-wrap align-items-center gap-1.5 mt-0.5">
+                                                <small class="text-muted">{{ $item->product->formatted_price }} / {{ __('unit') }}</small>
+                                                @if($item->product->creator)
+                                                <span class="badge bg-secondary-subtle text-body rounded-pill" style="font-size: 0.66rem;">
+                                                    <i class="fas fa-store text-primary me-1"></i>{{ $item->product->creator->display_name }}
+                                                </span>
+                                                @endif
+                                            </div>
                                             @if($item->vcc_services && count($item->vcc_services) > 0)
                                                 @php $groupedServices = array_count_values($item->vcc_services); @endphp
                                                 <div class="mt-1 d-flex flex-wrap gap-1 align-items-center">
