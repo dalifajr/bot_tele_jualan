@@ -75,17 +75,14 @@
         <div class="row g-2 g-md-3">
             <!-- 1. Wallet Balance Card -->
             <div class="col-6 col-lg-3">
-                <div class="card border-0 shadow-sm h-100 text-white overflow-hidden lift-hover seller-stat-card-gradient seller-stat-card-wallet" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important;">
+                <div class="card h-100 overflow-hidden lift-hover seller-stat-card-gradient seller-stat-card-wallet">
                     <div class="card-body p-3 p-md-4 position-relative">
-                        <div class="position-absolute end-0 bottom-0 text-white d-none d-md-block" style="font-size: 7rem; transform: translate(15px, 15px); opacity: 0.12; pointer-events: none;">
-                            <i class="fas fa-wallet"></i>
-                        </div>
                         <div class="position-relative z-1">
-                            <span class="badge bg-white text-primary px-2 px-md-3 py-1 mb-2 small fw-bold text-uppercase shadow-sm" style="font-size: 0.68rem; border-radius: var(--radius-xs);">{{ __('Saldo Dompet') }}</span>
-                            <h3 class="fw-bold mb-2 text-white h4 h2-md">Rp {{ number_format($user->wallet_balance, 0, ',', '.') }}</h3>
-                            <div class="d-flex align-items-center justify-content-between pt-2 border-top border-white border-opacity-25" style="font-size: 0.75rem;">
-                                <span class="text-white-50" style="color: rgba(255, 255, 255, 0.85) !important;">{{ __('Komisi:') }} <strong class="text-white">{{ !empty($user->commission_per_product) ? __('Per-Produk') : ($user->platform_fee_percent . '%') }}</strong></span>
-                                <a href="{{ route('seller.finance.index') }}" class="btn btn-light btn-xs btn-sm-sm rounded-pill px-2.5 px-md-3 fw-bold text-primary shadow-sm" style="font-size: 0.72rem;">{{ __('Tarik') }}</a>
+                            <span class="badge bg-white text-primary px-2 px-md-3 py-1 mb-2 small fw-bold text-uppercase" style="font-size: 0.68rem; border-radius: var(--radius-pill);">{{ __('Saldo Dompet') }}</span>
+                            <h3 class="fw-bold mb-2 h4 h2-md m3-tabular-nums">Rp {{ number_format($user->wallet_balance, 0, ',', '.') }}</h3>
+                            <div class="d-flex align-items-center justify-content-between pt-2" style="font-size: 0.75rem; border-top: 1px solid rgba(var(--primary-rgb), 0.2);">
+                                <span class="opacity-75">{{ __('Komisi:') }} <strong>{{ !empty($user->commission_per_product) ? __('Per-Produk') : ($user->platform_fee_percent . '%') }}</strong></span>
+                                <a href="{{ route('seller.finance.index') }}" class="btn btn-light btn-xs btn-sm-sm rounded-pill px-2.5 px-md-3 fw-bold" style="font-size: 0.72rem;">{{ __('Tarik') }}</a>
                             </div>
                         </div>
                     </div>
@@ -94,17 +91,14 @@
 
             <!-- 2. Held Balance Card -->
             <div class="col-6 col-lg-3">
-                <div class="card border-0 shadow-sm h-100 text-white overflow-hidden lift-hover seller-stat-card-gradient seller-stat-card-held" style="background: linear-gradient(135deg, #b45309 0%, #d97706 50%, #f59e0b 100%) !important;">
+                <div class="card h-100 overflow-hidden lift-hover seller-stat-card-gradient seller-stat-card-held">
                     <div class="card-body p-3 p-md-4 position-relative">
-                        <div class="position-absolute end-0 bottom-0 text-white d-none d-md-block" style="font-size: 7rem; transform: translate(15px, 15px); opacity: 0.15; pointer-events: none;">
-                            <i class="fas fa-lock"></i>
-                        </div>
                         <div class="position-relative z-1">
-                            <span class="badge bg-white text-warning-emphasis px-2 px-md-3 py-1 mb-2 small fw-bold text-uppercase shadow-sm" style="font-size: 0.68rem; border-radius: var(--radius-xs); color: #b45309 !important;">{{ __('Tertahan') }}</span>
-                            <h3 class="fw-bold mb-2 text-white h4 h2-md">Rp {{ number_format($heldBalance, 0, ',', '.') }}</h3>
-                            <div class="d-flex align-items-center justify-content-between pt-2 border-top border-white border-opacity-25" style="font-size: 0.75rem;">
-                                <span class="text-white-50" style="color: rgba(255, 255, 255, 0.85) !important;">{{ __('Garansi') }}</span>
-                                <a href="{{ route('seller.finance.index') }}" class="btn btn-light btn-xs btn-sm-sm rounded-pill px-2.5 px-md-3 fw-bold shadow-sm" style="font-size: 0.72rem; color: #b45309 !important;">{{ __('Rincian') }}</a>
+                            <span class="badge bg-white px-2 px-md-3 py-1 mb-2 small fw-bold text-uppercase" style="font-size: 0.68rem; border-radius: var(--radius-pill);">{{ __('Tertahan') }}</span>
+                            <h3 class="fw-bold mb-2 h4 h2-md m3-tabular-nums">Rp {{ number_format($heldBalance, 0, ',', '.') }}</h3>
+                            <div class="d-flex align-items-center justify-content-between pt-2" style="font-size: 0.75rem; border-top: 1px solid rgba(180, 83, 9, 0.22);">
+                                <span class="opacity-75">{{ __('Garansi') }}</span>
+                                <a href="{{ route('seller.finance.index') }}" class="btn btn-light btn-xs btn-sm-sm rounded-pill px-2.5 px-md-3 fw-bold" style="font-size: 0.72rem;">{{ __('Rincian') }}</a>
                             </div>
                         </div>
                     </div>

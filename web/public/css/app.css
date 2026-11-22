@@ -236,8 +236,8 @@
     --cm-sys-color-outline: var(--outline);
     --cm-sys-color-hairline: var(--outline-variant);
 
-    --cm-sys-color-status-success: var(--tertiary);
-    --cm-sys-color-status-success-container: var(--tertiary-container);
+    --cm-sys-color-status-success: #6dd58c;
+    --cm-sys-color-status-success-container: #0f5223;
     --cm-sys-color-status-warning: #fdd663;
     --cm-sys-color-status-warning-container: #573e00;
     --cm-sys-color-status-error: var(--error);
@@ -1035,23 +1035,130 @@ a:hover {
     box-shadow: none !important;
 }
 
-.card.seller-stat-card-wallet {
+.card.seller-stat-card-wallet,
+.card.seller-stat-card-finance-wallet {
     background: var(--primary-container) !important;
     color: var(--on-primary-container) !important;
-    border-color: rgba(var(--primary-rgb), 0.25) !important;
+    border-color: rgba(var(--primary-rgb), 0.22) !important;
 }
 
 .card.seller-stat-card-held,
 .card.seller-stat-card-finance-held {
     background: var(--cm-sys-color-status-warning-container) !important;
-    color: var(--cm-sys-color-status-warning) !important;
-    border-color: transparent !important;
+    color: #5b3200 !important;
+    border-color: rgba(180, 83, 9, 0.22) !important;
 }
 
-.card.seller-stat-card-finance-wallet {
-    background: var(--tertiary-container) !important;
-    color: var(--on-tertiary-container) !important;
-    border-color: transparent !important;
+[data-bs-theme="dark"] .card.seller-stat-card-held,
+[data-bs-theme="dark"] .card.seller-stat-card-finance-held {
+    background: var(--cm-sys-color-status-warning-container) !important;
+    color: var(--cm-sys-color-status-warning) !important;
+    border-color: rgba(253, 214, 99, 0.28) !important;
+}
+
+/* Seller Finance Flat M3 Helpers */
+.m3-tabular-nums {
+    font-variant-numeric: tabular-nums;
+}
+
+.m3-finance-icon-badge {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 1.1rem;
+}
+
+.m3-finance-icon-badge.is-primary {
+    background: var(--primary);
+    color: var(--on-primary);
+}
+
+.m3-finance-icon-badge.is-warning {
+    background: #b45309;
+    color: #ffffff;
+}
+
+[data-bs-theme="dark"] .m3-finance-icon-badge.is-warning {
+    background: #fdd663;
+    color: #3f2b00;
+}
+
+.m3-segmented-nav {
+    display: flex;
+    width: 100%;
+    gap: 4px;
+    padding: 4px !important;
+    border-radius: var(--radius-pill) !important;
+    background-color: var(--surface-container) !important;
+    border: 1px solid var(--outline-variant) !important;
+}
+
+.m3-segmented-nav .nav-item {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+.m3-segmented-nav .nav-link {
+    width: 100%;
+    min-height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    text-align: center;
+    white-space: nowrap;
+    font-size: 0.86rem;
+    padding: 0.5rem 0.85rem !important;
+}
+
+@media (min-width: 768px) {
+    .m3-segmented-nav {
+        display: inline-flex;
+        width: auto;
+    }
+
+    .m3-segmented-nav .nav-item {
+        flex: 0 0 auto;
+    }
+
+    .m3-segmented-nav .nav-link {
+        padding: 0.5rem 1.25rem !important;
+    }
+}
+
+.m3-mobile-item-card {
+    background-color: var(--surface-container-low);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--radius-md, 16px);
+    padding: 0.9rem 1rem;
+}
+
+.m3-quick-amount-chip {
+    border-radius: var(--radius-pill) !important;
+    background-color: var(--surface-container) !important;
+    color: var(--on-surface) !important;
+    border: 1px solid var(--outline-variant) !important;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 0.35rem 0.8rem;
+    min-height: 34px;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.m3-quick-amount-chip:hover:not(:disabled),
+.m3-quick-amount-chip:focus-visible:not(:disabled) {
+    background-color: var(--primary-container) !important;
+    color: var(--on-primary-container) !important;
+    border-color: var(--primary) !important;
+}
+
+.m3-quick-amount-chip:disabled {
+    opacity: 0.48;
+    cursor: not-allowed;
 }
 
 .seller-stat-card-gradient h1,
@@ -2644,8 +2751,8 @@ ul.nav-pills,
 
 .badge.bg-success-subtle,
 .bg-success-subtle {
-    background-color: var(--tertiary-container) !important;
-    color: var(--on-tertiary-container) !important;
+    background-color: var(--cm-sys-color-status-success-container) !important;
+    color: var(--cm-sys-color-status-success) !important;
     border: 1px solid transparent !important;
 }
 

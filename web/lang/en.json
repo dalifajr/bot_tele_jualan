@@ -4183,5 +4183,22 @@
     "Detail Pesan Telegram": "Telegram Error Details",
     "Tidak ada data untuk kategori ini.": "No records found for this category.",
     "Kode Error": "Error Code",
-    "Pesan Telegram": "Telegram Message"
+    "Pesan Telegram": "Telegram Message",
+    "Saldo Dompet Saya": "My Wallet Balance",
+    "Saldo Tertahan (Garansi)": "Held Balance (Warranty)",
+    "Potongan Platform": "Platform Fee",
+    "Komisi bersih yang ditangguhkan hingga masa garansi produk selesai.": "Net commission held until the product warranty period expires.",
+    "Lihat Rincian": "View Details",
+    "Minimal Rp 10.000 • Maksimal sesuai saldo tersedia": "Minimum Rp 10,000 • Up to available balance",
+    "Tarik Semua": "Withdraw All",
+    "Anda belum menyimpan rekening bank. Silakan simpan rekening tujuan terlebih dahulu di menu": "You have not saved a bank account yet. Please add a payout account first in",
+    "Tambah Rekening": "Add Account",
+    "Saldo Anda belum mencukupi minimal penarikan Rp 10.000.": "Your balance is below the Rp 10,000 minimum withdrawal.",
+    "Lihat Struk": "View Receipt",
+    "Lihat Alasan": "View Reason",
+    "Riwayat penarikan saldo Anda akan tampil di sini.": "Your withdrawal request history will appear here.",
+    "Estimasi Cair:": "Estimated Release:",
+    "Komisi dari produk bergaransi yang sedang ditahan akan tampil di sini.": "Held commissions from warrantied products will appear here.",
+    "Mendukung Bank Nasional & E-Wallet": "Supports Local Banks & E-Wallets",
+    "Tambahkan rekening bank atau e-wallet untuk mulai menarik saldo.": "Add a bank account or e-wallet to start withdrawing funds."
 }
