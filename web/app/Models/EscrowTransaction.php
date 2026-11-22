@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\HasSystemTimezone;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,7 +11,7 @@ use Illuminate\Support\Str;
 
 class EscrowTransaction extends Model
 {
-    use HasFactory;
+    use HasFactory, HasSystemTimezone;
 
     const STATUS_WAITING_DEPOSIT = 'waiting_deposit';
     const STATUS_DEPOSIT_SUBMITTED = 'deposit_submitted';

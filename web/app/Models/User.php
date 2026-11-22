@@ -2,13 +2,15 @@
 
 namespace App\Models;
 
+use App\Support\SystemTimezone;
+use App\Traits\HasSystemTimezone;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class User extends Authenticatable
 {
-    use SoftDeletes, Notifiable;
+    use SoftDeletes, Notifiable, HasSystemTimezone;
     protected $table = 'users';
 
     protected $fillable = [
@@ -97,8 +99,8 @@ class User extends Authenticatable
         if (!$this->last_seen_at) {
             return false;
         }
-        // Online if active in the last 5 minutes
-        return $this->last_seen_at->diffInMinutes(now()) < 5;
+        // Online if active in the last 5 minutes (timezone-safe instant comparison)
+        return $this->last_seen_at->greaterThan(now()->subMinutes(5));
     }
 
     public function getLastActiveLabelAttribute()
@@ -111,17 +113,19 @@ class User extends Authenticatable
             return __('Offline');
         }
 
-        $lastSeen = $this->last_seen_at;
+        $tz = SystemTimezone::active();
+        $nowInTz = now()->timezone($tz);
+        $lastSeen = $this->last_seen_at->copy()->timezone($tz);
 
-        if ($lastSeen->isToday()) {
+        if ($lastSeen->isSameDay($nowInTz)) {
             return __('Aktif hari ini pukul :time', ['time' => $lastSeen->format('H:i')]);
         }
 
-        if ($lastSeen->isYesterday()) {
+        if ($lastSeen->isSameDay($nowInTz->copy()->subDay())) {
             return __('Aktif kemarin pukul :time', ['time' => $lastSeen->format('H:i')]);
         }
 
-        // Return day name and date
+        // Return day name and date in system timezone
         return __('Aktif :date', ['date' => $lastSeen->translatedFormat('l, d M Y H:i')]);
     }
 

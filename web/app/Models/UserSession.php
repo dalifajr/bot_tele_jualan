@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Traits\HasSystemTimezone;
 use Illuminate\Database\Eloquent\Model;
 
 class UserSession extends Model
 {
+    use HasSystemTimezone;
     protected $table = 'user_sessions';
 
     protected $fillable = [

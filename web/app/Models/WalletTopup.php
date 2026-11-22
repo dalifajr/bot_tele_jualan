@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Traits\HasSystemTimezone;
 use Illuminate\Database\Eloquent\Model;
 
 class WalletTopup extends Model
 {
+    use HasSystemTimezone;
     protected $table = 'wallet_topups';
 
     protected $fillable = [

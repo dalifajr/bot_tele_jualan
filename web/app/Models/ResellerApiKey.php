@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\HasSystemTimezone;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -9,6 +10,7 @@ use Illuminate\Support\Str;
 
 class ResellerApiKey extends Model
 {
+    use HasSystemTimezone;
     protected $table = 'reseller_api_keys';
 
     protected $fillable = [

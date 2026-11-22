@@ -3124,6 +3124,10 @@ class AdminController extends Controller
             );
         }
 
+        if (array_key_exists('system_timezone', $settings)) {
+            \App\Support\SystemTimezone::forgetCache();
+        }
+
         if ($request->has('vcc_services_input')) {
             $rawServices = $request->input('vcc_services_input');
             if (is_array($rawServices)) {

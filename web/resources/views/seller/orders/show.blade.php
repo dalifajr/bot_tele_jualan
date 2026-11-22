@@ -219,7 +219,7 @@
                         <i class="fas fa-check-circle text-success mt-1"></i>
                         <div>
                             <span class="text-muted">{{ __('Dibayar:') }}</span>
-                            <div class="fw-semibold text-success">{{ \Carbon\Carbon::parse($order->paid_at)->format('d M Y H:i:s') }}</div>
+                            <div class="fw-semibold text-success">{{ \App\Support\SystemTimezone::toSystem($order->paid_at)?->format('d M Y H:i:s') }}</div>
                         </div>
                     </li>
                     @endif
@@ -228,7 +228,7 @@
                         <i class="fas fa-paper-plane text-primary mt-1"></i>
                         <div>
                             <span class="text-muted">{{ __('Dikirim:') }}</span>
-                            <div class="fw-semibold text-primary">{{ \Carbon\Carbon::parse($order->delivered_at)->format('d M Y H:i:s') }}</div>
+                            <div class="fw-semibold text-primary">{{ \App\Support\SystemTimezone::toSystem($order->delivered_at)?->format('d M Y H:i:s') }}</div>
                         </div>
                     </li>
                     @endif
@@ -237,7 +237,7 @@
                         <i class="fas fa-times-circle text-danger mt-1"></i>
                         <div>
                             <span class="text-muted">{{ __('Dibatalkan:') }}</span>
-                            <div class="fw-semibold text-danger">{{ \Carbon\Carbon::parse($order->cancelled_at)->format('d M Y H:i:s') }}</div>
+                            <div class="fw-semibold text-danger">{{ \App\Support\SystemTimezone::toSystem($order->cancelled_at)?->format('d M Y H:i:s') }}</div>
                         </div>
                     </li>
                     @endif

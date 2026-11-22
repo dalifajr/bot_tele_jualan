@@ -260,7 +260,9 @@ class BroadcastReadAnalyticsService
      */
     public function buildAnalyticsPayload(BroadcastJob $job): array
     {
-        $anchor = $job->completed_at ?? $job->updated_at ?? $job->created_at;
+        $tz = \App\Support\SystemTimezone::active();
+        $rawAnchor = $job->completed_at ?? $job->updated_at ?? $job->created_at;
+        $anchor = $rawAnchor ? $rawAnchor->copy()->timezone($tz) : null;
         $snapshots = is_array($job->read_snapshots) ? $job->read_snapshots : [];
 
         $labels = [
@@ -286,7 +288,7 @@ class BroadcastReadAnalyticsService
                 'telegram' => $snap['telegram'] ?? null,
                 'rate' => $snap['rate'] ?? null,
                 'captured_at' => isset($snap['captured_at'])
-                    ? Carbon::parse($snap['captured_at'])->format('d M Y, H:i')
+                    ? Carbon::parse($snap['captured_at'])->timezone($tz)->format('d M Y, H:i')
                     : null,
             ];
         }
@@ -308,7 +310,7 @@ class BroadcastReadAnalyticsService
             'cta_url' => $job->cta_url,
             'completed_at' => $anchor ? $anchor->format('d M Y, H:i') : null,
             'last_calculated_at' => $job->last_read_calculated_at
-                ? $job->last_read_calculated_at->format('d M Y, H:i:s')
+                ? $job->last_read_calculated_at->copy()->timezone($tz)->format('d M Y, H:i:s')
                 : null,
             'timeline' => $timeline,
         ];

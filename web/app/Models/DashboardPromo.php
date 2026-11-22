@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Traits\HasSystemTimezone;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class DashboardPromo extends Model
 {
-    use HasFactory;
+    use HasFactory, HasSystemTimezone;
 
     protected $table = 'dashboard_promos';
 

@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Traits\HasSystemTimezone;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
 class Coupon extends Model
 {
-    use HasFactory;
+    use HasFactory, HasSystemTimezone;
 
     public const APPLY_PER_ORDER = 'per_order';
     public const APPLY_PER_ITEM = 'per_item';

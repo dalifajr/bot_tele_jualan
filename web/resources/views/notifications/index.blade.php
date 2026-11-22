@@ -53,8 +53,9 @@
                                     </div>
                                     @endif
 
-                                    <small class="text-muted opacity-75" style="font-size: 0.73rem;">
-                                        <i class="far fa-clock me-1"></i>{{ $notification->created_at->diffForHumans() }}
+                                    @php $notifLocalTime = \App\Support\SystemTimezone::toSystem($notification->created_at); @endphp
+                                    <small class="text-muted opacity-75" style="font-size: 0.73rem;" title="{{ $notifLocalTime?->format('d M Y, H:i') }} {{ \App\Support\SystemTimezone::abbr() }}">
+                                        <i class="far fa-clock me-1"></i>{{ $notifLocalTime?->diffForHumans() }} &bull; {{ $notifLocalTime?->format('H:i') }} {{ \App\Support\SystemTimezone::abbr() }}
                                     </small>
                                 </div>
                             </div>

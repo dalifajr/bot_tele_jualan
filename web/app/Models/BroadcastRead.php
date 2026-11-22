@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Traits\HasSystemTimezone;
 use Illuminate\Database\Eloquent\Model;
 
 class BroadcastRead extends Model
 {
+    use HasSystemTimezone;
     protected $fillable = [
         'broadcast_job_id',
         'user_id',

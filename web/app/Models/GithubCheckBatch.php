@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Traits\HasSystemTimezone;
 use Illuminate\Database\Eloquent\Model;
 
 class GithubCheckBatch extends Model
 {
+    use HasSystemTimezone;
     protected $table = 'github_check_batches';
 
     protected $fillable = [

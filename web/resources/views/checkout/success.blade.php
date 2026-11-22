@@ -37,7 +37,7 @@
                     <div class="d-flex justify-content-between mb-2">
                         <span class="text-muted">{{ __('Batas Bayar') }}</span>
                         <span class="fw-bold text-danger" id="countdownTimer" data-expires="{{ $order->expires_at->toIso8601String() }}">
-                            {{ $order->expires_at->format('d M Y, H:i') }} WIB
+                            {{ $order->expires_at->format('d M Y, H:i') }} {{ \App\Support\SystemTimezone::abbr() }}
                         </span>
                     </div>
                     <hr class="border-secondary-subtle opacity-50">

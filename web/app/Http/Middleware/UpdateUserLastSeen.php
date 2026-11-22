@@ -16,8 +16,8 @@ class UpdateUserLastSeen
     {
         if (Auth::check()) {
             $user = Auth::user();
-            // Throttle database update to once per minute per user
-            if (!$user->last_seen_at || $user->last_seen_at->diffInMinutes(now()) >= 1) {
+            // Throttle database update to once per minute per user (timezone-safe instant comparison)
+            if (!$user->last_seen_at || $user->last_seen_at->lessThanOrEqualTo(now()->subMinute())) {
                 $user->timestamps = false;
                 $user->update(['last_seen_at' => now()]);
             }

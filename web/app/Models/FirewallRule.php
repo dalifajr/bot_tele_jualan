@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Traits\HasSystemTimezone;
 use Illuminate\Database\Eloquent\Model;
 
 class FirewallRule extends Model
 {
+    use HasSystemTimezone;
     protected $table = 'firewall_rules';
 
     protected $fillable = [

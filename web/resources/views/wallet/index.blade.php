@@ -91,7 +91,7 @@
                                     <strong class="font-monospace text-body small">{{ $topup->topup_ref }}</strong>
                                 </div>
                                 <small class="fw-bold text-danger wallet-countdown" data-expires="{{ optional($topup->expires_at)->toIso8601String() }}">
-                                    <i class="far fa-clock me-1"></i>{{ optional($topup->expires_at)->format('H:i') }} WIB
+                                    <i class="far fa-clock me-1"></i>{{ optional($topup->expires_at)->format('H:i') }} {{ \App\Support\SystemTimezone::abbr() }}
                                 </small>
                             </div>
 

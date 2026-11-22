@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Traits\HasSystemTimezone;
 use Illuminate\Database\Eloquent\Model;
 
 class BroadcastJob extends Model
 {
+    use HasSystemTimezone;
     protected $fillable = [
         'message',
         'media_type',

@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Traits\HasSystemTimezone;
 use Illuminate\Database\Eloquent\Model;
 
 class Visitor extends Model
 {
+    use HasSystemTimezone;
     protected $fillable = [
         'ip_address',
         'visited_date',

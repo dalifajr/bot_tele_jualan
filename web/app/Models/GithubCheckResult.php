@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Traits\HasSystemTimezone;
 use Illuminate\Database\Eloquent\Model;
 
 class GithubCheckResult extends Model
 {
+    use HasSystemTimezone;
     public $timestamps = false;
 
     protected $table = 'github_check_results';

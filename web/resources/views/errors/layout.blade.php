@@ -525,7 +525,7 @@
 
         <footer class="m3-err-footer">
             <span>{{ config('app.name', 'Digital Store') }}</span>
-            <span class="m3-mono">{{ now()->format('Y-m-d H:i:s') }}</span>
+            <span class="m3-mono">{{ \App\Support\SystemTimezone::now()->format('Y-m-d H:i:s') }} {{ \App\Support\SystemTimezone::abbr() }}</span>
         </footer>
     </main>
 
