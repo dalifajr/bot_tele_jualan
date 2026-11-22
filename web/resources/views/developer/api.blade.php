@@ -142,36 +142,14 @@
     {{-- TAB 1: API KEYS --}}
     @if($activeTab === 'keys')
     <div class="row g-4">
-        <div class="col-12 col-xl-4">
+        {{-- Desktop Inline Create Form --}}
+        <div class="col-12 col-xl-4 d-none d-xl-block">
             <div class="card border-0" style="border-radius: 22px; background: var(--surface-container-low); border: 1px solid var(--outline-variant) !important;">
                 <div class="card-body p-4">
                     <h5 class="fw-bold mb-1"><i class="fas fa-plus-circle text-primary me-2"></i>{{ __('Buat API Key Baru') }}</h5>
                     <p class="small text-secondary mb-3">{{ __('Kunci API menggunakan saldo Dompet Saldo Anda untuk pembelian otomatis tanpa menunggu konfirmasi QRIS.') }}</p>
 
-                    <form action="{{ route('developer.api.keys.store') }}" method="POST">
-                        @csrf
-                        <div class="mb-3">
-                            <label class="form-label small fw-semibold">{{ __('Nama Integrasi / Label') }}</label>
-                            <input type="text" name="name" class="form-control" placeholder="{{ __('Contoh: Bot Telegram Reseller') }}" required maxlength="100" value="{{ old('name') }}">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label small fw-semibold">{{ __('IP Whitelist (Opsional)') }}</label>
-                            <textarea name="allowed_ips" class="form-control font-monospace small" rows="2" placeholder="103.10.20.30, 103.10.21.0/24">{{ old('allowed_ips') }}</textarea>
-                            <div class="form-text">{{ __('Pisahkan dengan koma atau baris baru. Kosongkan untuk mengizinkan semua IP.') }}</div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label small fw-semibold">{{ __('Webhook URL (Opsional)') }}</label>
-                            <input type="url" name="webhook_url" class="form-control font-monospace small" placeholder="https://bot-anda.com/webhook/order" value="{{ old('webhook_url') }}">
-                            <div class="form-text">{{ __('Menerima POST JSON bertanda tangan HMAC-SHA256 saat pesanan selesai.') }}</div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label small fw-semibold">{{ __('Rate Limit (Request / Menit)') }}</label>
-                            <input type="number" name="rate_limit_per_minute" class="form-control" min="5" max="{{ $isAdmin ? 300 : 120 }}" value="{{ old('rate_limit_per_minute', 60) }}">
-                        </div>
-                        <button type="submit" class="btn btn-primary w-100 rounded-pill fw-semibold py-2">
-                            <i class="fas fa-key me-1"></i>{{ __('Generate API Key') }}
-                        </button>
-                    </form>
+                    @include('developer.partials.create_api_key_form', ['idPrefix' => 'desktop'])
                 </div>
             </div>
         </div>
@@ -179,7 +157,13 @@
         <div class="col-12 col-xl-8">
             <div class="card border-0" style="border-radius: 22px; background: var(--surface-container-low); border: 1px solid var(--outline-variant) !important;">
                 <div class="card-body p-4">
-                    <h5 class="fw-bold mb-3"><i class="fas fa-list-check text-primary me-2"></i>{{ __('Daftar API Key Anda') }}</h5>
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                        <h5 class="fw-bold mb-0"><i class="fas fa-list-check text-primary me-2"></i>{{ __('Daftar API Key Anda') }}</h5>
+                        {{-- Mobile Trigger Button --}}
+                        <button type="button" class="btn btn-sm btn-primary rounded-pill d-xl-none fw-semibold" data-bs-toggle="modal" data-bs-target="#createApiKeyModal">
+                            <i class="fas fa-plus me-1"></i>{{ __('Buat Key Baru') }}
+                        </button>
+                    </div>
 
                     @forelse($apiKeys as $key)
                     <div class="p-3 m3-subcard mb-3">
@@ -443,7 +427,9 @@ hash_equals($expected, $_SERVER['HTTP_X_RESELLER_SIGNATURE']);</pre>
     <div class="card border-0" style="border-radius: 22px; background: var(--surface-container-low); border: 1px solid var(--outline-variant) !important;">
         <div class="card-body p-4">
             <h5 class="fw-bold mb-3"><i class="fas fa-terminal text-primary me-2"></i>{{ __('50 Log Permintaan API Terakhir') }}</h5>
-            <div class="table-responsive">
+            
+            {{-- Desktop Table View --}}
+            <div class="table-responsive d-none d-md-block">
                 <table class="table table-hover align-middle mb-0 small">
                     <thead>
                         <tr class="text-secondary">
@@ -470,7 +456,7 @@ hash_equals($expected, $_SERVER['HTTP_X_RESELLER_SIGNATURE']);</pre>
                                 @endphp
                                 <span class="badge {{ $stClass }}">{{ $log->status_code }}</span>
                             </td>
-                            <td class="text-nowrap">{{ $log->duration_ms }} ms</td>
+                            <td class="text-nowrap m3-tabular-nums">{{ $log->duration_ms }} ms</td>
                             <td class="font-monospace">{{ $log->ip_address }}</td>
                             <td>
                                 {{ $log->response_summary ?: '-' }}
@@ -486,6 +472,43 @@ hash_equals($expected, $_SERVER['HTTP_X_RESELLER_SIGNATURE']);</pre>
                         @endforelse
                     </tbody>
                 </table>
+            </div>
+
+            {{-- Mobile Stacked Card View (< 768px) --}}
+            <div class="d-md-none d-flex flex-column gap-2.5">
+                @forelse($logs as $log)
+                    @php
+                        $stClass = $log->status_code >= 200 && $log->status_code < 300 ? 'bg-success text-white' : ($log->status_code >= 400 && $log->status_code < 500 ? 'bg-warning text-dark' : 'bg-danger text-white');
+                    @endphp
+                    <div class="m3-mobile-item-card p-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1.5">
+                            <span class="badge {{ $stClass }} fw-bold">{{ $log->status_code }}</span>
+                            <span class="small text-secondary">{{ optional($log->created_at)->format('d M, H:i:s') }}</span>
+                        </div>
+                        <div class="font-monospace small fw-semibold text-break mb-1">
+                            <span class="badge bg-secondary-subtle text-body me-1">{{ $log->method }}</span>{{ $log->endpoint }}
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center small text-secondary mt-2 pt-2 border-top" style="border-color: var(--outline-variant) !important;">
+                            <span><i class="fas fa-key me-1"></i>{{ $log->apiKey?->name ?? '-' }}</span>
+                            <span class="m3-tabular-nums"><i class="fas fa-stopwatch me-1"></i>{{ $log->duration_ms }} ms</span>
+                        </div>
+                        @if($log->order_ref || $log->response_summary)
+                        <div class="small text-secondary mt-1">
+                            @if($log->order_ref)
+                                <span class="badge bg-primary-subtle text-primary font-monospace">{{ $log->order_ref }}</span>
+                            @endif
+                            @if($log->response_summary)
+                                <span class="ms-1">{{ $log->response_summary }}</span>
+                            @endif
+                        </div>
+                        @endif
+                    </div>
+                @empty
+                    <div class="text-center py-4 text-secondary">
+                        <i class="fas fa-terminal fa-2x mb-2 opacity-50"></i>
+                        <div>{{ __('Belum ada riwayat panggilan API.') }}</div>
+                    </div>
+                @endforelse
             </div>
         </div>
     </div>
@@ -578,6 +601,25 @@ hash_equals($expected, $_SERVER['HTTP_X_RESELLER_SIGNATURE']);</pre>
     @endif
 </div>
 
+{{-- Modal Buat API Key Baru (M3 Bottom Sheet pada Mobile) --}}
+<div class="modal fade" id="createApiKeyModal" tabindex="-1" aria-labelledby="createApiKeyModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered m3-sheet-modal">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="m3-sheet-handle d-md-none"></div>
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold" id="createApiKeyModalLabel">
+                    <i class="fas fa-plus-circle text-primary me-2"></i>{{ __('Buat API Key Baru') }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p class="small text-secondary mb-3">{{ __('Kunci API menggunakan saldo Dompet Saldo Anda untuk pembelian otomatis tanpa menunggu konfirmasi QRIS.') }}</p>
+                @include('developer.partials.create_api_key_form', ['idPrefix' => 'modal'])
+            </div>
+        </div>
+    </div>
+</div>
+
 <script nonce="{{ $cspNonce ?? '' }}">
     function copyTextValue(inputId, btn) {
         const el = document.getElementById(inputId);
@@ -589,5 +631,16 @@ hash_equals($expected, $_SERVER['HTTP_X_RESELLER_SIGNATURE']);</pre>
             setTimeout(() => { btn.innerHTML = orig; }, 1800);
         });
     }
+
+    @if($errors->hasAny(['name', 'allowed_ips', 'webhook_url', 'rate_limit_per_minute']))
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.innerWidth < 1200) {
+                const modalEl = document.getElementById('createApiKeyModal');
+                if (modalEl && typeof bootstrap !== 'undefined') {
+                    bootstrap.Modal.getOrCreateInstance(modalEl).show();
+                }
+            }
+        });
+    @endif
 </script>
 @endsection

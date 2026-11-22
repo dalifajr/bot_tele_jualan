@@ -4,9 +4,9 @@
 @section('page_subtitle', __('Tren omzet, kualitas stok & jam transaksi teramai'))
 
 @section('content')
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 mb-md-4">
     <div>
-        <h4 class="fw-bold mb-0 text-body"><i class="fas fa-chart-area text-primary me-1.5"></i>{{ __('Analitik & Wawasan Toko') }}</h4>
+        <h4 class="fw-bold mb-0 text-body fs-5 fs-md-4"><i class="fas fa-chart-area text-primary me-1.5"></i>{{ __('Analitik & Wawasan Toko') }}</h4>
         <small class="text-secondary">{{ __('Pantau performa produk dan skor kesehatan garansi toko Anda.') }}</small>
     </div>
     <div class="d-flex gap-1.5">
@@ -18,64 +18,66 @@
     </div>
 </div>
 
-<div class="row g-3 mb-4">
+<div class="row g-2.5 g-md-3 mb-3 mb-md-4">
     <div class="col-6 col-lg-3">
         <div class="card border-0 rounded-4 shadow-sm h-100">
-            <div class="card-body p-3.5">
+            <div class="card-body p-3 p-md-3.5">
                 <small class="text-secondary fw-semibold">{{ __('Omzet Periode') }}</small>
-                <div class="fs-4 fw-bold text-primary mt-1">Rp {{ number_format($totalRevenue, 0, ',', '.') }}</div>
+                <div class="fs-4 fw-bold text-primary mt-1 m3-tabular-nums">Rp {{ number_format($totalRevenue, 0, ',', '.') }}</div>
             </div>
         </div>
     </div>
     <div class="col-6 col-lg-3">
         <div class="card border-0 rounded-4 shadow-sm h-100">
-            <div class="card-body p-3.5">
+            <div class="card-body p-3 p-md-3.5">
                 <small class="text-secondary fw-semibold">{{ __('Pesanan Selesai') }}</small>
-                <div class="fs-4 fw-bold text-body mt-1">{{ $totalOrdersCount }}</div>
+                <div class="fs-4 fw-bold text-body mt-1 m3-tabular-nums">{{ $totalOrdersCount }}</div>
             </div>
         </div>
     </div>
     <div class="col-6 col-lg-3">
         <div class="card border-0 rounded-4 shadow-sm h-100">
-            <div class="card-body p-3.5">
+            <div class="card-body p-3 p-md-3.5">
                 <small class="text-secondary fw-semibold">{{ __('Unit Terjual') }}</small>
-                <div class="fs-4 fw-bold text-body mt-1">{{ $totalUnitsSold }}</div>
+                <div class="fs-4 fw-bold text-body mt-1 m3-tabular-nums">{{ $totalUnitsSold }}</div>
             </div>
         </div>
     </div>
     <div class="col-6 col-lg-3">
         <div class="card border-0 rounded-4 shadow-sm h-100">
-            <div class="card-body p-3.5">
+            <div class="card-body p-3 p-md-3.5">
                 <small class="text-secondary fw-semibold">{{ __('Skor Kualitas Stok') }}</small>
-                <div class="fs-4 fw-bold {{ $overallHealthScore >= 90 ? 'text-success' : ($overallHealthScore >= 75 ? 'text-warning' : 'text-danger') }} mt-1">{{ $overallHealthScore }}%</div>
+                <div class="fs-4 fw-bold m3-tabular-nums {{ $overallHealthScore >= 90 ? 'text-success' : ($overallHealthScore >= 75 ? 'text-warning' : 'text-danger') }} mt-1">{{ $overallHealthScore }}%</div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="row g-4 mb-4">
+<div class="row g-3 g-md-4 mb-3 mb-md-4">
     <div class="col-lg-8">
         <div class="card border-0 rounded-4 shadow-sm h-100">
-            <div class="card-body p-4">
-                <h6 class="fw-bold text-body mb-3">{{ __('Tren Pendapatan Harian') }}</h6>
-                <div style="height: 260px;"><canvas id="sellerRevenueChart"></canvas></div>
+            <div class="card-body p-3 p-md-4">
+                <h6 class="fw-bold text-body mb-3 fs-6">{{ __('Tren Pendapatan Harian') }}</h6>
+                <div style="height: 240px;"><canvas id="sellerRevenueChart"></canvas></div>
             </div>
         </div>
     </div>
     <div class="col-lg-4">
         <div class="card border-0 rounded-4 shadow-sm h-100">
-            <div class="card-body p-4">
-                <h6 class="fw-bold text-body mb-3">{{ __('Pola Jam Ramai Belanja') }}</h6>
-                <div style="height: 260px;"><canvas id="sellerPeakHoursChart"></canvas></div>
+            <div class="card-body p-3 p-md-4">
+                <h6 class="fw-bold text-body mb-3 fs-6">{{ __('Pola Jam Ramai Belanja') }}</h6>
+                <div style="height: 240px;"><canvas id="sellerPeakHoursChart"></canvas></div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="card border-0 rounded-4 shadow-sm">
-    <div class="card-body p-4">
-        <h6 class="fw-bold text-body mb-3">{{ __('Performa & Kualitas Per Produk') }}</h6>
-        <div class="table-responsive">
+<div class="card border-0 rounded-4 shadow-sm overflow-hidden">
+    <div class="card-body p-3 p-md-4">
+        <h6 class="fw-bold text-body mb-3 fs-6">{{ __('Performa & Kualitas Per Produk') }}</h6>
+        
+        {{-- Desktop Table View --}}
+        <div class="table-responsive d-none d-md-block">
             <table class="table align-middle mb-0">
                 <thead>
                     <tr class="small text-muted">
@@ -90,11 +92,11 @@
                     @forelse($topProducts as $prod)
                         <tr>
                             <td class="fw-semibold text-body small">{{ $prod['name'] }}</td>
-                            <td class="text-end small">{{ $prod['units_sold'] }}</td>
-                            <td class="text-end fw-bold text-primary small">Rp {{ number_format($prod['revenue'], 0, ',', '.') }}</td>
-                            <td class="text-end small">{{ $prod['complaints'] }}</td>
+                            <td class="text-end small m3-tabular-nums">{{ $prod['units_sold'] }}</td>
+                            <td class="text-end fw-bold text-primary small m3-tabular-nums">Rp {{ number_format($prod['revenue'], 0, ',', '.') }}</td>
+                            <td class="text-end small m3-tabular-nums">{{ $prod['complaints'] }}</td>
                             <td class="text-end">
-                                <span class="badge rounded-pill {{ $prod['health_score'] >= 90 ? 'bg-primary-subtle text-primary' : 'bg-warning-subtle text-warning' }}">
+                                <span class="badge rounded-pill m3-tabular-nums {{ $prod['health_score'] >= 90 ? 'bg-primary-subtle text-primary' : 'bg-warning-subtle text-warning' }}">
                                     {{ $prod['health_score'] }}%
                                 </span>
                             </td>
@@ -106,6 +108,26 @@
                     @endforelse
                 </tbody>
             </table>
+        </div>
+
+        {{-- Mobile Stacked Card List --}}
+        <div class="d-md-none d-flex flex-column gap-2.5">
+            @forelse($topProducts as $prod)
+                <div class="m3-mobile-item-card">
+                    <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                        <div class="fw-bold text-body small">{{ $prod['name'] }}</div>
+                        <span class="badge rounded-pill flex-shrink-0 m3-tabular-nums {{ $prod['health_score'] >= 90 ? 'bg-primary-subtle text-primary' : 'bg-warning-subtle text-warning' }}">
+                            {{ $prod['health_score'] }}%
+                        </span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center pt-2 mt-1" style="border-top: 1px solid var(--outline-variant); font-size: 0.76rem;">
+                        <span class="text-muted">{{ __('Terjual:') }} <strong class="text-body m3-tabular-nums">{{ $prod['units_sold'] }}</strong> &bull; {{ __('Komplain:') }} <strong class="text-danger m3-tabular-nums">{{ $prod['complaints'] }}</strong></span>
+                        <span class="fw-bold text-primary m3-tabular-nums fs-6">Rp {{ number_format($prod['revenue'], 0, ',', '.') }}</span>
+                    </div>
+                </div>
+            @empty
+                <div class="text-center text-muted py-4 small">{{ __('Belum ada data penjualan pada rentang waktu ini.') }}</div>
+            @endforelse
         </div>
     </div>
 </div>

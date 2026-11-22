@@ -6,7 +6,7 @@
 @section('content')
 <div class="row g-3 mb-4">
     <div class="col-12 col-md-5">
-        <h4 class="fw-bold mb-1 text-dark">{{ __('Kelola Layanan Rekber (Escrow)') }}</h4>
+        <h4 class="fw-bold mb-1 text-body">{{ __('Kelola Layanan Rekber (Escrow)') }}</h4>
         <p class="text-muted small mb-0">{{ __('Kelola transaksi rekening bersama, verifikasi deposit masuk, pelepasan payout, dan penyelesaian sengketa.') }}</p>
     </div>
     <div class="col-12 col-md-7 text-md-end d-flex align-items-center justify-content-md-end gap-2 flex-wrap">
@@ -29,7 +29,7 @@
                 </div>
                 <div>
                     <small class="text-muted d-block">{{ __('Dana Diamankan') }}</small>
-                    <span class="fs-5 fw-bold text-dark">Rp {{ number_format($holdingFunds, 0, ',', '.') }}</span>
+                    <span class="fs-5 fw-bold text-body m3-tabular-nums">Rp {{ number_format($holdingFunds, 0, ',', '.') }}</span>
                 </div>
             </div>
         </div>
@@ -42,7 +42,7 @@
                 </div>
                 <div>
                     <small class="text-muted d-block">{{ __('Verifikasi Deposit') }}</small>
-                    <span class="fs-5 fw-bold text-dark">{{ $pendingDepositCount }} {{ __('Tiket') }}</span>
+                    <span class="fs-5 fw-bold text-body m3-tabular-nums">{{ $pendingDepositCount }} {{ __('Tiket') }}</span>
                 </div>
             </div>
         </div>
@@ -55,7 +55,7 @@
                 </div>
                 <div>
                     <small class="text-muted d-block">{{ __('Menunggu Payout') }}</small>
-                    <span class="fs-5 fw-bold text-dark">{{ $pendingPayoutCount }} {{ __('Tiket') }}</span>
+                    <span class="fs-5 fw-bold text-body m3-tabular-nums">{{ $pendingPayoutCount }} {{ __('Tiket') }}</span>
                 </div>
             </div>
         </div>
@@ -68,7 +68,7 @@
                 </div>
                 <div>
                     <small class="text-muted d-block">{{ __('Sengketa Terbuka') }}</small>
-                    <span class="fs-5 fw-bold {{ $disputedCount > 0 ? 'text-danger' : 'text-dark' }}">{{ $disputedCount }} {{ __('Kasus') }}</span>
+                    <span class="fs-5 fw-bold {{ $disputedCount > 0 ? 'text-danger' : 'text-body' }} m3-tabular-nums">{{ $disputedCount }} {{ __('Kasus') }}</span>
                 </div>
             </div>
         </div>
@@ -110,7 +110,8 @@
                 <p class="small mb-0">{{ __('Tidak ada transaksi rekber ditemukan.') }}</p>
             </div>
         @else
-            <div class="table-responsive">
+            {{-- Desktop Table View --}}
+            <div class="table-responsive d-none d-md-block">
                 <table class="table table-hover align-middle mb-0">
                     <thead class="bg-body-tertiary">
                         <tr>
@@ -126,20 +127,20 @@
                         @foreach($transactions as $trx)
                             <tr>
                                 <td class="ps-4 py-3">
-                                    <div class="fw-bold text-dark">{{ $trx->title }}</div>
+                                    <div class="fw-bold text-body">{{ $trx->title }}</div>
                                     <code class="small text-primary">{{ $trx->transaction_code }}</code>
                                 </td>
                                 <td class="py-3 small">
-                                    <strong class="text-dark">{{ $trx->buyer_name }}</strong>
+                                    <strong class="text-body">{{ $trx->buyer_name }}</strong>
                                     <div class="text-muted" style="font-size: 0.72rem;">{{ $trx->buyer_contact }}</div>
                                 </td>
                                 <td class="py-3 small">
-                                    <strong class="text-dark">{{ $trx->seller_name }}</strong>
+                                    <strong class="text-body">{{ $trx->seller_name }}</strong>
                                     <div class="text-muted" style="font-size: 0.72rem;">{{ $trx->seller_contact }}</div>
                                 </td>
                                 <td class="py-3">
-                                    <div class="fw-bold text-dark">Rp {{ number_format($trx->amount, 0, ',', '.') }}</div>
-                                    <small class="text-muted" style="font-size: 0.72rem;">
+                                    <div class="fw-bold text-body m3-tabular-nums">Rp {{ number_format($trx->amount, 0, ',', '.') }}</div>
+                                    <small class="text-muted m3-tabular-nums" style="font-size: 0.72rem;">
                                         Fee: Rp {{ number_format($trx->fee_amount, 0, ',', '.') }}
                                     </small>
                                 </td>
@@ -190,6 +191,83 @@
                     </tbody>
                 </table>
             </div>
+
+            {{-- Mobile Stacked Card View (< 768px) --}}
+            <div class="d-md-none d-flex flex-column gap-2.5 p-3">
+                @foreach($transactions as $trx)
+                    <div class="m3-mobile-item-card p-3">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div>
+                                <span class="badge bg-{{ $trx->status_badge }} rounded-pill px-2.5 py-1">
+                                    {{ $trx->status_label }}
+                                </span>
+                            </div>
+                            <code class="small text-primary font-monospace">{{ $trx->transaction_code }}</code>
+                        </div>
+
+                        <div class="fw-bold text-body mb-2">{{ $trx->title }}</div>
+
+                        <div class="d-flex justify-content-between align-items-center py-2 px-2.5 rounded-3 mb-2" style="background: var(--surface-container-high);">
+                            <div>
+                                <div class="text-secondary" style="font-size: 0.72rem;">{{ __('Nominal Transaksi') }}</div>
+                                <div class="fw-bold text-body m3-tabular-nums">Rp {{ number_format($trx->amount, 0, ',', '.') }}</div>
+                            </div>
+                            <div class="text-end">
+                                <div class="text-secondary" style="font-size: 0.72rem;">{{ __('Biaya Rekber') }}</div>
+                                <div class="small fw-semibold text-secondary m3-tabular-nums">Rp {{ number_format($trx->fee_amount, 0, ',', '.') }}</div>
+                            </div>
+                        </div>
+
+                        <div class="row g-2 small text-secondary mb-2">
+                            <div class="col-6">
+                                <div><i class="fas fa-user-tag me-1"></i>{{ __('Pembeli:') }}</div>
+                                <strong class="text-body text-truncate d-block">{{ $trx->buyer_name }}</strong>
+                                <span class="text-muted" style="font-size: 0.72rem;">{{ $trx->buyer_contact }}</span>
+                            </div>
+                            <div class="col-6">
+                                <div><i class="fas fa-store me-1"></i>{{ __('Penjual:') }}</div>
+                                <strong class="text-body text-truncate d-block">{{ $trx->seller_name }}</strong>
+                                <span class="text-muted" style="font-size: 0.72rem;">{{ $trx->seller_contact }}</span>
+                            </div>
+                        </div>
+
+                        {{-- Mobile Action Buttons --}}
+                        <div class="d-flex gap-2 pt-2 border-top" style="border-color: var(--outline-variant) !important;">
+                            <a href="{{ route('admin.escrow.show', $trx->transaction_code) }}" class="btn btn-sm btn-primary rounded-pill flex-grow-1 py-2 fw-bold text-center">
+                                <i class="fas fa-eye me-1"></i>{{ __('Kelola') }}
+                            </a>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-2" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fas fa-ellipsis-vertical"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3">
+                                    <li>
+                                        <a class="dropdown-item small py-2" href="{{ route('admin.escrow.edit', $trx->transaction_code) }}">
+                                            <i class="fas fa-edit text-warning me-2"></i> {{ __('Edit Transaksi') }}
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item small py-2" href="{{ route('escrow.public.show', $trx->public_token) }}" target="_blank">
+                                            <i class="fas fa-external-link-alt text-info me-2"></i> {{ __('Buka Ruang Publik') }}
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider my-1"></li>
+                                    <li>
+                                        <form action="{{ route('admin.escrow.destroy', $trx->transaction_code) }}" method="POST" onsubmit="return confirm('{{ __('Apakah Anda yakin ingin menghapus transaksi rekber :code beserta seluruh obrolan dan bukti lampiran?', ['code' => $trx->transaction_code]) }}')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="dropdown-item small py-2 text-danger">
+                                                <i class="fas fa-trash-alt me-2"></i> {{ __('Hapus Permanen') }}
+                                            </button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+
             @if($transactions->hasPages())
                 <div class="p-3 border-top d-flex justify-content-center">
                     {{ $transactions->links() }}
@@ -201,17 +279,18 @@
 
 {{-- Escrow Settings Modal --}}
 <div class="modal fade" id="escrowSettingsModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow" style="border-radius: 16px;">
-            <div class="modal-header border-bottom p-3">
-                <h6 class="modal-title fw-bold text-dark">
+    <div class="modal-dialog modal-dialog-centered m3-sheet-modal">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
+            <div class="m3-sheet-handle d-md-none"></div>
+            <div class="modal-header border-0 pb-0 p-4">
+                <h6 class="modal-title fw-bold text-body">
                     <i class="fas fa-sliders text-primary me-1.5"></i> {{ __('Pengaturan Tarif & Rekening Rekber') }}
                 </h6>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form action="{{ route('admin.escrow.settings') }}" method="POST">
                 @csrf
-                <div class="modal-body p-3">
+                <div class="modal-body p-4">
                     <div class="mb-3">
                         <label class="form-label small fw-bold text-muted">{{ __('Persentase Biaya Rekber (%)') }} <span class="text-danger">*</span></label>
                         <div class="input-group">
@@ -227,9 +306,9 @@
                         <div class="form-text small text-muted">{{ __('Informasi ini akan ditampilkan kepada pembeli saat instruksi pembayaran rekber.') }}</div>
                     </div>
                 </div>
-                <div class="modal-footer border-0 pt-0">
-                    <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">{{ __('Batal') }}</button>
-                    <button type="submit" class="btn btn-primary rounded-pill px-4">{{ __('Simpan Pengaturan') }}</button>
+                <div class="modal-footer border-0 pt-0 px-4 pb-4">
+                    <button type="button" class="btn btn-tonal rounded-pill px-4" data-bs-dismiss="modal">{{ __('Batal') }}</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold">{{ __('Simpan Pengaturan') }}</button>
                 </div>
             </form>
         </div>

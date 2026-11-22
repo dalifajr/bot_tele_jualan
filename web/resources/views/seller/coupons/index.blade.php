@@ -38,41 +38,41 @@
 
 {{-- Coupon Stats --}}
 <div class="row g-3 mb-4">
-    <div class="col-md-4">
-        <div class="card border-0 shadow-sm" style="border-radius: 16px;">
-            <div class="card-body p-4 d-flex align-items-center gap-3">
-                <div class="p-3 bg-warning-subtle text-warning rounded-3">
+    <div class="col-6 col-md-4">
+        <div class="card border-0 shadow-sm h-100" style="border-radius: 16px;">
+            <div class="card-body p-3.5 d-flex align-items-center gap-3">
+                <div class="p-2.5 bg-warning-subtle text-warning rounded-3">
                     <i class="fas fa-ticket-alt fs-4"></i>
                 </div>
                 <div>
                     <h6 class="text-muted small mb-1">{{ __('TOTAL KUPON SAYA') }}</h6>
-                    <h4 class="fw-bold mb-0">{{ $totalCoupons }}</h4>
+                    <h4 class="fw-bold mb-0 m3-tabular-nums">{{ $totalCoupons }}</h4>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card border-0 shadow-sm" style="border-radius: 16px;">
-            <div class="card-body p-4 d-flex align-items-center gap-3">
-                <div class="p-3 bg-success-subtle text-success rounded-3">
+    <div class="col-6 col-md-4">
+        <div class="card border-0 shadow-sm h-100" style="border-radius: 16px;">
+            <div class="card-body p-3.5 d-flex align-items-center gap-3">
+                <div class="p-2.5 bg-success-subtle text-success rounded-3">
                     <i class="fas fa-check-circle fs-4"></i>
                 </div>
                 <div>
                     <h6 class="text-muted small mb-1">{{ __('KUPON AKTIF') }}</h6>
-                    <h4 class="fw-bold mb-0">{{ $activeCoupons }}</h4>
+                    <h4 class="fw-bold mb-0 m3-tabular-nums">{{ $activeCoupons }}</h4>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card border-0 shadow-sm" style="border-radius: 16px;">
-            <div class="card-body p-4 d-flex align-items-center gap-3">
-                <div class="p-3 bg-primary-subtle text-primary rounded-3">
+    <div class="col-12 col-md-4">
+        <div class="card border-0 shadow-sm h-100" style="border-radius: 16px;">
+            <div class="card-body p-3.5 d-flex align-items-center gap-3">
+                <div class="p-2.5 bg-primary-subtle text-primary rounded-3">
                     <i class="fas fa-chart-line fs-4"></i>
                 </div>
                 <div>
                     <h6 class="text-muted small mb-1">{{ __('PENGGUNAAN OLEH PEMBELI') }}</h6>
-                    <h4 class="fw-bold mb-0">{{ $usedQty }} {{ __('kali') }}</h4>
+                    <h4 class="fw-bold mb-0 m3-tabular-nums">{{ $usedQty }} {{ __('kali') }}</h4>
                 </div>
             </div>
         </div>
@@ -82,7 +82,8 @@
 {{-- Coupons Table --}}
 <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
     <div class="card-body p-0">
-        <div class="table-responsive">
+        {{-- Desktop Table View --}}
+        <div class="table-responsive d-none d-md-block">
             <table class="table table-hover align-middle mb-0" style="font-size: 0.9rem;">
                 <thead class="table-light">
                     <tr>
@@ -207,6 +208,126 @@
                 </tbody>
             </table>
         </div>
+
+        {{-- Mobile Stacked Card View (< 768px) --}}
+        <div class="d-md-none d-flex flex-column gap-2.5 p-3">
+            @forelse($coupons as $coupon)
+                @php
+                    $isCouponActive = $coupon->is_active && (!$coupon->expires_at || !$coupon->expires_at->isPast()) && ($coupon->qty == 0 || $coupon->used_qty < $coupon->qty);
+                    $percent = $coupon->qty > 0 ? min(100, ($coupon->used_qty / $coupon->qty) * 100) : 0;
+                @endphp
+                <div class="m3-mobile-item-card p-3">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="badge bg-warning-subtle text-dark font-monospace fs-6 px-3 py-1.5 rounded-pill">
+                            {{ $coupon->code }}
+                        </span>
+                        @if($isCouponActive)
+                            <span class="badge bg-success-subtle text-success rounded-pill px-2.5 py-1">{{ __('Aktif') }}</span>
+                        @else
+                            <span class="badge bg-danger-subtle text-danger rounded-pill px-2.5 py-1">{{ __('Tidak Aktif') }}</span>
+                        @endif
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div>
+                            <span class="fw-bold text-success fs-5 m3-tabular-nums">
+                                @if($coupon->type === 'percent')
+                                    {{ $coupon->value }}%
+                                @else
+                                    Rp{{ number_format($coupon->value, 0, ',', '.') }}
+                                @endif
+                            </span>
+                            @if($coupon->type === 'percent' && $coupon->max_discount)
+                                <div class="text-secondary small">{{ __('Maks') }} Rp{{ number_format($coupon->max_discount, 0, ',', '.') }}</div>
+                            @endif
+                        </div>
+                        <div class="text-end">
+                            @if($coupon->isPerItemMode())
+                                <span class="badge bg-primary-subtle text-primary rounded-pill">
+                                    <i class="fas fa-cubes me-1"></i>{{ __('Per Produk') }}
+                                </span>
+                            @else
+                                <span class="badge bg-secondary-subtle text-secondary rounded-pill">
+                                    <i class="fas fa-shopping-cart me-1"></i>{{ __('Total Belanja') }}
+                                </span>
+                            @endif
+                        </div>
+                    </div>
+
+                    <div class="small text-secondary mb-2">
+                        <div><i class="fas fa-bag-shopping me-1"></i>{{ __('Min Belanja:') }} <strong>Rp{{ number_format($coupon->min_spend, 0, ',', '.') }}</strong></div>
+                        <div class="mt-1">
+                            <i class="fas fa-boxes me-1"></i>
+                            @if($coupon->products->count() > 0)
+                                <span>{{ $coupon->products->count() }} {{ __('Produk Pilihan') }}</span>
+                            @else
+                                <span>{{ __('Semua Produk Saya') }}</span>
+                            @endif
+                        </div>
+                    </div>
+
+                    {{-- Progress & Repeat Limit --}}
+                    <div class="p-2.5 rounded-3 mb-2" style="background: var(--surface-container-high);">
+                        <div class="d-flex justify-content-between small text-secondary mb-1">
+                            <span>{{ __('Kuota Terpakai') }}</span>
+                            <span class="fw-semibold text-body m3-tabular-nums">{{ $coupon->used_qty }} / {{ $coupon->qty > 0 ? $coupon->qty : '∞' }}</span>
+                        </div>
+                        <div class="progress" style="height: 6px;">
+                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ $percent }}%"></div>
+                        </div>
+                        <div class="mt-1.5">
+                            @if($coupon->allow_multiple_uses)
+                                <span class="badge bg-info-subtle text-info rounded-pill" style="font-size: 0.68rem;">
+                                    <i class="fas fa-redo me-1"></i>{{ $coupon->max_uses_per_user > 0 ? __('Maks :n× / akun', ['n' => $coupon->max_uses_per_user]) : __('Berulang (∞ / akun)') }}
+                                </span>
+                            @else
+                                <span class="badge bg-secondary-subtle text-secondary rounded-pill" style="font-size: 0.68rem;">
+                                    <i class="fas fa-user me-1"></i>{{ __('1× / akun') }}
+                                </span>
+                            @endif
+                        </div>
+                    </div>
+
+                    <div class="small text-secondary mb-2">
+                        <i class="far fa-clock me-1"></i>
+                        @if($coupon->expires_at)
+                            <span class="{{ $coupon->expires_at->isPast() ? 'text-danger fw-bold' : '' }}">
+                                {{ $coupon->expires_at->format('d M Y, H:i') }}
+                            </span>
+                        @else
+                            <span>{{ __('Tidak kadaluarsa') }}</span>
+                        @endif
+                    </div>
+
+                    {{-- Actions --}}
+                    <div class="d-flex gap-2 pt-2 border-top" style="border-color: var(--outline-variant) !important;">
+                        <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill flex-grow-1 py-2 fw-semibold" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#editSellerCouponModal-{{ $coupon->id }}">
+                            <i class="fas fa-edit me-1"></i>{{ __('Edit Kupon') }}
+                        </button>
+                        <form action="{{ route('seller.coupons.destroy', $coupon->id) }}" method="POST" class="m-0" onsubmit="confirmAction(event, '{{ __('Hapus kupon ini?') }}');">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3 py-2" title="{{ __('Hapus') }}">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            @empty
+                <div class="text-center py-5 text-muted">
+                    <div class="mb-3">
+                        <i class="fas fa-ticket-alt fs-1 text-secondary opacity-50"></i>
+                    </div>
+                    <h6 class="fw-bold">{{ __('Belum Ada Kupon Toko') }}</h6>
+                    <p class="small text-muted mb-3">{{ __('Tingkatkan penjualan produk Anda dengan memberikan kode kupon promosi kepada pembeli.') }}</p>
+                    <button type="button" class="btn btn-sm btn-warning text-dark fw-bold rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#createSellerCouponModal">
+                        <i class="fas fa-plus me-1"></i> {{ __('Buat Kupon Pertama') }}
+                    </button>
+                </div>
+            @endforelse
+        </div>
     </div>
 </div>
 
@@ -219,8 +340,9 @@
 @push('modals')
 {{-- Create Seller Coupon Modal --}}
 <div class="modal fade" id="createSellerCouponModal" tabindex="-1" aria-labelledby="createSellerCouponModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-dialog modal-dialog-centered modal-lg m3-sheet-modal">
         <div class="modal-content border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
+            <div class="m3-sheet-handle d-md-none"></div>
             <div class="modal-header border-0 bg-warning text-dark p-4">
                 <div class="d-flex align-items-center gap-3">
                     <div class="rounded-circle bg-white p-2 d-flex align-items-center justify-content-center shadow-sm" style="width: 44px; height: 44px;">
@@ -377,8 +499,9 @@
 {{-- Edit Seller Coupon Modals --}}
 @foreach($coupons as $coupon)
 <div class="modal fade" id="editSellerCouponModal-{{ $coupon->id }}" tabindex="-1" aria-labelledby="editSellerCouponModalLabel-{{ $coupon->id }}" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-dialog modal-dialog-centered modal-lg m3-sheet-modal">
         <div class="modal-content border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
+            <div class="m3-sheet-handle d-md-none"></div>
             <div class="modal-header border-0 bg-secondary-subtle p-4">
                 <div class="d-flex align-items-center gap-3">
                     <div class="rounded-circle bg-white p-2 d-flex align-items-center justify-content-center shadow-sm" style="width: 44px; height: 44px;">

@@ -40,8 +40,8 @@
 </div>
 
 <div class="row g-4">
-    {{-- Left: Injeksi & Penyesuaian Saldo User --}}
-    <div class="col-lg-4">
+    {{-- Left: Injeksi & Penyesuaian Saldo User (Desktop Only) --}}
+    <div class="col-lg-4 d-none d-lg-block">
         <div class="card border-0 rounded-4 shadow-sm">
             <div class="card-body p-4">
                 <h6 class="fw-bold text-body mb-1">
@@ -51,88 +51,23 @@
                     {{ __('Tambahkan (injeksi) atau koreksi/potong saldo dompet belanja user secara instan — cocok untuk bonus, kompensasi, maupun transfer manual.') }}
                 </p>
 
-                <form action="{{ route('admin.wallet.manual-credit') }}" method="POST" id="adminInjectWalletForm">
-                    @csrf
-
-                    {{-- Mode Injeksi vs Potong --}}
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold text-muted">{{ __('Jenis Aksi') }}</label>
-                        <div class="btn-group w-100" role="group">
-                            <input type="radio" class="btn-check" name="action_type" id="injectActionCredit" value="credit" checked autocomplete="off">
-                            <label class="btn btn-sm btn-outline-primary fw-semibold py-2" for="injectActionCredit">
-                                <i class="fas fa-plus-circle me-1"></i>{{ __('Injeksi Saldo (+)') }}
-                            </label>
-                            <input type="radio" class="btn-check" name="action_type" id="injectActionDebit" value="debit" autocomplete="off">
-                            <label class="btn btn-sm btn-outline-danger fw-semibold py-2" for="injectActionDebit">
-                                <i class="fas fa-minus-circle me-1"></i>{{ __('Potong Saldo (-)') }}
-                            </label>
-                        </div>
-                    </div>
-
-                    {{-- Filter & Pilih User --}}
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold text-muted">{{ __('Pilih Akun User') }}</label>
-                        <div class="input-group input-group-sm mb-1.5">
-                            <span class="input-group-text"><i class="fas fa-search text-muted"></i></span>
-                            <input type="text" id="injectUserFilter" class="form-control" placeholder="{{ __('Cari nama, @username, atau email...') }}">
-                        </div>
-                        <select name="user_id" id="injectUserSelect" class="form-select" required>
-                            <option value="">{{ __('-- Pilih Akun User --') }}</option>
-                            @foreach($customers as $cust)
-                                <option value="{{ $cust->id }}"
-                                        data-balance="{{ (int) ($cust->customer_wallet_balance ?? 0) }}"
-                                        data-search="{{ strtolower(trim(($cust->full_name ?? '') . ' ' . ($cust->username ?? '') . ' ' . ($cust->email ?? ''))) }}">
-                                    {{ $cust->full_name ?: $cust->username }} ({{ '@' . ($cust->username ?: 'id:' . $cust->id) }}) — Rp {{ number_format((int) ($cust->customer_wallet_balance ?? 0), 0, ',', '.') }}
-                                </option>
-                            @endforeach
-                        </select>
-                        <div id="injectSelectedBalanceWrap" class="mt-1.5 d-none">
-                            <span class="badge bg-primary-subtle text-primary rounded-pill px-2.5 py-1 fw-semibold" style="font-size: 0.74rem;">
-                                <i class="fas fa-wallet me-1"></i>{{ __('Saldo saat ini:') }} <span id="injectSelectedBalance">Rp 0</span>
-                            </span>
-                        </div>
-                    </div>
-
-                    {{-- Preset Nominal Cepat --}}
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold text-muted">{{ __('Nominal Saldo (Rp)') }}</label>
-                        <div class="d-flex flex-wrap gap-1.5 mb-2">
-                            @foreach([10000, 25000, 50000, 100000, 250000, 500000] as $preset)
-                                <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-2.5 py-0.5 fw-semibold btn-inject-preset" style="font-size: 0.74rem;" data-amount="{{ $preset }}">
-                                    Rp {{ number_format($preset, 0, ',', '.') }}
-                                </button>
-                            @endforeach
-                        </div>
-                        <input type="number" name="amount" id="injectAmountInput" class="form-control fw-bold" min="1000" max="50000000" step="1000" placeholder="50000" required>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold text-muted">{{ __('Catatan / Alasan') }}</label>
-                        <input type="text" name="note" class="form-control" placeholder="{{ __('Bonus / Kompensasi / Transfer manual BCA') }}" required>
-                    </div>
-
-                    <div class="form-check mb-3">
-                        <input type="hidden" name="notify_telegram" value="0">
-                        <input class="form-check-input" type="checkbox" name="notify_telegram" value="1" id="injectNotifyTg" checked>
-                        <label class="form-check-label small text-secondary" for="injectNotifyTg">
-                            {{ __('Kirim notifikasi Telegram ke user') }}
-                        </label>
-                    </div>
-
-                    <button type="submit" id="injectSubmitBtn" class="btn btn-primary w-100 rounded-pill fw-bold">
-                        <i class="fas fa-bolt me-1.5"></i>{{ __('Injeksi Saldo Sekarang') }}
-                    </button>
-                </form>
+                @include('admin.wallet.partials.inject_form', ['idPrefix' => 'desktop'])
             </div>
         </div>
     </div>
 
     {{-- Right: Daftar Permintaan Top-Up & Riwayat Injeksi --}}
-    <div class="col-lg-8">
+    <div class="col-12 col-lg-8">
         <div class="card border-0 rounded-4 shadow-sm mb-4">
             <div class="card-body p-4">
                 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-                    <h5 class="fw-bold mb-0 text-body"><i class="fas fa-coins text-primary me-1.5"></i>{{ __('Daftar Permintaan Top-Up Saldo') }}</h5>
+                    <div class="d-flex align-items-center gap-2">
+                        <h5 class="fw-bold mb-0 text-body"><i class="fas fa-coins text-primary me-1.5"></i>{{ __('Daftar Permintaan Top-Up Saldo') }}</h5>
+                        {{-- Mobile Trigger Button --}}
+                        <button type="button" class="btn btn-sm btn-primary rounded-pill d-lg-none fw-semibold" data-bs-toggle="modal" data-bs-target="#injectWalletModal">
+                            <i class="fas fa-bolt me-1"></i>{{ __('Injeksi') }}
+                        </button>
+                    </div>
                     <form action="{{ route('admin.wallet.index') }}" method="GET" class="d-flex flex-wrap gap-1.5 align-items-center">
                         <select name="status" class="form-select form-select-sm" style="width: auto;" onchange="this.form.submit()">
                             <option value="all" {{ $statusFilter === 'all' ? 'selected' : '' }}>{{ __('Semua Status') }}</option>
@@ -146,7 +81,8 @@
                     </form>
                 </div>
 
-                <div class="table-responsive">
+                {{-- Desktop Table View --}}
+                <div class="table-responsive d-none d-md-block">
                     <table class="table align-middle mb-0">
                         <thead>
                             <tr class="small text-muted">
@@ -223,6 +159,80 @@
                         </tbody>
                     </table>
                 </div>
+
+                {{-- Mobile Stacked Card View (< 768px) --}}
+                <div class="d-md-none d-flex flex-column gap-2.5">
+                    @forelse($topups as $topup)
+                        <div class="m3-mobile-item-card p-3">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <div class="fw-bold font-monospace text-body" style="font-size: 0.88rem;">{{ $topup->topup_ref }}</div>
+                                    <div class="small text-secondary">{{ $topup->created_at->format('d M Y, H:i') }}</div>
+                                </div>
+                                <div>
+                                    @if($topup->status === 'paid')
+                                        <span class="badge bg-primary-subtle text-primary rounded-pill">{{ __('Terkonfirmasi') }}</span>
+                                    @elseif($topup->status === 'pending')
+                                        <span class="badge bg-warning-subtle text-warning rounded-pill">{{ __('Menunggu') }}</span>
+                                    @elseif($topup->status === 'expired')
+                                        <span class="badge bg-danger-subtle text-danger rounded-pill">{{ __('Kedaluwarsa') }}</span>
+                                    @else
+                                        <span class="badge bg-secondary-subtle text-secondary rounded-pill">{{ __('Dibatalkan') }}</span>
+                                    @endif
+                                </div>
+                            </div>
+
+                            <div class="small text-body mb-2">
+                                <span class="text-secondary">{{ __('User:') }}</span>
+                                <strong>{{ $topup->user->full_name ?? $topup->user->username ?? ('User #' . $topup->user_id) }}</strong>
+                                <span class="text-secondary font-monospace">({{ '@' . ($topup->user->username ?? '-') }})</span>
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center py-2 px-2.5 rounded-3 mb-2" style="background: var(--surface-container-high);">
+                                <div>
+                                    <div class="text-secondary" style="font-size: 0.72rem;">{{ __('Nominal Saldo') }}</div>
+                                    <div class="fw-bold text-body m3-tabular-nums">Rp {{ number_format($topup->amount, 0, ',', '.') }}</div>
+                                </div>
+                                <div class="text-end">
+                                    <div class="text-secondary" style="font-size: 0.72rem;">{{ __('Bayar QRIS') }}</div>
+                                    <div class="fw-bold text-primary m3-tabular-nums">Rp {{ number_format($topup->total_pay, 0, ',', '.') }}</div>
+                                </div>
+                            </div>
+
+                            @if($topup->status === 'pending')
+                                <div class="d-flex gap-2 mt-2 pt-2 border-top" style="border-color: var(--outline-variant) !important;">
+                                    <button type="button"
+                                            class="btn btn-sm btn-primary rounded-pill flex-grow-1 fw-bold btn-open-manual-confirm py-2"
+                                            data-action="{{ route('admin.wallet.topup.confirm', $topup->id) }}"
+                                            data-ref="{{ $topup->topup_ref }}"
+                                            data-user="{{ $topup->user->username ?? $topup->user->full_name ?? ('User #' . $topup->user_id) }}"
+                                            data-amount="Rp {{ number_format($topup->amount, 0, ',', '.') }}"
+                                            data-total="Rp {{ number_format($topup->total_pay, 0, ',', '.') }}">
+                                        <i class="fas fa-check me-1"></i>{{ __('Konfirmasi Manual') }}
+                                    </button>
+                                    <form action="{{ route('admin.wallet.topup.reject', $topup->id) }}" method="POST" class="m-0">
+                                        @csrf
+                                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3 py-2" title="{{ __('Batalkan') }}">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            @elseif($topup->verified_source || $topup->admin_note)
+                                <div class="small text-secondary mt-1">
+                                    @if($topup->verified_source)
+                                        <span class="badge bg-secondary-subtle text-body font-monospace">{{ $topup->verified_source }}</span>
+                                    @endif
+                                    @if($topup->admin_note)
+                                        <span class="ms-1">{{ $topup->admin_note }}</span>
+                                    @endif
+                                </div>
+                            @endif
+                        </div>
+                    @empty
+                        <div class="text-center text-muted py-4 small">{{ __('Belum ada permintaan top-up saldo.') }}</div>
+                    @endforelse
+                </div>
+
                 @if($topups->hasPages())
                     <div class="mt-3">{{ $topups->links() }}</div>
                 @endif
@@ -235,7 +245,8 @@
                 <h6 class="fw-bold mb-3 text-body">
                     <i class="fas fa-clock-rotate-left text-primary me-1.5"></i>{{ __('Riwayat Injeksi & Penyesuaian Saldo Terbaru') }}
                 </h6>
-                <div class="table-responsive">
+                {{-- Desktop Table --}}
+                <div class="table-responsive d-none d-md-block">
                     <table class="table table-sm align-middle mb-0">
                         <thead>
                             <tr class="small text-muted">
@@ -275,6 +286,54 @@
                         </tbody>
                     </table>
                 </div>
+
+                {{-- Mobile Stacked Cards for Adjustments --}}
+                <div class="d-md-none d-flex flex-column gap-2">
+                    @forelse($recentAdjustments as $adj)
+                        <div class="m3-mobile-item-card p-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="fw-bold small {{ $adj->type === 'credit' ? 'text-success' : 'text-danger' }} m3-tabular-nums">
+                                    {{ $adj->type === 'credit' ? '+' : '-' }}Rp {{ number_format($adj->amount, 0, ',', '.') }}
+                                </span>
+                                <span class="small text-secondary">{{ $adj->created_at->format('d M Y H:i') }}</span>
+                            </div>
+                            <div class="small fw-semibold text-body">
+                                {{ $adj->user->full_name ?? $adj->user->username ?? ('User #' . $adj->user_id) }}
+                                <span class="text-muted">({{ '@' . ($adj->user->username ?? '-') }})</span>
+                            </div>
+                            <div class="small text-secondary mt-1">
+                                {{ $adj->description ?: '-' }}
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center small text-secondary mt-2 pt-2 border-top" style="border-color: var(--outline-variant) !important;">
+                                <span>{{ __('Saldo Akhir:') }}</span>
+                                <strong class="text-body m3-tabular-nums">Rp {{ number_format($adj->balance_after, 0, ',', '.') }}</strong>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="text-center text-muted py-3 small">{{ __('Belum ada riwayat injeksi saldo admin.') }}</div>
+                    @endforelse
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Modal Injeksi Saldo ke User (M3 Bottom Sheet pada Mobile) --}}
+<div class="modal fade" id="injectWalletModal" tabindex="-1" aria-labelledby="injectWalletModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered m3-sheet-modal">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="m3-sheet-handle d-md-none"></div>
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold" id="injectWalletModalLabel">
+                    <i class="fas fa-bolt text-primary me-1.5"></i>{{ __('Injeksi Saldo ke User') }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ __('Tutup') }}"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p class="small text-secondary mb-3">
+                    {{ __('Tambahkan (injeksi) atau koreksi/potong saldo dompet belanja user secara instan.') }}
+                </p>
+                @include('admin.wallet.partials.inject_form', ['idPrefix' => 'modal'])
             </div>
         </div>
     </div>
@@ -282,9 +341,10 @@
 
 {{-- Modal Konfirmasi Manual Top-Up (Khusus Status Menunggu) --}}
 <div class="modal fade" id="manualConfirmTopupModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
+    <div class="modal-dialog modal-dialog-centered m3-sheet-modal">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="m3-sheet-handle d-md-none"></div>
+            <div class="modal-header border-0 pb-0">
                 <h5 class="modal-title fw-bold">
                     <i class="fas fa-check-circle text-primary me-1.5"></i>{{ __('Konfirmasi Manual Top-Up') }}
                 </h5>
@@ -292,7 +352,7 @@
             </div>
             <form method="POST" id="manualConfirmTopupForm">
                 @csrf
-                <div class="modal-body">
+                <div class="modal-body p-4">
                     <div class="p-3 rounded-4 border mb-3 small" style="background: var(--surface-container-low); border-color: var(--outline-variant) !important;">
                         <div class="d-flex justify-content-between mb-1">
                             <span class="text-muted">{{ __('Referensi') }}</span>
@@ -304,11 +364,11 @@
                         </div>
                         <div class="d-flex justify-content-between mb-1">
                             <span class="text-muted">{{ __('Nominal Saldo Masuk') }}</span>
-                            <strong class="text-primary" id="mcAmount">-</strong>
+                            <strong class="text-primary m3-tabular-nums" id="mcAmount">-</strong>
                         </div>
                         <div class="d-flex justify-content-between">
                             <span class="text-muted">{{ __('Total Bayar QRIS') }}</span>
-                            <strong class="text-body" id="mcTotal">-</strong>
+                            <strong class="text-body m3-tabular-nums" id="mcTotal">-</strong>
                         </div>
                     </div>
 
@@ -317,7 +377,7 @@
                         <input type="text" name="admin_note" class="form-control" placeholder="{{ __('Misal: Dana QRIS masuk manual / webhook tertunda') }}">
                     </div>
                 </div>
-                <div class="modal-footer">
+                <div class="modal-footer border-0 pt-0">
                     <button type="button" class="btn btn-tonal rounded-pill px-4" data-bs-dismiss="modal">{{ __('Batal') }}</button>
                     <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold">
                         <i class="fas fa-check me-1"></i>{{ __('Setujui & Tambah Saldo') }}
@@ -350,61 +410,70 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // 2. Preset nominal injeksi saldo
-    const amountInput = document.getElementById('injectAmountInput');
-    document.querySelectorAll('.btn-inject-preset').forEach(btn => {
-        btn.addEventListener('click', function() {
-            if (amountInput) amountInput.value = this.dataset.amount;
+    // 2. Setup handler untuk form injeksi (baik desktop maupun modal)
+    ['desktop', 'modal'].forEach(prefix => {
+        const amountInput = document.getElementById(prefix + 'InjectAmountInput');
+        document.querySelectorAll('.' + prefix + '-btn-inject-preset').forEach(btn => {
+            btn.addEventListener('click', function() {
+                if (amountInput) amountInput.value = this.dataset.amount;
+            });
         });
-    });
 
-    // 3. Toggle gaya tombol Injeksi (+) vs Potong (-)
-    const creditRadio = document.getElementById('injectActionCredit');
-    const debitRadio = document.getElementById('injectActionDebit');
-    const submitBtn = document.getElementById('injectSubmitBtn');
-    const syncActionBtn = () => {
-        if (!submitBtn) return;
-        if (debitRadio && debitRadio.checked) {
-            submitBtn.className = 'btn btn-danger w-100 rounded-pill fw-bold';
-            submitBtn.innerHTML = '<i class="fas fa-minus-circle me-1.5"></i>{{ __("Potong Saldo Sekarang") }}';
-        } else {
-            submitBtn.className = 'btn btn-primary w-100 rounded-pill fw-bold';
-            submitBtn.innerHTML = '<i class="fas fa-bolt me-1.5"></i>{{ __("Injeksi Saldo Sekarang") }}';
-        }
-    };
-    if (creditRadio) creditRadio.addEventListener('change', syncActionBtn);
-    if (debitRadio) debitRadio.addEventListener('change', syncActionBtn);
+        const creditRadio = document.getElementById(prefix + 'InjectActionCredit');
+        const debitRadio = document.getElementById(prefix + 'InjectActionDebit');
+        const submitBtn = document.getElementById(prefix + 'InjectSubmitBtn');
+        const syncActionBtn = () => {
+            if (!submitBtn) return;
+            if (debitRadio && debitRadio.checked) {
+                submitBtn.className = 'btn btn-danger w-100 rounded-pill fw-bold';
+                submitBtn.innerHTML = '<i class="fas fa-minus-circle me-1.5"></i>{{ __("Potong Saldo Sekarang") }}';
+            } else {
+                submitBtn.className = 'btn btn-primary w-100 rounded-pill fw-bold';
+                submitBtn.innerHTML = '<i class="fas fa-bolt me-1.5"></i>{{ __("Injeksi Saldo Sekarang") }}';
+            }
+        };
+        if (creditRadio) creditRadio.addEventListener('change', syncActionBtn);
+        if (debitRadio) debitRadio.addEventListener('change', syncActionBtn);
 
-    // 4. Filter pencarian user + preview saldo saat ini
-    const filterInput = document.getElementById('injectUserFilter');
-    const userSelect = document.getElementById('injectUserSelect');
-    const balWrap = document.getElementById('injectSelectedBalanceWrap');
-    const balText = document.getElementById('injectSelectedBalance');
+        const filterInput = document.getElementById(prefix + 'InjectUserFilter');
+        const userSelect = document.getElementById(prefix + 'InjectUserSelect');
+        const balWrap = document.getElementById(prefix + 'InjectSelectedBalanceWrap');
+        const balText = document.getElementById(prefix + 'InjectSelectedBalance');
 
-    if (userSelect) {
-        const allOptions = Array.from(userSelect.options);
-        if (filterInput) {
-            filterInput.addEventListener('input', function() {
-                const q = this.value.trim().toLowerCase();
-                allOptions.forEach((opt, idx) => {
-                    if (idx === 0) return;
-                    const hay = opt.dataset.search || opt.textContent.toLowerCase();
-                    opt.hidden = q !== '' && !hay.includes(q);
+        if (userSelect) {
+            const allOptions = Array.from(userSelect.options);
+            if (filterInput) {
+                filterInput.addEventListener('input', function() {
+                    const q = this.value.trim().toLowerCase();
+                    allOptions.forEach((opt, idx) => {
+                        if (idx === 0) return;
+                        const hay = opt.dataset.search || opt.textContent.toLowerCase();
+                        opt.hidden = q !== '' && !hay.includes(q);
+                    });
                 });
+            }
+
+            userSelect.addEventListener('change', function() {
+                const opt = this.options[this.selectedIndex];
+                if (opt && opt.value && balWrap && balText) {
+                    const bal = Number(opt.dataset.balance || 0);
+                    balText.textContent = 'Rp ' + bal.toLocaleString('id-ID');
+                    balWrap.classList.remove('d-none');
+                } else if (balWrap) {
+                    balWrap.classList.add('d-none');
+                }
             });
         }
+    });
 
-        userSelect.addEventListener('change', function() {
-            const opt = this.options[this.selectedIndex];
-            if (opt && opt.value && balWrap && balText) {
-                const bal = Number(opt.dataset.balance || 0);
-                balText.textContent = 'Rp ' + bal.toLocaleString('id-ID');
-                balWrap.classList.remove('d-none');
-            } else if (balWrap) {
-                balWrap.classList.add('d-none');
+    @if($errors->hasAny(['user_id', 'amount', 'action_type', 'note']))
+        if (window.innerWidth < 992) {
+            const injModal = document.getElementById('injectWalletModal');
+            if (injModal && typeof bootstrap !== 'undefined') {
+                bootstrap.Modal.getOrCreateInstance(injModal).show();
             }
-        });
-    }
+        }
+    @endif
 });
 </script>
 @endsection

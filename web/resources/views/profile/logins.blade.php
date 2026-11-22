@@ -8,7 +8,7 @@
     <div class="col-lg-10 mx-auto">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <div>
-                <h4 class="fw-bold mb-1"><i class="fas fa-shield-alt text-primary me-2"></i>{{ __('Riwayat Percobaan Login') }}</h4>
+                <h4 class="fw-bold mb-1 text-body fs-5 fs-md-4"><i class="fas fa-shield-alt text-primary me-2"></i>{{ __('Riwayat Percobaan Login') }}</h4>
                 <p class="text-muted small mb-0">{{ __('Catatan masuk ke akun Anda berdasarkan alamat IP dan perangkat.') }}</p>
             </div>
             <a href="{{ route('profile') }}" class="btn btn-outline-secondary btn-sm rounded-pill px-3 fw-semibold">
@@ -16,13 +16,14 @@
             </a>
         </div>
 
-        <div class="card overflow-hidden">
+        <div class="card overflow-hidden" style="border-radius: var(--radius-lg, 20px);">
             <div class="card-body p-0">
                 @if($loginLogs->count() > 0)
-                <div class="table-responsive">
+                {{-- Desktop Table View --}}
+                <div class="table-responsive d-none d-md-block">
                     <table class="table table-hover align-middle mb-0">
                         <thead>
-                            <tr class="text-secondary small border-bottom bg-body-tertiary">
+                            <tr class="text-secondary small border-bottom">
                                 <th class="px-4 py-3 border-0">{{ __('Waktu') }}</th>
                                 <th class="py-3 border-0">{{ __('Status') }}</th>
                                 <th class="py-3 border-0">{{ __('IP & Lokasi') }}</th>
@@ -33,16 +34,16 @@
                         <tbody>
                             @foreach($loginLogs as $log)
                             <tr>
-                                <td class="px-4 text-secondary small">{{ $log->created_at->format('d M Y H:i') }}</td>
+                                <td class="px-4 text-secondary small text-nowrap">{{ $log->created_at->format('d M Y H:i') }}</td>
                                 <td>
                                     @if($log->is_successful)
-                                        <span class="badge bg-success-subtle text-success rounded-pill px-2.5 py-1"><i class="fas fa-check-circle me-1"></i>{{ __('Berhasil') }}</span>
+                                        <span class="badge bg-success-subtle text-success rounded-pill px-2.5 py-1 fw-semibold"><i class="fas fa-check-circle me-1"></i>{{ __('Berhasil') }}</span>
                                     @else
-                                        <span class="badge bg-danger-subtle text-danger rounded-pill px-2.5 py-1"><i class="fas fa-times-circle me-1"></i>{{ __('Gagal') }}</span>
+                                        <span class="badge bg-danger-subtle text-danger rounded-pill px-2.5 py-1 fw-semibold"><i class="fas fa-times-circle me-1"></i>{{ __('Gagal') }}</span>
                                     @endif
                                 </td>
                                 <td>
-                                    <div class="fw-semibold text-body">{{ $log->ip_address }}</div>
+                                    <div class="fw-semibold text-body font-monospace small">{{ $log->ip_address }}</div>
                                     <div class="text-secondary small"><i class="fas fa-map-marker-alt text-danger me-1"></i>{{ $log->location ?? 'Unknown' }}</div>
                                 </td>
                                 <td>
@@ -69,13 +70,59 @@
                         </tbody>
                     </table>
                 </div>
-                <div class="px-4 py-3 border-top">
+
+                {{-- Mobile Stacked Card List --}}
+                <div class="d-md-none p-3 d-flex flex-column gap-2.5">
+                    @foreach($loginLogs as $log)
+                    <div class="m3-mobile-item-card">
+                        <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                            <div>
+                                <div class="fw-bold font-monospace text-body small">{{ $log->ip_address }}</div>
+                                <div class="small text-muted"><i class="fas fa-map-marker-alt text-danger me-1"></i>{{ $log->location ?? 'Unknown' }}</div>
+                            </div>
+                            @if($log->is_successful)
+                                <span class="badge bg-success-subtle text-success rounded-pill px-2.5 py-1 fw-semibold"><i class="fas fa-check-circle me-1"></i>{{ __('Berhasil') }}</span>
+                            @else
+                                <span class="badge bg-danger-subtle text-danger rounded-pill px-2.5 py-1 fw-semibold"><i class="fas fa-times-circle me-1"></i>{{ __('Gagal') }}</span>
+                            @endif
+                        </div>
+
+                        <div class="small text-muted mb-2">
+                            <span><i class="fas fa-laptop me-1"></i>{{ $log->device_type }}</span> &bull;
+                            <span><i class="fab fa-chrome me-1"></i>{{ $log->browser ?? '-' }}</span>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center pt-2 mt-1" style="border-top: 1px solid var(--outline-variant);">
+                            <small class="text-muted"><i class="far fa-clock me-1"></i>{{ $log->created_at->format('d M Y, H:i') }}</small>
+                            <div>
+                                @if(\Illuminate\Support\Facades\Cache::has('blocked_ip:' . $log->ip_address) || \Illuminate\Support\Facades\Cache::has('blocked_user_ip:' . Auth::id() . ':' . $log->ip_address))
+                                    <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-3 py-1 fw-semibold" onclick="requestUnblockIp(event, '{{ $log->ip_address }}', '{{ $log->location ?? 'Unknown' }}', '{{ $log->device_type }}', '{{ $log->browser ?? '-' }}')">
+                                        <i class="fas fa-unlock me-1"></i>{{ __('Buka Blokir') }}
+                                    </button>
+                                @else
+                                    <form action="{{ route('profile.logins.block-ip') }}" method="POST" class="d-inline" onsubmit="confirmBlockIp(event, this)">
+                                        @csrf
+                                        <input type="hidden" name="ip_address" value="{{ $log->ip_address }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3 py-1 fw-semibold">
+                                            <i class="fas fa-ban me-1"></i>{{ __('Blokir') }}
+                                        </button>
+                                    </form>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+
+                <div class="px-3 px-sm-4 py-3 border-top">
                     {{ $loginLogs->links('pagination::bootstrap-5') }}
                 </div>
                 @else
-                <div class="text-center py-5">
-                    <i class="fas fa-shield-alt text-muted mb-3" style="font-size: 3rem; opacity: 0.5;"></i>
-                    <p class="text-muted mb-0">{{ __('Belum ada riwayat percobaan login.') }}</p>
+                <div class="text-center py-5 px-3">
+                    <span class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3" style="width: 56px; height: 56px; background: var(--surface-container); color: var(--on-surface-variant); font-size: 1.4rem;">
+                        <i class="fas fa-shield-alt"></i>
+                    </span>
+                    <p class="text-muted mb-0 small">{{ __('Belum ada riwayat percobaan login.') }}</p>
                 </div>
                 @endif
             </div>

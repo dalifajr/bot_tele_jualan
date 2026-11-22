@@ -4,73 +4,65 @@
 @section('page_subtitle', __('Top-up saldo QRIS otomatis & checkout instan 1-klik'))
 
 @section('content')
-<div class="row g-4">
+<div class="row g-3 g-lg-4">
     {{-- Balance Overview & Top-Up Card --}}
-    <div class="col-lg-5">
-        <div class="card border-0 rounded-4 shadow-sm mb-4" style="background: var(--primary-container); color: var(--on-primary-container);">
-            <div class="card-body p-4">
-                <div class="d-flex justify-content-between align-items-start mb-3">
-                    <div>
-                        <span class="small fw-semibold opacity-75 text-uppercase" style="letter-spacing: 0.05em;">{{ __('Saldo Dompet Tersedia') }}</span>
-                        <h2 class="fw-bold mb-0 mt-1" style="font-size: 2rem;">Rp {{ number_format((int) ($user->customer_wallet_balance ?? 0), 0, ',', '.') }}</h2>
+    <div class="col-12 col-lg-5">
+        <div class="card border-0 rounded-4 shadow-sm mb-3 mb-lg-4" style="background: var(--primary-container); color: var(--on-primary-container);">
+            <div class="card-body p-3 p-sm-4">
+                <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                    <div class="min-w-0">
+                        <span class="small fw-semibold opacity-75 text-uppercase" style="letter-spacing: 0.05em; font-size: 0.72rem;">{{ __('Saldo Dompet Tersedia') }}</span>
+                        <h2 class="fw-bold mb-0 mt-1 m3-tabular-nums" style="font-size: clamp(1.6rem, 5vw, 2rem); line-height: 1.2;">
+                            Rp {{ number_format((int) ($user->customer_wallet_balance ?? 0), 0, ',', '.') }}
+                        </h2>
                     </div>
-                    <div class="rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 48px; height: 48px; background: var(--primary); color: var(--on-primary, #fff);">
+                    <div class="rounded-circle d-inline-flex align-items-center justify-content-center flex-shrink-0" style="width: 44px; height: 44px; background: var(--primary); color: var(--on-primary, #fff);">
                         <i class="fas fa-wallet fs-5"></i>
                     </div>
                 </div>
                 <div class="row g-2 pt-2 border-top" style="border-color: rgba(var(--primary-rgb), 0.18) !important;">
                     <div class="col-6">
-                        <small class="d-block opacity-75">{{ __('Total Masuk') }}</small>
-                        <strong class="small">Rp {{ number_format($totalCredits, 0, ',', '.') }}</strong>
+                        <small class="d-block opacity-75" style="font-size: 0.74rem;">{{ __('Total Masuk') }}</small>
+                        <strong class="small m3-tabular-nums">Rp {{ number_format($totalCredits, 0, ',', '.') }}</strong>
                     </div>
                     <div class="col-6">
-                        <small class="d-block opacity-75">{{ __('Total Belanja') }}</small>
-                        <strong class="small">Rp {{ number_format($totalDebits, 0, ',', '.') }}</strong>
+                        <small class="d-block opacity-75" style="font-size: 0.74rem;">{{ __('Total Belanja') }}</small>
+                        <strong class="small m3-tabular-nums">Rp {{ number_format($totalDebits, 0, ',', '.') }}</strong>
                     </div>
+                </div>
+
+                {{-- Smartphone Action Button: Opens Modal Topup --}}
+                <div class="d-md-none mt-3 pt-2">
+                    <button type="button" class="btn btn-primary w-100 rounded-pill py-2.5 fw-bold d-inline-flex align-items-center justify-content-center gap-2" data-bs-toggle="modal" data-bs-target="#topupModal" style="min-height: 44px;">
+                        <i class="fas fa-qrcode"></i>
+                        <span>{{ __('Top-Up Saldo QRIS') }}</span>
+                    </button>
                 </div>
             </div>
         </div>
 
-        <div class="card border-0 rounded-4 shadow-sm">
+        {{-- Desktop Inline Topup Card --}}
+        <div class="card border-0 rounded-4 shadow-sm d-none d-md-block">
             <div class="card-body p-4">
-                <h5 class="fw-bold mb-1 text-body">
+                <h5 class="fw-bold mb-1 text-body fs-6">
                     <i class="fas fa-qrcode text-primary me-1.5"></i>{{ __('Top-Up Saldo via QRIS') }}
                 </h5>
                 <p class="small text-secondary mb-3">
                     {{ __('Bayar via QRIS Dinamis dengan verifikasi otomatis real-time oleh sistem webhook, lalu nikmati checkout 1-klik tanpa kode unik.') }}
                 </p>
 
-                <form action="{{ route('wallet.topup.store') }}" method="POST" id="walletTopupForm">
-                    @csrf
-                    <div class="d-flex flex-wrap gap-2 mb-3">
-                        @foreach([25000, 50000, 100000, 250000, 500000] as $preset)
-                            <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-semibold wallet-preset-btn" data-amount="{{ $preset }}">
-                                Rp {{ number_format($preset, 0, ',', '.') }}
-                            </button>
-                        @endforeach
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold text-muted">{{ __('Nominal Top-Up (Rp)') }}</label>
-                        <input type="number" name="amount" id="walletTopupAmount" class="form-control form-control-lg fw-bold" min="10000" max="50000000" step="1000" value="{{ old('amount', 50000) }}" required>
-                        <small class="text-muted">{{ __('Minimal top-up Rp 10.000') }}</small>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary w-100 rounded-pill py-2.5 fw-bold">
-                        <i class="fas fa-bolt me-1.5"></i>{{ __('Buat Kode QRIS Top-Up') }}
-                    </button>
-                </form>
+                @include('wallet.partials.topup_form', ['idPrefix' => 'desktop'])
             </div>
         </div>
     </div>
 
     {{-- Pending QRIS Top-ups & Transaction History --}}
-    <div class="col-lg-7">
+    <div class="col-12 col-lg-7">
         @if($pendingTopups->isNotEmpty())
-            <div class="card border-0 rounded-4 shadow-sm mb-4">
-                <div class="card-body p-4">
+            <div class="card border-0 rounded-4 shadow-sm mb-3 mb-lg-4">
+                <div class="card-body p-3 p-sm-4">
                     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-                        <h5 class="fw-bold mb-0 text-body">
+                        <h5 class="fw-bold mb-0 text-body fs-6">
                             <i class="fas fa-qrcode text-primary me-1.5"></i>{{ __('Selesaikan Pembayaran Top-Up') }}
                         </h5>
                         <span class="badge bg-primary-subtle text-primary rounded-pill px-2.5 py-1 fw-semibold" style="font-size: 0.72rem;">
@@ -112,11 +104,11 @@
                                 <div class="{{ !empty($topup->dynamic_qris) ? 'col-sm-7' : 'col-12' }}">
                                     <div class="p-3 rounded-4 border mb-2.5" style="background: var(--surface-container-lowest); border-color: var(--outline-variant) !important;">
                                         <small class="text-secondary d-block mb-0.5">{{ __('Nominal Saldo Masuk') }}</small>
-                                        <div class="fw-bold text-body mb-2">Rp {{ number_format($topup->amount, 0, ',', '.') }}</div>
+                                        <div class="fw-bold text-body mb-2 m3-tabular-nums">Rp {{ number_format($topup->amount, 0, ',', '.') }}</div>
 
                                         <small class="text-secondary d-block mb-0.5">{{ __('Total Bayar Tepat (termasuk kode unik +Rp:code)', ['code' => $topup->unique_code]) }}</small>
                                         <div class="d-flex align-items-center justify-content-between gap-2">
-                                            <div class="fs-4 fw-bold text-primary">Rp {{ number_format($topup->total_pay, 0, ',', '.') }}</div>
+                                            <div class="fs-4 fw-bold text-primary m3-tabular-nums">Rp {{ number_format($topup->total_pay, 0, ',', '.') }}</div>
                                             <button type="button" class="btn btn-sm btn-tonal rounded-pill px-2.5 py-1 fw-semibold btn-copy-amount" data-amount="{{ $topup->total_pay }}">
                                                 <i class="fas fa-copy me-1"></i>{{ __('Salin') }}
                                             </button>
@@ -146,13 +138,15 @@
             </div>
         @endif
 
+        {{-- Transaction History Card --}}
         <div class="card border-0 rounded-4 shadow-sm">
-            <div class="card-body p-4">
-                <h5 class="fw-bold mb-3 text-body">
+            <div class="card-body p-3 p-sm-4">
+                <h5 class="fw-bold mb-3 text-body fs-6">
                     <i class="fas fa-list-ul text-primary me-1.5"></i>{{ __('Riwayat Mutasi Dompet') }}
                 </h5>
 
-                <div class="table-responsive">
+                {{-- Desktop Table View --}}
+                <div class="table-responsive d-none d-md-block">
                     <table class="table align-middle mb-0">
                         <thead>
                             <tr class="text-muted small">
@@ -172,10 +166,10 @@
                                             <small class="font-monospace text-muted">{{ $tx->reference }}</small>
                                         @endif
                                     </td>
-                                    <td class="text-end fw-bold text-nowrap {{ $tx->type === 'credit' ? 'text-success' : 'text-danger' }}">
+                                    <td class="text-end fw-bold text-nowrap m3-tabular-nums {{ $tx->type === 'credit' ? 'text-success' : 'text-danger' }}">
                                         {{ $tx->type === 'credit' ? '+' : '-' }}Rp {{ number_format($tx->amount, 0, ',', '.') }}
                                     </td>
-                                    <td class="text-end small fw-semibold text-body text-nowrap">
+                                    <td class="text-end small fw-semibold text-body text-nowrap m3-tabular-nums">
                                         Rp {{ number_format($tx->balance_after, 0, ',', '.') }}
                                     </td>
                                 </tr>
@@ -191,6 +185,36 @@
                     </table>
                 </div>
 
+                {{-- Mobile Stacked Card List --}}
+                <div class="d-md-none d-flex flex-column gap-2.5">
+                    @forelse($transactions as $tx)
+                        <div class="m3-mobile-item-card">
+                            <div class="d-flex justify-content-between align-items-start gap-2 mb-1.5">
+                                <div class="min-w-0">
+                                    <div class="fw-semibold text-body small">{{ $tx->description ?: ucfirst($tx->category) }}</div>
+                                    @if($tx->reference)
+                                        <small class="font-monospace text-muted d-block" style="font-size: 0.72rem;">{{ $tx->reference }}</small>
+                                    @endif
+                                </div>
+                                <div class="text-end flex-shrink-0">
+                                    <div class="fw-bold small m3-tabular-nums {{ $tx->type === 'credit' ? 'text-success' : 'text-danger' }}">
+                                        {{ $tx->type === 'credit' ? '+' : '-' }}Rp {{ number_format($tx->amount, 0, ',', '.') }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center pt-2 mt-2 text-muted" style="border-top: 1px solid var(--outline-variant); font-size: 0.74rem;">
+                                <span><i class="far fa-clock me-1"></i>{{ $tx->created_at->format('d M Y, H:i') }}</span>
+                                <span class="m3-tabular-nums">{{ __('Saldo:') }} <strong class="text-body">Rp {{ number_format($tx->balance_after, 0, ',', '.') }}</strong></span>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="text-center text-muted py-4 small">
+                            <i class="fas fa-wallet fa-2x mb-2 opacity-25 d-block"></i>
+                            {{ __('Belum ada mutasi saldo dompet.') }}
+                        </div>
+                    @endforelse
+                </div>
+
                 @if($transactions->hasPages())
                     <div class="mt-3">{{ $transactions->links() }}</div>
                 @endif
@@ -199,16 +223,42 @@
     </div>
 </div>
 
+@push('modals')
+{{-- Smartphone Top-Up Modal (M3 Sheet) --}}
+<div class="modal fade m3-sheet-modal" id="topupModal" tabindex="-1" aria-labelledby="topupModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content" style="border-radius: var(--radius-xl, 28px); border: 1px solid var(--outline-variant);">
+            <div class="d-md-none m3-sheet-handle" aria-hidden="true"></div>
+            <div class="modal-header border-0 px-4 pt-3 pt-md-4 pb-2">
+                <div>
+                    <h5 class="fw-bold mb-0 text-body" id="topupModalLabel">
+                        <i class="fas fa-qrcode text-primary me-2"></i>{{ __('Top-Up Saldo via QRIS') }}
+                    </h5>
+                    <small class="text-muted">{{ __('Verifikasi otomatis real-time via webhook') }}</small>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ __('Tutup') }}"></button>
+            </div>
+            <div class="modal-body px-4 py-3">
+                @include('wallet.partials.topup_form', ['idPrefix' => 'modal'])
+            </div>
+        </div>
+    </div>
+</div>
+@endpush
+
+@push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const input = document.getElementById('walletTopupAmount');
+    // Preset buttons support both desktop and modal inputs
     document.querySelectorAll('.wallet-preset-btn').forEach(btn => {
         btn.addEventListener('click', function() {
+            const targetSelector = this.dataset.target;
+            const input = targetSelector ? document.querySelector(targetSelector) : document.querySelector('[name="amount"]');
             if (input) input.value = this.dataset.amount;
         });
     });
 
-    // Render dynamic QRIS locally on canvas (supports Vite bundle & CDN fallback seamlessly)
+    // Render dynamic QRIS locally on canvas
     function renderAllQris() {
         document.querySelectorAll('.wallet-qris-canvas').forEach(canvas => {
             const payload = canvas.dataset.qris;
@@ -303,6 +353,17 @@ document.addEventListener('DOMContentLoaded', function() {
         };
         setInterval(pollPending, 5000);
     }
+
+    // Auto-open topup modal on smartphone if error occurred
+    @if($errors->has('amount'))
+    if (window.innerWidth < 768) {
+        const modalEl = document.getElementById('topupModal');
+        if (modalEl && window.bootstrap) {
+            bootstrap.Modal.getOrCreateInstance(modalEl).show();
+        }
+    }
+    @endif
 });
 </script>
+@endpush
 @endsection

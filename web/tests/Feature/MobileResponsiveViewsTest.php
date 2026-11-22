@@ -1,0 +1,313 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\ComplaintCase;
+use App\Models\Coupon;
+use App\Models\EscrowTransaction;
+use App\Models\LoginLog;
+use App\Models\Order;
+use App\Models\OrderItem;
+use App\Models\Product;
+use App\Models\ResellerApiKey;
+use App\Models\User;
+use App\Models\WalletTopup;
+use App\Models\WalletTransaction;
+use App\Models\WithdrawalRequest;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+class MobileResponsiveViewsTest extends TestCase
+{
+    use RefreshDatabase;
+
+    protected User $admin;
+    protected User $seller;
+    protected User $customer;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->admin = User::forceCreate([
+            'username' => 'admin_test_mobile',
+            'full_name' => 'Admin Mobile',
+            'email' => 'admin_test_mobile@test.com',
+            'role' => 'admin',
+            'wallet_balance' => 500000,
+            'is_suspended' => false,
+            'password' => bcrypt('password'),
+        ]);
+
+        $this->seller = User::forceCreate([
+            'username' => 'seller_test_mobile',
+            'full_name' => 'Seller Mobile',
+            'email' => 'seller_test_mobile@test.com',
+            'role' => 'seller',
+            'wallet_balance' => 250000,
+            'is_suspended' => false,
+            'password' => bcrypt('password'),
+        ]);
+
+        $this->customer = User::forceCreate([
+            'username' => 'customer_test_mobile',
+            'full_name' => 'Customer Mobile',
+            'email' => 'customer_test_mobile@test.com',
+            'role' => 'customer',
+            'wallet_balance' => 100000,
+            'is_suspended' => false,
+            'password' => bcrypt('password'),
+        ]);
+    }
+
+    public function test_customer_mobile_responsive_views_render_successfully(): void
+    {
+        // 1. Customer Wallet Index dengan data mutasi
+        WalletTransaction::create([
+            'user_id' => $this->customer->id,
+            'type' => 'credit',
+            'category' => 'topup',
+            'amount' => 50000,
+            'balance_before' => 50000,
+            'balance_after' => 100000,
+            'description' => 'Top Up QRIS Berhasil',
+            'reference' => 'TOP-12345',
+        ]);
+        $responseWallet = $this->actingAs($this->customer)->get(route('wallet.index'));
+        $responseWallet->assertStatus(200);
+        $responseWallet->assertSee('topupModal');
+        $responseWallet->assertSee('m3-sheet-modal');
+        $responseWallet->assertSee('m3-mobile-item-card');
+
+        // 2. Customer Complaints Index
+        ComplaintCase::create([
+            'complaint_ref' => 'CMP-TEST-001',
+            'customer_id' => $this->customer->id,
+            'customer_telegram_id' => 123456789,
+            'order_ref_snapshot' => 'ORD-TEST-001',
+            'seller_id' => $this->seller->id,
+            'complaint_text' => 'Akun tidak bisa login',
+            'status' => 'open',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $responseComplaints = $this->actingAs($this->customer)->get(route('customer.complaints.index'));
+        $responseComplaints->assertStatus(200);
+        $responseComplaints->assertSee('m3-mobile-item-card');
+
+        // 3. Customer Escrow Index
+        EscrowTransaction::create([
+            'transaction_code' => 'ESC-TEST-001',
+            'public_token' => 'token-test-001',
+            'creator_id' => $this->customer->id,
+            'creator_role' => 'buyer',
+            'title' => 'Akun Game Premium',
+            'buyer_id' => $this->customer->id,
+            'buyer_name' => $this->customer->full_name ?: $this->customer->username,
+            'buyer_contact' => '@customer_mobile',
+            'seller_name' => $this->seller->full_name ?: $this->seller->username,
+            'seller_contact' => '@seller_mobile',
+            'amount' => 50000,
+            'fee_amount' => 2500,
+            'total_buyer_pay' => 52500,
+            'total_seller_receive' => 50000,
+            'fee_payer' => 'buyer',
+            'status' => EscrowTransaction::STATUS_WAITING_DEPOSIT,
+        ]);
+        $responseEscrow = $this->actingAs($this->customer)->get(route('escrow.index'));
+        $responseEscrow->assertStatus(200);
+        $responseEscrow->assertSee('m3-mobile-item-card');
+
+        // 4. User Logins Log
+        LoginLog::create([
+            'user_id' => $this->customer->id,
+            'ip_address' => '127.0.0.1',
+            'user_agent' => 'Mozilla/5.0 Mobile',
+            'status' => 'success',
+            'logged_at' => now(),
+        ]);
+        $responseLogins = $this->actingAs($this->customer)->get(route('profile.logins'));
+        $responseLogins->assertStatus(200);
+        $responseLogins->assertSee('m3-mobile-item-card');
+    }
+
+    public function test_seller_mobile_responsive_views_render_successfully(): void
+    {
+        // 1. Seller Complaints Index
+        ComplaintCase::create([
+            'complaint_ref' => 'CMP-TEST-002',
+            'customer_id' => $this->customer->id,
+            'customer_telegram_id' => 987654321,
+            'order_ref_snapshot' => 'ORD-TEST-002',
+            'seller_id' => $this->seller->id,
+            'complaint_text' => 'Garansi 30 hari bermasalah',
+            'status' => 'open',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $responseSellerComplaints = $this->actingAs($this->seller)->get(route('seller.complaints.index'));
+        $responseSellerComplaints->assertStatus(200);
+        $responseSellerComplaints->assertSee('m3-mobile-item-card');
+
+        // 2. Seller Analytics (dengan produk creator_id = seller & order delivered)
+        $product = Product::forceCreate([
+            'creator_id' => $this->seller->id,
+            'name' => 'Akun Netflix 1 Bulan',
+            'price' => 35000,
+            'is_suspended' => false,
+        ]);
+        $order = Order::create([
+            'order_ref' => 'ORD-SELLER-ANL-1',
+            'customer_id' => $this->customer->id,
+            'total_amount' => 35000,
+            'subtotal' => 35000,
+            'discount_amount' => 0,
+            'unique_code' => 0,
+            'status' => 'delivered',
+            'created_at' => now(),
+        ]);
+        OrderItem::create([
+            'order_id' => $order->id,
+            'product_id' => $product->id,
+            'unit_price' => 35000,
+            'quantity' => 1,
+            'discount_amount' => 0,
+        ]);
+        $responseAnalytics = $this->actingAs($this->seller)->get(route('seller.analytics'));
+        $responseAnalytics->assertStatus(200);
+        $responseAnalytics->assertSee('m3-mobile-item-card');
+
+        // 3. Seller Coupons Index (user_id = sellerId)
+        Coupon::create([
+            'code' => 'TOKOHEMAT',
+            'type' => 'fixed',
+            'value' => 5000,
+            'min_spend' => 25000,
+            'qty' => 50,
+            'used_qty' => 5,
+            'is_active' => true,
+            'user_id' => $this->seller->id,
+            'created_by' => $this->seller->id,
+        ]);
+        $responseSellerCoupons = $this->actingAs($this->seller)->get(route('seller.coupons.index'));
+        $responseSellerCoupons->assertStatus(200);
+        $responseSellerCoupons->assertSee('m3-mobile-item-card');
+        $responseSellerCoupons->assertSee('createSellerCouponModal');
+        $responseSellerCoupons->assertSee('m3-sheet-modal');
+    }
+
+    public function test_admin_and_developer_mobile_responsive_views_render_successfully(): void
+    {
+        // 1. Developer API Index
+        ResellerApiKey::create([
+            'user_id' => $this->seller->id,
+            'name' => 'Bot Toko H2H',
+            'key_prefix' => 'rsk_live_test',
+            'key_hash' => hash('sha256', 'dummy_plain_secret_key_12345'),
+            'rate_limit_per_minute' => 60,
+            'is_active' => true,
+        ]);
+        $responseApi = $this->actingAs($this->seller)->get(route('developer.api.index', ['tab' => 'keys']));
+        $responseApi->assertStatus(200);
+        $responseApi->assertSee('createApiKeyModal');
+        $responseApi->assertSee('m3-sheet-modal');
+
+        // 2. Admin Withdrawals Index
+        WithdrawalRequest::create([
+            'seller_id' => $this->seller->id,
+            'amount' => 50000,
+            'bank_name' => 'BCA',
+            'account_number' => '1234567890',
+            'account_holder' => 'Seller Mobile Test',
+            'status' => 'pending',
+        ]);
+        $responseAdminWithdrawals = $this->actingAs($this->admin)->get(route('admin.withdrawals.index'));
+        $responseAdminWithdrawals->assertStatus(200);
+        $responseAdminWithdrawals->assertSee('m3-mobile-item-card');
+        $responseAdminWithdrawals->assertSee('m3-sheet-modal');
+
+        // 3. Admin Complaints Index
+        ComplaintCase::create([
+            'complaint_ref' => 'CMP-ADM-001',
+            'customer_id' => $this->customer->id,
+            'customer_telegram_id' => 112233445,
+            'order_ref_snapshot' => 'ORD-ADM-001',
+            'seller_id' => $this->seller->id,
+            'complaint_text' => 'Komplain akun untuk admin review',
+            'status' => 'open',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $responseAdminComplaints = $this->actingAs($this->admin)->get(route('admin.complaints.index'));
+        $responseAdminComplaints->assertStatus(200);
+        $responseAdminComplaints->assertSee('m3-mobile-item-card');
+
+        // 4. Admin Wallet Index
+        WalletTopup::create([
+            'topup_ref' => 'TOP-TEST-001',
+            'user_id' => $this->customer->id,
+            'amount' => 50000,
+            'unique_code' => 123,
+            'total_pay' => 50123,
+            'status' => 'pending',
+            'expires_at' => now()->addHour(),
+        ]);
+        WalletTransaction::create([
+            'user_id' => $this->customer->id,
+            'amount' => 10000,
+            'type' => 'credit',
+            'category' => 'adjustment',
+            'balance_before' => 90000,
+            'balance_after' => 100000,
+            'description' => 'Injeksi Saldo Manual Admin: Bonus',
+            'reference' => 'ADJ-12345',
+        ]);
+        $responseAdminWallet = $this->actingAs($this->admin)->get(route('admin.wallet.index'));
+        $responseAdminWallet->assertStatus(200);
+        $responseAdminWallet->assertSee('injectWalletModal');
+        $responseAdminWallet->assertSee('m3-sheet-modal');
+        $responseAdminWallet->assertSee('m3-mobile-item-card');
+
+        // 5. Admin Coupons Index
+        Coupon::create([
+            'code' => 'ADMINPROMO',
+            'type' => 'percent',
+            'value' => 10,
+            'min_spend' => 10000,
+            'qty' => 100,
+            'used_qty' => 12,
+            'is_active' => true,
+            'created_by' => $this->admin->id,
+        ]);
+        $responseAdminCoupons = $this->actingAs($this->admin)->get(route('admin.coupons.index'));
+        $responseAdminCoupons->assertStatus(200);
+        $responseAdminCoupons->assertSee('m3-mobile-item-card');
+        $responseAdminCoupons->assertSee('createCouponModal');
+        $responseAdminCoupons->assertSee('m3-sheet-modal');
+
+        // 6. Admin Escrow Index
+        EscrowTransaction::create([
+            'transaction_code' => 'ESC-TEST-ADM',
+            'public_token' => 'token-test-adm',
+            'creator_id' => $this->admin->id,
+            'creator_role' => 'buyer',
+            'title' => 'Akun Cloud Server',
+            'buyer_id' => $this->customer->id,
+            'buyer_name' => $this->customer->full_name ?: $this->customer->username,
+            'buyer_contact' => '@customer_mobile',
+            'seller_name' => $this->seller->full_name ?: $this->seller->username,
+            'seller_contact' => '@seller_mobile',
+            'amount' => 120000,
+            'fee_amount' => 6000,
+            'total_buyer_pay' => 120000,
+            'total_seller_receive' => 114000,
+            'fee_payer' => 'seller',
+            'status' => EscrowTransaction::STATUS_WAITING_PAYOUT,
+        ]);
+        $responseAdminEscrow = $this->actingAs($this->admin)->get(route('admin.escrow.index'));
+        $responseAdminEscrow->assertStatus(200);
+        $responseAdminEscrow->assertSee('m3-mobile-item-card');
+        $responseAdminEscrow->assertSee('escrowSettingsModal');
+        $responseAdminEscrow->assertSee('m3-sheet-modal');
+    }
+}
