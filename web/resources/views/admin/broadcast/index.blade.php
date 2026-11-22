@@ -50,14 +50,37 @@
                         </label>
 
                         <div class="row g-2">
-                            <div class="col-md-5">
-                                <label class="form-label small text-muted mb-1">{{ __('Label Tombol Link CTA (Opsional)') }}</label>
-                                <input type="text" id="ctaLabel" name="cta_label" class="form-control form-control-sm" maxlength="80" placeholder="{{ __('Contoh: Lihat Promo Sekarang') }}">
+                            <div class="col-md-4">
+                                <label class="form-label small text-muted mb-1">{{ __('Label Tombol CTA (Opsional)') }}</label>
+                                <input type="text" id="ctaLabel" name="cta_label" class="form-control form-control-sm" maxlength="80" placeholder="{{ __('Contoh: Lihat Promo') }}">
                             </div>
-                            <div class="col-md-7">
-                                <label class="form-label small text-muted mb-1">{{ __('URL Tautan CTA (Opsional, klik dihitung dibaca)') }}</label>
-                                <input type="url" id="ctaUrl" name="cta_url" class="form-control form-control-sm" maxlength="500" placeholder="https://...">
+                            <div class="col-md-5 position-relative">
+                                <label class="form-label small text-muted mb-1">{{ __('URL / Laman Mini App CTA (Opsional)') }}</label>
+                                <input type="text" id="ctaUrl" name="cta_url" class="form-control form-control-sm font-monospace" maxlength="500" autocomplete="off" placeholder="/catalog/ atau https://...">
+                                <div id="ctaSuggestionsMenu"
+                                     class="d-none position-absolute start-0 end-0 mt-1 border rounded-4 overflow-hidden"
+                                     style="z-index: 40; max-height: 280px; overflow-y: auto; background: var(--surface-container-lowest, var(--bs-body-bg)); border-color: var(--outline-variant, var(--bs-border-color)) !important;">
+                                </div>
                             </div>
+                            <div class="col-md-3">
+                                <label class="form-label small text-muted mb-1">{{ __('Mode Buka Telegram') }}</label>
+                                <select id="ctaOpenMode" name="cta_open_mode" class="form-select form-select-sm">
+                                    <option value="miniapp" selected>{{ __('Telegram Mini App') }}</option>
+                                    <option value="browser">{{ __('Browser Eksternal') }}</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="d-flex flex-wrap align-items-center gap-1.5 mt-2">
+                            <span class="text-muted" style="font-size: 0.72rem;">{{ __('Pintasan cepat:') }}</span>
+                            <button type="button" class="btn btn-sm btn-light border rounded-pill py-0 px-2" style="font-size: 0.72rem;" onclick="applyCtaPreset('/dashboard', '{{ __('Buka Dashboard') }}')">/dashboard</button>
+                            <button type="button" class="btn btn-sm btn-light border rounded-pill py-0 px-2" style="font-size: 0.72rem;" onclick="applyCtaPreset('/catalog', '{{ __('Lihat Katalog') }}')">/catalog</button>
+                            <button type="button" class="btn btn-sm btn-primary-subtle text-primary border border-primary-subtle rounded-pill py-0 px-2 fw-semibold" style="font-size: 0.72rem;" onclick="triggerCatalogProductSuggest()">/catalog/ ({{ __('Pilih Produk') }})</button>
+                            <button type="button" class="btn btn-sm btn-light border rounded-pill py-0 px-2" style="font-size: 0.72rem;" onclick="applyCtaPreset('/wallet', '{{ __('Cek Wallet') }}')">/wallet</button>
+                            <button type="button" class="btn btn-sm btn-light border rounded-pill py-0 px-2" style="font-size: 0.72rem;" onclick="applyCtaPreset('/orders', '{{ __('Lihat Pesanan') }}')">/orders</button>
+                            <button type="button" class="btn btn-sm btn-light border rounded-pill py-0 px-2" style="font-size: 0.72rem;" onclick="applyCtaPreset('/escrow', '{{ __('Buka Rekber') }}')">/escrow</button>
+                        </div>
+                        <div class="text-muted mt-1" style="font-size: 0.72rem;">
+                            <i class="fas fa-magic text-primary me-1"></i>{{ __('Ketik') }} <code>/catalog/</code> {{ __('atau nama produk untuk memunculkan saran ID & nama produk otomatis. Klik tombol CTA otomatis dihitung sebagai dibaca.') }}
                         </div>
                     </div>
 
@@ -209,7 +232,7 @@
                                                 </button>
                                             </li>
                                             <li>
-                                                <button class="dropdown-item py-2" onclick="resendWithEdit({{ $history->id }}, `{{ base64_encode($history->message) }}`, '{{ $history->media_path }}', '{{ $history->media_type }}', {{ $history->enable_read_button ? 'true' : 'false' }}, `{{ base64_encode((string) $history->cta_label) }}`, `{{ base64_encode((string) $history->cta_url) }}`)">
+                                                <button class="dropdown-item py-2" onclick="resendWithEdit({{ $history->id }}, `{{ base64_encode($history->message) }}`, '{{ $history->media_path }}', '{{ $history->media_type }}', {{ $history->enable_read_button ? 'true' : 'false' }}, `{{ base64_encode((string) $history->cta_label) }}`, `{{ base64_encode((string) $history->cta_url) }}`, '{{ $history->cta_open_mode ?: 'miniapp' }}')">
                                                     <i class="fas fa-edit text-warning me-2"></i>{{ __('Resend with Edit') }}
                                                 </button>
                                             </li>
@@ -484,7 +507,7 @@ async function resendBroadcast(jobId) {
     }
 }
 
-function resendWithEdit(jobId, b64Message, mediaPath, mediaType, enableReadButton = true, b64CtaLabel = '', b64CtaUrl = '') {
+function resendWithEdit(jobId, b64Message, mediaPath, mediaType, enableReadButton = true, b64CtaLabel = '', b64CtaUrl = '', ctaOpenMode = 'miniapp') {
     const message = decodeURIComponent(escape(window.atob(b64Message)));
     document.getElementById('broadcastMessage').value = message;
 
@@ -494,6 +517,8 @@ function resendWithEdit(jobId, b64Message, mediaPath, mediaType, enableReadButto
     if (ctaLabelEl) ctaLabelEl.value = b64CtaLabel ? decodeURIComponent(escape(window.atob(b64CtaLabel))) : '';
     const ctaUrlEl = document.getElementById('ctaUrl');
     if (ctaUrlEl) ctaUrlEl.value = b64CtaUrl ? decodeURIComponent(escape(window.atob(b64CtaUrl))) : '';
+    const ctaModeEl = document.getElementById('ctaOpenMode');
+    if (ctaModeEl) ctaModeEl.value = ctaOpenMode || 'miniapp';
     
     // Create hidden inputs for existing media
     let existingPathInput = document.getElementById('existingMediaPath');
@@ -572,8 +597,12 @@ async function startBroadcast() {
     formData.append('enable_read_button', (readBtnToggle && readBtnToggle.checked) ? '1' : '0');
     const ctaLabelVal = (document.getElementById('ctaLabel')?.value || '').trim();
     const ctaUrlVal = (document.getElementById('ctaUrl')?.value || '').trim();
+    const ctaOpenModeVal = document.getElementById('ctaOpenMode')?.value || 'miniapp';
     if (ctaLabelVal) formData.append('cta_label', ctaLabelVal);
-    if (ctaUrlVal) formData.append('cta_url', ctaUrlVal);
+    if (ctaUrlVal) {
+        formData.append('cta_url', ctaUrlVal);
+        formData.append('cta_open_mode', ctaOpenModeVal);
+    }
     if (mediaFile) {
         formData.append('media_file', mediaFile);
     } else {
@@ -836,5 +865,179 @@ async function recalculateCurrentBroadcast() {
         btn.innerHTML = orig;
     }
 }
+
+// ==========================================
+// SMART PREDICTIVE CTA URL AUTOCOMPLETE
+// ==========================================
+(function () {
+    const urlInput = document.getElementById('ctaUrl');
+    const labelInput = document.getElementById('ctaLabel');
+    const modeSelect = document.getElementById('ctaOpenMode');
+    const menuEl = document.getElementById('ctaSuggestionsMenu');
+    if (!urlInput || !menuEl) return;
+
+    const suggestEndpoint = @json(route('admin.broadcast.cta-suggestions'));
+    let debounceTimer = null;
+    let activeAbort = null;
+    let currentItems = [];
+    let activeIndex = -1;
+
+    function escapeHtml(str) {
+        return String(str || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    function hideMenu() {
+        menuEl.classList.add('d-none');
+        activeIndex = -1;
+    }
+
+    function selectSuggestion(item) {
+        if (!item) return;
+        urlInput.value = item.url;
+        if (labelInput && !labelInput.value.trim() && item.suggested_label) {
+            labelInput.value = item.suggested_label;
+        }
+        if (modeSelect) {
+            modeSelect.value = item.url.startsWith('/') ? 'miniapp' : 'browser';
+        }
+        hideMenu();
+        urlInput.focus();
+    }
+
+    function updateHighlight() {
+        const buttons = menuEl.querySelectorAll('.cta-suggest-item');
+        buttons.forEach((btn, idx) => {
+            if (idx === activeIndex) {
+                btn.style.background = 'var(--primary-container, rgba(var(--bs-primary-rgb), 0.14))';
+                btn.scrollIntoView({ block: 'nearest' });
+            } else {
+                btn.style.background = 'transparent';
+            }
+        });
+    }
+
+    function renderSuggestions(items) {
+        currentItems = Array.isArray(items) ? items : [];
+        activeIndex = -1;
+
+        if (currentItems.length === 0) {
+            hideMenu();
+            return;
+        }
+
+        menuEl.innerHTML = currentItems.map((item, idx) => `
+            <button type="button"
+                    class="cta-suggest-item w-100 text-start border-0 px-3 py-2 d-flex align-items-center gap-2.5"
+                    data-idx="${idx}"
+                    style="background: transparent; color: var(--on-surface, var(--bs-body-color)); border-bottom: 1px solid var(--outline-variant, var(--bs-border-color)) !important; cursor: pointer;">
+                <span class="d-inline-flex align-items-center justify-content-center rounded-3 flex-shrink-0"
+                      style="width: 30px; height: 30px; background: var(--surface-container, var(--bs-tertiary-bg)); color: var(--primary, var(--bs-primary)); font-size: 0.78rem;">
+                    <i class="${escapeHtml(item.icon || 'fas fa-link')}"></i>
+                </span>
+                <span class="min-w-0 flex-grow-1">
+                    <span class="d-flex align-items-center justify-content-between gap-2">
+                        <span class="fw-semibold small text-truncate">${escapeHtml(item.title)}</span>
+                        <code class="small flex-shrink-0" style="font-size: 0.72rem; color: var(--primary, var(--bs-primary));">${escapeHtml(item.url)}</code>
+                    </span>
+                    <span class="d-block text-muted text-truncate" style="font-size: 0.72rem;">${escapeHtml(item.subtitle)}</span>
+                </span>
+            </button>
+        `).join('');
+
+        menuEl.querySelectorAll('.cta-suggest-item').forEach((btn) => {
+            btn.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                const idx = parseInt(btn.getAttribute('data-idx'), 10);
+                selectSuggestion(currentItems[idx]);
+            });
+            btn.addEventListener('mouseenter', () => {
+                activeIndex = parseInt(btn.getAttribute('data-idx'), 10);
+                updateHighlight();
+            });
+        });
+
+        menuEl.classList.remove('d-none');
+    }
+
+    async function fetchSuggestions(query) {
+        if (activeAbort) activeAbort.abort();
+        activeAbort = new AbortController();
+
+        try {
+            const res = await fetch(`${suggestEndpoint}?q=${encodeURIComponent(query)}`, {
+                headers: { 'Accept': 'application/json' },
+                signal: activeAbort.signal
+            });
+            if (!res.ok) return;
+            const data = await res.json();
+            if (data.status === 'success') {
+                renderSuggestions(data.suggestions || []);
+            }
+        } catch (err) {
+            if (err.name !== 'AbortError') hideMenu();
+        }
+    }
+
+    urlInput.addEventListener('input', () => {
+        const val = urlInput.value.trim();
+        if (modeSelect && (val.startsWith('https://t.me/') || val.startsWith('http://t.me/'))) {
+            modeSelect.value = 'browser';
+        } else if (modeSelect && val.startsWith('/')) {
+            modeSelect.value = 'miniapp';
+        }
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => fetchSuggestions(val), 140);
+    });
+
+    urlInput.addEventListener('focus', () => {
+        fetchSuggestions(urlInput.value.trim());
+    });
+
+    urlInput.addEventListener('keydown', (e) => {
+        if (menuEl.classList.contains('d-none') || currentItems.length === 0) return;
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            activeIndex = (activeIndex + 1) % currentItems.length;
+            updateHighlight();
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            activeIndex = (activeIndex - 1 + currentItems.length) % currentItems.length;
+            updateHighlight();
+        } else if (e.key === 'Enter' && activeIndex >= 0) {
+            e.preventDefault();
+            selectSuggestion(currentItems[activeIndex]);
+        } else if (e.key === 'Escape') {
+            hideMenu();
+        }
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!urlInput.contains(e.target) && !menuEl.contains(e.target)) {
+            hideMenu();
+        }
+    });
+
+    window.applyCtaPreset = function (path, suggestedLabel) {
+        urlInput.value = path;
+        if (labelInput && !labelInput.value.trim() && suggestedLabel) {
+            labelInput.value = suggestedLabel;
+        }
+        if (modeSelect) modeSelect.value = 'miniapp';
+        hideMenu();
+        urlInput.focus();
+    };
+
+    window.triggerCatalogProductSuggest = function () {
+        urlInput.value = '/catalog/';
+        if (modeSelect) modeSelect.value = 'miniapp';
+        urlInput.focus();
+        fetchSuggestions('/catalog/');
+    };
+})();
 </script>
 @endpush

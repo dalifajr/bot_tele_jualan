@@ -2682,7 +2682,23 @@ class AdminController extends Controller
             'media_file' => 'nullable|file|max:51200', // max 50MB
             'enable_read_button' => 'nullable|boolean',
             'cta_label' => 'nullable|string|max:80',
-            'cta_url' => ['nullable', 'url', 'max:500', 'regex:/^https?:\/\//i'],
+            'cta_open_mode' => 'nullable|in:miniapp,browser',
+            'cta_url' => [
+                'nullable',
+                'string',
+                'max:500',
+                function ($attribute, $value, $fail) {
+                    $trimmed = trim((string) $value);
+                    if ($trimmed === '') {
+                        return;
+                    }
+                    $isRelative = str_starts_with($trimmed, '/') && !str_starts_with($trimmed, '//');
+                    $isHttp = (bool) preg_match('/^https?:\/\/.+/i', $trimmed);
+                    if (!$isRelative && !$isHttp) {
+                        $fail(__('URL CTA harus berupa path internal diawali / (misal: /catalog) atau tautan https://.'));
+                    }
+                },
+            ],
         ]);
 
         if (empty($request->message) && !$request->hasFile('media_file') && empty($request->existing_media_path)) {
@@ -2728,6 +2744,10 @@ class AdminController extends Controller
             : true;
         $ctaUrl = trim((string) $request->input('cta_url', '')) ?: null;
         $ctaLabel = $ctaUrl ? (trim((string) $request->input('cta_label', '')) ?: '🔗 Buka Tautan') : null;
+        $ctaOpenMode = $request->input('cta_open_mode');
+        if (!in_array($ctaOpenMode, ['miniapp', 'browser'], true)) {
+            $ctaOpenMode = ($ctaUrl && str_starts_with($ctaUrl, '/')) ? 'miniapp' : 'browser';
+        }
 
         $allUsers = \App\Models\User::all();
 
@@ -2749,6 +2769,7 @@ class AdminController extends Controller
             'enable_read_button' => $enableReadButton,
             'cta_label' => $ctaLabel,
             'cta_url' => $ctaUrl,
+            'cta_open_mode' => $ctaOpenMode,
         ]);
 
         // Send Website Announcement Notification to all registered users
@@ -2821,6 +2842,7 @@ class AdminController extends Controller
             'enable_read_button' => $oldJob->enable_read_button,
             'cta_label' => $oldJob->cta_label,
             'cta_url' => $oldJob->cta_url,
+            'cta_open_mode' => $oldJob->cta_open_mode ?: 'miniapp',
         ]);
 
         return $this->startBroadcast($request);
@@ -2899,11 +2921,123 @@ class AdminController extends Controller
         );
 
         $targetUrl = trim((string) $job->cta_url);
-        if ($targetUrl === '' || !preg_match('/^https?:\/\//i', $targetUrl)) {
+        if ($targetUrl === '') {
+            return redirect()->route('dashboard');
+        }
+
+        if (str_starts_with($targetUrl, '/') && !str_starts_with($targetUrl, '//')) {
+            return redirect($targetUrl);
+        }
+
+        if (!preg_match('/^https?:\/\//i', $targetUrl)) {
             return redirect()->route('dashboard');
         }
 
         return redirect()->away($targetUrl);
+    }
+
+    public function suggestBroadcastCtaUrls(Request $request)
+    {
+        $rawQuery = trim((string) $request->query('q', ''));
+        $lowerQuery = strtolower($rawQuery);
+        $suggestions = [];
+
+        $staticPages = [
+            ['url' => '/dashboard', 'title' => __('Dashboard Utama'), 'subtitle' => __('Beranda & promo toko'), 'icon' => 'fas fa-home', 'category' => 'page', 'suggested_label' => __('Buka Dashboard')],
+            ['url' => '/catalog', 'title' => __('Katalog Produk'), 'subtitle' => __('Daftar semua produk tersedia'), 'icon' => 'fas fa-store', 'category' => 'page', 'suggested_label' => __('Lihat Katalog')],
+            ['url' => '/wallet', 'title' => __('Saldo & Top Up Wallet'), 'subtitle' => __('Cek saldo dan isi ulang'), 'icon' => 'fas fa-wallet', 'category' => 'page', 'suggested_label' => __('Cek Wallet')],
+            ['url' => '/orders', 'title' => __('Riwayat Pesanan'), 'subtitle' => __('Pantau status pesanan pelanggan'), 'icon' => 'fas fa-box-open', 'category' => 'page', 'suggested_label' => __('Lihat Pesanan')],
+            ['url' => '/escrow', 'title' => __('Rekening Bersama (Rekber)'), 'subtitle' => __('Transaksi escrow aman'), 'icon' => 'fas fa-shield-halved', 'category' => 'page', 'suggested_label' => __('Buka Rekber')],
+            ['url' => '/notifications', 'title' => __('Pusat Notifikasi'), 'subtitle' => __('Semua pengumuman & info akun'), 'icon' => 'fas fa-bell', 'category' => 'page', 'suggested_label' => __('Lihat Notifikasi')],
+            ['url' => '/profile', 'title' => __('Profil & Keamanan'), 'subtitle' => __('Pengaturan akun & 2FA'), 'icon' => 'fas fa-user-cog', 'category' => 'page', 'suggested_label' => __('Buka Profil')],
+        ];
+
+        $isCatalogProductQuery = str_starts_with($lowerQuery, '/catalog/');
+        $isSellerQuery = str_starts_with($lowerQuery, '/sellers/');
+
+        // 1. Static Mini App pages (unless user is explicitly drilling into /catalog/ or /sellers/)
+        if (!$isCatalogProductQuery && !$isSellerQuery) {
+            foreach ($staticPages as $page) {
+                if (
+                    $lowerQuery === '' ||
+                    str_contains(strtolower($page['url']), $lowerQuery) ||
+                    str_contains(strtolower($page['title']), $lowerQuery) ||
+                    str_contains(strtolower($page['subtitle']), $lowerQuery)
+                ) {
+                    $suggestions[] = $page;
+                }
+            }
+        }
+
+        // 2. Smart Product Predictions: triggered when typing `/catalog/...`, `/cat`, or any product name/ID
+        $productSearch = null;
+        if ($isCatalogProductQuery) {
+            $productSearch = trim(substr($rawQuery, strlen('/catalog/')));
+        } elseif ($lowerQuery !== '' && !str_starts_with($lowerQuery, 'http://') && !str_starts_with($lowerQuery, 'https://') && !$isSellerQuery) {
+            $productSearch = ltrim($rawQuery, '/');
+        }
+
+        if ($productSearch !== null) {
+            $productQuery = \App\Models\Product::query()
+                ->where(function ($q) {
+                    $q->where('is_suspended', false)->orWhereNull('is_suspended');
+                });
+
+            if ($productSearch !== '') {
+                $productQuery->where(function ($q) use ($productSearch) {
+                    $q->where('name', 'like', '%' . $productSearch . '%');
+                    if (ctype_digit($productSearch)) {
+                        $q->orWhere('id', (int) $productSearch)
+                          ->orWhereRaw('CAST(id AS CHAR) LIKE ?', [$productSearch . '%']);
+                    }
+                });
+            }
+
+            $products = $productQuery->orderBy('id', 'asc')->limit(12)->get(['id', 'name', 'price']);
+            foreach ($products as $product) {
+                $priceFormatted = 'Rp ' . number_format((int) $product->price, 0, ',', '.');
+                $suggestions[] = [
+                    'url' => '/catalog/' . $product->id,
+                    'title' => '#' . $product->id . ' — ' . $product->name,
+                    'subtitle' => __('Produk') . ' • ' . $priceFormatted,
+                    'icon' => 'fas fa-tag',
+                    'category' => 'product',
+                    'suggested_label' => '🛍️ ' . \Illuminate\Support\Str::limit($product->name, 26),
+                ];
+            }
+        }
+
+        // 3. Smart Seller Predictions when typing `/sellers/...`
+        if ($isSellerQuery) {
+            $sellerSearch = trim(substr($rawQuery, strlen('/sellers/')));
+            $sellerQuery = \App\Models\User::where('role', 'seller');
+            if ($sellerSearch !== '') {
+                $sellerQuery->where(function ($q) use ($sellerSearch) {
+                    $q->where('full_name', 'like', '%' . $sellerSearch . '%')
+                      ->orWhere('username', 'like', '%' . $sellerSearch . '%');
+                    if (ctype_digit($sellerSearch)) {
+                        $q->orWhere('id', (int) $sellerSearch);
+                    }
+                });
+            }
+            $sellers = $sellerQuery->orderBy('id', 'asc')->limit(10)->get(['id', 'full_name', 'username']);
+            foreach ($sellers as $seller) {
+                $displayName = $seller->full_name ?: ($seller->username ?: 'Seller #' . $seller->id);
+                $suggestions[] = [
+                    'url' => '/sellers/' . $seller->id,
+                    'title' => '#' . $seller->id . ' — ' . $displayName,
+                    'subtitle' => __('Toko Penjual') . ($seller->username ? ' (@' . $seller->username . ')' : ''),
+                    'icon' => 'fas fa-store-alt',
+                    'category' => 'seller',
+                    'suggested_label' => '🏪 ' . \Illuminate\Support\Str::limit($displayName, 26),
+                ];
+            }
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'suggestions' => array_slice($suggestions, 0, 15),
+        ]);
     }
 
     public function getBroadcastStatus($jobId)

@@ -26,6 +26,7 @@ class BroadcastJob extends Model
         'enable_read_button',
         'cta_label',
         'cta_url',
+        'cta_open_mode',
     ];
 
     protected $casts = [

@@ -100,10 +100,18 @@ class BroadcastDeliveryService
                 'sig' => $sig,
             ]);
 
-            $keyboard[] = [[
-                'text' => trim((string) $job->cta_label) ?: '🔗 Buka Tautan',
-                'url' => $trackedUrl,
-            ]];
+            $btnText = trim((string) $job->cta_label) ?: '🔗 Buka Tautan';
+            if ($this->shouldOpenAsMiniApp($job, $trackedUrl)) {
+                $keyboard[] = [[
+                    'text' => $btnText,
+                    'web_app' => ['url' => $trackedUrl],
+                ]];
+            } else {
+                $keyboard[] = [[
+                    'text' => $btnText,
+                    'url' => $trackedUrl,
+                ]];
+            }
         }
 
         if ($job->enable_read_button) {
@@ -118,6 +126,33 @@ class BroadcastDeliveryService
         }
 
         return json_encode(['inline_keyboard' => $keyboard]);
+    }
+
+    /**
+     * Telegram Bot API requires `web_app` URLs to be HTTPS and forbids `t.me` links inside WebApp.
+     */
+    protected function shouldOpenAsMiniApp(BroadcastJob $job, string $trackedUrl): bool
+    {
+        $mode = $job->cta_open_mode ?: 'miniapp';
+        if ($mode !== 'miniapp') {
+            return false;
+        }
+
+        if (!str_starts_with(strtolower($trackedUrl), 'https://')) {
+            return false;
+        }
+
+        $target = trim((string) $job->cta_url);
+        if (str_starts_with($target, '/') && !str_starts_with($target, '//')) {
+            return true;
+        }
+
+        $host = strtolower((string) parse_url($target, PHP_URL_HOST));
+        if ($host === '' || in_array($host, ['t.me', 'telegram.me', 'telegram.dog'], true) || str_ends_with($host, '.t.me')) {
+            return false;
+        }
+
+        return true;
     }
 
     protected function sendToRecipient(BroadcastJob $job, string $token, string $chatId, ?string $replyMarkup): bool

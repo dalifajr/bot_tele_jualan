@@ -245,4 +245,101 @@ class BroadcastReadAnalyticsTest extends TestCase
         $this->assertTrue($res->json('analytics.timeline.0.captured'));
         $this->assertTrue($res->json('analytics.timeline.3.captured'));
     }
+
+    public function test_miniapp_cta_sends_webapp_button_tracks_internal_redirect_and_predicts_catalog_products(): void
+    {
+        config([
+            'telegram.bot_token' => 'mock_token_123',
+            'app.url' => 'https://store.example.com',
+        ]);
+        \Illuminate\Support\Facades\URL::forceRootUrl('https://store.example.com');
+        \Illuminate\Support\Facades\URL::forceScheme('https');
+
+        $product1 = \App\Models\Product::create([
+            'name' => 'Netflix Premium UHD',
+            'price' => 35000,
+            'creator_id' => $this->admin->id,
+        ]);
+        $product2 = \App\Models\Product::create([
+            'name' => 'Spotify Family 1 Bulan',
+            'price' => 25000,
+            'creator_id' => $this->admin->id,
+        ]);
+
+        // 1. Smart predictive suggestions for `/catalog/`
+        $suggestAll = $this->actingAs($this->admin)
+            ->getJson(route('admin.broadcast.cta-suggestions', ['q' => '/catalog/']));
+        $suggestAll->assertStatus(200);
+        $urls = collect($suggestAll->json('suggestions'))->pluck('url')->all();
+        $this->assertContains('/catalog/' . $product1->id, $urls);
+        $this->assertContains('/catalog/' . $product2->id, $urls);
+        $this->assertStringContainsString('Netflix Premium UHD', $suggestAll->json('suggestions.0.title'));
+
+        // Filter by product name after `/catalog/`
+        $suggestFilter = $this->actingAs($this->admin)
+            ->getJson(route('admin.broadcast.cta-suggestions', ['q' => '/catalog/spot']));
+        $suggestFilter->assertStatus(200);
+        $this->assertEquals(['/catalog/' . $product2->id], collect($suggestFilter->json('suggestions'))->pluck('url')->all());
+
+        // 2. Broadcast with internal Mini App path `/catalog/{id}` sends `web_app` button
+        $capturedPayloads = [];
+        Http::fake(function ($request) use (&$capturedPayloads) {
+            if (str_contains($request->url(), 'api.telegram.org')) {
+                $capturedPayloads[] = $request->data();
+                return Http::response(['ok' => true], 200);
+            }
+            return Http::response(['status' => 'ok'], 200);
+        });
+
+        $startRes = $this->actingAs($this->admin)->post(route('admin.broadcast.start'), [
+            'message' => 'Promo Netflix!',
+            'enable_read_button' => '1',
+            'cta_label' => 'Beli Netflix',
+            'cta_url' => '/catalog/' . $product1->id,
+            'cta_open_mode' => 'miniapp',
+        ]);
+        $startRes->assertStatus(200);
+
+        $job = BroadcastJob::findOrFail($startRes->json('job_id'));
+        $job->update(['status' => 'pending', 'sent_count' => 0, 'failed_count' => 0]);
+        $this->artisan('broadcast:run', ['jobId' => $job->id])->assertExitCode(0);
+
+        $markup = json_decode($capturedPayloads[0]['reply_markup'] ?? '{}', true);
+        $firstBtn = $markup['inline_keyboard'][0][0] ?? [];
+        $this->assertArrayHasKey('web_app', $firstBtn);
+        $this->assertStringStartsWith('https://store.example.com/bc/t/' . $job->id . '/', $firstBtn['web_app']['url']);
+
+        // 3. Clicking tracked URL redirects cleanly to internal path `/catalog/{id}` and records read
+        $analytics = app(BroadcastReadAnalyticsService::class);
+        $sig = $analytics->generateTrackSignature($job->id, $this->customer1->id);
+        $this->get(route('broadcast.track-click', [
+            'jobId' => $job->id,
+            'userId' => $this->customer1->id,
+            'sig' => $sig,
+        ]))->assertRedirect('/catalog/' . $product1->id);
+
+        $this->assertDatabaseHas('broadcast_reads', [
+            'broadcast_job_id' => $job->id,
+            'user_id' => $this->customer1->id,
+            'via_telegram' => 1,
+        ]);
+
+        // 4. Telegram t.me link automatically falls back to `url` instead of `web_app`
+        $capturedPayloads = [];
+        $tmeJob = BroadcastJob::create([
+            'message' => 'Join Channel',
+            'total_targets' => 2,
+            'status' => 'pending',
+            'admin_id' => $this->admin->id,
+            'enable_read_button' => false,
+            'cta_label' => 'Join Channel',
+            'cta_url' => 'https://t.me/contohchannel',
+            'cta_open_mode' => 'miniapp',
+        ]);
+        $this->artisan('broadcast:run', ['jobId' => $tmeJob->id])->assertExitCode(0);
+        $tmeMarkup = json_decode($capturedPayloads[0]['reply_markup'] ?? '{}', true);
+        $tmeBtn = $tmeMarkup['inline_keyboard'][0][0] ?? [];
+        $this->assertArrayHasKey('url', $tmeBtn);
+        $this->assertArrayNotHasKey('web_app', $tmeBtn);
+    }
 }

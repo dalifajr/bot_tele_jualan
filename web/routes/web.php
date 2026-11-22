@@ -330,6 +330,7 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         Route::post('/broadcast/resend/{jobId}', [\App\Http\Controllers\AdminController::class, 'resendBroadcast'])->name('broadcast.resend');
         Route::get('/broadcast/analytics/{jobId}', [\App\Http\Controllers\AdminController::class, 'getBroadcastAnalytics'])->name('broadcast.analytics');
         Route::post('/broadcast/analytics/{jobId}/recalculate', [\App\Http\Controllers\AdminController::class, 'recalculateBroadcastAnalytics'])->name('broadcast.analytics.recalculate');
+        Route::get('/broadcast/cta-suggestions', [\App\Http\Controllers\AdminController::class, 'suggestBroadcastCtaUrls'])->name('broadcast.cta-suggestions');
 
         
         Route::get('/settings', [\App\Http\Controllers\AdminController::class, 'settings'])->name('settings.index');
