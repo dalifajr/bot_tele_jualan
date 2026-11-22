@@ -41,10 +41,10 @@
 </div>
 
 <div class="row g-3 g-lg-4">
-    {{-- Form Simpan Rekening Baru --}}
-    <div class="col-12 col-lg-5">
+    {{-- Desktop/Tablet Inline Form Simpan Rekening Baru (Hidden on Smartphone; opened via + button -> #addBankAccountModal) --}}
+    <div class="col-12 col-lg-5 d-none d-md-block">
         <div class="card">
-            <div class="card-body p-3 p-sm-4">
+            <div class="card-body p-4">
                 <div class="d-flex align-items-center gap-2.5 mb-3">
                     <span class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width: 36px; height: 36px; background: var(--primary-container); color: var(--on-primary-container);">
                         <i class="fas fa-plus"></i>
@@ -55,28 +55,7 @@
                     </div>
                 </div>
 
-                <form action="{{ route('seller.bank-accounts.store') }}" method="POST">
-                    @csrf
-                    <div class="mb-3">
-                        <label for="bankNameInput" class="form-label text-muted small fw-semibold mb-1.5">{{ __('Nama Bank / E-Wallet Tujuan') }}</label>
-                        <input id="bankNameInput" type="text" name="bank_name" class="form-control" placeholder="{{ __('Contoh: BCA, Mandiri, DANA, GoPay') }}" value="{{ old('bank_name') }}" required>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="accountNumberInput" class="form-label text-muted small fw-semibold mb-1.5">{{ __('Nomor Rekening / Akun E-Wallet') }}</label>
-                        <input id="accountNumberInput" type="text" name="account_number" class="form-control font-monospace" inputmode="numeric" placeholder="{{ __('Contoh: 8012345678') }}" value="{{ old('account_number') }}" required>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="accountHolderInput" class="form-label text-muted small fw-semibold mb-1.5">{{ __('Nama Pemilik Rekening (Sesuai Bank)') }}</label>
-                        <input id="accountHolderInput" type="text" name="account_holder" class="form-control" placeholder="{{ __('Contoh: Dzulfikri Alifajri') }}" value="{{ old('account_holder') }}" required>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary w-100 py-2.5 fw-bold rounded-pill d-inline-flex align-items-center justify-content-center gap-2" style="min-height: 46px;">
-                        <i class="fas fa-save"></i>
-                        <span>{{ __('Simpan Rekening') }}</span>
-                    </button>
-                </form>
+                @include('seller.finance.partials.bank_account_form', ['idPrefix' => 'desktop'])
             </div>
         </div>
     </div>
@@ -85,13 +64,26 @@
     <div class="col-12 col-lg-7">
         <div class="card overflow-hidden">
             <div class="card-header d-flex justify-content-between align-items-center gap-2 px-3 px-sm-4 py-3">
-                <h5 class="fw-bold m-0 text-body fs-6 d-flex align-items-center gap-2">
-                    <i class="fas fa-university text-primary"></i>
-                    <span>{{ __('Daftar Rekening Tersimpan') }}</span>
-                </h5>
-                <span class="badge bg-secondary-subtle rounded-pill px-2.5 py-1 fw-semibold m3-tabular-nums">
-                    {{ $bankAccounts->count() }}
-                </span>
+                <div class="d-flex align-items-center gap-2 min-w-0">
+                    <h5 class="fw-bold m-0 text-body fs-6 d-flex align-items-center gap-2 text-truncate">
+                        <i class="fas fa-university text-primary"></i>
+                        <span class="text-truncate">{{ __('Daftar Rekening Tersimpan') }}</span>
+                    </h5>
+                    <span class="badge bg-secondary-subtle rounded-pill px-2.5 py-1 fw-semibold m3-tabular-nums flex-shrink-0">
+                        {{ $bankAccounts->count() }}
+                    </span>
+                </div>
+
+                {{-- Smartphone "+" Trigger Button to open Add Bank Account Modal --}}
+                <button type="button"
+                        class="btn btn-primary rounded-pill d-md-none d-inline-flex align-items-center justify-content-center flex-shrink-0 p-0"
+                        style="width: 40px; height: 40px;"
+                        data-bs-toggle="modal"
+                        data-bs-target="#addBankAccountModal"
+                        title="{{ __('Tambah Rekening Payout') }}"
+                        aria-label="{{ __('Tambah Rekening Payout') }}">
+                    <i class="fas fa-plus"></i>
+                </button>
             </div>
 
             <div class="card-body p-0">
@@ -153,11 +145,55 @@
                             <i class="fas fa-university"></i>
                         </span>
                         <p class="fw-semibold text-body mb-1 small">{{ __('Belum ada rekening payout yang disimpan.') }}</p>
-                        <p class="text-muted small mb-0">{{ __('Tambahkan rekening bank atau e-wallet untuk mulai menarik saldo.') }}</p>
+                        <p class="text-muted small mb-3 mb-md-0">{{ __('Tambahkan rekening bank atau e-wallet untuk mulai menarik saldo.') }}</p>
+                        <button type="button"
+                                class="btn btn-primary rounded-pill px-4 py-2 fw-semibold d-md-none"
+                                data-bs-toggle="modal"
+                                data-bs-target="#addBankAccountModal">
+                            <i class="fas fa-plus me-1.5"></i>{{ __('Tambah Rekening') }}
+                        </button>
                     </div>
                 @endif
             </div>
         </div>
     </div>
 </div>
+
+@push('modals')
+{{-- Smartphone Modal: Tambah Rekening Payout --}}
+<div class="modal fade m3-sheet-modal" id="addBankAccountModal" tabindex="-1" aria-labelledby="addBankAccountModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content" style="border-radius: var(--radius-xl, 28px); border: 1px solid var(--outline-variant);">
+            <div class="d-md-none m3-sheet-handle" aria-hidden="true"></div>
+            <div class="modal-header border-0 px-4 pt-3 pt-md-4 pb-2">
+                <div>
+                    <h5 class="fw-bold mb-0 text-body" id="addBankAccountModalLabel">
+                        <i class="fas fa-plus-circle text-primary me-2"></i>{{ __('Tambah Rekening Payout') }}
+                    </h5>
+                    <small class="text-muted">{{ __('Mendukung Bank Nasional & E-Wallet') }}</small>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ __('Tutup') }}"></button>
+            </div>
+            <div class="modal-body px-4 py-3">
+                @include('seller.finance.partials.bank_account_form', ['idPrefix' => 'modal'])
+            </div>
+        </div>
+    </div>
+</div>
+@endpush
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    @if($errors->has('bank_name') || $errors->has('account_number') || $errors->has('account_holder'))
+    if (window.innerWidth < 768) {
+        const modalEl = document.getElementById('addBankAccountModal');
+        if (modalEl && window.bootstrap) {
+            bootstrap.Modal.getOrCreateInstance(modalEl).show();
+        }
+    }
+    @endif
+});
+</script>
+@endpush
 @endsection

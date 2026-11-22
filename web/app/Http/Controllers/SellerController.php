@@ -1036,10 +1036,20 @@ class SellerController extends Controller
     // ==========================================
     // FINANCE & WITHDRAWALS
     // ==========================================
-    public function finance()
+    public function finance(Request $request)
     {
         $sellerId = Auth::id();
         $user = Auth::user();
+
+        // Held funds
+        $heldFunds = \App\Models\HeldFund::with(['product', 'order'])
+            ->where('seller_id', $sellerId)
+            ->orderBy('created_at', 'desc')
+            ->paginate(10, ['*'], 'held_page');
+
+        if ($request->query('partial') === 'held_funds') {
+            return view('seller.finance.partials.held_funds_list', compact('heldFunds'));
+        }
 
         $withdrawals = WithdrawalRequest::where('seller_id', $sellerId)
             ->orderBy('created_at', 'desc')
@@ -1048,16 +1058,10 @@ class SellerController extends Controller
         // Fetch saved bank accounts
         $bankAccounts = \App\Models\SellerBankAccount::where('user_id', $sellerId)->get();
 
-        // Held funds
         $heldBalance = (int) DB::table('held_funds')
             ->where('seller_id', $sellerId)
             ->where('status', 'held')
             ->sum('amount');
-
-        $heldFunds = \App\Models\HeldFund::with(['product', 'order'])
-            ->where('seller_id', $sellerId)
-            ->orderBy('created_at', 'desc')
-            ->paginate(10, ['*'], 'held_page');
 
         return view('seller.finance.index', compact('user', 'withdrawals', 'bankAccounts', 'heldBalance', 'heldFunds'));
     }

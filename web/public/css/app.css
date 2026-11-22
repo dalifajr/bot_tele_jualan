@@ -1161,6 +1161,60 @@ a:hover {
     cursor: not-allowed;
 }
 
+.m3-finance-card-cta {
+    min-height: 40px;
+    border-radius: var(--radius-pill) !important;
+    font-weight: 700 !important;
+    font-size: 0.84rem !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+}
+
+.m3-finance-card-cta.is-warning-tonal {
+    background-color: var(--surface-container-lowest) !important;
+    color: #5b3200 !important;
+    border: 1px solid rgba(180, 83, 9, 0.25) !important;
+}
+
+[data-bs-theme="dark"] .m3-finance-card-cta.is-warning-tonal {
+    background-color: rgba(253, 214, 99, 0.16) !important;
+    color: var(--cm-sys-color-status-warning) !important;
+    border: 1px solid rgba(253, 214, 99, 0.35) !important;
+}
+
+.m3-sheet-handle {
+    width: 36px;
+    height: 4px;
+    border-radius: 999px;
+    background-color: var(--outline-variant);
+    margin: 10px auto 2px;
+}
+
+@media (max-width: 767.98px) {
+    .m3-sheet-modal .modal-dialog {
+        margin: 0 !important;
+        max-width: 100% !important;
+        min-height: 100%;
+        display: flex;
+        align-items: flex-end;
+    }
+
+    .m3-sheet-modal .modal-content {
+        border-radius: 28px 28px 0 0 !important;
+        border-bottom: 0 !important;
+        border-left: 0 !important;
+        border-right: 0 !important;
+        max-height: 88dvh;
+        width: 100%;
+    }
+
+    .m3-sheet-modal .modal-footer {
+        padding-bottom: max(1rem, env(safe-area-inset-bottom)) !important;
+    }
+}
+
 .seller-stat-card-gradient h1,
 .seller-stat-card-gradient h2,
 .seller-stat-card-gradient h3,

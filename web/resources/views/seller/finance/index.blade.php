@@ -47,9 +47,9 @@
 </div>
 
 <div class="row g-3 g-lg-4">
-    {{-- Left Column: Balance Overview Cards & Withdrawal Form --}}
+    {{-- Left Column: Balance Overview Cards & Desktop Withdrawal Form --}}
     <div class="col-12 col-lg-5">
-        <div class="row g-3 mb-3 mb-lg-4">
+        <div class="row g-3 mb-0 mb-md-4">
             {{-- Wallet Balance Card (Flat Material You Primary Tonal Container) --}}
             <div class="col-12">
                 <div class="card seller-stat-card-gradient seller-stat-card-finance-wallet">
@@ -72,6 +72,16 @@
                             <strong class="fw-semibold">
                                 {{ !empty($user->commission_per_product) ? __('Per-Produk (Sesuai Katalog)') : ($user->platform_fee_percent . '% ' . __('per penjualan')) }}
                             </strong>
+                        </div>
+                        {{-- Mobile Primary CTA: Opens Withdraw Modal --}}
+                        <div class="d-md-none mt-3">
+                            <button type="button"
+                                    class="btn btn-primary w-100 m3-finance-card-cta"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#withdrawModal">
+                                <i class="fas fa-money-bill-transfer"></i>
+                                <span>{{ __('Tarik Saldo') }}</span>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -97,19 +107,30 @@
                         <div class="mt-3 pt-2.5 d-flex flex-wrap justify-content-between align-items-center gap-2 small" style="border-top: 1px solid rgba(180, 83, 9, 0.22);">
                             <span class="opacity-85">{{ __('Komisi bersih yang ditangguhkan hingga masa garansi produk selesai.') }}</span>
                             @if($heldFunds->total() > 0)
-                                <a href="#heldFundsSection" class="fw-bold text-decoration-none ms-auto" style="color: inherit;">
+                                <a href="#heldFundsSection" class="d-none d-md-inline-flex align-items-center fw-bold text-decoration-none ms-auto" style="color: inherit;">
                                     {{ __('Lihat Rincian') }} <i class="fas fa-arrow-down ms-1 small"></i>
                                 </a>
                             @endif
+                        </div>
+                        {{-- Mobile CTA: Opens Held Funds Modal with In-Modal Pagination --}}
+                        <div class="d-md-none mt-3">
+                            <button type="button"
+                                    class="btn w-100 m3-finance-card-cta is-warning-tonal"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#heldFundsModal">
+                                <i class="fas fa-list-ul"></i>
+                                <span>{{ __('Lihat Rincian') }}</span>
+                                <span class="badge bg-warning-subtle rounded-pill px-2 py-0.5 m3-tabular-nums">{{ $heldFunds->total() }}</span>
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        {{-- Withdrawal Form Card --}}
-        <div class="card">
-            <div class="card-body p-3 p-sm-4">
+        {{-- Desktop/Tablet Inline Withdrawal Form Card (Hidden on Smartphone; opened via #withdrawModal) --}}
+        <div class="card d-none d-md-block">
+            <div class="card-body p-4">
                 <div class="d-flex align-items-center gap-2.5 mb-3">
                     <span class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width: 36px; height: 36px; background: var(--primary-container); color: var(--on-primary-container);">
                         <i class="fas fa-money-bill-transfer"></i>
@@ -120,96 +141,19 @@
                     </div>
                 </div>
 
-                <form action="{{ route('seller.finance.withdraw') }}" method="POST" id="sellerWithdrawForm">
-                    @csrf
-                    <div class="mb-3">
-                        <label for="withdrawAmountInput" class="form-label text-muted small fw-semibold mb-1.5">{{ __('Nominal Penarikan (Rp)') }}</label>
-                        <div class="input-group input-group-lg">
-                            <span class="input-group-text fw-bold fs-6">Rp</span>
-                            <input
-                                type="number"
-                                id="withdrawAmountInput"
-                                name="amount"
-                                class="form-control fw-bold m3-tabular-nums"
-                                inputmode="numeric"
-                                placeholder="100000"
-                                min="10000"
-                                max="{{ $walletBalance }}"
-                                value="{{ old('amount') }}"
-                                required
-                                {{ $walletBalance < 10000 ? 'disabled' : '' }}
-                            >
-                        </div>
-
-                        {{-- Quick Amount Chips --}}
-                        <div class="d-flex flex-wrap gap-1.5 mt-2">
-                            @php
-                                $q25 = (int) floor($walletBalance * 0.25);
-                                $q50 = (int) floor($walletBalance * 0.50);
-                            @endphp
-                            <button type="button" class="btn btn-sm m3-quick-amount-chip" data-withdraw-amount="{{ $q25 }}" {{ $q25 < 10000 ? 'disabled' : '' }}>
-                                25%
-                            </button>
-                            <button type="button" class="btn btn-sm m3-quick-amount-chip" data-withdraw-amount="{{ $q50 }}" {{ $q50 < 10000 ? 'disabled' : '' }}>
-                                50%
-                            </button>
-                            <button type="button" class="btn btn-sm m3-quick-amount-chip" data-withdraw-amount="{{ $walletBalance }}" {{ $walletBalance < 10000 ? 'disabled' : '' }}>
-                                {{ __('Tarik Semua') }} (Rp {{ number_format($walletBalance, 0, ',', '.') }})
-                            </button>
-                        </div>
-                    </div>
-
-                    @if($bankAccounts->isEmpty())
-                        <div class="p-3 rounded-4 mb-3 small d-flex align-items-start gap-2.5" style="background: var(--cm-sys-color-status-warning-container); color: var(--cm-sys-color-status-warning); border: 1px solid rgba(180, 83, 9, 0.2);">
-                            <i class="fas fa-exclamation-triangle mt-0.5 flex-shrink-0"></i>
-                            <div>
-                                {{ __('Anda belum menyimpan rekening bank. Silakan simpan rekening tujuan terlebih dahulu di menu') }}
-                                <a href="{{ route('seller.bank-accounts.index') }}" class="fw-bold text-decoration-underline" style="color: inherit;">{{ __('Konfigurasi Rekening') }}</a>.
-                            </div>
-                        </div>
-                    @else
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between align-items-center mb-1.5">
-                                <label for="withdrawBankAccount" class="form-label text-muted small fw-semibold mb-0">{{ __('Pilih Rekening Tujuan Payout') }}</label>
-                                <a href="{{ route('seller.bank-accounts.index') }}" class="small fw-semibold text-decoration-none">
-                                    <i class="fas fa-plus me-1"></i>{{ __('Tambah Rekening') }}
-                                </a>
-                            </div>
-                            <select id="withdrawBankAccount" name="bank_account_id" class="form-select" required>
-                                <option value="" disabled {{ old('bank_account_id') ? '' : 'selected' }}>{{ __('-- Pilih Rekening Payout --') }}</option>
-                                @foreach($bankAccounts as $acc)
-                                    <option value="{{ $acc->id }}" {{ (string) old('bank_account_id') === (string) $acc->id ? 'selected' : '' }}>
-                                        {{ strtoupper($acc->bank_name) }} — {{ $acc->account_number }} (a.n. {{ $acc->account_holder }})
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                    @endif
-
-                    <button type="submit" class="btn btn-primary rounded-pill w-100 py-2.5 fw-bold d-inline-flex align-items-center justify-content-center gap-2" style="min-height: 46px;" {{ !$canWithdraw ? 'disabled' : '' }}>
-                        <i class="fas fa-paper-plane"></i>
-                        <span>{{ __('Ajukan Penarikan Dana') }}</span>
-                    </button>
-
-                    @if($walletBalance < 10000)
-                        <div class="mt-3 p-2.5 px-3 rounded-4 small d-flex align-items-center gap-2" style="background: var(--error-container); color: var(--on-error-container);">
-                            <i class="fas fa-circle-info flex-shrink-0"></i>
-                            <span>{{ __('Saldo Anda belum mencukupi minimal penarikan Rp 10.000.') }}</span>
-                        </div>
-                    @elseif($bankAccounts->isEmpty())
-                        <div class="mt-3 p-2.5 px-3 rounded-4 small d-flex align-items-center gap-2" style="background: var(--error-container); color: var(--on-error-container);">
-                            <i class="fas fa-circle-info flex-shrink-0"></i>
-                            <span>{{ __('Hubungkan rekening bank payout terlebih dahulu.') }}</span>
-                        </div>
-                    @endif
-                </form>
+                @include('seller.finance.partials.withdraw_form', [
+                    'idPrefix' => 'desktop',
+                    'walletBalance' => $walletBalance,
+                    'bankAccounts' => $bankAccounts,
+                    'canWithdraw' => $canWithdraw,
+                ])
             </div>
         </div>
     </div>
 
-    {{-- Right Column: Withdrawal History & Held Funds Details --}}
+    {{-- Right Column: Withdrawal History & Desktop Held Funds Details --}}
     <div class="col-12 col-lg-7">
-        {{-- Withdrawal History Card --}}
+        {{-- Withdrawal History Card (Primary visible list on Smartphone & Desktop) --}}
         <div class="card overflow-hidden">
             <div class="card-header d-flex justify-content-between align-items-center gap-2 px-3 px-sm-4 py-3">
                 <h5 class="fw-bold m-0 text-body fs-6 d-flex align-items-center gap-2">
@@ -338,9 +282,9 @@
             </div>
         </div>
 
-        {{-- Held Funds Details Card --}}
-        <div class="card overflow-hidden mt-3 mt-lg-4" id="heldFundsSection">
-            <div class="card-header d-flex justify-content-between align-items-center gap-2 px-3 px-sm-4 py-3">
+        {{-- Desktop/Tablet Inline Held Funds Details Card (Hidden on Smartphone; opened via #heldFundsModal) --}}
+        <div class="card overflow-hidden mt-4 d-none d-md-block" id="heldFundsSection">
+            <div class="card-header d-flex justify-content-between align-items-center gap-2 px-4 py-3">
                 <h5 class="fw-bold m-0 text-body fs-6 d-flex align-items-center gap-2">
                     <i class="fas fa-shield-halved text-warning"></i>
                     <span>{{ __('Rincian Saldo Tertahan') }}</span>
@@ -352,8 +296,7 @@
 
             <div class="card-body p-0">
                 @if($heldFunds->count() > 0)
-                    {{-- Desktop Table View --}}
-                    <div class="table-responsive d-none d-md-block">
+                    <div class="table-responsive">
                         <table class="table table-hover align-middle mb-0">
                             <thead>
                                 <tr class="text-secondary small">
@@ -390,41 +333,9 @@
                         </table>
                     </div>
 
-                    {{-- Mobile Stacked Card List --}}
-                    <div class="d-md-none p-3 d-flex flex-column gap-2.5">
-                        @foreach($heldFunds as $fund)
-                            <div class="m3-mobile-item-card">
-                                <div class="d-flex justify-content-between align-items-start gap-2 mb-1.5">
-                                    <div class="min-w-0">
-                                        <div class="fw-bold text-primary font-monospace small">{{ $fund->order->order_ref ?? 'N/A' }}</div>
-                                        <div class="fw-semibold text-body small">{{ $fund->product->name ?? 'N/A' }}</div>
-                                    </div>
-                                    <div class="flex-shrink-0">
-                                        @if($fund->status === 'held')
-                                            <span class="badge bg-warning-subtle rounded-pill px-2.5 py-1 fw-semibold">{{ __('Tertahan') }}</span>
-                                        @elseif($fund->status === 'released')
-                                            <span class="badge bg-success-subtle rounded-pill px-2.5 py-1 fw-semibold">{{ __('Dicairkan') }}</span>
-                                        @else
-                                            <span class="badge bg-danger-subtle rounded-pill px-2.5 py-1 fw-semibold">{{ __('Batal') }}</span>
-                                        @endif
-                                    </div>
-                                </div>
-                                <div class="d-flex justify-content-between align-items-center gap-2 pt-2 mt-2" style="border-top: 1px solid var(--outline-variant);">
-                                    <div class="text-muted" style="font-size: 0.74rem;">
-                                        <i class="far fa-calendar-check me-1"></i>{{ __('Estimasi Cair:') }}
-                                        <strong class="text-body">{{ $fund->release_at ? $fund->release_at->format('d M Y, H:i') : '-' }}</strong>
-                                    </div>
-                                    <div class="fw-bold text-success text-nowrap m3-tabular-nums">
-                                        Rp {{ number_format($fund->amount, 0, ',', '.') }}
-                                    </div>
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
-
                     @if($heldFunds->hasPages())
-                        <div class="px-3 px-sm-4 py-3 border-top">
-                            {{ $heldFunds->appends(request()->except('held_page'))->links() }}
+                        <div class="px-4 py-3 border-top">
+                            {{ $heldFunds->appends(request()->except(['held_page', 'partial']))->links() }}
                         </div>
                     @endif
                 @else
@@ -442,13 +353,68 @@
 </div>
 
 @push('modals')
+{{-- Smartphone Modal: Tarik Saldo (Withdrawal) --}}
+<div class="modal fade m3-sheet-modal" id="withdrawModal" tabindex="-1" aria-labelledby="withdrawModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content" style="border-radius: var(--radius-xl, 28px); border: 1px solid var(--outline-variant);">
+            <div class="d-md-none m3-sheet-handle" aria-hidden="true"></div>
+            <div class="modal-header border-0 px-4 pt-3 pt-md-4 pb-2">
+                <div>
+                    <h5 class="fw-bold mb-0 text-body" id="withdrawModalLabel">
+                        <i class="fas fa-money-bill-transfer text-primary me-2"></i>{{ __('Tarik Saldo (Withdrawal)') }}
+                    </h5>
+                    <small class="text-muted">
+                        {{ __('Saldo tersedia:') }} <strong class="text-body m3-tabular-nums">Rp {{ number_format($walletBalance, 0, ',', '.') }}</strong>
+                    </small>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ __('Tutup') }}"></button>
+            </div>
+            <div class="modal-body px-4 py-3">
+                @include('seller.finance.partials.withdraw_form', [
+                    'idPrefix' => 'modal',
+                    'walletBalance' => $walletBalance,
+                    'bankAccounts' => $bankAccounts,
+                    'canWithdraw' => $canWithdraw,
+                ])
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Smartphone Modal: Rincian Saldo Tertahan (with AJAX Pagination) --}}
+<div class="modal fade m3-sheet-modal" id="heldFundsModal" tabindex="-1" aria-labelledby="heldFundsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+        <div class="modal-content" style="border-radius: var(--radius-xl, 28px); border: 1px solid var(--outline-variant);">
+            <div class="d-md-none m3-sheet-handle" aria-hidden="true"></div>
+            <div class="modal-header border-0 px-4 pt-3 pt-md-4 pb-2">
+                <div>
+                    <h5 class="fw-bold mb-0 text-body" id="heldFundsModalLabel">
+                        <i class="fas fa-shield-halved text-warning me-2"></i>{{ __('Rincian Saldo Tertahan') }}
+                    </h5>
+                    <small class="text-muted">
+                        {{ __('Total tertahan aktif:') }} <strong class="text-body m3-tabular-nums">Rp {{ number_format($heldBalanceInt, 0, ',', '.') }}</strong>
+                    </small>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ __('Tutup') }}"></button>
+            </div>
+            <div class="modal-body px-4 py-3" id="heldFundsModalBody">
+                @include('seller.finance.partials.held_funds_list', ['heldFunds' => $heldFunds])
+            </div>
+            <div class="modal-footer border-0 px-4 pb-4 pt-2">
+                <button type="button" class="btn btn-tonal px-4 rounded-pill fw-semibold w-100 w-md-auto" data-bs-dismiss="modal">{{ __('Tutup') }}</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @foreach($withdrawals as $withdrawal)
 @if($withdrawal->status === 'approved')
 {{-- View Proof Modal (M3 Dialog) --}}
-<div class="modal fade" id="viewProofModal{{ $withdrawal->id }}" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+<div class="modal fade m3-sheet-modal" id="viewProofModal{{ $withdrawal->id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content" style="border-radius: var(--radius-xl, 28px); border: 1px solid var(--outline-variant);">
-            <div class="modal-header border-0 px-4 pt-4 pb-2">
+            <div class="d-md-none m3-sheet-handle" aria-hidden="true"></div>
+            <div class="modal-header border-0 px-4 pt-3 pt-md-4 pb-2">
                 <h5 class="fw-bold mb-0 text-body">{{ __('Struk Bukti Transfer Payout') }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ __('Tutup') }}"></button>
             </div>
@@ -482,17 +448,18 @@
                 </div>
             </div>
             <div class="modal-footer border-0 px-4 pb-4 pt-2">
-                <button type="button" class="btn btn-tonal px-4 rounded-pill fw-semibold" data-bs-dismiss="modal">{{ __('Tutup') }}</button>
+                <button type="button" class="btn btn-tonal px-4 rounded-pill fw-semibold w-100 w-md-auto" data-bs-dismiss="modal">{{ __('Tutup') }}</button>
             </div>
         </div>
     </div>
 </div>
 @elseif($withdrawal->status === 'rejected')
 {{-- View Rejection Modal (M3 Dialog) --}}
-<div class="modal fade" id="viewRejectionModal{{ $withdrawal->id }}" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+<div class="modal fade m3-sheet-modal" id="viewRejectionModal{{ $withdrawal->id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content" style="border-radius: var(--radius-xl, 28px); border: 1px solid var(--outline-variant);">
-            <div class="modal-header border-0 px-4 pt-4 pb-2">
+            <div class="d-md-none m3-sheet-handle" aria-hidden="true"></div>
+            <div class="modal-header border-0 px-4 pt-3 pt-md-4 pb-2">
                 <h5 class="fw-bold mb-0 text-danger">{{ __('Pengajuan Payout Ditolak') }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ __('Tutup') }}"></button>
             </div>
@@ -513,7 +480,7 @@
                 </div>
             </div>
             <div class="modal-footer border-0 px-4 pb-4 pt-2">
-                <button type="button" class="btn btn-tonal px-4 rounded-pill fw-semibold" data-bs-dismiss="modal">{{ __('Tutup') }}</button>
+                <button type="button" class="btn btn-tonal px-4 rounded-pill fw-semibold w-100 w-md-auto" data-bs-dismiss="modal">{{ __('Tutup') }}</button>
             </div>
         </div>
     </div>
@@ -525,18 +492,70 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const amountInput = document.getElementById('withdrawAmountInput');
-    if (!amountInput) return;
-
+    // Quick amount chips (scoped per form so both desktop & mobile modal work cleanly)
     document.querySelectorAll('[data-withdraw-amount]').forEach(function (chip) {
         chip.addEventListener('click', function () {
+            const form = this.closest('form');
+            const input = form ? form.querySelector('[data-withdraw-input]') : null;
             const val = parseInt(this.dataset.withdrawAmount || '0', 10);
-            if (val >= 10000) {
-                amountInput.value = val;
-                amountInput.focus();
+            if (input && val >= 10000) {
+                input.value = val;
+                input.focus();
             }
         });
     });
+
+    // In-modal AJAX pagination for Held Funds modal
+    const heldModalBody = document.getElementById('heldFundsModalBody');
+    if (heldModalBody) {
+        heldModalBody.addEventListener('click', async function (e) {
+            const link = e.target.closest('.m3-held-funds-pagination a');
+            if (!link || !link.href) return;
+
+            e.preventDefault();
+            try {
+                const url = new URL(link.href, window.location.origin);
+                url.searchParams.set('partial', 'held_funds');
+
+                heldModalBody.style.opacity = '0.55';
+                heldModalBody.style.pointerEvents = 'none';
+
+                const res = await fetch(url.toString(), {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+
+                const html = await res.text();
+                heldModalBody.innerHTML = html;
+                heldModalBody.scrollTop = 0;
+            } catch (err) {
+                window.location.href = link.href;
+            } finally {
+                heldModalBody.style.opacity = '';
+                heldModalBody.style.pointerEvents = '';
+            }
+        });
+    }
+
+    // Auto-open Withdraw Modal on smartphone if validation error occurred
+    @if($errors->has('amount') || $errors->has('bank_account_id'))
+    if (window.innerWidth < 768) {
+        const withdrawModalEl = document.getElementById('withdrawModal');
+        if (withdrawModalEl && window.bootstrap) {
+            bootstrap.Modal.getOrCreateInstance(withdrawModalEl).show();
+        }
+    }
+    @endif
+
+    // Auto-open Held Funds Modal on smartphone when navigating directly with ?held_page=...
+    @if(request()->has('held_page'))
+    if (window.innerWidth < 768) {
+        const heldModalEl = document.getElementById('heldFundsModal');
+        if (heldModalEl && window.bootstrap) {
+            bootstrap.Modal.getOrCreateInstance(heldModalEl).show();
+        }
+    }
+    @endif
 });
 </script>
 @endpush
