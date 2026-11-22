@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\BroadcastFailure;
 use App\Models\BroadcastJob;
 use App\Models\BroadcastRead;
 use App\Models\User;
@@ -293,6 +294,49 @@ class BroadcastReadAnalyticsService
             ];
         }
 
+        $failureSummary = [];
+        $failuresList = [];
+        $failuresTotalLogged = 0;
+
+        if (Schema::hasTable('broadcast_failures')) {
+            $grouped = BroadcastFailure::where('broadcast_job_id', $job->id)
+                ->selectRaw('error_category, COUNT(*) as total')
+                ->groupBy('error_category')
+                ->orderByDesc('total')
+                ->get();
+
+            foreach ($grouped as $row) {
+                $meta = BroadcastFailure::categoryMeta((string) $row->error_category);
+                $count = (int) $row->total;
+                $failuresTotalLogged += $count;
+                $failureSummary[] = array_merge($meta, ['count' => $count]);
+            }
+
+            $recentFailures = BroadcastFailure::where('broadcast_job_id', $job->id)
+                ->orderByDesc('id')
+                ->limit(100)
+                ->get();
+
+            foreach ($recentFailures as $failure) {
+                $meta = BroadcastFailure::categoryMeta((string) $failure->error_category);
+                $failuresList[] = [
+                    'id' => $failure->id,
+                    'user_id' => $failure->user_id,
+                    'recipient_name' => $failure->recipient_name ?: ($failure->telegram_id ?: '-'),
+                    'telegram_id' => $failure->telegram_id,
+                    'error_category' => $failure->error_category,
+                    'category_label' => $meta['label'],
+                    'badge_class' => $meta['badge_class'],
+                    'icon' => $meta['icon'],
+                    'error_code' => $failure->error_code,
+                    'error_message' => $failure->error_message,
+                    'created_at' => $failure->created_at
+                        ? $failure->created_at->copy()->timezone($tz)->format('d M Y, H:i:s')
+                        : '-',
+                ];
+            }
+        }
+
         return [
             'job_id' => $job->id,
             'status' => $job->status,
@@ -313,6 +357,10 @@ class BroadcastReadAnalyticsService
                 ? $job->last_read_calculated_at->copy()->timezone($tz)->format('d M Y, H:i:s')
                 : null,
             'timeline' => $timeline,
+            'failure_summary' => $failureSummary,
+            'failures_total_logged' => $failuresTotalLogged,
+            'failures' => $failuresList,
+            'failures_export_url' => route('admin.broadcast.failures.export', $job->id),
         ];
     }
 

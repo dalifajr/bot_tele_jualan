@@ -187,12 +187,23 @@
                                     @endif
                                 </td>
                                 <td>
-                                    <div class="small">
+                                    <div class="small d-flex align-items-center flex-wrap gap-1">
                                         <span class="text-success fw-bold"><i class="fas fa-check me-1"></i>{{ $history->sent_count }}</span>
-                                        <span class="text-muted mx-1">|</span>
-                                        <span class="text-danger fw-bold"><i class="fas fa-times me-1"></i>{{ $history->failed_count }}</span>
-                                        <div class="text-muted" style="font-size: 0.7rem;">{{ __('dari') }} {{ $history->total_targets }}</div>
+                                        <span class="text-muted">|</span>
+                                        @if($history->failed_count > 0)
+                                            <button type="button"
+                                                    class="btn btn-sm bg-danger-subtle text-danger border border-danger-subtle rounded-pill py-0 px-2 fw-bold d-inline-flex align-items-center gap-1"
+                                                    style="font-size: 0.76rem;"
+                                                    onclick="openBroadcastAnalytics({{ $history->id }}, 'failures')"
+                                                    title="{{ __('Klik untuk melihat penyebab gagal') }}">
+                                                <i class="fas fa-times"></i>{{ $history->failed_count }}
+                                                <i class="fas fa-circle-info" style="font-size: 0.68rem;"></i>
+                                            </button>
+                                        @else
+                                            <span class="text-muted fw-semibold"><i class="fas fa-times me-1"></i>0</span>
+                                        @endif
                                     </div>
+                                    <div class="text-muted mt-1" style="font-size: 0.7rem;">{{ __('dari') }} {{ $history->total_targets }}</div>
                                 </td>
                                 <td>
                                     <button type="button"
@@ -222,10 +233,17 @@
                                         </button>
                                         <ul class="dropdown-menu dropdown-menu-end border" style="border-radius: 14px;">
                                             <li>
-                                                <button class="dropdown-item py-2" onclick="openBroadcastAnalytics({{ $history->id }})">
+                                                <button class="dropdown-item py-2" onclick="openBroadcastAnalytics({{ $history->id }}, 'reads')">
                                                     <i class="fas fa-chart-line text-primary me-2"></i>{{ __('Laporan Dibaca') }}
                                                 </button>
                                             </li>
+                                            @if($history->failed_count > 0)
+                                            <li>
+                                                <button class="dropdown-item py-2 text-danger" onclick="openBroadcastAnalytics({{ $history->id }}, 'failures')">
+                                                    <i class="fas fa-triangle-exclamation me-2"></i>{{ __('Penyebab Gagal') }} ({{ $history->failed_count }})
+                                                </button>
+                                            </li>
+                                            @endif
                                             <li>
                                                 <button class="dropdown-item py-2" onclick="resendBroadcast({{ $history->id }})">
                                                     <i class="fas fa-redo text-success me-2"></i>{{ __('Resend') }}
@@ -262,21 +280,21 @@
 
 @push('modals')
 <div class="modal fade" id="broadcastAnalyticsModal" tabindex="-1" aria-labelledby="broadcastAnalyticsModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
         <div class="modal-content border" style="border-radius: 28px; background: var(--surface-container-lowest, var(--bs-body-bg)); border-color: var(--outline-variant, var(--bs-border-color)) !important;">
             <div class="modal-header border-0 px-4 pt-4 pb-2">
                 <div>
                     <h5 class="modal-title fw-bold text-body mb-0" id="broadcastAnalyticsModalLabel">
-                        <i class="fas fa-chart-line text-primary me-2"></i>{{ __('Laporan Pembacaan Broadcast') }}
+                        <i class="fas fa-chart-line text-primary me-2"></i>{{ __('Laporan Broadcast') }}
                     </h5>
-                    <small class="text-muted" id="bcAnalyticsSubtitle">{{ __('Kalkulasi bertahap 10 menit, 30 menit, 1 jam, dan 1 hari') }}</small>
+                    <small class="text-muted" id="bcAnalyticsSubtitle">{{ __('Laporan pembacaan bertahap & diagnostik kegagalan pengiriman') }}</small>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body px-4 py-3" id="bcAnalyticsBody">
                 <div class="text-center py-5 text-muted">
                     <i class="fas fa-spinner fa-spin fa-2x mb-2 text-primary"></i>
-                    <div class="small">{{ __('Memuat laporan pembacaan...') }}</div>
+                    <div class="small">{{ __('Memuat laporan broadcast...') }}</div>
                 </div>
             </div>
             <div class="modal-footer border-0 px-4 pb-4 pt-2 d-flex justify-content-between align-items-center flex-wrap gap-2">
@@ -408,7 +426,7 @@ function startPolling(jobId) {
                 if (job.status === 'completed' || job.status === 'failed') {
                     clearInterval(pollInterval);
                     pollInterval = null;
-                    finishBroadcastUI(job.status, job.sent, job.failed);
+                    finishBroadcastUI(job.status, job.sent, job.failed, jobId);
                 }
             }
         } catch (e) {
@@ -417,7 +435,7 @@ function startPolling(jobId) {
     }, 1500);
 }
 
-function finishBroadcastUI(status, success, failed) {
+function finishBroadcastUI(status, success, failed, jobId = null) {
     const btnSend = document.getElementById('btnSend');
     const messageTextarea = document.getElementById('broadcastMessage');
     const mediaFileInput = document.getElementById('mediaFile');
@@ -429,8 +447,12 @@ function finishBroadcastUI(status, success, failed) {
         icon: status === 'completed' ? 'success' : 'error',
         title: status === 'completed' ? '{{ __('Broadcast Selesai!') }}' : '{{ __('Broadcast Gagal') }}',
         html: `{{ __('Laporan Pengiriman Latar Belakang:') }}<br>{{ __('Berhasil terkirim:') }} <b>${success}</b><br>{{ __('Gagal terkirim:') }} <b>${failed}</b>`,
-        confirmButtonColor: status === 'completed' ? '#198754' : '#dc3545'
-    }).then(() => {
+        confirmButtonColor: status === 'completed' ? '#198754' : '#dc3545',
+        confirmButtonText: '{{ __('Tutup') }}',
+        showDenyButton: failed > 0 && !!jobId,
+        denyButtonText: '<i class="fas fa-triangle-exclamation me-1"></i>{{ __('Lihat Penyebab Gagal') }}',
+        denyButtonColor: '#dc3545'
+    }).then((result) => {
         // Reset form
         messageTextarea.disabled = false;
         messageTextarea.value = '';
@@ -442,6 +464,10 @@ function finishBroadcastUI(status, success, failed) {
         btnSend.innerHTML = '<i class="fas fa-paper-plane me-2"></i>{{ __('Mulai Kirim Broadcast') }}';
         btnSend.classList.replace('btn-success', 'btn-primary');
         document.getElementById('progressSection').classList.add('d-none');
+
+        if (result.isDenied && jobId) {
+            openBroadcastAnalytics(jobId, 'failures');
+        }
     });
 }
 
@@ -716,8 +742,167 @@ async function cancelBroadcast() {
     }
 }
 let activeAnalyticsJobId = null;
+let activeAnalyticsData = null;
+let activeAnalyticsTab = 'reads';
+let activeFailureCategory = 'all';
 
-function renderBroadcastAnalytics(data) {
+function escapeAnalyticsHtml(str) {
+    return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function switchBroadcastAnalyticsTab(tab) {
+    activeAnalyticsTab = tab === 'failures' ? 'failures' : 'reads';
+    if (activeAnalyticsData) {
+        renderBroadcastAnalytics(activeAnalyticsData, activeAnalyticsTab);
+    }
+}
+
+function filterBroadcastFailures(category) {
+    activeFailureCategory = category || 'all';
+    if (activeAnalyticsData) {
+        renderBroadcastAnalytics(activeAnalyticsData, 'failures');
+    }
+}
+
+function buildFailuresTabHtml(data) {
+    const failedCount = Number(data.failed_count || 0);
+    const totalLogged = Number(data.failures_total_logged || 0);
+    const summary = Array.isArray(data.failure_summary) ? data.failure_summary : [];
+    const allFailures = Array.isArray(data.failures) ? data.failures : [];
+
+    if (failedCount === 0 && totalLogged === 0) {
+        return `
+            <div class="text-center py-5 px-3 rounded-4 border" style="background: var(--surface-container, var(--bs-tertiary-bg)); border-color: var(--outline-variant, var(--bs-border-color)) !important;">
+                <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle text-success mb-3" style="width: 56px; height: 56px; font-size: 1.4rem;">
+                    <i class="fas fa-check"></i>
+                </div>
+                <h6 class="fw-bold text-body mb-1">{{ __('Tidak Ada Kegagalan Pengiriman') }}</h6>
+                <p class="text-muted small mb-0">{{ __('Seluruh target pada broadcast ini berhasil terkirim tanpa error dari Telegram API.') }}</p>
+            </div>
+        `;
+    }
+
+    if (totalLogged === 0 && failedCount > 0) {
+        return `
+            <div class="p-4 rounded-4 border text-center" style="background: var(--surface-container, var(--bs-tertiary-bg)); border-color: var(--outline-variant, var(--bs-border-color)) !important;">
+                <i class="fas fa-clock-rotate-left text-warning fs-2 mb-2"></i>
+                <h6 class="fw-bold text-body mb-1">{{ __('Log Rincian Error Belum Tersedia') }}</h6>
+                <p class="text-muted small mb-0">
+                    {{ __('Broadcast ini memiliki') }} <b>${failedCount}</b> {{ __('pengiriman gagal, namun dijalankan sebelum fitur pencatatan penyebab error aktif. Broadcast baru akan otomatis merekam penyebab lengkap dari Telegram API.') }}
+                </p>
+            </div>
+        `;
+    }
+
+    const validCategories = summary.map(s => s.category);
+    if (activeFailureCategory !== 'all' && !validCategories.includes(activeFailureCategory)) {
+        activeFailureCategory = 'all';
+    }
+
+    const filteredRows = activeFailureCategory === 'all'
+        ? allFailures
+        : allFailures.filter(item => item.error_category === activeFailureCategory);
+
+    const activeCategoryMeta = summary.find(s => s.category === activeFailureCategory);
+    const exportUrl = data.failures_export_url
+        ? (activeFailureCategory !== 'all' ? `${data.failures_export_url}?category=${encodeURIComponent(activeFailureCategory)}` : data.failures_export_url)
+        : '#';
+
+    const chipsHtml = [
+        `<button type="button" onclick="filterBroadcastFailures('all')" class="btn btn-sm rounded-pill px-3 py-1 fw-semibold ${activeFailureCategory === 'all' ? 'btn-primary' : 'btn-light border'}">
+            {{ __('Semua') }} <span class="ms-1 opacity-75">(${totalLogged})</span>
+        </button>`,
+        ...summary.map(cat => {
+            const isActive = activeFailureCategory === cat.category;
+            return `
+                <button type="button"
+                        onclick="filterBroadcastFailures('${escapeAnalyticsHtml(cat.category)}')"
+                        title="${escapeAnalyticsHtml(cat.description)}"
+                        class="btn btn-sm rounded-pill px-3 py-1 fw-semibold d-inline-flex align-items-center gap-1.5 ${isActive ? 'btn-primary' : 'btn-light border'}">
+                    <i class="${escapeAnalyticsHtml(cat.icon)}"></i>
+                    <span>${escapeAnalyticsHtml(cat.label)}</span>
+                    <span class="badge ${isActive ? 'bg-white text-primary' : 'bg-danger-subtle text-danger'} rounded-pill">${cat.count}</span>
+                </button>
+            `;
+        })
+    ].join('');
+
+    const categoryNoteHtml = activeCategoryMeta ? `
+        <div class="p-2.5 px-3 rounded-4 border mb-3 small d-flex align-items-center gap-2" style="background: var(--surface-container, var(--bs-tertiary-bg)); border-color: var(--outline-variant, var(--bs-border-color)) !important;">
+            <i class="${escapeAnalyticsHtml(activeCategoryMeta.icon)} text-primary"></i>
+            <div>
+                <span class="fw-bold text-body">${escapeAnalyticsHtml(activeCategoryMeta.label)}:</span>
+                <span class="text-muted">${escapeAnalyticsHtml(activeCategoryMeta.description)}</span>
+            </div>
+        </div>
+    ` : '';
+
+    const tableRowsHtml = filteredRows.map(item => `
+        <tr>
+            <td>
+                <div class="fw-semibold small text-body">${escapeAnalyticsHtml(item.recipient_name)}</div>
+                <div class="text-muted font-monospace" style="font-size: 0.72rem;">ID: ${escapeAnalyticsHtml(item.telegram_id || '-')}</div>
+            </td>
+            <td>
+                <span class="badge rounded-pill px-2.5 py-1 ${escapeAnalyticsHtml(item.badge_class)}">
+                    <i class="${escapeAnalyticsHtml(item.icon)} me-1"></i>${escapeAnalyticsHtml(item.category_label)}
+                </span>
+            </td>
+            <td>
+                <div class="small text-body" style="word-break: break-word;">
+                    ${item.error_code ? `<code class="me-1 text-danger fw-bold">${escapeAnalyticsHtml(item.error_code)}</code>` : ''}
+                    <span>${escapeAnalyticsHtml(item.error_message)}</span>
+                </div>
+            </td>
+            <td class="text-nowrap small text-muted">${escapeAnalyticsHtml(item.created_at)}</td>
+        </tr>
+    `).join('');
+
+    const limitBanner = totalLogged > allFailures.length ? `
+        <div class="p-2.5 px-3 rounded-4 small text-muted border mt-3" style="background: var(--surface-container, var(--bs-tertiary-bg)); border-color: var(--outline-variant, var(--bs-border-color)) !important;">
+            <i class="fas fa-circle-info text-primary me-1"></i>
+            {{ __('Menampilkan') }} ${allFailures.length} {{ __('kegagalan terbaru dari total') }} <b>${totalLogged}</b>. {{ __('Klik tombol Unduh CSV untuk melihat seluruh daftar.') }}
+        </div>
+    ` : '';
+
+    return `
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+            <div class="d-flex flex-wrap gap-2">${chipsHtml}</div>
+            <a href="${escapeAnalyticsHtml(exportUrl)}" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-semibold flex-shrink-0">
+                <i class="fas fa-file-csv me-1"></i>{{ __('Unduh CSV') }}
+            </a>
+        </div>
+        ${categoryNoteHtml}
+        <div class="table-responsive rounded-4 border" style="max-height: 380px; overflow-y: auto; border-color: var(--outline-variant, var(--bs-border-color)) !important;">
+            <table class="table table-sm table-hover align-middle mb-0">
+                <thead class="table-light sticky-top">
+                    <tr>
+                        <th class="border-0 ps-3">{{ __('Penerima') }}</th>
+                        <th class="border-0">{{ __('Kategori Penyebab') }}</th>
+                        <th class="border-0">{{ __('Detail Pesan Telegram') }}</th>
+                        <th class="border-0 pe-3">{{ __('Waktu') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${tableRowsHtml || `<tr><td colspan="4" class="text-center py-4 text-muted small">{{ __('Tidak ada data untuk kategori ini.') }}</td></tr>`}
+                </tbody>
+            </table>
+        </div>
+        ${limitBanner}
+    `;
+}
+
+function renderBroadcastAnalytics(data, tab = null) {
+    activeAnalyticsData = data;
+    if (tab) {
+        activeAnalyticsTab = tab === 'failures' ? 'failures' : 'reads';
+    }
+
     const body = document.getElementById('bcAnalyticsBody');
     const subtitle = document.getElementById('bcAnalyticsSubtitle');
     const updatedAt = document.getElementById('bcAnalyticsUpdatedAt');
@@ -744,8 +929,8 @@ function renderBroadcastAnalytics(data) {
         return `
             <div class="d-flex justify-content-between align-items-center p-2.5 rounded-3 border" style="background: var(--surface-container-lowest, var(--bs-body-bg)); border-color: var(--outline-variant, var(--bs-border-color)) !important;">
                 <div>
-                    <div class="fw-semibold small text-body">${cp.label}</div>
-                    <div class="text-muted" style="font-size: 0.72rem;">${cp.captured && cp.captured_at ? '{{ __('Direkam:') }} ' + cp.captured_at : '{{ __('Menunggu jadwal kalkulasi') }}'}</div>
+                    <div class="fw-semibold small text-body">${escapeAnalyticsHtml(cp.label)}</div>
+                    <div class="text-muted" style="font-size: 0.72rem;">${cp.captured && cp.captured_at ? '{{ __('Direkam:') }} ' + escapeAnalyticsHtml(cp.captured_at) : '{{ __('Menunggu jadwal kalkulasi') }}'}</div>
                 </div>
                 <div class="text-end d-flex align-items-center gap-3">
                     <div>${metric}</div>
@@ -755,7 +940,7 @@ function renderBroadcastAnalytics(data) {
         `;
     }).join('');
 
-    body.innerHTML = `
+    const readsTabHtml = `
         <div class="row g-2.5 mb-3">
             <div class="col-6 col-md-3">
                 <div class="p-3 rounded-4 border h-100" style="background: var(--surface-container, var(--bs-tertiary-bg)); border-color: var(--outline-variant, var(--bs-border-color)) !important;">
@@ -800,6 +985,26 @@ function renderBroadcastAnalytics(data) {
         </div>
     `;
 
+    const failedCount = Number(data.failed_count || 0);
+    const tabsBarHtml = `
+        <div class="d-flex gap-2 mb-3 p-1.5 rounded-pill border" style="background: var(--surface-container, var(--bs-tertiary-bg)); border-color: var(--outline-variant, var(--bs-border-color)) !important;">
+            <button type="button"
+                    onclick="switchBroadcastAnalyticsTab('reads')"
+                    class="btn btn-sm rounded-pill flex-fill fw-semibold py-2 ${activeAnalyticsTab === 'reads' ? 'btn-primary' : 'btn-link text-body text-decoration-none'}">
+                <i class="fas fa-eye me-1.5"></i>{{ __('Laporan Dibaca') }}
+                <span class="badge ${activeAnalyticsTab === 'reads' ? 'bg-white text-primary' : 'bg-primary-subtle text-primary'} rounded-pill ms-1">${data.read_count}</span>
+            </button>
+            <button type="button"
+                    onclick="switchBroadcastAnalyticsTab('failures')"
+                    class="btn btn-sm rounded-pill flex-fill fw-semibold py-2 ${activeAnalyticsTab === 'failures' ? 'btn-danger' : 'btn-link text-body text-decoration-none'}">
+                <i class="fas fa-triangle-exclamation me-1.5"></i>{{ __('Penyebab Gagal') }}
+                <span class="badge ${activeAnalyticsTab === 'failures' ? 'bg-white text-danger' : (failedCount > 0 ? 'bg-danger-subtle text-danger' : 'bg-secondary-subtle text-secondary')} rounded-pill ms-1">${failedCount}</span>
+            </button>
+        </div>
+    `;
+
+    body.innerHTML = tabsBarHtml + (activeAnalyticsTab === 'failures' ? buildFailuresTabHtml(data) : readsTabHtml);
+
     // Sync table row numbers inline
     const countEl = document.getElementById(`bc-read-count-${data.job_id}`);
     const rateEl = document.getElementById(`bc-read-rate-${data.job_id}`);
@@ -810,16 +1015,20 @@ function renderBroadcastAnalytics(data) {
         const capturedList = data.timeline.filter(t => t.captured);
         if (capturedList.length > 0) {
             const latest = capturedList[capturedList.length - 1];
-            cpEl.innerHTML = `<i class="fas fa-clock me-1"></i>{{ __('Tahap:') }} ${latest.label}`;
+            cpEl.innerHTML = `<i class="fas fa-clock me-1"></i>{{ __('Tahap:') }} ${escapeAnalyticsHtml(latest.label)}`;
         }
     }
 }
 
-async function openBroadcastAnalytics(jobId) {
+async function openBroadcastAnalytics(jobId, initialTab = 'reads') {
     activeAnalyticsJobId = jobId;
+    activeAnalyticsData = null;
+    activeAnalyticsTab = initialTab === 'failures' ? 'failures' : 'reads';
+    activeFailureCategory = 'all';
+
     const modalEl = document.getElementById('broadcastAnalyticsModal');
     const body = document.getElementById('bcAnalyticsBody');
-    body.innerHTML = `<div class="text-center py-5 text-muted"><i class="fas fa-spinner fa-spin fa-2x mb-2 text-primary"></i><div class="small">{{ __('Memuat laporan pembacaan...') }}</div></div>`;
+    body.innerHTML = `<div class="text-center py-5 text-muted"><i class="fas fa-spinner fa-spin fa-2x mb-2 text-primary"></i><div class="small">{{ __('Memuat laporan broadcast...') }}</div></div>`;
 
     const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
     modal.show();
@@ -828,12 +1037,12 @@ async function openBroadcastAnalytics(jobId) {
         const res = await fetch(`/admin/broadcast/analytics/${jobId}`, { headers: { 'Accept': 'application/json' } });
         const data = await res.json();
         if (data.status === 'success' && data.analytics) {
-            renderBroadcastAnalytics(data.analytics);
+            renderBroadcastAnalytics(data.analytics, activeAnalyticsTab);
         } else {
-            throw new Error(data.message || '{{ __('Gagal memuat laporan pembacaan.') }}');
+            throw new Error(data.message || '{{ __('Gagal memuat laporan broadcast.') }}');
         }
     } catch (err) {
-        body.innerHTML = `<div class="alert alert-danger mb-0 rounded-4">${err.message}</div>`;
+        body.innerHTML = `<div class="alert alert-danger mb-0 rounded-4">${escapeAnalyticsHtml(err.message)}</div>`;
     }
 }
 

@@ -2,9 +2,11 @@
 
 namespace App\Services;
 
+use App\Models\BroadcastFailure;
 use App\Models\BroadcastJob;
 use App\Models\User;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
 class BroadcastDeliveryService
@@ -35,7 +37,7 @@ class BroadcastDeliveryService
 
         $targets = User::whereNotNull('telegram_id')
             ->where('role', 'customer')
-            ->get(['id', 'telegram_id']);
+            ->get(['id', 'telegram_id', 'full_name', 'username']);
 
         $token = config('telegram.bot_token');
         if (!$token) {
@@ -43,6 +45,7 @@ class BroadcastDeliveryService
             return ['status' => 'failed', 'reason' => 'no_token'];
         }
 
+        $canLogFailures = Schema::hasTable('broadcast_failures');
         $success = 0;
         $failed = 0;
 
@@ -53,12 +56,16 @@ class BroadcastDeliveryService
             }
 
             $replyMarkup = $this->buildReplyMarkup($job, (int) $targetUser->id);
-            $sentSuccessfully = $this->sendToRecipient($job, $token, (string) $targetUser->telegram_id, $replyMarkup);
+            $sendResult = $this->sendToRecipient($job, $token, (string) $targetUser->telegram_id, $replyMarkup);
 
-            if ($sentSuccessfully) {
+            if ($sendResult['ok']) {
                 $success++;
             } else {
                 $failed++;
+
+                if ($canLogFailures) {
+                    $this->recordFailure($jobId, $targetUser, $sendResult);
+                }
             }
 
             if (($success + $failed) % 5 === 0) {
@@ -155,10 +162,18 @@ class BroadcastDeliveryService
         return true;
     }
 
-    protected function sendToRecipient(BroadcastJob $job, string $token, string $chatId, ?string $replyMarkup): bool
+    /**
+     * Send broadcast message to a single recipient and return detailed delivery status.
+     *
+     * @return array{ok: bool, error_code: ?int, error_category: ?string, error_message: ?string}
+     */
+    protected function sendToRecipient(BroadcastJob $job, string $token, string $chatId, ?string $replyMarkup): array
     {
         $retry = 0;
         $maxRetries = 3;
+        $lastCode = null;
+        $lastMessage = 'Unknown Telegram API error';
+        $lastCategory = 'other';
 
         while ($retry < $maxRetries) {
             try {
@@ -202,6 +217,25 @@ class BroadcastDeliveryService
                     $response = Http::timeout(10)->post("https://api.telegram.org/bot{$token}/sendMessage", $payload);
                 }
 
+                if ($response->successful()) {
+                    return [
+                        'ok' => true,
+                        'error_code' => null,
+                        'error_category' => null,
+                        'error_message' => null,
+                    ];
+                }
+
+                $statusCode = (int) ($response->json('error_code') ?? $response->status());
+                $description = trim((string) ($response->json('description') ?? ''));
+                if ($description === '') {
+                    $description = trim(substr((string) $response->body(), 0, 500)) ?: "HTTP {$statusCode}";
+                }
+
+                $lastCode = $statusCode;
+                $lastMessage = $description;
+                $lastCategory = $this->classifyTelegramError($statusCode, $description);
+
                 if ($response->status() === 429) {
                     $retryAfter = (int) ($response->json('parameters.retry_after') ?? 2);
                     sleep(max(1, min(30, $retryAfter)));
@@ -209,13 +243,124 @@ class BroadcastDeliveryService
                     continue;
                 }
 
-                return $response->successful();
-            } catch (\Exception $e) {
+                return [
+                    'ok' => false,
+                    'error_code' => $lastCode,
+                    'error_category' => $lastCategory,
+                    'error_message' => $lastMessage,
+                ];
+            } catch (\Throwable $e) {
+                $lastCode = null;
+                $lastMessage = trim(substr($e->getMessage(), 0, 500)) ?: 'Network exception while contacting Telegram API';
+                $lastCategory = 'network_error';
                 sleep(1);
                 $retry++;
             }
         }
 
-        return false;
+        return [
+            'ok' => false,
+            'error_code' => $lastCode,
+            'error_category' => $lastCategory,
+            'error_message' => $lastMessage,
+        ];
+    }
+
+    /**
+     * Classify raw Telegram Bot API / transport errors into human-friendly categories.
+     */
+    public function classifyTelegramError(?int $statusCode, string $description): string
+    {
+        $msg = strtolower($description);
+
+        if (
+            str_contains($msg, 'bot was blocked')
+            || str_contains($msg, 'blocked by the user')
+            || str_contains($msg, 'bot was kicked')
+            || str_contains($msg, 'user is kicked')
+        ) {
+            return 'bot_blocked';
+        }
+
+        if (
+            str_contains($msg, 'user is deactivated')
+            || str_contains($msg, 'deleted account')
+        ) {
+            return 'user_deactivated';
+        }
+
+        if (
+            str_contains($msg, 'chat not found')
+            || str_contains($msg, "can't initiate conversation")
+            || str_contains($msg, 'peer_id_invalid')
+            || str_contains($msg, "can't send messages to bots")
+            || str_contains($msg, 'user not found')
+        ) {
+            return 'chat_not_found';
+        }
+
+        if (
+            str_contains($msg, "can't parse entities")
+            || str_contains($msg, 'unsupported start tag')
+            || str_contains($msg, 'unexpected end tag')
+            || str_contains($msg, 'message is too long')
+            || str_contains($msg, 'caption is too long')
+            || str_contains($msg, 'message text is empty')
+        ) {
+            return 'invalid_html';
+        }
+
+        if (
+            $statusCode === 413
+            || str_contains($msg, 'wrong file identifier')
+            || str_contains($msg, 'file is too big')
+            || str_contains($msg, 'failed to get http url')
+            || str_contains($msg, 'wrong remote file')
+            || str_contains($msg, 'photo_invalid_dimensions')
+            || str_contains($msg, 'media_caption_too_long')
+        ) {
+            return 'media_error';
+        }
+
+        if ($statusCode === 429 || str_contains($msg, 'too many requests')) {
+            return 'rate_limited';
+        }
+
+        if (
+            str_contains($msg, 'curl error')
+            || str_contains($msg, 'timed out')
+            || str_contains($msg, 'timeout')
+            || str_contains($msg, 'could not resolve host')
+            || str_contains($msg, 'connection refused')
+            || str_contains($msg, 'connection reset')
+        ) {
+            return 'network_error';
+        }
+
+        return 'other';
+    }
+
+    protected function recordFailure(int $jobId, User $targetUser, array $sendResult): void
+    {
+        try {
+            $fullName = trim((string) ($targetUser->full_name ?? ''));
+            $username = trim((string) ($targetUser->username ?? ''));
+            $recipientName = $fullName !== ''
+                ? ($username !== '' ? "{$fullName} (@{$username})" : $fullName)
+                : ($username !== '' ? "@{$username}" : "User #{$targetUser->id}");
+
+            BroadcastFailure::create([
+                'broadcast_job_id' => $jobId,
+                'user_id' => $targetUser->id,
+                'telegram_id' => (string) $targetUser->telegram_id,
+                'recipient_name' => mb_substr($recipientName, 0, 160),
+                'error_code' => $sendResult['error_code'],
+                'error_category' => $sendResult['error_category'] ?? 'other',
+                'error_message' => mb_substr((string) ($sendResult['error_message'] ?? 'Unknown error'), 0, 1000),
+                'created_at' => now(),
+            ]);
+        } catch (\Throwable $e) {
+            // Never interrupt broadcast delivery loop if failure logging throws
+        }
     }
 }

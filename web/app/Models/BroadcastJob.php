@@ -49,6 +49,11 @@ class BroadcastJob extends Model
         return $this->hasMany(BroadcastRead::class, 'broadcast_job_id');
     }
 
+    public function failures()
+    {
+        return $this->hasMany(BroadcastFailure::class, 'broadcast_job_id');
+    }
+
     /**
      * Effective reach base (avoiding >100% distortion when web + telegram audiences differ).
      */

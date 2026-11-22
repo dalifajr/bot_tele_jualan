@@ -2958,6 +2958,63 @@ class AdminController extends Controller
         ]);
     }
 
+    public function exportBroadcastFailures(Request $request, $jobId)
+    {
+        $job = \App\Models\BroadcastJob::findOrFail($jobId);
+        $category = trim((string) $request->query('category', ''));
+        $tz = \App\Support\SystemTimezone::active();
+
+        $query = \App\Models\BroadcastFailure::where('broadcast_job_id', $job->id)
+            ->orderBy('id');
+
+        if ($category !== '' && $category !== 'all') {
+            $query->where('error_category', $category);
+        }
+
+        $filename = sprintf('broadcast-%d-failures%s.csv', $job->id, $category && $category !== 'all' ? '-' . preg_replace('/[^a-z0-9_-]/i', '', $category) : '');
+
+        $sanitizeCsv = static function ($value): string {
+            $str = (string) $value;
+            if ($str !== '' && in_array($str[0], ['=', '+', '-', '@', "\t", "\r"], true)) {
+                return "'" . $str;
+            }
+            return $str;
+        };
+
+        return response()->streamDownload(function () use ($query, $tz, $sanitizeCsv) {
+            $handle = fopen('php://output', 'w');
+            // UTF-8 BOM for Excel compatibility
+            fwrite($handle, "\xEF\xBB\xBF");
+
+            fputcsv($handle, [
+                __('Tanggal'),
+                __('Penerima'),
+                __('Telegram ID'),
+                __('Kategori'),
+                __('Kode Error'),
+                __('Pesan Telegram'),
+            ]);
+
+            $query->chunk(500, function ($rows) use ($handle, $tz, $sanitizeCsv) {
+                foreach ($rows as $row) {
+                    $meta = \App\Models\BroadcastFailure::categoryMeta((string) $row->error_category);
+                    fputcsv($handle, [
+                        $row->created_at ? $row->created_at->copy()->timezone($tz)->format('Y-m-d H:i:s') : '-',
+                        $sanitizeCsv($row->recipient_name ?: '-'),
+                        $sanitizeCsv($row->telegram_id ?: '-'),
+                        $sanitizeCsv($meta['label']),
+                        $row->error_code !== null ? (string) $row->error_code : '-',
+                        $sanitizeCsv($row->error_message),
+                    ]);
+                }
+            });
+
+            fclose($handle);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
+    }
+
     public function trackBroadcastClick(Request $request, $jobId, $userId, $sig, \App\Services\BroadcastReadAnalyticsService $analytics)
     {
         $jobId = (int) $jobId;
