@@ -3473,6 +3473,7 @@
     "Server VPN merespons normal.": "VPN server responded normally.",
     "Server VPN yang dipilih tidak tersedia.": "The selected VPN server is not available.",
     "Server database utama aplikasi": "Primary application database server",
+    "Server mencatat koneksi dari proxy lokal (127.0.0.1). Jalankan cek-update terbaru di VPS VPN agar IP publik asli klien diteruskan dari Nginx ke Xray.": "Server recorded connections from local proxy (127.0.0.1). Run latest cek-update on the VPN VPS so real client public IPs are forwarded from Nginx to Xray.",
     "Service API pendukung bot": "Supporting bot API service",
     "Service jualan-bot otomatis di-restart.": "jualan-bot service was restarted automatically.",
     "Service utama bot Telegram Python": "Main Python Telegram bot service",

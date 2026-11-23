@@ -1005,10 +1005,10 @@
             </div>
             <div class="modal-body pt-2">
                 <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
-                    <div class="btn-group btn-group-sm" role="group" aria-label="{{ __('Rentang Log') }}">
-                        <button type="button" class="btn btn-outline-primary btn-devlog-window" data-window="5">5 {{ __('Menit') }}</button>
-                        <button type="button" class="btn btn-outline-primary btn-devlog-window active" data-window="60">1 {{ __('Jam') }}</button>
-                        <button type="button" class="btn btn-outline-primary btn-devlog-window" data-window="1440">24 {{ __('Jam') }}</button>
+                    <div class="d-flex flex-wrap align-items-center gap-1.5" role="group" aria-label="{{ __('Rentang Log') }}">
+                        <button type="button" class="btn btn-sm btn-light border text-body rounded-pill px-3 fw-semibold btn-devlog-window" data-window="5">5 {{ __('Menit') }}</button>
+                        <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 fw-semibold btn-devlog-window active" data-window="60">1 {{ __('Jam') }}</button>
+                        <button type="button" class="btn btn-sm btn-light border text-body rounded-pill px-3 fw-semibold btn-devlog-window" data-window="1440">24 {{ __('Jam') }}</button>
                     </div>
                     <button type="button" class="btn btn-sm btn-light border rounded-pill px-3 fw-semibold" id="btnRefreshDevLog">
                         <i class="fas fa-rotate me-1"></i>{{ __('Refresh') }}
@@ -1042,6 +1042,10 @@
                                 <div class="fs-5 fw-bold text-warning-emphasis" id="devLogStrikeCount">0 / 5</div>
                             </div>
                         </div>
+                    </div>
+
+                    <div id="devLogLoopbackHint" class="alert alert-warning border-0 py-2 px-3 small mb-2.5 d-none" style="border-radius: 12px;">
+                        <i class="fas fa-circle-info me-1"></i>{{ __('Server mencatat koneksi dari proxy lokal (127.0.0.1). Jalankan cek-update terbaru di VPS VPN agar IP publik asli klien diteruskan dari Nginx ke Xray.') }}
                     </div>
 
                     <div id="devLogEmpty" class="text-center text-muted small py-3 d-none">
@@ -2472,7 +2476,12 @@ document.addEventListener('DOMContentLoaded', function () {
         activeDevLogWindow = windowMinutes || 60;
 
         document.querySelectorAll('.btn-devlog-window').forEach(b => {
-            b.classList.toggle('active', parseInt(b.dataset.window, 10) === activeDevLogWindow);
+            const isActive = parseInt(b.dataset.window, 10) === activeDevLogWindow;
+            b.classList.toggle('active', isActive);
+            b.classList.toggle('btn-primary', isActive);
+            b.classList.toggle('btn-light', !isActive);
+            b.classList.toggle('border', !isActive);
+            b.classList.toggle('text-body', !isActive);
         });
 
         const loadingEl = document.getElementById('devLogLoading');
@@ -2515,6 +2524,10 @@ document.addEventListener('DOMContentLoaded', function () {
             const emptyEl = document.getElementById('devLogEmpty');
             const tableWrap = document.getElementById('devLogTableWrap');
             const tbody = document.getElementById('devLogTableBody');
+            const loopbackHint = document.getElementById('devLogLoopbackHint');
+            if (loopbackHint) {
+                loopbackHint.classList.toggle('d-none', !data.loopback_only);
+            }
 
             if (devices.length === 0) {
                 emptyEl.classList.remove('d-none');
