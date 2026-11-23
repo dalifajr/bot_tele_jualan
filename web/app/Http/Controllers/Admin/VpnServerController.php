@@ -190,6 +190,14 @@ class VpnServerController extends Controller
             ->with(!empty($result['ok']) ? 'success' : 'error', $result['message'] ?? __('Pengujian koneksi selesai.'));
     }
 
+    public function diagnose(Request $request, $id, VpnService $vpnService)
+    {
+        $server = VpnServer::findOrFail($id);
+        $report = $vpnService->diagnoseServer($server);
+
+        return response()->json($report, 200);
+    }
+
     public function destroy($id)
     {
         $server = VpnServer::findOrFail($id);

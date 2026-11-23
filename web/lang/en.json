@@ -4429,5 +4429,21 @@
     "Produk ini bukan layanan VPN.": "This product is not a VPN service.",
     "Username harus 3–24 karakter (huruf, angka, _ atau -).": "Username must be 3-24 characters (letters, numbers, _ or -).",
     "Gagal memeriksa ketersediaan username.": "Failed to check username availability.",
-    "Akun VPN :user disuspend oleh Admin. Anda diwajibkan menghubungi Admin melalui Chat untuk meminta pembukaan akses kembali.": "VPN account :user was suspended by Admin. You must contact Admin via Chat to request access restoration."
+    "Akun VPN :user disuspend oleh Admin. Anda diwajibkan menghubungi Admin melalui Chat untuk meminta pembukaan akses kembali.": "VPN account :user was suspended by Admin. You must contact Admin via Chat to request access restoration.",
+    "Diagnostik 5-Tahap": "5-Stage Diagnostics",
+    "Diagnostik Koneksi Server VPN": "VPN Server Connection Diagnostics",
+    "Menjalankan diagnostik 5-tahap (DNS, TCP, HTTP/2 vs HTTP/1.1, SSL, Clock Skew, Auth & Health)...": "Running 5-stage diagnostics (DNS, TCP, HTTP/2 vs HTTP/1.1, SSL, Clock Skew, Auth & Health)...",
+    "Rekomendasi Perbaikan": "Fix Recommendations",
+    "Salin Laporan": "Copy Report",
+    "Diagnostik:": "Diagnostics:",
+    "Server VPN merespons normal.": "VPN server responded normally.",
+    "Tidak ada respons detail dari server.": "No detailed response from server.",
+    "Gagal menjalankan diagnostik ke server.": "Failed to run diagnostics against the server.",
+    "1. Validasi Konfigurasi Server": "1. Server Configuration Validation",
+    "1. DNS & Koneksi TCP": "1. DNS & TCP Connection",
+    "2. Routing HTTP/2 vs HTTP/1.1": "2. HTTP/2 vs HTTP/1.1 Routing",
+    "3. Sertifikat SSL / TLS": "3. SSL / TLS Certificate",
+    "4. Sinkronisasi Jam Server (HMAC ±60s)": "4. Server Clock Sync (HMAC ±60s)",
+    "5. Autentikasi Bearer + HMAC & Kesehatan Panel": "5. Bearer + HMAC Auth & Panel Health",
+    "1. Koneksi Legacy SSH": "1. Legacy SSH Connection"
 }

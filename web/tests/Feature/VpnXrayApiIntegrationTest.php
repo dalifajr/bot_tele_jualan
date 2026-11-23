@@ -374,4 +374,27 @@ class VpnXrayApiIntegrationTest extends TestCase
         $this->assertNull($failed->last_error);
         $this->assertSame('99999999-8888-7777-6666-555555555555', $failed->uuid);
     }
+
+    public function test_admin_can_run_vpn_server_diagnostic_endpoint_and_artisan_command(): void
+    {
+        // Use a legacy_ssh server without valid host so diagnostic executes deterministically offline without external sockets
+        $sshSrv = VpnServer::create([
+            'name' => 'Legacy Test Node',
+            'code' => 'legacy-diag',
+            'driver' => VpnServer::DRIVER_LEGACY_SSH,
+            'ssh_host' => '',
+            'is_active' => true,
+            'is_default' => false,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->postJson(route('admin.vpn-servers.diagnose', $sshSrv->id))
+            ->assertStatus(200)
+            ->assertJsonPath('ok', false)
+            ->assertJsonPath('server_code', 'legacy-diag')
+            ->assertJsonStructure(['ok', 'server_name', 'endpoint', 'headline', 'steps', 'recommendations']);
+
+        $this->artisan('vpn:diagnose', ['server' => 'legacy-diag'])
+            ->assertExitCode(1);
+    }
 }

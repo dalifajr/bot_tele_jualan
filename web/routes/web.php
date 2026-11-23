@@ -465,6 +465,7 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
             Route::put('/{id}', [\App\Http\Controllers\Admin\VpnServerController::class, 'update'])->whereNumber('id')->name('update');
             Route::post('/{id}/default', [\App\Http\Controllers\Admin\VpnServerController::class, 'setDefault'])->whereNumber('id')->name('default');
             Route::post('/{id}/ping', [\App\Http\Controllers\Admin\VpnServerController::class, 'ping'])->whereNumber('id')->name('ping');
+            Route::post('/{id}/diagnose', [\App\Http\Controllers\Admin\VpnServerController::class, 'diagnose'])->whereNumber('id')->name('diagnose');
             Route::delete('/{id}', [\App\Http\Controllers\Admin\VpnServerController::class, 'destroy'])->whereNumber('id')->name('destroy');
         });
 

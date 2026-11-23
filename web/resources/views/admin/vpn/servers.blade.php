@@ -142,11 +142,19 @@
                             @if($server->last_ping_at)
                                 <div class="text-muted" style="font-size: 0.7rem;">{{ $server->last_ping_at->diffForHumans() }}</div>
                             @endif
+                            @if($server->last_status === 'offline' && $server->last_error)
+                                <div class="text-danger text-truncate mt-0.5" style="max-width: 220px; font-size: 0.7rem;" title="{{ $server->last_error }}">
+                                    <i class="fas fa-circle-exclamation me-0.5"></i>{{ $server->last_error }}
+                                </div>
+                            @endif
                         </td>
                         <td class="text-end pe-3">
                             <div class="d-inline-flex gap-1">
                                 <button type="button" class="btn btn-sm btn-outline-info rounded-pill px-2.5 btn-ping-server" data-url="{{ route('admin.vpn-servers.ping', $server->id) }}" data-name="{{ $server->name }}">
                                     <i class="fas fa-heartbeat"></i> {{ __('Test') }}
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-2.5 btn-diagnose-server" data-url="{{ route('admin.vpn-servers.diagnose', $server->id) }}" data-name="{{ $server->name }}" title="{{ __('Diagnostik 5-Tahap') }}">
+                                    <i class="fas fa-stethoscope"></i> {{ __('Diagnostik') }}
                                 </button>
                                 @if(!$server->is_default)
                                 <form action="{{ route('admin.vpn-servers.default', $server->id) }}" method="POST" class="d-inline">
@@ -216,6 +224,9 @@
                         @endif
                     </div>
                     <div class="d-flex flex-wrap gap-1.5">
+                        <button type="button" class="btn btn-sm btn-outline-info rounded-pill flex-grow-1 btn-diagnose-server" data-url="{{ route('admin.vpn-servers.diagnose', $server->id) }}" data-name="{{ $server->name }}">
+                            <i class="fas fa-stethoscope me-1"></i>{{ __('Diagnostik') }}
+                        </button>
                         <button type="button" class="btn btn-sm btn-outline-primary rounded-pill flex-grow-1" data-bs-toggle="modal" data-bs-target="#editVpnServerModal{{ $server->id }}">
                             <i class="fas fa-pen me-1"></i>{{ __('Edit') }}
                         </button>
@@ -452,6 +463,39 @@
     </div>
 </div>
 @endforeach
+{{-- Deep Diagnostic Modal --}}
+<div class="modal fade" id="vpnDiagnoseModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg m3-sheet-modal">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+            <div class="m3-sheet-handle d-md-none"></div>
+            <div class="modal-header border-0 pb-1">
+                <h5 class="modal-title fw-bold d-flex align-items-center gap-2">
+                    <i class="fas fa-stethoscope text-primary"></i>
+                    <span id="vpnDiagTitle">{{ __('Diagnostik Koneksi Server VPN') }}</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body pt-2">
+                <div id="vpnDiagLoading" class="text-center py-4">
+                    <div class="spinner-border text-primary mb-2" role="status"></div>
+                    <div class="small text-muted">{{ __('Menjalankan diagnostik 5-tahap (DNS, TCP, HTTP/2 vs HTTP/1.1, SSL, Clock Skew, Auth & Health)...') }}</div>
+                </div>
+                <div id="vpnDiagContent" class="d-none">
+                    <div id="vpnDiagHeadline" class="alert border-0 small mb-3" style="border-radius: 14px;"></div>
+                    <div id="vpnDiagSteps" class="d-flex flex-column gap-2 mb-3"></div>
+                    <div id="vpnDiagRecsWrap" class="d-none p-3 rounded-4 border" style="background: var(--surface-container-low);">
+                        <div class="fw-bold small text-body mb-1"><i class="fas fa-lightbulb text-warning me-1"></i>{{ __('Rekomendasi Perbaikan') }}</div>
+                        <ul id="vpnDiagRecs" class="small mb-0 ps-3"></ul>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-1">
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-3 d-none" id="btnCopyVpnDiag"><i class="fas fa-copy me-1"></i>{{ __('Salin Laporan') }}</button>
+                <button type="button" class="btn btn-primary rounded-pill px-4" data-bs-dismiss="modal">{{ __('Tutup') }}</button>
+            </div>
+        </div>
+    </div>
+</div>
 @endpush
 
 @push('scripts')
@@ -468,6 +512,10 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
+    function escHtml(str) {
+        return String(str ?? '').replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
+    }
+
     document.querySelectorAll('.btn-ping-server').forEach(function (btn) {
         btn.addEventListener('click', async function () {
             const url = this.dataset.url;
@@ -482,20 +530,30 @@ document.addEventListener('DOMContentLoaded', function () {
                     headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
                 });
                 const data = await res.json();
+                const msg = data.message || (data.ok ? '{{ __("Server VPN merespons normal.") }}' : '{{ __("Tidak ada respons detail dari server.") }}');
                 if (typeof Swal !== 'undefined') {
                     Swal.fire({
                         icon: data.ok ? 'success' : 'error',
-                        title: data.ok ? name + ' Online' : name + ' Offline',
-                        text: data.message || '',
+                        title: data.ok ? (name + ' Online') : (name + ' Offline'),
+                        html: '<div class="small text-break">' + escHtml(msg) + '</div>',
+                        showCancelButton: false,
+                        showDenyButton: false,
                         confirmButtonText: 'OK'
                     }).then(() => window.location.reload());
                 } else {
-                    alert(data.message || (data.ok ? 'Online' : 'Offline'));
+                    alert(msg);
                     window.location.reload();
                 }
             } catch (e) {
                 if (typeof Swal !== 'undefined') {
-                    Swal.fire('Error', '{{ __("Gagal menguji koneksi ke server VPN.") }}', 'error');
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        html: '<div class="small">{{ __("Gagal menguji koneksi ke server VPN.") }}</div>',
+                        showCancelButton: false,
+                        showDenyButton: false,
+                        confirmButtonText: 'OK'
+                    });
                 }
             } finally {
                 this.disabled = false;
@@ -503,6 +561,90 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     });
+
+    let lastDiagReportText = '';
+    document.querySelectorAll('.btn-diagnose-server').forEach(function (btn) {
+        btn.addEventListener('click', async function () {
+            const url = this.dataset.url;
+            const name = this.dataset.name || 'Server VPN';
+            const modalEl = document.getElementById('vpnDiagnoseModal');
+            const loadingEl = document.getElementById('vpnDiagLoading');
+            const contentEl = document.getElementById('vpnDiagContent');
+            const headlineEl = document.getElementById('vpnDiagHeadline');
+            const stepsEl = document.getElementById('vpnDiagSteps');
+            const recsWrap = document.getElementById('vpnDiagRecsWrap');
+            const recsEl = document.getElementById('vpnDiagRecs');
+            const copyBtn = document.getElementById('btnCopyVpnDiag');
+
+            document.getElementById('vpnDiagTitle').textContent = '{{ __("Diagnostik:") }} ' + name;
+            loadingEl.classList.remove('d-none');
+            contentEl.classList.add('d-none');
+            copyBtn.classList.add('d-none');
+            bootstrap.Modal.getOrCreateInstance(modalEl).show();
+
+            try {
+                const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                const report = await res.json();
+                loadingEl.classList.add('d-none');
+                contentEl.classList.remove('d-none');
+                copyBtn.classList.remove('d-none');
+
+                headlineEl.className = 'alert border-0 small mb-3 ' + (report.ok ? 'alert-success' : 'alert-danger');
+                headlineEl.innerHTML = '<div class="fw-bold">' + (report.ok ? 'ONLINE' : 'OFFLINE') + ' — ' + escHtml(report.endpoint || '') + '</div><div>' + escHtml(report.headline || '') + '</div>';
+
+                stepsEl.innerHTML = '';
+                const plainLines = ['=== VPN DIAGNOSTIC: ' + name + ' (' + (report.endpoint || '') + ') ===', 'Result: ' + (report.ok ? 'ONLINE' : 'OFFLINE') + ' — ' + (report.headline || '')];
+                (report.steps || []).forEach(function (st) {
+                    const badgeCls = st.status === 'ok' ? 'bg-success-subtle text-success' : (st.status === 'warn' ? 'bg-warning-subtle text-warning-emphasis' : 'bg-danger-subtle text-danger');
+                    const iconCls = st.status === 'ok' ? 'fa-check-circle' : (st.status === 'warn' ? 'fa-triangle-exclamation' : 'fa-times-circle');
+                    const msLabel = (st.latency_ms !== null && st.latency_ms !== undefined) ? (' <span class="text-muted">(' + st.latency_ms + ' ms)</span>') : '';
+                    const card = document.createElement('div');
+                    card.className = 'p-2.5 rounded-3 border';
+                    card.innerHTML = `
+                        <div class="d-flex align-items-center justify-content-between gap-2 mb-1">
+                            <div class="fw-bold small text-body">${escHtml(st.title)}${msLabel}</div>
+                            <span class="badge ${badgeCls} rounded-pill px-2 py-0.5 text-uppercase" style="font-size:0.68rem;"><i class="fas ${iconCls} me-1"></i>${escHtml(st.status)}</span>
+                        </div>
+                        <div class="small text-secondary text-break">${escHtml(st.detail)}</div>
+                        ${st.hint ? '<div class="small text-primary mt-1"><i class="fas fa-arrow-right me-1"></i>' + escHtml(st.hint) + '</div>' : ''}
+                    `;
+                    stepsEl.appendChild(card);
+                    plainLines.push('[' + String(st.status || '').toUpperCase() + '] ' + st.title + ': ' + st.detail + (st.hint ? ' | Hint: ' + st.hint : ''));
+                });
+
+                const recs = report.recommendations || [];
+                if (recs.length > 0) {
+                    recsWrap.classList.remove('d-none');
+                    recsEl.innerHTML = recs.map(r => '<li>' + escHtml(r) + '</li>').join('');
+                    plainLines.push('Recommendations:', ...recs.map(r => '- ' + r));
+                } else {
+                    recsWrap.classList.add('d-none');
+                }
+                lastDiagReportText = plainLines.join('\n');
+            } catch (e) {
+                loadingEl.classList.add('d-none');
+                contentEl.classList.remove('d-none');
+                headlineEl.className = 'alert alert-danger border-0 small mb-0';
+                headlineEl.textContent = '{{ __("Gagal menjalankan diagnostik ke server.") }}';
+                stepsEl.innerHTML = '';
+                recsWrap.classList.add('d-none');
+            }
+        });
+    });
+
+    const btnCopyDiag = document.getElementById('btnCopyVpnDiag');
+    if (btnCopyDiag) {
+        btnCopyDiag.addEventListener('click', function () {
+            navigator.clipboard?.writeText(lastDiagReportText);
+            const orig = this.innerHTML;
+            this.innerHTML = '<i class="fas fa-check text-success me-1"></i>{{ __("Tersalin!") }}';
+            setTimeout(() => { this.innerHTML = orig; }, 1500);
+        });
+    }
 });
 </script>
 @endpush

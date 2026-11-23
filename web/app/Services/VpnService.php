@@ -136,6 +136,50 @@ class VpnService
         return $result;
     }
 
+    /**
+     * Run deep multi-stage diagnostic on a VPN server and persist latest status/error.
+     */
+    public function diagnoseServer(VpnServer $server): array
+    {
+        if ($server->isApiDriver()) {
+            $report = (new VpnXrayApiDriver($server))->diagnose();
+        } else {
+            $health = $this->driverFor($server)->healthCheck();
+            $report = [
+                'ok' => !empty($health['ok']),
+                'server_name' => $server->name,
+                'server_code' => $server->code,
+                'driver' => $server->driver,
+                'endpoint' => $server->display_endpoint,
+                'latency_ms' => $health['latency_ms'] ?? null,
+                'headline' => $health['message'] ?? '',
+                'checked_at' => now()->format('Y-m-d H:i:s'),
+                'steps' => [
+                    [
+                        'key' => 'legacy_ssh',
+                        'title' => __('1. Koneksi Legacy SSH'),
+                        'status' => !empty($health['ok']) ? 'ok' : 'fail',
+                        'latency_ms' => $health['latency_ms'] ?? null,
+                        'detail' => $health['message'] ?? __('Gagal menguji SSH.'),
+                        'hint' => !empty($health['ok']) ? null : __('Periksa IP, Port SSH, Username, dan Private Key VPS.'),
+                    ],
+                ],
+                'recommendations' => !empty($health['ok']) ? [] : [__('Pertimbangkan beralih ke driver REST API vpnxray-main agar lebih aman dan mendukung CRUD penuh.')],
+            ];
+        }
+
+        if ($server->exists) {
+            $server->forceFill([
+                'last_ping_at' => now(),
+                'last_ping_ms' => $report['latency_ms'] ?? null,
+                'last_status' => !empty($report['ok']) ? 'online' : 'offline',
+                'last_error' => !empty($report['ok']) ? null : ($report['headline'] ?? 'Diagnostic failed'),
+            ])->save();
+        }
+
+        return $report;
+    }
+
     public function checkUsername(string $username, ?string $protocol = null, ?VpnServer $server = null, ?Product $product = null): array
     {
         $resolved = $this->resolveServer($server, $product);
