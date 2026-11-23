@@ -103,15 +103,21 @@ class CheckoutController extends Controller
         $baseVpnDays = max(1, (int) ($product->vpn_duration_days ?: 30));
         $reqDays = (int) $request->input('vpn_days', $baseVpnDays);
         $vpnDays = $product->is_vpn ? max(1, min(365, $reqDays ?: $baseVpnDays)) : $baseVpnDays;
+        $baseVpnIpLimit = max(1, min(50, (int) ($product->vpn_ip_limit ?: 1)));
+        $maxVpnIpLimit = $product->is_vpn ? $product->getEffectiveMaxVpnIpLimit() : $baseVpnIpLimit;
+        $reqIpLimit = (int) $request->input('vpn_ip_limit', $baseVpnIpLimit);
+        $vpnIpLimit = $product->is_vpn ? max($baseVpnIpLimit, min($maxVpnIpLimit, $reqIpLimit ?: $baseVpnIpLimit)) : $baseVpnIpLimit;
+        $vpnExtraDevices = max(0, $vpnIpLimit - $baseVpnIpLimit);
+        $vpnExtraIpPrice = max(0, (int) ($product->vpn_extra_ip_price ?? 0));
+
         $vpnServerId = $product->vpn_server_id ?: ($request->filled('vpn_server_id') ? (int) $request->input('vpn_server_id') : null);
         $vpnServerObj = $vpnServerId ? \App\Models\VpnServer::find($vpnServerId) : null;
         $rawSni = (string) $request->input('vpn_sni_mode', $product->vpn_sni_mode ?? '3');
         $vpnSniMode = in_array($rawSni, ['1', '2', '3'], true) ? $rawSni : '3';
 
-        $effectiveUnitPrice = (int) $product->price;
-        if ($product->is_vpn && $effectiveUnitPrice > 0 && $vpnDays !== $baseVpnDays) {
-            $effectiveUnitPrice = max(1, (int) round(($effectiveUnitPrice / $baseVpnDays) * $vpnDays));
-        }
+        $effectiveUnitPrice = $product->is_vpn
+            ? $product->calculateVpnPrice($vpnDays, $vpnIpLimit)
+            : (int) $product->price;
 
         $subtotal = $effectiveUnitPrice * $quantity;
 
@@ -137,7 +143,7 @@ class CheckoutController extends Controller
                 } elseif ($user && $coupon->hasReachedUserLimit((int) $user->id)) {
                     $couponError = $coupon->getUserLimitErrorMessage();
                 } else {
-                    $discount = $coupon->calculateDiscountForUnits((int) $product->price, (int) $quantity);
+                    $discount = $coupon->calculateDiscountForUnits((int) $effectiveUnitPrice, (int) $quantity);
                 }
             } else {
                 $couponError = __('Kode kupon tidak terdaftar.');
@@ -155,6 +161,10 @@ class CheckoutController extends Controller
             'vpnPassword',
             'vpnProtocol',
             'vpnDays',
+            'vpnIpLimit',
+            'baseVpnIpLimit',
+            'vpnExtraDevices',
+            'vpnExtraIpPrice',
             'vpnServerId',
             'vpnServerObj',
             'vpnSniMode',
@@ -209,6 +219,7 @@ class CheckoutController extends Controller
 
         $vpnProtocol = $product->vpn_protocol ?: 'vmess';
         $vpnDays = max(1, (int) ($product->vpn_duration_days ?: 30));
+        $vpnIpLimit = max(1, min(50, (int) ($product->vpn_ip_limit ?: 1)));
         $vpnServerId = $product->vpn_server_id;
         $effectiveUnitPrice = (int) $product->price;
 
@@ -221,14 +232,17 @@ class CheckoutController extends Controller
             $reqDays = (int) $request->input('vpn_days', $baseVpnDays);
             $vpnDays = max(1, min(365, $reqDays ?: $baseVpnDays));
 
+            $baseIp = max(1, min(50, (int) ($product->vpn_ip_limit ?: 1)));
+            $maxIp = $product->getEffectiveMaxVpnIpLimit();
+            $reqIp = (int) $request->input('vpn_ip_limit', $baseIp);
+            $vpnIpLimit = max($baseIp, min($maxIp, $reqIp ?: $baseIp));
+
             if (!$vpnServerId && $request->filled('vpn_server_id')) {
                 $srv = \App\Models\VpnServer::where('is_active', true)->find((int) $request->input('vpn_server_id'));
                 $vpnServerId = $srv?->id;
             }
 
-            if ($effectiveUnitPrice > 0 && $vpnDays !== $baseVpnDays) {
-                $effectiveUnitPrice = max(1, (int) round(($effectiveUnitPrice / $baseVpnDays) * $vpnDays));
-            }
+            $effectiveUnitPrice = $product->calculateVpnPrice($vpnDays, $vpnIpLimit);
 
             $request->validate([
                 'vpn_username' => ['required', 'string', 'min:3', 'max:24', 'regex:/^[a-zA-Z0-9_-]+$/'],
@@ -237,6 +251,7 @@ class CheckoutController extends Controller
                     : ['nullable', 'string', 'max:64'],
                 'vpn_sni_mode' => ['nullable', 'in:1,2,3'],
                 'vpn_days' => ['nullable', 'integer', 'min:1', 'max:365'],
+                'vpn_ip_limit' => ['nullable', 'integer', 'min:1', 'max:50'],
             ], [
                 'vpn_username.regex' => __('Username VPN hanya boleh berisi huruf, angka, garis bawah (_), atau tanda hubung (-).'),
                 'vpn_password.regex' => __('Password SSH tidak boleh mengandung spasi atau baris baru.'),
@@ -298,7 +313,7 @@ class CheckoutController extends Controller
             if ($couponCode) {
                 $coupon = \App\Models\Coupon::where('code', $couponCode)->lockForUpdate()->first();
                 if ($coupon && $coupon->isValidFor($subtotal, $user->id) && $coupon->appliesToProduct($product)) {
-                    $discount = $coupon->calculateDiscountForUnits((int) $product->price, (int) $quantity);
+                    $discount = $coupon->calculateDiscountForUnits((int) $effectiveUnitPrice, (int) $quantity);
                     $coupon->increment('used_qty');
                     DB::table('coupon_user')->insert([
                         'coupon_id' => $coupon->id,
@@ -361,12 +376,12 @@ class CheckoutController extends Controller
                 'vpn_username' => $vpnUsername,
                 'vpn_password' => $product->is_vpn ? $request->vpn_password : null,
                 'vpn_meta' => $product->is_vpn ? [
-                    'label' => $product->name . ' — ' . strtoupper($vpnProtocol) . ' (' . $vpnUsername . ') ' . $vpnDays . ' Hari',
+                    'label' => $product->name . ' — ' . strtoupper($vpnProtocol) . ' (' . $vpnUsername . ') ' . $vpnDays . ' Hari • ' . $vpnIpLimit . ' IP',
                     'server_id' => $vpnServerId,
                     'protocol' => $vpnProtocol,
                     'days' => $vpnDays,
                     'quota_gb' => (int) ($product->vpn_quota_gb ?? 0),
-                    'ip_limit' => max(1, (int) ($product->vpn_ip_limit ?? 1)),
+                    'ip_limit' => $vpnIpLimit,
                     'sni_mode' => $vpnSniMode,
                 ] : null,
                 'vcc_services' => $product->is_vcc ? $vccServices : null,

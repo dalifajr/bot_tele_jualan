@@ -67,7 +67,7 @@
                         <div>
                             <h6 class="fw-bold mb-1 text-body">{{ $product->name }}</h6>
                             <div class="text-muted small">
-                                <span class="fw-semibold text-primary">{{ $product->formatted_price }}</span> / {{ __('unit') }}
+                                <span class="fw-semibold text-primary">Rp {{ number_format($effectiveUnitPrice ?? $product->price, 0, ',', '.') }}</span> / {{ __('unit') }}
                             </div>
                             @if($product->is_vcc && !empty($vccServices))
                             @php $groupedServices = array_count_values($vccServices); @endphp
@@ -131,15 +131,27 @@
                                 <strong class="text-body">{{ $vpnDays ?? $product->vpn_duration_days }} {{ __('Hari') }}</strong>
                             </div>
                         </div>
-                        @if(($vpnProtocol ?? $product->vpn_protocol) !== 'ssh')
                         <div class="col-6 col-sm-3">
+                            <div class="bg-white bg-opacity-75 rounded-3 p-2 border border-primary-subtle">
+                                <span class="text-muted d-block" style="font-size: 0.72rem;">{{ __('Limit Perangkat (IP)') }}</span>
+                                <strong class="text-body">
+                                    {{ $vpnIpLimit ?? max(1, (int) ($product->vpn_ip_limit ?? 1)) }} IP
+                                    @if(($vpnExtraDevices ?? 0) > 0)
+                                        <span class="text-primary small">(+{{ $vpnExtraDevices }})</span>
+                                    @endif
+                                </strong>
+                            </div>
+                        </div>
+                        @if(($vpnProtocol ?? $product->vpn_protocol) !== 'ssh')
+                        <div class="col-6 col-sm-6">
                             <div class="bg-white bg-opacity-75 rounded-3 p-2 border border-primary-subtle">
                                 <span class="text-muted d-block" style="font-size: 0.72rem;">{{ __('Preset SNI') }}</span>
                                 <strong class="text-body">{{ $sniPresetLabel }}</strong>
                             </div>
                         </div>
-                        @elseif(isset($vpnServerObj) && $vpnServerObj)
-                        <div class="col-6 col-sm-3">
+                        @endif
+                        @if(isset($vpnServerObj) && $vpnServerObj)
+                        <div class="col-6 col-sm-6">
                             <div class="bg-white bg-opacity-75 rounded-3 p-2 border border-primary-subtle">
                                 <span class="text-muted d-block" style="font-size: 0.72rem;">{{ __('Server') }}</span>
                                 <strong class="text-body">{{ $vpnServerObj->name }}</strong>
@@ -189,6 +201,7 @@
                     @if($vpnPassword)<input type="hidden" name="vpn_password" value="{{ $vpnPassword }}">@endif
                     @if($product->is_vpn && isset($vpnProtocol))<input type="hidden" name="vpn_protocol" value="{{ $vpnProtocol }}">@endif
                     @if($product->is_vpn && isset($vpnDays))<input type="hidden" name="vpn_days" value="{{ $vpnDays }}">@endif
+                    @if($product->is_vpn && isset($vpnIpLimit))<input type="hidden" name="vpn_ip_limit" value="{{ $vpnIpLimit }}">@endif
                     @if($product->is_vpn && !empty($vpnServerId))<input type="hidden" name="vpn_server_id" value="{{ $vpnServerId }}">@endif
                     @if($product->is_vpn && isset($vpnSniMode))<input type="hidden" name="vpn_sni_mode" value="{{ $vpnSniMode }}">@endif
                     @if($product->is_vcc && !empty($vccServices))
@@ -276,6 +289,7 @@
                     @if($vpnPassword)<input type="hidden" name="vpn_password" value="{{ $vpnPassword }}">@endif
                     @if($product->is_vpn && isset($vpnProtocol))<input type="hidden" name="vpn_protocol" value="{{ $vpnProtocol }}">@endif
                     @if($product->is_vpn && isset($vpnDays))<input type="hidden" name="vpn_days" value="{{ $vpnDays }}">@endif
+                    @if($product->is_vpn && isset($vpnIpLimit))<input type="hidden" name="vpn_ip_limit" value="{{ $vpnIpLimit }}">@endif
                     @if($product->is_vpn && !empty($vpnServerId))<input type="hidden" name="vpn_server_id" value="{{ $vpnServerId }}">@endif
                     @if($product->is_vpn && isset($vpnSniMode))<input type="hidden" name="vpn_sni_mode" value="{{ $vpnSniMode }}">@endif
                     @if($product->is_vcc && !empty($vccServices))

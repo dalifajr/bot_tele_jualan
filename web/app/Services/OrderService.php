@@ -218,7 +218,7 @@ class OrderService
                     foreach ($items as $item) {
                         $product = $item->product;
                         for ($i = 0; $i < $item->quantity; $i++) {
-                            $rawPrice = $product->price;
+                            $rawPrice = (int) ($item->unit_price ?: $product->price);
                             $unitDiscount = 0;
                             if (isset($unitDiscounts[$product->id]) && count($unitDiscounts[$product->id]) > 0) {
                                 $unitDiscount = array_shift($unitDiscounts[$product->id]);

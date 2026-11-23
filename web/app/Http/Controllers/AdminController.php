@@ -1055,11 +1055,13 @@ class AdminController extends Controller
             'vpn_server_id' => 'nullable|exists:vpn_servers,id',
             'vpn_quota_gb' => 'nullable|integer|min:0|max:10000',
             'vpn_ip_limit' => 'nullable|integer|min:1|max:50',
+            'vpn_max_ip_limit' => 'nullable|integer|min:1|max:50',
+            'vpn_extra_ip_price' => 'nullable|integer|min:0|max:100000000',
             'vpn_sni_mode' => 'nullable|in:1,2,3',
             'vcc_services' => 'required_if:is_vcc,1|nullable|array',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,webp,gif|max:2048',
         ]);
-        $data = $request->only(['name', 'description', 'price', 'vpn_protocol', 'vpn_duration_days', 'vpn_server_id', 'vpn_quota_gb', 'vpn_ip_limit', 'vpn_sni_mode']);
+        $data = $request->only(['name', 'description', 'price', 'vpn_protocol', 'vpn_duration_days', 'vpn_server_id', 'vpn_quota_gb', 'vpn_ip_limit', 'vpn_max_ip_limit', 'vpn_extra_ip_price', 'vpn_sni_mode']);
         $data['description'] = $data['description'] ?? '';
         $data['platform_fee_percent'] = $request->filled('platform_fee_percent') ? (int)$request->platform_fee_percent : null;
         $data['is_suspended'] = false;
@@ -1078,7 +1080,12 @@ class AdminController extends Controller
             $data['vpn_protocol'] = $selectedProtos[0];
             $data['vpn_duration_days'] = max(1, (int) ($request->input('vpn_duration_days') ?: 30));
             $data['vpn_quota_gb'] = (int) ($request->input('vpn_quota_gb') ?? 0);
-            $data['vpn_ip_limit'] = max(1, (int) ($request->input('vpn_ip_limit') ?? 1));
+            $data['vpn_ip_limit'] = max(1, min(50, (int) ($request->input('vpn_ip_limit') ?? 1)));
+            $rawMaxIp = $request->filled('vpn_max_ip_limit')
+                ? (int) $request->input('vpn_max_ip_limit')
+                : max($data['vpn_ip_limit'], 10);
+            $data['vpn_max_ip_limit'] = max($data['vpn_ip_limit'], min(50, $rawMaxIp));
+            $data['vpn_extra_ip_price'] = max(0, (int) ($request->input('vpn_extra_ip_price') ?? 0));
             $data['vpn_sni_mode'] = (string) ($request->input('vpn_sni_mode') ?: '3');
             $data['vpn_server_id'] = $request->filled('vpn_server_id') ? (int) $request->input('vpn_server_id') : null;
         } else {
@@ -1087,6 +1094,8 @@ class AdminController extends Controller
             $data['vpn_server_id'] = null;
             $data['vpn_quota_gb'] = 0;
             $data['vpn_ip_limit'] = 1;
+            $data['vpn_max_ip_limit'] = 10;
+            $data['vpn_extra_ip_price'] = 0;
             $data['vpn_sni_mode'] = '3';
         }
         $data['warranty_days'] = $request->has('enable_warranty') ? $request->warranty_days : 0;
@@ -1118,11 +1127,13 @@ class AdminController extends Controller
             'vpn_server_id' => 'nullable|exists:vpn_servers,id',
             'vpn_quota_gb' => 'nullable|integer|min:0|max:10000',
             'vpn_ip_limit' => 'nullable|integer|min:1|max:50',
+            'vpn_max_ip_limit' => 'nullable|integer|min:1|max:50',
+            'vpn_extra_ip_price' => 'nullable|integer|min:0|max:100000000',
             'vpn_sni_mode' => 'nullable|in:1,2,3',
             'vcc_services' => $request->has('is_vcc') ? 'required|array' : 'nullable',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,webp,gif|max:2048',
         ]);
-        $data = $request->only(['name', 'description', 'price', 'vpn_protocol', 'vpn_duration_days', 'vpn_server_id', 'vpn_quota_gb', 'vpn_ip_limit', 'vpn_sni_mode']);
+        $data = $request->only(['name', 'description', 'price', 'vpn_protocol', 'vpn_duration_days', 'vpn_server_id', 'vpn_quota_gb', 'vpn_ip_limit', 'vpn_max_ip_limit', 'vpn_extra_ip_price', 'vpn_sni_mode']);
         $data['description'] = $data['description'] ?? '';
         $data['platform_fee_percent'] = $request->filled('platform_fee_percent') ? (int)$request->platform_fee_percent : null;
         $data['is_suspended'] = $request->has('is_suspended');
@@ -1141,7 +1152,12 @@ class AdminController extends Controller
             $data['vpn_protocol'] = $selectedProtos[0];
             $data['vpn_duration_days'] = max(1, (int) ($request->input('vpn_duration_days') ?: 30));
             $data['vpn_quota_gb'] = (int) ($request->input('vpn_quota_gb') ?? 0);
-            $data['vpn_ip_limit'] = max(1, (int) ($request->input('vpn_ip_limit') ?? 1));
+            $data['vpn_ip_limit'] = max(1, min(50, (int) ($request->input('vpn_ip_limit') ?? 1)));
+            $rawMaxIp = $request->filled('vpn_max_ip_limit')
+                ? (int) $request->input('vpn_max_ip_limit')
+                : max($data['vpn_ip_limit'], 10);
+            $data['vpn_max_ip_limit'] = max($data['vpn_ip_limit'], min(50, $rawMaxIp));
+            $data['vpn_extra_ip_price'] = max(0, (int) ($request->input('vpn_extra_ip_price') ?? 0));
             $data['vpn_sni_mode'] = (string) ($request->input('vpn_sni_mode') ?: '3');
             $data['vpn_server_id'] = $request->filled('vpn_server_id') ? (int) $request->input('vpn_server_id') : null;
         } else {
@@ -1150,6 +1166,8 @@ class AdminController extends Controller
             $data['vpn_server_id'] = null;
             $data['vpn_quota_gb'] = 0;
             $data['vpn_ip_limit'] = 1;
+            $data['vpn_max_ip_limit'] = 10;
+            $data['vpn_extra_ip_price'] = 0;
             $data['vpn_sni_mode'] = '3';
         }
         $data['warranty_days'] = $request->has('enable_warranty') ? $request->warranty_days : 0;

@@ -1253,4 +1253,126 @@ class VpnXrayApiIntegrationTest extends TestCase
         $acc->refresh();
         $this->assertSame('active', $acc->status);
     }
+
+    public function test_vpn_checkout_custom_device_limit_affects_price_clamps_bounds_and_provisions_ip_limit(): void
+    {
+        $capturedPayload = null;
+        Http::fake([
+            'https://sg1.vpnpanel.test/api/v1/vpn/check-username*' => Http::response([
+                'success' => true,
+                'message' => 'Available',
+                'data' => ['available' => true, 'exists' => false],
+            ], 200),
+            'https://sg1.vpnpanel.test/api/v1/vpn/accounts' => function ($request) use (&$capturedPayload) {
+                $capturedPayload = $request->data();
+                return Http::response([
+                    'success' => true,
+                    'message' => 'Created',
+                    'data' => [
+                        'protocol' => $capturedPayload['protocol'] ?? 'vmess',
+                        'username' => $capturedPayload['username'] ?? 'devlimit_01',
+                        'domain' => 'sg1.vpnpanel.test',
+                        'uuid' => 'aaaa1111-2222-3333-4444-555566667777',
+                        'sni_mode' => '3',
+                        'status' => 'active',
+                        'expired_at' => now()->addDays(30)->format('Y-m-d'),
+                        'links' => ['tls' => 'vmess://ZGV2bGltaXRfMDE='],
+                        'formatted_text' => 'VMESS Device Limit Account',
+                    ],
+                ], 201);
+            },
+        ]);
+
+        // 1. Admin creates VPN product with base 2 devices, max 5 devices, +Rp 5.000 / extra device
+        $this->actingAs($this->admin)
+            ->post(route('admin.products.store'), [
+                'name' => 'VPN Custom Device SG',
+                'price' => 15000,
+                'description' => 'Bisa tambah limit perangkat',
+                'is_vpn' => 1,
+                'vpn_protocols' => ['vmess', 'vless'],
+                'vpn_duration_days' => 30,
+                'vpn_quota_gb' => 0,
+                'vpn_ip_limit' => 2,
+                'vpn_max_ip_limit' => 5,
+                'vpn_extra_ip_price' => 5000,
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $prod = Product::where('name', 'VPN Custom Device SG')->firstOrFail();
+        $this->assertSame(2, (int) $prod->vpn_ip_limit);
+        $this->assertSame(5, (int) $prod->vpn_max_ip_limit);
+        $this->assertSame(5000, (int) $prod->vpn_extra_ip_price);
+
+        // Verify model pricing helper directly (including clamping)
+        $this->assertSame(15000, $prod->calculateVpnPrice(30, 1));  // clamped up to base 2
+        $this->assertSame(15000, $prod->calculateVpnPrice(30, 2));  // base 2
+        $this->assertSame(25000, $prod->calculateVpnPrice(30, 4));  // 15000 + 2*5000
+        $this->assertSame(50000, $prod->calculateVpnPrice(60, 4));  // proportional 60d
+        $this->assertSame(30000, $prod->calculateVpnPrice(30, 99)); // clamped down to max 5 (15000 + 3*5000)
+
+        // 2. Catalog show exposes device limit selector & extra device price
+        $this->actingAs($this->customer)
+            ->get(route('catalog.show', $prod->id))
+            ->assertStatus(200)
+            ->assertSee('vpnSelIpLimit', false)
+            ->assertSee('"extraIpPrice":5000', false)
+            ->assertSee('"maxIpLimit":5', false);
+
+        // 3. Review shows 4 IP (+2) and Rp 25.000 (30d) / Rp 50.000 (60d)
+        $this->actingAs($this->customer)
+            ->get(route('checkout.review', [
+                'product' => $prod->id,
+                'vpn_protocol' => 'vmess',
+                'vpn_days' => 30,
+                'vpn_ip_limit' => 4,
+                'vpn_username' => 'devlimit_01',
+            ]))
+            ->assertStatus(200)
+            ->assertSee('4 IP')
+            ->assertSee('(+2)')
+            ->assertSee('25.000')
+            ->assertSee('name="vpn_ip_limit" value="4"', false);
+
+        $this->actingAs($this->customer)
+            ->get(route('checkout.review', [
+                'product' => $prod->id,
+                'vpn_protocol' => 'vmess',
+                'vpn_days' => 60,
+                'vpn_ip_limit' => 4,
+                'vpn_username' => 'devlimit_01',
+            ]))
+            ->assertStatus(200)
+            ->assertSee('50.000');
+
+        // 4. Checkout store with 4 devices -> subtotal Rp 25.000 & ip_limit=4 forwarded to panel
+        $this->actingAs($this->customer)
+            ->post(route('checkout.store', $prod->id), [
+                'quantity' => 1,
+                'vpn_protocol' => 'vmess',
+                'vpn_days' => 30,
+                'vpn_ip_limit' => 4,
+                'vpn_username' => 'devlimit_01',
+                'vpn_sni_mode' => '3',
+                'payment_method' => 'qris',
+            ])
+            ->assertRedirect();
+
+        $order = Order::where('customer_id', $this->customer->id)->latest('id')->firstOrFail();
+        $this->assertSame(25000, (int) $order->subtotal);
+        $item = $order->items()->firstOrFail();
+        $this->assertSame(4, (int) ($item->vpn_meta['ip_limit'] ?? 0));
+
+        app(OrderService::class)->confirmPayment($order, 'qris_auto', $this->admin->id);
+        $this->assertSame(4, (int) ($capturedPayload['ip_limit'] ?? 0));
+        $this->assertDatabaseHas('vpn_accounts', [
+            'user_id' => $this->customer->id,
+            'username' => 'devlimit_01',
+            'ip_limit' => 4,
+            'purchase_price' => 25000,
+            'purchase_days' => 30,
+            'status' => 'active',
+        ]);
+    }
 }

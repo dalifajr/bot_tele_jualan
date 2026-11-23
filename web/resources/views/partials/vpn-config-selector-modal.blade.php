@@ -41,6 +41,23 @@
                 </div>
             </div>
 
+            {{-- 3B. Limit Perangkat (IP) --}}
+            <div id="vpnSelIpWrap" class="mb-2.5">
+                <div class="d-flex align-items-center justify-content-between mb-1">
+                    <label class="form-label small fw-bold text-body mb-0">{{ __('Limit Perangkat (IP)') }} <span class="text-danger">*</span></label>
+                    <span id="vpnSelIpExtraBadge" class="badge bg-primary-subtle text-primary rounded-pill" style="font-size: 0.7rem;">{{ __('Bawaan') }}</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <div class="input-group input-group-sm" style="max-width: 155px;">
+                        <button type="button" class="btn btn-outline-secondary fw-bold" id="btnVpnSelIpMinus" aria-label="{{ __('Kurangi perangkat') }}">−</button>
+                        <input type="number" id="vpnSelIpLimit" class="form-control text-center fw-bold" value="2" min="1" max="50" required>
+                        <button type="button" class="btn btn-outline-secondary fw-bold" id="btnVpnSelIpPlus" aria-label="{{ __('Tambah perangkat') }}">+</button>
+                    </div>
+                    <div class="small text-muted flex-grow-1" id="vpnSelIpPriceNote" style="font-size: 0.72rem;"></div>
+                </div>
+                <div class="form-text small text-muted" style="font-size: 0.71rem;">{{ __('Jumlah koneksi dari jaringan/IP berbeda secara bersamaan.') }}</div>
+            </div>
+
             {{-- 4. Username VPN (Global Live Auto-Check) --}}
             <div class="mb-2.5">
                 <label class="form-label small fw-bold text-body mb-1">{{ __('Username VPN') }} <span class="text-danger">*</span></label>
@@ -74,6 +91,10 @@
                 <div class="d-flex justify-content-between align-items-center small text-secondary mb-1">
                     <span>{{ __('Spesifikasi') }}</span>
                     <span class="fw-semibold text-body" id="vpnSelSpecSummary">-</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center small text-secondary mb-1 d-none" id="vpnSelExtraDeviceRow">
+                    <span>{{ __('Tambahan Perangkat') }}</span>
+                    <span class="fw-semibold text-primary" id="vpnSelExtraDeviceCost">-</span>
                 </div>
                 <div class="d-flex justify-content-between align-items-center border-top pt-2 mt-1" style="border-color: var(--outline-variant, var(--bs-border-color)) !important;">
                     <span class="fw-bold text-body small">{{ __('Total Harga Bayar:') }}</span>
@@ -193,6 +214,13 @@
     const elServer = document.getElementById('vpnSelServer');
     const elProtoGrid = document.getElementById('vpnSelProtoGrid');
     const elDays = document.getElementById('vpnSelDays');
+    const elIpLimit = document.getElementById('vpnSelIpLimit');
+    const btnIpMinus = document.getElementById('btnVpnSelIpMinus');
+    const btnIpPlus = document.getElementById('btnVpnSelIpPlus');
+    const elIpExtraBadge = document.getElementById('vpnSelIpExtraBadge');
+    const elIpPriceNote = document.getElementById('vpnSelIpPriceNote');
+    const elExtraDeviceRow = document.getElementById('vpnSelExtraDeviceRow');
+    const elExtraDeviceCost = document.getElementById('vpnSelExtraDeviceCost');
     const elUsername = document.getElementById('vpnSelUsername');
     const elUserIndicator = document.getElementById('vpnSelUserIndicator');
     const elUserStatus = document.getElementById('vpnSelUserStatus');
@@ -219,23 +247,62 @@
         document.body.style.overflow = '';
     }
 
+    function getEffectiveIpLimit() {
+        if (!state) return 1;
+        const raw = parseInt(elIpLimit.value || String(state.baseIpLimit), 10) || state.baseIpLimit;
+        return Math.max(state.baseIpLimit, Math.min(state.maxIpLimit, raw));
+    }
+
     function updateProceedState() {
         if (!state) return;
         const days = parseInt(elDays.value || '0', 10) || 0;
         const daysOk = days >= 1 && days <= 365;
+        const ipVal = parseInt(elIpLimit.value || '0', 10) || 0;
+        const ipOk = ipVal >= state.baseIpLimit && ipVal <= state.maxIpLimit;
         const sshOk = state.selectedProtocol !== 'ssh' || (elSshPass.value.trim().length >= 3 && !/\s/.test(elSshPass.value));
-        btnProceed.disabled = !(usernameValid && daysOk && sshOk && !!state.selectedProtocol);
+        btnProceed.disabled = !(usernameValid && daysOk && ipOk && sshOk && !!state.selectedProtocol);
     }
 
     function updatePricingAndSpec() {
         if (!state) return;
         const days = Math.max(1, Math.min(365, parseInt(elDays.value || '0', 10) || state.baseDays));
-        const total = state.basePrice > 0
+        const ipLimit = getEffectiveIpLimit();
+        const extraDevices = Math.max(0, ipLimit - state.baseIpLimit);
+        const basePeriodTotal = Math.max(0, state.basePrice) + (extraDevices * Math.max(0, state.extraIpPrice));
+        const total = basePeriodTotal > 0
+            ? (days === state.baseDays ? basePeriodTotal : Math.max(1, Math.round((basePeriodTotal / state.baseDays) * days)))
+            : 0;
+        const baseOnlyTotal = state.basePrice > 0
             ? (days === state.baseDays ? state.basePrice : Math.max(1, Math.round((state.basePrice / state.baseDays) * days)))
             : 0;
+        const extraCostForPeriod = Math.max(0, total - baseOnlyTotal);
+
         elTotalPrice.textContent = formatRp(total);
         const quotaTxt = state.quotaGb > 0 ? (state.quotaGb + ' GB') : 'Unlimited';
-        elSpecSummary.textContent = state.selectedProtocol.toUpperCase() + ' • ' + days + ' Hari • ' + quotaTxt + ' • ' + state.ipLimit + ' IP';
+        elSpecSummary.textContent = state.selectedProtocol.toUpperCase() + ' • ' + days + ' Hari • ' + quotaTxt + ' • ' + ipLimit + ' IP';
+
+        if (btnIpMinus) btnIpMinus.disabled = ipLimit <= state.baseIpLimit;
+        if (btnIpPlus) btnIpPlus.disabled = ipLimit >= state.maxIpLimit;
+        if (elIpLimit) elIpLimit.readOnly = state.maxIpLimit <= state.baseIpLimit;
+
+        if (elIpExtraBadge) {
+            if (state.maxIpLimit <= state.baseIpLimit) {
+                elIpExtraBadge.textContent = @js(__('Tetap')) + ': ' + state.baseIpLimit + ' IP';
+            } else if (extraDevices > 0) {
+                elIpExtraBadge.textContent = '+' + extraDevices + ' ' + @js(__('Perangkat'));
+            } else {
+                elIpExtraBadge.textContent = @js(__('Bawaan')) + ' (' + state.baseIpLimit + ' IP)';
+            }
+        }
+
+        if (elExtraDeviceRow && elExtraDeviceCost) {
+            if (extraDevices > 0 && state.extraIpPrice > 0) {
+                elExtraDeviceRow.classList.remove('d-none');
+                elExtraDeviceCost.textContent = '+' + extraDevices + ' IP (+' + formatRp(extraCostForPeriod) + ')';
+            } else {
+                elExtraDeviceRow.classList.add('d-none');
+            }
+        }
 
         document.querySelectorAll('.vpn-sel-day-chip').forEach(btn => {
             btn.classList.toggle('active', parseInt(btn.dataset.days, 10) === days);
@@ -327,6 +394,28 @@
     elUsername.addEventListener('input', runUsernameCheck);
     elServer.addEventListener('change', runUsernameCheck);
     elDays.addEventListener('input', updatePricingAndSpec);
+    elIpLimit?.addEventListener('input', updatePricingAndSpec);
+    elIpLimit?.addEventListener('blur', function () {
+        if (!state) return;
+        elIpLimit.value = String(getEffectiveIpLimit());
+        updatePricingAndSpec();
+    });
+    btnIpMinus?.addEventListener('click', function () {
+        if (!state) return;
+        const cur = getEffectiveIpLimit();
+        if (cur > state.baseIpLimit) {
+            elIpLimit.value = String(cur - 1);
+            updatePricingAndSpec();
+        }
+    });
+    btnIpPlus?.addEventListener('click', function () {
+        if (!state) return;
+        const cur = getEffectiveIpLimit();
+        if (cur < state.maxIpLimit) {
+            elIpLimit.value = String(cur + 1);
+            updatePricingAndSpec();
+        }
+    });
     elSshPass.addEventListener('input', updateProceedState);
     document.querySelectorAll('.vpn-sel-day-chip').forEach(btn => {
         btn.addEventListener('click', function () {
@@ -346,6 +435,7 @@
         params.set('quantity', '1');
         params.set('vpn_protocol', state.selectedProtocol);
         params.set('vpn_days', String(Math.max(1, Math.min(365, parseInt(elDays.value || '30', 10) || state.baseDays))));
+        params.set('vpn_ip_limit', String(getEffectiveIpLimit()));
         params.set('vpn_username', elUsername.value.trim());
         if (state.selectedProtocol === 'ssh') {
             params.set('vpn_password', elSshPass.value.trim());
@@ -358,13 +448,18 @@
     });
 
     window.openVpnCheckoutSelector = function (opts) {
+        const baseIp = Math.max(1, Number(opts.baseIpLimit || opts.ipLimit || 1));
+        const maxIp = Math.max(baseIp, Math.min(50, Number(opts.maxIpLimit || Math.max(baseIp, 10))));
         state = {
             productId: opts.productId,
             productName: opts.productName || 'VPN',
             basePrice: Number(opts.basePrice || 0),
             baseDays: Math.max(1, Number(opts.baseDays || 30)),
             quotaGb: Number(opts.quotaGb || 0),
-            ipLimit: Math.max(1, Number(opts.ipLimit || 1)),
+            ipLimit: baseIp,
+            baseIpLimit: baseIp,
+            maxIpLimit: maxIp,
+            extraIpPrice: Math.max(0, Number(opts.extraIpPrice || 0)),
             defaultSni: String(opts.defaultSni || '3'),
             protocols: Array.isArray(opts.protocols) && opts.protocols.length ? opts.protocols : ['vmess'],
             servers: Array.isArray(opts.servers) ? opts.servers : [],
@@ -378,6 +473,20 @@
         elBasePrice.textContent = formatRp(state.basePrice);
         elBaseDays.textContent = String(state.baseDays);
         elDays.value = String(state.baseDays);
+        if (elIpLimit) {
+            elIpLimit.min = String(state.baseIpLimit);
+            elIpLimit.max = String(state.maxIpLimit);
+            elIpLimit.value = String(state.baseIpLimit);
+        }
+        if (elIpPriceNote) {
+            if (state.maxIpLimit <= state.baseIpLimit) {
+                elIpPriceNote.textContent = @js(__('Limit perangkat tetap sesuai paket.'));
+            } else if (state.extraIpPrice > 0) {
+                elIpPriceNote.textContent = '+' + formatRp(state.extraIpPrice) + ' / ' + @js(__('perangkat')) + ' (' + state.baseDays + ' ' + @js(__('hari')) + ', ' + @js(__('maks.')) + ' ' + state.maxIpLimit + ' IP)';
+            } else {
+                elIpPriceNote.textContent = @js(__('Gratis tambah hingga')) + ' ' + state.maxIpLimit + ' IP';
+            }
+        }
         elSniMode.value = ['1', '2', '3'].includes(state.defaultSni) ? state.defaultSni : '3';
         elUsername.value = '';
         elSshPass.value = '';

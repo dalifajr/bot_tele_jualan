@@ -308,14 +308,26 @@
                                     </select>
                                 </div>
                                 <div class="row g-2 mb-2">
-                                    <div class="col-6">
+                                    <div class="col-4">
                                         <label class="form-label text-muted small fw-bold">{{ __('Kuota (GB, 0=Unli)') }}</label>
                                         <input type="number" name="vpn_quota_gb" class="form-control" value="0" min="0" max="10000">
                                     </div>
-                                    <div class="col-6">
-                                        <label class="form-label text-muted small fw-bold">{{ __('Limit IP') }}</label>
+                                    <div class="col-4">
+                                        <label class="form-label text-muted small fw-bold">{{ __('Perangkat Bawaan') }}</label>
                                         <input type="number" name="vpn_ip_limit" class="form-control" value="2" min="1" max="50">
                                     </div>
+                                    <div class="col-4">
+                                        <label class="form-label text-muted small fw-bold">{{ __('Maks. Perangkat') }}</label>
+                                        <input type="number" name="vpn_max_ip_limit" class="form-control" value="10" min="1" max="50">
+                                    </div>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label text-muted small fw-bold">{{ __('Harga Tambah Perangkat (Rp / +1 Device)') }}</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-white text-muted fw-bold">+Rp</span>
+                                        <input type="number" name="vpn_extra_ip_price" class="form-control" value="0" min="0" max="100000000" placeholder="5000">
+                                    </div>
+                                    <div class="form-text small">{{ __('Biaya tambahan per +1 perangkat (IP) untuk durasi acuan. Ikut dihitung proporsional dengan durasi. Isi Maks. Perangkat sama dengan Perangkat Bawaan jika ingin mengunci limit.') }}</div>
                                 </div>
                                 <div class="form-text text-muted small"><i class="fas fa-info-circle"></i> {{ __('Seperti produk VCC, pembeli akan mengonfigurasi server, protokol, durasi, username, dan preset SNI/password SSH melalui popup saat klik Beli Sekarang.') }}</div>
                             </div>
@@ -478,15 +490,27 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="row g-2">
-                                    <div class="col-6">
+                                <div class="row g-2 mb-2">
+                                    <div class="col-4">
                                         <label class="form-label text-muted small fw-bold">{{ __('Kuota (GB, 0=Unli)') }}</label>
                                         <input type="number" name="vpn_quota_gb" class="form-control" value="{{ $product->vpn_quota_gb ?? 0 }}" min="0" max="10000">
                                     </div>
-                                    <div class="col-6">
-                                        <label class="form-label text-muted small fw-bold">{{ __('Limit IP') }}</label>
+                                    <div class="col-4">
+                                        <label class="form-label text-muted small fw-bold">{{ __('Perangkat Bawaan') }}</label>
                                         <input type="number" name="vpn_ip_limit" class="form-control" value="{{ max(1, (int) ($product->vpn_ip_limit ?? 2)) }}" min="1" max="50">
                                     </div>
+                                    <div class="col-4">
+                                        <label class="form-label text-muted small fw-bold">{{ __('Maks. Perangkat') }}</label>
+                                        <input type="number" name="vpn_max_ip_limit" class="form-control" value="{{ $product->getEffectiveMaxVpnIpLimit() }}" min="1" max="50">
+                                    </div>
+                                </div>
+                                <div class="mb-0">
+                                    <label class="form-label text-muted small fw-bold">{{ __('Harga Tambah Perangkat (Rp / +1 Device)') }}</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-white text-muted fw-bold">+Rp</span>
+                                        <input type="number" name="vpn_extra_ip_price" class="form-control" value="{{ (int) ($product->vpn_extra_ip_price ?? 0) }}" min="0" max="100000000" placeholder="5000">
+                                    </div>
+                                    <div class="form-text small">{{ __('Biaya tambahan per +1 perangkat (IP) untuk durasi acuan. Ikut dihitung proporsional dengan durasi.') }}</div>
                                 </div>
                             </div>
 

@@ -27,6 +27,8 @@ class Product extends Model
         'vpn_server_id',
         'vpn_quota_gb',
         'vpn_ip_limit',
+        'vpn_extra_ip_price',
+        'vpn_max_ip_limit',
         'vpn_sni_mode',
         'is_vcc',
         'vcc_services',
@@ -43,6 +45,8 @@ class Product extends Model
         'vpn_server_id' => 'integer',
         'vpn_quota_gb' => 'integer',
         'vpn_ip_limit' => 'integer',
+        'vpn_extra_ip_price' => 'integer',
+        'vpn_max_ip_limit' => 'integer',
         'is_vcc' => 'boolean',
         'vcc_services' => 'array',
     ];
@@ -80,6 +84,44 @@ class Product extends Model
         }
 
         return $this->is_vpn ? ['vmess', 'vless', 'trojan', 'shadowsocks', 'ssh'] : [];
+    }
+
+    /**
+     * Effective maximum selectable device (IP) limit for this VPN product.
+     */
+    public function getEffectiveMaxVpnIpLimit(): int
+    {
+        $baseIp = max(1, min(50, (int) ($this->vpn_ip_limit ?: 1)));
+        $configuredMax = $this->vpn_max_ip_limit !== null && (int) $this->vpn_max_ip_limit > 0
+            ? (int) $this->vpn_max_ip_limit
+            : max($baseIp, 10);
+
+        return max($baseIp, min(50, $configuredMax));
+    }
+
+    /**
+     * Calculate VPN unit price proportionally for selected duration and device (IP) limit.
+     */
+    public function calculateVpnPrice(int $days, ?int $ipLimit = null): int
+    {
+        $baseDays = max(1, (int) ($this->vpn_duration_days ?: 30));
+        $effectiveDays = max(1, min(365, $days));
+        $baseIp = max(1, min(50, (int) ($this->vpn_ip_limit ?: 1)));
+        $maxIp = $this->getEffectiveMaxVpnIpLimit();
+        $effectiveIp = $ipLimit !== null ? max($baseIp, min($maxIp, $ipLimit)) : $baseIp;
+
+        $extraDevices = max(0, $effectiveIp - $baseIp);
+        $extraPricePerDevice = max(0, (int) ($this->vpn_extra_ip_price ?? 0));
+        $basePeriodTotal = max(0, (int) $this->price) + ($extraDevices * $extraPricePerDevice);
+
+        if ($basePeriodTotal <= 0) {
+            return 0;
+        }
+        if ($effectiveDays === $baseDays) {
+            return $basePeriodTotal;
+        }
+
+        return max(1, (int) round(($basePeriodTotal / $baseDays) * $effectiveDays));
     }
 
     public function orders()
