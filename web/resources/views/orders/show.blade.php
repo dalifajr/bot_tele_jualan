@@ -65,7 +65,7 @@
                         <div class="list-group-item p-3" style="background: var(--surface-bg); border-color: var(--outline-color) !important;">
                             <div class="d-flex justify-content-between align-items-start gap-2">
                                 <div class="min-w-0">
-                                    <span class="fw-bold text-body">{{ $item->product->name ?? ($item->vpn_meta['label'] ?? '-') }}</span>
+                                    <span class="fw-bold text-body">{{ $item->vpn_meta['label'] ?? ($item->product->name ?? '-') }}</span>
                                     <small class="text-muted d-block">{{ $item->quantity }} &times; Rp {{ number_format($item->unit_price, 0, ',', '.') }}</small>
                                     <div class="mt-1.5 d-flex flex-wrap align-items-center gap-1.5">
                                         @if($itemSeller)

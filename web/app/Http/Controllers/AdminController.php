@@ -335,7 +335,12 @@ class AdminController extends Controller
 
     public function products(Request $request)
     {
-        $query = Product::with(['creator', 'stockUnits', 'workers']);
+        $query = Product::with(['creator', 'stockUnits', 'workers'])
+            ->where(function ($q) {
+                $q->where('name', '!=', 'Layanan VPN Custom (Tagihan Admin)')
+                  ->orWhere('is_suspended', false)
+                  ->orWhere('vpn_duration_days', '>', 0);
+            });
 
         if ($request->filled('search')) {
             $search = trim($request->search);

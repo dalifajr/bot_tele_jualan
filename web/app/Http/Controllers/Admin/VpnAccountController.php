@@ -227,9 +227,7 @@ class VpnAccountController extends Controller
                     'expires_at' => now()->addMinutes($expiryMinutes),
                 ]);
 
-                $resolvedProductId = $product?->id
-                    ?? Product::where('is_vpn', true)->where('vpn_protocol', $validated['protocol'])->value('id')
-                    ?? 0;
+                $resolvedProductId = $this->resolveBillingProductId($product, $validated['protocol']);
 
                 OrderItem::create([
                     'order_id' => $order->id,
@@ -572,6 +570,53 @@ class VpnAccountController extends Controller
                 ? __('Akun VPN :user berhasil dihapus permanen.', ['user' => $username])
                 : ($res['message'] ?? __('Gagal menghapus akun VPN.'))
         );
+    }
+
+    private function resolveBillingProductId(?Product $selectedProduct, string $protocol): int
+    {
+        if ($selectedProduct && $selectedProduct->exists) {
+            return (int) $selectedProduct->id;
+        }
+
+        $matchingId = Product::where('is_vpn', true)
+            ->where('is_suspended', false)
+            ->where('vpn_protocol', strtolower($protocol))
+            ->value('id');
+        if ($matchingId) {
+            return (int) $matchingId;
+        }
+
+        // Fallback: reuse a hidden system product so MySQL FK (order_items.product_id -> products.id)
+        // is always satisfied even when the public catalog has 0 VPN products configured.
+        $systemProduct = Product::withTrashed()
+            ->where('name', 'Layanan VPN Custom (Tagihan Admin)')
+            ->where('is_vpn', true)
+            ->where('is_suspended', true)
+            ->where('vpn_duration_days', 0)
+            ->first();
+
+        if ($systemProduct) {
+            if ($systemProduct->trashed()) {
+                $systemProduct->restore();
+            }
+            return (int) $systemProduct->id;
+        }
+
+        $created = Product::create([
+            'name' => 'Layanan VPN Custom (Tagihan Admin)',
+            'price' => 0,
+            'description' => 'Produk sistem internal otomatis untuk tagihan VPN manual Admin (tidak tampil di katalog publik).',
+            'is_suspended' => true,
+            'creator_id' => null,
+            'is_vpn' => true,
+            'vpn_protocol' => 'vmess',
+            'vpn_duration_days' => 0,
+            'vpn_quota_gb' => 0,
+            'vpn_ip_limit' => 1,
+            'vpn_sni_mode' => '3',
+        ]);
+
+        return (int) $created->id;
     }
 
     private function logAudit(string $action, VpnAccount $account, string $detail): void

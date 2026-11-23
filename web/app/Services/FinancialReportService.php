@@ -384,7 +384,7 @@ class FinancialReportService
                 'direction' => 'in',
                 'reference' => $order->order_ref,
                 'party' => $order->customer?->display_name ?? __('Pelanggan'),
-                'detail' => $order->items->map(fn ($i) => ($i->product?->name ?? 'Produk') . ' x' . $i->quantity)->implode(', '),
+                'detail' => $order->items->map(fn ($i) => ($i->vpn_meta['label'] ?? $i->product?->name ?? 'Produk') . ' x' . $i->quantity)->implode(', '),
                 'amount' => (int) $order->total_amount,
                 'source' => $order->payment?->source_app ?? 'DIRECT',
             ]);

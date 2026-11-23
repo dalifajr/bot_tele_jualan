@@ -766,4 +766,96 @@ class VpnXrayApiIntegrationTest extends TestCase
         app(OrderService::class)->confirmPayment($order, 'qris_auto', $this->admin->id);
         $this->assertSame('1', $capturedSniModes[$item->vpn_username] ?? null);
     }
+
+    public function test_admin_manual_vpn_billing_works_with_zero_products_and_valid_foreign_key(): void
+    {
+        // Delete ALL catalog products so table `products` is completely empty (reproduces MySQL FK 1452 scenario)
+        Product::query()->forceDelete();
+        $this->assertSame(0, Product::withTrashed()->count());
+
+        Http::fake([
+            'https://sg1.vpnpanel.test/api/v1/vpn/check-username*' => Http::response([
+                'success' => true,
+                'message' => 'Available',
+                'data' => ['available' => true, 'exists' => false],
+            ], 200),
+            'https://sg1.vpnpanel.test/api/v1/vpn/accounts' => Http::response([
+                'success' => true,
+                'message' => 'Created',
+                'data' => [
+                    'protocol' => 'vmess',
+                    'username' => 'iann_billing01',
+                    'domain' => 'sg1.vpnpanel.test',
+                    'uuid' => '1234abcd-5678-ef90-1234-abcdef567890',
+                    'sni_mode' => '1',
+                    'status' => 'active',
+                    'expired_at' => now()->addDays(30)->format('Y-m-d'),
+                    'links' => ['tls' => 'vmess://aWFubg=='],
+                    'formatted_text' => 'VMESS iann_billing01',
+                ],
+            ], 201),
+        ]);
+
+        $res = $this->actingAs($this->admin)
+            ->post(route('admin.vpn-accounts.store'), [
+                'assign_target' => 'customer',
+                'customer_id' => $this->customer->id,
+                'vpn_server_id' => $this->server->id,
+                'protocol' => 'vmess',
+                'username' => 'iann_billing01',
+                'days' => 30,
+                'quota_gb' => 0,
+                'ip_limit' => 2,
+                'sni_mode' => '1',
+                'is_paid' => 0,
+                'billing_amount' => 10000,
+            ]);
+
+        $order = Order::where('customer_id', $this->customer->id)
+            ->where('status', 'pending_payment')
+            ->latest('id')
+            ->firstOrFail();
+
+        $res->assertRedirect(route('checkout.success', ['order_ref' => $order->order_ref]));
+
+        // OrderItem product_id MUST reference an existing row in `products` (MySQL FK order_items_ibfk_2)
+        $item = $order->items()->firstOrFail();
+        $this->assertGreaterThan(0, (int) $item->product_id);
+        $this->assertDatabaseHas('products', [
+            'id' => $item->product_id,
+            'is_suspended' => true,
+            'vpn_duration_days' => 0,
+        ]);
+
+        // Hidden system product must NOT appear in Admin Products list, Public Catalog, or unlock /my-vpn Create button
+        $this->actingAs($this->admin)
+            ->get(route('admin.products.index'))
+            ->assertStatus(200)
+            ->assertDontSee('Layanan VPN Custom (Tagihan Admin)');
+
+        $this->actingAs($this->customer)
+            ->get(route('vpn.my-accounts'))
+            ->assertStatus(200)
+            ->assertDontSee('customerCreateVpnModal');
+
+        // Customer's notification URL must point to checkout.success (not /admin/orders)
+        $custNotif = $this->customer->notifications()->latest()->first();
+        $this->assertNotNull($custNotif);
+        $this->assertStringContainsString('/checkout/success/' . $order->order_ref, (string) ($custNotif->data['url'] ?? ''));
+
+        // Order detail displays custom VPN label
+        $this->actingAs($this->customer)
+            ->get(route('orders.show', $order->id))
+            ->assertStatus(200)
+            ->assertSee('VPN VMESS (iann_billing01) 30 Hari');
+
+        // Paying the invoice auto-provisions the VPN account for customer
+        app(OrderService::class)->confirmPayment($order, 'qris_auto', $this->admin->id);
+        $this->assertDatabaseHas('vpn_accounts', [
+            'user_id' => $this->customer->id,
+            'username' => 'iann_billing01',
+            'protocol' => 'vmess',
+            'status' => 'active',
+        ]);
+    }
 }

@@ -72,7 +72,7 @@ class TelegramService
         $customerName = $order->customer->full_name ?? $order->customer->username ?? '-';
         $itemCount = $order->items->count();
         $firstItem = $order->items->first();
-        $productName = $firstItem ? $firstItem->product->name : 'Produk';
+        $productName = $firstItem ? ($firstItem->vpn_meta['label'] ?? $firstItem->product?->name ?? 'Produk') : 'Produk';
         
         if ($itemCount > 1) {
             $productName .= " (+" . ($itemCount - 1) . " item)";
@@ -143,7 +143,7 @@ class TelegramService
         $customerName = $order->customer->full_name ?? $order->customer->username ?? '-';
         $itemCount = $order->items->count();
         $firstItem = $order->items->first();
-        $productName = $firstItem ? $firstItem->product->name : 'Produk';
+        $productName = $firstItem ? ($firstItem->vpn_meta['label'] ?? $firstItem->product?->name ?? 'Produk') : 'Produk';
         
         if ($itemCount > 1) {
             $productName .= " (+" . ($itemCount - 1) . " item)";
@@ -227,7 +227,7 @@ class TelegramService
 
         $itemCount = $order->items->count();
         $firstItem = $order->items->first();
-        $productName = $firstItem ? $firstItem->product->name : 'Produk';
+        $productName = $firstItem ? ($firstItem->vpn_meta['label'] ?? $firstItem->product?->name ?? 'Produk') : 'Produk';
         if ($itemCount > 1) {
             $productName .= " (+" . ($itemCount - 1) . " item)";
         }
@@ -378,7 +378,7 @@ class TelegramService
 
         if ($order->items && $order->items->isNotEmpty()) {
             foreach ($order->items as $item) {
-                $prodName = $item->product->name ?? 'Produk';
+                $prodName = $item->vpn_meta['label'] ?? $item->product?->name ?? 'Produk';
                 $priceFormatted = 'Rp ' . number_format($item->unit_price, 0, ',', '.');
                 $text .= "Produk: " . htmlspecialchars($prodName) . "\n"
                       . "Harga: {$priceFormatted}\n"

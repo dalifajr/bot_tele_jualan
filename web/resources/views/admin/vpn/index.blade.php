@@ -1894,11 +1894,11 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         if (paidHint) {
             paidHint.textContent = paid
-                ? '{{ __("Akun langsung dibuat di server VPN dan muncul pada menu Akun VPN Saya milik pemilik terpilih.") }}'
-                : '{{ __("Membuat tagihan pembayaran (QRIS) untuk customer. Akun VPN otomatis dibuat begitu pembayaran diterima.") }}';
+                ? @js(__('Akun langsung dibuat di server VPN dan muncul pada menu Akun VPN Saya milik pemilik terpilih.'))
+                : @js(__('Membuat tagihan pembayaran (QRIS) untuk customer. Akun VPN otomatis dibuat begitu pembayaran diterima.'));
         }
         if (submitCreateBtn) {
-            submitCreateBtn.querySelector('span').textContent = paid ? '{{ __("Buat Akun Sekarang") }}' : '{{ __("Buat & Kirim Tagihan") }}';
+            submitCreateBtn.querySelector('span').textContent = paid ? @js(__('Buat Akun Sekarang')) : @js(__('Buat & Kirim Tagihan'));
         }
     }
     isPaidToggle?.addEventListener('change', syncPaidToggleUI);
