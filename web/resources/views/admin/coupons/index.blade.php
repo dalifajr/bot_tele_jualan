@@ -473,7 +473,7 @@
                         </div>
 
                         {{-- Specific Products Box --}}
-                        <div id="createSpecificProductsBox" class="border rounded-3 p-3 bg-light d-none">
+                        <div id="createSpecificProductsBox" class="border rounded-3 p-3 d-none" style="background: var(--surface-container-low); border-color: var(--outline-variant) !important;">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <span class="small fw-bold text-secondary">{{ __('Pilih Produk yang Memenuhi Syarat:') }}</span>
                                 <div class="btn-group btn-group-sm">
@@ -482,7 +482,7 @@
                                 </div>
                             </div>
                             <input type="text" class="form-control form-control-sm mb-2" placeholder="{{ __('Cari nama produk...') }}" oninput="filterProductList(this, 'createProductList')">
-                            <div id="createProductList" class="overflow-auto bg-white border rounded p-2" style="max-height: 200px;">
+                            <div id="createProductList" class="overflow-auto border rounded p-2" style="max-height: 200px; background: var(--surface-container-lowest); border-color: var(--outline-variant) !important;">
                                 @foreach($products as $prod)
                                 <div class="form-check py-1 product-item-row" data-name="{{ strtolower($prod->name) }}">
                                     <input class="form-check-input createProductCheck" type="checkbox" name="product_ids[]" value="{{ $prod->id }}" id="createProd-{{ $prod->id }}">
@@ -497,7 +497,7 @@
                     </div>
 
                 </div>
-                <div class="modal-footer bg-light border-0 px-4 py-3">
+                <div class="modal-footer border-0 px-4 py-3" style="background: var(--surface-container-low);">
                     <button type="button" class="btn btn-secondary rounded-pill px-3" data-bs-dismiss="modal">{{ __('Batal') }}</button>
                     <button type="submit" class="btn btn-primary rounded-pill px-4">{{ __('Buat Kupon') }}</button>
                 </div>
@@ -518,7 +518,7 @@
                         <i class="fas fa-edit text-primary fs-5"></i>
                     </div>
                     <div>
-                        <h5 class="modal-title fw-bold mb-0 text-dark" id="editCouponModalLabel-{{ $coupon->id }}">{{ __('Edit Kupon:') }} {{ $coupon->code }}</h5>
+                        <h5 class="modal-title fw-bold mb-0 text-body" id="editCouponModalLabel-{{ $coupon->id }}">{{ __('Edit Kupon:') }} {{ $coupon->code }}</h5>
                         <p class="small text-muted mb-0">{{ __('Perbarui rincian potongan harga atau batasan kupon.') }}</p>
                     </div>
                 </div>
@@ -632,7 +632,7 @@
                         </div>
 
                         {{-- Specific Products Box --}}
-                        <div id="edit-{{ $coupon->id }}SpecificProductsBox" class="border rounded-3 p-3 bg-light {{ !$hasSpecific ? 'd-none' : '' }}">
+                        <div id="edit-{{ $coupon->id }}SpecificProductsBox" class="border rounded-3 p-3 {{ !$hasSpecific ? 'd-none' : '' }}" style="background: var(--surface-container-low); border-color: var(--outline-variant) !important;">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <span class="small fw-bold text-secondary">{{ __('Pilih Produk yang Memenuhi Syarat:') }}</span>
                                 <div class="btn-group btn-group-sm">
@@ -641,7 +641,7 @@
                                 </div>
                             </div>
                             <input type="text" class="form-control form-control-sm mb-2" placeholder="{{ __('Cari nama produk...') }}" oninput="filterProductList(this, 'editProductList-{{ $coupon->id }}')">
-                            <div id="editProductList-{{ $coupon->id }}" class="overflow-auto bg-white border rounded p-2" style="max-height: 200px;">
+                            <div id="editProductList-{{ $coupon->id }}" class="overflow-auto border rounded p-2" style="max-height: 200px; background: var(--surface-container-lowest); border-color: var(--outline-variant) !important;">
                                 @foreach($products as $prod)
                                 <div class="form-check py-1 product-item-row" data-name="{{ strtolower($prod->name) }}">
                                     <input class="form-check-input editProductCheck-{{ $coupon->id }}" type="checkbox" name="product_ids[]" value="{{ $prod->id }}" id="editProd-{{ $coupon->id }}-{{ $prod->id }}" {{ in_array($prod->id, $assignedIds) ? 'checked' : '' }}>
@@ -656,7 +656,7 @@
                     </div>
 
                 </div>
-                <div class="modal-footer bg-light border-0 px-4 py-3">
+                <div class="modal-footer border-0 px-4 py-3" style="background: var(--surface-container-low);">
                     <button type="button" class="btn btn-secondary rounded-pill px-3" data-bs-dismiss="modal">{{ __('Batal') }}</button>
                     <button type="submit" class="btn btn-primary rounded-pill px-4">{{ __('Simpan Perubahan') }}</button>
                 </div>

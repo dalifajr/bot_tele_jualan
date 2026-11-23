@@ -211,7 +211,8 @@
                 <p class="text-muted small mb-0">{{ __('5 produk dengan jumlah penjualan unit terbanyak') }}</p>
             </div>
             <div class="card-body p-0">
-                <div class="table-responsive">
+                {{-- Desktop Table --}}
+                <div class="table-responsive d-none d-md-block">
                     <table class="table table-hover align-middle mb-0">
                         <thead>
                             <tr class="text-secondary small fw-bold text-uppercase" style="letter-spacing: 0.5px;">
@@ -225,9 +226,9 @@
                             @forelse($topProducts as $prod)
                             <tr>
                                 <td class="px-4 fw-bold text-body">{{ $prod->name }}</td>
-                                <td class="text-body">Rp {{ number_format($prod->price, 0, ',', '.') }}</td>
-                                <td class="text-center fw-bold text-primary">{{ $prod->units_sold }}</td>
-                                <td class="px-4 text-end fw-bold text-success">Rp {{ number_format($prod->total_earnings, 0, ',', '.') }}</td>
+                                <td class="text-body m3-tabular-nums">Rp {{ number_format($prod->price, 0, ',', '.') }}</td>
+                                <td class="text-center fw-bold text-primary m3-tabular-nums">{{ $prod->units_sold }}</td>
+                                <td class="px-4 text-end fw-bold text-success m3-tabular-nums">Rp {{ number_format($prod->total_earnings, 0, ',', '.') }}</td>
                             </tr>
                             @empty
                             <tr>
@@ -236,6 +237,24 @@
                             @endforelse
                         </tbody>
                     </table>
+                </div>
+
+                {{-- Mobile Stacked Cards (< 768px) --}}
+                <div class="d-md-none p-3 d-flex flex-column gap-2.5">
+                    @forelse($topProducts as $prod)
+                        <div class="m3-mobile-item-card p-3">
+                            <div class="d-flex justify-content-between align-items-start gap-2 mb-1.5">
+                                <div class="fw-bold text-body small">{{ $prod->name }}</div>
+                                <span class="badge bg-primary-subtle text-primary rounded-pill flex-shrink-0 m3-tabular-nums">{{ $prod->units_sold }} {{ __('unit') }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center small pt-2 border-top" style="border-color: var(--outline-variant) !important;">
+                                <span class="text-muted m3-tabular-nums">{{ __('Harga:') }} Rp {{ number_format($prod->price, 0, ',', '.') }}</span>
+                                <span class="fw-bold text-success m3-tabular-nums">Rp {{ number_format($prod->total_earnings, 0, ',', '.') }}</span>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="text-center py-4 text-muted small">{{ __('Belum ada produk yang terjual.') }}</div>
+                    @endforelse
                 </div>
             </div>
         </div>
@@ -314,7 +333,7 @@
                 </div>
             </div>
             <div class="mt-4 text-center">
-                <a href="{{ route('seller.finance.index') }}" class="btn btn-outline-primary btn-sm px-4 fw-bold" style="border-radius: 4px;">{{ __('Lihat Dompet Saya') }}</a>
+                <a href="{{ route('seller.finance.index') }}" class="btn btn-outline-primary btn-sm rounded-pill px-4 py-2 fw-bold">{{ __('Lihat Dompet Saya') }}</a>
             </div>
         </div>
     </div>
@@ -327,7 +346,8 @@
     </div>
     <div class="card-body p-0">
         @if($latestOrders->count() > 0)
-        <div class="table-responsive">
+        {{-- Desktop Table --}}
+        <div class="table-responsive d-none d-md-block">
             <table class="table table-hover align-middle mb-0">
                 <thead>
                     <tr class="text-secondary small fw-bold text-uppercase" style="letter-spacing: 0.5px;">
@@ -345,19 +365,44 @@
                         });
                     @endphp
                     <tr>
-                        <td class="px-4 fw-bold text-primary">{{ $order->order_ref }}</td>
+                        <td class="px-4 fw-bold text-primary font-monospace">{{ $order->order_ref }}</td>
                         <td>
                             <div class="d-flex flex-column">
                                 <span class="fw-bold text-body">{{ $order->customer->full_name ?? 'Unknown' }}</span>
                                 <span class="small text-muted">{{ $order->customer->username ?? '' }}</span>
                             </div>
                         </td>
-                        <td class="text-success fw-bold">Rp {{ number_format($myEarningsInOrder, 0, ',', '.') }}</td>
+                        <td class="text-success fw-bold m3-tabular-nums">Rp {{ number_format($myEarningsInOrder, 0, ',', '.') }}</td>
                         <td class="text-secondary small text-end pe-4">{{ $order->delivered_at ? $order->delivered_at->format('d M Y H:i') : '-' }}</td>
                     </tr>
                     @endforeach
                 </tbody>
             </table>
+        </div>
+
+        {{-- Mobile Stacked Cards (< 768px) --}}
+        <div class="d-md-none p-3 d-flex flex-column gap-2.5">
+            @foreach($latestOrders as $order)
+            @php
+                $myEarningsInOrder = $order->stockUnits->where('seller_id', Auth::id())->sum(function($unit) {
+                    return $unit->product->price ?? 0;
+                });
+            @endphp
+            <div class="m3-mobile-item-card p-3">
+                <div class="d-flex justify-content-between align-items-start gap-2 mb-1">
+                    <span class="fw-bold text-primary font-monospace small">{{ $order->order_ref }}</span>
+                    <span class="fw-bold text-success m3-tabular-nums">Rp {{ number_format($myEarningsInOrder, 0, ',', '.') }}</span>
+                </div>
+                <div class="small text-body fw-semibold">{{ $order->customer->full_name ?? 'Unknown' }}
+                    @if(!empty($order->customer->username))
+                        <span class="text-muted fw-normal">({{ '@' . $order->customer->username }})</span>
+                    @endif
+                </div>
+                <div class="small text-muted mt-1.5 pt-1.5 border-top" style="border-color: var(--outline-variant) !important;">
+                    <i class="far fa-clock me-1"></i>{{ $order->delivered_at ? $order->delivered_at->format('d M Y, H:i') : '-' }}
+                </div>
+            </div>
+            @endforeach
         </div>
         @else
         <div class="text-center py-5">

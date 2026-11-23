@@ -95,7 +95,7 @@
     @foreach($products as $product)
     <div class="col-12 col-sm-6 col-md-4 col-xl-3">
         <div class="card border-0 shadow-sm overflow-hidden h-100" style="border-radius: 14px;">
-            <div class="px-3 py-2 text-white d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);">
+            <div class="px-3 py-2 text-white d-flex justify-content-between align-items-center" style="background: var(--primary); color: var(--on-primary);">
                 <div class="text-truncate me-2" style="max-width: 65%;">
                     <span class="fw-bold text-white text-truncate d-block small" title="{{ $product->name }}">
                         #{{ $product->id }} {{ $product->name }}
@@ -118,7 +118,7 @@
                         @endif
 
                         @if($product->creator_id === null)
-                            <span class="badge bg-dark-subtle text-dark rounded-pill px-2 py-0.5" title="{{ __('Dikelola oleh Admin Utama') }}"><i class="fas fa-user-shield me-1"></i>{{ __('Admin') }}</span>
+                            <span class="badge bg-dark-subtle text-body rounded-pill px-2 py-0.5" title="{{ __('Dikelola oleh Admin Utama') }}"><i class="fas fa-user-shield me-1"></i>{{ __('Admin') }}</span>
                         @else
                             <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-0.5" title="{{ __('Pemilik Produk: Seller') }}"><i class="fas fa-store me-1"></i>{{ Str::limit($product->creator->full_name ?? $product->creator->username, 12) }}</span>
                         @endif
@@ -136,7 +136,7 @@
                         @endif
 
                         @if($product->platform_fee_percent !== null)
-                            <span class="badge bg-secondary-subtle text-dark border rounded-pill px-2 py-0.5" title="{{ __('Komisi Platform Produk ini: :fee%', ['fee' => $product->platform_fee_percent]) }}">
+                            <span class="badge bg-secondary-subtle text-body border rounded-pill px-2 py-0.5" title="{{ __('Komisi Platform Produk ini: :fee%', ['fee' => $product->platform_fee_percent]) }}">
                                 <i class="fas fa-percentage me-1 text-primary"></i>{{ $product->platform_fee_percent }}%
                             </span>
                         @endif
@@ -202,8 +202,9 @@
 @push('modals')
 {{-- Add Product Modal --}}
 <div class="modal fade" id="addProductModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable m3-sheet-modal">
         <div class="modal-content" style="border-radius: 16px; border: none;">
+            <div class="m3-sheet-handle d-md-none"></div>
             <div class="modal-header border-0 pb-0">
                 <h5 class="fw-bold">{{ __('Tambah Produk Baru') }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -296,7 +297,7 @@
                             </div>
 
                             <div id="vccOptionsAddContainer" style="display: none;" class="bg-light p-3 rounded-4 mb-3 border">
-                                <label class="form-label text-dark small fw-bold d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label text-body small fw-bold d-flex justify-content-between align-items-center mb-1">
                                     <span>{{ __('Layanan yang Didukung VCC:') }}</span>
                                     <div class="d-flex gap-2">
                                         <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2" style="font-size: 0.72rem;" onclick="toggleAllVccServices('vcc-check-add', true)">{{ __('Pilih Semua') }}</button>
@@ -334,8 +335,9 @@
 @foreach($products as $product)
 {{-- Edit Modal --}}
 <div class="modal fade" id="editProductModal{{ $product->id }}" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable m3-sheet-modal">
         <div class="modal-content" style="border-radius: 16px; border: none;">
+            <div class="m3-sheet-handle d-md-none"></div>
             <div class="modal-header border-0 pb-0">
                 <h5 class="fw-bold">{{ __('Edit Produk') }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -437,7 +439,7 @@
                             </div>
 
                             <div id="vccOptionsEditContainer{{ $product->id }}" style="display: {{ $product->is_vcc ? 'block' : 'none' }};" class="bg-light p-3 rounded-4 mb-3 border">
-                                <label class="form-label text-dark small fw-bold d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label text-body small fw-bold d-flex justify-content-between align-items-center mb-1">
                                     <span>{{ __('Layanan yang Didukung VCC:') }}</span>
                                     <div class="d-flex gap-2">
                                         <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2" style="font-size: 0.72rem;" onclick="toggleAllVccServices('vcc-check-edit-{{ $product->id }}', true)">{{ __('Pilih Semua') }}</button>
@@ -483,8 +485,9 @@
 {{-- Takeover Modal --}}
 @if($product->creator_id !== null)
 <div class="modal fade" id="takeoverProductModal{{ $product->id }}" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable m3-sheet-modal">
         <div class="modal-content text-center" style="border-radius: 16px; border: none;">
+            <div class="m3-sheet-handle d-md-none"></div>
             <div class="modal-body p-4">
                 <i class="fas fa-user-shield text-warning mb-3" style="font-size: 3rem;"></i>
                 <h5 class="fw-bold">{{ __('Ambil Alih Produk ke Admin?') }}</h5>
@@ -506,8 +509,9 @@
 
 {{-- Reassign / Transfer Modal --}}
 <div class="modal fade" id="reassignProductModal{{ $product->id }}" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable m3-sheet-modal">
         <div class="modal-content" style="border-radius: 16px; border: none;">
+            <div class="m3-sheet-handle d-md-none"></div>
             <div class="modal-header border-0 pb-0">
                 <h5 class="fw-bold"><i class="fas fa-exchange-alt text-info me-2"></i>{{ __('Limpahkan Produk ke Seller Lain') }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -543,8 +547,9 @@
 
 {{-- Delete Modal (M3 Alert Dialog Style) --}}
 <div class="modal fade" id="deleteProductModal{{ $product->id }}" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" style="max-width: 440px;">
+    <div class="modal-dialog modal-dialog-centered m3-sheet-modal" style="max-width: 440px;">
         <div class="modal-content text-center" style="border-radius: 28px; border: none; padding: 24px; background-color: var(--surface-container-high, #ece6f0);">
+            <div class="m3-sheet-handle d-md-none"></div>
             <div class="modal-body p-0">
                 <div class="mx-auto mb-3 d-flex align-items-center justify-content-center rounded-circle" style="width: 38px; height: 38px; background: var(--surface-container-highest, #dce4eb); color: var(--on-surface-variant, #44474f); font-weight: 600; font-size: 1.1rem;">i</div>
                 <h5 class="fw-bold mb-2" style="font-family: var(--font-poppins); font-size: 1.4rem;">{{ __('Hapus Produk?') }}</h5>
@@ -583,8 +588,9 @@
 
 {{-- Export PDF Modal --}}
 <div class="modal fade" id="exportPdfModal{{ $product->id }}" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable m3-sheet-modal">
         <div class="modal-content text-start" style="border-radius: 16px; border: none;">
+            <div class="m3-sheet-handle d-md-none"></div>
             <div class="modal-header border-0 pb-0">
                 <h5 class="fw-bold"><i class="fas fa-file-pdf text-danger me-2"></i>{{ __('Laporan Penjualan (PDF)') }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>

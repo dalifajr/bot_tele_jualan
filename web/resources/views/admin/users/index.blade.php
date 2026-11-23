@@ -33,7 +33,7 @@
         <div class="card border-0 shadow-sm h-100" style="border-radius: 16px;">
             <div class="card-body p-3 text-center">
                 <div class="text-secondary small fw-bold mb-1">{{ __('Admin') }}</div>
-                <h3 class="fw-bold mb-0 text-dark">{{ $adminCount }}</h3>
+                <h3 class="fw-bold mb-0 text-body m3-tabular-nums">{{ $adminCount }}</h3>
             </div>
         </div>
     </div>
@@ -88,7 +88,8 @@
 <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 16px;">
     <div class="card-body p-0">
         @if($users->count() > 0)
-        <div class="table-responsive">
+        {{-- Desktop Table View --}}
+        <div class="table-responsive d-none d-md-block">
             <table class="table table-hover align-middle mb-0">
                 <thead>
                     <tr class="text-secondary small border-bottom">
@@ -218,6 +219,119 @@
                 </tbody>
             </table>
         </div>
+
+        {{-- Mobile Stacked Card List (< 768px) --}}
+        <div class="d-md-none p-3 d-flex flex-column gap-2.5">
+            @foreach($users as $user)
+            <div class="m3-mobile-item-card p-3">
+                <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                    <div class="d-flex align-items-center gap-2.5 min-w-0">
+                        <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center fw-bold flex-shrink-0 overflow-hidden" style="width: 40px; height: 40px;">
+                            @if($user->avatar)
+                                <img src="{{ \Illuminate\Support\Facades\Storage::url($user->avatar) }}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover;">
+                            @else
+                                {{ strtoupper(substr($user->full_name ?? $user->username ?? 'U', 0, 1)) }}
+                            @endif
+                        </div>
+                        <div class="min-w-0">
+                            <div class="fw-bold text-body text-truncate">{{ $user->full_name ?? 'Unknown' }}</div>
+                            <div class="small text-secondary text-truncate">
+                                {{ $user->username ? '@'.$user->username : '-' }}
+                                @if($user->telegram_id)
+                                    · <span class="font-monospace">ID {{ $user->telegram_id }}</span>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex flex-column align-items-end gap-1 flex-shrink-0">
+                        @if($user->is_suspended)
+                            <span class="badge bg-danger-subtle text-danger rounded-pill px-2">{{ __('Ditangguhkan') }}</span>
+                        @else
+                            <span class="badge bg-success-subtle text-success rounded-pill px-2">{{ __('Aktif') }}</span>
+                        @endif
+                        <span class="badge bg-{{ $user->role === 'admin' ? 'primary' : ($user->role === 'seller' ? 'info' : 'secondary') }}-subtle text-{{ $user->role === 'admin' ? 'primary' : ($user->role === 'seller' ? 'info' : 'secondary') }} rounded-pill px-2">
+                            {{ ucfirst($user->role ?? 'customer') }}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center py-2 px-2.5 rounded-3 mb-2" style="background: var(--surface-container-high);">
+                    <div class="small text-secondary text-truncate me-2">
+                        <i class="far fa-envelope me-1"></i>{{ $user->email ?? '-' }}
+                    </div>
+                    <span class="badge bg-primary-subtle text-primary rounded-pill fw-bold flex-shrink-0 m3-tabular-nums">
+                        Rp {{ number_format((int) ($user->customer_wallet_balance ?? 0), 0, ',', '.') }}
+                    </span>
+                </div>
+
+                <div class="small text-muted mb-2">
+                    <i class="far fa-calendar me-1"></i>{{ __('Bergabung:') }} {{ $user->created_at->format('d M Y') }}
+                </div>
+
+                <div class="d-flex gap-2 pt-2 border-top" style="border-color: var(--outline-variant) !important;">
+                    <button type="button"
+                            class="btn btn-sm btn-tonal rounded-pill flex-grow-1 fw-semibold btn-open-user-inject"
+                            style="min-height: 40px;"
+                            data-user-id="{{ $user->id }}"
+                            data-user-label="{{ ($user->full_name ?: $user->username) . ($user->username ? ' (@' . $user->username . ')' : '') }}"
+                            data-balance="Rp {{ number_format((int) ($user->customer_wallet_balance ?? 0), 0, ',', '.') }}">
+                        <i class="fas fa-bolt me-1"></i>{{ __('Saldo') }}
+                    </button>
+                    @if($user->id !== Auth::id())
+                    <button type="button" class="btn btn-sm btn-outline-primary rounded-pill flex-grow-1 fw-semibold" style="min-height: 40px;" data-bs-toggle="modal" data-bs-target="#editUserModal{{ $user->id }}">
+                        <i class="fas fa-user-shield me-1"></i>{{ __('Akses') }}
+                    </button>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" style="min-height: 40px;" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" style="border-radius: 12px; min-width: 200px;">
+                            <li>
+                                <form action="{{ route('admin.users.impersonate', $user->id) }}" method="POST" class="m-0">
+                                    @csrf
+                                    <button type="submit" class="dropdown-item py-2 text-info">
+                                        <i class="fas fa-user-secret me-2"></i> {{ __('Login Sebagai') }}
+                                    </button>
+                                </form>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            @if($user->is_suspended)
+                                <li>
+                                    <form action="{{ route('admin.users.unsuspend', $user->id) }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="dropdown-item py-2 text-success">
+                                            <i class="fas fa-unlock me-2"></i> {{ __('Cabut Penangguhan') }}
+                                        </button>
+                                    </form>
+                                </li>
+                            @else
+                                <li>
+                                    <form action="{{ route('admin.users.suspend', $user->id) }}" method="POST">
+                                        @csrf
+                                        <button type="button" class="dropdown-item py-2 text-warning" onclick="confirmSuspend(event)">
+                                            <i class="fas fa-ban me-2"></i> {{ __('Suspend Pengguna') }}
+                                        </button>
+                                    </form>
+                                </li>
+                            @endif
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form action="{{ route('admin.users.destroy', $user->id) }}" method="POST">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="button" class="dropdown-item py-2 text-danger" onclick="confirmAction(event, '{{ __('Yakin ingin menghapus permanen pengguna ini? Proses ini tidak dapat dibatalkan.') }}')">
+                                        <i class="fas fa-trash me-2"></i> {{ __('Hapus Pengguna') }}
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                    @endif
+                </div>
+            </div>
+            @endforeach
+        </div>
+
         <div class="px-4 py-3 border-top">
             {{ $users->links() }}
         </div>
@@ -235,10 +349,11 @@
 @if($user->id !== Auth::id())
 {{-- Edit Role Modal --}}
 <div class="modal fade" id="editUserModal{{ $user->id }}" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content" style="border-radius: 16px; border: none;">
+    <div class="modal-dialog modal-dialog-centered m3-sheet-modal">
+        <div class="modal-content" style="border-radius: 20px; border: none;">
+            <div class="m3-sheet-handle d-md-none"></div>
             <div class="modal-header border-0 pb-0">
-                <h5 class="fw-bold">{{ __('Ubah Hak Akses & Detail Pengguna') }}</h5>
+                <h5 class="fw-bold text-body">{{ __('Ubah Hak Akses & Detail Pengguna') }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form action="{{ route('admin.users.update', $user->id) }}" method="POST">
@@ -268,10 +383,10 @@
                             </div>
                         </div>
 
-                        <div class="mb-3 p-3 bg-light rounded-3 border">
+                        <div class="mb-3 p-3 rounded-3 border" style="background: var(--surface-container-low); border-color: var(--outline-variant) !important;">
                             <div class="d-flex align-items-center justify-content-between">
                                 <div>
-                                    <label class="form-check-label fw-bold text-dark mb-0" for="user_comm_per_prod_{{ $user->id }}">
+                                    <label class="form-check-label fw-bold text-body mb-0" for="user_comm_per_prod_{{ $user->id }}">
                                         {{ __('Skema Komisi Khusus Per-Produk') }}
                                     </label>
                                     <div class="text-muted small" style="font-size: 0.75rem;">
@@ -353,10 +468,11 @@
 
 {{-- Modal Injeksi / Potong Saldo User Langsung dari Kelola Pelanggan --}}
 <div class="modal fade" id="injectBalanceUserModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content" style="border-radius: 16px; border: none;">
+    <div class="modal-dialog modal-dialog-centered m3-sheet-modal">
+        <div class="modal-content" style="border-radius: 20px; border: none;">
+            <div class="m3-sheet-handle d-md-none"></div>
             <div class="modal-header border-0 pb-0">
-                <h5 class="fw-bold"><i class="fas fa-bolt text-primary me-1.5"></i>{{ __('Injeksi / Kelola Saldo User') }}</h5>
+                <h5 class="fw-bold text-body"><i class="fas fa-bolt text-primary me-1.5"></i>{{ __('Injeksi / Kelola Saldo User') }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ __('Tutup') }}"></button>
             </div>
             <form action="{{ route('admin.wallet.manual-credit') }}" method="POST">

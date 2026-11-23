@@ -65,7 +65,7 @@
         {{-- Order Items Card --}}
         <div class="card border-0 shadow-sm mb-3" style="border-radius: 16px;">
             <div class="card-header bg-transparent border-0 pt-3 pt-md-4 px-3 px-md-4 pb-0">
-                <h6 class="fw-bold text-dark mb-0">
+                <h6 class="fw-bold text-body mb-0">
                     <i class="fas fa-shopping-bag text-primary me-2"></i>{{ __('Item Pesanan') }}
                 </h6>
             </div>
@@ -82,7 +82,7 @@
                                 @endif
                             </div>
                             <div class="flex-grow-1 min-w-0">
-                                <h6 class="fw-bold text-dark mb-1 text-truncate" style="font-size: 0.92rem;" title="{{ $item->product->name ?? '-' }}">{{ $item->product->name ?? '-' }}</h6>
+                                <h6 class="fw-bold text-body mb-1 text-truncate" style="font-size: 0.92rem;" title="{{ $item->product->name ?? '-' }}">{{ $item->product->name ?? '-' }}</h6>
                                 <div class="text-muted small" style="font-size: 0.78rem;">
                                     {{ $item->quantity }} unit &times; Rp {{ number_format($item->unit_price, 0, ',', '.') }}
                                 </div>
@@ -90,7 +90,7 @@
                         </div>
                         <div class="text-end d-flex justify-content-between justify-content-sm-end align-items-center pt-2 pt-sm-0 border-top border-sm-top-0 flex-shrink-0">
                             <span class="text-muted small d-sm-none">{{ __('Subtotal:') }}</span>
-                            <span class="fw-bold text-dark fs-6">Rp {{ number_format($item->unit_price * $item->quantity, 0, ',', '.') }}</span>
+                            <span class="fw-bold text-body fs-6">Rp {{ number_format($item->unit_price * $item->quantity, 0, ',', '.') }}</span>
                         </div>
                     </div>
                     @endforeach
@@ -139,7 +139,7 @@
         <div class="card border-0 shadow-sm mb-3" style="border-radius: 16px;">
             <div class="card-header bg-transparent border-0 pt-3 pt-md-4 px-3 px-md-4 pb-0 d-flex flex-wrap justify-content-between align-items-center gap-2">
                 <div>
-                    <h6 class="fw-bold text-dark mb-0">
+                    <h6 class="fw-bold text-body mb-0">
                         <i class="fas fa-key text-success me-2"></i>{{ __('Data Akun / Lisensi Terkirim') }} ({{ $order->stockUnits->count() }} unit)
                     </h6>
                     <small class="text-muted">{{ __('Data kredensial yang diserahkan otomatis kepada pembeli') }}</small>
@@ -244,7 +244,7 @@
         {{-- Customer Info Card --}}
         <div class="card border-0 shadow-sm mb-3" style="border-radius: 16px;">
             <div class="card-header bg-transparent border-0 pt-3 pt-md-4 px-3 px-md-4 pb-0">
-                <h6 class="fw-bold text-dark mb-0">
+                <h6 class="fw-bold text-body mb-0">
                     <i class="fas fa-user text-primary me-2"></i>{{ __('Informasi Pelanggan') }}
                 </h6>
             </div>
@@ -258,7 +258,7 @@
                         @endif
                     </div>
                     <div class="min-w-0">
-                        <h6 class="fw-bold mb-0 text-dark text-truncate">{{ $order->customer->full_name ?? $order->customer->username ?? '-' }}</h6>
+                        <h6 class="fw-bold mb-0 text-body text-truncate">{{ $order->customer->full_name ?? $order->customer->username ?? '-' }}</h6>
                         <small class="text-muted text-truncate d-block">{{ $order->customer->username ? '@'.$order->customer->username : '-' }}</small>
                     </div>
                 </div>
@@ -335,7 +335,7 @@
         {{-- Transaction Log & Timeline Card --}}
         <div class="card border-0 shadow-sm mb-3" style="border-radius: 16px;">
             <div class="card-header bg-transparent border-0 pt-3 pt-md-4 px-3 px-md-4 pb-0">
-                <h6 class="fw-bold text-dark mb-0">
+                <h6 class="fw-bold text-body mb-0">
                     <i class="fas fa-history text-secondary me-2"></i>{{ __('Log Sistem') }}
                 </h6>
             </div>
@@ -392,8 +392,9 @@
 {{-- Full Refund & Cancel Choice Modal --}}
 @if($order->status === 'delivered')
 <div class="modal fade" id="adminRefundOrderModal" tabindex="-1" aria-labelledby="adminRefundOrderModalLabel" aria-hidden="true" style="z-index: 1060;">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered m3-sheet-modal">
         <div class="modal-content border" style="border-radius: 24px;">
+            <div class="m3-sheet-handle d-md-none"></div>
             <div class="modal-header border-0 pb-0 px-4 pt-4">
                 <h5 class="fw-bold text-danger mb-0" id="adminRefundOrderModalLabel">
                     <i class="fas fa-undo-alt me-2"></i>{{ __('Refund & Batalkan Pesanan') }}
@@ -447,8 +448,9 @@
 
 {{-- Edit Status Modal (Rendered at Root Body outside container) --}}
 <div class="modal fade" id="editOrderStatusModal" tabindex="-1" aria-labelledby="editOrderStatusModalLabel" aria-hidden="true" style="z-index: 1060;">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered m3-sheet-modal">
         <div class="modal-content" style="border-radius: 16px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+            <div class="m3-sheet-handle d-md-none"></div>
             <div class="modal-header border-0 pb-0">
                 <h5 class="fw-bold" id="editOrderStatusModalLabel">{{ __('Ubah Status Pesanan') }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>

@@ -53,7 +53,7 @@
 
                 <div class="mb-4">
                     <span class="text-muted small fw-bold d-block mb-1">{{ __('Rincian Keluhan Anda:') }}</span>
-                    <div class="bg-body-secondary rounded-3 p-3 text-dark text-wrap small" style="white-space: pre-wrap; font-size: 0.95rem; line-height: 1.5;">{{ $complaint->complaint_text }}</div>
+                    <div class="bg-body-secondary rounded-3 p-3 text-body text-wrap small" style="white-space: pre-wrap; font-size: 0.95rem; line-height: 1.5;">{{ $complaint->complaint_text }}</div>
                 </div>
 
                 @if($complaint->attachment_path)
@@ -91,7 +91,7 @@
                 <hr>
                 <div class="mb-0">
                     <h6 class="fw-bold mb-3 text-success"><i class="fas fa-key me-2"></i>{{ __('Kredensial Akun (Unit Stok):') }}</h6>
-                    <div class="bg-light text-dark rounded-3 p-3 text-break" style="max-height: 300px; overflow-y: auto; font-family: monospace; white-space: pre-wrap; font-size: 0.85rem; border: 1px solid rgba(0,0,0,0.05);">
+                    <div class="bg-light text-body rounded-3 p-3 text-break" style="max-height: 300px; overflow-y: auto; font-family: monospace; white-space: pre-wrap; font-size: 0.85rem; border: 1px solid rgba(0,0,0,0.05);">
 @foreach($complaint->order->stockUnits as $unit)
 <b>Unit #{{ $unit->id }} (Status: {{ $unit->stock_status }}):</b>
 {{ $unit->raw_text }}
@@ -193,16 +193,16 @@
                 <h6 class="fw-bold mb-3">{{ __('Informasi Lain') }}</h6>
                 <div class="d-flex justify-content-between mb-2">
                     <span class="text-muted">{{ __('Tanggal Dibuat') }}</span>
-                    <span class="text-dark">{{ $complaint->created_at ? $complaint->created_at->format('d M Y H:i') : '-' }}</span>
+                    <span class="text-body">{{ $complaint->created_at ? $complaint->created_at->format('d M Y H:i') : '-' }}</span>
                 </div>
                 <div class="d-flex justify-content-between mb-2">
                     <span class="text-muted">{{ __('Pembaruan Terakhir') }}</span>
-                    <span class="text-dark">{{ $complaint->updated_at ? $complaint->updated_at->format('d M Y H:i') : '-' }}</span>
+                    <span class="text-body">{{ $complaint->updated_at ? $complaint->updated_at->format('d M Y H:i') : '-' }}</span>
                 </div>
                 @if($complaint->closed_at)
                 <div class="d-flex justify-content-between">
                     <span class="text-muted">{{ __('Ditutup Pada') }}</span>
-                    <span class="text-dark">{{ $complaint->closed_at ? $complaint->closed_at->format('d M Y H:i') : '-' }}</span>
+                    <span class="text-body">{{ $complaint->closed_at ? $complaint->closed_at->format('d M Y H:i') : '-' }}</span>
                 </div>
                 @endif
             </div>

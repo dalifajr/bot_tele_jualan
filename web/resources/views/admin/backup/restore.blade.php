@@ -26,29 +26,23 @@
 </div>
 @endif
 
-{{-- Sub Navigation Tabs --}}
-<ul class="nav nav-tabs nav-tabs-bordered mb-4" id="backupTabs" style="border-bottom: 2px solid var(--bs-border-color);">
-    <li class="nav-item">
-        <a class="nav-link text-secondary" href="{{ route('admin.backup.index') }}">
-            <i class="fas fa-chart-line me-1"></i> {{ __('Dashboard') }}
+{{-- Sub Navigation Tabs (M3 Scrollable Pill Strip) --}}
+<div class="mb-4">
+    <div class="m3-tab-strip">
+        <a class="m3-tab-pill" href="{{ route('admin.backup.index') }}">
+            <i class="fas fa-chart-line"></i><span>{{ __('Dashboard') }}</span>
         </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link text-secondary" href="{{ route('admin.backup.history') }}">
-            <i class="fas fa-history me-1"></i> {{ __('Riwayat Backup') }}
+        <a class="m3-tab-pill" href="{{ route('admin.backup.history') }}">
+            <i class="fas fa-history"></i><span>{{ __('Riwayat Backup') }}</span>
         </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link active fw-bold text-primary" href="{{ route('admin.backup.restore.show') }}" style="border-bottom: 3px solid var(--bs-primary); margin-bottom: -2px;">
-            <i class="fas fa-undo me-1"></i> {{ __('Pemulihan Data (Restore)') }}
+        <a class="m3-tab-pill active" href="{{ route('admin.backup.restore.show') }}">
+            <i class="fas fa-undo"></i><span>{{ __('Pemulihan Data (Restore)') }}</span>
         </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link text-secondary" href="{{ route('admin.backup.settings.show') }}">
-            <i class="fas fa-cog me-1"></i> {{ __('Pengaturan & Jadwal') }}
+        <a class="m3-tab-pill" href="{{ route('admin.backup.settings.show') }}">
+            <i class="fas fa-cog"></i><span>{{ __('Pengaturan & Jadwal') }}</span>
         </a>
-    </li>
-</ul>
+    </div>
+</div>
 
 {{-- Restore Card --}}
 <div class="card border-0 shadow-sm" style="border-radius: 16px;">
@@ -93,8 +87,9 @@
 
 {{-- Upload Progress Modal --}}
 <div class="modal fade" id="uploadProgressModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true" style="z-index: 1070 !important;">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; background: var(--bs-body-bg); backdrop-filter: none; -webkit-backdrop-filter: none; opacity: 1;">
+    <div class="modal-dialog modal-dialog-centered m3-sheet-modal">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px; background: var(--surface-container-lowest, var(--bs-body-bg)); backdrop-filter: none; -webkit-backdrop-filter: none; opacity: 1;">
+            <div class="m3-sheet-handle d-md-none"></div>
             <div class="modal-body p-4 text-center">
                 <div class="spinner-border text-danger mb-3" role="status" style="width: 3rem; height: 3rem;">
                     <span class="visually-hidden">{{ __('Loading...') }}</span>

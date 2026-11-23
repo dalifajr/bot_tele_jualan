@@ -713,7 +713,8 @@
         <div class="card overflow-hidden">
             <div class="card-body p-0">
                 @if($loginLogs->count() > 0)
-                <div class="table-responsive">
+                {{-- Desktop Table View --}}
+                <div class="table-responsive d-none d-md-block">
                     <table class="table table-hover align-middle mb-0">
                         <thead>
                             <tr>
@@ -808,6 +809,62 @@
                         </tbody>
                     </table>
                 </div>
+
+                {{-- Mobile Stacked Cards (< 768px) --}}
+                <div class="d-md-none p-3 d-flex flex-column gap-2.5">
+                    @foreach($loginLogs as $log)
+                    @php
+                        $effectiveFp = $log->device_fingerprint;
+                        $effectiveDevId = $log->device_id;
+                        $isIpBlocked = \Illuminate\Support\Facades\Cache::has('blocked_ip:' . $log->ip_address);
+                        $isDeviceBlocked = ($effectiveFp && \Illuminate\Support\Facades\Cache::has('blocked_device_fp:' . $effectiveFp))
+                            || ($effectiveDevId && \Illuminate\Support\Facades\Cache::has('blocked_device_id:' . $effectiveDevId));
+                        $isAccountSuspended = ($log->user && $log->user->is_suspended);
+                    @endphp
+                    <div class="m3-mobile-item-card p-3 {{ $isDeviceBlocked ? 'border-danger' : '' }}">
+                        <div class="d-flex justify-content-between align-items-start gap-2 mb-1.5">
+                            <div class="d-flex flex-wrap gap-1">
+                                @if($log->is_successful)
+                                    <span class="badge bg-success-subtle text-success rounded-pill px-2.5">{{ __('Berhasil') }}</span>
+                                @else
+                                    <span class="badge bg-danger-subtle text-danger rounded-pill px-2.5">{{ __('Gagal') }}</span>
+                                @endif
+                                @if($isDeviceBlocked)
+                                    <span class="badge bg-danger text-white rounded-pill">{{ __('Perangkat Diblokir') }}</span>
+                                @elseif($isIpBlocked)
+                                    <span class="badge bg-danger text-white rounded-pill">{{ __('IP Diblokir') }}</span>
+                                @elseif($isAccountSuspended)
+                                    <span class="badge bg-danger text-white rounded-pill">{{ __('Suspended') }}</span>
+                                @endif
+                            </div>
+                            <small class="text-secondary font-monospace flex-shrink-0">{{ $log->created_at->format('d M, H:i') }}</small>
+                        </div>
+
+                        <div class="fw-bold text-body small mb-1 text-truncate">{{ $log->username_or_email ?? '-' }}</div>
+
+                        <div class="small text-secondary mb-2">
+                            <div class="font-monospace text-body">{{ $log->ip_address }}</div>
+                            <div><i class="fas fa-map-marker-alt text-danger me-1"></i>{{ $log->location ?? 'Unknown' }}</div>
+                            <div><i class="fas fa-laptop me-1"></i>{{ $log->device_type }} · {{ $log->browser ?? '-' }}</div>
+                            @if($effectiveFp)
+                                <span class="badge bg-secondary-subtle text-secondary font-monospace mt-1" style="font-size: 0.65rem;"><i class="fas fa-fingerprint me-1"></i>{{ Str::limit($effectiveFp, 18) }}</span>
+                            @endif
+                        </div>
+
+                        <div class="d-flex gap-2 pt-2 border-top" style="border-color: var(--outline-variant) !important;">
+                            <button type="button" class="btn btn-sm btn-outline-danger rounded-pill flex-grow-1 fw-semibold" style="min-height: 38px;"
+                                    onclick="openUnifiedBlockModal('{{ $log->ip_address }}', '{{ $effectiveFp }}', '{{ $effectiveDevId }}', '{{ $log->user_id }}', '{{ $log->user ? $log->user->username : ($log->username_or_email ?? '') }}')">
+                                <i class="fas fa-ban me-1"></i>{{ __('Blokir') }}
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-success rounded-pill flex-grow-1 fw-semibold" style="min-height: 38px;"
+                                    onclick="openUnifiedUnblockModal('{{ $log->ip_address }}', '{{ $effectiveFp }}', '{{ $effectiveDevId }}', '{{ $log->user_id }}', '{{ $log->user ? $log->user->username : ($log->username_or_email ?? '') }}', {{ $isIpBlocked ? 'true' : 'false' }}, {{ $isDeviceBlocked ? 'true' : 'false' }}, {{ $isAccountSuspended ? 'true' : 'false' }})">
+                                <i class="fas fa-unlock me-1"></i>{{ __('Unblock') }}
+                            </button>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+
                 <div class="px-4 py-3 border-top">
                     {{ $loginLogs->links('pagination::bootstrap-5') }}
                 </div>
@@ -825,7 +882,8 @@
         <div class="card overflow-hidden">
             <div class="card-body p-0">
                 @if($loginTokens->count() > 0)
-                <div class="table-responsive">
+                {{-- Desktop Table --}}
+                <div class="table-responsive d-none d-md-block">
                     <table class="table table-hover align-middle mb-0">
                         <thead>
                             <tr>
@@ -857,6 +915,27 @@
                         </tbody>
                     </table>
                 </div>
+
+                {{-- Mobile Stacked Cards (< 768px) --}}
+                <div class="d-md-none p-3 d-flex flex-column gap-2.5">
+                    @foreach($loginTokens as $login)
+                    <div class="m3-mobile-item-card p-3">
+                        <div class="d-flex justify-content-between align-items-center gap-2 mb-1.5">
+                            <code class="fw-bold text-body small text-break">{{ $login->token }}</code>
+                            @if($login->status === 'used')
+                                <span class="badge bg-success-subtle text-success rounded-pill flex-shrink-0">{{ __('Digunakan') }}</span>
+                            @elseif($login->status === 'pending')
+                                <span class="badge bg-warning-subtle text-warning rounded-pill flex-shrink-0">{{ __('Menunggu') }}</span>
+                            @else
+                                <span class="badge bg-secondary-subtle text-secondary rounded-pill flex-shrink-0">{{ ucfirst($login->status) }}</span>
+                            @endif
+                        </div>
+                        <div class="small text-secondary font-monospace">{{ $login->ip_address ?? '-' }} · {{ $login->expires_at->diffForHumans() }}</div>
+                        <div class="small text-muted text-truncate mt-1">{{ $login->user_agent ?? '-' }}</div>
+                    </div>
+                    @endforeach
+                </div>
+
                 <div class="px-4 py-3 border-top">
                     {{ $loginTokens->links('pagination::bootstrap-5') }}
                 </div>

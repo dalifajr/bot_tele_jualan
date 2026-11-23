@@ -26,40 +26,35 @@
 </div>
 @endif
 
-{{-- Sub Navigation Tabs --}}
-<ul class="nav nav-tabs nav-tabs-bordered mb-4" id="backupTabs" style="border-bottom: 2px solid var(--bs-border-color);">
-    <li class="nav-item">
-        <a class="nav-link text-secondary" href="{{ route('admin.backup.index') }}">
-            <i class="fas fa-chart-line me-1"></i> {{ __('Dashboard') }}
+{{-- Sub Navigation Tabs (M3 Scrollable Pill Strip) --}}
+<div class="mb-4">
+    <div class="m3-tab-strip">
+        <a class="m3-tab-pill" href="{{ route('admin.backup.index') }}">
+            <i class="fas fa-chart-line"></i><span>{{ __('Dashboard') }}</span>
         </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link active fw-bold text-primary" href="{{ route('admin.backup.history') }}" style="border-bottom: 3px solid var(--bs-primary); margin-bottom: -2px;">
-            <i class="fas fa-history me-1"></i> {{ __('Riwayat Backup') }}
+        <a class="m3-tab-pill active" href="{{ route('admin.backup.history') }}">
+            <i class="fas fa-history"></i><span>{{ __('Riwayat Backup') }}</span>
         </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link text-secondary" href="{{ route('admin.backup.restore.show') }}">
-            <i class="fas fa-undo me-1"></i> {{ __('Pemulihan Data (Restore)') }}
+        <a class="m3-tab-pill" href="{{ route('admin.backup.restore.show') }}">
+            <i class="fas fa-undo"></i><span>{{ __('Pemulihan Data (Restore)') }}</span>
         </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link text-secondary" href="{{ route('admin.backup.settings.show') }}">
-            <i class="fas fa-cog me-1"></i> {{ __('Pengaturan & Jadwal') }}
+        <a class="m3-tab-pill" href="{{ route('admin.backup.settings.show') }}">
+            <i class="fas fa-cog"></i><span>{{ __('Pengaturan & Jadwal') }}</span>
         </a>
-    </li>
-</ul>
+    </div>
+</div>
 
 {{-- Backup History --}}
 <div class="card border-0 shadow-sm" style="border-radius: 16px;">
-    <div class="card-body p-4">
+    <div class="card-body p-3 p-md-4">
         <h5 class="fw-bold mb-2"><i class="fas fa-history text-success me-2"></i>{{ __('Riwayat File Backup Lokal') }}</h5>
         <p class="text-muted small mb-4">{{ __('Kumpulan file backup yang tersimpan di server local. Sistem membatasi riwayat maksimal 10 file backup terbaru.') }}</p>
 
-        <div class="table-responsive">
+        {{-- Desktop Table --}}
+        <div class="table-responsive d-none d-md-block">
             <table class="table table-hover align-middle mb-0" style="font-size: 0.85rem;">
                 <thead>
-                    <tr class="table-light">
+                    <tr style="background: var(--surface-container-high);">
                         <th>{{ __('Nama File / Tanggal') }}</th>
                         <th>{{ __('Ukuran / Tipe') }}</th>
                         <th class="text-end">{{ __('Aksi') }}</th>
@@ -101,6 +96,36 @@
                     @endforelse
                 </tbody>
             </table>
+        </div>
+
+        {{-- Mobile Stacked Cards (< 768px) --}}
+        <div class="d-md-none d-flex flex-column gap-2.5">
+            @forelse($history as $item)
+            <div class="m3-mobile-item-card p-3">
+                <div class="fw-bold small text-body font-monospace mb-1" style="word-break: break-all;">{{ $item['filename'] }}</div>
+                <div class="d-flex justify-content-between align-items-center small text-secondary mb-2">
+                    <span><i class="far fa-clock me-1"></i>{{ $item['created_at'] }}</span>
+                    <span class="badge bg-secondary-subtle text-body rounded-pill m3-tabular-nums">{{ $item['size'] }} · {{ $item['type'] }}</span>
+                </div>
+                <div class="d-flex gap-2 pt-2 border-top" style="border-color: var(--outline-variant) !important;">
+                    <a href="{{ route('admin.backup.download', $item['filename']) }}" class="btn btn-sm btn-tonal rounded-pill flex-grow-1 fw-semibold d-inline-flex align-items-center justify-content-center gap-1" style="min-height: 40px;">
+                        <i class="fas fa-download"></i><span>{{ __('Unduh Backup') }}</span>
+                    </a>
+                    <form action="{{ route('admin.backup.destroy', $item['filename']) }}" method="POST" class="m-0 form-delete-backup">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3" style="min-height: 40px;" title="{{ __('Hapus File') }}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+            @empty
+            <div class="text-center py-5 text-muted small">
+                <i class="fas fa-folder-open fs-1 mb-2 opacity-50"></i><br>
+                {{ __('Belum ada file backup lokal yang tersimpan.') }}
+            </div>
+            @endforelse
         </div>
     </div>
 </div>

@@ -2,14 +2,19 @@
 
 namespace Tests\Feature;
 
+use App\Models\AuditLog;
+use App\Models\BroadcastJob;
 use App\Models\ComplaintCase;
 use App\Models\Coupon;
+use App\Models\DashboardPromo;
 use App\Models\EscrowTransaction;
+use App\Models\FirewallRule;
 use App\Models\LoginLog;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\ResellerApiKey;
+use App\Models\StockUnit;
 use App\Models\User;
 use App\Models\WalletTopup;
 use App\Models\WalletTransaction;
@@ -309,5 +314,197 @@ class MobileResponsiveViewsTest extends TestCase
         $responseAdminEscrow->assertSee('m3-mobile-item-card');
         $responseAdminEscrow->assertSee('escrowSettingsModal');
         $responseAdminEscrow->assertSee('m3-sheet-modal');
+    }
+
+    public function test_wave2_mobile_responsive_views_and_wave1_fixes_render_successfully(): void
+    {
+        // 0. Verifikasi fix bug JS scoped selector di admin.wallet.index
+        $resAdminWalletFix = $this->actingAs($this->admin)->get(route('admin.wallet.index'));
+        $resAdminWalletFix->assertStatus(200);
+        $resAdminWalletFix->assertSee("document.querySelectorAll('.admin-inject-form')", false);
+        $resAdminWalletFix->assertDontSee("prefix + 'InjectAmountInput'", false);
+
+        // 0b. Verifikasi Tab 4 Admin Global Control di developer.api.index
+        ResellerApiKey::create([
+            'user_id' => $this->seller->id,
+            'name' => 'Reseller Key Global',
+            'key_prefix' => 'rsk_live_glob',
+            'key_hash' => hash('sha256', 'dummy_global_key_999'),
+            'rate_limit_per_minute' => 60,
+            'is_active' => true,
+        ]);
+        $resDevAdmin = $this->actingAs($this->admin)->get(route('developer.api.index', ['tab' => 'admin']));
+        $resDevAdmin->assertStatus(200);
+        $resDevAdmin->assertSee('m3-mobile-item-card');
+
+        // 1. Admin Security Firewall (Form -> Bottom Sheet Modal + Dual-View Cards)
+        FirewallRule::create([
+            'type' => 'ip',
+            'value' => '10.20.30.40',
+            'reason' => 'Test brute force',
+            'is_active' => true,
+            'hit_count' => 12,
+        ]);
+        $resFirewall = $this->actingAs($this->admin)->get(route('admin.security.firewall'));
+        $resFirewall->assertStatus(200);
+        $resFirewall->assertSee('addFirewallRuleModal');
+        $resFirewall->assertSee('m3-sheet-modal');
+        $resFirewall->assertSee('m3-mobile-item-card');
+
+        // 2. Admin Broadcast (Single-DOM Switcher + Mobile Cards + Sheet Modal)
+        BroadcastJob::forceCreate([
+            'message' => 'Promo besar hari ini!',
+            'status' => 'completed',
+            'total_targets' => 10,
+            'sent_count' => 8,
+            'failed_count' => 2,
+            'read_count' => 4,
+        ]);
+        $resBroadcast = $this->actingAs($this->admin)->get(route('admin.broadcast.index'));
+        $resBroadcast->assertStatus(200);
+        $resBroadcast->assertSee('bcMobileTabHistory');
+        $resBroadcast->assertSee('bcMobileTabComposer');
+        $resBroadcast->assertSee('m3-mobile-item-card');
+        $resBroadcast->assertSee('m3-sheet-modal');
+
+        // 3. Admin Promos (Dual-View + Mobile Reorder Sync)
+        DashboardPromo::create([
+            'title' => 'Diskon Kilat',
+            'description' => 'Potongan 20% semua akun',
+            'badge_text' => 'PROMO',
+            'badge_color' => '#2563eb',
+            'icon' => 'fas fa-bolt',
+            'gradient_theme' => 'blue',
+            'button_text' => 'Belanja Sekarang',
+            'button_url' => '/catalog',
+            'sort_order' => 1,
+            'is_active' => true,
+        ]);
+        $resPromos = $this->actingAs($this->admin)->get(route('admin.promos.index'));
+        $resPromos->assertStatus(200);
+        $resPromos->assertSee('promoSortableMobile');
+        $resPromos->assertSee('m3-mobile-item-card');
+
+        // 4. Seller Dashboard + Stock + Products
+        $product = Product::forceCreate([
+            'creator_id' => $this->seller->id,
+            'name' => 'Akun Spotify Family',
+            'price' => 25000,
+            'is_suspended' => false,
+        ]);
+        $order = Order::create([
+            'order_ref' => 'ORD-DASH-W2-1',
+            'customer_id' => $this->customer->id,
+            'total_amount' => 25000,
+            'subtotal' => 25000,
+            'discount_amount' => 0,
+            'unique_code' => 0,
+            'status' => 'delivered',
+            'delivered_at' => now(),
+            'created_at' => now(),
+        ]);
+        OrderItem::create([
+            'order_id' => $order->id,
+            'product_id' => $product->id,
+            'unit_price' => 25000,
+            'quantity' => 1,
+            'discount_amount' => 0,
+        ]);
+        StockUnit::forceCreate([
+            'product_id' => $product->id,
+            'seller_id' => $this->seller->id,
+            'raw_text' => "Username: demo_user\nPass: secret123",
+            'stock_status' => 'ready',
+            'is_sold' => false,
+        ]);
+        StockUnit::forceCreate([
+            'product_id' => $product->id,
+            'seller_id' => $this->seller->id,
+            'sold_order_id' => $order->id,
+            'raw_text' => "Username: sold_user\nPass: secret123",
+            'stock_status' => 'ready',
+            'is_sold' => true,
+        ]);
+
+        $resSellerDash = $this->actingAs($this->seller)->get(route('seller.dashboard'));
+        $resSellerDash->assertStatus(200);
+        $resSellerDash->assertSee('m3-mobile-item-card');
+
+        $resSellerStock = $this->actingAs($this->seller)->get(route('seller.stock.index'));
+        $resSellerStock->assertStatus(200);
+        $resSellerStock->assertSee('m3-mobile-item-card');
+        $resSellerStock->assertSee('m3-sheet-modal');
+        $resSellerStock->assertSee('select-all-stocks-toggle');
+
+        $resSellerProducts = $this->actingAs($this->seller)->get(route('seller.products.index'));
+        $resSellerProducts->assertStatus(200);
+        $resSellerProducts->assertSee('m3-sheet-modal');
+
+        // 5. Admin Users, Sellers, Stock, Products
+        $resAdminUsers = $this->actingAs($this->admin)->get(route('admin.users.index'));
+        $resAdminUsers->assertStatus(200);
+        $resAdminUsers->assertSee('m3-mobile-item-card');
+        $resAdminUsers->assertSee('m3-sheet-modal');
+
+        $resAdminSellers = $this->actingAs($this->admin)->get(route('admin.sellers.index'));
+        $resAdminSellers->assertStatus(200);
+        $resAdminSellers->assertSee('m3-mobile-item-card');
+        $resAdminSellers->assertSee('m3-sheet-modal');
+
+        $resAdminStock = $this->actingAs($this->admin)->get(route('admin.stock.index'));
+        $resAdminStock->assertStatus(200);
+        $resAdminStock->assertSee('m3-mobile-item-card');
+        $resAdminStock->assertSee('m3-sheet-modal');
+        $resAdminStock->assertSee('select-all-stocks-toggle');
+
+        $resAdminProducts = $this->actingAs($this->admin)->get(route('admin.products.index'));
+        $resAdminProducts->assertStatus(200);
+        $resAdminProducts->assertSee('m3-sheet-modal');
+
+        // 6. Admin Audit Logs, Logins, Finance Reports, Backup
+        AuditLog::forceCreate([
+            'actor_id' => $this->admin->id,
+            'action' => 'backup_create',
+            'entity_type' => 'system',
+            'detail' => 'Manual backup snapshot dibuat',
+            'created_at' => now(),
+        ]);
+        $resAudit = $this->actingAs($this->admin)->get(route('admin.audit-logs.index'));
+        $resAudit->assertStatus(200);
+        $resAudit->assertSee('m3-mobile-item-card');
+
+        LoginLog::forceCreate([
+            'user_id' => $this->customer->id,
+            'username_or_email' => $this->customer->email,
+            'ip_address' => '127.0.0.1',
+            'user_agent' => 'Mozilla/5.0 Mobile',
+            'is_successful' => true,
+            'created_at' => now(),
+        ]);
+        $resAdminLogins = $this->actingAs($this->admin)->get(route('admin.logins.index'));
+        $resAdminLogins->assertStatus(200);
+        $resAdminLogins->assertSee('m3-mobile-item-card');
+
+        $resFinLedger = $this->actingAs($this->admin)->get(route('admin.finance.reports', ['tab' => 'ledger']));
+        $resFinLedger->assertStatus(200);
+        $resFinLedger->assertSee('m3-mobile-item-card');
+
+        $resBackupIdx = $this->actingAs($this->admin)->get(route('admin.backup.index'));
+        $resBackupIdx->assertStatus(200);
+        $resBackupIdx->assertSee('m3-tab-strip');
+        $resBackupIdx->assertSee('m3-mobile-item-card');
+
+        $resBackupHist = $this->actingAs($this->admin)->get(route('admin.backup.history'));
+        $resBackupHist->assertStatus(200);
+        $resBackupHist->assertSee('m3-tab-strip');
+
+        $resBackupRestore = $this->actingAs($this->admin)->get(route('admin.backup.restore.show'));
+        $resBackupRestore->assertStatus(200);
+        $resBackupRestore->assertSee('m3-tab-strip');
+        $resBackupRestore->assertSee('m3-sheet-modal');
+
+        $resBackupSettings = $this->actingAs($this->admin)->get(route('admin.backup.settings.show'));
+        $resBackupSettings->assertStatus(200);
+        $resBackupSettings->assertSee('m3-tab-strip');
     }
 }

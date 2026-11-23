@@ -26,29 +26,23 @@
 </div>
 @endif
 
-{{-- Sub Navigation Tabs --}}
-<ul class="nav nav-tabs nav-tabs-bordered mb-4" id="backupTabs" style="border-bottom: 2px solid var(--bs-border-color);">
-    <li class="nav-item">
-        <a class="nav-link text-secondary" href="{{ route('admin.backup.index') }}">
-            <i class="fas fa-chart-line me-1"></i> {{ __('Dashboard') }}
+{{-- Sub Navigation Tabs (M3 Scrollable Pill Strip) --}}
+<div class="mb-4">
+    <div class="m3-tab-strip">
+        <a class="m3-tab-pill" href="{{ route('admin.backup.index') }}">
+            <i class="fas fa-chart-line"></i><span>{{ __('Dashboard') }}</span>
         </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link text-secondary" href="{{ route('admin.backup.history') }}">
-            <i class="fas fa-history me-1"></i> {{ __('Riwayat Backup') }}
+        <a class="m3-tab-pill" href="{{ route('admin.backup.history') }}">
+            <i class="fas fa-history"></i><span>{{ __('Riwayat Backup') }}</span>
         </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link text-secondary" href="{{ route('admin.backup.restore.show') }}">
-            <i class="fas fa-undo me-1"></i> {{ __('Pemulihan Data (Restore)') }}
+        <a class="m3-tab-pill" href="{{ route('admin.backup.restore.show') }}">
+            <i class="fas fa-undo"></i><span>{{ __('Pemulihan Data (Restore)') }}</span>
         </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link active fw-bold text-primary" href="{{ route('admin.backup.settings.show') }}" style="border-bottom: 3px solid var(--bs-primary); margin-bottom: -2px;">
-            <i class="fas fa-cog me-1"></i> {{ __('Pengaturan & Jadwal') }}
+        <a class="m3-tab-pill active" href="{{ route('admin.backup.settings.show') }}">
+            <i class="fas fa-cog"></i><span>{{ __('Pengaturan & Jadwal') }}</span>
         </a>
-    </li>
-</ul>
+    </div>
+</div>
 
 <div class="row g-4">
     {{-- Auto Backup Configuration --}}

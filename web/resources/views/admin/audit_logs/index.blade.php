@@ -256,7 +256,8 @@
 
     <div class="card-body p-0">
         @if($logs->count() > 0)
-        <div class="table-responsive">
+        {{-- Desktop Table View --}}
+        <div class="table-responsive d-none d-md-block">
             <table class="table table-hover align-middle mb-0">
                 <thead>
                     <tr>
@@ -312,6 +313,40 @@
                     @endforeach
                 </tbody>
             </table>
+        </div>
+
+        {{-- Mobile Stacked Card List (< 768px) --}}
+        <div class="d-md-none p-3 d-flex flex-column gap-2.5">
+            @foreach($logs as $log)
+            <div class="m3-mobile-item-card p-3">
+                <div class="d-flex justify-content-between align-items-start gap-2 mb-1.5">
+                    <span class="badge bg-primary-subtle text-primary rounded-pill px-2.5">{{ $log->action }}</span>
+                    <small class="text-secondary font-monospace">{{ \Carbon\Carbon::parse($log->created_at)->format('d M Y, H:i') }}</small>
+                </div>
+                <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                    <div class="d-flex align-items-center gap-2 min-w-0">
+                        @if($log->actor)
+                            <div class="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0" style="width: 28px; height: 28px; font-size: 0.72rem;">
+                                {{ strtoupper(substr($log->actor->username ?? 'U', 0, 1)) }}
+                            </div>
+                            <span class="fw-bold text-body small text-truncate">{{ $log->actor->full_name ?? $log->actor->username }}</span>
+                            <span class="badge bg-secondary-subtle text-secondary rounded-pill" style="font-size: 0.65rem;">{{ ucfirst($log->actor->role ?? 'user') }}</span>
+                        @else
+                            <div class="bg-secondary-subtle text-secondary rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0" style="width: 28px; height: 28px; font-size: 0.72rem;">S</div>
+                            <span class="small fw-semibold text-muted">{{ __('SYSTEM / BOT') }}</span>
+                        @endif
+                    </div>
+                    @if(!empty($log->entity_type))
+                        <span class="badge bg-info-subtle text-info font-monospace flex-shrink-0" style="font-size: 0.68rem;">
+                            {{ strtoupper($log->entity_type) }}{{ $log->entity_id ? ' #' . $log->entity_id : '' }}
+                        </span>
+                    @endif
+                </div>
+                <div class="p-2 rounded-3 font-monospace text-secondary small text-break" style="background: var(--surface-container-high); font-size: 0.76rem;">
+                    {{ $log->detail ?: '-' }}
+                </div>
+            </div>
+            @endforeach
         </div>
         @else
         <div class="text-center py-5">

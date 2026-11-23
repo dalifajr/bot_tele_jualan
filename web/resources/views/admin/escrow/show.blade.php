@@ -16,7 +16,7 @@
             </span>
             <code class="fw-bold text-primary">{{ $transaction->transaction_code }}</code>
         </div>
-        <h4 class="fw-bold text-dark mb-1">{{ $transaction->title }}</h4>
+        <h4 class="fw-bold text-body mb-1">{{ $transaction->title }}</h4>
         <p class="text-muted small mb-0">{{ $transaction->description ?: __('Tidak ada deskripsi tambahan.') }}</p>
     <div class="col-12 col-lg-5 text-lg-end d-flex align-items-center justify-content-lg-end gap-2 flex-wrap">
         <a href="{{ route('admin.escrow.edit', $transaction->transaction_code) }}" class="btn btn-sm btn-outline-warning rounded-pill px-3 fw-semibold">
@@ -41,13 +41,13 @@
         {{-- Card 1: Data Finansial & Rekening --}}
         <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
             <div class="card-body p-4">
-                <h6 class="fw-bold mb-3 text-dark d-flex align-items-center gap-2">
+                <h6 class="fw-bold mb-3 text-body d-flex align-items-center gap-2">
                     <i class="fas fa-money-check-dollar text-primary"></i> {{ __('Data Finansial & Rekening Pencairan') }}
                 </h6>
                 <div class="row g-3 mb-3">
                     <div class="col-6 col-md-3">
                         <small class="text-muted d-block">{{ __('Nilai Barang') }}</small>
-                        <strong class="text-dark fs-6">Rp {{ number_format($transaction->amount, 0, ',', '.') }}</strong>
+                        <strong class="text-body fs-6">Rp {{ number_format($transaction->amount, 0, ',', '.') }}</strong>
                     </div>
                     <div class="col-6 col-md-3">
                         <small class="text-muted d-block">{{ __('Fee Platform') }}</small>
@@ -64,7 +64,7 @@
                 </div>
 
                 <div class="p-3 bg-light rounded-3 border">
-                    <div class="small fw-bold text-dark mb-1">{{ __('Rekening Tujuan Pencairan Penjual:') }}</div>
+                    <div class="small fw-bold text-body mb-1">{{ __('Rekening Tujuan Pencairan Penjual:') }}</div>
                     <div class="small text-muted">
                         <strong>{{ __('Bank / E-Wallet:') }}</strong> {{ $transaction->seller_bank_name ?: '-' }} |
                         <strong>{{ __('No. Rekening:') }}</strong> <code>{{ $transaction->seller_account_number ?: '-' }}</code> |
@@ -184,7 +184,7 @@
         {{-- Section Serah Terima Barang --}}
         <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
             <div class="card-body p-4">
-                <h6 class="fw-bold mb-3 text-dark d-flex align-items-center gap-2">
+                <h6 class="fw-bold mb-3 text-body d-flex align-items-center gap-2">
                     <i class="fas fa-box-archive text-secondary"></i> {{ __('Data Barang / Akun yang Diserahkan') }}
                 </h6>
                 @if($transaction->delivery_proof)
@@ -202,14 +202,14 @@
     <div class="col-12 col-lg-5">
         <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
             <div class="card-header bg-white border-bottom p-3">
-                <h6 class="fw-bold mb-0 text-dark"><i class="fas fa-comments text-primary me-1"></i> {{ __('Diskusi Ruang Rekber') }}</h6>
+                <h6 class="fw-bold mb-0 text-body"><i class="fas fa-comments text-primary me-1"></i> {{ __('Diskusi Ruang Rekber') }}</h6>
             </div>
             <div class="card-body p-3">
                 <div class="overflow-y-auto mb-3 p-2 bg-light rounded-3" style="max-height: 350px; min-height: 180px;">
                     @forelse($transaction->messages as $msg)
                         <div class="mb-2 p-2.5 bg-white rounded-3 shadow-sm border">
                             <div class="d-flex justify-content-between align-items-center mb-1">
-                                <strong class="small text-dark">{{ $msg->sender_name }}</strong>
+                                <strong class="small text-body">{{ $msg->sender_name }}</strong>
                                 <span class="badge bg-secondary-subtle text-secondary" style="font-size: 0.65rem;">{{ strtoupper($msg->sender_role) }}</span>
                             </div>
                             <p class="small text-muted mb-1 text-break">{{ $msg->message }}</p>
@@ -241,7 +241,7 @@
         {{-- Timeline Card --}}
         <div class="card border-0 shadow-sm" style="border-radius: 16px;">
             <div class="card-header bg-white border-bottom p-3">
-                <h6 class="fw-bold mb-0 text-dark"><i class="fas fa-clock-rotate-left text-info me-1"></i> {{ __('Audit Trail Timeline') }}</h6>
+                <h6 class="fw-bold mb-0 text-body"><i class="fas fa-clock-rotate-left text-info me-1"></i> {{ __('Audit Trail Timeline') }}</h6>
             </div>
             <div class="card-body p-3">
                 <div class="timeline ps-2">
@@ -251,7 +251,7 @@
                                 <i class="fas fa-check" style="font-size: 0.6rem;"></i>
                             </div>
                             <div>
-                                <div class="small text-dark">{{ $t->description }}</div>
+                                <div class="small text-body">{{ $t->description }}</div>
                                 <small class="text-muted" style="font-size: 0.7rem;">{{ $t->created_at->format('d M Y, H:i') }}</small>
                             </div>
                         </div>

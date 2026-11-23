@@ -11,7 +11,7 @@
                 <a href="{{ route('admin.escrow.show', $transaction->transaction_code) }}" class="btn btn-sm btn-link text-muted p-0 text-decoration-none mb-1">
                     <i class="fas fa-arrow-left me-1"></i> {{ __('Kembali ke Detail Rekber') }}
                 </a>
-                <h4 class="fw-bold mb-0 text-dark">{{ __('Edit Transaksi Rekber') }}: <span class="text-primary">{{ $transaction->transaction_code }}</span></h4>
+                <h4 class="fw-bold mb-0 text-body">{{ __('Edit Transaksi Rekber') }}: <span class="text-primary">{{ $transaction->transaction_code }}</span></h4>
             </div>
             <span class="badge bg-{{ $transaction->status_badge }} rounded-pill px-3 py-1.5 fw-semibold">
                 {{ $transaction->status_label }}
@@ -64,7 +64,7 @@
 
                     <div class="row g-4">
                         <div class="col-12 col-md-6 border-end-md">
-                            <h6 class="fw-bold text-dark mb-3"><i class="fas fa-shopping-cart text-primary me-1"></i> {{ __('Pembeli (Buyer)') }}</h6>
+                            <h6 class="fw-bold text-body mb-3"><i class="fas fa-shopping-cart text-primary me-1"></i> {{ __('Pembeli (Buyer)') }}</h6>
                             <div class="mb-3">
                                 <label class="form-label small fw-bold text-muted">{{ __('Nama Pembeli') }} <span class="text-danger">*</span></label>
                                 <input type="text" name="buyer_name" class="form-control rounded-3" value="{{ old('buyer_name', $transaction->buyer_name) }}" required>
@@ -75,7 +75,7 @@
                             </div>
                         </div>
                         <div class="col-12 col-md-6">
-                            <h6 class="fw-bold text-dark mb-3"><i class="fas fa-store text-success me-1"></i> {{ __('Penjual (Seller)') }}</h6>
+                            <h6 class="fw-bold text-body mb-3"><i class="fas fa-store text-success me-1"></i> {{ __('Penjual (Seller)') }}</h6>
                             <div class="mb-3">
                                 <label class="form-label small fw-bold text-muted">{{ __('Nama Penjual') }} <span class="text-danger">*</span></label>
                                 <input type="text" name="seller_name" class="form-control rounded-3" value="{{ old('seller_name', $transaction->seller_name) }}" required>
@@ -147,7 +147,7 @@
                     <div class="p-3 bg-light rounded-3 border mb-3">
                         <div class="d-flex justify-content-between align-items-center mb-1">
                             <span class="small text-muted">{{ __('Nilai Pokok:') }}</span>
-                            <span class="fw-semibold text-dark" id="displayAmount">Rp {{ number_format($transaction->amount, 0, ',', '.') }}</span>
+                            <span class="fw-semibold text-body" id="displayAmount">Rp {{ number_format($transaction->amount, 0, ',', '.') }}</span>
                         </div>
                         <div class="d-flex justify-content-between align-items-center mb-1">
                             <span class="small text-muted">{{ __('Biaya Admin Rekber (:percent%):', ['percent' => $feePercent]) }}</span>
@@ -155,7 +155,7 @@
                         </div>
                         <hr class="my-2 opacity-25">
                         <div class="d-flex justify-content-between align-items-center mb-1">
-                            <span class="fw-bold text-dark">{{ __('Total Tagihan Pembeli (Termasuk Kode Unik):') }}</span>
+                            <span class="fw-bold text-body">{{ __('Total Tagihan Pembeli (Termasuk Kode Unik):') }}</span>
                             <span class="fs-5 fw-bold text-primary" id="displayTotalBuyer">Rp {{ number_format($transaction->total_buyer_pay, 0, ',', '.') }}</span>
                         </div>
                         <div class="d-flex justify-content-between align-items-center">
@@ -199,8 +199,9 @@
 
 {{-- Delete Modal --}}
 <div class="modal fade" id="deleteEscrowModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered m3-sheet-modal">
         <div class="modal-content border-0 shadow" style="border-radius: 16px;">
+            <div class="m3-sheet-handle d-md-none"></div>
             <div class="modal-header border-bottom p-3">
                 <h6 class="modal-title fw-bold text-danger"><i class="fas fa-triangle-exclamation me-1.5"></i> {{ __('Konfirmasi Hapus Transaksi Rekber') }}</h6>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -209,7 +210,7 @@
                 <div class="rounded-circle bg-danger-subtle text-danger d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px; font-size: 1.6rem;">
                     <i class="fas fa-trash-alt"></i>
                 </div>
-                <h6 class="fw-bold text-dark">{{ __('Hapus Permanen Transaksi Ini?') }}</h6>
+                <h6 class="fw-bold text-body">{{ __('Hapus Permanen Transaksi Ini?') }}</h6>
                 <p class="small text-muted mb-0">
                     {{ __('Transaksi') }} <code>{{ $transaction->transaction_code }}</code> {{ __('beserta seluruh pesan obrolan, riwayat audit timeline, dan bukti transfer lampiran akan dihapus permanen dari sistem.') }}
                 </p>

@@ -152,8 +152,9 @@
 @push('modals')
 {{-- Create Product Modal --}}
 <div class="modal fade" id="createProductModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered m3-sheet-modal">
         <div class="modal-content" style="border-radius: 16px; border: none;">
+            <div class="m3-sheet-handle d-md-none"></div>
             <div class="modal-header border-0 pb-0">
                 <h5 class="fw-bold">{{ __('Buat Produk Mandiri Baru') }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -201,7 +202,7 @@
                         </label>
                     </div>
                     <div id="vccOptionsAddContainerSeller" style="display: none;" class="bg-light p-3 rounded-4 mb-3 border">
-                        <label class="form-label text-dark small fw-bold d-flex justify-content-between align-items-center mb-1">
+                        <label class="form-label text-body small fw-bold d-flex justify-content-between align-items-center mb-1">
                             <span>{{ __('Layanan yang Didukung VCC:') }}</span>
                             <div class="d-flex gap-2">
                                 <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2" style="font-size: 0.72rem;" onclick="toggleAllVccServices('vcc-check-add-seller', true)">{{ __('Pilih Semua') }}</button>
@@ -237,8 +238,9 @@
 {{-- Add Worker Modals --}}
 @foreach($myProducts as $product)
 <div class="modal fade" id="addWorkerModal{{ $product->id }}" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered m3-sheet-modal">
         <div class="modal-content" style="border-radius: 16px; border: none;">
+            <div class="m3-sheet-handle d-md-none"></div>
             <div class="modal-header border-0 pb-0">
                 <h5 class="fw-bold">{{ __('Tambah Worker ke Produk Anda') }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -279,8 +281,9 @@
 @foreach($myProducts as $product)
 {{-- Edit Product Modal --}}
 <div class="modal fade" id="editProductModal{{ $product->id }}" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered m3-sheet-modal">
         <div class="modal-content" style="border-radius: 16px; border: none;">
+            <div class="m3-sheet-handle d-md-none"></div>
             <div class="modal-header border-0 pb-0">
                 <h5 class="fw-bold">{{ __('Edit Informasi Produk') }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -338,7 +341,7 @@
                         </label>
                     </div>
                     <div id="vccOptionsEditContainerSeller{{ $product->id }}" style="display: {{ $product->is_vcc ? 'block' : 'none' }};" class="bg-light p-3 rounded-4 mb-3 border">
-                        <label class="form-label text-dark small fw-bold d-flex justify-content-between align-items-center mb-1">
+                        <label class="form-label text-body small fw-bold d-flex justify-content-between align-items-center mb-1">
                             <span>{{ __('Layanan yang Didukung VCC:') }}</span>
                             <div class="d-flex gap-2">
                                 <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2" style="font-size: 0.72rem;" onclick="toggleAllVccServices('vcc-check-edit-seller-{{ $product->id }}', true)">{{ __('Pilih Semua') }}</button>
@@ -376,8 +379,9 @@
 
 {{-- Delete Product Modal --}}
 <div class="modal fade" id="deleteProductModal{{ $product->id }}" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered m3-sheet-modal">
         <div class="modal-content text-center" style="border-radius: 16px; border: none;">
+            <div class="m3-sheet-handle d-md-none"></div>
             <div class="modal-body p-4">
                 <i class="fas fa-exclamation-triangle text-danger mb-3" style="font-size: 3rem;"></i>
                 <h5 class="fw-bold">{{ __('Hapus Produk?') }}</h5>

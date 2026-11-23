@@ -26,67 +26,61 @@
 </div>
 @endif
 
-{{-- Sub Navigation Tabs --}}
-<ul class="nav nav-tabs nav-tabs-bordered mb-4" id="backupTabs" style="border-bottom: 2px solid var(--bs-border-color);">
-    <li class="nav-item">
-        <a class="nav-link active fw-bold text-primary" href="{{ route('admin.backup.index') }}" style="border-bottom: 3px solid var(--bs-primary); margin-bottom: -2px;">
-            <i class="fas fa-chart-line me-1"></i> {{ __('Dashboard') }}
+{{-- Sub Navigation Tabs (M3 Scrollable Pill Strip) --}}
+<div class="mb-4">
+    <div class="m3-tab-strip">
+        <a class="m3-tab-pill active" href="{{ route('admin.backup.index') }}">
+            <i class="fas fa-chart-line"></i><span>{{ __('Dashboard') }}</span>
         </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link text-secondary" href="{{ route('admin.backup.history') }}">
-            <i class="fas fa-history me-1"></i> {{ __('Riwayat Backup') }}
+        <a class="m3-tab-pill" href="{{ route('admin.backup.history') }}">
+            <i class="fas fa-history"></i><span>{{ __('Riwayat Backup') }}</span>
         </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link text-secondary" href="{{ route('admin.backup.restore.show') }}">
-            <i class="fas fa-undo me-1"></i> {{ __('Pemulihan Data (Restore)') }}
+        <a class="m3-tab-pill" href="{{ route('admin.backup.restore.show') }}">
+            <i class="fas fa-undo"></i><span>{{ __('Pemulihan Data (Restore)') }}</span>
         </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link text-secondary" href="{{ route('admin.backup.settings.show') }}">
-            <i class="fas fa-cog me-1"></i> {{ __('Pengaturan & Jadwal') }}
+        <a class="m3-tab-pill" href="{{ route('admin.backup.settings.show') }}">
+            <i class="fas fa-cog"></i><span>{{ __('Pengaturan & Jadwal') }}</span>
         </a>
-    </li>
-</ul>
+    </div>
+</div>
 
 {{-- Database Statistics --}}
-<div class="row g-4 mb-4">
-    <div class="col-md-4">
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-4">
         <div class="card border-0 shadow-sm h-100" style="border-radius: 16px;">
-            <div class="card-body p-4 d-flex align-items-center gap-3">
-                <div class="rounded-circle p-3 bg-primary-subtle text-primary">
-                    <i class="fas fa-hdd fs-3"></i>
+            <div class="card-body p-3 p-md-4 d-flex align-items-center gap-3">
+                <div class="rounded-circle p-2.5 p-md-3 bg-primary-subtle text-primary">
+                    <i class="fas fa-hdd fs-4"></i>
                 </div>
-                <div>
-                    <small class="text-muted fw-bold d-block text-uppercase">{{ __('Ukuran Database') }}</small>
-                    <h3 class="fw-bold m-0 text-primary">{{ $dbSizeFormatted }}</h3>
+                <div class="min-w-0">
+                    <small class="text-muted fw-bold d-block text-uppercase text-truncate">{{ __('Ukuran DB') }}</small>
+                    <h4 class="fw-bold m-0 text-primary m3-tabular-nums">{{ $dbSizeFormatted }}</h4>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-6 col-md-4">
         <div class="card border-0 shadow-sm h-100" style="border-radius: 16px;">
-            <div class="card-body p-4 d-flex align-items-center gap-3">
-                <div class="rounded-circle p-3 bg-success-subtle text-success">
-                    <i class="fas fa-database fs-3"></i>
+            <div class="card-body p-3 p-md-4 d-flex align-items-center gap-3">
+                <div class="rounded-circle p-2.5 p-md-3 bg-success-subtle text-success">
+                    <i class="fas fa-database fs-4"></i>
                 </div>
-                <div>
-                    <small class="text-muted fw-bold d-block text-uppercase">{{ __('Total Record Data') }}</small>
-                    <h3 class="fw-bold m-0 text-success">{{ number_format($totalRecords, 0, ',', '.') }}</h3>
+                <div class="min-w-0">
+                    <small class="text-muted fw-bold d-block text-uppercase text-truncate">{{ __('Total Record') }}</small>
+                    <h4 class="fw-bold m-0 text-success m3-tabular-nums">{{ number_format($totalRecords, 0, ',', '.') }}</h4>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-12 col-md-4">
         <div class="card border-0 shadow-sm h-100" style="border-radius: 16px;">
-            <div class="card-body p-4 d-flex align-items-center gap-3">
-                <div class="rounded-circle p-3 bg-warning-subtle text-warning">
-                    <i class="fas fa-clock fs-3"></i>
+            <div class="card-body p-3 p-md-4 d-flex align-items-center gap-3">
+                <div class="rounded-circle p-2.5 p-md-3 bg-warning-subtle text-warning">
+                    <i class="fas fa-clock fs-4"></i>
                 </div>
                 <div>
                     <small class="text-muted fw-bold d-block text-uppercase">{{ __('Auto-Backup') }}</small>
-                    <h5 class="fw-bold m-0">
+                    <h5 class="fw-bold m-0 mt-1">
                         @if($autoBackupEnabled === '1')
                         <span class="badge bg-success-subtle text-success rounded-pill px-3">{{ __('Aktif') }}</span>
                         @else
@@ -129,12 +123,13 @@
 
 {{-- Audit Logs --}}
 <div class="card border-0 shadow-sm" style="border-radius: 16px;">
-    <div class="card-body p-4">
+    <div class="card-body p-3 p-md-4">
         <h5 class="fw-bold mb-3"><i class="fas fa-user-shield text-secondary me-2"></i>{{ __('Riwayat Aktivitas Backup & Restore (Log Audit)') }}</h5>
-        <div class="table-responsive">
+        {{-- Desktop Table --}}
+        <div class="table-responsive d-none d-md-block">
             <table class="table table-hover align-middle mb-0" style="font-size: 0.85rem;">
                 <thead>
-                    <tr class="table-light">
+                    <tr style="background: var(--surface-container-high);">
                         <th>{{ __('Waktu (WIB)') }}</th>
                         <th>{{ __('User Admin') }}</th>
                         <th>{{ __('Aksi Aktivitas') }}</th>
@@ -158,7 +153,7 @@
                             @elseif($log->action === 'backup_create')
                             <span class="badge bg-primary text-uppercase px-2">{{ __('Export') }}</span>
                             @elseif($log->action === 'system_auto_backup')
-                            <span class="badge bg-warning text-uppercase px-2 text-dark">{{ __('Auto Backup') }}</span>
+                            <span class="badge bg-warning-subtle text-warning-emphasis text-uppercase px-2">{{ __('Auto Backup') }}</span>
                             @else
                             <span class="badge bg-secondary text-uppercase px-2">{{ __('Delete') }}</span>
                             @endif
@@ -172,6 +167,36 @@
                     @endforelse
                 </tbody>
             </table>
+        </div>
+
+        {{-- Mobile Stacked Cards (< 768px) --}}
+        <div class="d-md-none d-flex flex-column gap-2.5">
+            @forelse($logs as $log)
+            <div class="m3-mobile-item-card p-3">
+                <div class="d-flex justify-content-between align-items-center gap-2 mb-1">
+                    @if($log->action === 'backup_restore')
+                        <span class="badge bg-danger text-uppercase rounded-pill px-2.5">{{ __('Restore') }}</span>
+                    @elseif($log->action === 'backup_create')
+                        <span class="badge bg-primary text-uppercase rounded-pill px-2.5">{{ __('Export') }}</span>
+                    @elseif($log->action === 'system_auto_backup')
+                        <span class="badge bg-warning-subtle text-warning-emphasis text-uppercase rounded-pill px-2.5">{{ __('Auto Backup') }}</span>
+                    @else
+                        <span class="badge bg-secondary text-uppercase rounded-pill px-2.5">{{ __('Delete') }}</span>
+                    @endif
+                    <small class="text-secondary font-monospace">{{ \Carbon\Carbon::parse($log->created_at)->format('d M Y, H:i') }}</small>
+                </div>
+                <div class="fw-bold small text-body mb-1">
+                    @if($log->actor)
+                        {{ $log->actor->full_name ?: $log->actor->username }}
+                    @else
+                        <span class="text-success"><i class="fas fa-robot me-1"></i>{{ __('System Cron') }}</span>
+                    @endif
+                </div>
+                <div class="small text-secondary text-break">{{ $log->detail }}</div>
+            </div>
+            @empty
+            <div class="text-center py-4 text-muted small">{{ __('Belum ada catatan aktivitas log audit backup.') }}</div>
+            @endforelse
         </div>
     </div>
 </div>

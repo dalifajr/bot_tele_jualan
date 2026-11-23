@@ -4,17 +4,17 @@
 @section('page_subtitle', __('Stok'))
 
 @section('content')
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
     <div>
-        <h4 class="fw-bold mb-1">{{ __('Manajemen Stok') }}</h4>
-        <p class="text-muted mb-0">{{ __('Kelola stok unit produk digital') }}</p>
+        <h4 class="fw-bold mb-1 text-body">{{ __('Manajemen Stok') }}</h4>
+        <p class="text-muted small mb-0">{{ __('Kelola stok unit produk digital') }}</p>
     </div>
-    <div class="d-flex gap-2 align-items-center">
-        <button type="button" class="btn btn-success rounded-pill px-3" onclick="confirmExportStock()">
-            <i class="fas fa-file-excel me-2"></i>{{ __('Ekspor Excel') }}
+    <div class="d-flex gap-2 align-items-center flex-wrap">
+        <button type="button" class="btn btn-sm btn-md-normal btn-success rounded-pill px-3" onclick="confirmExportStock()">
+            <i class="fas fa-file-excel me-1.5"></i>{{ __('Ekspor Excel') }}
         </button>
-        <button class="btn btn-primary rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#addStockModal">
-            <i class="fas fa-plus me-2"></i>{{ __('Tambah Stok') }}
+        <button class="btn btn-sm btn-md-normal btn-primary rounded-pill px-3 px-md-4" data-bs-toggle="modal" data-bs-target="#addStockModal">
+            <i class="fas fa-plus me-1.5"></i>{{ __('Tambah Stok') }}
         </button>
     </div>
 </div>
@@ -133,11 +133,11 @@
         @if($stockUnits->count() > 0)
         @if(request('status') !== 'terjual')
         {{-- Bulk Action Bar --}}
-        <div id="bulk-actions-bar" class="bg-light border-bottom p-3 d-none align-items-center justify-content-between">
+        <div id="bulk-actions-bar" class="border-bottom p-3 d-none flex-wrap gap-2 align-items-center justify-content-between" style="background: var(--surface-container-high);">
             <div class="d-flex align-items-center gap-2">
-                <span class="fw-bold text-dark"><span id="selected-count">0</span> {{ __('akun terpilih') }}</span>
+                <span class="fw-bold text-body m3-tabular-nums"><span id="selected-count">0</span> {{ __('akun terpilih') }}</span>
             </div>
-            <div class="d-flex gap-2">
+            <div class="d-flex flex-wrap gap-2">
                 <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#bulkMoveModal">
                     <i class="fas fa-exchange-alt me-1"></i>{{ __('Ubah Status Masal') }}
                 </button>
@@ -150,13 +150,14 @@
             </div>
         </div>
         @endif
-        <div class="table-responsive">
+        {{-- Desktop Table View --}}
+        <div class="table-responsive d-none d-md-block">
             <table class="table table-hover align-middle mb-0">
                 <thead>
                     <tr class="text-secondary small border-bottom">
                         @if(request('status') !== 'terjual')
                         <th class="px-4 py-3 border-0" style="width: 40px;">
-                            <input type="checkbox" id="select-all-stocks" class="form-check-input">
+                            <input type="checkbox" id="select-all-stocks" class="form-check-input select-all-stocks-toggle">
                         </th>
                         <th class="py-3 border-0">ID</th>
                         @else
@@ -202,14 +203,14 @@
                         <td class="px-4 fw-bold text-muted">#{{ $unit->id }}</td>
                         @endif
                         <td>
-                            <span class="fw-semibold text-dark">{{ Str::limit($unit->product->name ?? 'Unknown', 25) }}</span>
+                            <span class="fw-semibold text-body">{{ Str::limit($unit->product->name ?? 'Unknown', 25) }}</span>
                             @if($unit->vcc_service)
                                 <br><span class="badge bg-primary-subtle text-primary border rounded-pill px-2 py-0.5" style="font-size: 0.7rem;"><i class="fas fa-credit-card me-1"></i>{{ $unit->vcc_service }}</span>
                             @endif
                         </td>
                         <td>
                             @if($unit->uploader)
-                                <span class="fw-bold text-dark">{{ $unit->uploader->full_name ?? $unit->uploader->username }}</span>
+                                <span class="fw-bold text-body">{{ $unit->uploader->full_name ?? $unit->uploader->username }}</span>
                                 @if($unit->uploader->role)
                                     <br><span class="badge bg-secondary-subtle text-secondary px-2 py-0.5 rounded-pill" style="font-size: 0.7rem; font-weight: normal;">{{ ucfirst($unit->uploader->role) }}</span>
                                 @endif
@@ -217,10 +218,10 @@
                                 <span class="text-muted small">{{ __('Admin Utama') }}</span>
                             @endif
                         </td>
-                        <td class="fw-medium text-dark">{{ Str::limit($extractedUsername, 20) }}</td>
+                        <td class="fw-medium text-body">{{ Str::limit($extractedUsername, 20) }}</td>
                         <td>
                             @if($unit->github_joined_at)
-                                <span class="text-dark fw-semibold" title="{{ __('Berdasarkan check GitHub') }}">{{ $unit->localized_umur_akun }}</span>
+                                <span class="text-body fw-semibold" title="{{ __('Berdasarkan check GitHub') }}">{{ $unit->localized_umur_akun }}</span>
                             @else
                                 <span class="text-muted small" title="{{ __('Tanggal input stok') }}">{{ $unit->localized_umur_akun }}</span>
                             @endif
@@ -248,7 +249,7 @@
                             {{ $unit->order ? $unit->order->created_at->format('d M Y H:i') : '-' }}
                         </td>
                         @else
-                        <td><code class="text-dark bg-light px-2 py-1 rounded">{{ Str::limit($unit->content ?? $unit->raw_text, 20) }}</code></td>
+                        <td><code class="text-body bg-light px-2 py-1 rounded">{{ Str::limit($unit->content ?? $unit->raw_text, 20) }}</code></td>
                         <td>
                             @if($unit->is_sold)
                                 <span class="badge bg-danger-subtle text-danger rounded-pill px-3">{{ __('Terjual') }}</span>
@@ -332,6 +333,98 @@
                 </tbody>
             </table>
         </div>
+
+        {{-- Mobile Stacked Card List (< 768px) --}}
+        <div class="d-md-none p-3 d-flex flex-column gap-2.5">
+            @if(request('status') !== 'terjual')
+            <div class="d-flex align-items-center justify-content-between px-2 py-1.5 rounded-3" style="background: var(--surface-container-high);">
+                <label class="form-check d-flex align-items-center gap-2 mb-0 small fw-semibold text-body" style="cursor: pointer;">
+                    <input type="checkbox" class="form-check-input mt-0 select-all-stocks-toggle">
+                    <span>{{ __('Pilih Semua di Halaman Ini') }}</span>
+                </label>
+                <span class="small text-secondary m3-tabular-nums">{{ $stockUnits->count() }} {{ __('item') }}</span>
+            </div>
+            @endif
+
+            @foreach($stockUnits as $unit)
+            @php
+                $extractedUsername = '-';
+                if (preg_match('/Username:\s*([^\n]+)/i', $unit->raw_text, $matches)) {
+                    $extractedUsername = trim($matches[1]);
+                }
+                $statusBadge = match($unit->stock_status) {
+                    'ready' => ['bg' => 'success-subtle', 'text' => 'success', 'label' => 'Ready'],
+                    'awaiting_benefits' => ['bg' => 'warning-subtle', 'text' => 'warning', 'label' => 'Awaiting Benefits'],
+                    'saved_for_verification' => ['bg' => 'info-subtle', 'text' => 'info', 'label' => __('Simpan Akun')],
+                    'saved_ready_notified' => ['bg' => 'primary-subtle', 'text' => 'primary', 'label' => __('Siap Diajukan')],
+                    default => ['bg' => 'secondary-subtle', 'text' => 'secondary', 'label' => $unit->stock_status]
+                };
+            @endphp
+            <div class="m3-mobile-item-card p-3">
+                <div class="d-flex justify-content-between align-items-start gap-2 mb-1.5">
+                    <div class="d-flex align-items-center gap-2 min-w-0">
+                        @if(request('status') !== 'terjual')
+                            <input type="checkbox" value="{{ $unit->id }}" class="form-check-input mt-0 stock-checkbox flex-shrink-0" data-status="{{ $unit->stock_status }}" {{ $unit->is_sold ? 'disabled' : '' }}>
+                        @endif
+                        <div class="min-w-0">
+                            <div class="fw-bold text-body small text-truncate">#{{ $unit->id }} · {{ $unit->product->name ?? 'Unknown' }}</div>
+                            @if($unit->vcc_service)
+                                <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-0.5" style="font-size: 0.66rem;"><i class="fas fa-credit-card me-1"></i>{{ $unit->vcc_service }}</span>
+                            @endif
+                        </div>
+                    </div>
+                    @if($unit->is_sold)
+                        <span class="badge bg-danger-subtle text-danger rounded-pill px-2.5 flex-shrink-0">{{ __('Terjual') }}</span>
+                    @else
+                        <span class="badge bg-{{ $statusBadge['bg'] }} text-{{ $statusBadge['text'] }} rounded-pill px-2.5 flex-shrink-0">{{ $statusBadge['label'] }}</span>
+                    @endif
+                </div>
+
+                <div class="small text-secondary mb-2">
+                    <div class="d-flex flex-wrap justify-content-between gap-2">
+                        <span><i class="fas fa-user me-1"></i><strong class="text-body">{{ Str::limit($extractedUsername, 26) }}</strong></span>
+                        <span><i class="fas fa-upload me-1"></i>{{ $unit->uploader ? ($unit->uploader->full_name ?? $unit->uploader->username) : __('Admin Utama') }}</span>
+                    </div>
+                    <div class="mt-1">
+                        <i class="far fa-clock me-1"></i>{{ __('Umur:') }} <strong class="text-body">{{ $unit->localized_umur_akun }}</strong>
+                        @if(request('status') === 'terjual' && $unit->order && $unit->order->customer)
+                            · {{ __('Pembeli:') }} <strong class="text-body">{{ $unit->order->customer->full_name ?? $unit->order->customer->username }}</strong>
+                        @endif
+                    </div>
+                </div>
+
+                @if(request('status') !== 'terjual')
+                    <div class="p-2 rounded-3 mb-2 font-monospace small text-body text-truncate" style="background: var(--surface-container-high);">
+                        {{ Str::limit($unit->content ?? $unit->raw_text, 48) }}
+                    </div>
+                @endif
+
+                <div class="d-flex gap-1.5 pt-2 border-top" style="border-color: var(--outline-variant) !important;">
+                    <button type="button" class="btn btn-sm btn-tonal rounded-pill flex-grow-1 fw-semibold" style="min-height: 38px;"
+                            data-bs-toggle="modal" data-bs-target="#detailStockModal"
+                            data-stock-detail-index="{{ $loop->index }}" onclick="openStockDetailModal({{ $loop->index }})">
+                        <i class="fas fa-eye me-1"></i>{{ __('Detail') }}
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3" style="min-height: 38px;" data-bs-toggle="modal" data-bs-target="#moveStockModal{{ $unit->id }}" title="{{ __('Ubah Status') }}">
+                        <i class="fas fa-exchange-alt"></i>
+                    </button>
+                    @if(!$unit->is_sold)
+                    <button type="button" class="btn btn-sm btn-outline-warning rounded-pill px-3" style="min-height: 38px;" data-bs-toggle="modal" data-bs-target="#editStockModal{{ $unit->id }}" title="{{ __('Edit') }}">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <form action="{{ route('admin.stock.destroy', $unit->id) }}" method="POST" class="m-0" onsubmit="confirmAction(event, '{{ __('Stok ini belum terjual. Yakin ingin menghapusnya?') }}', '{{ __('Hapus Stok?') }}');">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3" style="min-height: 38px;" title="{{ __('Hapus') }}">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </form>
+                    @endif
+                </div>
+            </div>
+            @endforeach
+        </div>
+
         <div class="px-4 py-3 border-top">
             {{ $stockUnits->withQueryString()->links() }}
         </div>
@@ -347,15 +440,16 @@
 @push('modals')
 {{-- Add Stock Modal --}}
 <div class="modal fade" id="addStockModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg" style="max-width: 860px;">
+    <div class="modal-dialog modal-dialog-centered modal-lg m3-sheet-modal" style="max-width: 860px;">
         <div class="modal-content shadow-lg" style="border-radius: 18px; border: none;">
+            <div class="m3-sheet-handle d-md-none"></div>
             <div class="modal-header border-0 pb-0 d-flex justify-content-between align-items-center px-4 pt-4">
                 <div class="d-flex align-items-center gap-2.5">
                     <div class="rounded-3 bg-primary-subtle text-primary d-flex align-items-center justify-content-center shadow-xs" style="width: 40px; height: 40px; font-size: 1.15rem;">
                         <i class="fas fa-layer-group"></i>
                     </div>
                     <div>
-                        <h5 class="fw-bold mb-0 text-dark">{{ __('Tambah Stok Produk') }}</h5>
+                        <h5 class="fw-bold mb-0 text-body">{{ __('Tambah Stok Produk') }}</h5>
                         <p class="text-muted small mb-0" style="font-size: 0.78rem;">{{ __('Input kredensial akun satuan maupun banyak sekaligus dengan auto-deteksi 2FA') }}</p>
                     </div>
                 </div>
@@ -414,7 +508,7 @@
                         <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mt-2 px-1 text-muted" style="font-size: 0.78rem;">
                             <div class="d-flex align-items-center gap-1 text-secondary">
                                 <i class="fas fa-info-circle text-primary"></i>
-                                <span>{{ __('Pisahkan antar akun dengan') }} <kbd class="bg-light text-dark border px-1 py-0.5 rounded shadow-xs" style="font-size: 0.72rem;">Enter 2x</kbd> {{ __('jika ingin menginput banyak akun sekaligus.') }}</span>
+                                <span>{{ __('Pisahkan antar akun dengan') }} <kbd class="bg-light text-body border px-1 py-0.5 rounded shadow-xs" style="font-size: 0.72rem;">Enter 2x</kbd> {{ __('jika ingin menginput banyak akun sekaligus.') }}</span>
                             </div>
                             <div id="stock-line-counter" class="text-muted fw-medium" style="font-size: 0.75rem;">0 {{ __('baris') }} / 0 {{ __('karakter') }}</div>
                         </div>
@@ -427,7 +521,7 @@
                                         <i class="fas fa-eye"></i>
                                         <span>{{ __('Pratinjau') }}</span>
                                     </span>
-                                    <span class="fw-bold text-dark small">{{ __('Hasil Pemecahan Akun') }} (<span id="preview-count" class="text-primary">0</span>)</span>
+                                    <span class="fw-bold text-body small">{{ __('Hasil Pemecahan Akun') }} (<span id="preview-count" class="text-primary">0</span>)</span>
                                 </div>
                                 <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2.5 py-1" style="font-size: 0.72rem;">
                                     <i class="fas fa-shield-alt me-1"></i>{{ __('Auto-Deteksi F2A Aktif') }}
@@ -474,11 +568,12 @@
 
 {{-- Master Detail Stock Modal with Prev/Next Navigation --}}
 <div class="modal fade" id="detailStockModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered m3-sheet-modal">
         <div class="modal-content shadow-lg" style="border-radius: 16px; border: none;">
+            <div class="m3-sheet-handle d-md-none"></div>
             <div class="modal-header border-0 pb-0 d-flex justify-content-between align-items-center">
                 <div class="d-flex align-items-center gap-2">
-                    <h5 class="fw-bold mb-0 text-dark">{{ __('Detail Data Akun') }}</h5>
+                    <h5 class="fw-bold mb-0 text-body">{{ __('Detail Data Akun') }}</h5>
                     <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill fw-semibold px-2.5 py-1" id="stockDetailCounterBadge" style="font-size: 0.72rem;">1 / 1</span>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -486,7 +581,7 @@
             <div class="modal-body p-4">
                 <div class="mb-3">
                     <label class="form-label fw-bold text-muted small mb-1">{{ __('Produk') }}</label>
-                    <p class="mb-0 fw-semibold text-dark fs-6" id="stockDetailProductName">-</p>
+                    <p class="mb-0 fw-semibold text-body fs-6" id="stockDetailProductName">-</p>
                 </div>
                 <div class="mb-0">
                     <label class="form-label fw-bold text-muted small mb-1">{{ __('Isi Data') }}</label>
@@ -521,8 +616,9 @@
 
 {{-- Move Stock Modal --}}
 <div class="modal fade" id="moveStockModal{{ $unit->id }}" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered m3-sheet-modal">
         <div class="modal-content" style="border-radius: 16px; border: none;">
+            <div class="m3-sheet-handle d-md-none"></div>
             <div class="modal-header border-0 pb-0">
                 <h5 class="fw-bold">{{ __('Ubah Status / Pindah Produk') }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -565,8 +661,9 @@
 @if(!$unit->is_sold)
 {{-- Edit Modal --}}
 <div class="modal fade" id="editStockModal{{ $unit->id }}" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered m3-sheet-modal">
         <div class="modal-content" style="border-radius: 16px; border: none;">
+            <div class="m3-sheet-handle d-md-none"></div>
             <div class="modal-header border-0 pb-0">
                 <h5 class="fw-bold">{{ __('Edit Detail Stok') }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -609,8 +706,9 @@
 
 {{-- Delete Modal (M3 Alert Dialog Style) --}}
 <div class="modal fade" id="deleteStockModal{{ $unit->id }}" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" style="max-width: 440px;">
+    <div class="modal-dialog modal-dialog-centered m3-sheet-modal" style="max-width: 440px;">
         <div class="modal-content text-center" style="border-radius: 28px; border: none; padding: 24px; background-color: var(--surface-container-high, #ece6f0);">
+            <div class="m3-sheet-handle d-md-none"></div>
             <div class="modal-body p-0">
                 <div class="mx-auto mb-3 d-flex align-items-center justify-content-center rounded-circle" style="width: 38px; height: 38px; background: var(--surface-container-highest, #dce4eb); color: var(--on-surface-variant, #44474f); font-weight: 600; font-size: 1.1rem;">i</div>
                 <h5 class="fw-bold mb-2" style="font-family: var(--font-poppins); font-size: 1.4rem;">{{ __('Hapus Stok?') }}</h5>
@@ -633,8 +731,9 @@
 @if(request('status') !== 'terjual')
 {{-- Bulk Move Modal --}}
 <div class="modal fade" id="bulkMoveModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered m3-sheet-modal">
         <div class="modal-content" style="border-radius: 16px; border: none;">
+            <div class="m3-sheet-handle d-md-none"></div>
             <div class="modal-header border-0 pb-0">
                 <h5 class="fw-bold">{{ __('Ubah Status Masal (') }}<span class="bulk-selected-count">0</span> {{ __('Akun)') }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -676,8 +775,9 @@
 
 {{-- Bulk Delete Modal (M3 Alert Dialog Style) --}}
 <div class="modal fade" id="bulkDeleteModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" style="max-width: 440px;">
+    <div class="modal-dialog modal-dialog-centered m3-sheet-modal" style="max-width: 440px;">
         <div class="modal-content text-center" style="border-radius: 28px; border: none; padding: 24px; background-color: var(--surface-container-high, #ece6f0);">
+            <div class="m3-sheet-handle d-md-none"></div>
             <div class="modal-body p-0">
                 <div class="mx-auto mb-3 d-flex align-items-center justify-content-center rounded-circle" style="width: 38px; height: 38px; background: var(--surface-container-highest, #dce4eb); color: var(--on-surface-variant, #44474f); font-weight: 600; font-size: 1.1rem;">i</div>
                 <h5 class="fw-bold mb-2" style="font-family: var(--font-poppins); font-size: 1.4rem;">{{ __('Hapus Masal?') }}</h5>
@@ -699,8 +799,9 @@
 @if(request('status') !== 'terjual')
 {{-- Bulk Checkout Modal with Optional Customer Assignment --}}
 <div class="modal fade" id="bulkCheckoutModal" tabindex="-1" aria-labelledby="bulkCheckoutModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered m3-sheet-modal">
         <div class="modal-content border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
+            <div class="m3-sheet-handle d-md-none"></div>
             <div class="modal-header border-0 bg-success text-white p-4">
                 <div class="d-flex align-items-center gap-3">
                     <div class="rounded-circle bg-white bg-opacity-20 p-2 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px;">
@@ -723,14 +824,14 @@
                     <div class="alert alert-success-subtle border-0 rounded-3 p-3 mb-4 d-flex align-items-center gap-3">
                         <i class="fas fa-boxes-stacked text-success fs-4"></i>
                         <div>
-                            <div class="fw-bold text-dark"><span class="bulk-selected-count">0</span> {{ __('akun terpilih') }}</div>
+                            <div class="fw-bold text-body"><span class="bulk-selected-count">0</span> {{ __('akun terpilih') }}</div>
                             <div class="small text-muted">{{ __('Stok yang dipesan akan otomatis di-reserve dan diteruskan ke pesanan.') }}</div>
                         </div>
                     </div>
 
                     {{-- Customer Assignment Section --}}
                     <div class="mb-3">
-                        <label class="form-label small fw-bold text-dark d-block mb-2">
+                        <label class="form-label small fw-bold text-body d-block mb-2">
                             <i class="fas fa-user-tag text-primary me-1"></i> {{ __('Tugaskan Pesanan ke Pelanggan (Opsional)') }}
                         </label>
                         
@@ -758,7 +859,7 @@
                                         <i class="fas fa-user"></i>
                                     </div>
                                     <div>
-                                        <strong class="d-block text-dark small" id="selectedCustomerNameText">-</strong>
+                                        <strong class="d-block text-body small" id="selectedCustomerNameText">-</strong>
                                         <span class="text-muted" style="font-size: 0.75rem;" id="selectedCustomerDetailText">-</span>
                                     </div>
                                 </div>
@@ -792,14 +893,14 @@
                                                     <i class="fas fa-user"></i>
                                                 </div>
                                                 <div>
-                                                    <div class="small fw-semibold text-dark">{{ $c->full_name ?? $c->username }}</div>
+                                                    <div class="small fw-semibold text-body">{{ $c->full_name ?? $c->username }}</div>
                                                     <div class="text-muted" style="font-size: 0.7rem;">
                                                         @if($c->username) @<span>{{ $c->username }}</span> @endif
                                                         @if($c->telegram_id) • TG: <code>{{ $c->telegram_id }}</code> @endif
                                                     </div>
                                                 </div>
                                             </div>
-                                            <span class="badge {{ $c->role === 'seller' ? 'bg-info' : 'bg-secondary' }}-subtle text-dark rounded-pill" style="font-size: 0.65rem;">{{ ucfirst($c->role) }}</span>
+                                            <span class="badge {{ $c->role === 'seller' ? 'bg-info' : 'bg-secondary' }}-subtle text-body rounded-pill" style="font-size: 0.65rem;">{{ ucfirst($c->role) }}</span>
                                         </div>
                                         @endforeach
                                     @else
@@ -1049,7 +1150,7 @@
                                 let secret = window.TotpEngine ? window.TotpEngine.extractSecret(line) : null;
                                 if (secret) {
                                     let badgeHtml = window.TotpEngine.renderBadgeHtml(secret);
-                                    details.push(`<span class="text-dark fw-medium">${escapeHtml(line)}</span> ${badgeHtml}`);
+                                    details.push(`<span class="text-body fw-medium">${escapeHtml(line)}</span> ${badgeHtml}`);
                                 } else {
                                     details.push(escapeHtml(line));
                                 }
@@ -1069,7 +1170,7 @@
                                 let secret = window.TotpEngine ? window.TotpEngine.extractSecret(partCandidate) : null;
                                 if (secret) {
                                     let badgeHtml = window.TotpEngine.renderBadgeHtml(secret);
-                                    details.push(`<span class="text-dark fw-medium">${escapeHtml(partCandidate)}</span> ${badgeHtml}`);
+                                    details.push(`<span class="text-body fw-medium">${escapeHtml(partCandidate)}</span> ${badgeHtml}`);
                                 } else {
                                     details.push(escapeHtml(partCandidate));
                                 }
@@ -1161,8 +1262,8 @@
             }
         });
 
-        // Bulk Action Logic
-        const selectAllCheckbox = document.getElementById('select-all-stocks');
+        // Bulk Action Logic (Viewport-aware & deduplicated across desktop table + mobile cards)
+        const selectAllCheckboxes = document.querySelectorAll('.select-all-stocks-toggle');
         const stockCheckboxes = document.querySelectorAll('.stock-checkbox');
         const bulkActionBar = document.getElementById('bulk-actions-bar');
         const selectedCountSpan = document.getElementById('selected-count');
@@ -1171,8 +1272,11 @@
         const bulkDeleteIdsInput = document.getElementById('bulk-delete-ids');
 
         function updateBulkActions() {
-            const checkedBoxes = document.querySelectorAll('.stock-checkbox:checked');
-            const count = checkedBoxes.length;
+            const uniqueSelected = new Map();
+            document.querySelectorAll('.stock-checkbox:checked:not(:disabled)').forEach(cb => {
+                uniqueSelected.set(cb.value, cb.getAttribute('data-status'));
+            });
+            const count = uniqueSelected.size;
 
             if (count > 0) {
                 if (bulkActionBar) {
@@ -1182,7 +1286,7 @@
                 if (selectedCountSpan) selectedCountSpan.textContent = count;
                 bulkSelectedCountSpans.forEach(span => span.textContent = count);
 
-                const ids = Array.from(checkedBoxes).map(cb => cb.value);
+                const ids = Array.from(uniqueSelected.keys());
                 const idsString = JSON.stringify(ids);
                 if (bulkMoveIdsInput) bulkMoveIdsInput.value = idsString;
                 if (bulkDeleteIdsInput) bulkDeleteIdsInput.value = idsString;
@@ -1191,10 +1295,8 @@
                 const bulkCheckoutIdsInput = document.getElementById('bulk-checkout-ids');
                 if (bulkCheckoutIdsInput) bulkCheckoutIdsInput.value = idsString;
                 
-                // Only show checkout button if all selected stocks are valid for checkout
                 let allValidForCheckout = true;
-                Array.from(checkedBoxes).forEach(cb => {
-                    const status = cb.getAttribute('data-status');
+                uniqueSelected.forEach(status => {
                     if (status !== 'ready' && status !== 'awaiting_benefits' && status !== 'saved_for_verification') {
                         allValidForCheckout = false;
                     }
@@ -1214,9 +1316,23 @@
             }
         }
 
-        if (selectAllCheckbox) {
-            selectAllCheckbox.addEventListener('change', function() {
+        function syncSelectAllState() {
+            const allIds = new Set();
+            const checkedIds = new Set();
+            stockCheckboxes.forEach(cb => {
+                if (!cb.disabled) {
+                    allIds.add(cb.value);
+                    if (cb.checked) checkedIds.add(cb.value);
+                }
+            });
+            const isAll = allIds.size > 0 && allIds.size === checkedIds.size;
+            selectAllCheckboxes.forEach(sa => { sa.checked = isAll; });
+        }
+
+        selectAllCheckboxes.forEach(sa => {
+            sa.addEventListener('change', function() {
                 const isChecked = this.checked;
+                selectAllCheckboxes.forEach(other => { other.checked = isChecked; });
                 stockCheckboxes.forEach(cb => {
                     if (!cb.disabled) {
                         cb.checked = isChecked;
@@ -1224,15 +1340,18 @@
                 });
                 updateBulkActions();
             });
-        }
+        });
 
         stockCheckboxes.forEach(cb => {
             cb.addEventListener('change', function() {
-                if (selectAllCheckbox) {
-                    const allUnsoldCount = document.querySelectorAll('.stock-checkbox:not(:disabled)').length;
-                    const checkedUnsoldCount = document.querySelectorAll('.stock-checkbox:checked:not(:disabled)').length;
-                    selectAllCheckbox.checked = (allUnsoldCount === checkedUnsoldCount && allUnsoldCount > 0);
-                }
+                const val = this.value;
+                const isChecked = this.checked;
+                stockCheckboxes.forEach(peer => {
+                    if (peer.value === val && !peer.disabled) {
+                        peer.checked = isChecked;
+                    }
+                });
+                syncSelectAllState();
                 updateBulkActions();
             });
         });
@@ -1447,11 +1566,11 @@ function performCustomerSearch(query) {
                                     <i class="fas fa-user"></i>
                                 </div>
                                 <div>
-                                    <div class="small fw-semibold text-dark">${displayName}</div>
+                                    <div class="small fw-semibold text-body">${displayName}</div>
                                     <div class="text-muted" style="font-size: 0.7rem;">${uname} ${tg}</div>
                                 </div>
                             </div>
-                            <span class="badge ${roleBadge}-subtle text-dark rounded-pill" style="font-size: 0.65rem;">${u.role}</span>
+                            <span class="badge ${roleBadge}-subtle text-body rounded-pill" style="font-size: 0.65rem;">${u.role}</span>
                         </div>
                     `;
                 });

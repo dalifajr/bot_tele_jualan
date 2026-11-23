@@ -410,35 +410,34 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // 2. Setup handler untuk form injeksi (baik desktop maupun modal)
-    ['desktop', 'modal'].forEach(prefix => {
-        const amountInput = document.getElementById(prefix + 'InjectAmountInput');
-        document.querySelectorAll('.' + prefix + '-btn-inject-preset').forEach(btn => {
+    // 2. Setup handler untuk setiap form injeksi (desktop inline maupun modal mobile) secara scoped
+    document.querySelectorAll('.admin-inject-form').forEach(injectForm => {
+        const amountInput = injectForm.querySelector('.inject-amount-input');
+        injectForm.querySelectorAll('.btn-inject-preset').forEach(btn => {
             btn.addEventListener('click', function() {
                 if (amountInput) amountInput.value = this.dataset.amount;
             });
         });
 
-        const creditRadio = document.getElementById(prefix + 'InjectActionCredit');
-        const debitRadio = document.getElementById(prefix + 'InjectActionDebit');
-        const submitBtn = document.getElementById(prefix + 'InjectSubmitBtn');
+        const actionRadios = injectForm.querySelectorAll('.inject-action-radio');
+        const submitBtn = injectForm.querySelector('.inject-submit-btn');
         const syncActionBtn = () => {
             if (!submitBtn) return;
+            const debitRadio = injectForm.querySelector('.inject-action-radio[value="debit"]');
             if (debitRadio && debitRadio.checked) {
-                submitBtn.className = 'btn btn-danger w-100 rounded-pill fw-bold';
-                submitBtn.innerHTML = '<i class="fas fa-minus-circle me-1.5"></i>{{ __("Potong Saldo Sekarang") }}';
+                submitBtn.className = 'btn btn-danger w-100 rounded-pill fw-bold inject-submit-btn py-2.5 d-inline-flex align-items-center justify-content-center gap-2';
+                submitBtn.innerHTML = '<i class="fas fa-minus-circle"></i><span class="inject-submit-text">{{ __("Potong Saldo Sekarang") }}</span>';
             } else {
-                submitBtn.className = 'btn btn-primary w-100 rounded-pill fw-bold';
-                submitBtn.innerHTML = '<i class="fas fa-bolt me-1.5"></i>{{ __("Injeksi Saldo Sekarang") }}';
+                submitBtn.className = 'btn btn-primary w-100 rounded-pill fw-bold inject-submit-btn py-2.5 d-inline-flex align-items-center justify-content-center gap-2';
+                submitBtn.innerHTML = '<i class="fas fa-bolt"></i><span class="inject-submit-text">{{ __("Injeksi Saldo Sekarang") }}</span>';
             }
         };
-        if (creditRadio) creditRadio.addEventListener('change', syncActionBtn);
-        if (debitRadio) debitRadio.addEventListener('change', syncActionBtn);
+        actionRadios.forEach(r => r.addEventListener('change', syncActionBtn));
 
-        const filterInput = document.getElementById(prefix + 'InjectUserFilter');
-        const userSelect = document.getElementById(prefix + 'InjectUserSelect');
-        const balWrap = document.getElementById(prefix + 'InjectSelectedBalanceWrap');
-        const balText = document.getElementById(prefix + 'InjectSelectedBalance');
+        const filterInput = injectForm.querySelector('.inject-user-filter');
+        const userSelect = injectForm.querySelector('.inject-user-select');
+        const balWrap = injectForm.querySelector('.inject-selected-balance-wrap');
+        const balText = injectForm.querySelector('.inject-selected-balance');
 
         if (userSelect) {
             const allOptions = Array.from(userSelect.options);

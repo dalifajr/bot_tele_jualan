@@ -12,7 +12,8 @@
                     <span class="badge bg-primary-subtle text-primary rounded-pill px-2.5">{{ $activeSessionsCount }} {{ __('aktif 24j') }}</span>
                 </div>
 
-                <div class="table-responsive">
+                {{-- Desktop Table --}}
+                <div class="table-responsive d-none d-md-block">
                     <table class="table table-hover align-middle mb-0">
                         <thead>
                             <tr class="small text-muted">
@@ -53,6 +54,38 @@
                             @endforelse
                         </tbody>
                     </table>
+                </div>
+
+                {{-- Mobile Stacked Cards (< 768px) --}}
+                <div class="d-md-none d-flex flex-column gap-2.5">
+                    @forelse($recentSessions as $sess)
+                        <div class="m3-mobile-item-card p-3">
+                            <div class="d-flex justify-content-between align-items-start gap-2 mb-1">
+                                <div>
+                                    <div class="fw-bold small text-body">{{ $sess->user->username ?? ('User #' . $sess->user_id) }}</div>
+                                    <span class="badge bg-secondary-subtle text-body text-uppercase" style="font-size: 0.65rem;">{{ $sess->user->role ?? '-' }}</span>
+                                </div>
+                                <small class="text-secondary">{{ optional($sess->last_active_at)->diffForHumans() ?: '-' }}</small>
+                            </div>
+                            <div class="small fw-semibold text-body mt-1">{{ $sess->device_label ?: '-' }}</div>
+                            <div class="small font-monospace text-secondary mb-2">{{ $sess->ip_address }} · {{ $sess->location_label ?: '-' }}</div>
+                            <div class="pt-2 border-top" style="border-color: var(--outline-variant) !important;">
+                                @if(!$sess->isCurrent())
+                                    <form action="{{ route('admin.security.firewall.revoke-session', $sess->id) }}" method="POST" class="m-0">
+                                        @csrf
+                                        <input type="hidden" name="active_tab" value="sesi-audit">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill w-100 fw-semibold" style="min-height: 40px;">
+                                            <i class="fas fa-right-from-bracket me-1"></i>{{ __('Cabut Sesi Perangkat') }}
+                                        </button>
+                                    </form>
+                                @else
+                                    <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-1.5">{{ __('Sesi Perangkat Anda Saat Ini') }}</span>
+                                @endif
+                            </div>
+                        </div>
+                    @empty
+                        <div class="text-center text-muted py-4 small">{{ __('Belum ada sesi aktif tercatat.') }}</div>
+                    @endforelse
                 </div>
             </div>
         </div>

@@ -555,7 +555,8 @@ hash_equals($expected, $_SERVER['HTTP_X_RESELLER_SIGNATURE']);</pre>
             <div class="card border-0" style="border-radius: 22px; background: var(--surface-container-low); border: 1px solid var(--outline-variant) !important;">
                 <div class="card-body p-4">
                     <h5 class="fw-bold mb-3"><i class="fas fa-users-gear text-primary me-2"></i>{{ __('Semua API Key Reseller Aktif') }}</h5>
-                    <div class="table-responsive">
+                    {{-- Desktop Table --}}
+                    <div class="table-responsive d-none d-md-block">
                         <table class="table table-hover align-middle mb-0 small">
                             <thead>
                                 <tr class="text-secondary">
@@ -577,7 +578,7 @@ hash_equals($expected, $_SERVER['HTTP_X_RESELLER_SIGNATURE']);</pre>
                                         <div class="fw-semibold">{{ $gKey->name }}</div>
                                         <code class="small">{{ $gKey->key_prefix }}</code>
                                     </td>
-                                    <td>{{ number_format($gKey->requests_count) }} <span class="text-secondary">/ {{ $gKey->rate_limit_per_minute }}m</span></td>
+                                    <td class="m3-tabular-nums">{{ number_format($gKey->requests_count) }} <span class="text-secondary">/ {{ $gKey->rate_limit_per_minute }}m</span></td>
                                     <td>{{ $gKey->last_used_at ? $gKey->last_used_at->diffForHumans() : '-' }}</td>
                                     <td class="text-end">
                                         <form action="{{ route('developer.api.admin.keys.revoke', $gKey->id) }}" method="POST" onsubmit="return confirm('{{ __('Cabut paksa API Key milik reseller ini?') }}')">
@@ -593,6 +594,38 @@ hash_equals($expected, $_SERVER['HTTP_X_RESELLER_SIGNATURE']);</pre>
                                 @endforelse
                             </tbody>
                         </table>
+                    </div>
+
+                    {{-- Mobile Stacked Cards (< 768px) --}}
+                    <div class="d-md-none d-flex flex-column gap-2.5">
+                        @forelse($adminData['all_keys'] as $gKey)
+                        <div class="m3-mobile-item-card p-3">
+                            <div class="d-flex justify-content-between align-items-start gap-2 mb-1.5">
+                                <div class="min-w-0">
+                                    <div class="fw-bold text-body text-truncate">{{ $gKey->name }}</div>
+                                    <code class="small text-primary">{{ $gKey->key_prefix }}</code>
+                                </div>
+                                <span class="badge bg-secondary-subtle text-body rounded-pill text-uppercase" style="font-size: 0.68rem;">{{ $gKey->user?->role ?? '-' }}</span>
+                            </div>
+                            <div class="small text-secondary mb-2">
+                                <div><i class="fas fa-user me-1"></i><strong class="text-body">{{ $gKey->user?->display_name ?? ('User #' . $gKey->user_id) }}</strong></div>
+                                <div class="d-flex flex-wrap gap-3 mt-1 m3-tabular-nums">
+                                    <span><i class="fas fa-chart-simple me-1"></i>{{ number_format($gKey->requests_count) }} hits ({{ $gKey->rate_limit_per_minute }}/m)</span>
+                                    <span><i class="far fa-clock me-1"></i>{{ $gKey->last_used_at ? $gKey->last_used_at->diffForHumans() : '-' }}</span>
+                                </div>
+                            </div>
+                            <div class="pt-2 border-top" style="border-color: var(--outline-variant) !important;">
+                                <form action="{{ route('developer.api.admin.keys.revoke', $gKey->id) }}" method="POST" class="m-0" onsubmit="return confirm('{{ __('Cabut paksa API Key milik reseller ini?') }}')">
+                                    @csrf
+                                    <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill w-100 fw-semibold" style="min-height: 40px;">
+                                        <i class="fas fa-ban me-1"></i>{{ __('Cabut API Key') }}
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        @empty
+                        <div class="text-center py-4 text-secondary small">{{ __('Belum ada API Key aktif di seluruh platform.') }}</div>
+                        @endforelse
                     </div>
                 </div>
             </div>

@@ -4,20 +4,34 @@
 @section('page_subtitle', __('Broadcast'))
 
 @section('content')
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3 mb-md-4">
     <div>
-        <h4 class="fw-bold mb-1">{{ __('Broadcast Telegram') }}</h4>
-        <p class="text-muted mb-0">{{ __('Kirim pesan massal ke seluruh pelanggan') }}</p>
+        <h4 class="fw-bold mb-1 text-body">{{ __('Broadcast Telegram') }}</h4>
+        <p class="text-muted small mb-0">{{ __('Kirim pesan massal ke seluruh pelanggan') }}</p>
     </div>
-    <a href="#broadcastHistorySection" class="btn btn-outline-primary rounded-pill fw-bold">
+    <a href="#broadcastHistorySection" class="btn btn-outline-primary rounded-pill fw-bold d-none d-md-inline-flex align-items-center">
         <i class="fas fa-history me-2"></i>{{ __('Riwayat Broadcast') }}
     </a>
 </div>
 
-<div class="row">
+{{-- Mobile Single-DOM M3 Segmented Pill Switcher (< 768px) --}}
+<div class="d-md-none mb-3">
+    <div class="m3-tab-strip w-100">
+        <button type="button" id="bcMobileTabHistory" class="m3-tab-pill active flex-fill justify-content-center" onclick="switchBroadcastMobileTab('history')">
+            <i class="fas fa-history"></i>
+            <span>{{ __('Riwayat') }}</span>
+        </button>
+        <button type="button" id="bcMobileTabComposer" class="m3-tab-pill flex-fill justify-content-center" onclick="switchBroadcastMobileTab('composer')">
+            <i class="fas fa-paper-plane"></i>
+            <span>{{ __('Buat Broadcast') }}</span>
+        </button>
+    </div>
+</div>
+
+<div class="row d-none d-md-flex" id="broadcastComposerSection">
     <div class="col-md-8 mx-auto">
         <div class="card border-0 shadow-sm" style="border-radius: 16px;">
-            <div class="card-body p-4">
+            <div class="card-body p-3 p-md-4">
                 <form id="broadcastForm" class="no-loader" onsubmit="event.preventDefault(); startBroadcast();">
                     @csrf
                     <div class="mb-4">
@@ -91,8 +105,8 @@
                             <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%;">0%</div>
                         </div>
                         <div class="d-flex justify-content-between mt-2 small text-secondary">
-                            <span><i class="fas fa-history me-1"></i>{{ __('Waktu Berjalan:') }} <span id="elapsedTime" class="fw-bold text-dark">-</span></span>
-                            <span><i class="fas fa-hourglass-half me-1"></i>{{ __('Estimasi Selesai (ETA):') }} <span id="etaTime" class="fw-bold text-dark">-</span></span>
+                            <span><i class="fas fa-history me-1"></i>{{ __('Waktu Berjalan:') }} <span id="elapsedTime" class="fw-bold text-body m3-tabular-nums">-</span></span>
+                            <span><i class="fas fa-hourglass-half me-1"></i>{{ __('Estimasi Selesai (ETA):') }} <span id="etaTime" class="fw-bold text-body m3-tabular-nums">-</span></span>
                         </div>
                         <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
                             <div class="d-flex gap-3 small">
@@ -126,14 +140,20 @@
     </div>
 </div>
 
-<div class="row mt-5" id="broadcastHistorySection">
+<div class="row mt-0 mt-md-5" id="broadcastHistorySection">
     <div class="col-md-12">
         <div class="card border-0 shadow-sm" style="border-radius: 16px;">
-            <div class="card-body p-4">
-                <h5 class="fw-bold mb-4"><i class="fas fa-history text-primary me-2"></i>{{ __('Riwayat Broadcast') }}</h5>
-                <div class="table-responsive">
+            <div class="card-body p-3 p-md-4">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3 mb-md-4">
+                    <h5 class="fw-bold mb-0 text-body"><i class="fas fa-history text-primary me-2"></i>{{ __('Riwayat Broadcast') }}</h5>
+                    <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 fw-semibold d-md-none" onclick="switchBroadcastMobileTab('composer')">
+                        <i class="fas fa-plus me-1"></i>{{ __('Tulis Baru') }}
+                    </button>
+                </div>
+                {{-- Desktop Table View --}}
+                <div class="table-responsive d-none d-md-block">
                     <table class="table table-hover align-middle">
-                        <thead class="table-light">
+                        <thead style="background: var(--surface-container-high);">
                             <tr>
                                 <th class="border-0">{{ __('Tanggal') }}</th>
                                 <th class="border-0">{{ __('Isi Pesan') }}</th>
@@ -269,6 +289,96 @@
                         </tbody>
                     </table>
                 </div>
+
+                {{-- Mobile Stacked Card List (< 768px) --}}
+                <div class="d-md-none d-flex flex-column gap-2.5">
+                    @forelse($broadcastHistory as $history)
+                        @php
+                            $snaps = is_array($history->read_snapshots) ? $history->read_snapshots : [];
+                            $lastCp = null;
+                            foreach (['24h' => '1 Hari', '1h' => '1 Jam', '30m' => '30m', '10m' => '10m'] as $cpKey => $cpLabel) {
+                                if (isset($snaps[$cpKey])) {
+                                    $lastCp = $cpLabel;
+                                    break;
+                                }
+                            }
+                        @endphp
+                        <div class="m3-mobile-item-card p-3">
+                            <div class="d-flex justify-content-between align-items-center gap-2 mb-1.5">
+                                <span class="small text-secondary"><i class="far fa-clock me-1"></i>{{ $history->created_at->format('d M Y, H:i') }}</span>
+                                @if($history->status == 'completed')
+                                    <span class="badge bg-success-subtle text-success rounded-pill px-2.5">{{ __('Selesai') }}</span>
+                                @elseif($history->status == 'failed')
+                                    <span class="badge bg-danger-subtle text-danger rounded-pill px-2.5">{{ __('Gagal') }}</span>
+                                @elseif($history->status == 'cancelled')
+                                    <span class="badge bg-secondary-subtle text-secondary rounded-pill px-2.5">{{ __('Dibatalkan') }}</span>
+                                @else
+                                    <span class="badge bg-warning-subtle text-warning rounded-pill px-2.5">{{ ucfirst($history->status) }}</span>
+                                @endif
+                            </div>
+
+                            <div class="small text-body fw-medium mb-2" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                                {!! Str::limit(strip_tags($history->message), 110) ?: '<em class="text-muted">' . __('Tidak ada teks') . '</em>' !!}
+                            </div>
+
+                            @if($history->media_type && $history->media_path)
+                                <div class="mb-2">
+                                    <a href="{{ Storage::url($history->media_path) }}" target="_blank" class="badge bg-info-subtle text-info text-decoration-none rounded-pill px-2.5 py-1">
+                                        <i class="fas fa-paperclip me-1"></i>{{ ucfirst($history->media_type) }}
+                                    </a>
+                                </div>
+                            @endif
+
+                            {{-- Delivery & Read Metrics Strip --}}
+                            <div class="d-flex justify-content-between align-items-center gap-2 py-2 px-2.5 rounded-3 mb-2.5 m3-tabular-nums" style="background: var(--surface-container-high);">
+                                <div class="small">
+                                    <span class="text-success fw-bold"><i class="fas fa-check me-1"></i>{{ $history->sent_count }}</span>
+                                    <span class="text-muted mx-1">/</span>
+                                    <span class="text-secondary">{{ $history->total_targets }}</span>
+                                    @if($history->failed_count > 0)
+                                        <button type="button" class="btn btn-sm bg-danger-subtle text-danger border border-danger-subtle rounded-pill py-0 px-2 ms-1 fw-bold" style="font-size: 0.72rem;" onclick="openBroadcastAnalytics({{ $history->id }}, 'failures')">
+                                            <i class="fas fa-triangle-exclamation me-1"></i>{{ $history->failed_count }}
+                                        </button>
+                                    @endif
+                                </div>
+                                <button type="button" class="btn btn-sm btn-tonal rounded-pill py-1 px-2.5 d-inline-flex align-items-center gap-1" onclick="openBroadcastAnalytics({{ $history->id }}, 'reads')">
+                                    <i class="fas fa-eye text-primary small"></i>
+                                    <span class="fw-bold text-body small" data-bc-read-count="{{ $history->id }}">{{ (int) $history->read_count }}</span>
+                                    <span class="text-secondary" style="font-size: 0.72rem;" data-bc-read-rate="{{ $history->id }}">({{ $history->read_rate }}%)</span>
+                                </button>
+                            </div>
+
+                            <div class="d-flex gap-2 pt-2 border-top" style="border-color: var(--outline-variant) !important;">
+                                <button type="button" class="btn btn-sm btn-tonal rounded-pill flex-grow-1 fw-semibold" style="min-height: 40px;" onclick="openBroadcastAnalytics({{ $history->id }}, '{{ $history->failed_count > 0 ? 'failures' : 'reads' }}')">
+                                    <i class="fas fa-chart-line me-1"></i>{{ $history->failed_count > 0 ? __('Diagnostik & Laporan') : __('Laporan Dibaca') }}
+                                </button>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" style="min-height: 40px;" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end border" style="border-radius: 14px;">
+                                        <li>
+                                            <button class="dropdown-item py-2" onclick="resendBroadcast({{ $history->id }})">
+                                                <i class="fas fa-redo text-success me-2"></i>{{ __('Resend') }}
+                                            </button>
+                                        </li>
+                                        <li>
+                                            <button class="dropdown-item py-2" onclick="resendWithEdit({{ $history->id }}, `{{ base64_encode($history->message) }}`, '{{ $history->media_path }}', '{{ $history->media_type }}', {{ $history->enable_read_button ? 'true' : 'false' }}, `{{ base64_encode((string) $history->cta_label) }}`, `{{ base64_encode((string) $history->cta_url) }}`, '{{ $history->cta_open_mode ?: 'miniapp' }}')">
+                                                <i class="fas fa-edit text-warning me-2"></i>{{ __('Resend with Edit') }}
+                                            </button>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="text-center py-4 text-muted">
+                            <i class="fas fa-history fs-3 mb-2 opacity-50"></i>
+                            <p class="mb-0 small">{{ __('Belum ada riwayat broadcast.') }}</p>
+                        </div>
+                    @endforelse
+                </div>
+
                 <div class="d-flex justify-content-end mt-3">
                     {{ $broadcastHistory->fragment('broadcastHistorySection')->links() }}
                 </div>
@@ -280,9 +390,10 @@
 
 @push('modals')
 <div class="modal fade" id="broadcastAnalyticsModal" tabindex="-1" aria-labelledby="broadcastAnalyticsModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-xl">
+    <div class="modal-dialog modal-dialog-centered modal-xl m3-sheet-modal">
         <div class="modal-content border" style="border-radius: 28px; background: var(--surface-container-lowest, var(--bs-body-bg)); border-color: var(--outline-variant, var(--bs-border-color)) !important;">
-            <div class="modal-header border-0 px-4 pt-4 pb-2">
+            <div class="m3-sheet-handle d-md-none"></div>
+            <div class="modal-header border-0 px-4 pt-3 pt-md-4 pb-2">
                 <div>
                     <h5 class="modal-title fw-bold text-body mb-0" id="broadcastAnalyticsModalLabel">
                         <i class="fas fa-chart-line text-primary me-2"></i>{{ __('Laporan Broadcast') }}
@@ -358,7 +469,30 @@ function formatDuration(seconds) {
     return parts.join(' ');
 }
 
+function switchBroadcastMobileTab(tab) {
+    const composerSec = document.getElementById('broadcastComposerSection');
+    const historySec = document.getElementById('broadcastHistorySection');
+    const btnHistory = document.getElementById('bcMobileTabHistory');
+    const btnComposer = document.getElementById('bcMobileTabComposer');
+    if (!composerSec || !historySec) return;
+
+    if (tab === 'composer') {
+        composerSec.classList.remove('d-none');
+        historySec.classList.add('d-none', 'd-md-flex');
+        if (btnComposer) btnComposer.classList.add('active');
+        if (btnHistory) btnHistory.classList.remove('active');
+    } else {
+        composerSec.classList.add('d-none');
+        historySec.classList.remove('d-none');
+        if (btnHistory) btnHistory.classList.add('active');
+        if (btnComposer) btnComposer.classList.remove('active');
+    }
+}
+
 function setupActiveBroadcastUI(job) {
+    if (window.innerWidth < 768) {
+        switchBroadcastMobileTab('composer');
+    }
     const btnSend = document.getElementById('btnSend');
     const messageTextarea = document.getElementById('broadcastMessage');
     const mediaFileInput = document.getElementById('mediaFile');
@@ -534,6 +668,9 @@ async function resendBroadcast(jobId) {
 }
 
 function resendWithEdit(jobId, b64Message, mediaPath, mediaType, enableReadButton = true, b64CtaLabel = '', b64CtaUrl = '', ctaOpenMode = 'miniapp') {
+    if (window.innerWidth < 768) {
+        switchBroadcastMobileTab('composer');
+    }
     const message = decodeURIComponent(escape(window.atob(b64Message)));
     document.getElementById('broadcastMessage').value = message;
 
@@ -1005,12 +1142,14 @@ function renderBroadcastAnalytics(data, tab = null) {
 
     body.innerHTML = tabsBarHtml + (activeAnalyticsTab === 'failures' ? buildFailuresTabHtml(data) : readsTabHtml);
 
-    // Sync table row numbers inline
+    // Sync table row & mobile card numbers inline
     const countEl = document.getElementById(`bc-read-count-${data.job_id}`);
     const rateEl = document.getElementById(`bc-read-rate-${data.job_id}`);
     const cpEl = document.getElementById(`bc-read-cp-${data.job_id}`);
     if (countEl) countEl.textContent = data.read_count;
     if (rateEl) rateEl.textContent = `(${data.read_rate}%)`;
+    document.querySelectorAll(`[data-bc-read-count="${data.job_id}"]`).forEach(el => { el.textContent = data.read_count; });
+    document.querySelectorAll(`[data-bc-read-rate="${data.job_id}"]`).forEach(el => { el.textContent = `(${data.read_rate}%)`; });
     if (cpEl && Array.isArray(data.timeline)) {
         const capturedList = data.timeline.filter(t => t.captured);
         if (capturedList.length > 0) {

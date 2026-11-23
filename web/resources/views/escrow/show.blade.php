@@ -193,7 +193,7 @@
             </span>
             <code class="fw-bold text-primary">{{ $transaction->transaction_code }}</code>
         </div>
-        <h4 class="fw-bold text-dark mb-1">{{ $transaction->title }}</h4>
+        <h4 class="fw-bold text-body mb-1">{{ $transaction->title }}</h4>
         <p class="text-muted small mb-0">{{ $transaction->description ?: __('Tidak ada deskripsi tambahan.') }}</p>
     </div>
     <div class="col-12 col-lg-4 text-lg-end d-flex align-items-center justify-content-lg-end gap-2">
@@ -271,10 +271,10 @@
         <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
             <div class="card-body p-4">
                 <div class="d-flex align-items-center justify-content-between mb-3">
-                    <h6 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+                    <h6 class="fw-bold mb-0 text-body d-flex align-items-center gap-2">
                         <i class="fas fa-file-invoice-dollar text-primary"></i> {{ __('Rincian Keuangan Rekber') }}
                     </h6>
-                    <span class="badge bg-light text-dark border">
+                    <span class="badge bg-light text-body border">
                         {{ __('Penanggung Fee:') }} 
                         <strong class="text-primary">{{ ucfirst($transaction->fee_payer) }}</strong>
                     </span>
@@ -284,7 +284,7 @@
                     <div class="col-6 col-md-3">
                         <div class="p-3 bg-light rounded-3 border h-100">
                             <small class="text-muted d-block mb-1">{{ __('Nilai Barang') }}</small>
-                            <strong class="text-dark fs-6">Rp {{ number_format($transaction->amount, 0, ',', '.') }}</strong>
+                            <strong class="text-body fs-6">Rp {{ number_format($transaction->amount, 0, ',', '.') }}</strong>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
@@ -356,7 +356,7 @@
                                             <i class="fas fa-bolt me-1"></i> {{ __('QRIS Dinamis • Verifikasi Otomatis Android Listener') }}
                                         </span>
                                     </div>
-                                    <h6 class="fw-bold text-dark mb-3">{{ __('Scan Kode QRIS di Bawah Ini:') }}</h6>
+                                    <h6 class="fw-bold text-body mb-3">{{ __('Scan Kode QRIS di Bawah Ini:') }}</h6>
 
                                     <div class="d-inline-block bg-white p-3 rounded-4 shadow-sm border mb-3 position-relative">
                                         <div id="qrcode" class="d-flex justify-content-center"></div>
@@ -366,7 +366,7 @@
                                         <div class="small text-muted mb-1">{{ __('Total Nominal Tagihan Rekber:') }}</div>
                                         <div class="fs-4 fw-bold text-primary font-monospace">Rp {{ number_format($transaction->total_buyer_pay, 0, ',', '.') }}</div>
                                         @if($transaction->unique_code > 0)
-                                            <div class="d-inline-flex align-items-center gap-1.5 badge bg-warning-subtle text-dark border border-warning-subtle rounded-pill px-3 py-1 mt-1">
+                                            <div class="d-inline-flex align-items-center gap-1.5 badge bg-warning-subtle text-body border border-warning-subtle rounded-pill px-3 py-1 mt-1">
                                                 <i class="fas fa-magic text-warning"></i>
                                                 <span>{{ __('Termasuk kode unik :code untuk verifikasi otomatis instan', ['code' => $transaction->unique_code]) }}</span>
                                             </div>
@@ -400,7 +400,7 @@
                                             <i class="fas fa-info-circle me-1"></i> {{ __('QRIS Resmi Toko') }}
                                         </span>
                                     </div>
-                                    <h6 class="fw-bold text-dark mb-3">{{ __('Scan Kode QRIS di Bawah Ini:') }}</h6>
+                                    <h6 class="fw-bold text-body mb-3">{{ __('Scan Kode QRIS di Bawah Ini:') }}</h6>
 
                                     <div class="d-inline-block bg-white p-3 rounded-4 shadow-sm border mb-3">
                                         <img src="{{ \Illuminate\Support\Facades\Storage::url($qrisImagePath) }}" alt="QRIS" class="img-fluid rounded-3" style="max-width: 260px;">
@@ -409,7 +409,7 @@
                                     <div class="alert alert-warning small text-center mb-0 mx-auto" style="max-width: 520px;">
                                         <i class="fas fa-exclamation-triangle me-1"></i>
                                         {{ __('Harap masukkan nominal transfer secara manual dan tepat sebesar:') }}
-                                        <strong class="text-dark d-block fs-5 mt-1">Rp {{ number_format($transaction->total_buyer_pay, 0, ',', '.') }}</strong>
+                                        <strong class="text-body d-block fs-5 mt-1">Rp {{ number_format($transaction->total_buyer_pay, 0, ',', '.') }}</strong>
                                     </div>
                                 </div>
                             @else
@@ -468,7 +468,7 @@
                     @if($isBuyer || $isAdmin)
                         <form action="{{ $isPublicView ? route('escrow.public.deposit', $transaction->public_token) : route('escrow.upload-deposit', $transaction->transaction_code) }}" method="POST" enctype="multipart/form-data">
                             @csrf
-                            <label class="form-label small fw-bold text-dark mb-1">
+                            <label class="form-label small fw-bold text-body mb-1">
                                 <i class="fas fa-cloud-arrow-up text-primary me-1"></i> {{ __('Unggah Bukti Pembayaran (QRIS / Bukti Transfer)') }}
                             </label>
                             <div class="input-group mb-2">
@@ -488,7 +488,7 @@
         @if(in_array($transaction->status, [\App\Models\EscrowTransaction::STATUS_FUNDS_HELD, \App\Models\EscrowTransaction::STATUS_DELIVERED, \App\Models\EscrowTransaction::STATUS_WAITING_PAYOUT, \App\Models\EscrowTransaction::STATUS_COMPLETED, \App\Models\EscrowTransaction::STATUS_DISPUTED]))
             <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
                 <div class="card-body p-4">
-                    <h6 class="fw-bold mb-3 text-dark d-flex align-items-center gap-2">
+                    <h6 class="fw-bold mb-3 text-body d-flex align-items-center gap-2">
                         <i class="fas fa-key text-success"></i> {{ __('Data Serah Terima Barang / Akun') }}
                     </h6>
 
@@ -614,7 +614,7 @@
         {{-- Card 1: Pihak Terlibat --}}
         <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
             <div class="card-header bg-white border-bottom p-3">
-                <h6 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+                <h6 class="fw-bold mb-0 text-body d-flex align-items-center gap-2">
                     <i class="fas fa-users text-primary"></i> {{ __('Pihak Terlibat Transaksi') }}
                 </h6>
             </div>
@@ -625,7 +625,7 @@
                     </div>
                     <div class="flex-grow-1 overflow-hidden">
                         <div class="d-flex justify-content-between align-items-center">
-                            <span class="small fw-bold text-dark text-truncate">{{ $transaction->buyer_name }}</span>
+                            <span class="small fw-bold text-body text-truncate">{{ $transaction->buyer_name }}</span>
                             <span class="badge bg-primary-subtle text-primary" style="font-size: 0.65rem;">{{ __('PEMBELI') }}</span>
                         </div>
                         <div class="small text-muted text-truncate">{{ $transaction->buyer_contact }}</div>
@@ -638,7 +638,7 @@
                     </div>
                     <div class="flex-grow-1 overflow-hidden">
                         <div class="d-flex justify-content-between align-items-center">
-                            <span class="small fw-bold text-dark text-truncate">{{ $transaction->seller_name }}</span>
+                            <span class="small fw-bold text-body text-truncate">{{ $transaction->seller_name }}</span>
                             <span class="badge bg-info-subtle text-info" style="font-size: 0.65rem;">{{ __('PENJUAL') }}</span>
                         </div>
                         <div class="small text-muted text-truncate">{{ $transaction->seller_contact }}</div>
@@ -650,7 +650,7 @@
                         <i class="fas fa-shield-halved"></i>
                     </div>
                     <div>
-                        <div class="small fw-bold text-dark">{{ __('Dzulfikrialifajri Store') }}</div>
+                        <div class="small fw-bold text-body">{{ __('Dzulfikrialifajri Store') }}</div>
                         <div class="small text-muted" style="font-size: 0.75rem;">{{ __('Perantara Rekber Resmi (Admin)') }}</div>
                     </div>
                 </div>
@@ -679,7 +679,7 @@
         {{-- Card 3: Jejak Waktu (Audit Timeline) --}}
         <div class="card border-0 shadow-sm" style="border-radius: 16px;">
             <div class="card-header bg-white border-bottom p-3">
-                <h6 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+                <h6 class="fw-bold mb-0 text-body d-flex align-items-center gap-2">
                     <i class="fas fa-clock-rotate-left text-primary"></i> {{ __('Jejak Waktu Rekber') }}
                 </h6>
             </div>
@@ -691,7 +691,7 @@
                                 <i class="fas fa-circle-dot" style="font-size: 0.65rem;"></i>
                             </div>
                             <div>
-                                <div class="small text-dark">{{ $t->description }}</div>
+                                <div class="small text-body">{{ $t->description }}</div>
                                 <small class="text-muted" style="font-size: 0.7rem;">{{ $t->created_at->format('d M Y, H:i') }}</small>
                             </div>
                         </div>
@@ -728,7 +728,7 @@
                 <i class="fas fa-comments fs-6"></i>
             </div>
             <div>
-                <h6 class="offcanvas-title fw-bold text-dark mb-0 fs-6" id="escrowChatDrawerLabel">{{ __('Obrolan Ruang Rekber') }}</h6>
+                <h6 class="offcanvas-title fw-bold text-body mb-0 fs-6" id="escrowChatDrawerLabel">{{ __('Obrolan Ruang Rekber') }}</h6>
                 <div class="d-flex align-items-center gap-1.5 mt-0.5">
                     <span class="badge bg-{{ $transaction->status_badge }} rounded-pill px-2 py-0.5" id="drawerStatusBadge" style="font-size: 0.65rem;">
                         {{ $transaction->status_label }}
@@ -781,7 +781,7 @@
                             <strong class="{{ $isMyMsg ? 'text-white' : ($isAdminMsg ? 'text-warning-emphasis' : 'text-primary') }}">
                                 {{ $msg->sender_name }}
                             </strong>
-                            <span class="badge {{ $isMyMsg ? 'bg-white bg-opacity-25 text-white' : ($isAdminMsg ? 'bg-warning-subtle text-dark' : 'bg-light text-secondary') }}" style="font-size: 0.6rem;">
+                            <span class="badge {{ $isMyMsg ? 'bg-white bg-opacity-25 text-white' : ($isAdminMsg ? 'bg-warning-subtle text-body' : 'bg-light text-secondary') }}" style="font-size: 0.6rem;">
                                 {{ strtoupper($msg->sender_role) }}
                             </span>
                         </div>
@@ -813,7 +813,7 @@
                     <div class="rounded-circle bg-white border p-3 d-inline-flex mb-2 shadow-sm">
                         <i class="far fa-comments fs-3 text-primary opacity-50"></i>
                     </div>
-                    <div class="fw-semibold small text-dark">{{ __('Belum ada pesan obrolan.') }}</div>
+                    <div class="fw-semibold small text-body">{{ __('Belum ada pesan obrolan.') }}</div>
                     <p class="small text-muted mb-0 px-4" style="font-size: 0.78rem;">
                         {{ __('Gunakan ruang obrolan ini untuk berdiskusi dengan aman di bawah pengawasan Admin.') }}
                     </p>
@@ -850,8 +850,9 @@
 
 {{-- Dispute Modal --}}
 <div class="modal fade" id="disputeModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered m3-sheet-modal">
         <div class="modal-content border-0 shadow" style="border-radius: 16px;">
+            <div class="m3-sheet-handle d-md-none"></div>
             <div class="modal-header border-bottom p-3">
                 <h6 class="modal-title fw-bold text-danger">
                     <i class="fas fa-gavel me-1.5"></i> {{ __('Ajukan Sengketa / Komplain Rekber') }}
@@ -1026,7 +1027,7 @@
         const avatarIcon = msg.is_admin ? '<i class="fas fa-shield-halved"></i>' : escapeHtml(msg.sender_name ? String(msg.sender_name).charAt(0).toUpperCase() : '?');
         const bubbleClass = msg.is_mine ? 'chat-bubble-me' : (msg.is_admin ? 'chat-bubble-admin' : 'chat-bubble-other');
         const nameClass = msg.is_mine ? 'text-white' : (msg.is_admin ? 'text-warning-emphasis' : 'text-primary');
-        const badgeClass = msg.is_mine ? 'bg-white bg-opacity-25 text-white' : (msg.is_admin ? 'bg-warning-subtle text-dark' : 'bg-light text-secondary');
+        const badgeClass = msg.is_mine ? 'bg-white bg-opacity-25 text-white' : (msg.is_admin ? 'bg-warning-subtle text-body' : 'bg-light text-secondary');
         const timeClass = msg.is_mine ? 'text-white-50' : 'text-muted';
 
         let attachmentHtml = '';

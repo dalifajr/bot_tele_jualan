@@ -495,8 +495,9 @@
 @if($order->status === 'delivered' && isset($claimableItems) && $claimableItems->isNotEmpty())
 @push('modals')
 <div class="modal fade" id="complaintModal" tabindex="-1" aria-labelledby="complaintModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered m3-sheet-modal">
         <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+            <div class="m3-sheet-handle d-md-none"></div>
             <div class="modal-header border-0 pb-0">
                 <h5 class="fw-bold" id="complaintModalLabel"><i class="fas fa-toolbox text-warning me-2"></i>{{ __('Ajukan Klaim Garansi') }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>

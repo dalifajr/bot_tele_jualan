@@ -101,7 +101,7 @@
                     @forelse($coupons as $coupon)
                     <tr>
                         <td class="px-4">
-                            <span class="badge bg-warning-subtle text-dark font-monospace fs-6 px-3 py-2 rounded-pill">
+                            <span class="badge bg-warning-subtle text-warning-emphasis font-monospace fs-6 px-3 py-2 rounded-pill">
                                 {{ $coupon->code }}
                             </span>
                         </td>
@@ -218,7 +218,7 @@
                 @endphp
                 <div class="m3-mobile-item-card p-3">
                     <div class="d-flex justify-content-between align-items-start mb-2">
-                        <span class="badge bg-warning-subtle text-dark font-monospace fs-6 px-3 py-1.5 rounded-pill">
+                        <span class="badge bg-warning-subtle text-warning-emphasis font-monospace fs-6 px-3 py-1.5 rounded-pill">
                             {{ $coupon->code }}
                         </span>
                         @if($isCouponActive)
@@ -459,7 +459,7 @@
                         </div>
 
                         {{-- Specific Products Box --}}
-                        <div id="sellerCreateSpecificProductsBox" class="border rounded-3 p-3 bg-light d-none">
+                        <div id="sellerCreateSpecificProductsBox" class="border rounded-3 p-3 d-none" style="background: var(--surface-container-low); border-color: var(--outline-variant) !important;">
                             @if($products->isEmpty())
                                 <p class="text-muted small mb-0">{{ __('Toko Anda belum memiliki produk aktif.') }}</p>
                             @else
@@ -471,7 +471,7 @@
                                     </div>
                                 </div>
                                 <input type="text" class="form-control form-control-sm mb-2" placeholder="{{ __('Cari nama produk...') }}" oninput="filterProductList(this, 'sellerCreateProductList')">
-                                <div id="sellerCreateProductList" class="overflow-auto bg-white border rounded p-2" style="max-height: 200px;">
+                                <div id="sellerCreateProductList" class="overflow-auto border rounded p-2" style="max-height: 200px; background: var(--surface-container-lowest); border-color: var(--outline-variant) !important;">
                                     @foreach($products as $prod)
                                     <div class="form-check py-1 product-item-row" data-name="{{ strtolower($prod->name) }}">
                                         <input class="form-check-input sellerCreateProductCheck" type="checkbox" name="product_ids[]" value="{{ $prod->id }}" id="sellerCreateProd-{{ $prod->id }}">
@@ -487,7 +487,7 @@
                     </div>
 
                 </div>
-                <div class="modal-footer bg-light border-0 px-4 py-3">
+                <div class="modal-footer border-0 px-4 py-3" style="background: var(--surface-container-low);">
                     <button type="button" class="btn btn-secondary rounded-pill px-3" data-bs-dismiss="modal">{{ __('Batal') }}</button>
                     <button type="submit" class="btn btn-warning text-dark fw-bold rounded-pill px-4">{{ __('Buat Kupon Toko') }}</button>
                 </div>
@@ -508,7 +508,7 @@
                         <i class="fas fa-edit text-warning fs-5"></i>
                     </div>
                     <div>
-                        <h5 class="modal-title fw-bold mb-0 text-dark" id="editSellerCouponModalLabel-{{ $coupon->id }}">{{ __('Edit Kupon:') }} {{ $coupon->code }}</h5>
+                        <h5 class="modal-title fw-bold mb-0 text-body" id="editSellerCouponModalLabel-{{ $coupon->id }}">{{ __('Edit Kupon:') }} {{ $coupon->code }}</h5>
                         <p class="small text-muted mb-0">{{ __('Perbarui rincian potongan harga atau produk yang berlaku.') }}</p>
                     </div>
                 </div>
@@ -622,7 +622,7 @@
                         </div>
 
                         {{-- Specific Products Box --}}
-                        <div id="sellerEdit-{{ $coupon->id }}SpecificProductsBox" class="border rounded-3 p-3 bg-light {{ !$hasSpecific ? 'd-none' : '' }}">
+                        <div id="sellerEdit-{{ $coupon->id }}SpecificProductsBox" class="border rounded-3 p-3 {{ !$hasSpecific ? 'd-none' : '' }}" style="background: var(--surface-container-low); border-color: var(--outline-variant) !important;">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <span class="small fw-bold text-secondary">{{ __('Pilih Produk Toko Anda:') }}</span>
                                 <div class="btn-group btn-group-sm">
@@ -631,7 +631,7 @@
                                 </div>
                             </div>
                             <input type="text" class="form-control form-control-sm mb-2" placeholder="{{ __('Cari nama produk...') }}" oninput="filterProductList(this, 'sellerEditProductList-{{ $coupon->id }}')">
-                            <div id="sellerEditProductList-{{ $coupon->id }}" class="overflow-auto bg-white border rounded p-2" style="max-height: 200px;">
+                            <div id="sellerEditProductList-{{ $coupon->id }}" class="overflow-auto border rounded p-2" style="max-height: 200px; background: var(--surface-container-lowest); border-color: var(--outline-variant) !important;">
                                 @foreach($products as $prod)
                                 <div class="form-check py-1 product-item-row" data-name="{{ strtolower($prod->name) }}">
                                     <input class="form-check-input sellerEditProductCheck-{{ $coupon->id }}" type="checkbox" name="product_ids[]" value="{{ $prod->id }}" id="sellerEditProd-{{ $coupon->id }}-{{ $prod->id }}" {{ in_array($prod->id, $assignedIds) ? 'checked' : '' }}>
@@ -646,7 +646,7 @@
                     </div>
 
                 </div>
-                <div class="modal-footer bg-light border-0 px-4 py-3">
+                <div class="modal-footer border-0 px-4 py-3" style="background: var(--surface-container-low);">
                     <button type="button" class="btn btn-secondary rounded-pill px-3" data-bs-dismiss="modal">{{ __('Batal') }}</button>
                     <button type="submit" class="btn btn-primary rounded-pill px-4">{{ __('Simpan Perubahan') }}</button>
                 </div>

@@ -46,7 +46,7 @@
             <form method="GET" action="{{ route('admin.finance.reports') }}" class="row g-2 align-items-end">
                 <input type="hidden" name="tab" value="{{ $activeTab }}">
                 <div class="col-12 col-md-auto">
-                    <div class="btn-group btn-group-sm flex-wrap" role="group">
+                    <div class="d-flex flex-nowrap overflow-x-auto gap-1.5 pb-1" style="scrollbar-width: thin;">
                         @foreach([
                             'today' => __('Hari Ini'),
                             '7d' => __('7 Hari'),
@@ -56,7 +56,7 @@
                             'this_year' => __('Tahun Ini'),
                         ] as $pKey => $pLabel)
                         <a href="{{ route('admin.finance.reports', ['tab' => $activeTab, 'preset' => $pKey]) }}"
-                           class="btn {{ $period['preset'] === $pKey ? 'btn-primary' : 'btn-outline-secondary' }}">
+                           class="btn btn-sm rounded-pill px-3 text-nowrap flex-shrink-0 {{ $period['preset'] === $pKey ? 'btn-primary fw-semibold' : 'btn-outline-secondary' }}">
                             {{ $pLabel }}
                         </a>
                         @endforeach
@@ -410,9 +410,9 @@
     <div class="row g-4">
         <div class="col-12 col-xl-6">
             <div class="card border-0" style="border-radius: 22px; background: var(--surface-container-low); border: 1px solid var(--outline-variant) !important;">
-                <div class="card-body p-4">
+                <div class="card-body p-3 p-md-4">
                     <h5 class="fw-bold mb-3"><i class="fas fa-box-open text-primary me-2"></i>{{ __('Top Produk Berdasarkan Kontribusi Profit Platform') }}</h5>
-                    <div class="table-responsive">
+                    <div class="table-responsive d-none d-md-block">
                         <table class="table table-sm table-hover align-middle mb-0 small">
                             <thead>
                                 <tr class="text-secondary">
@@ -429,9 +429,9 @@
                                         <div class="fw-semibold">{{ $tp['name'] }}</div>
                                         <div class="text-secondary" style="font-size: 0.72rem;">{{ $tp['owner_name'] }}</div>
                                     </td>
-                                    <td class="text-center">{{ number_format($tp['units_sold']) }}</td>
-                                    <td class="text-end">{{ $fmtRp($tp['gmv']) }}</td>
-                                    <td class="text-end fw-bold text-primary">{{ $fmtRp($tp['platform_revenue']) }}</td>
+                                    <td class="text-center m3-tabular-nums">{{ number_format($tp['units_sold']) }}</td>
+                                    <td class="text-end m3-tabular-nums">{{ $fmtRp($tp['gmv']) }}</td>
+                                    <td class="text-end fw-bold text-primary m3-tabular-nums">{{ $fmtRp($tp['platform_revenue']) }}</td>
                                 </tr>
                                 @empty
                                 <tr><td colspan="4" class="text-center py-4 text-secondary">{{ __('Belum ada penjualan produk pada periode ini.') }}</td></tr>
@@ -439,15 +439,34 @@
                             </tbody>
                         </table>
                     </div>
+                    <div class="d-md-none d-flex flex-column gap-2">
+                        @forelse($report['top_products'] as $tp)
+                        <div class="m3-mobile-item-card p-3">
+                            <div class="d-flex justify-content-between align-items-start gap-2 mb-1">
+                                <div class="min-w-0">
+                                    <div class="fw-bold text-body small text-truncate">{{ $tp['name'] }}</div>
+                                    <div class="text-secondary" style="font-size: 0.72rem;">{{ $tp['owner_name'] }}</div>
+                                </div>
+                                <span class="badge bg-primary-subtle text-primary rounded-pill flex-shrink-0 m3-tabular-nums">{{ number_format($tp['units_sold']) }} unit</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center small pt-2 border-top m3-tabular-nums" style="border-color: var(--outline-variant) !important;">
+                                <span class="text-secondary">GMV: {{ $fmtRp($tp['gmv']) }}</span>
+                                <span class="fw-bold text-primary">{{ $fmtRp($tp['platform_revenue']) }}</span>
+                            </div>
+                        </div>
+                        @empty
+                        <div class="text-center py-4 text-secondary small">{{ __('Belum ada penjualan produk pada periode ini.') }}</div>
+                        @endforelse
+                    </div>
                 </div>
             </div>
         </div>
 
         <div class="col-12 col-xl-6">
             <div class="card border-0" style="border-radius: 22px; background: var(--surface-container-low); border: 1px solid var(--outline-variant) !important;">
-                <div class="card-body p-4">
+                <div class="card-body p-3 p-md-4">
                     <h5 class="fw-bold mb-3"><i class="fas fa-medal text-warning me-2"></i>{{ __('Top Mitra Seller & Kontribusi Komisi') }}</h5>
-                    <div class="table-responsive">
+                    <div class="table-responsive d-none d-md-block">
                         <table class="table table-sm table-hover align-middle mb-0 small">
                             <thead>
                                 <tr class="text-secondary">
@@ -464,15 +483,34 @@
                                         <div class="fw-semibold">{{ $ts['name'] }}</div>
                                         <div class="text-secondary" style="font-size: 0.72rem;">@{{ $ts['username'] ?: 'seller-' . $ts['seller_id'] }}</div>
                                     </td>
-                                    <td class="text-center">{{ number_format($ts['units_sold']) }}</td>
-                                    <td class="text-end">{{ $fmtRp($ts['gmv']) }}</td>
-                                    <td class="text-end fw-bold text-success">{{ $fmtRp($ts['platform_fee']) }}</td>
+                                    <td class="text-center m3-tabular-nums">{{ number_format($ts['units_sold']) }}</td>
+                                    <td class="text-end m3-tabular-nums">{{ $fmtRp($ts['gmv']) }}</td>
+                                    <td class="text-end fw-bold text-success m3-tabular-nums">{{ $fmtRp($ts['platform_fee']) }}</td>
                                 </tr>
                                 @empty
                                 <tr><td colspan="4" class="text-center py-4 text-secondary">{{ __('Belum ada transaksi produk seller pada periode ini.') }}</td></tr>
                                 @endforelse
                             </tbody>
                         </table>
+                    </div>
+                    <div class="d-md-none d-flex flex-column gap-2">
+                        @forelse($report['top_sellers'] as $ts)
+                        <div class="m3-mobile-item-card p-3">
+                            <div class="d-flex justify-content-between align-items-start gap-2 mb-1">
+                                <div class="min-w-0">
+                                    <div class="fw-bold text-body small text-truncate">{{ $ts['name'] }}</div>
+                                    <div class="text-secondary" style="font-size: 0.72rem;">@{{ $ts['username'] ?: 'seller-' . $ts['seller_id'] }}</div>
+                                </div>
+                                <span class="badge bg-secondary-subtle text-body rounded-pill flex-shrink-0 m3-tabular-nums">{{ number_format($ts['units_sold']) }} unit</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center small pt-2 border-top m3-tabular-nums" style="border-color: var(--outline-variant) !important;">
+                                <span class="text-secondary">GMV: {{ $fmtRp($ts['gmv']) }}</span>
+                                <span class="fw-bold text-success">{{ $fmtRp($ts['platform_fee']) }}</span>
+                            </div>
+                        </div>
+                        @empty
+                        <div class="text-center py-4 text-secondary small">{{ __('Belum ada transaksi produk seller pada periode ini.') }}</div>
+                        @endforelse
                     </div>
                 </div>
             </div>
@@ -483,12 +521,13 @@
     {{-- TAB 4: UNIFIED LEDGER --}}
     @if($activeTab === 'ledger')
     <div class="card border-0" style="border-radius: 22px; background: var(--surface-container-low); border: 1px solid var(--outline-variant) !important;">
-        <div class="card-body p-4">
+        <div class="card-body p-3 p-md-4">
             <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
                 <h5 class="fw-bold mb-0"><i class="fas fa-book-journal-whills text-primary me-2"></i>{{ __('Buku Besar Transaksi Lintas Modul') }}</h5>
                 <span class="badge rounded-pill bg-secondary-subtle text-body">{{ $report['ledger']->count() }} {{ __('entri') }}</span>
             </div>
-            <div class="table-responsive">
+            {{-- Desktop Table --}}
+            <div class="table-responsive d-none d-md-block">
                 <table class="table table-sm table-hover align-middle mb-0 small">
                     <thead>
                         <tr class="text-secondary">
@@ -508,7 +547,7 @@
                             <td class="font-monospace">{{ $row['reference'] }}</td>
                             <td>{{ $row['party'] }}</td>
                             <td class="text-secondary">{{ \Illuminate\Support\Str::limit($row['detail'], 60) }}</td>
-                            <td class="text-end fw-bold {{ $row['direction'] === 'in' ? 'text-success' : 'text-danger' }}">
+                            <td class="text-end fw-bold m3-tabular-nums {{ $row['direction'] === 'in' ? 'text-success' : 'text-danger' }}">
                                 {{ $row['direction'] === 'in' ? '+' : '-' }}{{ $fmtRp($row['amount']) }}
                             </td>
                         </tr>
@@ -519,6 +558,27 @@
                         @endforelse
                     </tbody>
                 </table>
+            </div>
+
+            {{-- Mobile Stacked Cards (< 768px) --}}
+            <div class="d-md-none d-flex flex-column gap-2.5">
+                @forelse($report['ledger'] as $row)
+                <div class="m3-mobile-item-card p-3">
+                    <div class="d-flex justify-content-between align-items-center gap-2 mb-1">
+                        <span class="badge bg-{{ $row['badge'] }}-subtle text-{{ $row['badge'] }} rounded-pill">{{ $row['type_label'] }}</span>
+                        <span class="fw-bold m3-tabular-nums {{ $row['direction'] === 'in' ? 'text-success' : 'text-danger' }}">
+                            {{ $row['direction'] === 'in' ? '+' : '-' }}{{ $fmtRp($row['amount']) }}
+                        </span>
+                    </div>
+                    <div class="small fw-semibold text-body">{{ $row['party'] }} <span class="font-monospace text-muted">({{ $row['reference'] }})</span></div>
+                    <div class="small text-secondary mt-0.5">{{ \Illuminate\Support\Str::limit($row['detail'], 90) }}</div>
+                    <div class="small text-muted mt-1.5 pt-1.5 border-top" style="border-color: var(--outline-variant) !important;">
+                        <i class="far fa-clock me-1"></i>{{ optional($row['date'])->format('d M Y, H:i') }}
+                    </div>
+                </div>
+                @empty
+                <div class="text-center py-4 text-secondary small">{{ __('Belum ada transaksi finansial pada periode yang dipilih.') }}</div>
+                @endforelse
             </div>
         </div>
     </div>
