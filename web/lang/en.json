@@ -4640,5 +4640,6 @@
     "❌ Suspended:": "❌ Suspended:",
     "🔄 ERROR": "🔄 ERROR",
     "🔄 Error": "🔄 Error",
-    "🔄 Error:": "🔄 Error:"
+    "🔄 Error:": "🔄 Error:",
+    "Server mencatat koneksi dari proxy lokal (127.0.0.1). Jalankan cek-update terbaru di VPS VPN lalu reconnect 1x dari perangkat agar IP publik asli tercatat dari Nginx ke Xray.": "The server recorded connections from the local proxy (127.0.0.1). Run the latest cek-update on the VPN VPS and reconnect once from the device so the real client public IP is forwarded from Nginx to Xray."
 }

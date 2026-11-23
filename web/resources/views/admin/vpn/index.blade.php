@@ -1045,7 +1045,7 @@
                     </div>
 
                     <div id="devLogLoopbackHint" class="alert alert-warning border-0 py-2 px-3 small mb-2.5 d-none" style="border-radius: 12px;">
-                        <i class="fas fa-circle-info me-1"></i>{{ __('Server mencatat koneksi dari proxy lokal (127.0.0.1). Jalankan cek-update terbaru di VPS VPN agar IP publik asli klien diteruskan dari Nginx ke Xray.') }}
+                        <i class="fas fa-circle-info me-1"></i>{{ __('Server mencatat koneksi dari proxy lokal (127.0.0.1). Jalankan cek-update terbaru di VPS VPN lalu reconnect 1x dari perangkat agar IP publik asli tercatat dari Nginx ke Xray.') }}
                     </div>
 
                     <div id="devLogEmpty" class="text-center text-muted small py-3 d-none">
