@@ -351,6 +351,83 @@
     {{-- Custom SIMAK-style CSS --}}
     <link href="{{ asset('css/app.css') }}?v={{ filemtime(public_path('css/app.css')) }}" rel="stylesheet">
 
+    {{-- Render-blocking expectation & directional MPA view transition classifier (Chrome Modern Web Guidance) --}}
+    <link rel="expect" href="#m3MainContent" blocking="render">
+    <script blocking="render" nonce="{{ $cspNonce ?? '' }}">
+        (function () {
+            function getNavSlot(pathname) {
+                var p = (pathname || '/').replace(/\/+$/, '') || '/';
+                if (p === '/' || p === '/dashboard' || p === '/admin/dashboard' || p === '/seller/dashboard') return 0;
+                if (p.indexOf('/catalog') === 0 || p.indexOf('/admin/products') === 0 || p.indexOf('/seller/products') === 0) return 1;
+                if (p.indexOf('/cart') === 0 || p.indexOf('/orders') === 0 || p.indexOf('/admin/orders') === 0 || p.indexOf('/seller/orders') === 0) return 2;
+                if (p.indexOf('/chat') === 0 || p.indexOf('/admin/complaints') === 0 || p.indexOf('/seller/finance') === 0) return 3;
+                if (p.indexOf('/login') === 0) return 4;
+                return -1;
+            }
+
+            function getPathDepth(pathname) {
+                var clean = (pathname || '/').replace(/^\/+|\/+$/g, '');
+                return clean ? clean.split('/').length : 0;
+            }
+
+            function computeTransitionType(fromUrlStr, toUrlStr, navType) {
+                try {
+                    var fromUrl = new URL(fromUrlStr, window.location.origin);
+                    var toUrl = new URL(toUrlStr, window.location.origin);
+                    if (fromUrl.origin !== toUrl.origin || fromUrl.pathname === toUrl.pathname) return 'm3-cross-fade';
+
+                    var fromSlot = getNavSlot(fromUrl.pathname);
+                    var toSlot = getNavSlot(toUrl.pathname);
+
+                    if (fromSlot !== -1 && toSlot !== -1 && fromSlot !== toSlot) {
+                        return toSlot > fromSlot ? 'm3-slide-forward' : 'm3-slide-backward';
+                    }
+
+                    if (toUrl.pathname.indexOf(fromUrl.pathname + '/') === 0) return 'm3-slide-forward';
+                    if (fromUrl.pathname.indexOf(toUrl.pathname + '/') === 0) return 'm3-slide-backward';
+
+                    var fromDepth = getPathDepth(fromUrl.pathname);
+                    var toDepth = getPathDepth(toUrl.pathname);
+                    if (toDepth !== fromDepth) {
+                        return toDepth > fromDepth ? 'm3-slide-forward' : 'm3-slide-backward';
+                    }
+
+                    if (navType === 'traverse') return 'm3-slide-backward';
+                } catch (err) {}
+                return 'm3-slide-forward';
+            }
+
+            if ('onpageswap' in window) {
+                window.addEventListener('pageswap', function (e) {
+                    var loader = document.getElementById('pageLoader');
+                    if (loader) loader.classList.add('fade-out');
+                    if (e.viewTransition && e.activation && e.activation.from && e.activation.entry) {
+                        var t = computeTransitionType(e.activation.from.url, e.activation.entry.url, e.activation.navigationType);
+                        if (e.viewTransition.types && typeof e.viewTransition.types.add === 'function') {
+                            e.viewTransition.types.add(t);
+                        }
+                    }
+                });
+            }
+
+            if ('onpagereveal' in window) {
+                window.addEventListener('pagereveal', function (e) {
+                    var loader = document.getElementById('pageLoader');
+                    if (loader) loader.classList.add('fade-out');
+                    if (!e.viewTransition) return;
+                    var act = window.navigation && window.navigation.activation;
+                    var fromUrl = (act && act.from && act.from.url) || document.referrer || '';
+                    var toUrl = (act && act.entry && act.entry.url) || window.location.href;
+                    var navType = act ? act.navigationType : '';
+                    var t = fromUrl ? computeTransitionType(fromUrl, toUrl, navType) : 'm3-cross-fade';
+                    if (e.viewTransition.types && typeof e.viewTransition.types.add === 'function') {
+                        e.viewTransition.types.add(t);
+                    }
+                });
+            }
+        })();
+    </script>
+
     {{-- Telegram WebApp SDK --}}
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script nonce="{{ $cspNonce ?? '' }}">
@@ -1406,7 +1483,7 @@
     @endunless
 
     {{-- Main Content --}}
-    <main class="main-content position-relative" @if($hideSidebar) style="margin-left: 0 !important;" @endif>
+    <main id="m3MainContent" class="main-content position-relative" @if($hideSidebar) style="margin-left: 0 !important;" @endif>
         <div class="main-background"></div>
 
         <div class="container-fluid position-relative px-4 pb-4 pt-4">

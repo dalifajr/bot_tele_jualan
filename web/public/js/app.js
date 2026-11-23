@@ -8,6 +8,8 @@ function initAll() {
     initM3SweetAlertInterceptor();
     initThemeToggle();
     initSidebar();
+    initMobileNavFeedback();
+    initModalSheetSwipeDismiss();
     initPageLoader();
     initCsrfToken();
     initTelegramWebApp();
@@ -502,6 +504,133 @@ function finishTopLoadingBar() {
     }, 300);
 }
 
+/* === MOBILE BOTTOM NAV OPTIMISTIC PILL FEEDBACK & BFCACHE SYNC === */
+function initMobileNavFeedback() {
+    const bottomNav = document.getElementById('mobileBottomNav');
+    if (!bottomNav) return;
+
+    const navLinks = Array.from(bottomNav.querySelectorAll('a.mobile-nav-item[href]'));
+    const initialActive = bottomNav.querySelector('.mobile-nav-item.active');
+
+    navLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0) return;
+            navLinks.forEach(item => item.classList.remove('active'));
+            link.classList.add('active');
+        });
+    });
+
+    window.addEventListener('pageshow', (e) => {
+        if (e.persisted && initialActive) {
+            navLinks.forEach(item => item.classList.remove('active'));
+            initialActive.classList.add('active');
+        }
+    });
+}
+
+/* === MOBILE M3 BOTTOM SHEET MODAL SWIPE-DOWN TO DISMISS (< 768px) === */
+function initModalSheetSwipeDismiss() {
+    let activeDialog = null;
+    let activeModal = null;
+    let startY = 0;
+    let startX = 0;
+    let currentY = 0;
+    let startTime = 0;
+    let isDraggingModal = false;
+    let isHorizontalScroll = false;
+
+    document.addEventListener('touchstart', (e) => {
+        if (window.innerWidth >= 768 || e.touches.length !== 1) return;
+        const target = e.target;
+        if (!target || typeof target.closest !== 'function') return;
+
+        // Only initiate drag from sheet handle or modal header, ignoring buttons/inputs/links
+        const handleOrHeader = target.closest('.m3-sheet-handle, .modal-header');
+        if (!handleOrHeader) return;
+        if (target.closest('button, a, input, select, textarea, .btn-close')) return;
+
+        const modalEl = handleOrHeader.closest('.modal.show');
+        if (!modalEl || modalEl.getAttribute('data-bs-backdrop') === 'static') return;
+
+        const dialogEl = modalEl.querySelector('.modal-dialog');
+        if (!dialogEl) return;
+
+        activeModal = modalEl;
+        activeDialog = dialogEl;
+        startY = e.touches[0].clientY;
+        startX = e.touches[0].clientX;
+        currentY = startY;
+        startTime = performance.now();
+        isDraggingModal = true;
+        isHorizontalScroll = false;
+        activeDialog.style.transition = 'none';
+    }, { passive: true });
+
+    document.addEventListener('touchmove', (e) => {
+        if (!isDraggingModal || !activeDialog || e.touches.length !== 1) return;
+
+        const clientY = e.touches[0].clientY;
+        const clientX = e.touches[0].clientX;
+        const deltaY = clientY - startY;
+        const deltaX = clientX - startX;
+
+        if (!isHorizontalScroll && Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
+            isHorizontalScroll = true;
+            return;
+        }
+        if (isHorizontalScroll) return;
+
+        currentY = clientY;
+        if (deltaY > 0) {
+            if (e.cancelable) e.preventDefault();
+            activeDialog.style.transform = `translate3d(0, ${deltaY}px, 0)`;
+        } else if (deltaY < 0) {
+            const damped = Math.abs(deltaY) * 0.15;
+            activeDialog.style.transform = `translate3d(0, -${damped}px, 0)`;
+        }
+    }, { passive: false });
+
+    const endModalDrag = () => {
+        if (!isDraggingModal || !activeDialog || !activeModal) return;
+        isDraggingModal = false;
+
+        const deltaY = currentY - startY;
+        const elapsed = Math.max(1, performance.now() - startTime);
+        const velocity = deltaY / elapsed;
+        const modalToClose = activeModal;
+        const dialogToReset = activeDialog;
+
+        activeModal = null;
+        activeDialog = null;
+
+        if (deltaY > 85 || velocity > 0.42) {
+            dialogToReset.style.transition = 'transform 200ms cubic-bezier(0.3, 0, 0.8, 0.15)';
+            dialogToReset.style.transform = 'translate3d(0, 100%, 0)';
+            if (window.bootstrap && window.bootstrap.Modal) {
+                const inst = window.bootstrap.Modal.getOrCreateInstance(modalToClose);
+                if (inst) inst.hide();
+            }
+        } else {
+            dialogToReset.style.transition = 'transform 260ms cubic-bezier(0.05, 0.7, 0.1, 1)';
+            dialogToReset.style.transform = '';
+            setTimeout(() => {
+                if (dialogToReset) dialogToReset.style.transition = '';
+            }, 270);
+        }
+    };
+
+    document.addEventListener('touchend', endModalDrag, { passive: true });
+    document.addEventListener('touchcancel', endModalDrag, { passive: true });
+
+    document.addEventListener('hidden.bs.modal', (e) => {
+        const dialog = e.target && e.target.querySelector ? e.target.querySelector('.modal-dialog') : null;
+        if (dialog) {
+            dialog.style.transform = '';
+            dialog.style.transition = '';
+        }
+    });
+}
+
 /* === PAGE LOADER (M3 SMART NON-BLOCKING TOP PROGRESS + DELAYED OVERLAY) === */
 function initPageLoader() {
     const pageLoader = document.getElementById('pageLoader');
@@ -523,7 +652,7 @@ function initPageLoader() {
             if (pageLoader) {
                 pageLoader.classList.remove('fade-out');
             }
-        }, 380);
+        }, 650);
     };
 
     // Hide loader immediately on DOMContentLoaded
@@ -561,7 +690,9 @@ function initPageLoader() {
         });
     });
 
-    // Hide on page load / back-forward cache / visibility restore
+    // Cancel overlay before cross-document view transition snapshot & on page lifecycle events
+    window.addEventListener('pageswap', hideLoader);
+    window.addEventListener('pagehide', hideLoader);
     window.addEventListener('pageshow', () => {
         finishTopLoadingBar();
         hideLoader();

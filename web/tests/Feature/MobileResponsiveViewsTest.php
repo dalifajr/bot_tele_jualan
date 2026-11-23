@@ -84,6 +84,9 @@ class MobileResponsiveViewsTest extends TestCase
         $responseWallet->assertSee('m3-sheet-modal');
         $responseWallet->assertSee('m3-mobile-item-card');
         $responseWallet->assertSee('is-ultra-compact');
+        $responseWallet->assertSee('id="m3MainContent"', false);
+        $responseWallet->assertSee('<link rel="expect" href="#m3MainContent" blocking="render">', false);
+        $responseWallet->assertSee('m3-slide-forward');
 
         // 2. Customer Complaints Index
         ComplaintCase::create([

@@ -1153,7 +1153,9 @@ a:hover {
     padding: 0 !important;
     overflow: hidden;
     border-radius: var(--radius-md, 16px);
-    transition: border-color 0.18s ease, background-color 0.18s ease;
+    transition: border-color var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard),
+                background-color var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard),
+                transform var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
 }
 
 .m3-mobile-item-card.m3-collapsible-card:has(.m3-compact-trigger[aria-expanded="true"]) {
@@ -1167,6 +1169,37 @@ a:hover {
     gap: 0.55rem;
     padding: 0.6rem 0.85rem;
     min-height: 58px;
+    transition: background-color var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard);
+    -webkit-tap-highlight-color: transparent;
+}
+
+.m3-compact-row:active {
+    background-color: var(--surface-container-high);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .m3-mobile-item-card.m3-collapsible-card:has(.m3-compact-trigger:active) {
+        transform: scale(0.992);
+    }
+
+    .m3-collapsible-card .collapsing {
+        transition: height 260ms var(--md-sys-motion-easing-emphasized) !important;
+    }
+
+    .m3-collapsible-card .collapse.show .m3-collapsible-body {
+        animation: m3CollapsibleBodyReveal 210ms var(--md-sys-motion-easing-emphasized-decelerate) both;
+    }
+}
+
+@keyframes m3CollapsibleBodyReveal {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .m3-compact-trigger {
@@ -1183,6 +1216,7 @@ a:hover {
     color: inherit;
     cursor: pointer;
     width: 100%;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .m3-compact-trigger:focus-visible {
@@ -1195,7 +1229,8 @@ a:hover {
     flex-shrink: 0;
     font-size: 0.72rem;
     color: var(--on-surface-variant);
-    transition: transform 0.2s ease, color 0.2s ease;
+    transition: transform 260ms var(--md-sys-motion-easing-emphasized),
+                color 180ms var(--md-sys-motion-easing-standard);
 }
 
 .m3-compact-trigger[aria-expanded="true"] .m3-compact-chevron {
@@ -1228,6 +1263,16 @@ a:hover {
     align-items: center;
     justify-content: center;
     gap: 0.35rem;
+    transition: transform var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard),
+                background-color var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard),
+                border-color var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard);
+    -webkit-tap-highlight-color: transparent;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .m3-compact-action-btn:active:not(:disabled) {
+        transform: scale(0.965) !important;
+    }
 }
 
 .m3-quick-amount-chip {
@@ -1283,29 +1328,58 @@ a:hover {
     border-radius: 999px;
     background-color: var(--outline-variant);
     margin: 10px auto 2px;
+    cursor: grab;
+    touch-action: none;
 }
 
 @media (max-width: 767.98px) {
-    .m3-sheet-modal .modal-dialog {
+    .m3-sheet-modal .modal-dialog,
+    .modal-dialog.m3-sheet-modal {
         margin: 0 !important;
         max-width: 100% !important;
-        min-height: 100%;
-        display: flex;
-        align-items: flex-end;
+        width: 100% !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: flex-end !important;
     }
 
-    .m3-sheet-modal .modal-content {
+    .m3-sheet-modal .modal-content,
+    .modal-dialog.m3-sheet-modal .modal-content {
         border-radius: 28px 28px 0 0 !important;
         border-bottom: 0 !important;
         border-left: 0 !important;
         border-right: 0 !important;
-        max-height: 88dvh;
+        max-height: 88dvh !important;
         width: 100%;
     }
 
-    .m3-sheet-modal .modal-footer {
+    .m3-sheet-modal .modal-footer,
+    .modal-dialog.m3-sheet-modal .modal-footer {
         padding-bottom: max(1rem, env(safe-area-inset-bottom)) !important;
     }
+
+    .modal-content:has(.m3-sheet-handle) .modal-header {
+        padding-top: 12px !important;
+    }
+
+    .modal-content:has(.m3-sheet-handle) .modal-header::before {
+        display: none !important;
+    }
+
+    .modal.fade .modal-dialog {
+        transform: translate3d(0, 100%, 0) !important;
+        transition: transform 220ms var(--md-sys-motion-easing-emphasized-accelerate) !important;
+        will-change: transform;
+    }
+
+    .modal.fade.show .modal-dialog {
+        transform: translate3d(0, 0, 0) !important;
+        transition: transform 320ms var(--md-sys-motion-easing-emphasized-decelerate) !important;
+    }
+}
+
+.modal-backdrop.fade {
+    transition: opacity 240ms var(--md-sys-motion-easing-standard) !important;
 }
 
 .seller-stat-card-gradient h1,
@@ -2332,7 +2406,9 @@ ul.nav-pills,
         align-items: center;
         justify-content: center;
         border-radius: 14px;
-        transition: background-color 0.2s cubic-bezier(0.2, 0, 0, 1), color 0.2s cubic-bezier(0.2, 0, 0, 1);
+        transition: background-color 0.2s cubic-bezier(0.2, 0, 0, 1),
+                    color 0.2s cubic-bezier(0.2, 0, 0, 1),
+                    transform 140ms cubic-bezier(0.2, 0, 0, 1);
     }
 
     .mobile-nav-item:hover:not(.active) i {
@@ -2340,8 +2416,10 @@ ul.nav-pills,
         color: var(--on-surface);
     }
 
-    .mobile-nav-item:active {
-        transform: none;
+    @media (prefers-reduced-motion: no-preference) {
+        .mobile-nav-item:active i {
+            transform: scale(0.9);
+        }
     }
 
     .mobile-nav-item.active {
@@ -2350,11 +2428,27 @@ ul.nav-pills,
     }
 
     .mobile-nav-item.active i {
-        transform: none;
         background: var(--secondary-container) !important;
         color: var(--on-secondary-container) !important;
         padding: 0;
         border-radius: 14px;
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+        .mobile-nav-item.active i {
+            animation: m3NavPillExpand 240ms var(--md-sys-motion-easing-emphasized-decelerate) both;
+        }
+    }
+
+    @keyframes m3NavPillExpand {
+        0% {
+            transform: scaleX(0.52);
+            opacity: 0.7;
+        }
+        100% {
+            transform: scaleX(1);
+            opacity: 1;
+        }
     }
 
     .mobile-nav-badge {
@@ -3123,31 +3217,35 @@ ul.nav-pills,
     z-index: 1050 !important;
 }
 
-/* === TOP PROGRESS BAR (M3 LINEAR PROGRESS SYNCED TO DYNAMIC PALETTE) === */
+/* === TOP PROGRESS BAR (M3 LINEAR PROGRESS SYNCED TO DYNAMIC PALETTE — GPU COMPOSITED) === */
 .top-loading-bar {
     position: fixed;
     top: 0;
     left: 0;
     height: 3.5px;
-    width: 0;
+    width: 100%;
+    transform: scaleX(0);
+    transform-origin: left center;
+    will-change: transform, opacity;
     background: linear-gradient(90deg, var(--primary) 0%, var(--tertiary, var(--primary)) 100%);
     z-index: 99999;
-    transition: width 360ms var(--md-sys-motion-easing-emphasized-decelerate), opacity 180ms ease;
+    transition: transform 360ms var(--md-sys-motion-easing-emphasized-decelerate), opacity 180ms ease;
     box-shadow: none;
     opacity: 0;
+    pointer-events: none;
 }
 .top-loading-bar.start {
-    width: 30%;
+    transform: scaleX(0.32);
     opacity: 1;
 }
 .top-loading-bar.middle {
-    width: 70%;
+    transform: scaleX(0.72);
     opacity: 1;
 }
 .top-loading-bar.finish {
-    width: 100%;
+    transform: scaleX(1);
     opacity: 1;
-    transition: width 0.2s ease, opacity 0.2s ease 0.2s;
+    transition: transform 180ms var(--md-sys-motion-easing-emphasized-decelerate), opacity 200ms ease 160ms;
 }
 
 /* === SIDEBAR COLLAPSE (GOOGLE CLOUD CONSOLE 64PX RAIL MODE DESKTOP) === */
@@ -3570,21 +3668,60 @@ ul.nav-pills,
     animation: badgePop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-/* Content Smooth Reveal Animation */
+/* Content Smooth Reveal Animation & M3 Component Micro-Reveals */
 @keyframes contentReveal {
     0% {
         opacity: 0;
-        transform: translateY(4px);
+        transform: translateY(10px);
     }
     100% {
         opacity: 1;
-        transform: none;
+        transform: translateY(0);
     }
 }
 
-.main-content,
-main.flex-grow-1 {
-    animation: contentReveal 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+@keyframes m3TabPaneReveal {
+    0% {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes m3DropdownPopIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.95) translateY(-4px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    html:not(:active-view-transition) .main-content,
+    html:not(:active-view-transition) main.flex-grow-1 {
+        animation: contentReveal 240ms var(--md-sys-motion-easing-emphasized-decelerate) both;
+    }
+
+    .tab-pane.fade.show.active {
+        animation: m3TabPaneReveal 220ms var(--md-sys-motion-easing-emphasized-decelerate) both;
+    }
+
+    .dropdown-menu.show {
+        animation: m3DropdownPopIn 180ms var(--md-sys-motion-easing-emphasized-decelerate) both;
+        transform-origin: top center;
+    }
+
+    .m3-filter-chip:active,
+    .m3-segmented-nav .nav-link:active,
+    .menu-item:active {
+        transform: scale(0.965);
+    }
 }
 
 /* ==========================================================================
@@ -5694,40 +5831,103 @@ body.swal2-shown:not(.swal2-toast-shown) .swal2-container:not(.swal2-toast-conta
        V12: Card Keyboard Accessibility, Choice Cards & Below-the-Fold Deferral
        ========================================================================== */
 
-    /* V10.1 Cross-Document MPA View Transitions (Progressive Enhancement) */
+    /* V10.1 Cross-Document MPA View Transitions (Directional Shared Axis X + Shell Pinning) */
     @media (prefers-reduced-motion: no-preference) {
         @view-transition {
             navigation: auto;
         }
 
+        ::view-transition-group(root) {
+            animation-duration: 240ms;
+            animation-timing-function: var(--md-sys-motion-easing-emphasized);
+        }
+
         ::view-transition-old(root) {
-            animation: m3PageFadeOut 140ms var(--md-sys-motion-easing-emphasized-accelerate) both;
+            animation: m3PageFadeOut 170ms var(--md-sys-motion-easing-emphasized-accelerate) both;
         }
 
         ::view-transition-new(root) {
-            animation: m3PageFadeIn 200ms var(--md-sys-motion-easing-emphasized-decelerate) both;
+            animation: m3PageFadeIn 250ms var(--md-sys-motion-easing-emphasized-decelerate) both;
+        }
+
+        html:active-view-transition-type(m3-slide-forward)::view-transition-old(root) {
+            animation: m3VtSlideOutForward 180ms var(--md-sys-motion-easing-emphasized-accelerate) both;
+        }
+
+        html:active-view-transition-type(m3-slide-forward)::view-transition-new(root) {
+            animation: m3VtSlideInForward 270ms var(--md-sys-motion-easing-emphasized-decelerate) both;
+        }
+
+        html:active-view-transition-type(m3-slide-backward)::view-transition-old(root) {
+            animation: m3VtSlideOutBackward 180ms var(--md-sys-motion-easing-emphasized-accelerate) both;
+        }
+
+        html:active-view-transition-type(m3-slide-backward)::view-transition-new(root) {
+            animation: m3VtSlideInBackward 270ms var(--md-sys-motion-easing-emphasized-decelerate) both;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        @view-transition {
+            navigation: none;
+        }
+
+        ::view-transition-group(root) {
+            animation: none !important;
         }
     }
 
     @keyframes m3PageFadeOut {
-        from { opacity: 1; }
-        to { opacity: 0.92; }
+        from { opacity: 1; transform: scale(1); }
+        to { opacity: 0; transform: scale(0.988); }
     }
 
     @keyframes m3PageFadeIn {
-        from { opacity: 0.92; }
-        to { opacity: 1; }
+        from { opacity: 0; transform: scale(0.988); }
+        to { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes m3VtSlideOutForward {
+        from { opacity: 1; transform: translateX(0); }
+        to { opacity: 0; transform: translateX(-20px); }
+    }
+
+    @keyframes m3VtSlideInForward {
+        from { opacity: 0; transform: translateX(24px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+
+    @keyframes m3VtSlideOutBackward {
+        from { opacity: 1; transform: translateX(0); }
+        to { opacity: 0; transform: translateX(20px); }
+    }
+
+    @keyframes m3VtSlideInBackward {
+        from { opacity: 0; transform: translateX(-24px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+
+    /* Pin Persistent App Shell Across Smartphone & Desktop Viewports */
+    .top-navbar {
+        view-transition-name: m3-top-navbar;
+    }
+
+    @media (max-width: 991.98px) {
+        #mobileBottomNav {
+            view-transition-name: m3-bottom-nav;
+        }
     }
 
     @media (min-width: 992px) {
-        .navbar.fixed-top,
-        .top-navbar {
-            view-transition-name: m3-top-navbar;
-        }
-
         #sidebar {
             view-transition-name: m3-sidebar;
         }
+    }
+
+    ::view-transition-group(m3-top-navbar),
+    ::view-transition-group(m3-bottom-nav),
+    ::view-transition-group(m3-sidebar) {
+        z-index: 100;
     }
 
     /* V10.2 Prevent Page Scroll Under Modal Dialogs & Overlays (No Scroll Chaining) */
