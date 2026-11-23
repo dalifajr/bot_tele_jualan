@@ -263,12 +263,16 @@ class OrderService
             $vpnService = app(\App\Services\VpnService::class);
             $stagedVpnProvisions = [];
             foreach ($order->items as $item) {
-                if ($item->product && $item->product->is_vpn) {
-                    $resolvedServer = $vpnService->resolveServer(null, $item->product);
-                    $durationDays = max(1, (int) ($item->product->vpn_duration_days ?: 30));
-                    $quotaGb = max(0, (int) ($item->product->vpn_quota_gb ?? 0));
-                    $ipLimit = max(1, (int) ($item->product->vpn_ip_limit ?? 1));
-                    $sniMode = (string) ($item->product->vpn_sni_mode ?? '3');
+                $meta = is_array($item->vpn_meta) ? $item->vpn_meta : [];
+                $isVpnItem = ($item->product && $item->product->is_vpn) || !empty($meta['protocol']);
+                if ($isVpnItem) {
+                    $metaServer = !empty($meta['server_id']) ? \App\Models\VpnServer::find((int) $meta['server_id']) : null;
+                    $resolvedServer = $vpnService->resolveServer($metaServer, $item->product);
+                    $protocol = strtolower((string) ($meta['protocol'] ?? $item->product?->vpn_protocol ?? 'vmess'));
+                    $durationDays = max(1, (int) ($meta['days'] ?? $item->product?->vpn_duration_days ?: 30));
+                    $quotaGb = max(0, (int) ($meta['quota_gb'] ?? $item->product?->vpn_quota_gb ?? 0));
+                    $ipLimit = max(1, (int) ($meta['ip_limit'] ?? $item->product?->vpn_ip_limit ?? 1));
+                    $sniMode = (string) ($meta['sni_mode'] ?? $item->product?->vpn_sni_mode ?? '3');
 
                     for ($i = 0; $i < $item->quantity; $i++) {
                         $username = $item->vpn_username;
@@ -281,7 +285,7 @@ class OrderService
                             'order_id' => $order->id,
                             'vpn_server_id' => ($resolvedServer && $resolvedServer->exists) ? $resolvedServer->id : null,
                             'server_ip' => $resolvedServer?->ssh_host ?: ($resolvedServer ? parse_url((string) $resolvedServer->base_url, PHP_URL_HOST) : null),
-                            'protocol' => $item->product->vpn_protocol,
+                            'protocol' => $protocol,
                             'username' => $username,
                             'password' => $item->vpn_password,
                             'quota_gb' => $quotaGb,

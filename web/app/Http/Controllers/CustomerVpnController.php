@@ -16,7 +16,7 @@ use Illuminate\Support\Str;
 
 class CustomerVpnController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request, VpnService $vpnService)
     {
         $user = Auth::user();
 
@@ -47,11 +47,8 @@ class CustomerVpnController extends Controller
 
         $accounts = $query->paginate(15)->withQueryString();
 
-        $vpnProducts = Product::with('vpnServer')
-            ->where('is_vpn', true)
-            ->where('is_suspended', false)
-            ->orderBy('price')
-            ->get();
+        // Only expose "Buat Akun VPN" if admin has configured >= 1 valid, active VPN catalog product with an available VPN server
+        $vpnProducts = $this->getConfiguredVpnProducts($vpnService);
 
         $adminContact = User::where('role', 'admin')->orderBy('id')->first();
         $defaultAdminId = $adminContact?->id;
@@ -69,11 +66,53 @@ class CustomerVpnController extends Controller
         return view('vpn.my_accounts', compact('accounts', 'vpnProducts', 'defaultAdminId', 'stats'));
     }
 
+    public function fetchConfig(Request $request, $id, VpnService $vpnService)
+    {
+        $account = $this->findOwnedAccount($id);
+
+        if ($account->isAdminSuspended()) {
+            return $this->adminSuspendedResponse($account);
+        }
+
+        $needsSync = $request->boolean('refresh')
+            || empty($account->config_payload)
+            || empty($account->config_link);
+
+        if ($needsSync && $account->status !== 'failed') {
+            $vpnService->syncAccountFromPanel($account);
+            $account->refresh();
+        }
+
+        return response()->json([
+            'success' => true,
+            'title' => strtoupper($account->protocol) . ' — ' . $account->username,
+            'config_payload' => $account->config_payload,
+            'config_link' => $account->config_link ?: __('Konfigurasi belum tersedia dari server VPN.'),
+        ]);
+    }
+
+    private function getConfiguredVpnProducts(VpnService $vpnService)
+    {
+        return Product::with('vpnServer')
+            ->where('is_vpn', true)
+            ->where('is_suspended', false)
+            ->whereIn('vpn_protocol', ['ssh', 'vmess', 'vless', 'trojan', 'shadowsocks'])
+            ->where('vpn_duration_days', '>', 0)
+            ->orderBy('price')
+            ->get()
+            ->filter(fn (Product $p) => $vpnService->resolveServer(null, $p) !== null)
+            ->values();
+    }
+
     /**
      * Customer CREATE: purchase & provision a new VPN account directly using Wallet Balance.
      */
     public function store(Request $request, VpnService $vpnService)
     {
+        if ($this->getConfiguredVpnProducts($vpnService)->isEmpty()) {
+            return back()->with('error', __('Saat ini belum ada produk VPN yang aktif dan tersedia untuk dibuat.'));
+        }
+
         $validated = $request->validate([
             'product_id' => 'required|exists:products,id',
             'username' => ['required', 'string', 'regex:/^[a-zA-Z0-9_-]{3,24}$/'],
@@ -240,7 +279,7 @@ class CustomerVpnController extends Controller
         }
 
         $validated = $request->validate([
-            'days' => 'required|integer|in:7,14,30,60,90',
+            'days' => 'required|integer|min:1|max:365',
         ]);
 
         $days = (int) $validated['days'];

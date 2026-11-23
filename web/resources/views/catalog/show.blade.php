@@ -280,10 +280,12 @@
                                 <div class="mb-2">
                                     <label class="form-label text-body small fw-bold mb-1">{{ __('Username VPN') }} <span class="text-danger">*</span></label>
                                     <div class="input-group input-group-sm">
-                                        <input type="text" name="vpn_username" id="catalogVpnUsername" class="form-control px-3" required placeholder="{{ __('Contoh: user123') }}" pattern="[a-zA-Z0-9_-]{3,24}" title="{{ __('3–24 karakter: huruf, angka, dash, dan underscore') }}">
-                                        <button type="button" class="btn btn-outline-primary" id="btnCheckCatalogVpnUser">{{ __('Cek') }}</button>
+                                        <input type="text" name="vpn_username" id="catalogVpnUsername" class="form-control px-3 font-monospace" required autocomplete="off" placeholder="{{ __('Contoh: user123') }}" pattern="[a-zA-Z0-9_-]{3,24}" title="{{ __('3–24 karakter: huruf, angka, dash, dan underscore') }}">
+                                        <span class="input-group-text bg-white" id="catalogVpnUserIndicator">
+                                            <i class="fas fa-user-check text-muted"></i>
+                                        </span>
                                     </div>
-                                    <div id="catalogVpnUserStatus" class="form-text text-muted" style="font-size: 0.72rem;">{{ __('(Klik Cek untuk memverifikasi ketersediaan username langsung di server VPN)') }}</div>
+                                    <div id="catalogVpnUserStatus" class="form-text text-muted" style="font-size: 0.72rem;">{{ __('Ketersediaan username diperiksa otomatis saat Anda mengetik.') }}</div>
                                 </div>
                                 
                                 @if($product->vpn_protocol === 'ssh')
@@ -736,31 +738,76 @@
             });
         }
 
-        // Real-time VPN username availability check on catalog page
-        const btnCheckCatalogVpn = document.getElementById('btnCheckCatalogVpnUser');
+        // Automatic debounced live VPN username availability check on catalog page (450ms + AbortController)
         const inputCatalogVpnUser = document.getElementById('catalogVpnUsername');
         const statusCatalogVpnUser = document.getElementById('catalogVpnUserStatus');
-        if (btnCheckCatalogVpn && inputCatalogVpnUser && statusCatalogVpnUser) {
-            btnCheckCatalogVpn.addEventListener('click', async function() {
-                const username = inputCatalogVpnUser.value.trim();
-                if (username.length < 3) {
-                    statusCatalogVpnUser.className = 'form-text text-warning fw-semibold';
-                    statusCatalogVpnUser.textContent = '{{ __("Username minimal 3 karakter.") }}';
+        const indicatorCatalogVpnUser = document.getElementById('catalogVpnUserIndicator');
+        const catalogBuyBtns = document.querySelectorAll('.btn-buy-now');
+        if (inputCatalogVpnUser && statusCatalogVpnUser) {
+            let catalogVpnTimer = null;
+            let catalogVpnAbort = null;
+
+            const setCatalogBuyLocked = (locked) => {
+                catalogBuyBtns.forEach(b => { b.disabled = locked; });
+            };
+
+            inputCatalogVpnUser.addEventListener('input', function() {
+                const username = this.value.trim();
+                clearTimeout(catalogVpnTimer);
+                if (catalogVpnAbort) { catalogVpnAbort.abort(); catalogVpnAbort = null; }
+
+                if (username.length === 0) {
+                    setCatalogBuyLocked(false);
+                    if (indicatorCatalogVpnUser) indicatorCatalogVpnUser.innerHTML = '<i class="fas fa-user-check text-muted"></i>';
+                    statusCatalogVpnUser.className = 'form-text text-muted';
+                    statusCatalogVpnUser.textContent = '{{ __("Ketersediaan username diperiksa otomatis saat Anda mengetik.") }}';
                     return;
                 }
+                if (!/^[a-zA-Z0-9_-]{3,24}$/.test(username)) {
+                    setCatalogBuyLocked(true);
+                    if (indicatorCatalogVpnUser) indicatorCatalogVpnUser.innerHTML = '<i class="fas fa-exclamation-triangle text-warning"></i>';
+                    statusCatalogVpnUser.className = 'form-text text-warning fw-semibold';
+                    statusCatalogVpnUser.textContent = '{{ __("Username harus 3–24 karakter (huruf, angka, _ atau -).") }}';
+                    return;
+                }
+
+                if (indicatorCatalogVpnUser) indicatorCatalogVpnUser.innerHTML = '<i class="fas fa-spinner fa-spin text-primary"></i>';
                 statusCatalogVpnUser.className = 'form-text text-muted';
                 statusCatalogVpnUser.textContent = '{{ __("Memeriksa ke server VPN...") }}';
-                try {
-                    const res = await fetch("{{ route('catalog.check-vpn-username', $product->id) }}?username=" + encodeURIComponent(username), {
-                        headers: { 'Accept': 'application/json' }
-                    });
-                    const data = await res.json();
-                    statusCatalogVpnUser.className = 'form-text ' + (data.available ? 'text-success fw-semibold' : 'text-danger fw-semibold');
-                    statusCatalogVpnUser.textContent = data.message || (data.available ? '{{ __("Username tersedia.") }}' : '{{ __("Username sudah terpakai.") }}');
-                } catch (err) {
-                    statusCatalogVpnUser.className = 'form-text text-danger';
-                    statusCatalogVpnUser.textContent = '{{ __("Gagal memeriksa username.") }}';
-                }
+
+                catalogVpnTimer = setTimeout(async function() {
+                    catalogVpnAbort = new AbortController();
+                    try {
+                        const res = await fetch("{{ route('catalog.check-vpn-username', $product->id) }}?username=" + encodeURIComponent(username), {
+                            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                            signal: catalogVpnAbort.signal
+                        });
+                        const data = await res.json();
+                        if (data.success && data.available) {
+                            setCatalogBuyLocked(false);
+                            if (indicatorCatalogVpnUser) indicatorCatalogVpnUser.innerHTML = '<i class="fas fa-check-circle text-success"></i>';
+                            statusCatalogVpnUser.className = 'form-text text-success fw-semibold';
+                            statusCatalogVpnUser.textContent = data.message || '{{ __("Username tersedia.") }}';
+                        } else if (data.success && !data.available) {
+                            setCatalogBuyLocked(true);
+                            if (indicatorCatalogVpnUser) indicatorCatalogVpnUser.innerHTML = '<i class="fas fa-times-circle text-danger"></i>';
+                            statusCatalogVpnUser.className = 'form-text text-danger fw-semibold';
+                            statusCatalogVpnUser.textContent = data.message || '{{ __("Username sudah terpakai.") }}';
+                        } else {
+                            setCatalogBuyLocked(false);
+                            if (indicatorCatalogVpnUser) indicatorCatalogVpnUser.innerHTML = '<i class="fas fa-info-circle text-warning"></i>';
+                            statusCatalogVpnUser.className = 'form-text text-warning';
+                            statusCatalogVpnUser.textContent = data.message || '{{ __("Tidak dapat memverifikasi ke server saat ini.") }}';
+                        }
+                    } catch (err) {
+                        if (err.name !== 'AbortError') {
+                            setCatalogBuyLocked(false);
+                            if (indicatorCatalogVpnUser) indicatorCatalogVpnUser.innerHTML = '<i class="fas fa-info-circle text-muted"></i>';
+                            statusCatalogVpnUser.className = 'form-text text-muted';
+                            statusCatalogVpnUser.textContent = '{{ __("Gagal memeriksa username secara otomatis.") }}';
+                        }
+                    }
+                }, 450);
             });
         }
     });

@@ -148,7 +148,7 @@ class LegacySshVpnDriver implements VpnProviderInterface
         ];
     }
 
-    public function listAccounts(?string $protocol = null, ?string $status = null, ?string $search = null): array
+    public function listAccounts(?string $protocol = null, ?string $status = null, ?string $search = null, bool $includeConfig = false): array
     {
         return [
             'success' => false,

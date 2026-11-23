@@ -13,21 +13,10 @@ use Illuminate\Support\Str;
 
 class VpnServerController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $servers = VpnServer::withCount(['vpnAccounts', 'products'])
-            ->orderByDesc('is_default')
-            ->orderBy('name')
-            ->get();
-
-        $stats = [
-            'total' => $servers->count(),
-            'active' => $servers->where('is_active', true)->count(),
-            'api_driver' => $servers->where('driver', VpnServer::DRIVER_VPNXRAY_API)->count(),
-            'online' => $servers->where('last_status', 'online')->count(),
-        ];
-
-        return view('admin.vpn.servers', compact('servers', 'stats'));
+        $request->merge(['tab' => 'servers']);
+        return app(VpnAccountController::class)->index($request);
     }
 
     public function store(Request $request)
@@ -85,7 +74,7 @@ class VpnServerController extends Controller
             'created_at' => now(),
         ]);
 
-        return redirect()->route('admin.vpn-servers.index')
+        return redirect()->route('admin.vpn-accounts.index', ['tab' => 'servers'])
             ->with('success', __('Server VPN :name berhasil ditambahkan.', ['name' => $server->name]));
     }
 
@@ -155,7 +144,7 @@ class VpnServerController extends Controller
             'created_at' => now(),
         ]);
 
-        return redirect()->route('admin.vpn-servers.index')
+        return redirect()->route('admin.vpn-accounts.index', ['tab' => 'servers'])
             ->with('success', __('Server VPN :name berhasil diperbarui.', ['name' => $server->name]));
     }
 
@@ -168,7 +157,7 @@ class VpnServerController extends Controller
             $server->update(['is_default' => true, 'is_active' => true]);
         });
 
-        return redirect()->route('admin.vpn-servers.index')
+        return redirect()->route('admin.vpn-accounts.index', ['tab' => 'servers'])
             ->with('success', __('Server :name ditetapkan sebagai server VPN utama.', ['name' => $server->name]));
     }
 
@@ -219,7 +208,7 @@ class VpnServerController extends Controller
             'created_at' => now(),
         ]);
 
-        return redirect()->route('admin.vpn-servers.index')
+        return redirect()->route('admin.vpn-accounts.index', ['tab' => 'servers'])
             ->with('success', __('Server VPN :name berhasil dihapus.', ['name' => $name]));
     }
 }

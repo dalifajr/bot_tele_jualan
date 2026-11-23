@@ -362,12 +362,13 @@ class VpnXrayApiDriver implements VpnProviderInterface
         ];
     }
 
-    public function listAccounts(?string $protocol = null, ?string $status = null, ?string $search = null): array
+    public function listAccounts(?string $protocol = null, ?string $status = null, ?string $search = null, bool $includeConfig = false): array
     {
         $query = array_filter([
             'protocol' => $protocol,
             'status' => $status,
             'search' => $search,
+            'include_config' => $includeConfig ? '1' : null,
         ], fn ($v) => $v !== null && $v !== '');
 
         $res = $this->request('GET', '/accounts', [], $query);

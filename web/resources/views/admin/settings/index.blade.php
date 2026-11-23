@@ -290,11 +290,8 @@
                         <div>{{ __('Direkomendasikan mengelola server & akun VPN via REST API terenkripsi HMAC-SHA256 (mendukung Create, Renew, Suspend, Unsuspend, Sync & Delete). Form SSH di bawah hanya fallback untuk VPS lawas.') }}</div>
                     </div>
                     <div class="d-flex gap-2">
-                        <a href="{{ route('admin.vpn-servers.index') }}" class="btn btn-primary btn-sm rounded-pill px-3 fw-semibold">
-                            <i class="fas fa-server me-1"></i>{{ __('Kelola Server VPN (API)') }}
-                        </a>
-                        <a href="{{ route('admin.vpn-accounts.index') }}" class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-semibold">
-                            <i class="fas fa-network-wired me-1"></i>{{ __('Kelola Akun VPN') }}
+                        <a href="{{ route('admin.vpn-accounts.index', ['tab' => 'servers']) }}" class="btn btn-primary btn-sm rounded-pill px-3 fw-semibold">
+                            <i class="fas fa-server me-1"></i>{{ __('Kelola VPN (Server & Akun)') }}
                         </a>
                     </div>
                 </div>

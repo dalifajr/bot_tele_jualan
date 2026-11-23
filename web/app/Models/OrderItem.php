@@ -18,6 +18,7 @@ class OrderItem extends Model
         'discount_amount',
         'vpn_username',
         'vpn_password',
+        'vpn_meta',
         'vcc_services',
     ];
 
@@ -25,6 +26,7 @@ class OrderItem extends Model
         'quantity' => 'integer',
         'unit_price' => 'integer',
         'discount_amount' => 'integer',
+        'vpn_meta' => 'array',
         'vcc_services' => 'array',
     ];
 

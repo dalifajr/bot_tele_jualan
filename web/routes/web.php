@@ -212,6 +212,7 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         Route::post('/{id}/suspend', [\App\Http\Controllers\CustomerVpnController::class, 'suspend'])->whereNumber('id')->name('suspend');
         Route::post('/{id}/unsuspend', [\App\Http\Controllers\CustomerVpnController::class, 'unsuspend'])->whereNumber('id')->name('unsuspend');
         Route::post('/{id}/sync', [\App\Http\Controllers\CustomerVpnController::class, 'sync'])->whereNumber('id')->name('sync');
+        Route::get('/{id}/config', [\App\Http\Controllers\CustomerVpnController::class, 'fetchConfig'])->whereNumber('id')->name('config');
         Route::delete('/{id}', [\App\Http\Controllers\CustomerVpnController::class, 'destroy'])->whereNumber('id')->name('destroy');
     });
 
@@ -471,6 +472,8 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
 
         Route::prefix('vpn-accounts')->name('vpn-accounts.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\VpnAccountController::class, 'index'])->name('index');
+            Route::get('/check-username', [\App\Http\Controllers\Admin\VpnAccountController::class, 'checkUsername'])->name('check-username')->middleware('throttle:60,1');
+            Route::get('/{id}/config', [\App\Http\Controllers\Admin\VpnAccountController::class, 'fetchConfig'])->whereNumber('id')->name('config');
             Route::post('/', [\App\Http\Controllers\Admin\VpnAccountController::class, 'store'])->name('store');
             Route::post('/sync-server', [\App\Http\Controllers\Admin\VpnAccountController::class, 'syncServer'])->name('sync-server');
             Route::post('/{id}/renew', [\App\Http\Controllers\Admin\VpnAccountController::class, 'renew'])->whereNumber('id')->name('renew');

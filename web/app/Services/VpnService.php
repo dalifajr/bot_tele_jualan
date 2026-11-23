@@ -489,8 +489,8 @@ class VpnService
         return ['success' => true, 'message' => __('Konfigurasi akun berhasil disinkronkan dari panel VPN.'), 'data' => $data];
     }
 
-    public function listRemoteAccounts(VpnServer $server, ?string $protocol = null, ?string $status = null, ?string $search = null): array
+    public function listRemoteAccounts(VpnServer $server, ?string $protocol = null, ?string $status = null, ?string $search = null, bool $includeConfig = false): array
     {
-        return $this->driverFor($server)->listAccounts($protocol, $status, $search);
+        return $this->driverFor($server)->listAccounts($protocol, $status, $search, $includeConfig);
     }
 }

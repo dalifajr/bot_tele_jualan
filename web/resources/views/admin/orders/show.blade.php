@@ -82,7 +82,7 @@
                                 @endif
                             </div>
                             <div class="flex-grow-1 min-w-0">
-                                <h6 class="fw-bold text-body mb-1 text-truncate" style="font-size: 0.92rem;" title="{{ $item->product->name ?? '-' }}">{{ $item->product->name ?? '-' }}</h6>
+                                <h6 class="fw-bold text-body mb-1 text-truncate" style="font-size: 0.92rem;" title="{{ $item->product->name ?? ($item->vpn_meta['label'] ?? '-') }}">{{ $item->product->name ?? ($item->vpn_meta['label'] ?? '-') }}</h6>
                                 <div class="text-muted small" style="font-size: 0.78rem;">
                                     {{ $item->quantity }} unit &times; Rp {{ number_format($item->unit_price, 0, ',', '.') }}
                                 </div>

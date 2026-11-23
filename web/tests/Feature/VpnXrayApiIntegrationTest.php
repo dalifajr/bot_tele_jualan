@@ -397,4 +397,256 @@ class VpnXrayApiIntegrationTest extends TestCase
         $this->artisan('vpn:diagnose', ['server' => 'legacy-diag'])
             ->assertExitCode(1);
     }
+
+    public function test_unified_admin_vpn_menu_tabs_server_sync_with_config_and_lazy_fetch(): void
+    {
+        // Unified page renders both tabs cleanly; legacy /admin/vpn-servers route also renders unified view on servers tab
+        $this->actingAs($this->admin)
+            ->get(route('admin.vpn-accounts.index'))
+            ->assertStatus(200)
+            ->assertSee('Kelola VPN')
+            ->assertSee('tab-vpn-accounts-btn')
+            ->assertSee('tab-vpn-servers-btn')
+            ->assertSee('adminVpnActionSheetModal');
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.vpn-servers.index'))
+            ->assertStatus(200)
+            ->assertSee('Kelola VPN')
+            ->assertSee('Singapore SG-01');
+
+        // 1. Server Sync with include_config=1 populates config_payload, config_link, and uuid immediately
+        Http::fake([
+            'https://sg1.vpnpanel.test/api/v1/vpn/accounts?include_config=1' => Http::response([
+                'success' => true,
+                'message' => 'OK',
+                'data' => [
+                    'accounts' => [
+                        [
+                            'protocol' => 'vmess',
+                            'username' => 'synced_full_01',
+                            'domain' => 'sg1.vpnpanel.test',
+                            'uuid' => '55555555-6666-7777-8888-999999999999',
+                            'status' => 'active',
+                            'quota_gb' => 50,
+                            'ip_limit' => 2,
+                            'expired_at' => now()->addDays(20)->format('Y-m-d'),
+                            'links' => ['tls' => 'vmess://c3luY2Vk'],
+                            'formatted_text' => "=== VMESS ===\nUser: synced_full_01",
+                        ],
+                    ],
+                ],
+            ], 200),
+            'https://sg1.vpnpanel.test/api/v1/vpn/accounts/vmess/lazy_empty_01*' => Http::response([
+                'success' => true,
+                'message' => 'OK',
+                'data' => [
+                    'protocol' => 'vmess',
+                    'username' => 'lazy_empty_01',
+                    'domain' => 'sg1.vpnpanel.test',
+                    'uuid' => '11111111-aaaa-bbbb-cccc-222222222222',
+                    'status' => 'active',
+                    'quota_gb' => 10,
+                    'ip_limit' => 1,
+                    'expired_at' => now()->addDays(15)->format('Y-m-d'),
+                    'links' => ['tls' => 'vmess://bGF6eQ=='],
+                    'formatted_text' => "=== VMESS LAZY ===\nUser: lazy_empty_01",
+                ],
+            ], 200),
+        ]);
+
+        $this->actingAs($this->admin)
+            ->post(route('admin.vpn-accounts.sync-server'), ['vpn_server_id' => $this->server->id])
+            ->assertRedirect(route('admin.vpn-accounts.index', ['tab' => 'accounts', 'server_id' => $this->server->id]))
+            ->assertSessionHas('success');
+
+        $synced = VpnAccount::where('username', 'synced_full_01')->firstOrFail();
+        $this->assertSame('55555555-6666-7777-8888-999999999999', $synced->uuid);
+        $this->assertSame('vmess://c3luY2Vk', $synced->config_payload['links']['tls'] ?? null);
+        $this->assertStringContainsString('synced_full_01', (string) $synced->config_link);
+
+        // 2. Lazy auto-fetch AJAX populates empty config on demand (Admin & Customer endpoints)
+        $emptyAcc = VpnAccount::create([
+            'user_id' => $this->customer->id,
+            'vpn_server_id' => $this->server->id,
+            'protocol' => 'vmess',
+            'username' => 'lazy_empty_01',
+            'status' => 'active',
+            'expired_at' => now()->addDays(15),
+        ]);
+
+        $this->actingAs($this->admin)
+            ->getJson(route('admin.vpn-accounts.config', $emptyAcc->id))
+            ->assertStatus(200)
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('config_payload.links.tls', 'vmess://bGF6eQ==');
+
+        $emptyAcc->refresh();
+        $this->assertSame('vmess://bGF6eQ==', $emptyAcc->config_payload['links']['tls'] ?? null);
+
+        $this->actingAs($this->customer)
+            ->getJson(route('vpn.config', $emptyAcc->id))
+            ->assertStatus(200)
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('config_payload.links.tls', 'vmess://bGF6eQ==');
+    }
+
+    public function test_admin_manual_vpn_create_paid_and_unpaid_billing_flow(): void
+    {
+        Http::fake([
+            'https://sg1.vpnpanel.test/api/v1/vpn/check-username*' => Http::response([
+                'success' => true,
+                'message' => 'Available',
+                'data' => ['available' => true, 'exists' => false],
+            ], 200),
+            'https://sg1.vpnpanel.test/api/v1/vpn/accounts' => Http::sequence()
+                ->push([
+                    'success' => true,
+                    'message' => 'Created',
+                    'data' => [
+                        'protocol' => 'vless',
+                        'username' => 'paid_for_cust01',
+                        'domain' => 'sg1.vpnpanel.test',
+                        'uuid' => 'aaaa1111-bbbb-2222-cccc-333333333333',
+                        'status' => 'active',
+                        'expired_at' => now()->addDays(30)->format('Y-m-d'),
+                        'links' => ['tls' => 'vless://paid@sg1.vpnpanel.test:443#paid_for_cust01'],
+                        'formatted_text' => 'VLESS paid_for_cust01',
+                    ],
+                ], 201)
+                ->push([
+                    'success' => true,
+                    'message' => 'Created',
+                    'data' => [
+                        'protocol' => 'trojan',
+                        'username' => 'billed_cust01',
+                        'domain' => 'sg1.vpnpanel.test',
+                        'uuid' => 'dddd4444-eeee-5555-ffff-666666666666',
+                        'status' => 'active',
+                        'expired_at' => now()->addDays(60)->format('Y-m-d'),
+                        'links' => ['tls' => 'trojan://billed@sg1.vpnpanel.test:443#billed_cust01'],
+                        'formatted_text' => 'TROJAN billed_cust01',
+                    ],
+                ], 201),
+        ]);
+
+        // 1. Live Admin AJAX username check
+        $this->actingAs($this->admin)
+            ->getJson(route('admin.vpn-accounts.check-username', ['username' => 'paid_for_cust01', 'protocol' => 'vless', 'server_id' => $this->server->id]))
+            ->assertStatus(200)
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('available', true);
+
+        // 2. Paid mode (is_paid = 1): provisions immediately & appears in customer's /my-vpn
+        $this->actingAs($this->admin)
+            ->post(route('admin.vpn-accounts.store'), [
+                'assign_target' => 'customer',
+                'customer_id' => $this->customer->id,
+                'vpn_server_id' => $this->server->id,
+                'protocol' => 'vless',
+                'username' => 'paid_for_cust01',
+                'days' => 30,
+                'quota_gb' => 100,
+                'ip_limit' => 2,
+                'is_paid' => 1,
+            ])
+            ->assertRedirect(route('admin.vpn-accounts.index', ['tab' => 'accounts']))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('vpn_accounts', [
+            'user_id' => $this->customer->id,
+            'username' => 'paid_for_cust01',
+            'protocol' => 'vless',
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($this->customer)
+            ->get(route('vpn.my-accounts'))
+            ->assertStatus(200)
+            ->assertSee('paid_for_cust01');
+
+        // 3. Unpaid Billing mode (is_paid = 0): creates pending Order + OrderItem(vpn_meta) + Payment; auto-provisions on confirmPayment!
+        $res = $this->actingAs($this->admin)
+            ->post(route('admin.vpn-accounts.store'), [
+                'assign_target' => 'customer',
+                'customer_id' => $this->customer->id,
+                'vpn_server_id' => $this->server->id,
+                'protocol' => 'trojan',
+                'username' => 'billed_cust01',
+                'days' => 60,
+                'quota_gb' => 250,
+                'ip_limit' => 3,
+                'is_paid' => 0,
+                'billing_amount' => 25000,
+            ]);
+
+        $order = Order::where('customer_id', $this->customer->id)
+            ->where('status', 'pending_payment')
+            ->latest('id')
+            ->firstOrFail();
+
+        $res->assertRedirect(route('checkout.success', ['order_ref' => $order->order_ref]));
+        $this->assertDatabaseMissing('vpn_accounts', ['username' => 'billed_cust01']);
+
+        $item = $order->items()->firstOrFail();
+        $this->assertSame('trojan', $item->vpn_meta['protocol'] ?? null);
+        $this->assertSame(60, $item->vpn_meta['days'] ?? null);
+        $this->assertSame(250, $item->vpn_meta['quota_gb'] ?? null);
+
+        // Once paid -> OrderService automatically provisions custom trojan VPN account for customer!
+        app(OrderService::class)->confirmPayment($order, 'qris_auto', $this->admin->id);
+
+        $provisioned = VpnAccount::where('username', 'billed_cust01')->firstOrFail();
+        $this->assertSame('active', $provisioned->status);
+        $this->assertSame('trojan', $provisioned->protocol);
+        $this->assertSame($this->customer->id, (int) $provisioned->user_id);
+        $this->assertSame(250, (int) $provisioned->quota_gb);
+        $this->assertSame(3, (int) $provisioned->ip_limit);
+    }
+
+    public function test_customer_my_vpn_gating_and_one_day_quick_renew(): void
+    {
+        Http::fake([
+            'https://sg1.vpnpanel.test/api/v1/vpn/accounts/vmess/quick_renew_01/renew' => Http::response([
+                'success' => true,
+                'message' => 'Renewed',
+                'data' => ['expired_at' => now()->addDays(11)->format('Y-m-d')],
+            ], 200),
+        ]);
+
+        $account = VpnAccount::create([
+            'user_id' => $this->customer->id,
+            'vpn_server_id' => $this->server->id,
+            'protocol' => 'vmess',
+            'username' => 'quick_renew_01',
+            'status' => 'active',
+            'expired_at' => now()->addDays(10),
+        ]);
+
+        // With active VPN product: Create button is shown & +1 day renew works
+        $this->actingAs($this->customer)
+            ->get(route('vpn.my-accounts'))
+            ->assertStatus(200)
+            ->assertSee('customerCreateVpnModal')
+            ->assertSee('myVpnActionSheetModal');
+
+        $this->actingAs($this->customer)
+            ->post(route('vpn.renew', $account->id), ['days' => 1])
+            ->assertSessionHas('success');
+
+        // Suspend all VPN products -> "Buat Akun VPN" button & modal hidden, and POST blocked
+        Product::where('is_vpn', true)->update(['is_suspended' => true]);
+
+        $this->actingAs($this->customer)
+            ->get(route('vpn.my-accounts'))
+            ->assertStatus(200)
+            ->assertDontSee('customerCreateVpnModal');
+
+        $this->actingAs($this->customer)
+            ->post(route('vpn.store'), [
+                'product_id' => $this->vpnProduct->id,
+                'username' => 'blocked_create01',
+            ])
+            ->assertSessionHas('error');
+    }
 }

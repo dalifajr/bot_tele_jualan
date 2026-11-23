@@ -17,7 +17,7 @@ interface VpnProviderInterface
     /**
      * @return array{success: bool, accounts: array, message: string}
      */
-    public function listAccounts(?string $protocol = null, ?string $status = null, ?string $search = null): array;
+    public function listAccounts(?string $protocol = null, ?string $status = null, ?string $search = null, bool $includeConfig = false): array;
 
     /**
      * @return array{success: bool, data?: array, message: string}
