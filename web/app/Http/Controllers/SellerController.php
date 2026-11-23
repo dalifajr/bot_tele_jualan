@@ -334,11 +334,16 @@ class SellerController extends Controller
 
         $stocks = $query->orderBy('created_at', 'desc')->paginate(15);
 
-        // Fetch products available for this seller to upload stock (either created by them or they are workers)
-        $products = Product::where('creator_id', $sellerId)
-            ->orWhereHas('workers', function($q) use ($sellerId) {
-                $q->where('user_id', $sellerId);
-            })->get();
+        // Fetch non-VPN products available for this seller to upload stock (either created by them or they are workers)
+        $products = Product::where('is_vpn', false)
+            ->where(function ($q) use ($sellerId) {
+                $q->where('creator_id', $sellerId)
+                    ->orWhereHas('workers', function ($wq) use ($sellerId) {
+                        $wq->where('user_id', $sellerId);
+                    });
+            })
+            ->orderBy('name')
+            ->get();
         $allMoveProducts = $products;
 
         return view('seller.stock.index', compact(
@@ -380,6 +385,11 @@ class SellerController extends Controller
 
         // Split raw text into individual stock blocks supporting line dividers & double-newlines
         $product = Product::findOrFail($request->product_id);
+        if ((bool) $product->is_vpn) {
+            return redirect()->back()
+                ->with('error', __('Produk VPN tidak menggunakan stok manual. Silakan kelola akun VPN melalui menu Kelola VPN.'))
+                ->withInput();
+        }
         $isVcc = (bool) $product->is_vcc;
         $vccServices = [];
         if ($isVcc) {

@@ -84,7 +84,7 @@
                 <select name="product_id" class="form-select form-select-sm">
                     <option value="">{{ __('Semua Produk') }}</option>
                     @php
-                        $filterProducts = \App\Models\Product::orderBy('name')->get();
+                        $filterProducts = \App\Models\Product::where('is_vpn', false)->orderBy('name')->get();
                     @endphp
                     @foreach($filterProducts as $fp)
                     <option value="{{ $fp->id }}" {{ request('product_id') == $fp->id ? 'selected' : '' }}>
@@ -482,12 +482,15 @@
                             <select name="product_id" id="addStockProductId" class="form-select rounded-3 py-2 border-secondary-subtle" required>
                                 <option value="">{{ __('-- Pilih Produk Digital --') }}</option>
                                 @php
-                                    $allProducts = \App\Models\Product::where('is_suspended', false)->get();
+                                    $allProducts = \App\Models\Product::where('is_suspended', false)->where('is_vpn', false)->orderBy('name')->get();
                                 @endphp
                                 @foreach($allProducts as $p)
                                     <option value="{{ $p->id }}">{{ $p->name }} (Rp {{ number_format($p->price, 0, ',', '.') }})</option>
                                 @endforeach
                             </select>
+                            <div class="form-text small text-muted mt-1" style="font-size: 0.74rem;">
+                                <i class="fas fa-info-circle text-primary me-1"></i>{{ __('Produk VPN tidak menggunakan stok manual dan dikelola melalui menu') }} <a href="{{ route('admin.vpn-accounts.index') }}" class="text-decoration-none fw-semibold">{{ __('Kelola VPN') }}</a>.
+                            </div>
                         </div>
                         <div class="col-md-5">
                             <label class="form-label text-muted small fw-bold mb-1.5 d-flex align-items-center gap-1.5">
@@ -645,7 +648,7 @@
                         <label class="form-label text-muted small fw-bold">{{ __('Pindah ke Produk') }}</label>
                         <select name="product_id" class="form-select">
                             @php
-                                $allMoveProducts = \App\Models\Product::orderBy('name')->get();
+                                $allMoveProducts = \App\Models\Product::where('is_vpn', false)->orderBy('name')->get();
                             @endphp
                             @foreach($allMoveProducts as $p)
                                 <option value="{{ $p->id }}" {{ $unit->product_id == $p->id ? 'selected' : '' }}>{{ $p->name }}</option>
@@ -761,7 +764,7 @@
                         <select name="product_id" class="form-select">
                             <option value="">{{ __('-- Pertahankan Produk Asli --') }}</option>
                             @php
-                                $allProducts = \App\Models\Product::where('is_suspended', false)->get();
+                                $allProducts = \App\Models\Product::where('is_suspended', false)->where('is_vpn', false)->orderBy('name')->get();
                             @endphp
                             @foreach($allProducts as $p)
                                 <option value="{{ $p->id }}">{{ $p->name }}</option>

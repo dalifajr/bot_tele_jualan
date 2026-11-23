@@ -701,6 +701,62 @@ class VpnAccountController extends Controller
         );
     }
 
+    /**
+     * Transfer ownership of an existing VPN account to another website user.
+     * Leaves original order/billing history intact and does not touch VPS Xray/SSH configs.
+     */
+    public function transferOwner(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'target_user_id' => 'required|integer|exists:users,id',
+            'notify_new_owner' => 'nullable|boolean',
+            'note' => 'nullable|string|max:255',
+        ]);
+
+        $account = VpnAccount::with(['user', 'vpnServer'])->findOrFail($id);
+        $targetUser = User::findOrFail((int) $validated['target_user_id']);
+        $oldUser = $account->user;
+
+        if ((int) $account->user_id === (int) $targetUser->id) {
+            return back()->with('error', __('Akun VPN :vpn sudah dimiliki oleh :user.', [
+                'vpn' => $account->username,
+                'user' => $targetUser->full_name ?: $targetUser->username,
+            ]));
+        }
+
+        $oldUserId = $account->user_id;
+        $oldUserLabel = $oldUser ? ($oldUser->full_name ?: $oldUser->username) : __('Tidak ada');
+        $newUserLabel = $targetUser->full_name ?: $targetUser->username;
+
+        $account->forceFill([
+            'user_id' => $targetUser->id,
+        ])->save();
+
+        $notifyNewOwner = $request->has('notify_new_owner') ? $request->boolean('notify_new_owner') : true;
+        if ($notifyNewOwner) {
+            try {
+                $targetUser->notify(new \App\Notifications\VpnOwnerTransferredNotification($account));
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('Failed to send VpnOwnerTransferredNotification: ' . $e->getMessage());
+            }
+        }
+
+        $note = trim((string) ($validated['note'] ?? ''));
+        $this->logAudit(
+            'admin_vpn_transfer_owner',
+            $account,
+            "protocol={$account->protocol}; username={$account->username}; old_user_id=" . ($oldUserId ?? 'null')
+                . "; new_user_id={$targetUser->id}; notify=" . ($notifyNewOwner ? '1' : '0')
+                . ($note !== '' ? "; note={$note}" : '')
+        );
+
+        return back()->with('success', __('Kepemilikan akun VPN :vpn berhasil dipindahkan dari :old ke :new. Kini tampil di menu Akun VPN Saya milik :new.', [
+            'vpn' => $account->username,
+            'old' => $oldUserLabel,
+            'new' => $newUserLabel,
+        ]));
+    }
+
     private function resolveBillingProductId(?Product $selectedProduct, string $protocol): int
     {
         if ($selectedProduct && $selectedProduct->exists) {

@@ -1709,6 +1709,11 @@ class AdminController extends Controller
 
         // Split raw text into individual stock blocks supporting line dividers & double-newlines
         $product = Product::findOrFail($request->product_id);
+        if ((bool) $product->is_vpn) {
+            return redirect()->back()
+                ->with('error', __('Produk VPN tidak menggunakan stok manual. Silakan kelola akun VPN melalui menu Kelola VPN.'))
+                ->withInput();
+        }
         $isVcc = (bool) $product->is_vcc;
         $vccServices = [];
         if ($isVcc) {
@@ -1778,6 +1783,11 @@ class AdminController extends Controller
             return redirect()->route('admin.stock.index')->with('error', __('Stok yang sudah terjual tidak dapat diedit.'));
         }
 
+        $targetProduct = Product::findOrFail($request->product_id);
+        if ((bool) $targetProduct->is_vpn) {
+            return redirect()->back()->with('error', __('Produk VPN tidak menggunakan stok manual. Silakan kelola akun VPN melalui menu Kelola VPN.'));
+        }
+
         // Only compute available_at if status has changed, or re-compute unconditionally since admin explicitly saves.
         // We re-compute unconditionally to ensure correctness.
         $availableAt = null;
@@ -1807,6 +1817,10 @@ class AdminController extends Controller
         ]);
 
         $stock = StockUnit::findOrFail($id);
+        $targetProduct = Product::findOrFail($request->product_id);
+        if ((bool) $targetProduct->is_vpn) {
+            return back()->with('error', __('Produk VPN tidak menggunakan stok manual. Silakan kelola akun VPN melalui menu Kelola VPN.'));
+        }
         $stock->product_id = $request->product_id;
         
         if ($request->stock_status === 'terjual') {
@@ -2010,6 +2024,13 @@ class AdminController extends Controller
         $ids = json_decode($request->ids, true);
         if (!is_array($ids) || empty($ids)) {
             return back()->with('error', __('Tidak ada stok terpilih.'));
+        }
+
+        if ($request->filled('product_id')) {
+            $targetProduct = Product::findOrFail($request->product_id);
+            if ((bool) $targetProduct->is_vpn) {
+                return back()->with('error', __('Produk VPN tidak menggunakan stok manual. Silakan kelola akun VPN melalui menu Kelola VPN.'));
+            }
         }
 
         $stockUnits = StockUnit::whereIn('id', $ids)->where('is_sold', false)->get();

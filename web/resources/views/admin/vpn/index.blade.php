@@ -420,6 +420,20 @@
                                                         <span>{{ __('Lihat Config & QR Code') }}</span>
                                                     </button>
                                                 </li>
+                                                <li>
+                                                    <button type="button"
+                                                            class="dropdown-item py-2 d-flex align-items-center gap-2 btn-open-vpn-transfer"
+                                                            data-action="{{ route('admin.vpn-accounts.transfer-owner', $acc->id) }}"
+                                                            data-username="{{ $acc->username }}"
+                                                            data-protocol="{{ strtoupper($acc->protocol) }}"
+                                                            data-server="{{ $acc->vpnServer?->name ?: __('Default') }}"
+                                                            data-owner-id="{{ $acc->user_id }}"
+                                                            data-owner-name="{{ $acc->user ? ($acc->user->full_name ?: $acc->user->username) : __('Tidak ada') }}"
+                                                            data-owner-username="{{ $acc->user?->username ?? '' }}">
+                                                        <i class="fas fa-user-pen text-info fa-fw"></i>
+                                                        <span>{{ __('Ubah Pemilik') }}</span>
+                                                    </button>
+                                                </li>
                                                 @if(!$isFailedOrProv)
                                                 <li>
                                                     <button type="button"
@@ -606,6 +620,10 @@
                                         data-status-label="{{ $statusLabel }}"
                                         data-config-url="{{ route('admin.vpn-accounts.config', $acc->id) }}"
                                         data-devices-url="{{ route('admin.vpn-accounts.devices', $acc->id) }}"
+                                        data-transfer-url="{{ route('admin.vpn-accounts.transfer-owner', $acc->id) }}"
+                                        data-owner-id="{{ $acc->user_id }}"
+                                        data-owner-name="{{ $acc->user ? ($acc->user->full_name ?: $acc->user->username) : __('Tidak ada') }}"
+                                        data-owner-username="{{ $acc->user?->username ?? '' }}"
                                         data-notify-url="{{ $acc->user ? route('admin.vpn-accounts.notify-expiring', $acc->id) : '' }}"
                                         data-payload='@json($acc->config_payload)'
                                         data-text="{{ $acc->config_link }}"
@@ -899,6 +917,17 @@
                         <i class="fas fa-chevron-right text-muted small"></i>
                     </button>
 
+                    <button type="button" class="m3-sheet-action-tile" id="sheetBtnTransferOwner">
+                        <span class="m3-sheet-action-icon bg-info-subtle text-info">
+                            <i class="fas fa-user-pen"></i>
+                        </span>
+                        <span class="m3-sheet-action-text">
+                            <span class="m3-sheet-action-title">{{ __('Ubah Pemilik') }}</span>
+                            <span class="m3-sheet-action-sub">{{ __('Pindahkan kepemilikan akun VPN ke user website lain') }}</span>
+                        </span>
+                        <i class="fas fa-chevron-right text-muted small"></i>
+                    </button>
+
                     <form id="sheetFormNotify" method="POST" class="d-none m-0">
                         @csrf
                         <button type="submit" class="m3-sheet-action-tile">
@@ -1076,6 +1105,110 @@
             <div class="modal-footer border-0 pt-1">
                 <button type="button" class="btn btn-primary rounded-pill px-4" data-bs-dismiss="modal">{{ __('Tutup') }}</button>
             </div>
+        </div>
+    </div>
+</div>
+
+{{-- ===================================================================== --}}
+{{-- ADMIN TRANSFER VPN ACCOUNT OWNERSHIP MODAL                            --}}
+{{-- ===================================================================== --}}
+<div class="modal fade" id="adminVpnTransferOwnerModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered m3-sheet-modal">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 22px;">
+            <div class="m3-sheet-handle d-md-none"></div>
+            <div class="modal-header border-0 pb-1">
+                <div>
+                    <h5 class="modal-title fw-bold mb-0 d-flex align-items-center gap-2">
+                        <i class="fas fa-user-pen text-info"></i>
+                        <span>{{ __('Ubah Pemilik Akun VPN') }}</span>
+                    </h5>
+                    <div class="small text-muted" id="transferVpnSub">-</div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" id="adminVpnTransferOwnerForm">
+                @csrf
+                <input type="hidden" name="target_user_id" id="transferTargetUserId" value="">
+                <div class="modal-body pt-2">
+                    <div class="p-2.5 rounded-4 border mb-3 d-flex align-items-center justify-content-between gap-2" style="background: var(--surface-container-low);">
+                        <div class="min-w-0">
+                            <div class="text-muted" style="font-size: 0.72rem;">{{ __('Pemilik Saat Ini') }}</div>
+                            <div class="fw-bold text-body small text-truncate" id="transferCurrentOwnerName">-</div>
+                        </div>
+                        <span class="badge bg-primary-subtle text-primary rounded-pill font-monospace flex-shrink-0" id="transferVpnUserBadge">-</span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-body mb-1.5">
+                            <i class="fas fa-user-check text-success me-1"></i>{{ __('Pilih Pemilik Baru (User Website)') }} <span class="text-danger">*</span>
+                        </label>
+
+                        <div id="transferSelectedUserChip" class="alert alert-success border-0 shadow-sm d-none align-items-center justify-content-between p-2 mb-2" style="border-radius: 12px;">
+                            <div class="d-flex align-items-center gap-2 min-w-0">
+                                <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center flex-shrink-0" style="width: 32px; height: 32px; font-size: 0.8rem;">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <div class="min-w-0">
+                                    <strong class="d-block text-body small text-truncate" id="transferSelectedUserName">-</strong>
+                                    <span class="text-muted d-block text-truncate" style="font-size: 0.72rem;" id="transferSelectedUserDetail">-</span>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2 rounded-pill flex-shrink-0" id="btnClearTransferUser" style="font-size: 0.72rem;">
+                                <i class="fas fa-times me-1"></i>{{ __('Ganti') }}
+                            </button>
+                        </div>
+
+                        <div id="transferUserSearchWrap">
+                            <div class="input-group input-group-sm mb-2">
+                                <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
+                                <input type="text" id="transferUserSearchInput" class="form-control border-start-0" placeholder="{{ __('Cari nama, @username, email, atau Telegram ID...') }}" autocomplete="off">
+                            </div>
+                            <div id="transferUserSearchResults" class="bg-white border rounded-3 p-1 overflow-auto" style="max-height: 190px;">
+                                @forelse($customers as $c)
+                                    <div class="transfer-user-item d-flex align-items-center justify-content-between p-2 rounded-2"
+                                         style="cursor: pointer;"
+                                         data-id="{{ $c->id }}"
+                                         data-name="{{ $c->full_name ?: $c->username }}"
+                                         data-username="{{ $c->username }}"
+                                         data-tg="{{ $c->telegram_id ?: '-' }}">
+                                        <div class="min-w-0">
+                                            <div class="small fw-semibold text-body text-truncate">{{ $c->full_name ?: $c->username }}</div>
+                                            <div class="text-muted text-truncate" style="font-size: 0.7rem;">
+                                                @if($c->username) @<span>{{ $c->username }}</span> @endif
+                                                @if($c->telegram_id) &bull; TG: <code>{{ $c->telegram_id }}</code> @endif
+                                            </div>
+                                        </div>
+                                        <span class="badge bg-secondary-subtle text-body rounded-pill flex-shrink-0 transfer-role-badge" style="font-size: 0.65rem;">{{ ucfirst($c->role) }}</span>
+                                    </div>
+                                @empty
+                                    <div class="p-2 text-center text-muted small">{{ __('Ketik untuk mencari user...') }}</div>
+                                @endforelse
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-body mb-1">{{ __('Catatan Audit (Opsional)') }}</label>
+                        <input type="text" name="note" id="transferOwnerNote" class="form-control form-control-sm" maxlength="255" placeholder="{{ __('Contoh: Dipindahkan atas permintaan pelanggan') }}">
+                    </div>
+
+                    <div class="form-check form-switch mb-2">
+                        <input type="hidden" name="notify_new_owner" value="0">
+                        <input class="form-check-input" type="checkbox" role="switch" id="transferNotifyNewOwner" name="notify_new_owner" value="1" checked>
+                        <label class="form-check-label small fw-semibold" for="transferNotifyNewOwner">{{ __('Kirim notifikasi ke Notification Hub pemilik baru') }}</label>
+                    </div>
+
+                    <div class="alert alert-info border-0 py-2 px-3 small mb-0" style="border-radius: 12px;">
+                        <i class="fas fa-shield-halved me-1"></i>{{ __('Koneksi VPN tidak akan terputus. Setelah dipindahkan, akun langsung muncul di menu Akun VPN Saya milik pemilik baru dan tidak lagi tampil pada pemilik lama.') }}
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-1">
+                    <button type="button" class="btn btn-light border rounded-pill px-3" data-bs-dismiss="modal">{{ __('Batal') }}</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold" id="btnSubmitTransferOwner" disabled>
+                        <i class="fas fa-right-left me-1"></i>{{ __('Pindahkan Kepemilikan') }}
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -1976,6 +2109,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 statusLabel: this.dataset.statusLabel || '',
                 configUrl: this.dataset.configUrl || '',
                 devicesUrl: this.dataset.devicesUrl || '',
+                transferUrl: this.dataset.transferUrl || '',
+                ownerId: this.dataset.ownerId || '',
+                ownerName: this.dataset.ownerName || '-',
+                ownerUsername: this.dataset.ownerUsername || '',
                 notifyUrl: this.dataset.notifyUrl || '',
                 payload: parsedPayload,
                 text: this.dataset.text || '',
@@ -2598,6 +2735,159 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('btnRefreshDevLog')?.addEventListener('click', function () {
         if (!activeDevLogUrl) return;
         loadVpnDeviceLogs(activeDevLogUrl, activeDevLogWindow);
+    });
+
+    // =========================================================================
+    // 8. ADMIN TRANSFER VPN ACCOUNT OWNERSHIP MODAL (LIVE USER SEARCH)
+    // =========================================================================
+    const transferModalEl = document.getElementById('adminVpnTransferOwnerModal');
+    const transferForm = document.getElementById('adminVpnTransferOwnerForm');
+    const transferTargetInput = document.getElementById('transferTargetUserId');
+    const transferChip = document.getElementById('transferSelectedUserChip');
+    const transferSearchWrap = document.getElementById('transferUserSearchWrap');
+    const transferSearchInput = document.getElementById('transferUserSearchInput');
+    const transferResultsBox = document.getElementById('transferUserSearchResults');
+    const transferSubmitBtn = document.getElementById('btnSubmitTransferOwner');
+    let transferCurrentOwnerId = '';
+    let transferSearchTimer = null;
+
+    function resetTransferUserPicker() {
+        if (transferTargetInput) transferTargetInput.value = '';
+        if (transferSubmitBtn) transferSubmitBtn.disabled = true;
+        if (transferChip) {
+            transferChip.classList.add('d-none');
+            transferChip.classList.remove('d-flex');
+        }
+        if (transferSearchWrap) transferSearchWrap.classList.remove('d-none');
+        if (transferSearchInput) transferSearchInput.value = '';
+        highlightCurrentOwnerInTransferList();
+    }
+
+    function highlightCurrentOwnerInTransferList() {
+        transferResultsBox?.querySelectorAll('.transfer-user-item').forEach(function (item) {
+            const isSame = transferCurrentOwnerId && String(item.dataset.id) === String(transferCurrentOwnerId);
+            item.classList.toggle('opacity-50', isSame);
+            item.style.pointerEvents = isSame ? 'none' : 'auto';
+            const badge = item.querySelector('.transfer-role-badge');
+            if (badge) {
+                if (!badge.dataset.origText) badge.dataset.origText = badge.textContent;
+                badge.textContent = isSame ? @js(__('Pemilik Saat Ini')) : badge.dataset.origText;
+                badge.classList.toggle('bg-warning-subtle', isSame);
+                badge.classList.toggle('text-warning-emphasis', isSame);
+                badge.classList.toggle('bg-secondary-subtle', !isSame);
+            }
+        });
+    }
+
+    function selectTransferUser(id, name, username, tg) {
+        if (transferCurrentOwnerId && String(id) === String(transferCurrentOwnerId)) return;
+        if (transferTargetInput) transferTargetInput.value = id;
+        if (transferSubmitBtn) transferSubmitBtn.disabled = false;
+        document.getElementById('transferSelectedUserName').textContent = name || '-';
+        document.getElementById('transferSelectedUserDetail').textContent = (username ? '@' + username : '') + (tg && tg !== '-' ? ' • TG: ' + tg : '');
+        transferChip?.classList.remove('d-none');
+        transferChip?.classList.add('d-flex');
+        transferSearchWrap?.classList.add('d-none');
+    }
+
+    function bindTransferUserClicks() {
+        transferResultsBox?.querySelectorAll('.transfer-user-item').forEach(function (item) {
+            item.addEventListener('click', function () {
+                selectTransferUser(this.dataset.id, this.dataset.name, this.dataset.username, this.dataset.tg);
+            });
+        });
+        highlightCurrentOwnerInTransferList();
+    }
+    bindTransferUserClicks();
+
+    function openTransferOwnerModal(opts) {
+        if (!transferModalEl || !transferForm) return;
+        transferForm.action = opts.action || '';
+        transferCurrentOwnerId = String(opts.ownerId || '');
+        document.getElementById('transferVpnSub').textContent = (opts.protocol || '-') + ' • ' + (opts.server || '-');
+        document.getElementById('transferVpnUserBadge').textContent = opts.username || '-';
+        const ownerLabel = (opts.ownerName || '-') + (opts.ownerUsername ? ' (@' + opts.ownerUsername + ')' : '');
+        document.getElementById('transferCurrentOwnerName').textContent = ownerLabel;
+        const noteEl = document.getElementById('transferOwnerNote');
+        if (noteEl) noteEl.value = '';
+        const notifyEl = document.getElementById('transferNotifyNewOwner');
+        if (notifyEl) notifyEl.checked = true;
+        resetTransferUserPicker();
+        bootstrap.Modal.getOrCreateInstance(transferModalEl).show();
+    }
+
+    document.querySelectorAll('.btn-open-vpn-transfer').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            openTransferOwnerModal({
+                action: this.dataset.action,
+                username: this.dataset.username,
+                protocol: this.dataset.protocol,
+                server: this.dataset.server,
+                ownerId: this.dataset.ownerId,
+                ownerName: this.dataset.ownerName,
+                ownerUsername: this.dataset.ownerUsername,
+            });
+        });
+    });
+
+    document.getElementById('sheetBtnTransferOwner')?.addEventListener('click', function () {
+        if (!activeSheetData || !activeSheetData.transferUrl) return;
+        bootstrap.Modal.getOrCreateInstance(sheetModalEl).hide();
+        openTransferOwnerModal({
+            action: activeSheetData.transferUrl,
+            username: activeSheetData.username,
+            protocol: activeSheetData.protocol,
+            server: activeSheetData.server,
+            ownerId: activeSheetData.ownerId,
+            ownerName: activeSheetData.ownerName,
+            ownerUsername: activeSheetData.ownerUsername,
+        });
+    });
+
+    document.getElementById('btnClearTransferUser')?.addEventListener('click', function () {
+        resetTransferUserPicker();
+        transferSearchInput?.focus();
+    });
+
+    transferSearchInput?.addEventListener('input', function () {
+        const q = this.value.trim();
+        clearTimeout(transferSearchTimer);
+        transferSearchTimer = setTimeout(async function () {
+            if (!transferResultsBox) return;
+            transferResultsBox.innerHTML = '<div class="p-2 text-center text-muted small"><i class="fas fa-spinner fa-spin me-1"></i>{{ __("Mencari...") }}</div>';
+            try {
+                const res = await fetch("{{ route('admin.stock.search-customers') }}?q=" + encodeURIComponent(q), {
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                const users = await res.json();
+                if (!Array.isArray(users) || users.length === 0) {
+                    transferResultsBox.innerHTML = '<div class="p-2 text-center text-muted small">{{ __("User tidak ditemukan.") }}</div>';
+                    return;
+                }
+                transferResultsBox.innerHTML = users.map(u => {
+                    const name = escHtml(u.full_name || u.username || ('User #' + u.id));
+                    const uname = escHtml(u.username || '');
+                    const tg = escHtml(u.telegram_id || '-');
+                    const role = escHtml((u.role || 'customer').charAt(0).toUpperCase() + (u.role || 'customer').slice(1));
+                    return `
+                        <div class="transfer-user-item d-flex align-items-center justify-content-between p-2 rounded-2"
+                             style="cursor: pointer;"
+                             data-id="${u.id}" data-name="${name}" data-username="${uname}" data-tg="${tg}">
+                            <div class="min-w-0">
+                                <div class="small fw-semibold text-body text-truncate">${name}</div>
+                                <div class="text-muted text-truncate" style="font-size: 0.7rem;">
+                                    ${uname ? '@' + uname : ''}${tg !== '-' ? ' &bull; TG: <code>' + tg + '</code>' : ''}
+                                </div>
+                            </div>
+                            <span class="badge bg-secondary-subtle text-body rounded-pill flex-shrink-0 transfer-role-badge" style="font-size: 0.65rem;">${role}</span>
+                        </div>
+                    `;
+                }).join('');
+                bindTransferUserClicks();
+            } catch (e) {
+                transferResultsBox.innerHTML = '<div class="p-2 text-center text-danger small">{{ __("Gagal memuat daftar user.") }}</div>';
+            }
+        }, 300);
     });
 });
 </script>

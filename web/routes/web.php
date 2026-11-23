@@ -479,6 +479,7 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
             Route::post('/sync-server', [\App\Http\Controllers\Admin\VpnAccountController::class, 'syncServer'])->name('sync-server');
             Route::post('/sync-traffic', [\App\Http\Controllers\Admin\VpnAccountController::class, 'syncTraffic'])->name('sync-traffic');
             Route::post('/{id}/notify-expiring', [\App\Http\Controllers\Admin\VpnAccountController::class, 'notifyExpiring'])->whereNumber('id')->name('notify-expiring');
+            Route::post('/{id}/transfer-owner', [\App\Http\Controllers\Admin\VpnAccountController::class, 'transferOwner'])->whereNumber('id')->name('transfer-owner');
             Route::post('/{id}/renew', [\App\Http\Controllers\Admin\VpnAccountController::class, 'renew'])->whereNumber('id')->name('renew');
             Route::post('/{id}/suspend', [\App\Http\Controllers\Admin\VpnAccountController::class, 'suspend'])->whereNumber('id')->name('suspend');
             Route::post('/{id}/unsuspend', [\App\Http\Controllers\Admin\VpnAccountController::class, 'unsuspend'])->whereNumber('id')->name('unsuspend');

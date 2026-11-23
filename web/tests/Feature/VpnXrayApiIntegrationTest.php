@@ -1637,4 +1637,184 @@ class VpnXrayApiIntegrationTest extends TestCase
             ->assertSee('progress-bar')  // Quota bar rendered for quota_gb=10
             ->assertSee('6.00 GB');
     }
+
+    public function test_admin_can_transfer_vpn_account_ownership_and_new_owner_manages_it_in_my_vpn(): void
+    {
+        $newOwner = User::create([
+            'username' => 'newowner_vpn',
+            'full_name' => 'Pemilik Baru VPN',
+            'email' => 'newowner@test.local',
+            'password' => bcrypt('secret123'),
+            'role' => 'customer',
+        ]);
+
+        $order = Order::create([
+            'order_ref' => 'ORD-XFER-01',
+            'customer_id' => $this->customer->id,
+            'subtotal' => 15000,
+            'discount_amount' => 0,
+            'unique_code' => 11,
+            'total_amount' => 15011,
+            'status' => 'delivered',
+            'delivered_at' => now(),
+        ]);
+
+        $account = VpnAccount::create([
+            'user_id' => $this->customer->id,
+            'order_id' => $order->id,
+            'vpn_server_id' => $this->server->id,
+            'protocol' => 'vmess',
+            'username' => 'xfer_user01',
+            'uuid' => 'aaaa1111-2222-3333-4444-555566667777',
+            'config_link' => 'vmess://test-link-xfer',
+            'config_payload' => ['links' => ['tls' => 'vmess://test-link-xfer'], 'domain' => 'sg1.vpnpanel.test'],
+            'status' => 'active',
+            'expired_at' => now()->addDays(20),
+        ]);
+
+        // 1. Non-admin cannot transfer ownership (admin middleware blocks with 302 redirect & owner stays unchanged)
+        $this->actingAs($this->customer)
+            ->post(route('admin.vpn-accounts.transfer-owner', $account->id), [
+                'target_user_id' => $newOwner->id,
+            ])
+            ->assertRedirect();
+        $account->refresh();
+        $this->assertSame($this->customer->id, (int) $account->user_id);
+
+        // 2. Admin transferring to the exact same owner returns error
+        $this->actingAs($this->admin)
+            ->post(route('admin.vpn-accounts.transfer-owner', $account->id), [
+                'target_user_id' => $this->customer->id,
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('error');
+
+        // 3. Admin transfers ownership to $newOwner with notification enabled
+        $this->actingAs($this->admin)
+            ->post(route('admin.vpn-accounts.transfer-owner', $account->id), [
+                'target_user_id' => $newOwner->id,
+                'notify_new_owner' => 1,
+                'note' => 'Permintaan pindah akun',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $account->refresh();
+        $order->refresh();
+        $this->assertSame($newOwner->id, (int) $account->user_id);
+        // Original order history stays with original buyer for accurate financial reporting
+        $this->assertSame($this->customer->id, (int) $order->customer_id);
+
+        // 4. Audit log & Notification Hub entry created for new owner
+        $this->assertDatabaseHas('audit_logs', [
+            'action' => 'admin_vpn_transfer_owner',
+            'entity_type' => 'vpn_account',
+            'entity_id' => $account->id,
+        ]);
+        $this->assertSame(1, $newOwner->notifications()->count());
+        $notifData = $newOwner->notifications()->first()->data;
+        $this->assertSame('vpn_owner_transferred', $notifData['type'] ?? null);
+
+        // 5. New owner sees & manages the VPN account in /my-vpn; old owner loses access
+        $this->actingAs($newOwner)
+            ->get(route('vpn.my-accounts'))
+            ->assertStatus(200)
+            ->assertSee('xfer_user01');
+
+        $this->actingAs($newOwner)
+            ->getJson(route('vpn.config', $account->id))
+            ->assertStatus(200)
+            ->assertJsonPath('success', true);
+
+        $this->actingAs($this->customer)
+            ->get(route('vpn.my-accounts'))
+            ->assertStatus(200)
+            ->assertDontSee('xfer_user01');
+
+        $this->actingAs($this->customer)
+            ->getJson(route('vpn.config', $account->id))
+            ->assertStatus(404);
+
+        // 6. Admin page renders transfer modal & button cleanly
+        $this->actingAs($this->admin)
+            ->get(route('admin.vpn-accounts.index'))
+            ->assertStatus(200)
+            ->assertSee('adminVpnTransferOwnerModal')
+            ->assertSee('Ubah Pemilik');
+    }
+
+    public function test_vpn_products_are_hidden_and_blocked_in_stock_management(): void
+    {
+        $digitalProd = Product::create([
+            'name' => 'Akun Digital Reguler',
+            'price' => 25000,
+            'is_suspended' => false,
+            'is_vpn' => false,
+        ]);
+
+        $vpnProd = Product::create([
+            'name' => 'Paket VPN Eksklusif SG',
+            'price' => 15000,
+            'is_suspended' => false,
+            'is_vpn' => true,
+            'vpn_protocol' => 'vmess',
+            'vpn_duration_days' => 30,
+        ]);
+
+        // 1. Admin stock page hides VPN products from product dropdowns and shows regular digital product
+        $this->actingAs($this->admin)
+            ->get(route('admin.stock.index'))
+            ->assertStatus(200)
+            ->assertSee('Akun Digital Reguler')
+            ->assertDontSee('Paket VPN Eksklusif SG');
+
+        // 2. Backend rejects adding stock to a VPN product with a clear error message
+        $this->actingAs($this->admin)
+            ->post(route('admin.stock.store'), [
+                'product_id' => $vpnProd->id,
+                'stock_status' => 'ready',
+                'raw_text' => 'user: test_should_block',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('error');
+
+        $this->assertSame(0, \App\Models\StockUnit::where('product_id', $vpnProd->id)->count());
+
+        // 3. Backend also rejects editing, moving, or bulk-moving existing stock onto a VPN product
+        $unit = \App\Models\StockUnit::create([
+            'product_id' => $digitalProd->id,
+            'raw_text' => 'email: regular@example.com',
+            'stock_status' => 'ready',
+            'is_sold' => false,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->put(route('admin.stock.update', $unit->id), [
+                'product_id' => $vpnProd->id,
+                'stock_status' => 'ready',
+                'raw_text' => 'email: regular@example.com',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('error');
+
+        $this->actingAs($this->admin)
+            ->put(route('admin.stock.move', $unit->id), [
+                'product_id' => $vpnProd->id,
+                'stock_status' => 'ready',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('error');
+
+        $this->actingAs($this->admin)
+            ->post(route('admin.stock.bulkMove'), [
+                'ids' => json_encode([$unit->id]),
+                'product_id' => $vpnProd->id,
+                'stock_status' => 'ready',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('error');
+
+        $unit->refresh();
+        $this->assertSame($digitalProd->id, (int) $unit->product_id);
+    }
 }
