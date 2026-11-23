@@ -92,6 +92,13 @@
         {{-- Contextual actions for Accounts Tab --}}
         <div id="vpnHeaderActionsAccounts" class="d-flex flex-wrap gap-2 {{ $isServerTab ? 'd-none' : '' }}">
             @if($servers->where('driver', 'vpnxray_api')->isNotEmpty())
+            <form action="{{ route('admin.vpn-accounts.sync-traffic') }}" method="POST" class="d-inline m-0">
+                @csrf
+                <button type="submit" class="btn btn-outline-secondary rounded-pill px-3 fw-semibold btn-sm d-inline-flex align-items-center gap-1.5" title="{{ __('Perbarui statistik Upload & Download dari server VPN') }}">
+                    <i class="fas fa-chart-line"></i>
+                    <span>{{ __('Refresh Traffic') }}</span>
+                </button>
+            </form>
             <button type="button" class="btn btn-outline-primary rounded-pill px-3 fw-semibold btn-sm d-inline-flex align-items-center gap-1.5" data-bs-toggle="modal" data-bs-target="#syncServerModal">
                 <i class="fas fa-rotate"></i>
                 <span>{{ __('Sync Panel') }}</span>
@@ -156,29 +163,57 @@
     {{-- ===================================================================== --}}
     <div class="tab-pane fade {{ !$isServerTab ? 'show active' : '' }}" id="pane-vpn-accounts" role="tabpanel" aria-labelledby="tab-vpn-accounts-btn">
         {{-- KPI Summary --}}
-        <div class="row g-2 g-md-3 mb-3">
-            <div class="col-6 col-md-3">
+        @php
+            $trafficRangeLabel = match($trafficRange ?? 'all') {
+                'today' => __('Hari Ini'),
+                '7d' => __('7 Hari'),
+                '30d' => __('30 Hari'),
+                'month' => __('Bulan Ini'),
+                default => __('Semua Waktu'),
+            };
+        @endphp
+        <div class="row row-cols-2 row-cols-md-3 row-cols-xl-5 g-2 g-md-3 mb-3">
+            <div class="col">
                 <div class="card h-100"><div class="card-body p-3">
                     <div class="text-muted small fw-semibold">{{ __('Total Akun') }}</div>
                     <div class="fs-4 fw-bold text-body">{{ $stats['total'] }}</div>
                 </div></div>
             </div>
-            <div class="col-6 col-md-3">
+            <div class="col">
                 <div class="card h-100"><div class="card-body p-3">
                     <div class="text-muted small fw-semibold">{{ __('Aktif') }}</div>
                     <div class="fs-4 fw-bold text-success">{{ $stats['active'] }}</div>
                 </div></div>
             </div>
-            <div class="col-6 col-md-3">
+            <div class="col">
+                <a href="{{ route('admin.vpn-accounts.index', ['tab' => 'accounts', 'status' => 'expiring_soon', 'traffic_range' => $trafficRange ?? 'all']) }}" class="text-decoration-none">
+                    <div class="card h-100 {{ ($stats['expiring_soon'] ?? 0) > 0 ? 'border-warning' : '' }}"><div class="card-body p-3">
+                        <div class="text-muted small fw-semibold d-flex align-items-center justify-content-between">
+                            <span>{{ __('Hampir Expired') }}</span>
+                            <i class="fas fa-clock text-warning"></i>
+                        </div>
+                        <div class="fs-4 fw-bold {{ ($stats['expiring_soon'] ?? 0) > 0 ? 'text-warning-emphasis' : 'text-body' }}">{{ $stats['expiring_soon'] ?? 0 }}</div>
+                        <div class="text-muted" style="font-size: 0.7rem;">{{ __('≤ 3 hari lagi') }}</div>
+                    </div></div>
+                </a>
+            </div>
+            <div class="col">
                 <div class="card h-100"><div class="card-body p-3">
-                    <div class="text-muted small fw-semibold">{{ __('Disuspend') }}</div>
-                    <div class="fs-4 fw-bold text-warning">{{ $stats['suspended'] }}</div>
+                    <div class="text-muted small fw-semibold">{{ __('Suspend / Gagal') }}</div>
+                    <div class="fs-4 fw-bold text-warning">{{ $stats['suspended'] }} <span class="fs-6 text-danger fw-semibold">/ {{ $stats['failed'] }}</span></div>
                 </div></div>
             </div>
-            <div class="col-6 col-md-3">
-                <div class="card h-100"><div class="card-body p-3">
-                    <div class="text-muted small fw-semibold">{{ __('Gagal / Pending') }}</div>
-                    <div class="fs-4 fw-bold text-danger">{{ $stats['failed'] }}</div>
+            <div class="col col-12 col-md-6 col-xl">
+                <div class="card h-100 border-primary-subtle"><div class="card-body p-3">
+                    <div class="text-muted small fw-semibold d-flex align-items-center justify-content-between gap-1">
+                        <span>{{ __('Total Traffic') }}</span>
+                        <span class="badge bg-primary-subtle text-primary rounded-pill" style="font-size: 0.65rem;">{{ $trafficRangeLabel }}</span>
+                    </div>
+                    <div class="fs-5 fw-bold text-primary">{{ \App\Models\VpnAccount::formatBytes((int) ($trafficSummary['total_bytes'] ?? 0)) }}</div>
+                    <div class="d-flex flex-wrap gap-2 mt-0.5" style="font-size: 0.72rem;">
+                        <span class="text-info fw-semibold" title="{{ __('Total Upload') }}"><i class="fas fa-arrow-up me-0.5"></i>{{ \App\Models\VpnAccount::formatBytes((int) ($trafficSummary['total_uplink'] ?? 0)) }}</span>
+                        <span class="text-success fw-semibold" title="{{ __('Total Download') }}"><i class="fas fa-arrow-down me-0.5"></i>{{ \App\Models\VpnAccount::formatBytes((int) ($trafficSummary['total_downlink'] ?? 0)) }}</span>
+                    </div>
                 </div></div>
             </div>
         </div>
@@ -188,7 +223,7 @@
             <div class="card-body p-3">
                 <form action="{{ route('admin.vpn-accounts.index') }}" method="GET" class="row g-2 align-items-center">
                     <input type="hidden" name="tab" value="accounts">
-                    <div class="col-12 col-md-4">
+                    <div class="col-12 col-md-3">
                         <input type="text" name="search" class="form-control form-control-sm" value="{{ request('search') }}" placeholder="{{ __('Cari username, pemilik, atau ref order...') }}">
                     </div>
                     <div class="col-6 col-md-2">
@@ -211,14 +246,24 @@
                         <select name="status" class="form-select form-select-sm">
                             <option value="">{{ __('Semua Status') }}</option>
                             <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>{{ __('Aktif') }}</option>
+                            <option value="expiring_soon" {{ request('status') === 'expiring_soon' ? 'selected' : '' }}>{{ __('Hampir Expired (≤ 3 Hari)') }}</option>
                             <option value="suspended" {{ request('status') === 'suspended' ? 'selected' : '' }}>{{ __('Disuspend') }}</option>
                             <option value="expired" {{ request('status') === 'expired' ? 'selected' : '' }}>{{ __('Expired') }}</option>
                             <option value="failed" {{ request('status') === 'failed' ? 'selected' : '' }}>{{ __('Gagal') }}</option>
                         </select>
                     </div>
-                    <div class="col-6 col-md-2 d-flex gap-1.5">
+                    <div class="col-6 col-md-2">
+                        <select name="traffic_range" class="form-select form-select-sm" title="{{ __('Rentang Waktu Traffic') }}">
+                            <option value="all" {{ ($trafficRange ?? 'all') === 'all' ? 'selected' : '' }}>{{ __('Traffic: Semua Waktu') }}</option>
+                            <option value="today" {{ ($trafficRange ?? 'all') === 'today' ? 'selected' : '' }}>{{ __('Traffic: Hari Ini') }}</option>
+                            <option value="7d" {{ ($trafficRange ?? 'all') === '7d' ? 'selected' : '' }}>{{ __('Traffic: 7 Hari Terakhir') }}</option>
+                            <option value="30d" {{ ($trafficRange ?? 'all') === '30d' ? 'selected' : '' }}>{{ __('Traffic: 30 Hari Terakhir') }}</option>
+                            <option value="month" {{ ($trafficRange ?? 'all') === 'month' ? 'selected' : '' }}>{{ __('Traffic: Bulan Ini') }}</option>
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-1 d-flex gap-1">
                         <button type="submit" class="btn btn-primary btn-sm rounded-pill flex-grow-1 fw-semibold">{{ __('Filter') }}</button>
-                        @if(request()->hasAny(['search', 'server_id', 'protocol', 'status']))
+                        @if(request()->hasAny(['search', 'server_id', 'protocol', 'status']) || ($trafficRange ?? 'all') !== 'all')
                             <a href="{{ route('admin.vpn-accounts.index', ['tab' => 'accounts']) }}" class="btn btn-light btn-sm rounded-pill border"><i class="fas fa-times"></i></a>
                         @endif
                     </div>
@@ -245,6 +290,7 @@
                                 <th>{{ __('Pemilik') }}</th>
                                 <th>{{ __('Server') }}</th>
                                 <th>{{ __('Kuota / IP') }}</th>
+                                <th>{{ __('Traffic (↑ / ↓)') }}</th>
                                 <th>{{ __('Masa Aktif') }}</th>
                                 <th>{{ __('Status') }}</th>
                                 <th class="text-end pe-3">{{ __('Aksi') }}</th>
@@ -255,6 +301,9 @@
                             @php
                                 $isExpired = $acc->expired_at && $acc->expired_at->isPast();
                                 $isFailedOrProv = in_array($acc->status, ['failed', 'provisioning']);
+                                $expHl = $acc->getExpiryHighlight();
+                                $quotaInfo = $acc->getQuotaUsage();
+                                $accTraffic = $trafficSummary['per_account'][$acc->id] ?? ['uplink' => 0, 'downlink' => 0, 'total' => 0];
                                 $badge = match(true) {
                                     $acc->status === 'failed' => ['bg' => 'danger-subtle', 'text' => 'danger', 'label' => __('Gagal')],
                                     $acc->status === 'provisioning' => ['bg' => 'info-subtle', 'text' => 'info', 'label' => __('Provisioning')],
@@ -282,14 +331,39 @@
                                     <div class="fw-semibold text-body">{{ $acc->vpnServer?->name ?: __('Legacy/Default') }}</div>
                                     <div class="text-muted font-monospace" style="font-size: 0.72rem;">{{ $acc->display_domain }}</div>
                                 </td>
-                                <td class="small">
-                                    <div>{{ ($acc->quota_gb ?? 0) > 0 ? $acc->quota_gb . ' GB' : 'Unlimited' }}</div>
-                                    <div class="text-muted">{{ max(1, (int) ($acc->ip_limit ?? 1)) }} IP</div>
+                                <td class="small" style="min-width: 130px;">
+                                    <div class="d-flex align-items-center justify-content-between gap-1">
+                                        <span>{{ $quotaInfo['limited'] ? $acc->quota_gb . ' GB' : 'Unlimited' }}</span>
+                                        <span class="text-muted">{{ max(1, (int) ($acc->ip_limit ?? 1)) }} IP</span>
+                                    </div>
+                                    @if($quotaInfo['limited'])
+                                        <div class="progress mt-1" style="height: 6px; border-radius: 999px;" title="{{ __('Terpakai :used / :tot (:pct%)', ['used' => \App\Models\VpnAccount::formatBytes($quotaInfo['used_bytes']), 'tot' => $acc->quota_gb . ' GB', 'pct' => $quotaInfo['used_percent']]) }}">
+                                            <div class="progress-bar {{ $quotaInfo['bar_class'] }}" role="progressbar" style="width: {{ $quotaInfo['remaining_percent'] }}%;"></div>
+                                        </div>
+                                        <div class="{{ $quotaInfo['text_class'] }} mt-0.5" style="font-size: 0.68rem;">
+                                            {{ __('Sisa :rem', ['rem' => \App\Models\VpnAccount::formatBytes($quotaInfo['remaining_bytes'])]) }} ({{ $quotaInfo['remaining_percent'] }}%)
+                                        </div>
+                                    @endif
+                                </td>
+                                <td class="small" style="min-width: 118px;">
+                                    <div class="text-info fw-semibold" style="font-size: 0.76rem;" title="{{ __('Upload') }}">
+                                        <i class="fas fa-arrow-up me-1"></i>{{ \App\Models\VpnAccount::formatBytes((int) $accTraffic['uplink']) }}
+                                    </div>
+                                    <div class="text-success fw-semibold" style="font-size: 0.76rem;" title="{{ __('Download') }}">
+                                        <i class="fas fa-arrow-down me-1"></i>{{ \App\Models\VpnAccount::formatBytes((int) $accTraffic['downlink']) }}
+                                    </div>
                                 </td>
                                 <td class="small">
-                                    <div class="fw-semibold text-body">{{ $acc->expired_at ? $acc->expired_at->format('d M Y') : '-' }}</div>
-                                    @if($acc->expired_at)
-                                        <div class="text-muted" style="font-size: 0.72rem;">{{ $acc->expired_at->diffForHumans() }}</div>
+                                    @if($expHl['level'] !== 'normal')
+                                        <div class="d-inline-block px-2 py-1 rounded-3 {{ $expHl['pill_class'] }}">
+                                            <div class="fw-bold" style="font-size: 0.78rem;">{{ $acc->expired_at ? $acc->expired_at->format('d M Y') : '-' }}</div>
+                                            <div style="font-size: 0.68rem;"><i class="fas {{ $expHl['level'] === 'warning' ? 'fa-clock' : 'fa-exclamation-triangle' }} me-1"></i>{{ $expHl['label'] }}</div>
+                                        </div>
+                                    @else
+                                        <div class="fw-semibold text-body">{{ $acc->expired_at ? $acc->expired_at->format('d M Y') : '-' }}</div>
+                                        @if($acc->expired_at)
+                                            <div class="text-muted" style="font-size: 0.72rem;">{{ $expHl['label'] }}</div>
+                                        @endif
                                     @endif
                                 </td>
                                 <td>
@@ -346,6 +420,29 @@
                                                         <span>{{ __('Lihat Config & QR Code') }}</span>
                                                     </button>
                                                 </li>
+                                                @if(!$isFailedOrProv)
+                                                <li>
+                                                    <button type="button"
+                                                            class="dropdown-item py-2 d-flex align-items-center gap-2 btn-open-vpn-devices"
+                                                            data-url="{{ route('admin.vpn-accounts.devices', $acc->id) }}"
+                                                            data-username="{{ $acc->username }}"
+                                                            data-protocol="{{ strtoupper($acc->protocol) }}">
+                                                        <i class="fas fa-satellite-dish text-primary fa-fw"></i>
+                                                        <span>{{ __('Pantau Log Device') }}</span>
+                                                    </button>
+                                                </li>
+                                                @if($acc->user)
+                                                <li>
+                                                    <form action="{{ route('admin.vpn-accounts.notify-expiring', $acc->id) }}" method="POST" class="m-0">
+                                                        @csrf
+                                                        <button type="submit" class="dropdown-item py-2 d-flex align-items-center gap-2 text-warning-emphasis">
+                                                            <i class="fas fa-bell text-warning fa-fw"></i>
+                                                            <span>{{ __('Kirim Pengingat Expired') }}</span>
+                                                        </button>
+                                                    </form>
+                                                </li>
+                                                @endif
+                                                @endif
                                                 @if(!$isFailedOrProv)
                                                     @if($acc->status === 'suspended')
                                                     <li>
@@ -416,10 +513,15 @@
                 @php
                     $isExpired = $acc->expired_at && $acc->expired_at->isPast();
                     $isFailedOrProv = in_array($acc->status, ['failed', 'provisioning']);
+                    $expHl = $acc->getExpiryHighlight();
+                    $quotaInfo = $acc->getQuotaUsage();
+                    $accTraffic = $trafficSummary['per_account'][$acc->id] ?? ['uplink' => 0, 'downlink' => 0, 'total' => 0];
                     $dotColor = match(true) {
                         $acc->status === 'failed' => 'bg-danger',
                         $acc->status === 'suspended' => 'bg-warning',
                         $isExpired || $acc->status === 'expired' => 'bg-secondary',
+                        $expHl['level'] === 'critical' => 'bg-danger',
+                        $expHl['level'] === 'warning' => 'bg-warning',
                         default => 'bg-success',
                     };
                     $statusLabel = match(true) {
@@ -442,9 +544,13 @@
                                 <div class="fw-bold text-body font-monospace text-truncate d-flex align-items-center gap-1.5" style="font-size: 0.9rem;">
                                     <span class="text-truncate">{{ $acc->username }}</span>
                                     <span class="badge bg-primary-subtle text-primary rounded-pill flex-shrink-0" style="font-size: 0.62rem;">{{ strtoupper($acc->protocol) }}</span>
+                                    @if($expHl['level'] !== 'normal')
+                                        <span class="badge {{ $expHl['pill_class'] }} rounded-pill flex-shrink-0" style="font-size: 0.6rem;">{{ $expHl['label'] }}</span>
+                                    @endif
                                 </div>
                                 <div class="text-muted text-truncate" style="font-size: 0.74rem;">
-                                    {{ $acc->user?->full_name ?: $acc->user?->username ?: '-' }} &bull; Exp: {{ $acc->expired_at ? $acc->expired_at->format('d M Y') : '-' }}
+                                    {{ $acc->user?->full_name ?: $acc->user?->username ?: '-' }} &bull;
+                                    <span class="{{ $expHl['level'] !== 'normal' ? $expHl['text_class'] : '' }}">Exp: {{ $acc->expired_at ? $acc->expired_at->format('d M Y') : '-' }}</span>
                                 </div>
                             </div>
                             <i class="fas fa-chevron-down m3-compact-chevron"></i>
@@ -454,7 +560,20 @@
                         <div class="m3-collapsible-body">
                             <div class="small mb-2.5 d-flex flex-column gap-1">
                                 <div><span class="text-muted">{{ __('Server:') }}</span> <strong>{{ $acc->vpnServer?->name ?: __('Default') }}</strong> <span class="font-monospace text-muted">({{ $acc->display_domain }})</span></div>
-                                <div><span class="text-muted">{{ __('Limit:') }}</span> {{ ($acc->quota_gb ?? 0) > 0 ? $acc->quota_gb . ' GB' : 'Unlimited' }} &bull; {{ max(1, (int) ($acc->ip_limit ?? 1)) }} IP</div>
+                                <div>
+                                    <span class="text-muted">{{ __('Limit:') }}</span> {{ $quotaInfo['limited'] ? $acc->quota_gb . ' GB' : 'Unlimited' }} &bull; {{ max(1, (int) ($acc->ip_limit ?? 1)) }} IP
+                                    @if($quotaInfo['limited'])
+                                        <div class="progress mt-1" style="height: 6px; border-radius: 999px;">
+                                            <div class="progress-bar {{ $quotaInfo['bar_class'] }}" role="progressbar" style="width: {{ $quotaInfo['remaining_percent'] }}%;"></div>
+                                        </div>
+                                        <div class="{{ $quotaInfo['text_class'] }}" style="font-size: 0.7rem;">{{ __('Sisa Kuota:') }} {{ \App\Models\VpnAccount::formatBytes($quotaInfo['remaining_bytes']) }} / {{ $acc->quota_gb }} GB ({{ $quotaInfo['remaining_percent'] }}%)</div>
+                                    @endif
+                                </div>
+                                <div>
+                                    <span class="text-muted">{{ __('Traffic') }} ({{ $trafficRangeLabel }}):</span>
+                                    <span class="text-info fw-semibold ms-1"><i class="fas fa-arrow-up"></i> {{ \App\Models\VpnAccount::formatBytes((int) $accTraffic['uplink']) }}</span>
+                                    <span class="text-success fw-semibold ms-2"><i class="fas fa-arrow-down"></i> {{ \App\Models\VpnAccount::formatBytes((int) $accTraffic['downlink']) }}</span>
+                                </div>
                                 @if($acc->isAdminSuspended())
                                     <div class="text-danger fw-semibold mt-1"><i class="fas fa-lock me-1"></i>{{ __('Disuspend Admin:') }} {{ $acc->suspended_reason }}</div>
                                 @elseif($acc->status === 'failed' && $acc->last_error)
@@ -486,6 +605,8 @@
                                         data-status="{{ $acc->status }}"
                                         data-status-label="{{ $statusLabel }}"
                                         data-config-url="{{ route('admin.vpn-accounts.config', $acc->id) }}"
+                                        data-devices-url="{{ route('admin.vpn-accounts.devices', $acc->id) }}"
+                                        data-notify-url="{{ $acc->user ? route('admin.vpn-accounts.notify-expiring', $acc->id) : '' }}"
                                         data-payload='@json($acc->config_payload)'
                                         data-text="{{ $acc->config_link }}"
                                         data-suspend-url="{{ route('admin.vpn-accounts.suspend', $acc->id) }}"
@@ -767,6 +888,31 @@
                         <i class="fas fa-chevron-right text-muted small"></i>
                     </button>
 
+                    <button type="button" class="m3-sheet-action-tile" id="sheetBtnDevices">
+                        <span class="m3-sheet-action-icon bg-primary-subtle text-primary">
+                            <i class="fas fa-satellite-dish"></i>
+                        </span>
+                        <span class="m3-sheet-action-text">
+                            <span class="m3-sheet-action-title">{{ __('Pantau Log Device') }}</span>
+                            <span class="m3-sheet-action-sub">{{ __('Lihat IP aktif, riwayat koneksi & status strike limit') }}</span>
+                        </span>
+                        <i class="fas fa-chevron-right text-muted small"></i>
+                    </button>
+
+                    <form id="sheetFormNotify" method="POST" class="d-none m-0">
+                        @csrf
+                        <button type="submit" class="m3-sheet-action-tile">
+                            <span class="m3-sheet-action-icon bg-warning-subtle text-warning-emphasis">
+                                <i class="fas fa-bell"></i>
+                            </span>
+                            <span class="m3-sheet-action-text">
+                                <span class="m3-sheet-action-title">{{ __('Kirim Pengingat Expired') }}</span>
+                                <span class="m3-sheet-action-sub">{{ __('Kirim notifikasi Telegram (Renew) & Notification Hub') }}</span>
+                            </span>
+                            <i class="fas fa-chevron-right text-muted small"></i>
+                        </button>
+                    </form>
+
                     <button type="button" class="m3-sheet-action-tile" id="sheetBtnSuspend">
                         <span class="m3-sheet-action-icon bg-warning-subtle text-warning-emphasis">
                             <i class="fas fa-ban"></i>
@@ -835,6 +981,96 @@
                         </button>
                     </form>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- ===================================================================== --}}
+{{-- ADMIN DEVICE ACTIVITY LOG MODAL (LAZY AJAX ON-DEMAND)                 --}}
+{{-- ===================================================================== --}}
+<div class="modal fade" id="adminVpnDeviceLogModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg m3-sheet-modal">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 22px;">
+            <div class="m3-sheet-handle d-md-none"></div>
+            <div class="modal-header border-0 pb-1">
+                <div>
+                    <h5 class="modal-title fw-bold mb-0 d-flex align-items-center gap-2">
+                        <i class="fas fa-satellite-dish text-primary"></i>
+                        <span id="devLogModalTitle">{{ __('Log Device VPN') }}</span>
+                    </h5>
+                    <div class="small text-muted" id="devLogModalSub">-</div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body pt-2">
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                    <div class="btn-group btn-group-sm" role="group" aria-label="{{ __('Rentang Log') }}">
+                        <button type="button" class="btn btn-outline-primary btn-devlog-window" data-window="5">5 {{ __('Menit') }}</button>
+                        <button type="button" class="btn btn-outline-primary btn-devlog-window active" data-window="60">1 {{ __('Jam') }}</button>
+                        <button type="button" class="btn btn-outline-primary btn-devlog-window" data-window="1440">24 {{ __('Jam') }}</button>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-light border rounded-pill px-3 fw-semibold" id="btnRefreshDevLog">
+                        <i class="fas fa-rotate me-1"></i>{{ __('Refresh') }}
+                    </button>
+                </div>
+
+                <div id="devLogLoading" class="text-center py-4 d-none">
+                    <div class="spinner-border text-primary mb-2" role="status"></div>
+                    <div class="small text-muted">{{ __('Membaca log perangkat dari server VPN...') }}</div>
+                </div>
+
+                <div id="devLogError" class="alert alert-danger border-0 small d-none" style="border-radius: 14px;"></div>
+
+                <div id="devLogContent" class="d-none">
+                    <div class="row g-2 mb-3">
+                        <div class="col-4">
+                            <div class="p-2.5 rounded-4 border text-center" style="background: var(--surface-container-low);">
+                                <div class="text-muted" style="font-size: 0.7rem;">{{ __('Online Sekarang') }}</div>
+                                <div class="fs-5 fw-bold text-success" id="devLogOnlineCount">0 / 1</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="p-2.5 rounded-4 border text-center" style="background: var(--surface-container-low);">
+                                <div class="text-muted" style="font-size: 0.7rem;">{{ __('IP Terdeteksi') }}</div>
+                                <div class="fs-5 fw-bold text-body" id="devLogRecentCount">0</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="p-2.5 rounded-4 border text-center" style="background: var(--surface-container-low);">
+                                <div class="text-muted" style="font-size: 0.7rem;">{{ __('Strike Limit') }}</div>
+                                <div class="fs-5 fw-bold text-warning-emphasis" id="devLogStrikeCount">0 / 5</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="devLogEmpty" class="text-center text-muted small py-3 d-none">
+                        <i class="fas fa-check-circle text-success me-1"></i>{{ __('Belum ada aktivitas perangkat tercatat pada rentang waktu ini.') }}
+                    </div>
+
+                    <div class="table-responsive rounded-3 border mb-3 d-none" id="devLogTableWrap">
+                        <table class="table table-sm table-hover align-middle mb-0 small">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-3">{{ __('IP / Sesi') }}</th>
+                                    <th>{{ __('Status') }}</th>
+                                    <th>{{ __('Sumber') }}</th>
+                                    <th>{{ __('Aktivitas') }}</th>
+                                    <th class="pe-3">{{ __('Terakhir Aktif') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody id="devLogTableBody"></tbody>
+                        </table>
+                    </div>
+
+                    <div id="devLogViolationsWrap" class="d-none">
+                        <div class="small fw-bold text-danger mb-1.5"><i class="fas fa-triangle-exclamation me-1"></i>{{ __('Riwayat Pelanggaran Limit IP (log-limit.txt)') }}</div>
+                        <div id="devLogViolationsList" class="p-2.5 rounded-3 border bg-light font-monospace" style="font-size: 0.72rem; max-height: 150px; overflow-y: auto;"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-1">
+                <button type="button" class="btn btn-primary rounded-pill px-4" data-bs-dismiss="modal">{{ __('Tutup') }}</button>
             </div>
         </div>
     </div>
@@ -1735,6 +1971,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 status: this.dataset.status || '',
                 statusLabel: this.dataset.statusLabel || '',
                 configUrl: this.dataset.configUrl || '',
+                devicesUrl: this.dataset.devicesUrl || '',
+                notifyUrl: this.dataset.notifyUrl || '',
                 payload: parsedPayload,
                 text: this.dataset.text || '',
                 suspendUrl: this.dataset.suspendUrl || '',
@@ -1750,6 +1988,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const isFailed = activeSheetData.status === 'failed' || activeSheetData.status === 'provisioning';
             const isSuspended = activeSheetData.status === 'suspended';
+
+            document.getElementById('sheetBtnDevices')?.classList.toggle('d-none', isFailed || !activeSheetData.devicesUrl);
+            const fNotify = document.getElementById('sheetFormNotify');
+            if (fNotify) {
+                fNotify.classList.toggle('d-none', isFailed || !activeSheetData.notifyUrl);
+                fNotify.action = activeSheetData.notifyUrl;
+            }
 
             document.getElementById('sheetBtnSuspend').classList.toggle('d-none', isFailed || isSuspended);
             const fUnsusp = document.getElementById('sheetFormUnsuspend');
@@ -2212,6 +2457,134 @@ document.addEventListener('DOMContentLoaded', function () {
         const orig = this.innerHTML;
         this.innerHTML = '<i class="fas fa-check text-success me-1"></i>{{ __("Tersalin!") }}';
         setTimeout(() => { this.innerHTML = orig; }, 1500);
+    });
+
+    // =========================================================================
+    // 7. ADMIN DEVICE ACTIVITY LOG MODAL
+    // =========================================================================
+    let activeDevLogUrl = '';
+    let activeDevLogWindow = 60;
+    const devLogModalEl = document.getElementById('adminVpnDeviceLogModal');
+
+    async function loadVpnDeviceLogs(url, windowMinutes) {
+        if (!url || !devLogModalEl) return;
+        activeDevLogUrl = url;
+        activeDevLogWindow = windowMinutes || 60;
+
+        document.querySelectorAll('.btn-devlog-window').forEach(b => {
+            b.classList.toggle('active', parseInt(b.dataset.window, 10) === activeDevLogWindow);
+        });
+
+        const loadingEl = document.getElementById('devLogLoading');
+        const errEl = document.getElementById('devLogError');
+        const contentEl = document.getElementById('devLogContent');
+        loadingEl.classList.remove('d-none');
+        errEl.classList.add('d-none');
+        contentEl.classList.add('d-none');
+
+        try {
+            const res = await fetch(url + '?window_minutes=' + encodeURIComponent(activeDevLogWindow), {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const json = await res.json();
+            loadingEl.classList.add('d-none');
+
+            if (!res.ok || !json.success) {
+                errEl.textContent = json.message || '{{ __("Gagal mengambil log perangkat dari server VPN.") }}';
+                errEl.classList.remove('d-none');
+                return;
+            }
+
+            const acct = json.account || {};
+            const data = json.data || {};
+            document.getElementById('devLogModalSub').textContent = (acct.protocol || '-') + ' • ' + (acct.server || '-') + ' • Limit ' + (acct.ip_limit || data.ip_limit || 1) + ' IP';
+
+            const onlineCount = parseInt(data.active_device_count || 0, 10);
+            const ipLim = parseInt(data.ip_limit || acct.ip_limit || 1, 10);
+            const onlineEl = document.getElementById('devLogOnlineCount');
+            onlineEl.textContent = onlineCount + ' / ' + ipLim;
+            onlineEl.className = 'fs-5 fw-bold ' + (onlineCount > ipLim ? 'text-danger' : 'text-success');
+
+            document.getElementById('devLogRecentCount').textContent = String(data.recent_device_count || 0);
+            const strikes = parseInt(data.current_strikes || 0, 10);
+            const strikeEl = document.getElementById('devLogStrikeCount');
+            strikeEl.textContent = strikes + ' / 5';
+            strikeEl.className = 'fs-5 fw-bold ' + (strikes > 0 ? 'text-danger' : 'text-muted');
+
+            const devices = Array.isArray(data.devices) ? data.devices : [];
+            const emptyEl = document.getElementById('devLogEmpty');
+            const tableWrap = document.getElementById('devLogTableWrap');
+            const tbody = document.getElementById('devLogTableBody');
+
+            if (devices.length === 0) {
+                emptyEl.classList.remove('d-none');
+                tableWrap.classList.add('d-none');
+                tbody.innerHTML = '';
+            } else {
+                emptyEl.classList.add('d-none');
+                tableWrap.classList.remove('d-none');
+                tbody.innerHTML = devices.map(d => `
+                    <tr>
+                        <td class="ps-3 font-monospace fw-semibold">${escHtml(d.ip || '-')}</td>
+                        <td>
+                            ${d.is_online
+                                ? '<span class="badge bg-success-subtle text-success rounded-pill"><i class="fas fa-circle me-1" style="font-size:0.5rem;"></i>Online</span>'
+                                : '<span class="badge bg-secondary-subtle text-secondary rounded-pill">Idle</span>'}
+                        </td>
+                        <td class="text-uppercase text-muted">${escHtml(d.source || '-')}</td>
+                        <td>${escHtml(d.hits || 0)}x</td>
+                        <td class="pe-3 text-muted font-monospace" style="font-size:0.74rem;">${escHtml(d.last_seen || '-')}</td>
+                    </tr>
+                `).join('');
+            }
+
+            const violations = Array.isArray(data.violations) ? data.violations : [];
+            const violWrap = document.getElementById('devLogViolationsWrap');
+            const violList = document.getElementById('devLogViolationsList');
+            if (violations.length > 0) {
+                violWrap.classList.remove('d-none');
+                violList.innerHTML = violations.map(v => '<div class="mb-1 text-break">' + escHtml(v) + '</div>').join('');
+            } else {
+                violWrap.classList.add('d-none');
+                violList.innerHTML = '';
+            }
+
+            contentEl.classList.remove('d-none');
+        } catch (e) {
+            loadingEl.classList.add('d-none');
+            errEl.textContent = '{{ __("Terjadi kesalahan jaringan saat menghubungi server VPN.") }}';
+            errEl.classList.remove('d-none');
+        }
+    }
+
+    document.querySelectorAll('.btn-open-vpn-devices').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            document.getElementById('devLogModalTitle').textContent = '{{ __("Log Device:") }} ' + (this.dataset.username || '');
+            document.getElementById('devLogModalSub').textContent = this.dataset.protocol || '';
+            bootstrap.Modal.getOrCreateInstance(devLogModalEl).show();
+            loadVpnDeviceLogs(this.dataset.url || '', 60);
+        });
+    });
+
+    document.getElementById('sheetBtnDevices')?.addEventListener('click', function () {
+        if (!activeSheetData || !activeSheetData.devicesUrl) return;
+        bootstrap.Modal.getOrCreateInstance(sheetModalEl).hide();
+        document.getElementById('devLogModalTitle').textContent = '{{ __("Log Device:") }} ' + activeSheetData.username;
+        document.getElementById('devLogModalSub').textContent = activeSheetData.protocol;
+        bootstrap.Modal.getOrCreateInstance(devLogModalEl).show();
+        loadVpnDeviceLogs(activeSheetData.devicesUrl, 60);
+    });
+
+    document.querySelectorAll('.btn-devlog-window').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            if (!activeDevLogUrl) return;
+            loadVpnDeviceLogs(activeDevLogUrl, parseInt(this.dataset.window || '60', 10));
+        });
+    });
+
+    document.getElementById('btnRefreshDevLog')?.addEventListener('click', function () {
+        if (!activeDevLogUrl) return;
+        loadVpnDeviceLogs(activeDevLogUrl, activeDevLogWindow);
     });
 });
 </script>

@@ -22,8 +22,9 @@ use Illuminate\Support\Facades\DB;
 
 class VpnAccountController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request, ?VpnService $vpnService = null)
     {
+        $vpnService = $vpnService ?? app(VpnService::class);
         $activeTab = $request->query('tab') === 'servers' ? 'servers' : 'accounts';
 
         $query = VpnAccount::with(['user', 'order', 'vpnServer', 'suspendedBy'])
@@ -44,6 +45,11 @@ class VpnAccountController extends Controller
                           $q2->where('status', 'active')->whereNotNull('expired_at')->where('expired_at', '<', now());
                       });
                 });
+            } elseif ($status === 'expiring_soon') {
+                $query->where('status', 'active')
+                    ->whereNotNull('expired_at')
+                    ->where('expired_at', '>', now())
+                    ->where('expired_at', '<=', now()->addHours(72));
             } else {
                 $query->where('status', $status);
             }
@@ -62,7 +68,16 @@ class VpnAccountController extends Controller
             });
         }
 
+        $trafficRange = in_array((string) $request->query('traffic_range', 'all'), ['all', 'today', '7d', '30d', 'month'], true)
+            ? (string) $request->query('traffic_range', 'all')
+            : 'all';
+
         $accounts = $query->paginate(20)->withQueryString();
+        $trafficSummary = $vpnService->resolveTrafficForRange(
+            $trafficRange,
+            null,
+            $accounts->pluck('id')->all()
+        );
 
         $servers = VpnServer::withCount(['vpnAccounts', 'products'])
             ->orderByDesc('is_default')
@@ -83,6 +98,11 @@ class VpnAccountController extends Controller
         $stats = [
             'total' => VpnAccount::count(),
             'active' => VpnAccount::where('status', 'active')->count(),
+            'expiring_soon' => VpnAccount::where('status', 'active')
+                ->whereNotNull('expired_at')
+                ->where('expired_at', '>', now())
+                ->where('expired_at', '<=', now()->addHours(72))
+                ->count(),
             'suspended' => VpnAccount::where('status', 'suspended')->count(),
             'failed' => VpnAccount::whereIn('status', ['failed', 'provisioning'])->count(),
         ];
@@ -101,7 +121,9 @@ class VpnAccountController extends Controller
             'customers',
             'vpnProducts',
             'stats',
-            'serverStats'
+            'serverStats',
+            'trafficRange',
+            'trafficSummary'
         ));
     }
 
@@ -580,6 +602,102 @@ class VpnAccountController extends Controller
             !empty($res['success'])
                 ? __('Akun VPN :user berhasil dihapus permanen.', ['user' => $username])
                 : ($res['message'] ?? __('Gagal menghapus akun VPN.'))
+        );
+    }
+
+    /**
+     * Admin-only JSON endpoint to monitor live & recent device IPs and strike violations for a VPN account.
+     */
+    public function devices(Request $request, $id, VpnService $vpnService)
+    {
+        $account = VpnAccount::with('vpnServer')->findOrFail($id);
+        $windowMinutes = max(5, min(1440, (int) $request->query('window_minutes', 60)));
+
+        $res = $vpnService->getAccountDevices($account, $windowMinutes);
+        if (empty($res['success'])) {
+            return response()->json([
+                'success' => false,
+                'message' => $res['message'] ?? __('Gagal mengambil log device dari server VPN.'),
+            ], 502);
+        }
+
+        $data = is_array($res['data'] ?? null) ? $res['data'] : [];
+        return response()->json([
+            'success' => true,
+            'account' => [
+                'id' => $account->id,
+                'username' => $account->username,
+                'protocol' => strtoupper($account->protocol),
+                'server' => $account->vpnServer?->name ?: $account->display_domain,
+                'ip_limit' => max(1, (int) ($data['ip_limit'] ?? $account->ip_limit ?? 1)),
+            ],
+            'data' => $data,
+        ]);
+    }
+
+    /**
+     * Manually refresh persistent Upload/Download traffic counters from all active REST API VPN servers.
+     */
+    public function syncTraffic(Request $request, VpnService $vpnService)
+    {
+        $query = VpnServer::where('is_active', true)
+            ->where('driver', VpnServer::DRIVER_VPNXRAY_API);
+
+        if ($request->filled('vpn_server_id')) {
+            $query->where('id', (int) $request->input('vpn_server_id'));
+        }
+
+        $servers = $query->get();
+        if ($servers->isEmpty()) {
+            return back()->with('error', __('Tidak ada server VPN REST API aktif yang dapat disinkronkan.'));
+        }
+
+        $totalUpdated = 0;
+        $errors = [];
+        foreach ($servers as $srv) {
+            $res = $vpnService->syncServerTraffic($srv);
+            if (!empty($res['success'])) {
+                $totalUpdated += (int) ($res['updated'] ?? 0);
+            } else {
+                $errors[] = $srv->name . ': ' . ($res['message'] ?? 'Error');
+            }
+        }
+
+        if (!empty($errors) && $totalUpdated === 0) {
+            return back()->with('error', __('Gagal menyinkronkan traffic VPN: ') . implode('; ', $errors));
+        }
+
+        return back()->with('success', __('Traffic Upload/Download berhasil diperbarui untuk :count akun VPN.', ['count' => $totalUpdated]));
+    }
+
+    /**
+     * Manually send an expiring reminder (Telegram inline Renew button + Website Notification Hub) to account owner.
+     */
+    public function notifyExpiring($id)
+    {
+        $account = VpnAccount::with(['user', 'vpnServer'])->findOrFail($id);
+        if (!$account->user) {
+            return back()->with('error', __('Akun VPN ini tidak memiliki pemilik terdaftar.'));
+        }
+
+        $hoursLeft = $account->expired_at ? now()->diffInMinutes($account->expired_at, false) / 60 : 48;
+        $stage = $hoursLeft <= 24 ? '1d' : '3d';
+
+        $account->user->notify(new \App\Notifications\VpnExpiringNotification($account, $stage));
+        $tgSent = TelegramService::notifyVpnExpiring($account, $stage);
+
+        $account->forceFill([
+            'expiry_notified_stage' => $stage,
+            'expiry_notified_at' => now(),
+        ])->save();
+
+        $this->logAudit('admin_vpn_notify_expiring', $account, "stage={$stage}; telegram=" . ($tgSent ? '1' : '0'));
+
+        return back()->with(
+            'success',
+            $tgSent
+                ? __('Pengingat masa aktif berhasil dikirim ke Telegram & Notification Hub milik :user.', ['user' => $account->user->full_name ?: $account->user->username])
+                : __('Pengingat berhasil dikirim ke Notification Hub website (akun belum terhubung Telegram).')
         );
     }
 

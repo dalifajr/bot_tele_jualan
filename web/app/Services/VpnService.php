@@ -364,6 +364,8 @@ class VpnService
 
             $update = [
                 'expired_at' => $newExp,
+                'expiry_notified_stage' => null,
+                'expiry_notified_at' => null,
                 'status' => 'active',
                 'quota_gb' => $quotaGb ?? (int) ($data['quota_gb'] ?? $account->quota_gb),
                 'ip_limit' => $ipLimit ?? max(1, (int) ($data['ip_limit'] ?? $account->ip_limit)),
@@ -518,5 +520,188 @@ class VpnService
     public function listRemoteAccounts(VpnServer $server, ?string $protocol = null, ?string $status = null, ?string $search = null, bool $includeConfig = false): array
     {
         return $this->driverFor($server)->listAccounts($protocol, $status, $search, $includeConfig);
+    }
+
+    /**
+     * Fetch active/recent device log & IP limit violation history from panel VPS (Admin monitoring).
+     */
+    public function getAccountDevices(VpnAccount $account, int $windowMinutes = 60): array
+    {
+        $server = $this->resolveServer($account->vpnServer);
+        if (!$server) {
+            return ['success' => false, 'message' => __('Server VPN untuk akun ini tidak ditemukan.')];
+        }
+
+        return $this->driverFor($server)->getAccountDevices($account->protocol, $account->username, $windowMinutes);
+    }
+
+    /**
+     * Sync live traffic (Upload/Download) for all accounts on a server using anti-reset high-water-mark accumulation.
+     * Persists both lifetime totals on `vpn_accounts` and daily buckets on `vpn_traffic_logs`.
+     */
+    public function syncServerTraffic(VpnServer $server): array
+    {
+        $res = $this->driverFor($server)->getTrafficStats();
+        if (empty($res['success'])) {
+            return $res;
+        }
+
+        $accountsMap = is_array($res['data']['accounts'] ?? null) ? $res['data']['accounts'] : [];
+        if (empty($accountsMap)) {
+            return ['success' => true, 'updated' => 0, 'message' => __('Tidak ada data traffic baru dari panel.')];
+        }
+
+        // Case-insensitive lookup map by username
+        $normalized = [];
+        foreach ($accountsMap as $uname => $stats) {
+            if (!is_array($stats)) {
+                continue;
+            }
+            $normalized[strtolower((string) $uname)] = [
+                'uplink' => max(0, (int) ($stats['uplink_bytes'] ?? 0)),
+                'downlink' => max(0, (int) ($stats['downlink_bytes'] ?? 0)),
+            ];
+        }
+
+        $localAccounts = VpnAccount::where('vpn_server_id', $server->id)->get();
+        $today = now()->toDateString();
+        $updated = 0;
+
+        foreach ($localAccounts as $acc) {
+            $key = strtolower((string) $acc->username);
+            if (!isset($normalized[$key])) {
+                continue;
+            }
+
+            $currUp = $normalized[$key]['uplink'];
+            $currDown = $normalized[$key]['downlink'];
+
+            $this->applyTrafficSnapshot($acc, $currUp, $currDown, $today);
+            $updated++;
+        }
+
+        return [
+            'success' => true,
+            'updated' => $updated,
+            'message' => __('Traffic :count akun berhasil disinkronkan.', ['count' => $updated]),
+        ];
+    }
+
+    /**
+     * Apply a panel traffic counter snapshot safely using high-water-mark delta so restarts/reboots NEVER reset totals.
+     */
+    public function applyTrafficSnapshot(VpnAccount $account, int $currentPanelUp, int $currentPanelDown, ?string $date = null): void
+    {
+        $currentPanelUp = max(0, $currentPanelUp);
+        $currentPanelDown = max(0, $currentPanelDown);
+        $lastUp = max(0, (int) ($account->last_panel_uplink_bytes ?? 0));
+        $lastDown = max(0, (int) ($account->last_panel_downlink_bytes ?? 0));
+
+        // If panel counter dropped (Xray restart or VPS reboot), treat full current reading as new delta
+        $deltaUp = $currentPanelUp >= $lastUp ? ($currentPanelUp - $lastUp) : $currentPanelUp;
+        $deltaDown = $currentPanelDown >= $lastDown ? ($currentPanelDown - $lastDown) : $currentPanelDown;
+
+        $account->forceFill([
+            'uplink_bytes' => max(0, (int) ($account->uplink_bytes ?? 0)) + $deltaUp,
+            'downlink_bytes' => max(0, (int) ($account->downlink_bytes ?? 0)) + $deltaDown,
+            'last_panel_uplink_bytes' => $currentPanelUp,
+            'last_panel_downlink_bytes' => $currentPanelDown,
+            'traffic_synced_at' => now(),
+        ])->save();
+
+        if ($deltaUp > 0 || $deltaDown > 0) {
+            $logDate = $date ?: now()->toDateString();
+            $existing = \App\Models\VpnTrafficLog::where('vpn_account_id', $account->id)
+                ->where('date', $logDate)
+                ->first();
+            if ($existing) {
+                $existing->increment('uplink_bytes', $deltaUp);
+                $existing->increment('downlink_bytes', $deltaDown);
+            } else {
+                \App\Models\VpnTrafficLog::create([
+                    'vpn_account_id' => $account->id,
+                    'date' => $logDate,
+                    'uplink_bytes' => $deltaUp,
+                    'downlink_bytes' => $deltaDown,
+                ]);
+            }
+        }
+    }
+
+    /**
+     * Resolve traffic totals (per-account map & aggregate sum) for a set of account IDs across a selected time range.
+     *
+     * @param  array<int, int>  $accountIds
+     * @return array{per_account: array<int, array{uplink: int, downlink: int, total: int}>, total_uplink: int, total_downlink: int, total_bytes: int}
+     */
+    public function resolveTrafficForRange(string $range, ?int $userId = null, array $pageAccountIds = []): array
+    {
+        $range = in_array($range, ['all', 'today', '7d', '30d', 'month'], true) ? $range : 'all';
+
+        if ($range === 'all') {
+            $aggQuery = VpnAccount::query();
+            if ($userId !== null) {
+                $aggQuery->where('user_id', $userId);
+            }
+            $agg = $aggQuery->selectRaw('COALESCE(SUM(uplink_bytes), 0) as up_sum, COALESCE(SUM(downlink_bytes), 0) as down_sum')->first();
+            $totalUp = (int) ($agg->up_sum ?? 0);
+            $totalDown = (int) ($agg->down_sum ?? 0);
+
+            $perAccount = [];
+            if (!empty($pageAccountIds)) {
+                $rows = VpnAccount::whereIn('id', $pageAccountIds)->get(['id', 'uplink_bytes', 'downlink_bytes']);
+                foreach ($rows as $r) {
+                    $u = max(0, (int) $r->uplink_bytes);
+                    $d = max(0, (int) $r->downlink_bytes);
+                    $perAccount[$r->id] = ['uplink' => $u, 'downlink' => $d, 'total' => $u + $d];
+                }
+            }
+
+            return [
+                'per_account' => $perAccount,
+                'total_uplink' => $totalUp,
+                'total_downlink' => $totalDown,
+                'total_bytes' => $totalUp + $totalDown,
+            ];
+        }
+
+        $startDate = match ($range) {
+            'today' => now()->toDateString(),
+            '7d' => now()->subDays(6)->toDateString(),
+            '30d' => now()->subDays(29)->toDateString(),
+            'month' => now()->startOfMonth()->toDateString(),
+            default => now()->toDateString(),
+        };
+
+        $aggQuery = \App\Models\VpnTrafficLog::query()
+            ->where('vpn_traffic_logs.date', '>=', $startDate);
+        if ($userId !== null) {
+            $aggQuery->join('vpn_accounts', 'vpn_accounts.id', '=', 'vpn_traffic_logs.vpn_account_id')
+                ->where('vpn_accounts.user_id', $userId);
+        }
+        $agg = $aggQuery->selectRaw('COALESCE(SUM(vpn_traffic_logs.uplink_bytes), 0) as up_sum, COALESCE(SUM(vpn_traffic_logs.downlink_bytes), 0) as down_sum')->first();
+        $totalUp = (int) ($agg->up_sum ?? 0);
+        $totalDown = (int) ($agg->downlink_bytes_sum ?? $agg->down_sum ?? 0);
+
+        $perAccount = [];
+        if (!empty($pageAccountIds)) {
+            $rows = \App\Models\VpnTrafficLog::whereIn('vpn_account_id', $pageAccountIds)
+                ->where('date', '>=', $startDate)
+                ->groupBy('vpn_account_id')
+                ->selectRaw('vpn_account_id, COALESCE(SUM(uplink_bytes), 0) as up_sum, COALESCE(SUM(downlink_bytes), 0) as down_sum')
+                ->get();
+            foreach ($rows as $r) {
+                $u = max(0, (int) $r->up_sum);
+                $d = max(0, (int) $r->down_sum);
+                $perAccount[(int) $r->vpn_account_id] = ['uplink' => $u, 'downlink' => $d, 'total' => $u + $d];
+            }
+        }
+
+        return [
+            'per_account' => $perAccount,
+            'total_uplink' => $totalUp,
+            'total_downlink' => $totalDown,
+            'total_bytes' => $totalUp + $totalDown,
+        ];
     }
 }

@@ -242,4 +242,22 @@ class LegacySshVpnDriver implements VpnProviderInterface
             'message' => __('Penghapusan jarak jauh memerlukan driver REST API vpnxray-main.'),
         ];
     }
+
+    public function getTrafficStats(): array
+    {
+        return [
+            'success' => false,
+            'data' => ['accounts' => []],
+            'message' => __('Monitoring lalu lintas data memerlukan driver REST API vpnxray-main.'),
+        ];
+    }
+
+    public function getAccountDevices(string $protocol, string $username, int $windowMinutes = 60): array
+    {
+        return [
+            'success' => false,
+            'data' => [],
+            'message' => __('Pantau log device memerlukan driver REST API vpnxray-main.'),
+        ];
+    }
 }

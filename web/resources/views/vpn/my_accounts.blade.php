@@ -99,26 +99,53 @@
 </div>
 
 {{-- KPI Summary --}}
-<div class="row g-2 g-md-3 mb-3">
-    <div class="col-6 col-md-3">
+@php
+    $custTrafficRangeLabel = match($trafficRange ?? 'all') {
+        'today' => __('Hari Ini'),
+        '7d' => __('7 Hari'),
+        '30d' => __('30 Hari'),
+        'month' => __('Bulan Ini'),
+        default => __('Semua Waktu'),
+    };
+@endphp
+<div class="row row-cols-2 row-cols-md-3 row-cols-xl-5 g-2 g-md-3 mb-3">
+    <div class="col">
         <div class="card h-100"><div class="card-body p-3">
             <div class="text-muted small fw-semibold">{{ __('Total Akun') }}</div>
             <div class="fs-4 fw-bold text-body">{{ $stats['total'] }}</div>
         </div></div>
     </div>
-    <div class="col-6 col-md-3">
+    <div class="col">
         <div class="card h-100"><div class="card-body p-3">
             <div class="text-muted small fw-semibold">{{ __('Aktif') }}</div>
             <div class="fs-4 fw-bold text-success">{{ $stats['active'] }}</div>
+            @if(($stats['expiring_soon'] ?? 0) > 0)
+                <div class="text-warning-emphasis fw-semibold" style="font-size: 0.7rem;">
+                    <i class="fas fa-clock me-0.5"></i>{{ __(':count hampir habis', ['count' => $stats['expiring_soon']]) }}
+                </div>
+            @endif
         </div></div>
     </div>
-    <div class="col-6 col-md-3">
+    <div class="col">
         <div class="card h-100"><div class="card-body p-3">
             <div class="text-muted small fw-semibold">{{ __('Disuspend') }}</div>
             <div class="fs-4 fw-bold text-warning">{{ $stats['suspended'] }}</div>
         </div></div>
     </div>
-    <div class="col-6 col-md-3">
+    <div class="col">
+        <div class="card h-100 border-primary-subtle"><div class="card-body p-3">
+            <div class="text-muted small fw-semibold d-flex align-items-center justify-content-between gap-1">
+                <span>{{ __('Total Traffic') }}</span>
+                <span class="badge bg-primary-subtle text-primary rounded-pill" style="font-size: 0.65rem;">{{ $custTrafficRangeLabel }}</span>
+            </div>
+            <div class="fs-5 fw-bold text-primary">{{ \App\Models\VpnAccount::formatBytes((int) ($trafficSummary['total_bytes'] ?? 0)) }}</div>
+            <div class="d-flex flex-wrap gap-2 mt-0.5" style="font-size: 0.72rem;">
+                <span class="text-info fw-semibold" title="{{ __('Upload') }}"><i class="fas fa-arrow-up me-0.5"></i>{{ \App\Models\VpnAccount::formatBytes((int) ($trafficSummary['total_uplink'] ?? 0)) }}</span>
+                <span class="text-success fw-semibold" title="{{ __('Download') }}"><i class="fas fa-arrow-down me-0.5"></i>{{ \App\Models\VpnAccount::formatBytes((int) ($trafficSummary['total_downlink'] ?? 0)) }}</span>
+            </div>
+        </div></div>
+    </div>
+    <div class="col col-12 col-md-6 col-xl">
         <div class="card h-100"><div class="card-body p-3">
             <div class="text-muted small fw-semibold">{{ __('Saldo Dompet') }}</div>
             <div class="fs-5 fw-bold text-primary">Rp {{ number_format((int) (Auth::user()->customer_wallet_balance ?? 0), 0, ',', '.') }}</div>
@@ -147,10 +174,10 @@
 <div class="card mb-3">
     <div class="card-body p-3">
         <form action="{{ route('vpn.my-accounts') }}" method="GET" class="row g-2 align-items-center">
-            <div class="col-12 col-md-5">
+            <div class="col-12 col-md-4">
                 <input type="text" name="search" class="form-control form-control-sm" value="{{ request('search') }}" placeholder="{{ __('Cari username VPN Anda...') }}">
             </div>
-            <div class="col-6 col-md-3">
+            <div class="col-6 col-md-2">
                 <select name="protocol" class="form-select form-select-sm">
                     <option value="">{{ __('Semua Protokol') }}</option>
                     @foreach(['vmess', 'vless', 'trojan', 'shadowsocks', 'ssh'] as $p)
@@ -162,13 +189,23 @@
                 <select name="status" class="form-select form-select-sm">
                     <option value="">{{ __('Semua Status') }}</option>
                     <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>{{ __('Aktif') }}</option>
+                    <option value="expiring_soon" {{ request('status') === 'expiring_soon' ? 'selected' : '' }}>{{ __('Hampir Expired (≤ 3 Hari)') }}</option>
                     <option value="suspended" {{ request('status') === 'suspended' ? 'selected' : '' }}>{{ __('Disuspend') }}</option>
                     <option value="expired" {{ request('status') === 'expired' ? 'selected' : '' }}>{{ __('Expired') }}</option>
                 </select>
             </div>
-            <div class="col-12 col-md-2 d-flex gap-1.5">
+            <div class="col-6 col-md-2">
+                <select name="traffic_range" class="form-select form-select-sm" title="{{ __('Rentang Waktu Traffic') }}">
+                    <option value="all" {{ ($trafficRange ?? 'all') === 'all' ? 'selected' : '' }}>{{ __('Traffic: Semua Waktu') }}</option>
+                    <option value="today" {{ ($trafficRange ?? 'all') === 'today' ? 'selected' : '' }}>{{ __('Traffic: Hari Ini') }}</option>
+                    <option value="7d" {{ ($trafficRange ?? 'all') === '7d' ? 'selected' : '' }}>{{ __('Traffic: 7 Hari Terakhir') }}</option>
+                    <option value="30d" {{ ($trafficRange ?? 'all') === '30d' ? 'selected' : '' }}>{{ __('Traffic: 30 Hari Terakhir') }}</option>
+                    <option value="month" {{ ($trafficRange ?? 'all') === 'month' ? 'selected' : '' }}>{{ __('Traffic: Bulan Ini') }}</option>
+                </select>
+            </div>
+            <div class="col-6 col-md-2 d-flex gap-1.5">
                 <button type="submit" class="btn btn-primary btn-sm rounded-pill flex-grow-1 fw-semibold">{{ __('Cari') }}</button>
-                @if(request()->hasAny(['search', 'protocol', 'status']))
+                @if(request()->hasAny(['search', 'protocol', 'status']) || ($trafficRange ?? 'all') !== 'all')
                     <a href="{{ route('vpn.my-accounts') }}" class="btn btn-light btn-sm rounded-pill border"><i class="fas fa-times"></i></a>
                 @endif
             </div>
@@ -209,6 +246,7 @@
                         <th class="ps-3">{{ __('Akun VPN') }}</th>
                         <th>{{ __('Server / Domain') }}</th>
                         <th>{{ __('Kuota / IP') }}</th>
+                        <th>{{ __('Traffic (↑ / ↓)') }}</th>
                         <th>{{ __('Masa Aktif') }}</th>
                         <th>{{ __('Status') }}</th>
                         <th class="text-end pe-3">{{ __('Aksi') }}</th>
@@ -220,6 +258,9 @@
                         $adminSuspended = $acc->isAdminSuspended();
                         $chatTargetId = $acc->suspended_by_user_id ?: $defaultAdminId;
                         $isExpired = $acc->expired_at && $acc->expired_at->isPast();
+                        $expHl = $acc->getExpiryHighlight();
+                        $quotaInfo = $acc->getQuotaUsage();
+                        $accTraffic = $trafficSummary['per_account'][$acc->id] ?? ['uplink' => 0, 'downlink' => 0, 'total' => 0];
                         $statusLabel = match(true) {
                             $adminSuspended => __('Disuspend Admin'),
                             $acc->status === 'suspended' => __('Ditangguhkan Mandiri'),
@@ -237,14 +278,39 @@
                             <div class="fw-semibold text-body">{{ $acc->vpnServer?->name ?: __('Server VPN') }}</div>
                             <div class="text-muted font-monospace" style="font-size: 0.72rem;">{{ $acc->display_domain }}</div>
                         </td>
-                        <td class="small">
-                            <div>{{ ($acc->quota_gb ?? 0) > 0 ? $acc->quota_gb . ' GB' : 'Unlimited' }}</div>
-                            <div class="text-muted">{{ max(1, (int) ($acc->ip_limit ?? 1)) }} IP</div>
+                        <td class="small" style="min-width: 130px;">
+                            <div class="d-flex align-items-center justify-content-between gap-1">
+                                <span>{{ $quotaInfo['limited'] ? $acc->quota_gb . ' GB' : 'Unlimited' }}</span>
+                                <span class="text-muted">{{ max(1, (int) ($acc->ip_limit ?? 1)) }} IP</span>
+                            </div>
+                            @if($quotaInfo['limited'])
+                                <div class="progress mt-1" style="height: 6px; border-radius: 999px;" title="{{ __('Terpakai :used / :tot (:pct%)', ['used' => \App\Models\VpnAccount::formatBytes($quotaInfo['used_bytes']), 'tot' => $acc->quota_gb . ' GB', 'pct' => $quotaInfo['used_percent']]) }}">
+                                    <div class="progress-bar {{ $quotaInfo['bar_class'] }}" role="progressbar" style="width: {{ $quotaInfo['remaining_percent'] }}%;"></div>
+                                </div>
+                                <div class="{{ $quotaInfo['text_class'] }} mt-0.5" style="font-size: 0.68rem;">
+                                    {{ __('Sisa :rem', ['rem' => \App\Models\VpnAccount::formatBytes($quotaInfo['remaining_bytes'])]) }} ({{ $quotaInfo['remaining_percent'] }}%)
+                                </div>
+                            @endif
+                        </td>
+                        <td class="small" style="min-width: 118px;">
+                            <div class="text-info fw-semibold" style="font-size: 0.76rem;" title="{{ __('Upload') }}">
+                                <i class="fas fa-arrow-up me-1"></i>{{ \App\Models\VpnAccount::formatBytes((int) $accTraffic['uplink']) }}
+                            </div>
+                            <div class="text-success fw-semibold" style="font-size: 0.76rem;" title="{{ __('Download') }}">
+                                <i class="fas fa-arrow-down me-1"></i>{{ \App\Models\VpnAccount::formatBytes((int) $accTraffic['downlink']) }}
+                            </div>
                         </td>
                         <td class="small">
-                            <div class="fw-semibold text-body">{{ $acc->expired_at ? $acc->expired_at->format('d M Y') : '-' }}</div>
-                            @if($acc->expired_at)
-                                <div class="text-muted" style="font-size: 0.72rem;">{{ $acc->expired_at->diffForHumans() }}</div>
+                            @if($expHl['level'] !== 'normal')
+                                <div class="d-inline-block px-2 py-1 rounded-3 {{ $expHl['pill_class'] }}">
+                                    <div class="fw-bold" style="font-size: 0.78rem;">{{ $acc->expired_at ? $acc->expired_at->format('d M Y') : '-' }}</div>
+                                    <div style="font-size: 0.68rem;"><i class="fas {{ $expHl['level'] === 'warning' ? 'fa-clock' : 'fa-exclamation-triangle' }} me-1"></i>{{ $expHl['label'] }}</div>
+                                </div>
+                            @else
+                                <div class="fw-semibold text-body">{{ $acc->expired_at ? $acc->expired_at->format('d M Y') : '-' }}</div>
+                                @if($acc->expired_at)
+                                    <div class="text-muted" style="font-size: 0.72rem;">{{ $expHl['label'] }}</div>
+                                @endif
                             @endif
                         </td>
                         <td>
@@ -276,6 +342,7 @@
                                 @php $accPricing = $renewPricing[$acc->id] ?? null; @endphp
                                 <div class="d-inline-flex align-items-center justify-content-end gap-1.5">
                                     <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-2.5 fw-semibold btn-renew-my-vpn"
+                                            data-account-id="{{ $acc->id }}"
                                             data-action="{{ route('vpn.renew', $acc->id) }}"
                                             data-username="{{ $acc->username }}"
                                             data-expired-iso="{{ $acc->expired_at ? $acc->expired_at->toIso8601String() : '' }}"
@@ -367,10 +434,15 @@
             $adminSuspended = $acc->isAdminSuspended();
             $chatTargetId = $acc->suspended_by_user_id ?: $defaultAdminId;
             $isExpired = $acc->expired_at && $acc->expired_at->isPast();
+            $expHl = $acc->getExpiryHighlight();
+            $quotaInfo = $acc->getQuotaUsage();
+            $accTraffic = $trafficSummary['per_account'][$acc->id] ?? ['uplink' => 0, 'downlink' => 0, 'total' => 0];
             $dotColor = match(true) {
                 $adminSuspended || $acc->status === 'failed' => 'bg-danger',
                 $acc->status === 'suspended' => 'bg-warning',
                 $isExpired || $acc->status === 'expired' => 'bg-secondary',
+                $expHl['level'] === 'critical' => 'bg-danger',
+                $expHl['level'] === 'warning' => 'bg-warning',
                 default => 'bg-success',
             };
             $statusLabel = match(true) {
@@ -393,12 +465,16 @@
                         <div class="fw-bold text-body font-monospace text-truncate d-flex align-items-center gap-1.5" style="font-size: 0.9rem;">
                             <span class="text-truncate">{{ $acc->username }}</span>
                             <span class="badge bg-primary-subtle text-primary rounded-pill flex-shrink-0" style="font-size: 0.62rem;">{{ strtoupper($acc->protocol) }}</span>
+                            @if($expHl['level'] !== 'normal')
+                                <span class="badge {{ $expHl['pill_class'] }} rounded-pill flex-shrink-0" style="font-size: 0.6rem;">{{ $expHl['label'] }}</span>
+                            @endif
                         </div>
                         <div class="text-muted text-truncate" style="font-size: 0.74rem;">
                             @if($adminSuspended)
                                 <span class="text-danger fw-semibold"><i class="fas fa-lock me-1"></i>{{ __('Disuspend Admin') }}</span>
                             @else
-                                {{ $acc->display_domain }} &bull; Exp: {{ $acc->expired_at ? $acc->expired_at->format('d M Y') : '-' }}
+                                {{ $acc->display_domain }} &bull;
+                                <span class="{{ $expHl['level'] !== 'normal' ? $expHl['text_class'] : '' }}">Exp: {{ $acc->expired_at ? $acc->expired_at->format('d M Y') : '-' }}</span>
                             @endif
                         </div>
                     </div>
@@ -409,8 +485,21 @@
                 <div class="m3-collapsible-body">
                     <div class="small mb-2.5 d-flex flex-column gap-1">
                         <div><span class="text-muted">{{ __('Server:') }}</span> <strong>{{ $acc->vpnServer?->name ?: __('Server VPN') }}</strong> <span class="font-monospace text-muted">({{ $acc->display_domain }})</span></div>
-                        <div><span class="text-muted">{{ __('Limit:') }}</span> {{ ($acc->quota_gb ?? 0) > 0 ? $acc->quota_gb . ' GB' : 'Unlimited' }} &bull; {{ max(1, (int) ($acc->ip_limit ?? 1)) }} IP</div>
-                        <div><span class="text-muted">{{ __('Berakhir:') }}</span> {{ $acc->expired_at ? $acc->expired_at->format('d M Y H:i') : '-' }}</div>
+                        <div>
+                            <span class="text-muted">{{ __('Limit:') }}</span> {{ $quotaInfo['limited'] ? $acc->quota_gb . ' GB' : 'Unlimited' }} &bull; {{ max(1, (int) ($acc->ip_limit ?? 1)) }} IP
+                            @if($quotaInfo['limited'])
+                                <div class="progress mt-1" style="height: 6px; border-radius: 999px;">
+                                    <div class="progress-bar {{ $quotaInfo['bar_class'] }}" role="progressbar" style="width: {{ $quotaInfo['remaining_percent'] }}%;"></div>
+                                </div>
+                                <div class="{{ $quotaInfo['text_class'] }}" style="font-size: 0.7rem;">{{ __('Sisa Kuota:') }} {{ \App\Models\VpnAccount::formatBytes($quotaInfo['remaining_bytes']) }} / {{ $acc->quota_gb }} GB ({{ $quotaInfo['remaining_percent'] }}%)</div>
+                            @endif
+                        </div>
+                        <div>
+                            <span class="text-muted">{{ __('Traffic') }} ({{ $custTrafficRangeLabel }}):</span>
+                            <span class="text-info fw-semibold ms-1"><i class="fas fa-arrow-up"></i> {{ \App\Models\VpnAccount::formatBytes((int) $accTraffic['uplink']) }}</span>
+                            <span class="text-success fw-semibold ms-2"><i class="fas fa-arrow-down"></i> {{ \App\Models\VpnAccount::formatBytes((int) $accTraffic['downlink']) }}</span>
+                        </div>
+                        <div><span class="text-muted">{{ __('Berakhir:') }}</span> <span class="{{ $expHl['level'] !== 'normal' ? $expHl['text_class'] : '' }}">{{ $acc->expired_at ? $acc->expired_at->format('d M Y H:i') : '-' }}</span></div>
                         @if($accPricing && ($accPricing['base_price'] ?? 0) > 0)
                         <div><span class="text-muted">{{ __('Tarif Acuan:') }}</span> <strong class="text-primary">Rp {{ number_format($accPricing['base_price'], 0, ',', '.') }} / {{ $accPricing['base_days'] }} {{ __('hari') }}</strong></div>
                         @endif
@@ -432,6 +521,7 @@
                     @else
                         <div class="d-flex align-items-center gap-2">
                             <button type="button" class="btn btn-sm btn-primary rounded-pill flex-grow-1 fw-semibold py-2 btn-renew-my-vpn"
+                                    data-account-id="{{ $acc->id }}"
                                     data-action="{{ route('vpn.renew', $acc->id) }}"
                                     data-username="{{ $acc->username }}"
                                     data-expired-iso="{{ $acc->expired_at ? $acc->expired_at->toIso8601String() : '' }}"
@@ -983,6 +1073,15 @@ document.addEventListener('DOMContentLoaded', function () {
             bootstrap.Modal.getOrCreateInstance(document.getElementById('customerRenewVpnModal')).show();
         });
     });
+
+    // Auto-open Renew modal when arriving from Telegram "Renew Sekarang" or Website Notification Hub (?renew=<id>)
+    const autoRenewId = @json($autoRenewAccountId ?? null);
+    if (autoRenewId) {
+        const targetRenewBtn = document.querySelector(`.btn-renew-my-vpn[data-account-id="${autoRenewId}"]`);
+        if (targetRenewBtn) {
+            setTimeout(() => targetRenewBtn.click(), 220);
+        }
+    }
 
     // 3. Config & QR Viewer with Lazy Auto-Fetch + Live Preset SNI Switcher
     let currentMyConfigUrl = '';

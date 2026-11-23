@@ -442,6 +442,22 @@ class VpnXrayApiDriver implements VpnProviderInterface
         return $this->request('DELETE', "/accounts/{$proto}/{$user}");
     }
 
+    public function getTrafficStats(): array
+    {
+        return $this->request('GET', '/traffic');
+    }
+
+    public function getAccountDevices(string $protocol, string $username, int $windowMinutes = 60): array
+    {
+        $proto = rawurlencode(strtolower($protocol));
+        $user = rawurlencode($username);
+        $windowMinutes = max(5, min(1440, $windowMinutes));
+
+        return $this->request('GET', "/accounts/{$proto}/{$user}/devices", [], [
+            'window_minutes' => $windowMinutes,
+        ]);
+    }
+
     /**
      * Build signed headers for a given HTTP request against vpnxray-main External API v1.
      */

@@ -474,8 +474,11 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\VpnAccountController::class, 'index'])->name('index');
             Route::get('/check-username', [\App\Http\Controllers\Admin\VpnAccountController::class, 'checkUsername'])->name('check-username')->middleware('throttle:60,1');
             Route::get('/{id}/config', [\App\Http\Controllers\Admin\VpnAccountController::class, 'fetchConfig'])->whereNumber('id')->name('config');
+            Route::get('/{id}/devices', [\App\Http\Controllers\Admin\VpnAccountController::class, 'devices'])->whereNumber('id')->name('devices');
             Route::post('/', [\App\Http\Controllers\Admin\VpnAccountController::class, 'store'])->name('store');
             Route::post('/sync-server', [\App\Http\Controllers\Admin\VpnAccountController::class, 'syncServer'])->name('sync-server');
+            Route::post('/sync-traffic', [\App\Http\Controllers\Admin\VpnAccountController::class, 'syncTraffic'])->name('sync-traffic');
+            Route::post('/{id}/notify-expiring', [\App\Http\Controllers\Admin\VpnAccountController::class, 'notifyExpiring'])->whereNumber('id')->name('notify-expiring');
             Route::post('/{id}/renew', [\App\Http\Controllers\Admin\VpnAccountController::class, 'renew'])->whereNumber('id')->name('renew');
             Route::post('/{id}/suspend', [\App\Http\Controllers\Admin\VpnAccountController::class, 'suspend'])->whereNumber('id')->name('suspend');
             Route::post('/{id}/unsuspend', [\App\Http\Controllers\Admin\VpnAccountController::class, 'unsuspend'])->whereNumber('id')->name('unsuspend');

@@ -12,3 +12,5 @@ Artisan::command('inspire', function () {
 Schedule::command('orders:release-expired')->everyMinute();
 Schedule::command('funds:release-held')->everyMinute();
 Schedule::command('broadcast:calculate-reads')->everyFiveMinutes();
+Schedule::command('vpn:sync-traffic')->everyFiveMinutes()->withoutOverlapping();
+Schedule::command('vpn:notify-expiring')->hourly()->withoutOverlapping();

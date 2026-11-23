@@ -48,4 +48,14 @@ interface VpnProviderInterface
      * @return array{success: bool, data?: array, message: string}
      */
     public function deleteAccount(string $protocol, string $username): array;
+
+    /**
+     * @return array{success: bool, data?: array, message: string}
+     */
+    public function getTrafficStats(): array;
+
+    /**
+     * @return array{success: bool, data?: array, message: string}
+     */
+    public function getAccountDevices(string $protocol, string $username, int $windowMinutes = 60): array;
 }

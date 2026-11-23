@@ -41,6 +41,11 @@ class CustomerVpnController extends Controller
                           $q2->where('status', 'active')->whereNotNull('expired_at')->where('expired_at', '<', now());
                       });
                 });
+            } elseif ($status === 'expiring_soon') {
+                $query->where('status', 'active')
+                    ->whereNotNull('expired_at')
+                    ->where('expired_at', '>', now())
+                    ->where('expired_at', '<=', now()->addHours(72));
             } else {
                 $query->where('status', $status);
             }
@@ -50,7 +55,16 @@ class CustomerVpnController extends Controller
             $query->where('username', 'like', "%{$search}%");
         }
 
+        $trafficRange = in_array((string) $request->query('traffic_range', 'all'), ['all', 'today', '7d', '30d', 'month'], true)
+            ? (string) $request->query('traffic_range', 'all')
+            : 'all';
+
         $accounts = $query->paginate(15)->withQueryString();
+        $trafficSummary = $vpnService->resolveTrafficForRange(
+            $trafficRange,
+            (int) $user->id,
+            $accounts->pluck('id')->all()
+        );
 
         // Only expose "Buat Akun VPN" if admin has configured >= 1 valid, active VPN catalog product with an available VPN server
         $vpnProducts = $this->getConfiguredVpnProducts($vpnService);
@@ -62,6 +76,12 @@ class CustomerVpnController extends Controller
             'total' => VpnAccount::where('user_id', $user->id)->count(),
             'active' => VpnAccount::where('user_id', $user->id)->where('status', 'active')->count(),
             'suspended' => VpnAccount::where('user_id', $user->id)->where('status', 'suspended')->count(),
+            'expiring_soon' => VpnAccount::where('user_id', $user->id)
+                ->where('status', 'active')
+                ->whereNotNull('expired_at')
+                ->where('expired_at', '>', now())
+                ->where('expired_at', '<=', now()->addHours(72))
+                ->count(),
             'admin_suspended' => VpnAccount::where('user_id', $user->id)
                 ->where('status', 'suspended')
                 ->where('suspended_by_role', 'admin')
@@ -73,7 +93,18 @@ class CustomerVpnController extends Controller
             $renewPricing[$acc->id] = $this->resolveRenewPricing($acc);
         }
 
-        return view('vpn.my_accounts', compact('accounts', 'vpnProducts', 'defaultAdminId', 'stats', 'renewPricing'));
+        $autoRenewAccountId = $request->filled('renew') ? (int) $request->query('renew') : null;
+
+        return view('vpn.my_accounts', compact(
+            'accounts',
+            'vpnProducts',
+            'defaultAdminId',
+            'stats',
+            'renewPricing',
+            'trafficRange',
+            'trafficSummary',
+            'autoRenewAccountId'
+        ));
     }
 
     public function fetchConfig(Request $request, $id, VpnService $vpnService)

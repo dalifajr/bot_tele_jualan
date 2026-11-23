@@ -1375,4 +1375,266 @@ class VpnXrayApiIntegrationTest extends TestCase
             'status' => 'active',
         ]);
     }
+
+    public function test_vpn_expiry_highlight_dual_notifications_anti_spam_and_renew_reset(): void
+    {
+        config(['services.telegram.bot_token' => 'test_bot_token_123']);
+        $this->customer->update(['telegram_id' => '6083760754']);
+
+        $telegramCalls = [];
+        Http::fake([
+            'https://api.telegram.org/bot*' => function ($request) use (&$telegramCalls) {
+                $telegramCalls[] = $request->data();
+                return Http::response(['ok' => true, 'result' => ['message_id' => 99]], 200);
+            },
+            'https://sg1.vpnpanel.test/api/v1/vpn/accounts/vmess/crit_exp01/renew' => Http::response([
+                'success' => true,
+                'message' => 'Renewed',
+                'data' => ['expired_at' => now()->addDays(30)->format('Y-m-d')],
+            ], 200),
+        ]);
+
+        $criticalAcc = VpnAccount::create([
+            'user_id' => $this->customer->id,
+            'vpn_server_id' => $this->server->id,
+            'protocol' => 'vmess',
+            'username' => 'crit_exp01',
+            'status' => 'active',
+            'expired_at' => now()->addHours(12),
+        ]);
+
+        $warningAcc = VpnAccount::create([
+            'user_id' => $this->customer->id,
+            'vpn_server_id' => $this->server->id,
+            'protocol' => 'vless',
+            'username' => 'warn_exp02',
+            'status' => 'active',
+            'expired_at' => now()->addHours(48),
+        ]);
+
+        $normalAcc = VpnAccount::create([
+            'user_id' => $this->customer->id,
+            'vpn_server_id' => $this->server->id,
+            'protocol' => 'trojan',
+            'username' => 'norm_ok03',
+            'status' => 'active',
+            'expired_at' => now()->addDays(15),
+        ]);
+
+        // 1. Highlight classes & filter `expiring_soon` on both Admin and Customer views
+        $this->actingAs($this->admin)
+            ->get(route('admin.vpn-accounts.index', ['status' => 'expiring_soon']))
+            ->assertStatus(200)
+            ->assertSee('crit_exp01')
+            ->assertSee('warn_exp02')
+            ->assertDontSee('norm_ok03')
+            ->assertSee('bg-danger-subtle text-danger')
+            ->assertSee('bg-warning-subtle text-warning-emphasis');
+
+        $this->actingAs($this->customer)
+            ->get(route('vpn.my-accounts', ['renew' => $criticalAcc->id]))
+            ->assertStatus(200)
+            ->assertSee('crit_exp01')
+            ->assertSee('bg-danger-subtle text-danger')
+            ->assertSee('const autoRenewId = ' . $criticalAcc->id, false);
+
+        // 2. Run `vpn:notify-expiring` -> sends BOTH Telegram (with Renew Sekarang button) AND Website Notification Hub
+        $this->artisan('vpn:notify-expiring')->assertExitCode(0);
+
+        $this->assertCount(2, $telegramCalls);
+        $tgMarkup0 = (string) ($telegramCalls[0]['reply_markup'] ?? '');
+        $this->assertStringContainsString('Renew Sekarang', $tgMarkup0);
+        $this->assertStringContainsString('/my-vpn?renew=', $tgMarkup0);
+
+        $hubNotifs = $this->customer->notifications()->where('type', \App\Notifications\VpnExpiringNotification::class)->get();
+        $this->assertCount(2, $hubNotifs);
+        $this->assertStringContainsString('/my-vpn?renew=', (string) ($hubNotifs->first()->data['url'] ?? ''));
+
+        $criticalAcc->refresh();
+        $warningAcc->refresh();
+        $this->assertSame('1d', $criticalAcc->expiry_notified_stage);
+        $this->assertSame('3d', $warningAcc->expiry_notified_stage);
+
+        // 3. Running `vpn:notify-expiring` again immediately MUST NOT spam duplicate alerts
+        $this->artisan('vpn:notify-expiring')->assertExitCode(0);
+        $this->assertCount(2, $telegramCalls);
+        $this->assertSame(2, $this->customer->notifications()->where('type', \App\Notifications\VpnExpiringNotification::class)->count());
+
+        // 4. Renewing critical account resets `expiry_notified_stage` to null
+        app(\App\Services\VpnService::class)->renewAccount($criticalAcc, 30);
+        $criticalAcc->refresh();
+        $this->assertNull($criticalAcc->expiry_notified_stage);
+    }
+
+    public function test_admin_device_log_monitoring_and_strict_admin_access_control(): void
+    {
+        Http::fake([
+            'https://sg1.vpnpanel.test/api/v1/vpn/accounts/vmess/mon_dev01/devices*' => Http::response([
+                'success' => true,
+                'message' => 'OK',
+                'data' => [
+                    'protocol' => 'vmess',
+                    'username' => 'mon_dev01',
+                    'window_minutes' => 60,
+                    'ip_limit' => 2,
+                    'active_device_count' => 2,
+                    'recent_device_count' => 3,
+                    'current_strikes' => 2,
+                    'devices' => [
+                        ['ip' => '103.50.50.1', 'source' => 'xray', 'is_online' => true, 'hits' => 14, 'first_seen' => '2026-11-23 20:00:00', 'last_seen' => '2026-11-23 20:40:00'],
+                    ],
+                    'violations' => [
+                        '2026-11-23 20:30:00 | vmess | mon_dev01 | ip=3/2 | strikes=2 | 103.50.50.1(4)',
+                    ],
+                ],
+            ], 200),
+        ]);
+
+        $acc = VpnAccount::create([
+            'user_id' => $this->customer->id,
+            'vpn_server_id' => $this->server->id,
+            'protocol' => 'vmess',
+            'username' => 'mon_dev01',
+            'ip_limit' => 2,
+            'status' => 'active',
+            'expired_at' => now()->addDays(20),
+        ]);
+
+        // Admin can fetch device logs
+        $this->actingAs($this->admin)
+            ->getJson(route('admin.vpn-accounts.devices', ['id' => $acc->id, 'window_minutes' => 60]))
+            ->assertStatus(200)
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.active_device_count', 2)
+            ->assertJsonPath('data.current_strikes', 2)
+            ->assertJsonPath('data.devices.0.ip', '103.50.50.1');
+
+        // Customer MUST NOT access Admin device monitoring endpoint
+        $custRes = $this->actingAs($this->customer)
+            ->get(route('admin.vpn-accounts.devices', ['id' => $acc->id]));
+        $this->assertTrue(in_array($custRes->status(), [302, 403], true));
+    }
+
+    public function test_persistent_anti_reset_traffic_sync_range_filter_quota_bar_and_customer_isolation(): void
+    {
+        $otherCustomer = User::create([
+            'username' => 'other_vpn_cust',
+            'full_name' => 'Other Customer',
+            'email' => 'other_vpn_cust@example.test',
+            'password' => bcrypt('password'),
+            'role' => 'customer',
+        ]);
+
+        $custXrayAcc = VpnAccount::create([
+            'user_id' => $this->customer->id,
+            'vpn_server_id' => $this->server->id,
+            'protocol' => 'vmess',
+            'username' => 'traf_iann',
+            'quota_gb' => 10,
+            'ip_limit' => 2,
+            'status' => 'active',
+            'expired_at' => now()->addDays(20),
+        ]);
+
+        $custSshAcc = VpnAccount::create([
+            'user_id' => $this->customer->id,
+            'vpn_server_id' => $this->server->id,
+            'protocol' => 'ssh',
+            'username' => 'traf_ssh01',
+            'quota_gb' => 0,
+            'ip_limit' => 2,
+            'status' => 'active',
+            'expired_at' => now()->addDays(20),
+        ]);
+
+        $otherAcc = VpnAccount::create([
+            'user_id' => $otherCustomer->id,
+            'vpn_server_id' => $this->server->id,
+            'protocol' => 'vless',
+            'username' => 'traf_other',
+            'quota_gb' => 0,
+            'ip_limit' => 2,
+            'status' => 'active',
+            'expired_at' => now()->addDays(20),
+        ]);
+
+        $gb = 1073741824;
+
+        // Snapshot 1: initial panel counters (Xray + SSH + other user)
+        Http::fakeSequence('https://sg1.vpnpanel.test/api/v1/vpn/traffic*')
+            ->push([
+                'success' => true,
+                'message' => 'OK',
+                'data' => [
+                    'xray_stats_ok' => true,
+                    'ssh_stats_ok' => true,
+                    'accounts' => [
+                        'traf_iann' => ['uplink_bytes' => 1 * $gb, 'downlink_bytes' => 2 * $gb],
+                        'traf_ssh01' => ['uplink_bytes' => 536870912, 'downlink_bytes' => 536870912], // 0.5 GB + 0.5 GB = 1 GB
+                        'traf_other' => ['uplink_bytes' => 5 * $gb, 'downlink_bytes' => 5 * $gb],     // 10 GB total
+                    ],
+                ],
+            ], 200)
+            // Snapshot 2: SIMULATE VPS REBOOT / XRAY RESTART where panel counters reset and grow from 0!
+            ->push([
+                'success' => true,
+                'message' => 'OK',
+                'data' => [
+                    'xray_stats_ok' => true,
+                    'ssh_stats_ok' => true,
+                    'accounts' => [
+                        'traf_iann' => ['uplink_bytes' => 536870912, 'downlink_bytes' => 536870912], // +0.5 GB up, +0.5 GB down after reboot!
+                        'traf_ssh01' => ['uplink_bytes' => 0, 'downlink_bytes' => 0],
+                        'traf_other' => ['uplink_bytes' => 0, 'downlink_bytes' => 0],
+                    ],
+                ],
+            ], 200);
+
+        $this->artisan('vpn:sync-traffic')->assertExitCode(0);
+        $this->artisan('vpn:sync-traffic')->assertExitCode(0);
+
+        // Verify ANTI-RESET accumulation: traf_iann MUST be 1.5 GB up + 2.5 GB down = 4.0 GB total (NOT reset!)
+        $custXrayAcc->refresh();
+        $custSshAcc->refresh();
+        $this->assertSame((int) (1.5 * $gb), (int) $custXrayAcc->uplink_bytes);
+        $this->assertSame((int) (2.5 * $gb), (int) $custXrayAcc->downlink_bytes);
+        $this->assertSame(536870912, (int) $custSshAcc->uplink_bytes);
+
+        // Add historical traffic from 10 days ago to verify time-range filtering (today vs 30d)
+        \App\Models\VpnTrafficLog::create([
+            'vpn_account_id' => $custXrayAcc->id,
+            'date' => now()->subDays(10)->toDateString(),
+            'uplink_bytes' => 0,
+            'downlink_bytes' => 2 * $gb,
+        ]);
+
+        $vpnService = app(\App\Services\VpnService::class);
+        $todayCust = $vpnService->resolveTrafficForRange('today', $this->customer->id, [$custXrayAcc->id, $custSshAcc->id]);
+        $monthCust = $vpnService->resolveTrafficForRange('30d', $this->customer->id, [$custXrayAcc->id, $custSshAcc->id]);
+        $allAdmin = $vpnService->resolveTrafficForRange('all', null, [$custXrayAcc->id, $custSshAcc->id, $otherAcc->id]);
+
+        // Customer isolation: todayCust = 4 GB (iann) + 1 GB (ssh) = 5 GB (EXCLUDES other_cust's 10 GB!)
+        $this->assertSame(5 * $gb, $todayCust['total_bytes']);
+        // 30d includes the 2 GB from 10 days ago -> 7 GB
+        $this->assertSame(7 * $gb, $monthCust['total_bytes']);
+        // Admin all-time includes all 3 accounts -> 4 + 1 + 10 = 15 GB
+        $this->assertSame(15 * $gb, $allAdmin['total_bytes']);
+
+        // Verify UI renders Quota Remaining Progress Bar (10 GB quota - 4 GB used = 6 GB / 60% left) on BOTH Admin & Customer views
+        $this->actingAs($this->admin)
+            ->get(route('admin.vpn-accounts.index'))
+            ->assertStatus(200)
+            ->assertSee('15.0 GB')
+            ->assertSee('progress-bar')
+            ->assertSee('6.00 GB')
+            ->assertSee('adminVpnDeviceLogModal');
+
+        $this->actingAs($this->customer)
+            ->get(route('vpn.my-accounts'))
+            ->assertStatus(200)
+            ->assertSee('5.00 GB')       // Customer KPI sees ONLY own 5 GB, NOT admin's 15 GB!
+            ->assertDontSee('15.0 GB')
+            ->assertSee('progress-bar')  // Quota bar rendered for quota_gb=10
+            ->assertSee('6.00 GB');
+    }
 }

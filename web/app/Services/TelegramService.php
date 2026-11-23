@@ -674,6 +674,65 @@ class TelegramService
     }
 
     /**
+     * Notify VPN account owner via Telegram when account is expiring soon, with inline "Renew Sekarang" button.
+     */
+    public static function notifyVpnExpiring(\App\Models\VpnAccount $account, string $stage = '3d'): bool
+    {
+        $botToken = config('services.telegram.bot_token');
+        $user = $account->user;
+        if (empty($botToken) || !$user || empty($user->telegram_id)) {
+            return false;
+        }
+
+        $isCritical = $stage === '1d';
+        $emoji = $isCritical ? '🚨' : '⚠️';
+        $title = $isCritical
+            ? '<b>Akun VPN Anda Segera Berakhir!</b>'
+            : '<b>Pengingat Masa Aktif Akun VPN</b>';
+        $expStr = $account->expired_at ? $account->expired_at->format('d M Y, H:i') : '-';
+        $remaining = $account->expired_at ? $account->expired_at->diffForHumans() : '-';
+        $serverName = htmlspecialchars((string) ($account->vpnServer?->name ?: $account->display_domain ?: '-'));
+        $username = htmlspecialchars((string) $account->username);
+        $proto = strtoupper((string) $account->protocol);
+
+        $text = "{$emoji} {$title}\n\n"
+              . "Username: <code>{$username}</code>\n"
+              . "Protokol: <b>{$proto}</b>\n"
+              . "Server: {$serverName}\n"
+              . "Berakhir Pada: <b>{$expStr}</b> ({$remaining})\n\n"
+              . "Segera perpanjang agar koneksi VPN Anda tidak terputus.";
+
+        $renewUrl = self::resolveBaseDomain() . '/my-vpn?renew=' . $account->id;
+        $keyboard = [
+            'inline_keyboard' => [
+                [
+                    ['text' => '🔄 Renew Sekarang', 'url' => $renewUrl],
+                ],
+            ],
+        ];
+
+        try {
+            $response = Http::post("https://api.telegram.org/bot{$botToken}/sendMessage", [
+                'chat_id' => $user->telegram_id,
+                'text' => $text,
+                'parse_mode' => 'HTML',
+                'reply_markup' => json_encode($keyboard),
+                'disable_web_page_preview' => true,
+            ]);
+
+            if (!$response->successful()) {
+                Log::warning("Telegram VPN expiring alert failed for chat {$user->telegram_id}: " . $response->body());
+                return false;
+            }
+
+            return true;
+        } catch (\Throwable $e) {
+            Log::error("Gagal mengirim pengingat VPN expired ke {$user->telegram_id}: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
      * Helper to send Telegram message.
      */
     public static function sendTelegramMessage(string $chatId, string $text)
