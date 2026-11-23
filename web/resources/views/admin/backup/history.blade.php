@@ -98,26 +98,49 @@
             </table>
         </div>
 
-        {{-- Mobile Stacked Cards (< 768px) --}}
-        <div class="d-md-none d-flex flex-column gap-2.5">
+        {{-- Mobile Collapsible Compact List (< 768px) --}}
+        <div class="d-md-none m3-collapsible-list" id="backupHistoryAccordion">
             @forelse($history as $item)
-            <div class="m3-mobile-item-card p-3">
-                <div class="fw-bold small text-body font-monospace mb-1" style="word-break: break-all;">{{ $item['filename'] }}</div>
-                <div class="d-flex justify-content-between align-items-center small text-secondary mb-2">
-                    <span><i class="far fa-clock me-1"></i>{{ $item['created_at'] }}</span>
-                    <span class="badge bg-secondary-subtle text-body rounded-pill m3-tabular-nums">{{ $item['size'] }} · {{ $item['type'] }}</span>
+            <div class="m3-mobile-item-card m3-collapsible-card">
+                <div class="m3-compact-row">
+                    <button type="button"
+                            class="m3-compact-trigger"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#backupHistoryCollapse-{{ $loop->index }}"
+                            aria-expanded="false"
+                            aria-controls="backupHistoryCollapse-{{ $loop->index }}">
+                        <div class="min-w-0 flex-grow-1">
+                            <div class="fw-bold text-body font-monospace text-truncate" style="font-size: 0.8rem;">{{ $item['filename'] }}</div>
+                            <div class="text-secondary text-truncate" style="font-size: 0.72rem;">
+                                <i class="far fa-clock me-1"></i>{{ $item['created_at'] }}
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                            <span class="badge bg-secondary-subtle text-body rounded-pill m3-tabular-nums px-2 py-0.5" style="font-size: 0.68rem;">{{ $item['size'] }}</span>
+                            <i class="fas fa-chevron-down m3-compact-chevron"></i>
+                        </div>
+                    </button>
                 </div>
-                <div class="d-flex gap-2 pt-2 border-top" style="border-color: var(--outline-variant) !important;">
-                    <a href="{{ route('admin.backup.download', $item['filename']) }}" class="btn btn-sm btn-tonal rounded-pill flex-grow-1 fw-semibold d-inline-flex align-items-center justify-content-center gap-1" style="min-height: 40px;">
-                        <i class="fas fa-download"></i><span>{{ __('Unduh Backup') }}</span>
-                    </a>
-                    <form action="{{ route('admin.backup.destroy', $item['filename']) }}" method="POST" class="m-0 form-delete-backup">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3" style="min-height: 40px;" title="{{ __('Hapus File') }}">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </form>
+
+                <div class="collapse" id="backupHistoryCollapse-{{ $loop->index }}" data-bs-parent="#backupHistoryAccordion">
+                    <div class="m3-collapsible-body">
+                        <div class="small text-secondary mb-2">
+                            <div class="font-monospace text-body mb-1" style="word-break: break-all; font-size: 0.74rem;">{{ $item['filename'] }}</div>
+                            <div>{{ __('Tipe:') }} <strong class="text-body">{{ $item['type'] }}</strong> · {{ $item['size'] }}</div>
+                        </div>
+                        <div class="d-flex gap-1.5">
+                            <a href="{{ route('admin.backup.download', $item['filename']) }}" class="btn btn-sm btn-tonal m3-compact-action-btn flex-grow-1 px-2.5">
+                                <i class="fas fa-download"></i><span>{{ __('Unduh Backup') }}</span>
+                            </a>
+                            <form action="{{ route('admin.backup.destroy', $item['filename']) }}" method="POST" class="m-0 form-delete-backup">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-sm btn-outline-danger m3-compact-action-btn px-3" title="{{ __('Hapus File') }}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
                 </div>
             </div>
             @empty

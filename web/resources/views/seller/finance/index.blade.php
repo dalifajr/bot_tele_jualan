@@ -222,44 +222,58 @@
                         </table>
                     </div>
 
-                    {{-- Mobile Stacked Card List --}}
-                    <div class="d-md-none p-3 d-flex flex-column gap-2.5">
+                    {{-- Mobile Collapsible Compact List --}}
+                    <div class="d-md-none p-2.5 m3-collapsible-list" id="sellerWithdrawalsAccordion">
                         @foreach($withdrawals as $withdrawal)
-                            <div class="m3-mobile-item-card">
-                                <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
-                                    <div class="min-w-0">
-                                        <div class="fw-bold text-body">{{ strtoupper($withdrawal->bank_name) }}</div>
-                                        <div class="small text-muted font-monospace">{{ $withdrawal->account_number }}</div>
-                                        <div class="small text-muted" style="font-size: 0.78rem;">a.n. {{ $withdrawal->account_holder }}</div>
-                                    </div>
-                                    <div class="flex-shrink-0">
-                                        @if($withdrawal->status === 'pending')
-                                            <span class="badge bg-warning-subtle rounded-pill px-2.5 py-1 fw-semibold">{{ __('Menunggu') }}</span>
-                                        @elseif($withdrawal->status === 'approved')
-                                            <span class="badge bg-success-subtle rounded-pill px-2.5 py-1 fw-semibold">{{ __('Selesai') }}</span>
-                                        @else
-                                            <span class="badge bg-danger-subtle rounded-pill px-2.5 py-1 fw-semibold">{{ __('Ditolak') }}</span>
-                                        @endif
-                                    </div>
+                            <div class="m3-mobile-item-card m3-collapsible-card">
+                                <div class="m3-compact-row">
+                                    <button type="button"
+                                            class="m3-compact-trigger"
+                                            data-bs-toggle="collapse"
+                                            data-bs-target="#sellerWithdrawalCollapse-{{ $withdrawal->id }}"
+                                            aria-expanded="false"
+                                            aria-controls="sellerWithdrawalCollapse-{{ $withdrawal->id }}">
+                                        <div class="min-w-0 flex-grow-1">
+                                            <div class="fw-bold text-body text-truncate" style="font-size: 0.85rem;">
+                                                {{ strtoupper($withdrawal->bank_name) }} · <span class="font-monospace fw-semibold">{{ $withdrawal->account_number }}</span>
+                                            </div>
+                                            <div class="text-secondary text-truncate" style="font-size: 0.73rem;">
+                                                <i class="far fa-clock me-1"></i>{{ $withdrawal->created_at->format('d M Y, H:i') }}
+                                            </div>
+                                        </div>
+                                        <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                                            <div class="text-end">
+                                                <div class="fw-bold text-body m3-tabular-nums" style="font-size: 0.82rem;">Rp {{ number_format($withdrawal->amount, 0, ',', '.') }}</div>
+                                                @if($withdrawal->status === 'pending')
+                                                    <span class="badge bg-warning-subtle rounded-pill px-2 py-0" style="font-size: 0.64rem;">{{ __('Menunggu') }}</span>
+                                                @elseif($withdrawal->status === 'approved')
+                                                    <span class="badge bg-success-subtle rounded-pill px-2 py-0" style="font-size: 0.64rem;">{{ __('Selesai') }}</span>
+                                                @else
+                                                    <span class="badge bg-danger-subtle rounded-pill px-2 py-0" style="font-size: 0.64rem;">{{ __('Ditolak') }}</span>
+                                                @endif
+                                            </div>
+                                            <i class="fas fa-chevron-down m3-compact-chevron"></i>
+                                        </div>
+                                    </button>
                                 </div>
 
-                                <div class="d-flex justify-content-between align-items-center gap-2 pt-2.5 mt-2" style="border-top: 1px solid var(--outline-variant);">
-                                    <div>
-                                        <div class="fw-bold text-body fs-6 m3-tabular-nums">Rp {{ number_format($withdrawal->amount, 0, ',', '.') }}</div>
-                                        <div class="text-muted" style="font-size: 0.74rem;">
-                                            <i class="far fa-clock me-1"></i>{{ $withdrawal->created_at->format('d M Y, H:i') }}
+                                <div class="collapse" id="sellerWithdrawalCollapse-{{ $withdrawal->id }}" data-bs-parent="#sellerWithdrawalsAccordion">
+                                    <div class="m3-collapsible-body">
+                                        <div class="small text-secondary mb-2">
+                                            <div>a.n. <strong class="text-body">{{ $withdrawal->account_holder }}</strong></div>
                                         </div>
+                                        @if($withdrawal->status === 'approved')
+                                            <button type="button" class="btn btn-sm btn-tonal m3-compact-action-btn w-100" data-bs-toggle="modal" data-bs-target="#viewProofModal{{ $withdrawal->id }}">
+                                                <i class="fas fa-receipt"></i><span>{{ __('Lihat Struk') }}</span>
+                                            </button>
+                                        @elseif($withdrawal->status === 'rejected')
+                                            <button type="button" class="btn btn-sm btn-outline-danger m3-compact-action-btn w-100" data-bs-toggle="modal" data-bs-target="#viewRejectionModal{{ $withdrawal->id }}">
+                                                <i class="fas fa-circle-info"></i><span>{{ __('Lihat Alasan') }}</span>
+                                            </button>
+                                        @else
+                                            <div class="small text-muted"><i class="fas fa-hourglass-half me-1"></i>{{ __('Sedang diproses oleh admin.') }}</div>
+                                        @endif
                                     </div>
-
-                                    @if($withdrawal->status === 'approved')
-                                        <button type="button" class="btn btn-sm btn-tonal rounded-pill px-3 py-1.5 fw-semibold" style="min-height: 38px;" data-bs-toggle="modal" data-bs-target="#viewProofModal{{ $withdrawal->id }}">
-                                            <i class="fas fa-receipt me-1"></i>{{ __('Lihat Struk') }}
-                                        </button>
-                                    @elseif($withdrawal->status === 'rejected')
-                                        <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 py-1.5 fw-semibold" style="min-height: 38px;" data-bs-toggle="modal" data-bs-target="#viewRejectionModal{{ $withdrawal->id }}">
-                                            <i class="fas fa-circle-info me-1"></i>{{ __('Lihat Alasan') }}
-                                        </button>
-                                    @endif
                                 </div>
                             </div>
                         @endforeach

@@ -290,8 +290,8 @@
                     </table>
                 </div>
 
-                {{-- Mobile Stacked Card List (< 768px) --}}
-                <div class="d-md-none d-flex flex-column gap-2.5">
+                {{-- Mobile Collapsible Compact List (< 768px) --}}
+                <div class="d-md-none m3-collapsible-list" id="adminBroadcastAccordion">
                     @forelse($broadcastHistory as $history)
                         @php
                             $snaps = is_array($history->read_snapshots) ? $history->read_snapshots : [];
@@ -302,72 +302,78 @@
                                     break;
                                 }
                             }
+                            $plainMsg = trim(strip_tags($history->message ?? ''));
                         @endphp
-                        <div class="m3-mobile-item-card p-3">
-                            <div class="d-flex justify-content-between align-items-center gap-2 mb-1.5">
-                                <span class="small text-secondary"><i class="far fa-clock me-1"></i>{{ $history->created_at->format('d M Y, H:i') }}</span>
-                                @if($history->status == 'completed')
-                                    <span class="badge bg-success-subtle text-success rounded-pill px-2.5">{{ __('Selesai') }}</span>
-                                @elseif($history->status == 'failed')
-                                    <span class="badge bg-danger-subtle text-danger rounded-pill px-2.5">{{ __('Gagal') }}</span>
-                                @elseif($history->status == 'cancelled')
-                                    <span class="badge bg-secondary-subtle text-secondary rounded-pill px-2.5">{{ __('Dibatalkan') }}</span>
-                                @else
-                                    <span class="badge bg-warning-subtle text-warning rounded-pill px-2.5">{{ ucfirst($history->status) }}</span>
-                                @endif
+                        <div class="m3-mobile-item-card m3-collapsible-card">
+                            <div class="m3-compact-row">
+                                <button type="button"
+                                        class="m3-compact-trigger"
+                                        data-bs-toggle="collapse"
+                                        data-bs-target="#adminBroadcastCollapse-{{ $history->id }}"
+                                        aria-expanded="false"
+                                        aria-controls="adminBroadcastCollapse-{{ $history->id }}">
+                                    <div class="min-w-0 flex-grow-1">
+                                        <div class="fw-bold text-body text-truncate" style="font-size: 0.84rem;">
+                                            {{ $plainMsg ? Str::limit($plainMsg, 44) : __('(Media / Tanpa teks)') }}
+                                        </div>
+                                        <div class="text-secondary text-truncate m3-tabular-nums" style="font-size: 0.72rem;">
+                                            {{ $history->created_at->format('d M, H:i') }}
+                                            · <span class="text-success fw-semibold">{{ $history->sent_count }}</span>/{{ $history->total_targets }}
+                                            · <i class="fas fa-eye text-primary"></i> <span data-bc-read-count="{{ $history->id }}">{{ (int) $history->read_count }}</span> <span data-bc-read-rate="{{ $history->id }}">({{ $history->read_rate }}%)</span>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                                        @if($history->status == 'completed')
+                                            <span class="badge bg-success-subtle text-success rounded-pill px-2 py-0.5" style="font-size: 0.66rem;">{{ __('Selesai') }}</span>
+                                        @elseif($history->status == 'failed')
+                                            <span class="badge bg-danger-subtle text-danger rounded-pill px-2 py-0.5" style="font-size: 0.66rem;">{{ __('Gagal') }}</span>
+                                        @elseif($history->status == 'cancelled')
+                                            <span class="badge bg-secondary-subtle text-secondary rounded-pill px-2 py-0.5" style="font-size: 0.66rem;">{{ __('Batal') }}</span>
+                                        @else
+                                            <span class="badge bg-warning-subtle text-warning rounded-pill px-2 py-0.5" style="font-size: 0.66rem;">{{ ucfirst($history->status) }}</span>
+                                        @endif
+                                        <i class="fas fa-chevron-down m3-compact-chevron"></i>
+                                    </div>
+                                </button>
                             </div>
 
-                            <div class="small text-body fw-medium mb-2" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
-                                {!! Str::limit(strip_tags($history->message), 110) ?: '<em class="text-muted">' . __('Tidak ada teks') . '</em>' !!}
-                            </div>
+                            <div class="collapse" id="adminBroadcastCollapse-{{ $history->id }}" data-bs-parent="#adminBroadcastAccordion">
+                                <div class="m3-collapsible-body">
+                                    <div class="small text-body mb-2" style="line-height: 1.4;">
+                                        {!! Str::limit(strip_tags($history->message), 140) ?: '<em class="text-muted">' . __('Tidak ada teks') . '</em>' !!}
+                                    </div>
 
-                            @if($history->media_type && $history->media_path)
-                                <div class="mb-2">
-                                    <a href="{{ Storage::url($history->media_path) }}" target="_blank" class="badge bg-info-subtle text-info text-decoration-none rounded-pill px-2.5 py-1">
-                                        <i class="fas fa-paperclip me-1"></i>{{ ucfirst($history->media_type) }}
-                                    </a>
-                                </div>
-                            @endif
-
-                            {{-- Delivery & Read Metrics Strip --}}
-                            <div class="d-flex justify-content-between align-items-center gap-2 py-2 px-2.5 rounded-3 mb-2.5 m3-tabular-nums" style="background: var(--surface-container-high);">
-                                <div class="small">
-                                    <span class="text-success fw-bold"><i class="fas fa-check me-1"></i>{{ $history->sent_count }}</span>
-                                    <span class="text-muted mx-1">/</span>
-                                    <span class="text-secondary">{{ $history->total_targets }}</span>
-                                    @if($history->failed_count > 0)
-                                        <button type="button" class="btn btn-sm bg-danger-subtle text-danger border border-danger-subtle rounded-pill py-0 px-2 ms-1 fw-bold" style="font-size: 0.72rem;" onclick="openBroadcastAnalytics({{ $history->id }}, 'failures')">
-                                            <i class="fas fa-triangle-exclamation me-1"></i>{{ $history->failed_count }}
-                                        </button>
+                                    @if($history->media_type && $history->media_path)
+                                        <div class="mb-2">
+                                            <a href="{{ Storage::url($history->media_path) }}" target="_blank" class="badge bg-info-subtle text-info text-decoration-none rounded-pill px-2.5 py-1">
+                                                <i class="fas fa-paperclip me-1"></i>{{ ucfirst($history->media_type) }}
+                                            </a>
+                                        </div>
                                     @endif
-                                </div>
-                                <button type="button" class="btn btn-sm btn-tonal rounded-pill py-1 px-2.5 d-inline-flex align-items-center gap-1" onclick="openBroadcastAnalytics({{ $history->id }}, 'reads')">
-                                    <i class="fas fa-eye text-primary small"></i>
-                                    <span class="fw-bold text-body small" data-bc-read-count="{{ $history->id }}">{{ (int) $history->read_count }}</span>
-                                    <span class="text-secondary" style="font-size: 0.72rem;" data-bc-read-rate="{{ $history->id }}">({{ $history->read_rate }}%)</span>
-                                </button>
-                            </div>
 
-                            <div class="d-flex gap-2 pt-2 border-top" style="border-color: var(--outline-variant) !important;">
-                                <button type="button" class="btn btn-sm btn-tonal rounded-pill flex-grow-1 fw-semibold" style="min-height: 40px;" onclick="openBroadcastAnalytics({{ $history->id }}, '{{ $history->failed_count > 0 ? 'failures' : 'reads' }}')">
-                                    <i class="fas fa-chart-line me-1"></i>{{ $history->failed_count > 0 ? __('Diagnostik & Laporan') : __('Laporan Dibaca') }}
-                                </button>
-                                <div class="dropdown">
-                                    <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" style="min-height: 40px;" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                        <i class="fas fa-ellipsis-v"></i>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-end border" style="border-radius: 14px;">
-                                        <li>
-                                            <button class="dropdown-item py-2" onclick="resendBroadcast({{ $history->id }})">
-                                                <i class="fas fa-redo text-success me-2"></i>{{ __('Resend') }}
-                                            </button>
-                                        </li>
-                                        <li>
-                                            <button class="dropdown-item py-2" onclick="resendWithEdit({{ $history->id }}, `{{ base64_encode($history->message) }}`, '{{ $history->media_path }}', '{{ $history->media_type }}', {{ $history->enable_read_button ? 'true' : 'false' }}, `{{ base64_encode((string) $history->cta_label) }}`, `{{ base64_encode((string) $history->cta_url) }}`, '{{ $history->cta_open_mode ?: 'miniapp' }}')">
-                                                <i class="fas fa-edit text-warning me-2"></i>{{ __('Resend with Edit') }}
-                                            </button>
-                                        </li>
-                                    </ul>
+                                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 py-1.5 px-2.5 rounded-3 mb-2.5 m3-tabular-nums small" style="background: var(--surface-container-high);">
+                                        <span>
+                                            <span class="text-success fw-bold"><i class="fas fa-check me-1"></i>{{ $history->sent_count }}</span> / {{ $history->total_targets }}
+                                            @if($history->failed_count > 0)
+                                                <button type="button" class="btn btn-sm bg-danger-subtle text-danger border border-danger-subtle rounded-pill py-0 px-2 ms-1 fw-bold" style="font-size: 0.7rem;" onclick="openBroadcastAnalytics({{ $history->id }}, 'failures')">
+                                                    <i class="fas fa-triangle-exclamation me-1"></i>{{ $history->failed_count }}
+                                                </button>
+                                            @endif
+                                        </span>
+                                        <span class="text-secondary">{{ $history->created_at->format('d M Y, H:i') }}</span>
+                                    </div>
+
+                                    <div class="d-flex flex-wrap gap-1.5">
+                                        <button type="button" class="btn btn-sm btn-tonal m3-compact-action-btn flex-grow-1 px-2.5" onclick="openBroadcastAnalytics({{ $history->id }}, '{{ $history->failed_count > 0 ? 'failures' : 'reads' }}')">
+                                            <i class="fas fa-chart-line"></i><span>{{ $history->failed_count > 0 ? __('Diagnostik') : __('Laporan') }}</span>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-success m3-compact-action-btn px-2.5" onclick="resendBroadcast({{ $history->id }})">
+                                            <i class="fas fa-redo"></i><span>{{ __('Resend') }}</span>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-warning m3-compact-action-btn px-2.5" onclick="resendWithEdit({{ $history->id }}, `{{ base64_encode($history->message) }}`, '{{ $history->media_path }}', '{{ $history->media_type }}', {{ $history->enable_read_button ? 'true' : 'false' }}, `{{ base64_encode((string) $history->cta_label) }}`, `{{ base64_encode((string) $history->cta_url) }}`, '{{ $history->cta_open_mode ?: 'miniapp' }}')">
+                                            <i class="fas fa-edit"></i><span>{{ __('Edit & Kirim') }}</span>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>

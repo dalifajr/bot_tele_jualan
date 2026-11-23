@@ -71,40 +71,50 @@
                     </table>
                 </div>
 
-                {{-- Mobile Stacked Card List --}}
-                <div class="d-md-none p-3 d-flex flex-column gap-2.5">
+                {{-- Mobile Collapsible Compact List --}}
+                <div class="d-md-none p-2.5 m3-collapsible-list" id="profileLoginsAccordion">
                     @foreach($loginLogs as $log)
-                    <div class="m3-mobile-item-card">
-                        <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
-                            <div>
-                                <div class="fw-bold font-monospace text-body small">{{ $log->ip_address }}</div>
-                                <div class="small text-muted"><i class="fas fa-map-marker-alt text-danger me-1"></i>{{ $log->location ?? 'Unknown' }}</div>
-                            </div>
-                            @if($log->is_successful)
-                                <span class="badge bg-success-subtle text-success rounded-pill px-2.5 py-1 fw-semibold"><i class="fas fa-check-circle me-1"></i>{{ __('Berhasil') }}</span>
-                            @else
-                                <span class="badge bg-danger-subtle text-danger rounded-pill px-2.5 py-1 fw-semibold"><i class="fas fa-times-circle me-1"></i>{{ __('Gagal') }}</span>
-                            @endif
+                    <div class="m3-mobile-item-card m3-collapsible-card">
+                        <div class="m3-compact-row">
+                            <button type="button"
+                                    class="m3-compact-trigger"
+                                    data-bs-toggle="collapse"
+                                    data-bs-target="#profileLoginCollapse-{{ $log->id }}"
+                                    aria-expanded="false"
+                                    aria-controls="profileLoginCollapse-{{ $log->id }}">
+                                <div class="min-w-0 flex-grow-1">
+                                    <div class="fw-bold font-monospace text-body text-truncate" style="font-size: 0.83rem;">{{ $log->ip_address }}</div>
+                                    <div class="text-secondary text-truncate" style="font-size: 0.72rem;">
+                                        {{ $log->location ?? 'Unknown' }} · {{ $log->created_at->format('d M, H:i') }}
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                                    @if($log->is_successful)
+                                        <span class="badge bg-success-subtle text-success rounded-pill px-2 py-0.5" style="font-size: 0.66rem;">{{ __('Berhasil') }}</span>
+                                    @else
+                                        <span class="badge bg-danger-subtle text-danger rounded-pill px-2 py-0.5" style="font-size: 0.66rem;">{{ __('Gagal') }}</span>
+                                    @endif
+                                    <i class="fas fa-chevron-down m3-compact-chevron"></i>
+                                </div>
+                            </button>
                         </div>
 
-                        <div class="small text-muted mb-2">
-                            <span><i class="fas fa-laptop me-1"></i>{{ $log->device_type }}</span> &bull;
-                            <span><i class="fab fa-chrome me-1"></i>{{ $log->browser ?? '-' }}</span>
-                        </div>
-
-                        <div class="d-flex justify-content-between align-items-center pt-2 mt-1" style="border-top: 1px solid var(--outline-variant);">
-                            <small class="text-muted"><i class="far fa-clock me-1"></i>{{ $log->created_at->format('d M Y, H:i') }}</small>
-                            <div>
+                        <div class="collapse" id="profileLoginCollapse-{{ $log->id }}" data-bs-parent="#profileLoginsAccordion">
+                            <div class="m3-collapsible-body">
+                                <div class="small text-secondary mb-2.5">
+                                    <div><i class="fas fa-laptop me-1"></i>{{ $log->device_type }} · <i class="fab fa-chrome me-1"></i>{{ $log->browser ?? '-' }}</div>
+                                    <div class="mt-0.5"><i class="far fa-clock me-1"></i>{{ $log->created_at->format('d M Y, H:i') }}</div>
+                                </div>
                                 @if(\Illuminate\Support\Facades\Cache::has('blocked_ip:' . $log->ip_address) || \Illuminate\Support\Facades\Cache::has('blocked_user_ip:' . Auth::id() . ':' . $log->ip_address))
-                                    <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-3 py-1 fw-semibold" onclick="requestUnblockIp(event, '{{ $log->ip_address }}', '{{ $log->location ?? 'Unknown' }}', '{{ $log->device_type }}', '{{ $log->browser ?? '-' }}')">
-                                        <i class="fas fa-unlock me-1"></i>{{ __('Buka Blokir') }}
+                                    <button type="button" class="btn btn-sm btn-outline-success m3-compact-action-btn w-100" onclick="requestUnblockIp(event, '{{ $log->ip_address }}', '{{ $log->location ?? 'Unknown' }}', '{{ $log->device_type }}', '{{ $log->browser ?? '-' }}')">
+                                        <i class="fas fa-unlock"></i><span>{{ __('Buka Blokir') }}</span>
                                     </button>
                                 @else
-                                    <form action="{{ route('profile.logins.block-ip') }}" method="POST" class="d-inline" onsubmit="confirmBlockIp(event, this)">
+                                    <form action="{{ route('profile.logins.block-ip') }}" method="POST" class="m-0" onsubmit="confirmBlockIp(event, this)">
                                         @csrf
                                         <input type="hidden" name="ip_address" value="{{ $log->ip_address }}">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3 py-1 fw-semibold">
-                                            <i class="fas fa-ban me-1"></i>{{ __('Blokir') }}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger m3-compact-action-btn w-100">
+                                            <i class="fas fa-ban"></i><span>{{ __('Blokir IP Ini') }}</span>
                                         </button>
                                     </form>
                                 @endif

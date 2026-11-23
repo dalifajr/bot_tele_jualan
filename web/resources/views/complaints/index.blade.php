@@ -73,8 +73,8 @@
             </table>
         </div>
 
-        {{-- Mobile Stacked Card List --}}
-        <div class="d-md-none p-3 d-flex flex-column gap-2.5">
+        {{-- Mobile Collapsible Compact List --}}
+        <div class="d-md-none p-2.5 m3-collapsible-list" id="customerComplaintsAccordion">
             @foreach($complaints as $complaint)
             @php
                 $statusBadge = match($complaint->status) {
@@ -86,23 +86,41 @@
                     default => ['bg' => 'secondary-subtle', 'text' => 'secondary', 'label' => $complaint->status]
                 };
             @endphp
-            <div class="m3-mobile-item-card">
-                <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
-                    <div class="min-w-0">
-                        <div class="fw-bold text-primary font-monospace small">{{ $complaint->complaint_ref }}</div>
-                        <div class="small text-muted font-monospace">{{ $complaint->order_ref_snapshot }}</div>
-                        <div class="fw-semibold text-body small mt-1">{{ $complaint->order?->items?->first()?->product?->name ?? __('Produk') }}</div>
-                    </div>
-                    <span class="badge bg-{{ $statusBadge['bg'] }} text-{{ $statusBadge['text'] }} rounded-pill px-2.5 py-1 fw-semibold flex-shrink-0">
-                        {{ $statusBadge['label'] }}
-                    </span>
+            <div class="m3-mobile-item-card m3-collapsible-card">
+                <div class="m3-compact-row">
+                    <button type="button"
+                            class="m3-compact-trigger"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#customerComplaintCollapse-{{ $complaint->id }}"
+                            aria-expanded="false"
+                            aria-controls="customerComplaintCollapse-{{ $complaint->id }}">
+                        <div class="min-w-0 flex-grow-1">
+                            <div class="fw-bold text-body text-truncate" style="font-size: 0.84rem;">
+                                <span class="font-monospace text-primary">{{ $complaint->complaint_ref }}</span> · {{ $complaint->order?->items?->first()?->product?->name ?? __('Produk') }}
+                            </div>
+                            <div class="text-secondary text-truncate" style="font-size: 0.72rem;">
+                                <span class="font-monospace">{{ $complaint->order_ref_snapshot }}</span> · {{ $complaint->created_at->format('d M, H:i') }}
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                            <span class="badge bg-{{ $statusBadge['bg'] }} text-{{ $statusBadge['text'] }} rounded-pill px-2 py-0.5" style="font-size: 0.66rem;">
+                                {{ $statusBadge['label'] }}
+                            </span>
+                            <i class="fas fa-chevron-down m3-compact-chevron"></i>
+                        </div>
+                    </button>
                 </div>
-                <div class="d-flex justify-content-between align-items-center pt-2 mt-2" style="border-top: 1px solid var(--outline-variant);">
-                    <small class="text-muted"><i class="far fa-clock me-1"></i>{{ $complaint->created_at->format('d M Y, H:i') }}</small>
-                    <a href="{{ route('customer.complaints.show', $complaint->id) }}" class="btn btn-sm btn-tonal rounded-pill px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1" style="min-height: 38px;">
-                        <span>{{ __('Lihat Detail') }}</span>
-                        <i class="fas fa-arrow-right small"></i>
-                    </a>
+
+                <div class="collapse" id="customerComplaintCollapse-{{ $complaint->id }}" data-bs-parent="#customerComplaintsAccordion">
+                    <div class="m3-collapsible-body">
+                        <div class="small text-secondary mb-2">
+                            <i class="far fa-clock me-1"></i>{{ $complaint->created_at->format('d M Y, H:i') }}
+                        </div>
+                        <a href="{{ route('customer.complaints.show', $complaint->id) }}" class="btn btn-sm btn-tonal m3-compact-action-btn w-100">
+                            <span>{{ __('Lihat Detail') }}</span>
+                            <i class="fas fa-arrow-right small"></i>
+                        </a>
+                    </div>
                 </div>
             </div>
             @endforeach

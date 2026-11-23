@@ -474,34 +474,51 @@ hash_equals($expected, $_SERVER['HTTP_X_RESELLER_SIGNATURE']);</pre>
                 </table>
             </div>
 
-            {{-- Mobile Stacked Card View (< 768px) --}}
-            <div class="d-md-none d-flex flex-column gap-2.5">
+            {{-- Mobile Collapsible Compact List (< 768px) --}}
+            <div class="d-md-none m3-collapsible-list" id="devApiLogsAccordion">
                 @forelse($logs as $log)
                     @php
                         $stClass = $log->status_code >= 200 && $log->status_code < 300 ? 'bg-success text-white' : ($log->status_code >= 400 && $log->status_code < 500 ? 'bg-warning text-dark' : 'bg-danger text-white');
                     @endphp
-                    <div class="m3-mobile-item-card p-3">
-                        <div class="d-flex justify-content-between align-items-center mb-1.5">
-                            <span class="badge {{ $stClass }} fw-bold">{{ $log->status_code }}</span>
-                            <span class="small text-secondary">{{ optional($log->created_at)->format('d M, H:i:s') }}</span>
+                    <div class="m3-mobile-item-card m3-collapsible-card">
+                        <div class="m3-compact-row">
+                            <button type="button"
+                                    class="m3-compact-trigger"
+                                    data-bs-toggle="collapse"
+                                    data-bs-target="#devApiLogCollapse-{{ $log->id }}"
+                                    aria-expanded="false"
+                                    aria-controls="devApiLogCollapse-{{ $log->id }}">
+                                <div class="min-w-0 flex-grow-1">
+                                    <div class="d-flex align-items-center gap-1.5 min-w-0">
+                                        <span class="badge bg-secondary-subtle text-body flex-shrink-0" style="font-size: 0.62rem;">{{ $log->method }}</span>
+                                        <span class="font-monospace fw-semibold text-body text-truncate" style="font-size: 0.78rem;">{{ $log->endpoint }}</span>
+                                    </div>
+                                    <div class="text-secondary text-truncate m3-tabular-nums" style="font-size: 0.72rem;">
+                                        {{ optional($log->created_at)->format('d M, H:i:s') }} · {{ $log->duration_ms }} ms
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                                    <span class="badge {{ $stClass }} fw-bold" style="font-size: 0.66rem;">{{ $log->status_code }}</span>
+                                    <i class="fas fa-chevron-down m3-compact-chevron"></i>
+                                </div>
+                            </button>
                         </div>
-                        <div class="font-monospace small fw-semibold text-break mb-1">
-                            <span class="badge bg-secondary-subtle text-body me-1">{{ $log->method }}</span>{{ $log->endpoint }}
+                        <div class="collapse" id="devApiLogCollapse-{{ $log->id }}" data-bs-parent="#devApiLogsAccordion">
+                            <div class="m3-collapsible-body small text-secondary">
+                                <div class="font-monospace text-body text-break mb-1" style="font-size: 0.74rem;">{{ $log->method }} {{ $log->endpoint }}</div>
+                                <div><i class="fas fa-key me-1"></i>{{ $log->apiKey?->name ?? '-' }}</div>
+                                @if($log->order_ref || $log->response_summary)
+                                <div class="mt-1.5">
+                                    @if($log->order_ref)
+                                        <span class="badge bg-primary-subtle text-primary font-monospace">{{ $log->order_ref }}</span>
+                                    @endif
+                                    @if($log->response_summary)
+                                        <span class="ms-1 text-break">{{ $log->response_summary }}</span>
+                                    @endif
+                                </div>
+                                @endif
+                            </div>
                         </div>
-                        <div class="d-flex justify-content-between align-items-center small text-secondary mt-2 pt-2 border-top" style="border-color: var(--outline-variant) !important;">
-                            <span><i class="fas fa-key me-1"></i>{{ $log->apiKey?->name ?? '-' }}</span>
-                            <span class="m3-tabular-nums"><i class="fas fa-stopwatch me-1"></i>{{ $log->duration_ms }} ms</span>
-                        </div>
-                        @if($log->order_ref || $log->response_summary)
-                        <div class="small text-secondary mt-1">
-                            @if($log->order_ref)
-                                <span class="badge bg-primary-subtle text-primary font-monospace">{{ $log->order_ref }}</span>
-                            @endif
-                            @if($log->response_summary)
-                                <span class="ms-1">{{ $log->response_summary }}</span>
-                            @endif
-                        </div>
-                        @endif
                     </div>
                 @empty
                     <div class="text-center py-4 text-secondary">
@@ -596,31 +613,43 @@ hash_equals($expected, $_SERVER['HTTP_X_RESELLER_SIGNATURE']);</pre>
                         </table>
                     </div>
 
-                    {{-- Mobile Stacked Cards (< 768px) --}}
-                    <div class="d-md-none d-flex flex-column gap-2.5">
+                    {{-- Mobile Collapsible Compact List (< 768px) --}}
+                    <div class="d-md-none m3-collapsible-list" id="adminGlobalApiKeysAccordion">
                         @forelse($adminData['all_keys'] as $gKey)
-                        <div class="m3-mobile-item-card p-3">
-                            <div class="d-flex justify-content-between align-items-start gap-2 mb-1.5">
-                                <div class="min-w-0">
-                                    <div class="fw-bold text-body text-truncate">{{ $gKey->name }}</div>
-                                    <code class="small text-primary">{{ $gKey->key_prefix }}</code>
-                                </div>
-                                <span class="badge bg-secondary-subtle text-body rounded-pill text-uppercase" style="font-size: 0.68rem;">{{ $gKey->user?->role ?? '-' }}</span>
+                        <div class="m3-mobile-item-card m3-collapsible-card">
+                            <div class="m3-compact-row">
+                                <button type="button"
+                                        class="m3-compact-trigger"
+                                        data-bs-toggle="collapse"
+                                        data-bs-target="#adminGlobalKeyCollapse-{{ $gKey->id }}"
+                                        aria-expanded="false"
+                                        aria-controls="adminGlobalKeyCollapse-{{ $gKey->id }}">
+                                    <div class="min-w-0 flex-grow-1">
+                                        <div class="fw-bold text-body text-truncate" style="font-size: 0.84rem;">
+                                            {{ $gKey->user?->display_name ?? ('User #' . $gKey->user_id) }} · {{ $gKey->name }}
+                                        </div>
+                                        <div class="text-secondary text-truncate font-monospace" style="font-size: 0.72rem;">
+                                            {{ $gKey->key_prefix }} · {{ $gKey->last_used_at ? $gKey->last_used_at->diffForHumans() : '-' }}
+                                        </div>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                                        <span class="badge bg-secondary-subtle text-body rounded-pill text-uppercase px-2 py-0.5" style="font-size: 0.64rem;">{{ $gKey->user?->role ?? '-' }}</span>
+                                        <i class="fas fa-chevron-down m3-compact-chevron"></i>
+                                    </div>
+                                </button>
                             </div>
-                            <div class="small text-secondary mb-2">
-                                <div><i class="fas fa-user me-1"></i><strong class="text-body">{{ $gKey->user?->display_name ?? ('User #' . $gKey->user_id) }}</strong></div>
-                                <div class="d-flex flex-wrap gap-3 mt-1 m3-tabular-nums">
-                                    <span><i class="fas fa-chart-simple me-1"></i>{{ number_format($gKey->requests_count) }} hits ({{ $gKey->rate_limit_per_minute }}/m)</span>
-                                    <span><i class="far fa-clock me-1"></i>{{ $gKey->last_used_at ? $gKey->last_used_at->diffForHumans() : '-' }}</span>
+                            <div class="collapse" id="adminGlobalKeyCollapse-{{ $gKey->id }}" data-bs-parent="#adminGlobalApiKeysAccordion">
+                                <div class="m3-collapsible-body">
+                                    <div class="small text-secondary mb-2.5 m3-tabular-nums">
+                                        <div><i class="fas fa-chart-simple me-1"></i>{{ number_format($gKey->requests_count) }} hits ({{ $gKey->rate_limit_per_minute }}/m)</div>
+                                    </div>
+                                    <form action="{{ route('developer.api.admin.keys.revoke', $gKey->id) }}" method="POST" class="m-0" onsubmit="return confirm('{{ __('Cabut paksa API Key milik reseller ini?') }}')">
+                                        @csrf
+                                        <button type="submit" class="btn btn-sm btn-outline-danger m3-compact-action-btn w-100">
+                                            <i class="fas fa-ban"></i><span>{{ __('Cabut API Key') }}</span>
+                                        </button>
+                                    </form>
                                 </div>
-                            </div>
-                            <div class="pt-2 border-top" style="border-color: var(--outline-variant) !important;">
-                                <form action="{{ route('developer.api.admin.keys.revoke', $gKey->id) }}" method="POST" class="m-0" onsubmit="return confirm('{{ __('Cabut paksa API Key milik reseller ini?') }}')">
-                                    @csrf
-                                    <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill w-100 fw-semibold" style="min-height: 40px;">
-                                        <i class="fas fa-ban me-1"></i>{{ __('Cabut API Key') }}
-                                    </button>
-                                </form>
                             </div>
                         </div>
                         @empty

@@ -110,19 +110,23 @@
             </table>
         </div>
 
-        {{-- Mobile Stacked Card List --}}
-        <div class="d-md-none d-flex flex-column gap-2.5">
+        {{-- Mobile Ultra-Compact 2-Line List --}}
+        <div class="d-md-none d-flex flex-column gap-1.5">
             @forelse($topProducts as $prod)
-                <div class="m3-mobile-item-card">
-                    <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
-                        <div class="fw-bold text-body small">{{ $prod['name'] }}</div>
-                        <span class="badge rounded-pill flex-shrink-0 m3-tabular-nums {{ $prod['health_score'] >= 90 ? 'bg-primary-subtle text-primary' : 'bg-warning-subtle text-warning' }}">
-                            {{ $prod['health_score'] }}%
-                        </span>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center pt-2 mt-1" style="border-top: 1px solid var(--outline-variant); font-size: 0.76rem;">
-                        <span class="text-muted">{{ __('Terjual:') }} <strong class="text-body m3-tabular-nums">{{ $prod['units_sold'] }}</strong> &bull; {{ __('Komplain:') }} <strong class="text-danger m3-tabular-nums">{{ $prod['complaints'] }}</strong></span>
-                        <span class="fw-bold text-primary m3-tabular-nums fs-6">Rp {{ number_format($prod['revenue'], 0, ',', '.') }}</span>
+                <div class="m3-mobile-item-card is-ultra-compact">
+                    <div class="d-flex justify-content-between align-items-center gap-2">
+                        <div class="min-w-0 flex-grow-1">
+                            <div class="fw-bold text-body text-truncate" style="font-size: 0.84rem;">{{ $prod['name'] }}</div>
+                            <div class="text-muted text-truncate m3-tabular-nums" style="font-size: 0.72rem;">
+                                {{ __('Terjual:') }} <strong class="text-body">{{ $prod['units_sold'] }}</strong> · {{ __('Komplain:') }} <strong class="text-danger">{{ $prod['complaints'] }}</strong>
+                            </div>
+                        </div>
+                        <div class="text-end flex-shrink-0 m3-tabular-nums">
+                            <div class="fw-bold text-primary" style="font-size: 0.82rem;">Rp {{ number_format($prod['revenue'], 0, ',', '.') }}</div>
+                            <span class="badge rounded-pill px-2 py-0 {{ $prod['health_score'] >= 90 ? 'bg-primary-subtle text-primary' : 'bg-warning-subtle text-warning' }}" style="font-size: 0.64rem;">
+                                {{ $prod['health_score'] }}%
+                            </span>
+                        </div>
                     </div>
                 </div>
             @empty

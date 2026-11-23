@@ -169,30 +169,48 @@
             </table>
         </div>
 
-        {{-- Mobile Stacked Cards (< 768px) --}}
-        <div class="d-md-none d-flex flex-column gap-2.5">
+        {{-- Mobile Collapsible Compact List (< 768px) --}}
+        <div class="d-md-none m3-collapsible-list" id="adminBackupAuditAccordion">
             @forelse($logs as $log)
-            <div class="m3-mobile-item-card p-3">
-                <div class="d-flex justify-content-between align-items-center gap-2 mb-1">
-                    @if($log->action === 'backup_restore')
-                        <span class="badge bg-danger text-uppercase rounded-pill px-2.5">{{ __('Restore') }}</span>
-                    @elseif($log->action === 'backup_create')
-                        <span class="badge bg-primary text-uppercase rounded-pill px-2.5">{{ __('Export') }}</span>
-                    @elseif($log->action === 'system_auto_backup')
-                        <span class="badge bg-warning-subtle text-warning-emphasis text-uppercase rounded-pill px-2.5">{{ __('Auto Backup') }}</span>
-                    @else
-                        <span class="badge bg-secondary text-uppercase rounded-pill px-2.5">{{ __('Delete') }}</span>
-                    @endif
-                    <small class="text-secondary font-monospace">{{ \Carbon\Carbon::parse($log->created_at)->format('d M Y, H:i') }}</small>
+            <div class="m3-mobile-item-card m3-collapsible-card">
+                <div class="m3-compact-row">
+                    <button type="button"
+                            class="m3-compact-trigger"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#backupAuditCollapse-{{ $log->id }}"
+                            aria-expanded="false"
+                            aria-controls="backupAuditCollapse-{{ $log->id }}">
+                        <div class="min-w-0 flex-grow-1">
+                            <div class="fw-bold text-body text-truncate" style="font-size: 0.83rem;">
+                                @if($log->actor)
+                                    {{ $log->actor->full_name ?: $log->actor->username }}
+                                @else
+                                    <span class="text-success"><i class="fas fa-robot me-1"></i>{{ __('System Cron') }}</span>
+                                @endif
+                            </div>
+                            <div class="text-secondary text-truncate font-monospace" style="font-size: 0.71rem;">
+                                {{ \Carbon\Carbon::parse($log->created_at)->format('d M Y, H:i') }}
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                            @if($log->action === 'backup_restore')
+                                <span class="badge bg-danger text-uppercase rounded-pill px-2 py-0.5" style="font-size: 0.64rem;">{{ __('Restore') }}</span>
+                            @elseif($log->action === 'backup_create')
+                                <span class="badge bg-primary text-uppercase rounded-pill px-2 py-0.5" style="font-size: 0.64rem;">{{ __('Export') }}</span>
+                            @elseif($log->action === 'system_auto_backup')
+                                <span class="badge bg-warning-subtle text-warning-emphasis text-uppercase rounded-pill px-2 py-0.5" style="font-size: 0.64rem;">{{ __('Auto Backup') }}</span>
+                            @else
+                                <span class="badge bg-secondary text-uppercase rounded-pill px-2 py-0.5" style="font-size: 0.64rem;">{{ __('Delete') }}</span>
+                            @endif
+                            <i class="fas fa-chevron-down m3-compact-chevron"></i>
+                        </div>
+                    </button>
                 </div>
-                <div class="fw-bold small text-body mb-1">
-                    @if($log->actor)
-                        {{ $log->actor->full_name ?: $log->actor->username }}
-                    @else
-                        <span class="text-success"><i class="fas fa-robot me-1"></i>{{ __('System Cron') }}</span>
-                    @endif
+                <div class="collapse" id="backupAuditCollapse-{{ $log->id }}" data-bs-parent="#adminBackupAuditAccordion">
+                    <div class="m3-collapsible-body small text-secondary text-break">
+                        {{ $log->detail ?: '-' }}
+                    </div>
                 </div>
-                <div class="small text-secondary text-break">{{ $log->detail }}</div>
             </div>
             @empty
             <div class="text-center py-4 text-muted small">{{ __('Belum ada catatan aktivitas log audit backup.') }}</div>

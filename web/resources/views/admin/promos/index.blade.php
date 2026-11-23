@@ -203,77 +203,96 @@
         </table>
     </div>
 
-    {{-- Mobile Stacked Card List (< 768px) dengan tombol reorder sinkron --}}
-    <div id="promoSortableMobile" class="d-md-none p-3 d-flex flex-column gap-3">
+    {{-- Mobile Collapsible Compact List (< 768px) dengan tombol reorder sinkron --}}
+    <div id="promoSortableMobile" class="d-md-none p-2.5 m3-collapsible-list">
         @forelse($promos as $promo)
-        <div class="m3-mobile-item-card promo-mobile-card p-3" data-promo-id="{{ $promo->id }}">
-            <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
-                <div class="d-flex align-items-center gap-1.5">
-                    <span class="badge rounded-pill px-2.5 py-1 fw-bold font-monospace promo-pos-badge"
-                          style="background: var(--surface-container-high); color: var(--on-surface); border: 1px solid var(--outline-variant);">
-                        #{{ $loop->iteration }}
-                    </span>
-                    <button type="button"
-                            class="promo-order-btn btn-move-up"
-                            style="width: 38px; height: 38px;"
-                            onclick="movePromoRow({{ $promo->id }}, 'up')"
-                            title="{{ __('Geser ke Atas') }}"
-                            aria-label="{{ __('Geser ke Atas') }}"
-                            {{ $loop->first ? 'disabled' : '' }}>
-                        <i class="fas fa-arrow-up"></i>
-                    </button>
-                    <button type="button"
-                            class="promo-order-btn btn-move-down"
-                            style="width: 38px; height: 38px;"
-                            onclick="movePromoRow({{ $promo->id }}, 'down')"
-                            title="{{ __('Geser ke Bawah') }}"
-                            aria-label="{{ __('Geser ke Bawah') }}"
-                            {{ $loop->last ? 'disabled' : '' }}>
-                        <i class="fas fa-arrow-down"></i>
-                    </button>
-                </div>
-                <form action="{{ route('admin.promos.toggle', $promo) }}" method="POST" class="m-0">
-                    @csrf
-                    <button type="submit" class="btn btn-sm rounded-pill px-3 py-1 fw-semibold border-0 {{ $promo->is_active ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary' }}">
-                        <i class="fas fa-circle me-1" style="font-size: 0.55rem;"></i>
-                        {{ $promo->is_active ? __('Aktif') : __('Nonaktif') }}
-                    </button>
-                </form>
-            </div>
-
-            {{-- Compact Promo Visual Preview --}}
-            <div class="rounded-3 position-relative overflow-hidden d-flex mb-2.5" style="background: {{ $promo->gradient_style }}; border: 1px solid var(--outline-variant); min-height: 76px;">
-                @if($promo->image)
-                    <div class="position-absolute end-0 top-0 bottom-0" style="width: 96px; pointer-events: none; z-index: 1;">
-                        <img src="{{ $promo->image_url }}" alt="{{ $promo->title }}" style="width: 100%; height: 100%; object-fit: cover; object-position: right center;">
-                        <div style="position: absolute; inset: 0; background: linear-gradient(to left, rgba({{ $promo->theme_rgb }}, 0.05) 0%, rgba({{ $promo->theme_rgb }}, 0.5) 45%, var(--surface-container) 95%); pointer-events: none; z-index: 2;"></div>
+        <div class="m3-mobile-item-card m3-collapsible-card promo-mobile-card" data-promo-id="{{ $promo->id }}">
+            <div class="m3-compact-row">
+                <button type="button"
+                        class="m3-compact-trigger"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#adminPromoCollapse-{{ $promo->id }}"
+                        aria-expanded="false"
+                        aria-controls="adminPromoCollapse-{{ $promo->id }}">
+                    <div class="d-flex align-items-center gap-2 min-w-0 flex-grow-1">
+                        <span class="badge rounded-pill px-2 py-0.5 fw-bold font-monospace promo-pos-badge flex-shrink-0"
+                              style="background: var(--surface-container-high); color: var(--on-surface); border: 1px solid var(--outline-variant); font-size: 0.72rem;">
+                            #{{ $loop->iteration }}
+                        </span>
+                        <div class="min-w-0 flex-grow-1">
+                            <div class="fw-bold text-body text-truncate" style="font-size: 0.85rem;">{{ __($promo->title) }}</div>
+                            <div class="d-flex align-items-center gap-1.5 text-secondary text-truncate" style="font-size: 0.72rem;">
+                                <span class="badge rounded-pill px-1.5 py-0" style="background: {{ $promo->badge_color }}; color: #ffffff; font-size: 0.62rem;">{{ __($promo->badge_text ?: 'INFO') }}</span>
+                                <span class="text-truncate">{{ __($promo->button_text) }}</span>
+                            </div>
+                        </div>
                     </div>
-                @endif
-                <div class="p-2.5 w-100 overflow-hidden position-relative" style="z-index: 3;">
-                    <span class="badge rounded-pill mb-1" style="background: {{ $promo->badge_color }}; color: #ffffff; font-size: 0.66rem;">
-                        {{ __($promo->badge_text ?: 'INFO') }}
-                    </span>
-                    <div class="fw-bold text-body small text-truncate" style="max-width: 75%;">{{ __($promo->title) }}</div>
-                    <div class="text-secondary text-truncate" style="font-size: 0.74rem; max-width: 75%;">{{ $promo->description }}</div>
+                    <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                        <span class="badge rounded-pill px-2 py-0.5 {{ $promo->is_active ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary' }}" style="font-size: 0.66rem;">
+                            {{ $promo->is_active ? __('Aktif') : __('Nonaktif') }}
+                        </span>
+                        <i class="fas fa-chevron-down m3-compact-chevron"></i>
+                    </div>
+                </button>
+            </div>
+
+            <div class="collapse" id="adminPromoCollapse-{{ $promo->id }}" data-bs-parent="#promoSortableMobile">
+                <div class="m3-collapsible-body">
+                    {{-- Compact Promo Visual Preview --}}
+                    <div class="rounded-3 position-relative overflow-hidden d-flex mb-2" style="background: {{ $promo->gradient_style }}; border: 1px solid var(--outline-variant); min-height: 68px;">
+                        @if($promo->image)
+                            <div class="position-absolute end-0 top-0 bottom-0" style="width: 88px; pointer-events: none; z-index: 1;">
+                                <img src="{{ $promo->image_url }}" alt="{{ $promo->title }}" style="width: 100%; height: 100%; object-fit: cover; object-position: right center;">
+                                <div style="position: absolute; inset: 0; background: linear-gradient(to left, rgba({{ $promo->theme_rgb }}, 0.05) 0%, rgba({{ $promo->theme_rgb }}, 0.5) 45%, var(--surface-container) 95%); pointer-events: none; z-index: 2;"></div>
+                            </div>
+                        @endif
+                        <div class="p-2 w-100 overflow-hidden position-relative" style="z-index: 3;">
+                            <div class="fw-bold text-body small text-truncate" style="max-width: 75%;">{{ __($promo->title) }}</div>
+                            <div class="text-secondary text-truncate" style="font-size: 0.73rem; max-width: 75%;">{{ $promo->description }}</div>
+                        </div>
+                    </div>
+
+                    <div class="font-monospace text-secondary text-truncate mb-2.5" style="font-size: 0.72rem;">
+                        <i class="{{ $promo->icon }} me-1"></i>{{ $promo->button_url }}
+                    </div>
+
+                    <div class="d-flex flex-wrap align-items-center gap-1.5">
+                        <button type="button"
+                                class="promo-order-btn btn-move-up"
+                                style="width: 36px; height: 36px;"
+                                onclick="movePromoRow({{ $promo->id }}, 'up')"
+                                title="{{ __('Geser ke Atas') }}"
+                                aria-label="{{ __('Geser ke Atas') }}"
+                                {{ $loop->first ? 'disabled' : '' }}>
+                            <i class="fas fa-arrow-up"></i>
+                        </button>
+                        <button type="button"
+                                class="promo-order-btn btn-move-down"
+                                style="width: 36px; height: 36px;"
+                                onclick="movePromoRow({{ $promo->id }}, 'down')"
+                                title="{{ __('Geser ke Bawah') }}"
+                                aria-label="{{ __('Geser ke Bawah') }}"
+                                {{ $loop->last ? 'disabled' : '' }}>
+                            <i class="fas fa-arrow-down"></i>
+                        </button>
+                        <form action="{{ route('admin.promos.toggle', $promo) }}" method="POST" class="m-0">
+                            @csrf
+                            <button type="submit" class="btn btn-sm m3-compact-action-btn px-2.5 border-0 {{ $promo->is_active ? 'bg-secondary-subtle text-body' : 'bg-success-subtle text-success' }}">
+                                <i class="fas fa-power-off"></i><span>{{ $promo->is_active ? __('Nonaktifkan') : __('Aktifkan') }}</span>
+                            </button>
+                        </form>
+                        <a href="{{ route('admin.promos.edit', $promo) }}" class="btn btn-sm btn-tonal m3-compact-action-btn flex-grow-1 px-2.5">
+                            <i class="fas fa-pen"></i><span>{{ __('Edit') }}</span>
+                        </a>
+                        <form action="{{ route('admin.promos.destroy', $promo) }}" method="POST" class="m-0" onsubmit="return confirm('{{ __('Hapus kartu promo ini secara permanen?') }}');">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="btn btn-sm btn-outline-danger m3-compact-action-btn px-2.5" title="{{ __('Hapus') }}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
+                    </div>
                 </div>
-            </div>
-
-            <div class="small text-secondary mb-2.5">
-                <div><i class="{{ $promo->icon }} me-1"></i><strong>{{ __($promo->button_text) }}</strong></div>
-                <div class="font-monospace text-truncate" style="font-size: 0.72rem;">{{ $promo->button_url }}</div>
-            </div>
-
-            <div class="d-flex gap-2 pt-2 border-top" style="border-color: var(--outline-variant) !important;">
-                <a href="{{ route('admin.promos.edit', $promo) }}" class="btn btn-sm btn-tonal rounded-pill flex-grow-1 fw-semibold d-inline-flex align-items-center justify-content-center gap-1" style="min-height: 40px;">
-                    <i class="fas fa-pen"></i><span>{{ __('Edit Promo') }}</span>
-                </a>
-                <form action="{{ route('admin.promos.destroy', $promo) }}" method="POST" class="m-0" onsubmit="return confirm('{{ __('Hapus kartu promo ini secara permanen?') }}');">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3" style="min-height: 40px;" title="{{ __('Hapus') }}">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </form>
             </div>
         </div>
         @empty

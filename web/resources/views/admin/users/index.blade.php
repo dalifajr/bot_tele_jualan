@@ -220,113 +220,106 @@
             </table>
         </div>
 
-        {{-- Mobile Stacked Card List (< 768px) --}}
-        <div class="d-md-none p-3 d-flex flex-column gap-2.5">
+        {{-- Mobile Collapsible Compact List (< 768px) --}}
+        <div class="d-md-none p-2.5 m3-collapsible-list" id="adminUsersAccordion">
             @foreach($users as $user)
-            <div class="m3-mobile-item-card p-3">
-                <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
-                    <div class="d-flex align-items-center gap-2.5 min-w-0">
-                        <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center fw-bold flex-shrink-0 overflow-hidden" style="width: 40px; height: 40px;">
-                            @if($user->avatar)
-                                <img src="{{ \Illuminate\Support\Facades\Storage::url($user->avatar) }}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover;">
-                            @else
-                                {{ strtoupper(substr($user->full_name ?? $user->username ?? 'U', 0, 1)) }}
-                            @endif
-                        </div>
-                        <div class="min-w-0">
-                            <div class="fw-bold text-body text-truncate">{{ $user->full_name ?? 'Unknown' }}</div>
-                            <div class="small text-secondary text-truncate">
-                                {{ $user->username ? '@'.$user->username : '-' }}
-                                @if($user->telegram_id)
-                                    · <span class="font-monospace">ID {{ $user->telegram_id }}</span>
-                                @endif
+            @php
+                $roleColor = $user->role === 'admin' ? 'primary' : ($user->role === 'seller' ? 'info' : 'secondary');
+            @endphp
+            <div class="m3-mobile-item-card m3-collapsible-card">
+                <div class="m3-compact-row">
+                    <button type="button"
+                            class="m3-compact-trigger"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#adminUserCollapse-{{ $user->id }}"
+                            aria-expanded="false"
+                            aria-controls="adminUserCollapse-{{ $user->id }}">
+                        <div class="d-flex align-items-center gap-2.5 min-w-0 flex-grow-1">
+                            <div class="position-relative flex-shrink-0">
+                                <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center fw-bold overflow-hidden" style="width: 34px; height: 34px; font-size: 0.82rem;">
+                                    @if($user->avatar)
+                                        <img src="{{ \Illuminate\Support\Facades\Storage::url($user->avatar) }}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover;">
+                                    @else
+                                        {{ strtoupper(substr($user->full_name ?? $user->username ?? 'U', 0, 1)) }}
+                                    @endif
+                                </div>
+                                <span class="m3-status-dot {{ $user->is_suspended ? 'bg-danger' : 'bg-success' }}" title="{{ $user->is_suspended ? __('Ditangguhkan') : __('Aktif') }}"></span>
+                            </div>
+                            <div class="min-w-0 flex-grow-1">
+                                <div class="d-flex align-items-center gap-1.5 min-w-0">
+                                    <span class="fw-bold text-body text-truncate" style="font-size: 0.86rem;">{{ $user->full_name ?? 'Unknown' }}</span>
+                                    <span class="badge bg-{{ $roleColor }}-subtle text-{{ $roleColor }} rounded-pill px-1.5 py-0 flex-shrink-0" style="font-size: 0.65rem;">{{ ucfirst($user->role ?? 'customer') }}</span>
+                                </div>
+                                <div class="text-secondary text-truncate" style="font-size: 0.74rem;">
+                                    {{ $user->username ? '@'.$user->username : ($user->email ?? '-') }}
+                                    @if($user->telegram_id)
+                                        · <span class="font-monospace">TG {{ $user->telegram_id }}</span>
+                                    @endif
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="d-flex flex-column align-items-end gap-1 flex-shrink-0">
-                        @if($user->is_suspended)
-                            <span class="badge bg-danger-subtle text-danger rounded-pill px-2">{{ __('Ditangguhkan') }}</span>
-                        @else
-                            <span class="badge bg-success-subtle text-success rounded-pill px-2">{{ __('Aktif') }}</span>
-                        @endif
-                        <span class="badge bg-{{ $user->role === 'admin' ? 'primary' : ($user->role === 'seller' ? 'info' : 'secondary') }}-subtle text-{{ $user->role === 'admin' ? 'primary' : ($user->role === 'seller' ? 'info' : 'secondary') }} rounded-pill px-2">
-                            {{ ucfirst($user->role ?? 'customer') }}
-                        </span>
-                    </div>
-                </div>
-
-                <div class="d-flex justify-content-between align-items-center py-2 px-2.5 rounded-3 mb-2" style="background: var(--surface-container-high);">
-                    <div class="small text-secondary text-truncate me-2">
-                        <i class="far fa-envelope me-1"></i>{{ $user->email ?? '-' }}
-                    </div>
-                    <span class="badge bg-primary-subtle text-primary rounded-pill fw-bold flex-shrink-0 m3-tabular-nums">
-                        Rp {{ number_format((int) ($user->customer_wallet_balance ?? 0), 0, ',', '.') }}
-                    </span>
-                </div>
-
-                <div class="small text-muted mb-2">
-                    <i class="far fa-calendar me-1"></i>{{ __('Bergabung:') }} {{ $user->created_at->format('d M Y') }}
-                </div>
-
-                <div class="d-flex gap-2 pt-2 border-top" style="border-color: var(--outline-variant) !important;">
-                    <button type="button"
-                            class="btn btn-sm btn-tonal rounded-pill flex-grow-1 fw-semibold btn-open-user-inject"
-                            style="min-height: 40px;"
-                            data-user-id="{{ $user->id }}"
-                            data-user-label="{{ ($user->full_name ?: $user->username) . ($user->username ? ' (@' . $user->username . ')' : '') }}"
-                            data-balance="Rp {{ number_format((int) ($user->customer_wallet_balance ?? 0), 0, ',', '.') }}">
-                        <i class="fas fa-bolt me-1"></i>{{ __('Saldo') }}
+                        <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                            <span class="fw-bold text-primary m3-tabular-nums" style="font-size: 0.8rem;">
+                                Rp {{ number_format((int) ($user->customer_wallet_balance ?? 0), 0, ',', '.') }}
+                            </span>
+                            <i class="fas fa-chevron-down m3-compact-chevron"></i>
+                        </div>
                     </button>
-                    @if($user->id !== Auth::id())
-                    <button type="button" class="btn btn-sm btn-outline-primary rounded-pill flex-grow-1 fw-semibold" style="min-height: 40px;" data-bs-toggle="modal" data-bs-target="#editUserModal{{ $user->id }}">
-                        <i class="fas fa-user-shield me-1"></i>{{ __('Akses') }}
-                    </button>
-                    <div class="dropdown">
-                        <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" style="min-height: 40px;" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-ellipsis-v"></i>
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" style="border-radius: 12px; min-width: 200px;">
-                            <li>
-                                <form action="{{ route('admin.users.impersonate', $user->id) }}" method="POST" class="m-0">
-                                    @csrf
-                                    <button type="submit" class="dropdown-item py-2 text-info">
-                                        <i class="fas fa-user-secret me-2"></i> {{ __('Login Sebagai') }}
-                                    </button>
-                                </form>
-                            </li>
-                            <li><hr class="dropdown-divider"></li>
+                </div>
+
+                <div class="collapse" id="adminUserCollapse-{{ $user->id }}" data-bs-parent="#adminUsersAccordion">
+                    <div class="m3-collapsible-body">
+                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 small text-secondary mb-2.5">
+                            <span class="text-truncate"><i class="far fa-envelope me-1"></i>{{ $user->email ?? '-' }}</span>
+                            <span class="badge {{ $user->is_suspended ? 'bg-danger-subtle text-danger' : 'bg-success-subtle text-success' }} rounded-pill px-2 py-0.5" style="font-size: 0.68rem;">
+                                {{ $user->is_suspended ? __('Ditangguhkan') : __('Aktif') }}
+                            </span>
+                            <span><i class="far fa-calendar me-1"></i>{{ $user->created_at->format('d M Y') }}</span>
+                        </div>
+
+                        <div class="d-flex flex-wrap gap-1.5">
+                            <button type="button"
+                                    class="btn btn-sm btn-tonal m3-compact-action-btn flex-grow-1 px-2.5 btn-open-user-inject"
+                                    data-user-id="{{ $user->id }}"
+                                    data-user-label="{{ ($user->full_name ?: $user->username) . ($user->username ? ' (@' . $user->username . ')' : '') }}"
+                                    data-balance="Rp {{ number_format((int) ($user->customer_wallet_balance ?? 0), 0, ',', '.') }}">
+                                <i class="fas fa-bolt"></i><span>{{ __('Saldo') }}</span>
+                            </button>
+                            @if($user->id !== Auth::id())
+                            <button type="button" class="btn btn-sm btn-outline-primary m3-compact-action-btn flex-grow-1 px-2.5" data-bs-toggle="modal" data-bs-target="#editUserModal{{ $user->id }}">
+                                <i class="fas fa-user-shield"></i><span>{{ __('Akses') }}</span>
+                            </button>
+                            <form action="{{ route('admin.users.impersonate', $user->id) }}" method="POST" class="m-0 flex-grow-1">
+                                @csrf
+                                <button type="submit" class="btn btn-sm btn-outline-info m3-compact-action-btn w-100 px-2.5">
+                                    <i class="fas fa-user-secret"></i><span>{{ __('Login Sebagai') }}</span>
+                                </button>
+                            </form>
                             @if($user->is_suspended)
-                                <li>
-                                    <form action="{{ route('admin.users.unsuspend', $user->id) }}" method="POST">
-                                        @csrf
-                                        <button type="submit" class="dropdown-item py-2 text-success">
-                                            <i class="fas fa-unlock me-2"></i> {{ __('Cabut Penangguhan') }}
-                                        </button>
-                                    </form>
-                                </li>
-                            @else
-                                <li>
-                                    <form action="{{ route('admin.users.suspend', $user->id) }}" method="POST">
-                                        @csrf
-                                        <button type="button" class="dropdown-item py-2 text-warning" onclick="confirmSuspend(event)">
-                                            <i class="fas fa-ban me-2"></i> {{ __('Suspend Pengguna') }}
-                                        </button>
-                                    </form>
-                                </li>
-                            @endif
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <form action="{{ route('admin.users.destroy', $user->id) }}" method="POST">
+                                <form action="{{ route('admin.users.unsuspend', $user->id) }}" method="POST" class="m-0">
                                     @csrf
-                                    @method('DELETE')
-                                    <button type="button" class="dropdown-item py-2 text-danger" onclick="confirmAction(event, '{{ __('Yakin ingin menghapus permanen pengguna ini? Proses ini tidak dapat dibatalkan.') }}')">
-                                        <i class="fas fa-trash me-2"></i> {{ __('Hapus Pengguna') }}
+                                    <button type="submit" class="btn btn-sm btn-outline-success m3-compact-action-btn px-2.5">
+                                        <i class="fas fa-unlock"></i><span>{{ __('Aktifkan') }}</span>
                                     </button>
                                 </form>
-                            </li>
-                        </ul>
+                            @else
+                                <form action="{{ route('admin.users.suspend', $user->id) }}" method="POST" class="m-0">
+                                    @csrf
+                                    <button type="button" class="btn btn-sm btn-outline-warning m3-compact-action-btn px-2.5" onclick="confirmSuspend(event)">
+                                        <i class="fas fa-ban"></i><span>{{ __('Suspend') }}</span>
+                                    </button>
+                                </form>
+                            @endif
+                            <form action="{{ route('admin.users.destroy', $user->id) }}" method="POST" class="m-0">
+                                @csrf
+                                @method('DELETE')
+                                <button type="button" class="btn btn-sm btn-outline-danger m3-compact-action-btn px-2.5" title="{{ __('Hapus Pengguna') }}" onclick="confirmAction(event, '{{ __('Yakin ingin menghapus permanen pengguna ini? Proses ini tidak dapat dibatalkan.') }}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                            @endif
+                        </div>
                     </div>
-                    @endif
                 </div>
             </div>
             @endforeach

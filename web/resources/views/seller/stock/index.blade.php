@@ -295,10 +295,10 @@
             </table>
         </div>
 
-        {{-- Mobile Stacked Card List (< 768px) --}}
-        <div class="d-md-none p-3 d-flex flex-column gap-2.5">
+        {{-- Mobile Collapsible Compact List (< 768px) --}}
+        <div class="d-md-none p-2.5 d-flex flex-column gap-2">
             @if(request('status') !== 'terjual')
-            <div class="d-flex align-items-center justify-content-between px-2 py-1.5 rounded-3" style="background: var(--surface-container-high);">
+            <div class="d-flex align-items-center justify-content-between px-2.5 py-1.5 rounded-3" style="background: var(--surface-container-high);">
                 <label class="form-check d-flex align-items-center gap-2 mb-0 small fw-semibold text-body" style="cursor: pointer;">
                     <input type="checkbox" class="form-check-input mt-0 select-all-stocks-toggle">
                     <span>{{ __('Pilih Semua di Halaman Ini') }}</span>
@@ -307,6 +307,7 @@
             </div>
             @endif
 
+            <div class="m3-collapsible-list" id="sellerStockAccordion">
             @foreach($stocks as $unit)
             @php
                 $extractedUsername = '-';
@@ -315,71 +316,88 @@
                 }
                 $statusBadge = match($unit->stock_status) {
                     'ready' => ['bg' => 'success-subtle', 'text' => 'success', 'label' => 'Ready'],
-                    'saved_for_verification' => ['bg' => 'info-subtle', 'text' => 'info', 'label' => __('Simpan Akun')],
-                    'saved_ready_notified' => ['bg' => 'primary-subtle', 'text' => 'primary', 'label' => __('Siap Diajukan')],
+                    'saved_for_verification' => ['bg' => 'info-subtle', 'text' => 'info', 'label' => __('Simpan')],
+                    'saved_ready_notified' => ['bg' => 'primary-subtle', 'text' => 'primary', 'label' => __('Siap Ajukan')],
                     default => ['bg' => 'secondary-subtle', 'text' => 'secondary', 'label' => $unit->stock_status]
                 };
+                $compactTitle = $extractedUsername !== '-' ? $extractedUsername : Str::limit($unit->content ?? $unit->raw_text, 24);
             @endphp
-            <div class="m3-mobile-item-card p-3">
-                <div class="d-flex justify-content-between align-items-start gap-2 mb-1.5">
-                    <div class="d-flex align-items-center gap-2 min-w-0">
-                        @if(request('status') !== 'terjual')
-                            <input type="checkbox" value="{{ $unit->id }}" class="form-check-input mt-0 stock-checkbox flex-shrink-0" data-status="{{ $unit->stock_status }}" {{ $unit->is_sold ? 'disabled' : '' }}>
-                        @endif
-                        <div class="min-w-0">
-                            <div class="fw-bold text-body small text-truncate">#{{ $unit->id }} · {{ $unit->product->name ?? 'Unknown' }}</div>
+            <div class="m3-mobile-item-card m3-collapsible-card">
+                <div class="m3-compact-row">
+                    @if(request('status') !== 'terjual')
+                        <input type="checkbox" value="{{ $unit->id }}" class="form-check-input mt-0 stock-checkbox flex-shrink-0" data-status="{{ $unit->stock_status }}" {{ $unit->is_sold ? 'disabled' : '' }}>
+                    @endif
+                    <button type="button"
+                            class="m3-compact-trigger"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#sellerStockCollapse-{{ $unit->id }}"
+                            aria-expanded="false"
+                            aria-controls="sellerStockCollapse-{{ $unit->id }}">
+                        <div class="min-w-0 flex-grow-1">
+                            <div class="fw-bold text-body text-truncate" style="font-size: 0.84rem;">
+                                <span class="font-monospace text-primary">#{{ $unit->id }}</span> · {{ Str::limit($compactTitle, 26) }}
+                            </div>
+                            <div class="text-secondary text-truncate" style="font-size: 0.73rem;">
+                                {{ $unit->product->name ?? 'Unknown' }} · {{ $unit->localized_umur_akun }}
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                            @if($unit->is_sold)
+                                <span class="badge bg-danger-subtle text-danger rounded-pill px-2 py-0.5" style="font-size: 0.68rem;">{{ __('Terjual') }}</span>
+                            @else
+                                <span class="badge bg-{{ $statusBadge['bg'] }} text-{{ $statusBadge['text'] }} rounded-pill px-2 py-0.5" style="font-size: 0.68rem;">{{ $statusBadge['label'] }}</span>
+                            @endif
+                            <i class="fas fa-chevron-down m3-compact-chevron"></i>
+                        </div>
+                    </button>
+                </div>
+
+                <div class="collapse" id="sellerStockCollapse-{{ $unit->id }}" data-bs-parent="#sellerStockAccordion">
+                    <div class="m3-collapsible-body">
+                        @if($unit->vcc_service || (request('status') === 'terjual' && $unit->order && $unit->order->customer))
+                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-1.5 small text-secondary mb-2">
                             @if($unit->vcc_service)
                                 <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-0.5" style="font-size: 0.66rem;"><i class="fas fa-credit-card me-1"></i>{{ $unit->vcc_service }}</span>
                             @endif
+                            @if(request('status') === 'terjual' && $unit->order && $unit->order->customer)
+                                <span>{{ __('Pembeli:') }} <strong class="text-body">{{ $unit->order->customer->full_name ?? $unit->order->customer->username }}</strong></span>
+                            @endif
+                        </div>
+                        @endif
+
+                        @if(request('status') !== 'terjual')
+                            <div class="p-2 rounded-3 mb-2.5 font-monospace small text-body text-truncate" style="background: var(--surface-container-high); font-size: 0.76rem;">
+                                {{ Str::limit($unit->content ?? $unit->raw_text, 56) }}
+                            </div>
+                        @endif
+
+                        <div class="d-flex flex-wrap gap-1.5">
+                            <button type="button" class="btn btn-sm btn-tonal m3-compact-action-btn flex-grow-1 px-2.5"
+                                    data-bs-toggle="modal" data-bs-target="#detailStockModal"
+                                    data-stock-detail-index="{{ $loop->index }}" onclick="openStockDetailModal({{ $loop->index }})">
+                                <i class="fas fa-eye"></i><span>{{ __('Detail') }}</span>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-primary m3-compact-action-btn px-2.5" data-bs-toggle="modal" data-bs-target="#moveStockModal{{ $unit->id }}" title="{{ __('Ubah Status') }}">
+                                <i class="fas fa-exchange-alt"></i><span>{{ __('Status') }}</span>
+                            </button>
+                            @if(!$unit->is_sold)
+                            <button type="button" class="btn btn-sm btn-outline-warning m3-compact-action-btn px-2.5" data-bs-toggle="modal" data-bs-target="#editStockModal{{ $unit->id }}" title="{{ __('Edit') }}">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <form action="{{ route('seller.stock.destroy', $unit->id) }}" method="POST" class="m-0" onsubmit="confirmAction(event, '{{ __('Stok ini belum terjual. Yakin ingin menghapusnya?') }}', '{{ __('Hapus Stok?') }}');">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-sm btn-outline-danger m3-compact-action-btn px-2.5" title="{{ __('Hapus') }}">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </form>
+                            @endif
                         </div>
                     </div>
-                    @if($unit->is_sold)
-                        <span class="badge bg-danger-subtle text-danger rounded-pill px-2.5 flex-shrink-0">{{ __('Terjual') }}</span>
-                    @else
-                        <span class="badge bg-{{ $statusBadge['bg'] }} text-{{ $statusBadge['text'] }} rounded-pill px-2.5 flex-shrink-0">{{ $statusBadge['label'] }}</span>
-                    @endif
-                </div>
-
-                <div class="small text-secondary mb-2">
-                    <div class="d-flex flex-wrap justify-content-between gap-2">
-                        <span><i class="fas fa-user me-1"></i><strong class="text-body">{{ Str::limit($extractedUsername, 26) }}</strong></span>
-                        <span><i class="far fa-clock me-1"></i>{{ $unit->localized_umur_akun }}</span>
-                    </div>
-                    @if(request('status') === 'terjual' && $unit->order && $unit->order->customer)
-                    <div class="mt-1">{{ __('Pembeli:') }} <strong class="text-body">{{ $unit->order->customer->full_name ?? $unit->order->customer->username }}</strong></div>
-                    @endif
-                </div>
-
-                @if(request('status') !== 'terjual')
-                    <div class="p-2 rounded-3 mb-2 font-monospace small text-body text-truncate" style="background: var(--surface-container-high);">
-                        {{ Str::limit($unit->content ?? $unit->raw_text, 48) }}
-                    </div>
-                @endif
-
-                <div class="d-flex gap-1.5 pt-2 border-top" style="border-color: var(--outline-variant) !important;">
-                    <button type="button" class="btn btn-sm btn-tonal rounded-pill flex-grow-1 fw-semibold" style="min-height: 38px;"
-                            data-bs-toggle="modal" data-bs-target="#detailStockModal"
-                            data-stock-detail-index="{{ $loop->index }}" onclick="openStockDetailModal({{ $loop->index }})">
-                        <i class="fas fa-eye me-1"></i>{{ __('Detail') }}
-                    </button>
-                    <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3" style="min-height: 38px;" data-bs-toggle="modal" data-bs-target="#moveStockModal{{ $unit->id }}" title="{{ __('Ubah Status') }}">
-                        <i class="fas fa-exchange-alt"></i>
-                    </button>
-                    @if(!$unit->is_sold)
-                    <button type="button" class="btn btn-sm btn-outline-warning rounded-pill px-3" style="min-height: 38px;" data-bs-toggle="modal" data-bs-target="#editStockModal{{ $unit->id }}" title="{{ __('Edit') }}">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <form action="{{ route('seller.stock.destroy', $unit->id) }}" method="POST" class="m-0" onsubmit="confirmAction(event, '{{ __('Stok ini belum terjual. Yakin ingin menghapusnya?') }}', '{{ __('Hapus Stok?') }}');">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3" style="min-height: 38px;" title="{{ __('Hapus') }}">
-                            <i class="fas fa-trash-alt"></i>
-                        </button>
-                    </form>
-                    @endif
                 </div>
             </div>
             @endforeach
+            </div>
         </div>
 
         <div class="px-4 py-3 border-top">

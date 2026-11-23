@@ -120,22 +120,38 @@
                         </table>
                     </div>
 
-                    {{-- Mobile Stacked Card List --}}
-                    <div class="d-md-none p-3 d-flex flex-column gap-2.5">
+                    {{-- Mobile Collapsible Compact List --}}
+                    <div class="d-md-none p-2.5 m3-collapsible-list" id="sellerBankAccountsAccordion">
                         @foreach($bankAccounts as $acc)
-                            <div class="m3-mobile-item-card d-flex justify-content-between align-items-center gap-3">
-                                <div class="min-w-0">
-                                    <div class="fw-bold text-body">{{ strtoupper($acc->bank_name) }}</div>
-                                    <div class="small font-monospace text-primary fw-semibold">{{ $acc->account_number }}</div>
-                                    <div class="small text-muted text-truncate">a.n. {{ $acc->account_holder }}</div>
-                                </div>
-                                <form action="{{ route('seller.bank-accounts.destroy', $acc->id) }}" method="POST" class="flex-shrink-0 m-0">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="button" class="btn btn-sm btn-outline-danger rounded-pill d-inline-flex align-items-center justify-content-center" style="min-width: 40px; min-height: 40px;" title="{{ __('Hapus Rekening') }}" aria-label="{{ __('Hapus Rekening') }}" onclick="confirmAction(event, '{{ __('Yakin ingin menghapus rekening bank payout ini?') }}')">
-                                        <i class="fas fa-trash"></i>
+                            <div class="m3-mobile-item-card m3-collapsible-card">
+                                <div class="m3-compact-row">
+                                    <button type="button"
+                                            class="m3-compact-trigger"
+                                            data-bs-toggle="collapse"
+                                            data-bs-target="#sellerBankCollapse-{{ $acc->id }}"
+                                            aria-expanded="false"
+                                            aria-controls="sellerBankCollapse-{{ $acc->id }}">
+                                        <div class="min-w-0 flex-grow-1">
+                                            <div class="fw-bold text-body text-truncate" style="font-size: 0.85rem;">
+                                                {{ strtoupper($acc->bank_name) }} · <span class="font-monospace text-primary">{{ $acc->account_number }}</span>
+                                            </div>
+                                            <div class="text-secondary text-truncate" style="font-size: 0.74rem;">a.n. {{ $acc->account_holder }}</div>
+                                        </div>
+                                        <i class="fas fa-chevron-down m3-compact-chevron"></i>
                                     </button>
-                                </form>
+                                </div>
+
+                                <div class="collapse" id="sellerBankCollapse-{{ $acc->id }}" data-bs-parent="#sellerBankAccountsAccordion">
+                                    <div class="m3-collapsible-body">
+                                        <form action="{{ route('seller.bank-accounts.destroy', $acc->id) }}" method="POST" class="m-0">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="button" class="btn btn-sm btn-outline-danger m3-compact-action-btn w-100" title="{{ __('Hapus Rekening') }}" aria-label="{{ __('Hapus Rekening') }}" onclick="confirmAction(event, '{{ __('Yakin ingin menghapus rekening bank payout ini?') }}')">
+                                                <i class="fas fa-trash"></i><span>{{ __('Hapus Rekening') }}</span>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
                             </div>
                         @endforeach
                     </div>

@@ -1137,6 +1137,99 @@ a:hover {
     padding: 0.9rem 1rem;
 }
 
+.m3-mobile-item-card.is-ultra-compact {
+    padding: 0.65rem 0.85rem;
+    border-radius: 14px;
+}
+
+/* Compact Collapsible List Architecture (M3 Expandable List Tile) */
+.m3-collapsible-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.m3-mobile-item-card.m3-collapsible-card {
+    padding: 0 !important;
+    overflow: hidden;
+    border-radius: var(--radius-md, 16px);
+    transition: border-color 0.18s ease, background-color 0.18s ease;
+}
+
+.m3-mobile-item-card.m3-collapsible-card:has(.m3-compact-trigger[aria-expanded="true"]) {
+    border-color: var(--primary);
+    background-color: var(--surface-container);
+}
+
+.m3-compact-row {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.6rem 0.85rem;
+    min-height: 58px;
+}
+
+.m3-compact-trigger {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    background: transparent;
+    border: 0;
+    padding: 0;
+    text-align: left;
+    color: inherit;
+    cursor: pointer;
+    width: 100%;
+}
+
+.m3-compact-trigger:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+    border-radius: 8px;
+}
+
+.m3-compact-chevron {
+    flex-shrink: 0;
+    font-size: 0.72rem;
+    color: var(--on-surface-variant);
+    transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.m3-compact-trigger[aria-expanded="true"] .m3-compact-chevron {
+    transform: rotate(180deg);
+    color: var(--primary);
+}
+
+.m3-collapsible-body {
+    padding: 0.7rem 0.85rem 0.8rem;
+    border-top: 1px solid var(--outline-variant);
+    background-color: var(--surface-container-lowest);
+}
+
+.m3-status-dot {
+    position: absolute;
+    right: -1px;
+    bottom: -1px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid var(--surface-container-low);
+}
+
+.m3-compact-action-btn {
+    min-height: 36px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    border-radius: var(--radius-pill, 999px) !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+}
+
 .m3-quick-amount-chip {
     border-radius: var(--radius-pill) !important;
     background-color: var(--surface-container) !important;

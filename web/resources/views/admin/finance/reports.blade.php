@@ -439,19 +439,17 @@
                             </tbody>
                         </table>
                     </div>
-                    <div class="d-md-none d-flex flex-column gap-2">
+                    <div class="d-md-none d-flex flex-column gap-1.5">
                         @forelse($report['top_products'] as $tp)
-                        <div class="m3-mobile-item-card p-3">
-                            <div class="d-flex justify-content-between align-items-start gap-2 mb-1">
-                                <div class="min-w-0">
-                                    <div class="fw-bold text-body small text-truncate">{{ $tp['name'] }}</div>
-                                    <div class="text-secondary" style="font-size: 0.72rem;">{{ $tp['owner_name'] }}</div>
+                        <div class="m3-mobile-item-card is-ultra-compact">
+                            <div class="d-flex justify-content-between align-items-center gap-2">
+                                <div class="min-w-0 flex-grow-1">
+                                    <div class="fw-bold text-body text-truncate" style="font-size: 0.83rem;">{{ $tp['name'] }}</div>
+                                    <div class="text-secondary text-truncate m3-tabular-nums" style="font-size: 0.72rem;">
+                                        {{ $tp['owner_name'] }} · {{ number_format($tp['units_sold']) }} unit · GMV {{ $fmtRp($tp['gmv']) }}
+                                    </div>
                                 </div>
-                                <span class="badge bg-primary-subtle text-primary rounded-pill flex-shrink-0 m3-tabular-nums">{{ number_format($tp['units_sold']) }} unit</span>
-                            </div>
-                            <div class="d-flex justify-content-between align-items-center small pt-2 border-top m3-tabular-nums" style="border-color: var(--outline-variant) !important;">
-                                <span class="text-secondary">GMV: {{ $fmtRp($tp['gmv']) }}</span>
-                                <span class="fw-bold text-primary">{{ $fmtRp($tp['platform_revenue']) }}</span>
+                                <span class="fw-bold text-primary flex-shrink-0 m3-tabular-nums" style="font-size: 0.82rem;">{{ $fmtRp($tp['platform_revenue']) }}</span>
                             </div>
                         </div>
                         @empty
@@ -493,19 +491,17 @@
                             </tbody>
                         </table>
                     </div>
-                    <div class="d-md-none d-flex flex-column gap-2">
+                    <div class="d-md-none d-flex flex-column gap-1.5">
                         @forelse($report['top_sellers'] as $ts)
-                        <div class="m3-mobile-item-card p-3">
-                            <div class="d-flex justify-content-between align-items-start gap-2 mb-1">
-                                <div class="min-w-0">
-                                    <div class="fw-bold text-body small text-truncate">{{ $ts['name'] }}</div>
-                                    <div class="text-secondary" style="font-size: 0.72rem;">@{{ $ts['username'] ?: 'seller-' . $ts['seller_id'] }}</div>
+                        <div class="m3-mobile-item-card is-ultra-compact">
+                            <div class="d-flex justify-content-between align-items-center gap-2">
+                                <div class="min-w-0 flex-grow-1">
+                                    <div class="fw-bold text-body text-truncate" style="font-size: 0.83rem;">{{ $ts['name'] }}</div>
+                                    <div class="text-secondary text-truncate m3-tabular-nums" style="font-size: 0.72rem;">
+                                        @{{ $ts['username'] ?: 'seller-' . $ts['seller_id'] }} · {{ number_format($ts['units_sold']) }} unit · GMV {{ $fmtRp($ts['gmv']) }}
+                                    </div>
                                 </div>
-                                <span class="badge bg-secondary-subtle text-body rounded-pill flex-shrink-0 m3-tabular-nums">{{ number_format($ts['units_sold']) }} unit</span>
-                            </div>
-                            <div class="d-flex justify-content-between align-items-center small pt-2 border-top m3-tabular-nums" style="border-color: var(--outline-variant) !important;">
-                                <span class="text-secondary">GMV: {{ $fmtRp($ts['gmv']) }}</span>
-                                <span class="fw-bold text-success">{{ $fmtRp($ts['platform_fee']) }}</span>
+                                <span class="fw-bold text-success flex-shrink-0 m3-tabular-nums" style="font-size: 0.82rem;">{{ $fmtRp($ts['platform_fee']) }}</span>
                             </div>
                         </div>
                         @empty
@@ -560,20 +556,39 @@
                 </table>
             </div>
 
-            {{-- Mobile Stacked Cards (< 768px) --}}
-            <div class="d-md-none d-flex flex-column gap-2.5">
+            {{-- Mobile Collapsible Compact List (< 768px) --}}
+            <div class="d-md-none m3-collapsible-list" id="adminFinanceLedgerAccordion">
                 @forelse($report['ledger'] as $row)
-                <div class="m3-mobile-item-card p-3">
-                    <div class="d-flex justify-content-between align-items-center gap-2 mb-1">
-                        <span class="badge bg-{{ $row['badge'] }}-subtle text-{{ $row['badge'] }} rounded-pill">{{ $row['type_label'] }}</span>
-                        <span class="fw-bold m3-tabular-nums {{ $row['direction'] === 'in' ? 'text-success' : 'text-danger' }}">
-                            {{ $row['direction'] === 'in' ? '+' : '-' }}{{ $fmtRp($row['amount']) }}
-                        </span>
+                <div class="m3-mobile-item-card m3-collapsible-card">
+                    <div class="m3-compact-row">
+                        <button type="button"
+                                class="m3-compact-trigger"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#adminLedgerCollapse-{{ $loop->index }}"
+                                aria-expanded="false"
+                                aria-controls="adminLedgerCollapse-{{ $loop->index }}">
+                            <div class="min-w-0 flex-grow-1">
+                                <div class="d-flex align-items-center gap-1.5 min-w-0">
+                                    <span class="badge bg-{{ $row['badge'] }}-subtle text-{{ $row['badge'] }} rounded-pill px-2 py-0 flex-shrink-0" style="font-size: 0.64rem;">{{ $row['type_label'] }}</span>
+                                    <span class="fw-bold text-body text-truncate" style="font-size: 0.82rem;">{{ $row['party'] }}</span>
+                                </div>
+                                <div class="text-secondary text-truncate" style="font-size: 0.71rem;">
+                                    <span class="font-monospace">{{ $row['reference'] }}</span> · {{ optional($row['date'])->format('d M, H:i') }}
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                                <span class="fw-bold m3-tabular-nums {{ $row['direction'] === 'in' ? 'text-success' : 'text-danger' }}" style="font-size: 0.8rem;">
+                                    {{ $row['direction'] === 'in' ? '+' : '-' }}{{ $fmtRp($row['amount']) }}
+                                </span>
+                                <i class="fas fa-chevron-down m3-compact-chevron"></i>
+                            </div>
+                        </button>
                     </div>
-                    <div class="small fw-semibold text-body">{{ $row['party'] }} <span class="font-monospace text-muted">({{ $row['reference'] }})</span></div>
-                    <div class="small text-secondary mt-0.5">{{ \Illuminate\Support\Str::limit($row['detail'], 90) }}</div>
-                    <div class="small text-muted mt-1.5 pt-1.5 border-top" style="border-color: var(--outline-variant) !important;">
-                        <i class="far fa-clock me-1"></i>{{ optional($row['date'])->format('d M Y, H:i') }}
+                    <div class="collapse" id="adminLedgerCollapse-{{ $loop->index }}" data-bs-parent="#adminFinanceLedgerAccordion">
+                        <div class="m3-collapsible-body small text-secondary">
+                            <div class="text-body mb-1">{{ $row['detail'] ?: '-' }}</div>
+                            <div><i class="far fa-clock me-1"></i>{{ optional($row['date'])->format('d M Y, H:i') }}</div>
+                        </div>
                     </div>
                 </div>
                 @empty

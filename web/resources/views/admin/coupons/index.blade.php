@@ -218,121 +218,99 @@
             </table>
         </div>
 
-        {{-- Mobile Stacked Card View (< 768px) --}}
-        <div class="d-md-none d-flex flex-column gap-2.5 p-3">
+        {{-- Mobile Collapsible Compact List (< 768px) --}}
+        <div class="d-md-none p-2.5 m3-collapsible-list" id="adminCouponsAccordion">
             @forelse($coupons as $coupon)
                 @php
                     $isCouponActive = $coupon->is_active && (!$coupon->expires_at || !$coupon->expires_at->isPast()) && ($coupon->qty == 0 || $coupon->used_qty < $coupon->qty);
                     $percent = $coupon->qty > 0 ? min(100, ($coupon->used_qty / $coupon->qty) * 100) : 0;
+                    $discountDisplay = $coupon->type === 'percent' ? ($coupon->value . '%') : ('Rp' . number_format($coupon->value, 0, ',', '.'));
                 @endphp
-                <div class="m3-mobile-item-card p-3">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                        <span class="badge bg-primary-subtle text-primary font-monospace fs-6 px-3 py-1.5 rounded-pill">
-                            {{ $coupon->code }}
-                        </span>
-                        @if($isCouponActive)
-                            <span class="badge bg-success-subtle text-success rounded-pill px-2.5 py-1">{{ __('Aktif') }}</span>
-                        @else
-                            <span class="badge bg-danger-subtle text-danger rounded-pill px-2.5 py-1">{{ __('Tidak Aktif') }}</span>
-                        @endif
-                    </div>
-
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <div>
-                            <span class="fw-bold text-success fs-5 m3-tabular-nums">
-                                @if($coupon->type === 'percent')
-                                    {{ $coupon->value }}%
-                                @else
-                                    Rp{{ number_format($coupon->value, 0, ',', '.') }}
-                                @endif
-                            </span>
-                            @if($coupon->type === 'percent' && $coupon->max_discount)
-                                <div class="text-secondary small">{{ __('Maks') }} Rp{{ number_format($coupon->max_discount, 0, ',', '.') }}</div>
-                            @endif
-                        </div>
-                        <div class="text-end">
-                            @if($coupon->isPerItemMode())
-                                <span class="badge bg-primary-subtle text-primary rounded-pill">
-                                    <i class="fas fa-cubes me-1"></i>{{ __('Per Produk') }}
+                <div class="m3-mobile-item-card m3-collapsible-card">
+                    <div class="m3-compact-row">
+                        <button type="button"
+                                class="m3-compact-trigger"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#adminCouponCollapse-{{ $coupon->id }}"
+                                aria-expanded="false"
+                                aria-controls="adminCouponCollapse-{{ $coupon->id }}">
+                            <div class="min-w-0 flex-grow-1">
+                                <div class="d-flex align-items-center gap-1.5 min-w-0">
+                                    <span class="badge bg-primary-subtle text-primary font-monospace px-2 py-0.5 rounded-pill flex-shrink-0" style="font-size: 0.76rem;">{{ $coupon->code }}</span>
+                                    <span class="fw-bold text-success m3-tabular-nums text-truncate" style="font-size: 0.84rem;">{{ $discountDisplay }}</span>
+                                </div>
+                                <div class="text-secondary text-truncate mt-0.5" style="font-size: 0.73rem;">
+                                    {{ $coupon->creator ? ($coupon->creator->full_name ?? $coupon->creator->username) : __('Platform') }}
+                                    · <span class="m3-tabular-nums">{{ $coupon->used_qty }}/{{ $coupon->qty > 0 ? $coupon->qty : '∞' }}</span>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                                <span class="badge {{ $isCouponActive ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger' }} rounded-pill px-2 py-0.5" style="font-size: 0.68rem;">
+                                    {{ $isCouponActive ? __('Aktif') : __('Nonaktif') }}
                                 </span>
-                            @else
-                                <span class="badge bg-secondary-subtle text-secondary rounded-pill">
-                                    <i class="fas fa-shopping-cart me-1"></i>{{ __('Total Belanja') }}
-                                </span>
-                            @endif
-                        </div>
-                    </div>
-
-                    <div class="small text-secondary mb-2">
-                        <div class="d-flex align-items-center gap-1.5 mb-1">
-                            <span class="text-muted">{{ __('Pembuat:') }}</span>
-                            @if($coupon->creator)
-                                <span class="badge {{ $coupon->creator->role === 'admin' ? 'bg-primary' : 'bg-info' }} rounded-pill px-2 py-0.5" style="font-size: 0.68rem;">
-                                    {{ $coupon->creator->role === 'admin' ? __('Admin') : __('Seller') }}
-                                </span>
-                                <strong class="text-body">{{ $coupon->creator->full_name ?? $coupon->creator->username }}</strong>
-                            @else
-                                <span class="badge bg-secondary rounded-pill px-2 py-0.5" style="font-size: 0.68rem;">{{ __('Platform') }}</span>
-                            @endif
-                        </div>
-                        <div><i class="fas fa-bag-shopping me-1"></i>{{ __('Min Belanja:') }} <strong>Rp{{ number_format($coupon->min_spend, 0, ',', '.') }}</strong></div>
-                        <div class="mt-1">
-                            <i class="fas fa-boxes me-1"></i>
-                            @if($coupon->products->count() > 0)
-                                <span>{{ $coupon->products->count() }} {{ __('Produk Pilihan') }}</span>
-                            @else
-                                <span>{{ __('Semua Produk') }}</span>
-                            @endif
-                        </div>
-                    </div>
-
-                    {{-- Progress & Repeat Limit --}}
-                    <div class="p-2.5 rounded-3 mb-2" style="background: var(--surface-container-high);">
-                        <div class="d-flex justify-content-between small text-secondary mb-1">
-                            <span>{{ __('Kuota Terpakai') }}</span>
-                            <span class="fw-semibold text-body m3-tabular-nums">{{ $coupon->used_qty }} / {{ $coupon->qty > 0 ? $coupon->qty : '∞' }}</span>
-                        </div>
-                        <div class="progress" style="height: 6px;">
-                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ $percent }}%"></div>
-                        </div>
-                        <div class="mt-1.5">
-                            @if($coupon->allow_multiple_uses)
-                                <span class="badge bg-info-subtle text-info rounded-pill" style="font-size: 0.68rem;">
-                                    <i class="fas fa-redo me-1"></i>{{ $coupon->max_uses_per_user > 0 ? __('Maks :n× / akun', ['n' => $coupon->max_uses_per_user]) : __('Berulang (∞ / akun)') }}
-                                </span>
-                            @else
-                                <span class="badge bg-secondary-subtle text-secondary rounded-pill" style="font-size: 0.68rem;">
-                                    <i class="fas fa-user me-1"></i>{{ __('1× / akun') }}
-                                </span>
-                            @endif
-                        </div>
-                    </div>
-
-                    <div class="small text-secondary mb-2">
-                        <i class="far fa-clock me-1"></i>
-                        @if($coupon->expires_at)
-                            <span class="{{ $coupon->expires_at->isPast() ? 'text-danger fw-bold' : '' }}">
-                                {{ $coupon->expires_at->format('d M Y, H:i') }}
-                            </span>
-                        @else
-                            <span>{{ __('Tidak kadaluarsa') }}</span>
-                        @endif
-                    </div>
-
-                    {{-- Actions --}}
-                    <div class="d-flex gap-2 pt-2 border-top" style="border-color: var(--outline-variant) !important;">
-                        <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill flex-grow-1 py-2 fw-semibold" 
-                                data-bs-toggle="modal" 
-                                data-bs-target="#editCouponModal-{{ $coupon->id }}">
-                            <i class="fas fa-edit me-1"></i>{{ __('Edit Kupon') }}
+                                <i class="fas fa-chevron-down m3-compact-chevron"></i>
+                            </div>
                         </button>
-                        <form action="{{ route('admin.coupons.destroy', $coupon->id) }}" method="POST" class="m-0" onsubmit="confirmAction(event, '{{ __('Hapus kupon ini?') }}');">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3 py-2" title="{{ __('Hapus') }}">
-                                <i class="fas fa-trash-alt"></i>
-                            </button>
-                        </form>
+                    </div>
+
+                    <div class="collapse" id="adminCouponCollapse-{{ $coupon->id }}" data-bs-parent="#adminCouponsAccordion">
+                        <div class="m3-collapsible-body">
+                            <div class="d-flex flex-wrap gap-1.5 mb-2">
+                                @if($coupon->isPerItemMode())
+                                    <span class="badge bg-primary-subtle text-primary rounded-pill" style="font-size: 0.68rem;"><i class="fas fa-cubes me-1"></i>{{ __('Per Produk') }}</span>
+                                @else
+                                    <span class="badge bg-secondary-subtle text-secondary rounded-pill" style="font-size: 0.68rem;"><i class="fas fa-shopping-cart me-1"></i>{{ __('Total Belanja') }}</span>
+                                @endif
+                                @if($coupon->allow_multiple_uses)
+                                    <span class="badge bg-info-subtle text-info rounded-pill" style="font-size: 0.68rem;"><i class="fas fa-redo me-1"></i>{{ $coupon->max_uses_per_user > 0 ? __('Maks :n× / akun', ['n' => $coupon->max_uses_per_user]) : __('Berulang (∞ / akun)') }}</span>
+                                @else
+                                    <span class="badge bg-secondary-subtle text-secondary rounded-pill" style="font-size: 0.68rem;"><i class="fas fa-user me-1"></i>{{ __('1× / akun') }}</span>
+                                @endif
+                                @if($coupon->type === 'percent' && $coupon->max_discount)
+                                    <span class="badge bg-secondary-subtle text-body rounded-pill m3-tabular-nums" style="font-size: 0.68rem;">{{ __('Maks') }} Rp{{ number_format($coupon->max_discount, 0, ',', '.') }}</span>
+                                @endif
+                            </div>
+
+                            <div class="small text-secondary mb-2">
+                                <div class="d-flex flex-wrap justify-content-between gap-2">
+                                    <span><i class="fas fa-bag-shopping me-1"></i>{{ __('Min:') }} <strong class="text-body">Rp{{ number_format($coupon->min_spend, 0, ',', '.') }}</strong></span>
+                                    <span><i class="fas fa-boxes me-1"></i>{{ $coupon->products->count() > 0 ? ($coupon->products->count() . ' ' . __('Produk Pilihan')) : __('Semua Produk') }}</span>
+                                </div>
+                                <div class="mt-1">
+                                    <i class="far fa-clock me-1"></i>
+                                    @if($coupon->expires_at)
+                                        <span class="{{ $coupon->expires_at->isPast() ? 'text-danger fw-bold' : '' }}">{{ $coupon->expires_at->format('d M Y, H:i') }}</span>
+                                    @else
+                                        <span>{{ __('Tidak kadaluarsa') }}</span>
+                                    @endif
+                                </div>
+                            </div>
+
+                            <div class="p-2 rounded-3 mb-2.5" style="background: var(--surface-container-high);">
+                                <div class="d-flex justify-content-between small text-secondary mb-1">
+                                    <span>{{ __('Kuota Terpakai') }}</span>
+                                    <span class="fw-semibold text-body m3-tabular-nums">{{ $coupon->used_qty }} / {{ $coupon->qty > 0 ? $coupon->qty : '∞' }}</span>
+                                </div>
+                                <div class="progress" style="height: 5px;">
+                                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ $percent }}%"></div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex gap-1.5">
+                                <button type="button" class="btn btn-sm btn-tonal m3-compact-action-btn flex-grow-1 px-3"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#editCouponModal-{{ $coupon->id }}">
+                                    <i class="fas fa-edit"></i><span>{{ __('Edit Kupon') }}</span>
+                                </button>
+                                <form action="{{ route('admin.coupons.destroy', $coupon->id) }}" method="POST" class="m-0" onsubmit="confirmAction(event, '{{ __('Hapus kupon ini?') }}');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-sm btn-outline-danger m3-compact-action-btn px-3" title="{{ __('Hapus') }}">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
                     </div>
                 </div>
             @empty

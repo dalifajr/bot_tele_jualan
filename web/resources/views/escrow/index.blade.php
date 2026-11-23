@@ -141,40 +141,54 @@
                 </table>
             </div>
 
-            {{-- Mobile Stacked Card List --}}
-            <div class="d-md-none p-3 d-flex flex-column gap-2.5">
+            {{-- Mobile Collapsible Compact List --}}
+            <div class="d-md-none p-2.5 m3-collapsible-list" id="customerEscrowAccordion">
                 @foreach($transactions as $trx)
-                    <div class="m3-mobile-item-card">
-                        <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
-                            <div class="min-w-0">
-                                <div class="fw-bold text-body">{{ $trx->title }}</div>
-                                <div class="d-flex align-items-center gap-1.5 mt-0.5">
-                                    <code class="small text-primary fw-semibold">{{ $trx->transaction_code }}</code>
-                                    @if($trx->creator_id === Auth::id())
-                                        <span class="badge bg-secondary-subtle rounded-pill" style="font-size: 0.65rem;">{{ __('Inisiator') }}</span>
-                                    @endif
+                    <div class="m3-mobile-item-card m3-collapsible-card">
+                        <div class="m3-compact-row">
+                            <button type="button"
+                                    class="m3-compact-trigger"
+                                    data-bs-toggle="collapse"
+                                    data-bs-target="#customerEscrowCollapse-{{ $trx->id }}"
+                                    aria-expanded="false"
+                                    aria-controls="customerEscrowCollapse-{{ $trx->id }}">
+                                <div class="min-w-0 flex-grow-1">
+                                    <div class="fw-bold text-body text-truncate" style="font-size: 0.85rem;">{{ $trx->title }}</div>
+                                    <div class="text-secondary text-truncate" style="font-size: 0.73rem;">
+                                        <span class="font-monospace text-primary">{{ $trx->transaction_code }}</span> · {{ $trx->updated_at->diffForHumans() }}
+                                    </div>
                                 </div>
-                            </div>
-                            <span class="badge bg-{{ $trx->status_badge }} rounded-pill px-2.5 py-1 fw-semibold flex-shrink-0" style="font-size: 0.72rem;">
-                                {{ $trx->status_label }}
-                            </span>
+                                <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                                    <div class="text-end">
+                                        <div class="fw-bold text-body m3-tabular-nums" style="font-size: 0.8rem;">Rp {{ number_format($trx->amount, 0, ',', '.') }}</div>
+                                        <span class="badge bg-{{ $trx->status_badge }} rounded-pill px-2 py-0" style="font-size: 0.64rem;">{{ $trx->status_label }}</span>
+                                    </div>
+                                    <i class="fas fa-chevron-down m3-compact-chevron"></i>
+                                </div>
+                            </button>
                         </div>
 
-                        <div class="small text-muted mb-2">
-                            <div>{{ __('Pembeli:') }} <strong class="text-body">{{ $trx->buyer_name }}</strong> &bull; {{ __('Penjual:') }} <strong class="text-body">{{ $trx->seller_name }}</strong></div>
-                        </div>
-
-                        <div class="d-flex justify-content-between align-items-center pt-2 mt-1" style="border-top: 1px solid var(--outline-variant);">
-                            <div>
-                                <div class="fw-bold text-body fs-6 m3-tabular-nums">Rp {{ number_format($trx->amount, 0, ',', '.') }}</div>
-                                <div class="text-muted" style="font-size: 0.72rem;">
-                                    Fee: Rp {{ number_format($trx->fee_amount, 0, ',', '.') }} &bull; {{ $trx->updated_at->diffForHumans() }}
+                        <div class="collapse" id="customerEscrowCollapse-{{ $trx->id }}" data-bs-parent="#customerEscrowAccordion">
+                            <div class="m3-collapsible-body">
+                                <div class="small text-secondary mb-2.5">
+                                    <div class="d-flex flex-wrap align-items-center gap-1.5 mb-1">
+                                        <span>{{ __('Pembeli:') }} <strong class="text-body">{{ $trx->buyer_name }}</strong></span>
+                                        <span>&bull;</span>
+                                        <span>{{ __('Penjual:') }} <strong class="text-body">{{ $trx->seller_name }}</strong></span>
+                                    </div>
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <span class="m3-tabular-nums">Fee: Rp {{ number_format($trx->fee_amount, 0, ',', '.') }}</span>
+                                        @if($trx->creator_id === Auth::id())
+                                            <span class="badge bg-secondary-subtle text-body rounded-pill" style="font-size: 0.65rem;">{{ __('Inisiator') }}</span>
+                                        @endif
+                                    </div>
                                 </div>
+
+                                <a href="{{ route('escrow.show', $trx->transaction_code) }}" class="btn btn-sm btn-tonal m3-compact-action-btn w-100">
+                                    <span>{{ __('Buka Ruang') }}</span>
+                                    <i class="fas fa-arrow-right small"></i>
+                                </a>
                             </div>
-                            <a href="{{ route('escrow.show', $trx->transaction_code) }}" class="btn btn-sm btn-tonal rounded-pill px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1" style="min-height: 38px;">
-                                <span>{{ __('Buka Ruang') }}</span>
-                                <i class="fas fa-arrow-right small"></i>
-                            </a>
                         </div>
                     </div>
                 @endforeach

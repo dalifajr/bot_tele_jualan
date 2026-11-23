@@ -83,6 +83,7 @@ class MobileResponsiveViewsTest extends TestCase
         $responseWallet->assertSee('topupModal');
         $responseWallet->assertSee('m3-sheet-modal');
         $responseWallet->assertSee('m3-mobile-item-card');
+        $responseWallet->assertSee('is-ultra-compact');
 
         // 2. Customer Complaints Index
         ComplaintCase::create([
@@ -99,6 +100,8 @@ class MobileResponsiveViewsTest extends TestCase
         $responseComplaints = $this->actingAs($this->customer)->get(route('customer.complaints.index'));
         $responseComplaints->assertStatus(200);
         $responseComplaints->assertSee('m3-mobile-item-card');
+        $responseComplaints->assertSee('m3-collapsible-card');
+        $responseComplaints->assertSee('data-bs-parent="#customerComplaintsAccordion"', false);
 
         // 3. Customer Escrow Index
         EscrowTransaction::create([
@@ -122,6 +125,8 @@ class MobileResponsiveViewsTest extends TestCase
         $responseEscrow = $this->actingAs($this->customer)->get(route('escrow.index'));
         $responseEscrow->assertStatus(200);
         $responseEscrow->assertSee('m3-mobile-item-card');
+        $responseEscrow->assertSee('m3-collapsible-card');
+        $responseEscrow->assertSee('data-bs-parent="#customerEscrowAccordion"', false);
 
         // 4. User Logins Log
         LoginLog::create([
@@ -134,6 +139,8 @@ class MobileResponsiveViewsTest extends TestCase
         $responseLogins = $this->actingAs($this->customer)->get(route('profile.logins'));
         $responseLogins->assertStatus(200);
         $responseLogins->assertSee('m3-mobile-item-card');
+        $responseLogins->assertSee('m3-collapsible-card');
+        $responseLogins->assertSee('data-bs-parent="#profileLoginsAccordion"', false);
     }
 
     public function test_seller_mobile_responsive_views_render_successfully(): void
@@ -429,10 +436,13 @@ class MobileResponsiveViewsTest extends TestCase
         $resSellerDash = $this->actingAs($this->seller)->get(route('seller.dashboard'));
         $resSellerDash->assertStatus(200);
         $resSellerDash->assertSee('m3-mobile-item-card');
+        $resSellerDash->assertSee('is-ultra-compact');
 
         $resSellerStock = $this->actingAs($this->seller)->get(route('seller.stock.index'));
         $resSellerStock->assertStatus(200);
         $resSellerStock->assertSee('m3-mobile-item-card');
+        $resSellerStock->assertSee('m3-collapsible-card');
+        $resSellerStock->assertSee('data-bs-parent="#sellerStockAccordion"', false);
         $resSellerStock->assertSee('m3-sheet-modal');
         $resSellerStock->assertSee('select-all-stocks-toggle');
 
@@ -444,16 +454,22 @@ class MobileResponsiveViewsTest extends TestCase
         $resAdminUsers = $this->actingAs($this->admin)->get(route('admin.users.index'));
         $resAdminUsers->assertStatus(200);
         $resAdminUsers->assertSee('m3-mobile-item-card');
+        $resAdminUsers->assertSee('m3-collapsible-card');
+        $resAdminUsers->assertSee('data-bs-parent="#adminUsersAccordion"', false);
         $resAdminUsers->assertSee('m3-sheet-modal');
 
         $resAdminSellers = $this->actingAs($this->admin)->get(route('admin.sellers.index'));
         $resAdminSellers->assertStatus(200);
         $resAdminSellers->assertSee('m3-mobile-item-card');
+        $resAdminSellers->assertSee('m3-collapsible-card');
+        $resAdminSellers->assertSee('data-bs-parent="#adminSellersAccordion"', false);
         $resAdminSellers->assertSee('m3-sheet-modal');
 
         $resAdminStock = $this->actingAs($this->admin)->get(route('admin.stock.index'));
         $resAdminStock->assertStatus(200);
         $resAdminStock->assertSee('m3-mobile-item-card');
+        $resAdminStock->assertSee('m3-collapsible-card');
+        $resAdminStock->assertSee('data-bs-parent="#adminStockAccordion"', false);
         $resAdminStock->assertSee('m3-sheet-modal');
         $resAdminStock->assertSee('select-all-stocks-toggle');
 
@@ -472,6 +488,8 @@ class MobileResponsiveViewsTest extends TestCase
         $resAudit = $this->actingAs($this->admin)->get(route('admin.audit-logs.index'));
         $resAudit->assertStatus(200);
         $resAudit->assertSee('m3-mobile-item-card');
+        $resAudit->assertSee('m3-collapsible-card');
+        $resAudit->assertSee('data-bs-parent="#adminAuditLogsAccordion"', false);
 
         LoginLog::forceCreate([
             'user_id' => $this->customer->id,
@@ -484,15 +502,19 @@ class MobileResponsiveViewsTest extends TestCase
         $resAdminLogins = $this->actingAs($this->admin)->get(route('admin.logins.index'));
         $resAdminLogins->assertStatus(200);
         $resAdminLogins->assertSee('m3-mobile-item-card');
+        $resAdminLogins->assertSee('m3-collapsible-card');
 
         $resFinLedger = $this->actingAs($this->admin)->get(route('admin.finance.reports', ['tab' => 'ledger']));
         $resFinLedger->assertStatus(200);
         $resFinLedger->assertSee('m3-mobile-item-card');
+        $resFinLedger->assertSee('m3-collapsible-card');
+        $resFinLedger->assertSee('data-bs-parent="#adminFinanceLedgerAccordion"', false);
 
         $resBackupIdx = $this->actingAs($this->admin)->get(route('admin.backup.index'));
         $resBackupIdx->assertStatus(200);
         $resBackupIdx->assertSee('m3-tab-strip');
         $resBackupIdx->assertSee('m3-mobile-item-card');
+        $resBackupIdx->assertSee('m3-collapsible-card');
 
         $resBackupHist = $this->actingAs($this->admin)->get(route('admin.backup.history'));
         $resBackupHist->assertStatus(200);

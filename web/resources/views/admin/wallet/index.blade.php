@@ -160,73 +160,81 @@
                     </table>
                 </div>
 
-                {{-- Mobile Stacked Card View (< 768px) --}}
-                <div class="d-md-none d-flex flex-column gap-2.5">
+                {{-- Mobile Collapsible Compact List (< 768px) --}}
+                <div class="d-md-none m3-collapsible-list" id="adminTopupAccordion">
                     @forelse($topups as $topup)
-                        <div class="m3-mobile-item-card p-3">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <div>
-                                    <div class="fw-bold font-monospace text-body" style="font-size: 0.88rem;">{{ $topup->topup_ref }}</div>
-                                    <div class="small text-secondary">{{ $topup->created_at->format('d M Y, H:i') }}</div>
-                                </div>
-                                <div>
-                                    @if($topup->status === 'paid')
-                                        <span class="badge bg-primary-subtle text-primary rounded-pill">{{ __('Terkonfirmasi') }}</span>
-                                    @elseif($topup->status === 'pending')
-                                        <span class="badge bg-warning-subtle text-warning rounded-pill">{{ __('Menunggu') }}</span>
-                                    @elseif($topup->status === 'expired')
-                                        <span class="badge bg-danger-subtle text-danger rounded-pill">{{ __('Kedaluwarsa') }}</span>
-                                    @else
-                                        <span class="badge bg-secondary-subtle text-secondary rounded-pill">{{ __('Dibatalkan') }}</span>
+                        <div class="m3-mobile-item-card m3-collapsible-card">
+                            <div class="m3-compact-row">
+                                <button type="button"
+                                        class="m3-compact-trigger"
+                                        data-bs-toggle="collapse"
+                                        data-bs-target="#adminTopupCollapse-{{ $topup->id }}"
+                                        aria-expanded="false"
+                                        aria-controls="adminTopupCollapse-{{ $topup->id }}">
+                                    <div class="min-w-0 flex-grow-1">
+                                        <div class="fw-bold font-monospace text-body text-truncate" style="font-size: 0.82rem;">{{ $topup->topup_ref }}</div>
+                                        <div class="text-secondary text-truncate" style="font-size: 0.73rem;">
+                                            {{ $topup->user->full_name ?? $topup->user->username ?? ('User #' . $topup->user_id) }} · {{ $topup->created_at->format('d M, H:i') }}
+                                        </div>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                                        <div class="text-end">
+                                            <div class="fw-bold text-primary m3-tabular-nums" style="font-size: 0.8rem;">Rp {{ number_format($topup->amount, 0, ',', '.') }}</div>
+                                            @if($topup->status === 'paid')
+                                                <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-0" style="font-size: 0.64rem;">{{ __('Terkonfirmasi') }}</span>
+                                            @elseif($topup->status === 'pending')
+                                                <span class="badge bg-warning-subtle text-warning rounded-pill px-2 py-0" style="font-size: 0.64rem;">{{ __('Menunggu') }}</span>
+                                            @elseif($topup->status === 'expired')
+                                                <span class="badge bg-danger-subtle text-danger rounded-pill px-2 py-0" style="font-size: 0.64rem;">{{ __('Kedaluwarsa') }}</span>
+                                            @else
+                                                <span class="badge bg-secondary-subtle text-secondary rounded-pill px-2 py-0" style="font-size: 0.64rem;">{{ __('Dibatalkan') }}</span>
+                                            @endif
+                                        </div>
+                                        <i class="fas fa-chevron-down m3-compact-chevron"></i>
+                                    </div>
+                                </button>
+                            </div>
+
+                            <div class="collapse" id="adminTopupCollapse-{{ $topup->id }}" data-bs-parent="#adminTopupAccordion">
+                                <div class="m3-collapsible-body">
+                                    <div class="small text-secondary mb-2">
+                                        <div>{{ __('User:') }} <strong class="text-body">{{ $topup->user->full_name ?? $topup->user->username ?? ('User #' . $topup->user_id) }}</strong> <span class="font-monospace">({{ '@' . ($topup->user->username ?? '-') }})</span></div>
+                                        <div class="d-flex justify-content-between mt-1">
+                                            <span>{{ __('Bayar QRIS:') }} <strong class="text-primary m3-tabular-nums">Rp {{ number_format($topup->total_pay, 0, ',', '.') }}</strong></span>
+                                            <span>{{ $topup->created_at->format('d M Y, H:i') }}</span>
+                                        </div>
+                                    </div>
+
+                                    @if($topup->status === 'pending')
+                                        <div class="d-flex gap-1.5">
+                                            <button type="button"
+                                                    class="btn btn-sm btn-primary m3-compact-action-btn flex-grow-1 btn-open-manual-confirm px-2.5"
+                                                    data-action="{{ route('admin.wallet.topup.confirm', $topup->id) }}"
+                                                    data-ref="{{ $topup->topup_ref }}"
+                                                    data-user="{{ $topup->user->username ?? $topup->user->full_name ?? ('User #' . $topup->user_id) }}"
+                                                    data-amount="Rp {{ number_format($topup->amount, 0, ',', '.') }}"
+                                                    data-total="Rp {{ number_format($topup->total_pay, 0, ',', '.') }}">
+                                                <i class="fas fa-check"></i><span>{{ __('Konfirmasi Manual') }}</span>
+                                            </button>
+                                            <form action="{{ route('admin.wallet.topup.reject', $topup->id) }}" method="POST" class="m-0">
+                                                @csrf
+                                                <button type="submit" class="btn btn-sm btn-outline-danger m3-compact-action-btn px-3" title="{{ __('Batalkan') }}">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    @elseif($topup->verified_source || $topup->admin_note)
+                                        <div class="small text-secondary">
+                                            @if($topup->verified_source)
+                                                <span class="badge bg-secondary-subtle text-body font-monospace">{{ $topup->verified_source }}</span>
+                                            @endif
+                                            @if($topup->admin_note)
+                                                <span class="ms-1">{{ $topup->admin_note }}</span>
+                                            @endif
+                                        </div>
                                     @endif
                                 </div>
                             </div>
-
-                            <div class="small text-body mb-2">
-                                <span class="text-secondary">{{ __('User:') }}</span>
-                                <strong>{{ $topup->user->full_name ?? $topup->user->username ?? ('User #' . $topup->user_id) }}</strong>
-                                <span class="text-secondary font-monospace">({{ '@' . ($topup->user->username ?? '-') }})</span>
-                            </div>
-
-                            <div class="d-flex justify-content-between align-items-center py-2 px-2.5 rounded-3 mb-2" style="background: var(--surface-container-high);">
-                                <div>
-                                    <div class="text-secondary" style="font-size: 0.72rem;">{{ __('Nominal Saldo') }}</div>
-                                    <div class="fw-bold text-body m3-tabular-nums">Rp {{ number_format($topup->amount, 0, ',', '.') }}</div>
-                                </div>
-                                <div class="text-end">
-                                    <div class="text-secondary" style="font-size: 0.72rem;">{{ __('Bayar QRIS') }}</div>
-                                    <div class="fw-bold text-primary m3-tabular-nums">Rp {{ number_format($topup->total_pay, 0, ',', '.') }}</div>
-                                </div>
-                            </div>
-
-                            @if($topup->status === 'pending')
-                                <div class="d-flex gap-2 mt-2 pt-2 border-top" style="border-color: var(--outline-variant) !important;">
-                                    <button type="button"
-                                            class="btn btn-sm btn-primary rounded-pill flex-grow-1 fw-bold btn-open-manual-confirm py-2"
-                                            data-action="{{ route('admin.wallet.topup.confirm', $topup->id) }}"
-                                            data-ref="{{ $topup->topup_ref }}"
-                                            data-user="{{ $topup->user->username ?? $topup->user->full_name ?? ('User #' . $topup->user_id) }}"
-                                            data-amount="Rp {{ number_format($topup->amount, 0, ',', '.') }}"
-                                            data-total="Rp {{ number_format($topup->total_pay, 0, ',', '.') }}">
-                                        <i class="fas fa-check me-1"></i>{{ __('Konfirmasi Manual') }}
-                                    </button>
-                                    <form action="{{ route('admin.wallet.topup.reject', $topup->id) }}" method="POST" class="m-0">
-                                        @csrf
-                                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3 py-2" title="{{ __('Batalkan') }}">
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                    </form>
-                                </div>
-                            @elseif($topup->verified_source || $topup->admin_note)
-                                <div class="small text-secondary mt-1">
-                                    @if($topup->verified_source)
-                                        <span class="badge bg-secondary-subtle text-body font-monospace">{{ $topup->verified_source }}</span>
-                                    @endif
-                                    @if($topup->admin_note)
-                                        <span class="ms-1">{{ $topup->admin_note }}</span>
-                                    @endif
-                                </div>
-                            @endif
                         </div>
                     @empty
                         <div class="text-center text-muted py-4 small">{{ __('Belum ada permintaan top-up saldo.') }}</div>
@@ -287,26 +295,41 @@
                     </table>
                 </div>
 
-                {{-- Mobile Stacked Cards for Adjustments --}}
-                <div class="d-md-none d-flex flex-column gap-2">
+                {{-- Mobile Collapsible Compact List for Adjustments --}}
+                <div class="d-md-none m3-collapsible-list" id="adminAdjAccordion">
                     @forelse($recentAdjustments as $adj)
-                        <div class="m3-mobile-item-card p-3">
-                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                <span class="fw-bold small {{ $adj->type === 'credit' ? 'text-success' : 'text-danger' }} m3-tabular-nums">
-                                    {{ $adj->type === 'credit' ? '+' : '-' }}Rp {{ number_format($adj->amount, 0, ',', '.') }}
-                                </span>
-                                <span class="small text-secondary">{{ $adj->created_at->format('d M Y H:i') }}</span>
+                        <div class="m3-mobile-item-card m3-collapsible-card">
+                            <div class="m3-compact-row">
+                                <button type="button"
+                                        class="m3-compact-trigger"
+                                        data-bs-toggle="collapse"
+                                        data-bs-target="#adminAdjCollapse-{{ $adj->id }}"
+                                        aria-expanded="false"
+                                        aria-controls="adminAdjCollapse-{{ $adj->id }}">
+                                    <div class="min-w-0 flex-grow-1">
+                                        <div class="fw-bold text-body text-truncate" style="font-size: 0.84rem;">
+                                            {{ $adj->user->full_name ?? $adj->user->username ?? ('User #' . $adj->user_id) }}
+                                        </div>
+                                        <div class="text-secondary text-truncate" style="font-size: 0.72rem;">
+                                            {{ $adj->created_at->format('d M Y H:i') }} · {{ __('Saldo:') }} <span class="m3-tabular-nums">Rp {{ number_format($adj->balance_after, 0, ',', '.') }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                                        <span class="fw-bold m3-tabular-nums {{ $adj->type === 'credit' ? 'text-success' : 'text-danger' }}" style="font-size: 0.8rem;">
+                                            {{ $adj->type === 'credit' ? '+' : '-' }}Rp {{ number_format($adj->amount, 0, ',', '.') }}
+                                        </span>
+                                        <i class="fas fa-chevron-down m3-compact-chevron"></i>
+                                    </div>
+                                </button>
                             </div>
-                            <div class="small fw-semibold text-body">
-                                {{ $adj->user->full_name ?? $adj->user->username ?? ('User #' . $adj->user_id) }}
-                                <span class="text-muted">({{ '@' . ($adj->user->username ?? '-') }})</span>
-                            </div>
-                            <div class="small text-secondary mt-1">
-                                {{ $adj->description ?: '-' }}
-                            </div>
-                            <div class="d-flex justify-content-between align-items-center small text-secondary mt-2 pt-2 border-top" style="border-color: var(--outline-variant) !important;">
-                                <span>{{ __('Saldo Akhir:') }}</span>
-                                <strong class="text-body m3-tabular-nums">Rp {{ number_format($adj->balance_after, 0, ',', '.') }}</strong>
+                            <div class="collapse" id="adminAdjCollapse-{{ $adj->id }}" data-bs-parent="#adminAdjAccordion">
+                                <div class="m3-collapsible-body small text-secondary">
+                                    <div class="mb-1"><strong class="text-body">{{ '@' . ($adj->user->username ?? '-') }}</strong></div>
+                                    <div class="text-body">{{ $adj->description ?: '-' }}</div>
+                                    @if($adj->reference)
+                                        <div class="font-monospace text-muted mt-1" style="font-size: 0.7rem;">{{ $adj->reference }}</div>
+                                    @endif
+                                </div>
                             </div>
                         </div>
                     @empty

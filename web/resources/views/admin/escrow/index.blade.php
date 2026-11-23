@@ -192,76 +192,70 @@
                 </table>
             </div>
 
-            {{-- Mobile Stacked Card View (< 768px) --}}
-            <div class="d-md-none d-flex flex-column gap-2.5 p-3">
+            {{-- Mobile Collapsible Compact List (< 768px) --}}
+            <div class="d-md-none p-2.5 m3-collapsible-list" id="adminEscrowAccordion">
                 @foreach($transactions as $trx)
-                    <div class="m3-mobile-item-card p-3">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <div>
-                                <span class="badge bg-{{ $trx->status_badge }} rounded-pill px-2.5 py-1">
-                                    {{ $trx->status_label }}
-                                </span>
-                            </div>
-                            <code class="small text-primary font-monospace">{{ $trx->transaction_code }}</code>
+                    <div class="m3-mobile-item-card m3-collapsible-card">
+                        <div class="m3-compact-row">
+                            <button type="button"
+                                    class="m3-compact-trigger"
+                                    data-bs-toggle="collapse"
+                                    data-bs-target="#adminEscrowCollapse-{{ $trx->id }}"
+                                    aria-expanded="false"
+                                    aria-controls="adminEscrowCollapse-{{ $trx->id }}">
+                                <div class="min-w-0 flex-grow-1">
+                                    <div class="fw-bold text-body text-truncate" style="font-size: 0.85rem;">{{ $trx->title }}</div>
+                                    <div class="text-secondary text-truncate" style="font-size: 0.73rem;">
+                                        <span class="font-monospace text-primary">{{ $trx->transaction_code }}</span> · {{ $trx->buyer_name }} ↔ {{ $trx->seller_name }}
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                                    <div class="text-end">
+                                        <div class="fw-bold text-body m3-tabular-nums" style="font-size: 0.8rem;">Rp {{ number_format($trx->amount, 0, ',', '.') }}</div>
+                                        <span class="badge bg-{{ $trx->status_badge }} rounded-pill px-2 py-0" style="font-size: 0.64rem;">{{ $trx->status_label }}</span>
+                                    </div>
+                                    <i class="fas fa-chevron-down m3-compact-chevron"></i>
+                                </div>
+                            </button>
                         </div>
 
-                        <div class="fw-bold text-body mb-2">{{ $trx->title }}</div>
+                        <div class="collapse" id="adminEscrowCollapse-{{ $trx->id }}" data-bs-parent="#adminEscrowAccordion">
+                            <div class="m3-collapsible-body">
+                                <div class="row g-2 small text-secondary mb-2.5">
+                                    <div class="col-6">
+                                        <div><i class="fas fa-user-tag me-1"></i>{{ __('Pembeli:') }}</div>
+                                        <strong class="text-body text-truncate d-block">{{ $trx->buyer_name }}</strong>
+                                        <span class="text-muted" style="font-size: 0.72rem;">{{ $trx->buyer_contact }}</span>
+                                    </div>
+                                    <div class="col-6">
+                                        <div><i class="fas fa-store me-1"></i>{{ __('Penjual:') }}</div>
+                                        <strong class="text-body text-truncate d-block">{{ $trx->seller_name }}</strong>
+                                        <span class="text-muted" style="font-size: 0.72rem;">{{ $trx->seller_contact }}</span>
+                                    </div>
+                                    <div class="col-12 pt-1 border-top d-flex justify-content-between" style="border-color: var(--outline-variant) !important;">
+                                        <span>{{ __('Biaya Rekber') }}</span>
+                                        <strong class="text-body m3-tabular-nums">Rp {{ number_format($trx->fee_amount, 0, ',', '.') }}</strong>
+                                    </div>
+                                </div>
 
-                        <div class="d-flex justify-content-between align-items-center py-2 px-2.5 rounded-3 mb-2" style="background: var(--surface-container-high);">
-                            <div>
-                                <div class="text-secondary" style="font-size: 0.72rem;">{{ __('Nominal Transaksi') }}</div>
-                                <div class="fw-bold text-body m3-tabular-nums">Rp {{ number_format($trx->amount, 0, ',', '.') }}</div>
-                            </div>
-                            <div class="text-end">
-                                <div class="text-secondary" style="font-size: 0.72rem;">{{ __('Biaya Rekber') }}</div>
-                                <div class="small fw-semibold text-secondary m3-tabular-nums">Rp {{ number_format($trx->fee_amount, 0, ',', '.') }}</div>
-                            </div>
-                        </div>
-
-                        <div class="row g-2 small text-secondary mb-2">
-                            <div class="col-6">
-                                <div><i class="fas fa-user-tag me-1"></i>{{ __('Pembeli:') }}</div>
-                                <strong class="text-body text-truncate d-block">{{ $trx->buyer_name }}</strong>
-                                <span class="text-muted" style="font-size: 0.72rem;">{{ $trx->buyer_contact }}</span>
-                            </div>
-                            <div class="col-6">
-                                <div><i class="fas fa-store me-1"></i>{{ __('Penjual:') }}</div>
-                                <strong class="text-body text-truncate d-block">{{ $trx->seller_name }}</strong>
-                                <span class="text-muted" style="font-size: 0.72rem;">{{ $trx->seller_contact }}</span>
-                            </div>
-                        </div>
-
-                        {{-- Mobile Action Buttons --}}
-                        <div class="d-flex gap-2 pt-2 border-top" style="border-color: var(--outline-variant) !important;">
-                            <a href="{{ route('admin.escrow.show', $trx->transaction_code) }}" class="btn btn-sm btn-primary rounded-pill flex-grow-1 py-2 fw-bold text-center">
-                                <i class="fas fa-eye me-1"></i>{{ __('Kelola') }}
-                            </a>
-                            <div class="dropdown">
-                                <button class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-2" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="fas fa-ellipsis-vertical"></i>
-                                </button>
-                                <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3">
-                                    <li>
-                                        <a class="dropdown-item small py-2" href="{{ route('admin.escrow.edit', $trx->transaction_code) }}">
-                                            <i class="fas fa-edit text-warning me-2"></i> {{ __('Edit Transaksi') }}
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item small py-2" href="{{ route('escrow.public.show', $trx->public_token) }}" target="_blank">
-                                            <i class="fas fa-external-link-alt text-info me-2"></i> {{ __('Buka Ruang Publik') }}
-                                        </a>
-                                    </li>
-                                    <li><hr class="dropdown-divider my-1"></li>
-                                    <li>
-                                        <form action="{{ route('admin.escrow.destroy', $trx->transaction_code) }}" method="POST" onsubmit="return confirm('{{ __('Apakah Anda yakin ingin menghapus transaksi rekber :code beserta seluruh obrolan dan bukti lampiran?', ['code' => $trx->transaction_code]) }}')">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="dropdown-item small py-2 text-danger">
-                                                <i class="fas fa-trash-alt me-2"></i> {{ __('Hapus Permanen') }}
-                                            </button>
-                                        </form>
-                                    </li>
-                                </ul>
+                                <div class="d-flex flex-wrap gap-1.5">
+                                    <a href="{{ route('admin.escrow.show', $trx->transaction_code) }}" class="btn btn-sm btn-primary m3-compact-action-btn flex-grow-1 px-2.5">
+                                        <i class="fas fa-eye"></i><span>{{ __('Kelola') }}</span>
+                                    </a>
+                                    <a href="{{ route('admin.escrow.edit', $trx->transaction_code) }}" class="btn btn-sm btn-outline-warning m3-compact-action-btn px-2.5">
+                                        <i class="fas fa-edit"></i><span>{{ __('Edit') }}</span>
+                                    </a>
+                                    <a href="{{ route('escrow.public.show', $trx->public_token) }}" target="_blank" class="btn btn-sm btn-outline-info m3-compact-action-btn px-2.5" title="{{ __('Buka Ruang Publik') }}">
+                                        <i class="fas fa-external-link-alt"></i>
+                                    </a>
+                                    <form action="{{ route('admin.escrow.destroy', $trx->transaction_code) }}" method="POST" class="m-0" onsubmit="return confirm('{{ __('Apakah Anda yakin ingin menghapus transaksi rekber :code beserta seluruh obrolan dan bukti lampiran?', ['code' => $trx->transaction_code]) }}')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-outline-danger m3-compact-action-btn px-2.5" title="{{ __('Hapus Permanen') }}">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </form>
+                                </div>
                             </div>
                         </div>
                     </div>

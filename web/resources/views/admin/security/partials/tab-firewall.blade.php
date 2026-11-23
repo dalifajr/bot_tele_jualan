@@ -123,44 +123,64 @@
                     </table>
                 </div>
 
-                {{-- Mobile Stacked Cards (< 768px) --}}
-                <div class="d-md-none d-flex flex-column gap-2.5">
+                {{-- Mobile Collapsible Compact List (< 768px) --}}
+                <div class="d-md-none m3-collapsible-list" id="hubFirewallRulesAccordion">
                     @forelse($rules as $rule)
-                        <div class="m3-mobile-item-card p-3">
-                            <div class="d-flex justify-content-between align-items-start gap-2 mb-1.5">
-                                <div class="min-w-0">
-                                    <span class="badge bg-secondary-subtle text-body text-uppercase me-1" style="font-size: 0.65rem;">{{ $rule->type }}</span>
-                                    <span class="font-monospace fw-bold small text-body text-break">{{ $rule->value }}</span>
+                        <div class="m3-mobile-item-card m3-collapsible-card">
+                            <div class="m3-compact-row">
+                                <button type="button"
+                                        class="m3-compact-trigger"
+                                        data-bs-toggle="collapse"
+                                        data-bs-target="#hubFwRuleCollapse-{{ $rule->id }}"
+                                        aria-expanded="false"
+                                        aria-controls="hubFwRuleCollapse-{{ $rule->id }}">
+                                    <div class="min-w-0 flex-grow-1">
+                                        <div class="d-flex align-items-center gap-1.5 min-w-0">
+                                            <span class="badge bg-secondary-subtle text-body text-uppercase flex-shrink-0" style="font-size: 0.62rem;">{{ $rule->type }}</span>
+                                            <span class="font-monospace fw-bold text-body text-truncate" style="font-size: 0.82rem;">{{ $rule->value }}</span>
+                                        </div>
+                                        <div class="text-secondary text-truncate m3-tabular-nums" style="font-size: 0.72rem;">
+                                            {{ number_format($rule->hit_count) }} hit · {{ $rule->expires_at ? $rule->expires_at->format('d M Y') : __('Permanen') }}
+                                        </div>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                                        @if(!$rule->is_active)
+                                            <span class="badge bg-secondary-subtle text-secondary rounded-pill px-2 py-0.5" style="font-size: 0.66rem;">{{ __('Dijeda') }}</span>
+                                        @elseif($rule->expires_at && $rule->expires_at->isPast())
+                                            <span class="badge bg-warning-subtle text-warning rounded-pill px-2 py-0.5" style="font-size: 0.66rem;">{{ __('Kedaluwarsa') }}</span>
+                                        @else
+                                            <span class="badge bg-danger-subtle text-danger rounded-pill px-2 py-0.5" style="font-size: 0.66rem;">{{ __('Aktif') }}</span>
+                                        @endif
+                                        <i class="fas fa-chevron-down m3-compact-chevron"></i>
+                                    </div>
+                                </button>
+                            </div>
+
+                            <div class="collapse" id="hubFwRuleCollapse-{{ $rule->id }}" data-bs-parent="#hubFirewallRulesAccordion">
+                                <div class="m3-collapsible-body">
+                                    <div class="small text-secondary mb-2.5">
+                                        <div class="font-monospace text-body text-break mb-1" style="font-size: 0.76rem;">{{ $rule->value }}</div>
+                                        <div>{{ $rule->reason ?: __('Tanpa catatan alasan') }}</div>
+                                        <div class="mt-1"><i class="far fa-clock me-1"></i>{{ $rule->expires_at ? $rule->expires_at->format('d M Y H:i') : __('Permanen') }}</div>
+                                    </div>
+                                    <div class="d-flex gap-1.5">
+                                        <form action="{{ route('admin.security.firewall.toggle', $rule->id) }}" method="POST" class="flex-grow-1 m-0">
+                                            @csrf
+                                            <input type="hidden" name="active_tab" value="firewall">
+                                            <button type="submit" class="btn btn-sm {{ $rule->is_active ? 'btn-outline-secondary' : 'btn-outline-primary' }} m3-compact-action-btn w-100">
+                                                <i class="fas {{ $rule->is_active ? 'fa-pause' : 'fa-play' }}"></i><span>{{ $rule->is_active ? __('Jeda') : __('Aktifkan') }}</span>
+                                            </button>
+                                        </form>
+                                        <form action="{{ route('admin.security.firewall.destroy', $rule->id) }}" method="POST" class="m-0">
+                                            @csrf
+                                            @method('DELETE')
+                                            <input type="hidden" name="active_tab" value="firewall">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger m3-compact-action-btn px-3" title="{{ __('Hapus Aturan') }}">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
                                 </div>
-                                @if(!$rule->is_active)
-                                    <span class="badge bg-secondary-subtle text-secondary rounded-pill flex-shrink-0">{{ __('Dijeda') }}</span>
-                                @elseif($rule->expires_at && $rule->expires_at->isPast())
-                                    <span class="badge bg-warning-subtle text-warning rounded-pill flex-shrink-0">{{ __('Kedaluwarsa') }}</span>
-                                @else
-                                    <span class="badge bg-danger-subtle text-danger rounded-pill flex-shrink-0">{{ __('Aktif') }}</span>
-                                @endif
-                            </div>
-                            <div class="small text-secondary mb-2">{{ $rule->reason ?: __('Tanpa catatan alasan') }}</div>
-                            <div class="d-flex justify-content-between align-items-center small text-muted mb-2 m3-tabular-nums">
-                                <span><i class="far fa-clock me-1"></i>{{ $rule->expires_at ? $rule->expires_at->format('d M Y H:i') : __('Permanen') }}</span>
-                                <span class="fw-bold text-body">{{ number_format($rule->hit_count) }} hit</span>
-                            </div>
-                            <div class="d-flex gap-2 pt-2 border-top" style="border-color: var(--outline-variant) !important;">
-                                <form action="{{ route('admin.security.firewall.toggle', $rule->id) }}" method="POST" class="flex-grow-1 m-0">
-                                    @csrf
-                                    <input type="hidden" name="active_tab" value="firewall">
-                                    <button type="submit" class="btn btn-sm {{ $rule->is_active ? 'btn-outline-secondary' : 'btn-outline-primary' }} rounded-pill w-100 fw-semibold" style="min-height: 40px;">
-                                        <i class="fas {{ $rule->is_active ? 'fa-pause' : 'fa-play' }} me-1"></i>{{ $rule->is_active ? __('Jeda') : __('Aktifkan') }}
-                                    </button>
-                                </form>
-                                <form action="{{ route('admin.security.firewall.destroy', $rule->id) }}" method="POST" class="m-0">
-                                    @csrf
-                                    @method('DELETE')
-                                    <input type="hidden" name="active_tab" value="firewall">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3" style="min-height: 40px;" title="{{ __('Hapus Aturan') }}">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
                             </div>
                         </div>
                     @empty

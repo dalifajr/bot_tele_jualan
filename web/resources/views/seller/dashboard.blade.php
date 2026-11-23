@@ -239,17 +239,18 @@
                     </table>
                 </div>
 
-                {{-- Mobile Stacked Cards (< 768px) --}}
-                <div class="d-md-none p-3 d-flex flex-column gap-2.5">
+                {{-- Mobile Ultra-Compact 2-Line List (< 768px) --}}
+                <div class="d-md-none p-2.5 d-flex flex-column gap-1.5">
                     @forelse($topProducts as $prod)
-                        <div class="m3-mobile-item-card p-3">
-                            <div class="d-flex justify-content-between align-items-start gap-2 mb-1.5">
-                                <div class="fw-bold text-body small">{{ $prod->name }}</div>
-                                <span class="badge bg-primary-subtle text-primary rounded-pill flex-shrink-0 m3-tabular-nums">{{ $prod->units_sold }} {{ __('unit') }}</span>
-                            </div>
-                            <div class="d-flex justify-content-between align-items-center small pt-2 border-top" style="border-color: var(--outline-variant) !important;">
-                                <span class="text-muted m3-tabular-nums">{{ __('Harga:') }} Rp {{ number_format($prod->price, 0, ',', '.') }}</span>
-                                <span class="fw-bold text-success m3-tabular-nums">Rp {{ number_format($prod->total_earnings, 0, ',', '.') }}</span>
+                        <div class="m3-mobile-item-card is-ultra-compact">
+                            <div class="d-flex justify-content-between align-items-center gap-2">
+                                <div class="min-w-0 flex-grow-1">
+                                    <div class="fw-bold text-body text-truncate" style="font-size: 0.84rem;">{{ $prod->name }}</div>
+                                    <div class="text-muted text-truncate m3-tabular-nums" style="font-size: 0.72rem;">
+                                        {{ $prod->units_sold }} {{ __('unit') }} · Rp {{ number_format($prod->price, 0, ',', '.') }}
+                                    </div>
+                                </div>
+                                <span class="fw-bold text-success flex-shrink-0 m3-tabular-nums" style="font-size: 0.82rem;">Rp {{ number_format($prod->total_earnings, 0, ',', '.') }}</span>
                             </div>
                         </div>
                     @empty
@@ -380,26 +381,25 @@
             </table>
         </div>
 
-        {{-- Mobile Stacked Cards (< 768px) --}}
-        <div class="d-md-none p-3 d-flex flex-column gap-2.5">
+        {{-- Mobile Ultra-Compact 2-Line List (< 768px) --}}
+        <div class="d-md-none p-2.5 d-flex flex-column gap-1.5">
             @foreach($latestOrders as $order)
             @php
                 $myEarningsInOrder = $order->stockUnits->where('seller_id', Auth::id())->sum(function($unit) {
                     return $unit->product->price ?? 0;
                 });
             @endphp
-            <div class="m3-mobile-item-card p-3">
-                <div class="d-flex justify-content-between align-items-start gap-2 mb-1">
-                    <span class="fw-bold text-primary font-monospace small">{{ $order->order_ref }}</span>
-                    <span class="fw-bold text-success m3-tabular-nums">Rp {{ number_format($myEarningsInOrder, 0, ',', '.') }}</span>
-                </div>
-                <div class="small text-body fw-semibold">{{ $order->customer->full_name ?? 'Unknown' }}
-                    @if(!empty($order->customer->username))
-                        <span class="text-muted fw-normal">({{ '@' . $order->customer->username }})</span>
-                    @endif
-                </div>
-                <div class="small text-muted mt-1.5 pt-1.5 border-top" style="border-color: var(--outline-variant) !important;">
-                    <i class="far fa-clock me-1"></i>{{ $order->delivered_at ? $order->delivered_at->format('d M Y, H:i') : '-' }}
+            <div class="m3-mobile-item-card is-ultra-compact">
+                <div class="d-flex justify-content-between align-items-center gap-2">
+                    <div class="min-w-0 flex-grow-1">
+                        <div class="fw-bold text-body text-truncate" style="font-size: 0.83rem;">
+                            <span class="font-monospace text-primary">{{ $order->order_ref }}</span> · {{ $order->customer->full_name ?? 'Unknown' }}
+                        </div>
+                        <div class="text-muted text-truncate" style="font-size: 0.72rem;">
+                            {{ $order->delivered_at ? $order->delivered_at->format('d M Y, H:i') : '-' }}
+                        </div>
+                    </div>
+                    <span class="fw-bold text-success flex-shrink-0 m3-tabular-nums" style="font-size: 0.82rem;">Rp {{ number_format($myEarningsInOrder, 0, ',', '.') }}</span>
                 </div>
             </div>
             @endforeach

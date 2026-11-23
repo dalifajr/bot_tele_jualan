@@ -90,50 +90,66 @@
             </table>
         </div>
 
-        {{-- Mobile Stacked Card List --}}
-        <div class="d-md-none p-3 d-flex flex-column gap-2.5">
+        {{-- Mobile Collapsible Compact List --}}
+        <div class="d-md-none p-2.5 m3-collapsible-list" id="adminWithdrawalsAccordion">
             @foreach($withdrawals as $withdrawal)
-            <div class="m3-mobile-item-card">
-                <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
-                    <div class="min-w-0">
-                        <div class="fw-bold text-primary small">{{ $withdrawal->seller->full_name ?? $withdrawal->seller->username ?? 'Unknown Seller' }}</div>
-                        <div class="fw-semibold text-body small mt-0.5">{{ strtoupper($withdrawal->bank_name) }} &bull; <span class="font-monospace">{{ $withdrawal->account_number }}</span></div>
-                        <div class="text-muted small" style="font-size: 0.74rem;">a.n. {{ $withdrawal->account_holder }}</div>
-                    </div>
-                    <div>
-                        @if($withdrawal->status === 'pending')
-                            <span class="badge bg-warning-subtle text-warning rounded-pill px-2.5 py-1 fw-semibold">{{ __('Menunggu') }}</span>
-                        @elseif($withdrawal->status === 'approved')
-                            <span class="badge bg-success-subtle text-success rounded-pill px-2.5 py-1 fw-semibold">{{ __('Selesai') }}</span>
-                        @else
-                            <span class="badge bg-danger-subtle text-danger rounded-pill px-2.5 py-1 fw-semibold">{{ __('Ditolak') }}</span>
-                        @endif
-                    </div>
+            <div class="m3-mobile-item-card m3-collapsible-card">
+                <div class="m3-compact-row">
+                    <button type="button"
+                            class="m3-compact-trigger"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#adminWithdrawalCollapse-{{ $withdrawal->id }}"
+                            aria-expanded="false"
+                            aria-controls="adminWithdrawalCollapse-{{ $withdrawal->id }}">
+                        <div class="min-w-0 flex-grow-1">
+                            <div class="fw-bold text-body text-truncate" style="font-size: 0.85rem;">
+                                {{ $withdrawal->seller->full_name ?? $withdrawal->seller->username ?? 'Unknown Seller' }}
+                            </div>
+                            <div class="text-secondary text-truncate" style="font-size: 0.73rem;">
+                                {{ strtoupper($withdrawal->bank_name) }} · {{ $withdrawal->created_at->format('d M Y, H:i') }}
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                            <div class="text-end">
+                                <div class="fw-bold text-success m3-tabular-nums" style="font-size: 0.82rem;">Rp {{ number_format($withdrawal->amount, 0, ',', '.') }}</div>
+                                @if($withdrawal->status === 'pending')
+                                    <span class="badge bg-warning-subtle text-warning rounded-pill px-2 py-0" style="font-size: 0.64rem;">{{ __('Menunggu') }}</span>
+                                @elseif($withdrawal->status === 'approved')
+                                    <span class="badge bg-success-subtle text-success rounded-pill px-2 py-0" style="font-size: 0.64rem;">{{ __('Selesai') }}</span>
+                                @else
+                                    <span class="badge bg-danger-subtle text-danger rounded-pill px-2 py-0" style="font-size: 0.64rem;">{{ __('Ditolak') }}</span>
+                                @endif
+                            </div>
+                            <i class="fas fa-chevron-down m3-compact-chevron"></i>
+                        </div>
+                    </button>
                 </div>
 
-                <div class="d-flex justify-content-between align-items-center pt-2 mt-1" style="border-top: 1px solid var(--outline-variant);">
-                    <div>
-                        <div class="fw-bold text-success fs-6 m3-tabular-nums">Rp {{ number_format($withdrawal->amount, 0, ',', '.') }}</div>
-                        <small class="text-muted" style="font-size: 0.72rem;"><i class="far fa-clock me-1"></i>{{ $withdrawal->created_at->format('d M Y, H:i') }}</small>
-                    </div>
+                <div class="collapse" id="adminWithdrawalCollapse-{{ $withdrawal->id }}" data-bs-parent="#adminWithdrawalsAccordion">
+                    <div class="m3-collapsible-body">
+                        <div class="small text-secondary mb-2.5">
+                            <div>{{ strtoupper($withdrawal->bank_name) }} · <strong class="text-body font-monospace">{{ $withdrawal->account_number }}</strong></div>
+                            <div>a.n. <strong class="text-body">{{ $withdrawal->account_holder }}</strong></div>
+                        </div>
 
-                    <div class="d-flex gap-1.5">
-                        @if($withdrawal->status === 'pending')
-                            <button class="btn btn-sm btn-primary rounded-pill px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1" style="min-height: 38px;" data-bs-toggle="modal" data-bs-target="#approveModal{{ $withdrawal->id }}">
-                                <i class="fas fa-check"></i><span>{{ __('Setujui') }}</span>
-                            </button>
-                            <button class="btn btn-sm btn-outline-danger rounded-pill px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1" style="min-height: 38px;" data-bs-toggle="modal" data-bs-target="#rejectModal{{ $withdrawal->id }}">
-                                <i class="fas fa-ban"></i><span>{{ __('Tolak') }}</span>
-                            </button>
-                        @elseif($withdrawal->status === 'approved')
-                            <button class="btn btn-sm btn-tonal rounded-pill px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1" style="min-height: 38px;" data-bs-toggle="modal" data-bs-target="#viewProofModal{{ $withdrawal->id }}">
-                                <i class="fas fa-receipt"></i><span>{{ __('Bukti') }}</span>
-                            </button>
-                        @else
-                            <button class="btn btn-sm btn-outline-danger rounded-pill px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1" style="min-height: 38px;" data-bs-toggle="modal" data-bs-target="#viewRejectionModal{{ $withdrawal->id }}">
-                                <i class="fas fa-comment-slash"></i><span>{{ __('Alasan') }}</span>
-                            </button>
-                        @endif
+                        <div class="d-flex gap-1.5">
+                            @if($withdrawal->status === 'pending')
+                                <button type="button" class="btn btn-sm btn-primary m3-compact-action-btn flex-grow-1 px-3" data-bs-toggle="modal" data-bs-target="#approveModal{{ $withdrawal->id }}">
+                                    <i class="fas fa-check"></i><span>{{ __('Setujui') }}</span>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger m3-compact-action-btn flex-grow-1 px-3" data-bs-toggle="modal" data-bs-target="#rejectModal{{ $withdrawal->id }}">
+                                    <i class="fas fa-ban"></i><span>{{ __('Tolak') }}</span>
+                                </button>
+                            @elseif($withdrawal->status === 'approved')
+                                <button type="button" class="btn btn-sm btn-tonal m3-compact-action-btn w-100 px-3" data-bs-toggle="modal" data-bs-target="#viewProofModal{{ $withdrawal->id }}">
+                                    <i class="fas fa-receipt"></i><span>{{ __('Bukti') }}</span>
+                                </button>
+                            @else
+                                <button type="button" class="btn btn-sm btn-outline-danger m3-compact-action-btn w-100 px-3" data-bs-toggle="modal" data-bs-target="#viewRejectionModal{{ $withdrawal->id }}">
+                                    <i class="fas fa-comment-slash"></i><span>{{ __('Alasan') }}</span>
+                                </button>
+                            @endif
+                        </div>
                     </div>
                 </div>
             </div>

@@ -56,31 +56,53 @@
                     </table>
                 </div>
 
-                {{-- Mobile Stacked Cards (< 768px) --}}
-                <div class="d-md-none d-flex flex-column gap-2.5">
+                {{-- Mobile Collapsible Compact List (< 768px) --}}
+                <div class="d-md-none m3-collapsible-list" id="hubSessionsAccordion">
                     @forelse($recentSessions as $sess)
-                        <div class="m3-mobile-item-card p-3">
-                            <div class="d-flex justify-content-between align-items-start gap-2 mb-1">
-                                <div>
-                                    <div class="fw-bold small text-body">{{ $sess->user->username ?? ('User #' . $sess->user_id) }}</div>
-                                    <span class="badge bg-secondary-subtle text-body text-uppercase" style="font-size: 0.65rem;">{{ $sess->user->role ?? '-' }}</span>
-                                </div>
-                                <small class="text-secondary">{{ optional($sess->last_active_at)->diffForHumans() ?: '-' }}</small>
+                        <div class="m3-mobile-item-card m3-collapsible-card">
+                            <div class="m3-compact-row">
+                                <button type="button"
+                                        class="m3-compact-trigger"
+                                        data-bs-toggle="collapse"
+                                        data-bs-target="#hubSessCollapse-{{ $sess->id }}"
+                                        aria-expanded="false"
+                                        aria-controls="hubSessCollapse-{{ $sess->id }}">
+                                    <div class="min-w-0 flex-grow-1">
+                                        <div class="d-flex align-items-center gap-1.5 min-w-0">
+                                            <span class="fw-bold text-body text-truncate" style="font-size: 0.84rem;">{{ $sess->user->username ?? ('User #' . $sess->user_id) }}</span>
+                                            <span class="badge bg-secondary-subtle text-body text-uppercase flex-shrink-0" style="font-size: 0.6rem;">{{ $sess->user->role ?? '-' }}</span>
+                                        </div>
+                                        <div class="text-secondary text-truncate font-monospace" style="font-size: 0.72rem;">
+                                            {{ $sess->ip_address }} · {{ optional($sess->last_active_at)->diffForHumans() ?: '-' }}
+                                        </div>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                                        @if($sess->isCurrent())
+                                            <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-0.5" style="font-size: 0.64rem;">{{ __('Saat Ini') }}</span>
+                                        @endif
+                                        <i class="fas fa-chevron-down m3-compact-chevron"></i>
+                                    </div>
+                                </button>
                             </div>
-                            <div class="small fw-semibold text-body mt-1">{{ $sess->device_label ?: '-' }}</div>
-                            <div class="small font-monospace text-secondary mb-2">{{ $sess->ip_address }} · {{ $sess->location_label ?: '-' }}</div>
-                            <div class="pt-2 border-top" style="border-color: var(--outline-variant) !important;">
-                                @if(!$sess->isCurrent())
-                                    <form action="{{ route('admin.security.firewall.revoke-session', $sess->id) }}" method="POST" class="m-0">
-                                        @csrf
-                                        <input type="hidden" name="active_tab" value="sesi-audit">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill w-100 fw-semibold" style="min-height: 40px;">
-                                            <i class="fas fa-right-from-bracket me-1"></i>{{ __('Cabut Sesi Perangkat') }}
-                                        </button>
-                                    </form>
-                                @else
-                                    <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-1.5">{{ __('Sesi Perangkat Anda Saat Ini') }}</span>
-                                @endif
+
+                            <div class="collapse" id="hubSessCollapse-{{ $sess->id }}" data-bs-parent="#hubSessionsAccordion">
+                                <div class="m3-collapsible-body">
+                                    <div class="small text-secondary mb-2">
+                                        <div class="fw-semibold text-body">{{ $sess->device_label ?: '-' }}</div>
+                                        <div><i class="fas fa-map-marker-alt me-1 text-danger"></i>{{ $sess->location_label ?: '-' }}</div>
+                                    </div>
+                                    @if(!$sess->isCurrent())
+                                        <form action="{{ route('admin.security.firewall.revoke-session', $sess->id) }}" method="POST" class="m-0">
+                                            @csrf
+                                            <input type="hidden" name="active_tab" value="sesi-audit">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger m3-compact-action-btn w-100">
+                                                <i class="fas fa-right-from-bracket"></i><span>{{ __('Cabut Sesi Perangkat') }}</span>
+                                            </button>
+                                        </form>
+                                    @else
+                                        <span class="badge bg-primary-subtle text-primary rounded-pill px-2.5 py-1">{{ __('Sesi Perangkat Anda Saat Ini') }}</span>
+                                    @endif
+                                </div>
                             </div>
                         </div>
                     @empty

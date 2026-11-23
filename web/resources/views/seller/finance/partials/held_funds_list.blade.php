@@ -8,31 +8,27 @@
         @endif
     </div>
 
-    <div class="d-flex flex-column gap-2.5">
+    <div class="d-flex flex-column gap-1.5">
         @foreach($heldFunds as $fund)
-            <div class="m3-mobile-item-card">
-                <div class="d-flex justify-content-between align-items-start gap-2 mb-1.5">
-                    <div class="min-w-0">
-                        <div class="fw-bold text-primary font-monospace small">{{ $fund->order->order_ref ?? 'N/A' }}</div>
-                        <div class="fw-semibold text-body small">{{ $fund->product->name ?? 'N/A' }}</div>
+            <div class="m3-mobile-item-card is-ultra-compact">
+                <div class="d-flex justify-content-between align-items-center gap-2">
+                    <div class="min-w-0 flex-grow-1">
+                        <div class="fw-bold text-body text-truncate" style="font-size: 0.83rem;">
+                            <span class="font-monospace text-primary">{{ $fund->order->order_ref ?? 'N/A' }}</span> · {{ $fund->product->name ?? 'N/A' }}
+                        </div>
+                        <div class="text-muted text-truncate" style="font-size: 0.72rem;">
+                            <i class="far fa-calendar-check me-1"></i>{{ $fund->release_at ? $fund->release_at->format('d M Y, H:i') : '-' }}
+                        </div>
                     </div>
-                    <div class="flex-shrink-0">
+                    <div class="text-end flex-shrink-0">
+                        <div class="fw-bold text-success m3-tabular-nums" style="font-size: 0.82rem;">Rp {{ number_format($fund->amount, 0, ',', '.') }}</div>
                         @if($fund->status === 'held')
-                            <span class="badge bg-warning-subtle rounded-pill px-2.5 py-1 fw-semibold">{{ __('Tertahan') }}</span>
+                            <span class="badge bg-warning-subtle rounded-pill px-2 py-0" style="font-size: 0.64rem;">{{ __('Tertahan') }}</span>
                         @elseif($fund->status === 'released')
-                            <span class="badge bg-success-subtle rounded-pill px-2.5 py-1 fw-semibold">{{ __('Dicairkan') }}</span>
+                            <span class="badge bg-success-subtle rounded-pill px-2 py-0" style="font-size: 0.64rem;">{{ __('Dicairkan') }}</span>
                         @else
-                            <span class="badge bg-danger-subtle rounded-pill px-2.5 py-1 fw-semibold">{{ __('Batal') }}</span>
+                            <span class="badge bg-danger-subtle rounded-pill px-2 py-0" style="font-size: 0.64rem;">{{ __('Batal') }}</span>
                         @endif
-                    </div>
-                </div>
-                <div class="d-flex justify-content-between align-items-center gap-2 pt-2 mt-2" style="border-top: 1px solid var(--outline-variant);">
-                    <div class="text-muted" style="font-size: 0.74rem;">
-                        <i class="far fa-calendar-check me-1"></i>{{ __('Estimasi Cair:') }}
-                        <strong class="text-body">{{ $fund->release_at ? $fund->release_at->format('d M Y, H:i') : '-' }}</strong>
-                    </div>
-                    <div class="fw-bold text-success text-nowrap m3-tabular-nums">
-                        Rp {{ number_format($fund->amount, 0, ',', '.') }}
                     </div>
                 </div>
             </div>

@@ -315,35 +315,42 @@
             </table>
         </div>
 
-        {{-- Mobile Stacked Card List (< 768px) --}}
-        <div class="d-md-none p-3 d-flex flex-column gap-2.5">
+        {{-- Mobile Collapsible Compact List (< 768px) --}}
+        <div class="d-md-none p-2.5 m3-collapsible-list" id="adminAuditLogsAccordion">
             @foreach($logs as $log)
-            <div class="m3-mobile-item-card p-3">
-                <div class="d-flex justify-content-between align-items-start gap-2 mb-1.5">
-                    <span class="badge bg-primary-subtle text-primary rounded-pill px-2.5">{{ $log->action }}</span>
-                    <small class="text-secondary font-monospace">{{ \Carbon\Carbon::parse($log->created_at)->format('d M Y, H:i') }}</small>
-                </div>
-                <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
-                    <div class="d-flex align-items-center gap-2 min-w-0">
-                        @if($log->actor)
-                            <div class="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0" style="width: 28px; height: 28px; font-size: 0.72rem;">
-                                {{ strtoupper(substr($log->actor->username ?? 'U', 0, 1)) }}
+            <div class="m3-mobile-item-card m3-collapsible-card">
+                <div class="m3-compact-row">
+                    <button type="button"
+                            class="m3-compact-trigger"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#adminAuditLogCollapse-{{ $log->id }}"
+                            aria-expanded="false"
+                            aria-controls="adminAuditLogCollapse-{{ $log->id }}">
+                        <div class="min-w-0 flex-grow-1">
+                            <div class="d-flex align-items-center gap-1.5 min-w-0">
+                                <span class="fw-bold text-body text-truncate" style="font-size: 0.82rem;">
+                                    {{ $log->actor ? ($log->actor->full_name ?? $log->actor->username) : __('SYSTEM / BOT') }}
+                                </span>
+                                <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-0 flex-shrink-0" style="font-size: 0.64rem;">{{ $log->action }}</span>
                             </div>
-                            <span class="fw-bold text-body small text-truncate">{{ $log->actor->full_name ?? $log->actor->username }}</span>
-                            <span class="badge bg-secondary-subtle text-secondary rounded-pill" style="font-size: 0.65rem;">{{ ucfirst($log->actor->role ?? 'user') }}</span>
-                        @else
-                            <div class="bg-secondary-subtle text-secondary rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0" style="width: 28px; height: 28px; font-size: 0.72rem;">S</div>
-                            <span class="small fw-semibold text-muted">{{ __('SYSTEM / BOT') }}</span>
-                        @endif
-                    </div>
-                    @if(!empty($log->entity_type))
-                        <span class="badge bg-info-subtle text-info font-monospace flex-shrink-0" style="font-size: 0.68rem;">
-                            {{ strtoupper($log->entity_type) }}{{ $log->entity_id ? ' #' . $log->entity_id : '' }}
-                        </span>
-                    @endif
+                            <div class="text-secondary text-truncate font-monospace" style="font-size: 0.71rem;">
+                                {{ !empty($log->entity_type) ? (strtoupper($log->entity_type) . ($log->entity_id ? ' #' . $log->entity_id : '') . ' · ') : '' }}{{ \Carbon\Carbon::parse($log->created_at)->format('d M Y, H:i') }}
+                            </div>
+                        </div>
+                        <i class="fas fa-chevron-down m3-compact-chevron"></i>
+                    </button>
                 </div>
-                <div class="p-2 rounded-3 font-monospace text-secondary small text-break" style="background: var(--surface-container-high); font-size: 0.76rem;">
-                    {{ $log->detail ?: '-' }}
+                <div class="collapse" id="adminAuditLogCollapse-{{ $log->id }}" data-bs-parent="#adminAuditLogsAccordion">
+                    <div class="m3-collapsible-body">
+                        @if($log->actor)
+                            <div class="small text-secondary mb-1.5">
+                                <span class="badge bg-secondary-subtle text-secondary rounded-pill" style="font-size: 0.65rem;">{{ ucfirst($log->actor->role ?? 'user') }}</span>
+                            </div>
+                        @endif
+                        <div class="p-2 rounded-3 font-monospace text-secondary small text-break" style="background: var(--surface-container-high); font-size: 0.75rem;">
+                            {{ $log->detail ?: '-' }}
+                        </div>
+                    </div>
                 </div>
             </div>
             @endforeach

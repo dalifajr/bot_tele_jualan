@@ -185,26 +185,25 @@
                     </table>
                 </div>
 
-                {{-- Mobile Stacked Card List --}}
-                <div class="d-md-none d-flex flex-column gap-2.5">
+                {{-- Mobile Ultra-Compact 2-Line List --}}
+                <div class="d-md-none d-flex flex-column gap-1.5">
                     @forelse($transactions as $tx)
-                        <div class="m3-mobile-item-card">
-                            <div class="d-flex justify-content-between align-items-start gap-2 mb-1.5">
-                                <div class="min-w-0">
-                                    <div class="fw-semibold text-body small">{{ $tx->description ?: ucfirst($tx->category) }}</div>
-                                    @if($tx->reference)
-                                        <small class="font-monospace text-muted d-block" style="font-size: 0.72rem;">{{ $tx->reference }}</small>
-                                    @endif
-                                </div>
-                                <div class="text-end flex-shrink-0">
-                                    <div class="fw-bold small m3-tabular-nums {{ $tx->type === 'credit' ? 'text-success' : 'text-danger' }}">
-                                        {{ $tx->type === 'credit' ? '+' : '-' }}Rp {{ number_format($tx->amount, 0, ',', '.') }}
+                        <div class="m3-mobile-item-card is-ultra-compact">
+                            <div class="d-flex justify-content-between align-items-center gap-2">
+                                <div class="min-w-0 flex-grow-1">
+                                    <div class="fw-semibold text-body text-truncate" style="font-size: 0.83rem;">{{ $tx->description ?: ucfirst($tx->category) }}</div>
+                                    <div class="text-muted text-truncate" style="font-size: 0.72rem;">
+                                        {{ $tx->created_at->format('d M, H:i') }}@if($tx->reference) · <span class="font-monospace">{{ $tx->reference }}</span>@endif
                                     </div>
                                 </div>
-                            </div>
-                            <div class="d-flex justify-content-between align-items-center pt-2 mt-2 text-muted" style="border-top: 1px solid var(--outline-variant); font-size: 0.74rem;">
-                                <span><i class="far fa-clock me-1"></i>{{ $tx->created_at->format('d M Y, H:i') }}</span>
-                                <span class="m3-tabular-nums">{{ __('Saldo:') }} <strong class="text-body">Rp {{ number_format($tx->balance_after, 0, ',', '.') }}</strong></span>
+                                <div class="text-end flex-shrink-0 m3-tabular-nums">
+                                    <div class="fw-bold {{ $tx->type === 'credit' ? 'text-success' : 'text-danger' }}" style="font-size: 0.82rem;">
+                                        {{ $tx->type === 'credit' ? '+' : '-' }}Rp {{ number_format($tx->amount, 0, ',', '.') }}
+                                    </div>
+                                    <div class="text-muted" style="font-size: 0.69rem;">
+                                        {{ __('Saldo:') }} Rp {{ number_format($tx->balance_after, 0, ',', '.') }}
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     @empty
