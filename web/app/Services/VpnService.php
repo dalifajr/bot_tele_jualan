@@ -192,7 +192,29 @@ class VpnService
             ];
         }
 
-        return $this->driverFor($resolved)->checkUsername($username, $protocol);
+        // Global cross-protocol uniqueness check in local DB first (prevents duplicate username across VMESS/VLESS/Trojan/SS/SSH)
+        $localExists = VpnAccount::query()
+            ->whereRaw('LOWER(username) = ?', [strtolower($username)])
+            ->where('status', '!=', 'failed')
+            ->when($resolved->exists, fn ($q) => $q->where('vpn_server_id', $resolved->id))
+            ->exists();
+
+        if ($localExists) {
+            return [
+                'success' => true,
+                'available' => false,
+                'exists' => true,
+                'message' => __('Username sudah terpakai.'),
+            ];
+        }
+
+        // Always query panel globally (protocol = null) so cross-protocol collisions on the VPS are caught too
+        $res = $this->driverFor($resolved)->checkUsername($username, null);
+        if (!empty($res['success']) && empty($res['available'])) {
+            $res['message'] = __('Username sudah terpakai.');
+        }
+
+        return $res;
     }
 
     /**

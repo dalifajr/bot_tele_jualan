@@ -120,14 +120,14 @@ class VpnAccountController extends Controller
         }
 
         $server = $serverId ? VpnServer::find((int) $serverId) : null;
-        $res = $vpnService->checkUsername($username, $protocol !== '' ? $protocol : null, $server);
+        $res = $vpnService->checkUsername($username, null, $server);
 
         return response()->json([
             'success' => !empty($res['success']),
             'available' => (bool) ($res['available'] ?? false),
             'exists' => (bool) ($res['exists'] ?? false),
             'message' => !empty($res['success'])
-                ? (!empty($res['available']) ? __('Username tersedia.') : __('Username sudah terpakai di server VPN.'))
+                ? (!empty($res['available']) ? __('Username tersedia.') : __('Username sudah terpakai.'))
                 : ($res['message'] ?? __('Gagal memeriksa ketersediaan username.')),
         ]);
     }
@@ -163,7 +163,7 @@ class VpnAccountController extends Controller
             'product_id' => 'nullable|exists:products,id',
             'protocol' => 'required|in:ssh,vmess,vless,trojan,shadowsocks',
             'username' => ['required', 'string', 'regex:/^[a-zA-Z0-9_-]{3,24}$/'],
-            'password' => 'required_if:protocol,ssh|nullable|string|min:4|max:64',
+            'password' => ['required_if:protocol,ssh', 'nullable', 'string', 'min:3', 'max:64', 'regex:/^[^\r\n\0\s]+$/'],
             'days' => 'required|integer|min:1|max:365',
             'quota_gb' => 'nullable|integer|min:0|max:10000',
             'ip_limit' => 'nullable|integer|min:1|max:50',
@@ -191,6 +191,12 @@ class VpnAccountController extends Controller
             return back()->with('error', __('Belum ada Server VPN yang aktif dan terkonfigurasi.'));
         }
 
+        // Pre-flight global username uniqueness check across all protocols (both paid & billing modes)
+        $preCheck = $vpnService->checkUsername($validated['username'], null, $server);
+        if (!empty($preCheck['success']) && empty($preCheck['available'])) {
+            return back()->with('error', __('Username sudah terpakai.'))->withInput();
+        }
+
         // Toggle: is_paid = 1 (already paid -> provision immediately), is_paid = 0 (unpaid -> send billing order!)
         $isPaid = $request->has('is_paid') ? $request->boolean('is_paid') : true;
 
@@ -201,12 +207,6 @@ class VpnAccountController extends Controller
             }
             if ($billingAmount <= 0) {
                 return back()->with('error', __('Nominal tagihan (Rp) wajib diisi jika status belum terbayar.'))->withInput();
-            }
-
-            // Pre-flight username check before issuing billing
-            $check = $vpnService->checkUsername($validated['username'], $validated['protocol'], $server);
-            if (!empty($check['success']) && empty($check['available'])) {
-                return back()->with('error', __('Username :user sudah terpakai di server VPN.', ['user' => $validated['username']]))->withInput();
             }
 
             try {

@@ -269,45 +269,22 @@
                         @endif
 
                         @if($product->is_vpn)
+                            @php $vpnProtosList = $product->getAvailableVpnProtocols(); @endphp
                             <div class="bg-primary-subtle p-3 rounded-3 mb-3">
-                                <h6 class="fw-bold text-primary mb-2 d-flex align-items-center gap-1.5" style="font-size: 0.9rem;">
-                                    <i class="fas fa-key"></i> {{ __('Konfigurasi Akun VPN') }}
+                                <h6 class="fw-bold text-primary mb-1 d-flex align-items-center gap-1.5" style="font-size: 0.9rem;">
+                                    <i class="fas fa-network-wired"></i> {{ __('Produk Akun VPN Otomatis') }}
                                 </h6>
-                                <p class="text-muted small mb-3" style="font-size: 0.75rem;">
-                                    {{ __('Sistem otomatis membuat dan mengonfigurasi akun VPN Anda seketika.') }}
+                                <p class="text-secondary small mb-2" style="font-size: 0.75rem;">
+                                    {{ __('Klik Beli Sekarang untuk memilih protokol, masa aktif, username, serta preset SNI (Default / Zoom / Iflix) sebelum checkout.') }}
                                 </p>
-                                
-                                <div class="mb-2">
-                                    <label class="form-label text-body small fw-bold mb-1">{{ __('Username VPN') }} <span class="text-danger">*</span></label>
-                                    <div class="input-group input-group-sm">
-                                        <input type="text" name="vpn_username" id="catalogVpnUsername" class="form-control px-3 font-monospace" required autocomplete="off" placeholder="{{ __('Contoh: user123') }}" pattern="[a-zA-Z0-9_-]{3,24}" title="{{ __('3–24 karakter: huruf, angka, dash, dan underscore') }}">
-                                        <span class="input-group-text bg-white" id="catalogVpnUserIndicator">
-                                            <i class="fas fa-user-check text-muted"></i>
-                                        </span>
-                                    </div>
-                                    <div id="catalogVpnUserStatus" class="form-text text-muted" style="font-size: 0.72rem;">{{ __('Ketersediaan username diperiksa otomatis saat Anda mengetik.') }}</div>
+                                <div class="d-flex flex-wrap gap-1 mb-1.5">
+                                    @foreach($vpnProtosList as $vp)
+                                        <span class="badge bg-white text-primary border rounded-pill px-2 py-0.5 fw-bold" style="font-size: 0.7rem;">{{ strtoupper($vp) }}</span>
+                                    @endforeach
                                 </div>
-                                
-                                @if($product->vpn_protocol === 'ssh')
-                                <div class="mb-2">
-                                    <label class="form-label text-body small fw-bold mb-1">{{ __('Password SSH') }} <span class="text-danger">*</span></label>
-                                    <input type="password" name="vpn_password" class="form-control form-control-sm px-3" required placeholder="{{ __('Masukkan password') }}">
-                                </div>
-                                @else
-                                <div class="mb-2">
-                                    <label class="form-label text-body small fw-bold mb-1">{{ __('Preset / Custom SNI') }}</label>
-                                    <select name="vpn_sni_mode" class="form-select form-select-sm">
-                                        <option value="3" {{ ($product->vpn_sni_mode ?? '3') == '3' ? 'selected' : '' }}>{{ __('Tanpa Konfigurasi (Default SNI)') }}</option>
-                                        <option value="1" {{ ($product->vpn_sni_mode ?? '3') == '1' ? 'selected' : '' }}>Zoom (support.zoom.us)</option>
-                                        <option value="2" {{ ($product->vpn_sni_mode ?? '3') == '2' ? 'selected' : '' }}>Iflix (live.iflix.com)</option>
-                                    </select>
-                                    <div class="form-text text-muted" style="font-size: 0.72rem;">{{ __('Pilih profil SNI sesuai kebutuhan koneksi Anda.') }}</div>
-                                </div>
-                                @endif
-
                                 <div class="d-flex flex-wrap gap-1 mt-1">
                                     <span class="badge bg-primary text-white rounded-pill px-2.5 py-1" style="font-size: 0.72rem;">
-                                        <i class="far fa-calendar-check me-1"></i>{{ __('Masa Aktif:') }} {{ $product->vpn_duration_days }} {{ __('Hari') }}
+                                        <i class="far fa-calendar-check me-1"></i>{{ __('Acuan:') }} {{ $product->vpn_duration_days ?: 30 }} {{ __('Hari') }}
                                     </span>
                                     <span class="badge bg-body text-body border rounded-pill px-2.5 py-1" style="font-size: 0.72rem;">
                                         <i class="fas fa-gauge-high me-1 text-primary"></i>{{ ($product->vpn_quota_gb ?? 0) > 0 ? $product->vpn_quota_gb . ' GB' : 'Unlimited' }} &bull; {{ max(1, (int) ($product->vpn_ip_limit ?? 1)) }} IP
@@ -321,8 +298,8 @@
                             </div>
                         @endif
 
-                        {{-- Quantity Selector (Hidden for VCC products - chosen in selector modal) --}}
-                        @if(!$product->is_vcc)
+                        {{-- Quantity Selector (Hidden for VCC & VPN products - configured in selector modal) --}}
+                        @if(!$product->is_vcc && !$product->is_vpn)
                         <div class="mb-4">
                             <label class="form-label text-muted small fw-bold mb-2">{{ __('Jumlah Beli (QTY)') }}</label>
                             <div class="d-flex align-items-center justify-content-between p-2 m3-tonal-item">
@@ -342,13 +319,13 @@
 
                         {{-- Subtotal Calculation --}}
                         <div class="d-flex justify-content-between align-items-center mb-4 p-3 m3-tonal-item">
-                            <span class="text-muted small fw-semibold">{{ $product->is_vcc ? __('Harga Satuan:') : __('Total Harga:') }}</span>
+                            <span class="text-muted small fw-semibold">{{ $product->is_vcc ? __('Harga Satuan:') : ($product->is_vpn ? __('Harga Acuan:') : __('Total Harga:')) }}</span>
                             <span class="fw-bold text-primary fs-5" id="displaySubtotal">{{ $product->formatted_price }}</span>
                         </div>
 
                         {{-- Action Buttons --}}
                         <div class="d-flex flex-column gap-2">
-                            <button type="{{ $product->is_vcc ? 'button' : 'submit' }}" id="btnDesktopBuyNow" class="btn btn-primary w-100 rounded-pill py-3 fw-bold d-flex align-items-center justify-content-center gap-2 btn-buy-now">
+                            <button type="{{ ($product->is_vcc || $product->is_vpn) ? 'button' : 'submit' }}" id="btnDesktopBuyNow" class="btn btn-primary w-100 rounded-pill py-3 fw-bold d-flex align-items-center justify-content-center gap-2 btn-buy-now">
                                 <i class="fas fa-bolt btn-buy-icon"></i>
                                 <span class="btn-buy-text">{{ __('Beli Sekarang') }}</span>
                             </button>
@@ -405,6 +382,12 @@
 
 
 
+@if($product->is_vpn)
+@push('modals')
+    @include('partials.vpn-config-selector-modal')
+@endpush
+@endif
+
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -413,6 +396,25 @@
         const isVpn = {{ $product->is_vpn ? 'true' : 'false' }};
         const isVcc = {{ $product->is_vcc ? 'true' : 'false' }};
         const vccServicesData = @json($product->is_vcc ? $product->getVccServicesWithStock() : []);
+        @php
+            $vpnConfigPayload = $product->is_vpn ? [
+                'productId' => $product->id,
+                'productName' => $product->name,
+                'basePrice' => (int) $product->price,
+                'baseDays' => max(1, (int) ($product->vpn_duration_days ?: 30)),
+                'quotaGb' => (int) ($product->vpn_quota_gb ?? 0),
+                'ipLimit' => max(1, (int) ($product->vpn_ip_limit ?? 1)),
+                'defaultSni' => (string) ($product->vpn_sni_mode ?? '3'),
+                'protocols' => $product->getAvailableVpnProtocols(),
+                'fixedServerId' => $product->vpn_server_id,
+                'servers' => ($availableVpnServers ?? collect())->map(function ($s) {
+                    return ['id' => $s->id, 'name' => $s->name, 'region' => $s->region];
+                })->values()->all(),
+                'checkUrl' => route('catalog.check-vpn-username', $product->id),
+                'reviewUrl' => route('checkout.review', $product->id),
+            ] : null;
+        @endphp
+        const vpnConfigData = @json($vpnConfigPayload);
         const qtyInput = document.getElementById('quantity');
         const displaySubtotal = document.getElementById('displaySubtotal');
         const mainBuyForm = document.getElementById('mainBuyForm');
@@ -606,6 +608,19 @@
 
         if (btnDesktopBuy) {
             btnDesktopBuy.addEventListener('click', function(e) {
+                if (isVpn) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (isGuest) {
+                        window.location.href = "{{ route('login', ['redirect' => route('catalog.show', $product->id)]) }}";
+                        return;
+                    }
+                    if (typeof window.openVpnCheckoutSelector === 'function' && vpnConfigData) {
+                        window.openVpnCheckoutSelector(vpnConfigData);
+                    }
+                    return;
+                }
+
                 if (isVcc) {
                     e.preventDefault();
                     e.stopPropagation();
@@ -684,6 +699,14 @@
                     return false;
                 }
 
+                if (isVpn) {
+                    e.preventDefault();
+                    if (typeof window.openVpnCheckoutSelector === 'function' && vpnConfigData) {
+                        window.openVpnCheckoutSelector(vpnConfigData);
+                    }
+                    return false;
+                }
+
                 if (isVcc) {
                     e.preventDefault();
                     if (typeof window.openVccSelector === 'function') {
@@ -721,6 +744,14 @@
                     return;
                 }
 
+                if (isVpn) {
+                    e.preventDefault();
+                    if (typeof window.openVpnCheckoutSelector === 'function' && vpnConfigData) {
+                        window.openVpnCheckoutSelector(vpnConfigData);
+                    }
+                    return false;
+                }
+
                 if (isVcc) {
                     if (typeof window.openVccSelector === 'function') {
                         window.openVccSelector({
@@ -745,79 +776,6 @@
                     // Scroll into view if invalid fields exist
                     mainBuyForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }
-            });
-        }
-
-        // Automatic debounced live VPN username availability check on catalog page (450ms + AbortController)
-        const inputCatalogVpnUser = document.getElementById('catalogVpnUsername');
-        const statusCatalogVpnUser = document.getElementById('catalogVpnUserStatus');
-        const indicatorCatalogVpnUser = document.getElementById('catalogVpnUserIndicator');
-        const catalogBuyBtns = document.querySelectorAll('.btn-buy-now');
-        if (inputCatalogVpnUser && statusCatalogVpnUser) {
-            let catalogVpnTimer = null;
-            let catalogVpnAbort = null;
-
-            const setCatalogBuyLocked = (locked) => {
-                catalogBuyBtns.forEach(b => { b.disabled = locked; });
-            };
-
-            inputCatalogVpnUser.addEventListener('input', function() {
-                const username = this.value.trim();
-                clearTimeout(catalogVpnTimer);
-                if (catalogVpnAbort) { catalogVpnAbort.abort(); catalogVpnAbort = null; }
-
-                if (username.length === 0) {
-                    setCatalogBuyLocked(false);
-                    if (indicatorCatalogVpnUser) indicatorCatalogVpnUser.innerHTML = '<i class="fas fa-user-check text-muted"></i>';
-                    statusCatalogVpnUser.className = 'form-text text-muted';
-                    statusCatalogVpnUser.textContent = '{{ __("Ketersediaan username diperiksa otomatis saat Anda mengetik.") }}';
-                    return;
-                }
-                if (!/^[a-zA-Z0-9_-]{3,24}$/.test(username)) {
-                    setCatalogBuyLocked(true);
-                    if (indicatorCatalogVpnUser) indicatorCatalogVpnUser.innerHTML = '<i class="fas fa-exclamation-triangle text-warning"></i>';
-                    statusCatalogVpnUser.className = 'form-text text-warning fw-semibold';
-                    statusCatalogVpnUser.textContent = '{{ __("Username harus 3–24 karakter (huruf, angka, _ atau -).") }}';
-                    return;
-                }
-
-                if (indicatorCatalogVpnUser) indicatorCatalogVpnUser.innerHTML = '<i class="fas fa-spinner fa-spin text-primary"></i>';
-                statusCatalogVpnUser.className = 'form-text text-muted';
-                statusCatalogVpnUser.textContent = '{{ __("Memeriksa ke server VPN...") }}';
-
-                catalogVpnTimer = setTimeout(async function() {
-                    catalogVpnAbort = new AbortController();
-                    try {
-                        const res = await fetch("{{ route('catalog.check-vpn-username', $product->id) }}?username=" + encodeURIComponent(username), {
-                            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-                            signal: catalogVpnAbort.signal
-                        });
-                        const data = await res.json();
-                        if (data.success && data.available) {
-                            setCatalogBuyLocked(false);
-                            if (indicatorCatalogVpnUser) indicatorCatalogVpnUser.innerHTML = '<i class="fas fa-check-circle text-success"></i>';
-                            statusCatalogVpnUser.className = 'form-text text-success fw-semibold';
-                            statusCatalogVpnUser.textContent = data.message || '{{ __("Username tersedia.") }}';
-                        } else if (data.success && !data.available) {
-                            setCatalogBuyLocked(true);
-                            if (indicatorCatalogVpnUser) indicatorCatalogVpnUser.innerHTML = '<i class="fas fa-times-circle text-danger"></i>';
-                            statusCatalogVpnUser.className = 'form-text text-danger fw-semibold';
-                            statusCatalogVpnUser.textContent = data.message || '{{ __("Username sudah terpakai.") }}';
-                        } else {
-                            setCatalogBuyLocked(false);
-                            if (indicatorCatalogVpnUser) indicatorCatalogVpnUser.innerHTML = '<i class="fas fa-info-circle text-warning"></i>';
-                            statusCatalogVpnUser.className = 'form-text text-warning';
-                            statusCatalogVpnUser.textContent = data.message || '{{ __("Tidak dapat memverifikasi ke server saat ini.") }}';
-                        }
-                    } catch (err) {
-                        if (err.name !== 'AbortError') {
-                            setCatalogBuyLocked(false);
-                            if (indicatorCatalogVpnUser) indicatorCatalogVpnUser.innerHTML = '<i class="fas fa-info-circle text-muted"></i>';
-                            statusCatalogVpnUser.className = 'form-text text-muted';
-                            statusCatalogVpnUser.textContent = '{{ __("Gagal memeriksa username secara otomatis.") }}';
-                        }
-                    }
-                }, 450);
             });
         }
     });

@@ -929,15 +929,16 @@
                         <select name="product_id" id="adminCreateTemplate" class="form-select form-select-sm">
                             <option value="">{{ __('-- Kustom Manual (Isi Sendiri) --') }}</option>
                             @foreach($vpnProducts as $vp)
+                                @php $vpProtos = $vp->getAvailableVpnProtocols(); @endphp
                                 <option value="{{ $vp->id }}"
-                                        data-protocol="{{ $vp->vpn_protocol }}"
+                                        data-protocol="{{ $vpProtos[0] ?? $vp->vpn_protocol }}"
                                         data-server-id="{{ $vp->vpn_server_id }}"
                                         data-days="{{ $vp->vpn_duration_days ?: 30 }}"
                                         data-quota="{{ $vp->vpn_quota_gb ?? 0 }}"
                                         data-ip="{{ max(1, (int) ($vp->vpn_ip_limit ?? 2)) }}"
                                         data-sni-mode="{{ $vp->vpn_sni_mode ?? '3' }}"
                                         data-price="{{ (int) $vp->price }}">
-                                    {{ $vp->name }} — {{ strtoupper($vp->vpn_protocol) }} ({{ $vp->vpn_duration_days }} {{ __('hari') }}) — {{ $vp->formatted_price }}
+                                    {{ $vp->name }} — {{ strtoupper(implode('/', $vpProtos)) }} ({{ $vp->vpn_duration_days }} {{ __('hari') }}) — {{ $vp->formatted_price }}
                                 </option>
                             @endforeach
                         </select>
@@ -985,7 +986,7 @@
 
                     <div class="mb-2.5 d-none" id="adminCreateSshPassWrap">
                         <label class="form-label small fw-bold">{{ __('Password SSH') }} <span class="text-danger">*</span></label>
-                        <input type="text" name="password" id="adminCreateSshPass" class="form-control font-monospace" placeholder="{{ __('Minimal 4 karakter') }}">
+                        <input type="text" name="password" id="adminCreateSshPass" class="form-control font-monospace" minlength="3" maxlength="64" placeholder="{{ __('Minimal 3 karakter, tanpa spasi') }}">
                     </div>
 
                     <div class="mb-2.5" id="adminCreateSniWrap">

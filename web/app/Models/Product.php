@@ -22,6 +22,7 @@ class Product extends Model
         'platform_fee_percent',
         'is_vpn',
         'vpn_protocol',
+        'vpn_protocols',
         'vpn_duration_days',
         'vpn_server_id',
         'vpn_quota_gb',
@@ -37,6 +38,7 @@ class Product extends Model
         'is_suspended' => 'boolean',
         'warranty_days' => 'integer',
         'is_vpn' => 'boolean',
+        'vpn_protocols' => 'array',
         'vpn_duration_days' => 'integer',
         'vpn_server_id' => 'integer',
         'vpn_quota_gb' => 'integer',
@@ -48,6 +50,36 @@ class Product extends Model
     public function vpnServer()
     {
         return $this->belongsTo(VpnServer::class, 'vpn_server_id');
+    }
+
+    /**
+     * Return list of allowed VPN protocols for this product (supports both new multi-protocol array & legacy single protocol).
+     *
+     * @return array<int, string>
+     */
+    public function getAvailableVpnProtocols(): array
+    {
+        $valid = ['vmess', 'vless', 'trojan', 'shadowsocks', 'ssh'];
+        $list = $this->vpn_protocols;
+        if (is_string($list)) {
+            $list = json_decode($list, true) ?? [];
+        }
+        if (is_array($list) && count($list) > 0) {
+            $filtered = array_values(array_unique(array_filter(
+                array_map(fn ($p) => strtolower(trim((string) $p)), $list),
+                fn ($p) => in_array($p, $valid, true)
+            )));
+            if (count($filtered) > 0) {
+                return $filtered;
+            }
+        }
+
+        $single = strtolower(trim((string) ($this->vpn_protocol ?? '')));
+        if (in_array($single, $valid, true)) {
+            return [$single];
+        }
+
+        return $this->is_vpn ? ['vmess', 'vless', 'trojan', 'shadowsocks', 'ssh'] : [];
     }
 
     public function orders()

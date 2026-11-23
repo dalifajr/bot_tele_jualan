@@ -124,7 +124,8 @@
                         @endif
 
                         @if($product->is_vpn)
-                            <span class="badge bg-info-subtle text-info rounded-pill px-2 py-0.5"><i class="fas fa-network-wired me-1"></i>VPN ({{ strtoupper($product->vpn_protocol) }})</span>
+                            @php $vpnProtos = $product->getAvailableVpnProtocols(); @endphp
+                            <span class="badge bg-info-subtle text-info rounded-pill px-2 py-0.5"><i class="fas fa-network-wired me-1"></i>VPN ({{ count($vpnProtos) > 2 ? count($vpnProtos) . ' ' . __('Protokol') : strtoupper(implode(', ', $vpnProtos)) }})</span>
                         @endif
 
                         @if($product->is_vcc)
@@ -269,53 +270,54 @@
                                 <label class="form-check-label text-primary small fw-bold" for="isVpnAdd"><i class="fas fa-network-wired me-1"></i> {{ __('Jadikan Produk VPN?') }}</label>
                             </div>
                             
-                            <div id="vpnOptionsAddContainer" style="display: none;" class="bg-light p-3 rounded mb-3">
-                                <div class="mb-2">
-                                    <label class="form-label text-muted small fw-bold">{{ __('Protokol VPN') }}</label>
-                                    <select name="vpn_protocol" id="vpnProtocolAdd" class="form-select">
-                                        <option value="">{{ __('Pilih Protokol') }}</option>
-                                        <option value="vmess">{{ __('VMESS') }}</option>
-                                        <option value="vless">{{ __('VLESS') }}</option>
-                                        <option value="trojan">{{ __('TROJAN') }}</option>
-                                        <option value="shadowsocks">{{ __('SHADOWSOCKS') }}</option>
-                                        <option value="ssh">{{ __('SSH') }}</option>
-                                    </select>
+                            <div id="vpnOptionsAddContainer" style="display: none;" class="bg-light p-3 rounded-4 mb-3 border">
+                                <div class="mb-2.5">
+                                    <label class="form-label text-body small fw-bold d-flex justify-content-between align-items-center mb-1">
+                                        <span>{{ __('Protokol VPN yang Didukung:') }}</span>
+                                        <div class="d-flex gap-2">
+                                            <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2" style="font-size: 0.72rem;" onclick="toggleAllVccServices('vpn-proto-check-add', true)">{{ __('Pilih Semua') }}</button>
+                                            <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2" style="font-size: 0.72rem;" onclick="toggleAllVccServices('vpn-proto-check-add', false)">{{ __('Kosongkan') }}</button>
+                                        </div>
+                                    </label>
+                                    <div class="row g-2 mt-1">
+                                        @foreach(['vmess' => 'VMESS', 'vless' => 'VLESS', 'trojan' => 'TROJAN', 'shadowsocks' => 'SHADOWSOCKS', 'ssh' => 'SSH'] as $pKey => $pLabel)
+                                            <div class="col-6 col-md-4">
+                                                <div class="form-check p-2 bg-white rounded-3 border d-flex align-items-center">
+                                                    <input class="form-check-input vpn-proto-check-add ms-1 me-2" type="checkbox" name="vpn_protocols[]" value="{{ $pKey }}" id="vpnProtoAdd_{{ $pKey }}" checked>
+                                                    <label class="form-check-label small fw-semibold text-truncate d-block mb-0" for="vpnProtoAdd_{{ $pKey }}">{{ $pLabel }}</label>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
                                 </div>
                                 <div class="mb-2">
-                                    <label class="form-label text-muted small fw-bold">{{ __('Durasi / Masa Aktif') }}</label>
+                                    <label class="form-label text-muted small fw-bold">{{ __('Durasi Acuan Harga (Hari)') }}</label>
                                     <div class="input-group">
-                                        <input type="number" name="vpn_duration_days" id="vpnDurationAdd" class="form-control" placeholder="30" min="1">
+                                        <input type="number" name="vpn_duration_days" id="vpnDurationAdd" class="form-control" value="30" placeholder="30" min="1" max="365">
                                         <span class="input-group-text bg-white text-muted">{{ __('hari') }}</span>
                                     </div>
+                                    <div class="form-text small">{{ __('Pembeli dapat memilih durasi lain saat checkout dengan harga otomatis dihitung proporsional.') }}</div>
                                 </div>
                                 <div class="mb-2">
                                     <label class="form-label text-muted small fw-bold">{{ __('Target Server VPN') }}</label>
                                     <select name="vpn_server_id" class="form-select">
-                                        <option value="">{{ __('Otomatis (Server Default)') }}</option>
+                                        <option value="">{{ __('Semua Server Aktif (Pembeli Memilih Saat Checkout)') }}</option>
                                         @foreach(($vpnServers ?? collect()) as $vs)
                                             <option value="{{ $vs->id }}">{{ $vs->name }} ({{ strtoupper($vs->driver === 'vpnxray_api' ? 'API' : 'SSH') }}{{ $vs->region ? ' • ' . $vs->region : '' }})</option>
                                         @endforeach
                                     </select>
                                 </div>
                                 <div class="row g-2 mb-2">
-                                    <div class="col-4">
-                                        <label class="form-label text-muted small fw-bold">{{ __('Kuota (GB)') }}</label>
+                                    <div class="col-6">
+                                        <label class="form-label text-muted small fw-bold">{{ __('Kuota (GB, 0=Unli)') }}</label>
                                         <input type="number" name="vpn_quota_gb" class="form-control" value="0" min="0" max="10000">
                                     </div>
-                                    <div class="col-4">
+                                    <div class="col-6">
                                         <label class="form-label text-muted small fw-bold">{{ __('Limit IP') }}</label>
-                                        <input type="number" name="vpn_ip_limit" class="form-control" value="1" min="1" max="50">
-                                    </div>
-                                    <div class="col-4">
-                                        <label class="form-label text-muted small fw-bold">{{ __('Preset SNI') }}</label>
-                                        <select name="vpn_sni_mode" class="form-select">
-                                            <option value="3" selected>{{ __('Default') }}</option>
-                                            <option value="1">Zoom (support.zoom.us)</option>
-                                            <option value="2">Iflix (live.iflix.com)</option>
-                                        </select>
+                                        <input type="number" name="vpn_ip_limit" class="form-control" value="2" min="1" max="50">
                                     </div>
                                 </div>
-                                <div class="form-text text-muted small"><i class="fas fa-info-circle"></i> {{ __('Stok untuk produk VPN tidak perlu ditambahkan secara manual. Saat pembeli melakukan checkout, sistem akan meng-generate akun secara otomatis melalui REST API panel vpnxray-main.') }}</div>
+                                <div class="form-text text-muted small"><i class="fas fa-info-circle"></i> {{ __('Seperti produk VCC, pembeli akan mengonfigurasi server, protokol, durasi, username, dan preset SNI/password SSH melalui popup saat klik Beli Sekarang.') }}</div>
                             </div>
 
                             <div class="form-check form-switch mb-3 border-top pt-3">
@@ -439,50 +441,51 @@
                                 <label class="form-check-label text-primary small fw-bold" for="isVpnEdit{{ $product->id }}"><i class="fas fa-network-wired me-1"></i> {{ __('Jadikan Produk VPN?') }}</label>
                             </div>
 
-                            <div id="vpnOptionsEditContainer{{ $product->id }}" style="display: {{ $product->is_vpn ? 'block' : 'none' }};" class="bg-light p-3 rounded mb-3">
-                                <div class="mb-2">
-                                    <label class="form-label text-muted small fw-bold">{{ __('Protokol VPN') }}</label>
-                                    <select name="vpn_protocol" class="form-select">
-                                        <option value="">{{ __('Pilih Protokol') }}</option>
-                                        <option value="vmess" {{ $product->vpn_protocol == 'vmess' ? 'selected' : '' }}>{{ __('VMESS') }}</option>
-                                        <option value="vless" {{ $product->vpn_protocol == 'vless' ? 'selected' : '' }}>{{ __('VLESS') }}</option>
-                                        <option value="trojan" {{ $product->vpn_protocol == 'trojan' ? 'selected' : '' }}>{{ __('TROJAN') }}</option>
-                                        <option value="shadowsocks" {{ $product->vpn_protocol == 'shadowsocks' ? 'selected' : '' }}>{{ __('SHADOWSOCKS') }}</option>
-                                        <option value="ssh" {{ $product->vpn_protocol == 'ssh' ? 'selected' : '' }}>{{ __('SSH') }}</option>
-                                    </select>
+                            <div id="vpnOptionsEditContainer{{ $product->id }}" style="display: {{ $product->is_vpn ? 'block' : 'none' }};" class="bg-light p-3 rounded-4 mb-3 border">
+                                @php $currentVpnProtos = $product->getAvailableVpnProtocols(); @endphp
+                                <div class="mb-2.5">
+                                    <label class="form-label text-body small fw-bold d-flex justify-content-between align-items-center mb-1">
+                                        <span>{{ __('Protokol VPN yang Didukung:') }}</span>
+                                        <div class="d-flex gap-2">
+                                            <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2" style="font-size: 0.72rem;" onclick="toggleAllVccServices('vpn-proto-check-edit-{{ $product->id }}', true)">{{ __('Pilih Semua') }}</button>
+                                            <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2" style="font-size: 0.72rem;" onclick="toggleAllVccServices('vpn-proto-check-edit-{{ $product->id }}', false)">{{ __('Kosongkan') }}</button>
+                                        </div>
+                                    </label>
+                                    <div class="row g-2 mt-1">
+                                        @foreach(['vmess' => 'VMESS', 'vless' => 'VLESS', 'trojan' => 'TROJAN', 'shadowsocks' => 'SHADOWSOCKS', 'ssh' => 'SSH'] as $pKey => $pLabel)
+                                            <div class="col-6 col-md-4">
+                                                <div class="form-check p-2 bg-white rounded-3 border d-flex align-items-center">
+                                                    <input class="form-check-input vpn-proto-check-edit-{{ $product->id }} ms-1 me-2" type="checkbox" name="vpn_protocols[]" value="{{ $pKey }}" id="vpnProtoEdit_{{ $product->id }}_{{ $pKey }}" {{ in_array($pKey, $currentVpnProtos, true) ? 'checked' : '' }}>
+                                                    <label class="form-check-label small fw-semibold text-truncate d-block mb-0" for="vpnProtoEdit_{{ $product->id }}_{{ $pKey }}">{{ $pLabel }}</label>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
                                 </div>
                                 <div class="mb-2">
-                                    <label class="form-label text-muted small fw-bold">{{ __('Durasi / Masa Aktif') }}</label>
+                                    <label class="form-label text-muted small fw-bold">{{ __('Durasi Acuan Harga (Hari)') }}</label>
                                     <div class="input-group">
-                                        <input type="number" name="vpn_duration_days" class="form-control" value="{{ $product->vpn_duration_days > 0 ? $product->vpn_duration_days : '' }}" min="1">
+                                        <input type="number" name="vpn_duration_days" class="form-control" value="{{ $product->vpn_duration_days > 0 ? $product->vpn_duration_days : 30 }}" min="1" max="365">
                                         <span class="input-group-text bg-white text-muted">{{ __('hari') }}</span>
                                     </div>
                                 </div>
                                 <div class="mb-2">
                                     <label class="form-label text-muted small fw-bold">{{ __('Target Server VPN') }}</label>
                                     <select name="vpn_server_id" class="form-select">
-                                        <option value="">{{ __('Otomatis (Server Default)') }}</option>
+                                        <option value="">{{ __('Semua Server Aktif (Pembeli Memilih Saat Checkout)') }}</option>
                                         @foreach(($vpnServers ?? collect()) as $vs)
                                             <option value="{{ $vs->id }}" {{ (int) $product->vpn_server_id === (int) $vs->id ? 'selected' : '' }}>{{ $vs->name }} ({{ strtoupper($vs->driver === 'vpnxray_api' ? 'API' : 'SSH') }}{{ $vs->region ? ' • ' . $vs->region : '' }})</option>
                                         @endforeach
                                     </select>
                                 </div>
                                 <div class="row g-2">
-                                    <div class="col-4">
-                                        <label class="form-label text-muted small fw-bold">{{ __('Kuota (GB)') }}</label>
+                                    <div class="col-6">
+                                        <label class="form-label text-muted small fw-bold">{{ __('Kuota (GB, 0=Unli)') }}</label>
                                         <input type="number" name="vpn_quota_gb" class="form-control" value="{{ $product->vpn_quota_gb ?? 0 }}" min="0" max="10000">
                                     </div>
-                                    <div class="col-4">
+                                    <div class="col-6">
                                         <label class="form-label text-muted small fw-bold">{{ __('Limit IP') }}</label>
-                                        <input type="number" name="vpn_ip_limit" class="form-control" value="{{ max(1, (int) ($product->vpn_ip_limit ?? 1)) }}" min="1" max="50">
-                                    </div>
-                                    <div class="col-4">
-                                        <label class="form-label text-muted small fw-bold">{{ __('Preset SNI') }}</label>
-                                        <select name="vpn_sni_mode" class="form-select">
-                                            <option value="3" {{ ($product->vpn_sni_mode ?? '3') == '3' ? 'selected' : '' }}>{{ __('Default') }}</option>
-                                            <option value="1" {{ ($product->vpn_sni_mode ?? '3') == '1' ? 'selected' : '' }}>Zoom (support.zoom.us)</option>
-                                            <option value="2" {{ ($product->vpn_sni_mode ?? '3') == '2' ? 'selected' : '' }}>Iflix (live.iflix.com)</option>
-                                        </select>
+                                        <input type="number" name="vpn_ip_limit" class="form-control" value="{{ max(1, (int) ($product->vpn_ip_limit ?? 2)) }}" min="1" max="50">
                                     </div>
                                 </div>
                             </div>
@@ -699,10 +702,11 @@
 
     // VPN Togglers
     document.getElementById('isVpnAdd')?.addEventListener('change', function() {
-        document.getElementById('vpnOptionsAddContainer').style.display = this.checked ? 'block' : 'none';
-        if (!this.checked) {
-            document.getElementById('vpnProtocolAdd').value = '';
-            document.getElementById('vpnDurationAdd').value = '';
+        var box = document.getElementById('vpnOptionsAddContainer');
+        if (box) box.style.display = this.checked ? 'block' : 'none';
+        if (this.checked) {
+            var dur = document.getElementById('vpnDurationAdd');
+            if (dur && !dur.value) dur.value = '30';
         }
     });
 

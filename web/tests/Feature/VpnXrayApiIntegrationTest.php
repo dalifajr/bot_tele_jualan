@@ -733,11 +733,12 @@ class VpnXrayApiIntegrationTest extends TestCase
             ->assertSee('custCreateSniMode')
             ->assertSee('myVpnConfigSniSelect');
 
-        // 3. Catalog show -> Checkout review -> Checkout store -> OrderService forwards Zoom preset (vpn_sni_mode = 1)
+        // 3. Catalog show (VCC-style VPN modal) -> Checkout review -> Checkout store -> OrderService forwards Zoom preset (vpn_sni_mode = 1)
         $this->actingAs($this->customer)
             ->get(route('catalog.show', $this->vpnProduct->id))
             ->assertStatus(200)
-            ->assertSee('name="vpn_sni_mode"', false)
+            ->assertSee('vpnSelectorBackdrop', false)
+            ->assertSee('vpnSelSniMode', false)
             ->assertSee('support.zoom.us');
 
         $this->actingAs($this->customer)
@@ -977,13 +978,279 @@ class VpnXrayApiIntegrationTest extends TestCase
         $this->customer->refresh();
         $this->assertSame($balanceBeforeBlocked, (int) $this->customer->customer_wallet_balance);
 
-        // Verify /my-vpn uses Material You confirmAction, clean M3 action tiles, live cost preview, and zero native confirm()
+        // Verify /my-vpn uses Material You confirmAction, clean M3 action tiles, live cost preview, QRIS renew option, and zero native confirm()
         $this->actingAs($this->customer)
             ->get(route('vpn.my-accounts'))
             ->assertStatus(200)
             ->assertSee('m3-sheet-action-tile')
             ->assertSee('custRenewCostPreview')
+            ->assertSee('custRenewPayQris')
             ->assertSee('confirmAction(event')
             ->assertDontSee('return confirm(');
+    }
+
+    public function test_vcc_style_multi_protocol_vpn_product_checkout_and_proportional_pricing(): void
+    {
+        $capturedPayload = null;
+        Http::fake([
+            'https://sg1.vpnpanel.test/api/v1/vpn/check-username*' => Http::response([
+                'success' => true,
+                'message' => 'Available',
+                'data' => ['available' => true, 'exists' => false],
+            ], 200),
+            'https://sg1.vpnpanel.test/api/v1/vpn/accounts' => function ($request) use (&$capturedPayload) {
+                $capturedPayload = $request->data();
+                return Http::response([
+                    'success' => true,
+                    'message' => 'Created',
+                    'data' => [
+                        'protocol' => $capturedPayload['protocol'] ?? 'vless',
+                        'username' => $capturedPayload['username'] ?? 'vless_custom01',
+                        'domain' => 'sg1.vpnpanel.test',
+                        'uuid' => '9999aaaa-bbbb-cccc-dddd-eeeeffff0000',
+                        'sni_mode' => $capturedPayload['sni_mode'] ?? '1',
+                        'status' => 'active',
+                        'expired_at' => now()->addDays((int) ($capturedPayload['days'] ?? 60))->format('Y-m-d'),
+                        'links' => ['tls' => 'vless://9999aaaa@sg1.vpnpanel.test:443'],
+                        'formatted_text' => 'VLESS Account',
+                    ],
+                ], 201);
+            },
+        ]);
+
+        // 1. Admin creates multi-protocol VPN product (like VCC multi-service checkboxes)
+        $this->actingAs($this->admin)
+            ->post(route('admin.products.store'), [
+                'name' => 'VPN All-in-One SG',
+                'price' => 15000,
+                'description' => 'Multi protokol fleksibel',
+                'is_vpn' => 1,
+                'vpn_protocols' => ['vmess', 'vless', 'ssh'],
+                'vpn_duration_days' => 30,
+                'vpn_quota_gb' => 0,
+                'vpn_ip_limit' => 2,
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $multiProd = Product::where('name', 'VPN All-in-One SG')->firstOrFail();
+        $this->assertSame(['vmess', 'vless', 'ssh'], $multiProd->getAvailableVpnProtocols());
+        $this->assertSame('vmess', $multiProd->vpn_protocol);
+
+        // 2. Catalog show renders VCC-style VPN selector modal & config summary
+        $this->actingAs($this->customer)
+            ->get(route('catalog.show', $multiProd->id))
+            ->assertStatus(200)
+            ->assertSee('openVpnCheckoutSelector')
+            ->assertSee('vpnSelectorBackdrop')
+            ->assertSee('VMESS')
+            ->assertSee('VLESS')
+            ->assertSee('SSH');
+
+        // 3. Checkout review with user-configured VLESS, 60 days (proportional = Rp 30.000), Zoom SNI
+        $this->actingAs($this->customer)
+            ->get(route('checkout.review', [
+                'product' => $multiProd->id,
+                'vpn_protocol' => 'vless',
+                'vpn_days' => 60,
+                'vpn_server_id' => $this->server->id,
+                'vpn_username' => 'vless_custom01',
+                'vpn_sni_mode' => '1',
+            ]))
+            ->assertStatus(200)
+            ->assertSee('VLESS')
+            ->assertSee('vless_custom01')
+            ->assertSee('60')
+            ->assertSee('Zoom (support.zoom.us)')
+            ->assertSee('30.000');
+
+        // 4. Checkout store preserves exact username (no random suffix) and proportional price
+        $this->actingAs($this->customer)
+            ->post(route('checkout.store', $multiProd->id), [
+                'quantity' => 1,
+                'vpn_protocol' => 'vless',
+                'vpn_days' => 60,
+                'vpn_server_id' => $this->server->id,
+                'vpn_username' => 'vless_custom01',
+                'vpn_sni_mode' => '1',
+                'payment_method' => 'qris',
+            ])
+            ->assertRedirect();
+
+        $order = Order::where('customer_id', $this->customer->id)->latest('id')->firstOrFail();
+        $this->assertSame(30000, (int) $order->subtotal);
+        $item = $order->items()->firstOrFail();
+        $this->assertSame('vless_custom01', $item->vpn_username);
+        $this->assertSame('vless', $item->vpn_meta['protocol'] ?? null);
+        $this->assertSame(60, (int) ($item->vpn_meta['days'] ?? 0));
+        $this->assertSame('1', (string) ($item->vpn_meta['sni_mode'] ?? ''));
+
+        // 5. Confirm payment provisions VLESS for 60 days & records purchase pricing
+        app(OrderService::class)->confirmPayment($order, 'qris_auto', $this->admin->id);
+        $this->assertSame('vless', $capturedPayload['protocol'] ?? null);
+        $this->assertSame('vless_custom01', $capturedPayload['username'] ?? null);
+        $this->assertSame(60, (int) ($capturedPayload['days'] ?? 0));
+        $this->assertDatabaseHas('vpn_accounts', [
+            'user_id' => $this->customer->id,
+            'username' => 'vless_custom01',
+            'protocol' => 'vless',
+            'purchase_price' => 30000,
+            'purchase_days' => 60,
+            'status' => 'active',
+        ]);
+    }
+
+    public function test_cross_protocol_username_uniqueness_and_ssh_create_with_short_password(): void
+    {
+        // Existing VMESS account named "iann"
+        VpnAccount::create([
+            'user_id' => $this->customer->id,
+            'vpn_server_id' => $this->server->id,
+            'protocol' => 'vmess',
+            'username' => 'iann',
+            'status' => 'active',
+            'expired_at' => now()->addDays(30),
+        ]);
+
+        Http::fake([
+            'https://sg1.vpnpanel.test/api/v1/vpn/check-username*' => Http::response([
+                'success' => true,
+                'message' => 'Available',
+                'data' => ['available' => true, 'exists' => false],
+            ], 200),
+            'https://sg1.vpnpanel.test/api/v1/vpn/accounts' => Http::response([
+                'success' => true,
+                'message' => 'Created',
+                'data' => [
+                    'protocol' => 'ssh',
+                    'username' => 'iann_ssh01',
+                    'domain' => 'sg1.vpnpanel.test',
+                    'status' => 'active',
+                    'expired_at' => now()->addDays(30)->format('Y-m-d'),
+                    'formatted_text' => 'SSH Account iann_ssh01',
+                ],
+            ], 201),
+        ]);
+
+        // 1. Checking "iann" on SSH MUST return unavailable with plain message (no protocol leak!)
+        $this->actingAs($this->admin)
+            ->getJson(route('admin.vpn-accounts.check-username', [
+                'username' => 'iann',
+                'protocol' => 'ssh',
+                'vpn_server_id' => $this->server->id,
+            ]))
+            ->assertStatus(200)
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('available', false)
+            ->assertJsonPath('message', 'Username sudah terpakai.');
+
+        // 2. Trying to create SSH "iann" via admin store MUST be rejected
+        $this->actingAs($this->admin)
+            ->post(route('admin.vpn-accounts.store'), [
+                'assign_target' => 'customer',
+                'customer_id' => $this->customer->id,
+                'vpn_server_id' => $this->server->id,
+                'protocol' => 'ssh',
+                'username' => 'iann',
+                'password' => '123',
+                'days' => 30,
+                'is_paid' => 1,
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('error', 'Username sudah terpakai.');
+
+        // 3. Creating SSH with fresh username "iann_ssh01" and 3-char password "123" MUST succeed
+        $this->actingAs($this->admin)
+            ->post(route('admin.vpn-accounts.store'), [
+                'assign_target' => 'customer',
+                'customer_id' => $this->customer->id,
+                'vpn_server_id' => $this->server->id,
+                'protocol' => 'ssh',
+                'username' => 'iann_ssh01',
+                'password' => '123',
+                'days' => 30,
+                'is_paid' => 1,
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('vpn_accounts', [
+            'user_id' => $this->customer->id,
+            'username' => 'iann_ssh01',
+            'protocol' => 'ssh',
+            'status' => 'active',
+        ]);
+
+        // 4. Invalid 2-char password flashes validation error & renders visibly via layout $errors->any()
+        $resInvalid = $this->actingAs($this->admin)
+            ->from(route('admin.vpn-accounts.index'))
+            ->post(route('admin.vpn-accounts.store'), [
+                'assign_target' => 'self',
+                'vpn_server_id' => $this->server->id,
+                'protocol' => 'ssh',
+                'username' => 'iann_ssh02',
+                'password' => '12',
+                'days' => 30,
+                'is_paid' => 1,
+            ]);
+        $resInvalid->assertRedirect(route('admin.vpn-accounts.index'))
+            ->assertSessionHasErrors('password');
+    }
+
+    public function test_customer_renew_via_qris_creates_pending_order_and_renews_existing_account_on_payment(): void
+    {
+        // Customer has Rp 0 wallet balance -> can still renew via QRIS!
+        $this->customer->update(['customer_wallet_balance' => 0]);
+
+        $renewCapturedDays = null;
+        Http::fake([
+            'https://sg1.vpnpanel.test/api/v1/vpn/accounts/vmess/qris_renew01/renew' => function ($request) use (&$renewCapturedDays) {
+                $renewCapturedDays = (int) ($request->data()['days'] ?? 0);
+                return Http::response([
+                    'success' => true,
+                    'message' => 'Renewed',
+                    'data' => ['expired_at' => now()->addDays(44)->format('Y-m-d')],
+                ], 200);
+            },
+        ]);
+
+        $acc = VpnAccount::create([
+            'user_id' => $this->customer->id,
+            'vpn_server_id' => $this->server->id,
+            'protocol' => 'vmess',
+            'username' => 'qris_renew01',
+            'purchase_price' => 15000,
+            'purchase_days' => 30,
+            'status' => 'active',
+            'expired_at' => now()->addDays(30),
+        ]);
+
+        $res = $this->actingAs($this->customer)
+            ->post(route('vpn.renew', $acc->id), [
+                'days' => 14,
+                'payment_method' => 'qris',
+            ]);
+
+        $order = Order::where('customer_id', $this->customer->id)
+            ->where('status', 'pending_payment')
+            ->latest('id')
+            ->firstOrFail();
+
+        $res->assertRedirect(route('checkout.success', ['order_ref' => $order->order_ref]));
+        $this->assertSame(7000, (int) $order->subtotal);
+
+        $item = $order->items()->firstOrFail();
+        $this->assertSame('renew', $item->vpn_meta['action'] ?? null);
+        $this->assertSame($acc->id, (int) ($item->vpn_meta['vpn_account_id'] ?? 0));
+        $this->assertSame(14, (int) ($item->vpn_meta['days'] ?? 0));
+
+        // Simulate QRIS payment confirmation -> MUST call renewAccount, NOT create duplicate account
+        $countBefore = VpnAccount::count();
+        app(OrderService::class)->confirmPayment($order, 'qris_auto', $this->admin->id);
+
+        $this->assertSame(14, $renewCapturedDays);
+        $this->assertSame($countBefore, VpnAccount::count());
+        $acc->refresh();
+        $this->assertSame('active', $acc->status);
     }
 }

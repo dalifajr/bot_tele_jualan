@@ -579,14 +579,20 @@
                         <label class="form-label small fw-bold">{{ __('Pilih Paket VPN') }} <span class="text-danger">*</span></label>
                         <select name="product_id" id="custCreateProduct" class="form-select" required>
                             @foreach($vpnProducts as $vp)
+                                @php $vpProtos = $vp->getAvailableVpnProtocols(); @endphp
                                 <option value="{{ $vp->id }}"
-                                        data-protocol="{{ $vp->vpn_protocol }}"
+                                        data-protocol="{{ $vpProtos[0] ?? $vp->vpn_protocol }}"
+                                        data-protocols='@json($vpProtos)'
                                         data-sni-mode="{{ $vp->vpn_sni_mode ?? '3' }}"
                                         data-check-url="{{ route('catalog.check-vpn-username', $vp->id) }}">
-                                    {{ $vp->name }} — {{ strtoupper($vp->vpn_protocol) }} ({{ $vp->vpn_duration_days }} {{ __('hari') }}) — {{ $vp->formatted_price }}
+                                    {{ $vp->name }} — {{ strtoupper(implode('/', $vpProtos)) }} ({{ $vp->vpn_duration_days }} {{ __('hari') }}) — {{ $vp->formatted_price }}
                                 </option>
                             @endforeach
                         </select>
+                    </div>
+                    <div class="mb-2.5 d-none" id="custCreateProtoWrap">
+                        <label class="form-label small fw-bold">{{ __('Protokol VPN') }} <span class="text-danger">*</span></label>
+                        <select name="protocol" id="custCreateProto" class="form-select"></select>
                     </div>
                     <div class="mb-2.5">
                         <label class="form-label small fw-bold">{{ __('Username VPN') }} <span class="text-danger">*</span></label>
@@ -600,7 +606,7 @@
                     </div>
                     <div class="mb-2.5 d-none" id="custSshPassWrap">
                         <label class="form-label small fw-bold">{{ __('Password SSH') }} <span class="text-danger">*</span></label>
-                        <input type="text" name="password" id="custSshPassword" class="form-control font-monospace" placeholder="{{ __('Minimal 4 karakter') }}">
+                        <input type="text" name="password" id="custSshPassword" class="form-control font-monospace" minlength="3" maxlength="64" placeholder="{{ __('Minimal 3 karakter, tanpa spasi') }}">
                     </div>
                     <div class="mb-0" id="custSniWrap">
                         <label class="form-label small fw-bold">{{ __('Preset / Custom SNI') }}</label>
@@ -662,6 +668,29 @@
                                 <span class="fw-semibold text-body">Rp {{ number_format((int) (Auth::user()->customer_wallet_balance ?? 0), 0, ',', '.') }}</span>
                             </div>
                         </div>
+                        <div id="custRenewPayMethodWrap" class="mb-2.5">
+                            <label class="form-label small fw-bold mb-1.5">{{ __('Metode Pembayaran') }} <span class="text-danger">*</span></label>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <label class="d-flex align-items-start gap-2 p-2.5 rounded-4 border h-100" id="custRenewWalletCard" style="cursor: pointer; background: var(--surface-container-lowest);">
+                                        <input class="form-check-input mt-0.5 flex-shrink-0" type="radio" name="payment_method" id="custRenewPayWallet" value="wallet" checked>
+                                        <span class="min-w-0">
+                                            <span class="d-block small fw-bold text-body"><i class="fas fa-wallet text-primary me-1"></i>{{ __('Dompet Saldo') }}</span>
+                                            <span class="d-block text-muted" style="font-size: 0.72rem;" id="custRenewWalletHint">{{ __('Langsung aktif instan') }}</span>
+                                        </span>
+                                    </label>
+                                </div>
+                                <div class="col-6">
+                                    <label class="d-flex align-items-start gap-2 p-2.5 rounded-4 border h-100" id="custRenewQrisCard" style="cursor: pointer; background: var(--surface-container-lowest);">
+                                        <input class="form-check-input mt-0.5 flex-shrink-0" type="radio" name="payment_method" id="custRenewPayQris" value="qris">
+                                        <span class="min-w-0">
+                                            <span class="d-block small fw-bold text-body"><i class="fas fa-qrcode text-success me-1"></i>{{ __('Bayar QRIS') }}</span>
+                                            <span class="d-block text-muted" style="font-size: 0.72rem;">{{ __('Scan QRIS otomatis') }}</span>
+                                        </span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
                         <div id="custRenewNoPriceAlert" class="alert alert-warning border-0 py-2 px-3 small d-none mb-2" style="border-radius: 12px;">
                             <div class="fw-bold"><i class="fas fa-circle-info me-1"></i>{{ __('Tarif perpanjangan belum ditetapkan Admin') }}</div>
                             <div class="mt-0.5">{{ __('Silakan hubungi Admin melalui Chat untuk memperpanjang akun VPN ini.') }}</div>
@@ -671,13 +700,13 @@
                             </a>
                             @endif
                         </div>
-                        <div id="custRenewLowBalanceAlert" class="alert alert-danger border-0 py-2 px-3 small d-none mb-2" style="border-radius: 12px;">
+                        <div id="custRenewLowBalanceAlert" class="alert alert-info border-0 py-2 px-3 small d-none mb-2" style="border-radius: 12px;">
                             <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
-                                <span><i class="fas fa-wallet me-1"></i>{{ __('Saldo Dompet tidak mencukupi.') }}</span>
-                                <a href="{{ route('wallet.index') }}" class="btn btn-danger btn-sm rounded-pill px-3 fw-semibold">{{ __('Isi Saldo') }}</a>
+                                <span><i class="fas fa-info-circle me-1"></i>{{ __('Saldo dompet kurang untuk durasi ini. Gunakan QRIS atau isi saldo.') }}</span>
+                                <a href="{{ route('wallet.index') }}" class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-semibold">{{ __('Isi Saldo') }}</a>
                             </div>
                         </div>
-                        <div class="form-text small">{{ __('Biaya perpanjangan dihitung proporsional dari harga pembelian akun dan memotong saldo dompet Anda.') }}</div>
+                        <div class="form-text small">{{ __('Biaya perpanjangan dihitung proporsional dari harga pembelian akun. Pilih Dompet Saldo untuk instan atau QRIS untuk bayar via e-wallet/bank.') }}</div>
                     </div>
                 </div>
                 <div class="modal-footer border-0 pt-1">
@@ -741,8 +770,10 @@ document.addEventListener('DOMContentLoaded', function () {
         return String(str ?? '').replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
     }
 
-    // 1. Create Modal: SSH password toggle + Automatic Debounced Live Username Check
+    // 1. Create Modal: Multi-protocol selector + SSH password toggle + Automatic Debounced Live Username Check
     const prodSelect = document.getElementById('custCreateProduct');
+    const custProtoWrap = document.getElementById('custCreateProtoWrap');
+    const custProtoSelect = document.getElementById('custCreateProto');
     const sshWrap = document.getElementById('custSshPassWrap');
     const sshInput = document.getElementById('custSshPassword');
     const custSniWrap = document.getElementById('custSniWrap');
@@ -752,10 +783,25 @@ document.addEventListener('DOMContentLoaded', function () {
     const custUserIndicator = document.getElementById('custUsernameIndicator');
     const custCreateSubmitBtn = document.getElementById('btnSubmitCustCreateVpn');
 
+    const syncProductProtocols = () => {
+        if (!prodSelect || !custProtoSelect || !custProtoWrap) return;
+        const opt = prodSelect.options[prodSelect.selectedIndex];
+        let protos = [];
+        try {
+            protos = JSON.parse(opt?.dataset?.protocols || '[]');
+        } catch (e) { protos = []; }
+        if (!Array.isArray(protos) || protos.length === 0) {
+            protos = [opt?.dataset?.protocol || 'vmess'];
+        }
+        custProtoSelect.innerHTML = protos.map(p => `<option value="${escHtml(p)}">${escHtml(p.toUpperCase())}</option>`).join('');
+        custProtoWrap.classList.toggle('d-none', protos.length <= 1);
+    };
+
     const toggleSsh = () => {
         if (!prodSelect || !sshWrap) return;
         const opt = prodSelect.options[prodSelect.selectedIndex];
-        const isSsh = !!(opt && opt.dataset.protocol === 'ssh');
+        const activeProto = (custProtoSelect && custProtoSelect.value) ? custProtoSelect.value : (opt?.dataset?.protocol || '');
+        const isSsh = activeProto === 'ssh';
         sshWrap.classList.toggle('d-none', !isSsh);
         if (sshInput) sshInput.required = isSsh;
         if (custSniWrap) custSniWrap.classList.toggle('d-none', isSsh);
@@ -829,12 +875,14 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     if (prodSelect) {
-        prodSelect.addEventListener('change', function () { toggleSsh(); triggerCustUsernameCheck(); });
+        prodSelect.addEventListener('change', function () { syncProductProtocols(); toggleSsh(); triggerCustUsernameCheck(); });
+        syncProductProtocols();
         toggleSsh();
     }
+    custProtoSelect?.addEventListener('change', function () { toggleSsh(); triggerCustUsernameCheck(); });
     custUserInput?.addEventListener('input', triggerCustUsernameCheck);
 
-    // 2. Renew Modal with Quick Presets (+1, +7, +30, +60), Live Expiry & Live Cost Calculation
+    // 2. Renew Modal with Quick Presets (+1, +7, +30, +60), Live Expiry, Live Cost & Wallet/QRIS Payment Selector
     let custRenewBaseExpiry = null;
     let custRenewBasePrice = 0;
     let custRenewBaseDays = 30;
@@ -842,9 +890,43 @@ document.addEventListener('DOMContentLoaded', function () {
     const custRenewDays = document.getElementById('custRenewDaysInput');
     const custRenewPreview = document.getElementById('custRenewExpiryPreview');
     const custRenewCostEl = document.getElementById('custRenewCostPreview');
+    const custRenewPayWrap = document.getElementById('custRenewPayMethodWrap');
+    const custRenewPayWallet = document.getElementById('custRenewPayWallet');
+    const custRenewPayQris = document.getElementById('custRenewPayQris');
+    const custRenewWalletCard = document.getElementById('custRenewWalletCard');
+    const custRenewQrisCard = document.getElementById('custRenewQrisCard');
+    const custRenewWalletHint = document.getElementById('custRenewWalletHint');
     const custRenewNoPriceAlert = document.getElementById('custRenewNoPriceAlert');
     const custRenewLowBalAlert = document.getElementById('custRenewLowBalanceAlert');
     const custRenewSubmitBtn = document.getElementById('btnSubmitCustRenew');
+
+    function syncRenewPayCardState(cost) {
+        const insufficient = cost > custWalletBalance;
+        if (custRenewPayWallet) {
+            custRenewPayWallet.disabled = insufficient;
+            if (insufficient && custRenewPayWallet.checked && custRenewPayQris) {
+                custRenewPayQris.checked = true;
+            }
+        }
+        if (custRenewWalletCard) {
+            custRenewWalletCard.style.opacity = insufficient ? '0.6' : '1';
+            custRenewWalletCard.classList.toggle('border-primary', !!(custRenewPayWallet && custRenewPayWallet.checked));
+        }
+        if (custRenewQrisCard) {
+            custRenewQrisCard.classList.toggle('border-primary', !!(custRenewPayQris && custRenewPayQris.checked));
+        }
+        if (custRenewWalletHint) {
+            custRenewWalletHint.textContent = insufficient ? @js(__('Saldo tidak mencukupi')) : @js(__('Langsung aktif instan'));
+        }
+        if (custRenewLowBalAlert) {
+            custRenewLowBalAlert.classList.toggle('d-none', !insufficient);
+        }
+        const isQris = !!(custRenewPayQris && custRenewPayQris.checked);
+        if (custRenewSubmitBtn) {
+            custRenewSubmitBtn.disabled = (!isQris && insufficient);
+            custRenewSubmitBtn.textContent = isQris ? @js(__('Bayar & Perpanjang via QRIS')) : @js(__('Perpanjang Sekarang'));
+        }
+    }
 
     function updateCustRenewPreview() {
         if (!custRenewDays || !custRenewPreview) return;
@@ -858,14 +940,17 @@ document.addEventListener('DOMContentLoaded', function () {
             const cost = Math.max(1, Math.round((custRenewBasePrice / custRenewBaseDays) * days));
             if (custRenewCostEl) custRenewCostEl.textContent = 'Rp ' + new Intl.NumberFormat('id-ID').format(cost);
             if (custRenewNoPriceAlert) custRenewNoPriceAlert.classList.add('d-none');
-            const insufficient = cost > custWalletBalance;
-            if (custRenewLowBalAlert) custRenewLowBalAlert.classList.toggle('d-none', !insufficient);
-            if (custRenewSubmitBtn) custRenewSubmitBtn.disabled = insufficient;
+            if (custRenewPayWrap) custRenewPayWrap.classList.remove('d-none');
+            syncRenewPayCardState(cost);
         } else {
             if (custRenewCostEl) custRenewCostEl.textContent = @js(__('Belum diatur'));
             if (custRenewNoPriceAlert) custRenewNoPriceAlert.classList.remove('d-none');
+            if (custRenewPayWrap) custRenewPayWrap.classList.add('d-none');
             if (custRenewLowBalAlert) custRenewLowBalAlert.classList.add('d-none');
-            if (custRenewSubmitBtn) custRenewSubmitBtn.disabled = true;
+            if (custRenewSubmitBtn) {
+                custRenewSubmitBtn.disabled = true;
+                custRenewSubmitBtn.textContent = @js(__('Perpanjang Sekarang'));
+            }
         }
 
         document.querySelectorAll('.btn-cust-renew-preset').forEach(function (b) {
@@ -873,6 +958,8 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    custRenewPayWallet?.addEventListener('change', updateCustRenewPreview);
+    custRenewPayQris?.addEventListener('change', updateCustRenewPreview);
     custRenewDays?.addEventListener('input', updateCustRenewPreview);
     document.querySelectorAll('.btn-cust-renew-preset').forEach(function (b) {
         b.addEventListener('click', function () {
@@ -891,6 +978,7 @@ document.addEventListener('DOMContentLoaded', function () {
             custRenewBasePrice = parseInt(this.dataset.basePrice || '0', 10) || 0;
             custRenewBaseDays = Math.max(1, parseInt(this.dataset.baseDays || '30', 10) || 30);
             if (custRenewDays) custRenewDays.value = 30;
+            if (custRenewPayWallet) custRenewPayWallet.checked = true;
             updateCustRenewPreview();
             bootstrap.Modal.getOrCreateInstance(document.getElementById('customerRenewVpnModal')).show();
         });

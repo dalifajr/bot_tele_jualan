@@ -113,23 +113,36 @@
                         };
                     @endphp
                     <div class="row g-2 small">
-                        <div class="col-sm-4">
+                        <div class="col-6 col-sm-3">
+                            <div class="bg-white bg-opacity-75 rounded-3 p-2 border border-primary-subtle">
+                                <span class="text-muted d-block" style="font-size: 0.72rem;">{{ __('Protokol') }}</span>
+                                <strong class="text-primary">{{ strtoupper($vpnProtocol ?? $product->vpn_protocol ?? 'VMESS') }}</strong>
+                            </div>
+                        </div>
+                        <div class="col-6 col-sm-3">
                             <div class="bg-white bg-opacity-75 rounded-3 p-2 border border-primary-subtle">
                                 <span class="text-muted d-block" style="font-size: 0.72rem;">{{ __('Username') }}</span>
                                 <strong class="text-body font-monospace">{{ $vpnUsername ?: '-' }}</strong>
                             </div>
                         </div>
-                        <div class="col-sm-4">
+                        <div class="col-6 col-sm-3">
                             <div class="bg-white bg-opacity-75 rounded-3 p-2 border border-primary-subtle">
                                 <span class="text-muted d-block" style="font-size: 0.72rem;">{{ __('Masa Aktif') }}</span>
-                                <strong class="text-body">{{ $product->vpn_duration_days }} {{ __('Hari') }}</strong>
+                                <strong class="text-body">{{ $vpnDays ?? $product->vpn_duration_days }} {{ __('Hari') }}</strong>
                             </div>
                         </div>
-                        @if($product->vpn_protocol !== 'ssh')
-                        <div class="col-sm-4">
+                        @if(($vpnProtocol ?? $product->vpn_protocol) !== 'ssh')
+                        <div class="col-6 col-sm-3">
                             <div class="bg-white bg-opacity-75 rounded-3 p-2 border border-primary-subtle">
                                 <span class="text-muted d-block" style="font-size: 0.72rem;">{{ __('Preset SNI') }}</span>
                                 <strong class="text-body">{{ $sniPresetLabel }}</strong>
+                            </div>
+                        </div>
+                        @elseif(isset($vpnServerObj) && $vpnServerObj)
+                        <div class="col-6 col-sm-3">
+                            <div class="bg-white bg-opacity-75 rounded-3 p-2 border border-primary-subtle">
+                                <span class="text-muted d-block" style="font-size: 0.72rem;">{{ __('Server') }}</span>
+                                <strong class="text-body">{{ $vpnServerObj->name }}</strong>
                             </div>
                         </div>
                         @endif
@@ -174,6 +187,9 @@
                     <input type="hidden" name="quantity" value="{{ $quantity }}">
                     @if($vpnUsername)<input type="hidden" name="vpn_username" value="{{ $vpnUsername }}">@endif
                     @if($vpnPassword)<input type="hidden" name="vpn_password" value="{{ $vpnPassword }}">@endif
+                    @if($product->is_vpn && isset($vpnProtocol))<input type="hidden" name="vpn_protocol" value="{{ $vpnProtocol }}">@endif
+                    @if($product->is_vpn && isset($vpnDays))<input type="hidden" name="vpn_days" value="{{ $vpnDays }}">@endif
+                    @if($product->is_vpn && !empty($vpnServerId))<input type="hidden" name="vpn_server_id" value="{{ $vpnServerId }}">@endif
                     @if($product->is_vpn && isset($vpnSniMode))<input type="hidden" name="vpn_sni_mode" value="{{ $vpnSniMode }}">@endif
                     @if($product->is_vcc && !empty($vccServices))
                         @foreach($vccServices as $srv)
@@ -258,6 +274,9 @@
                     @if($couponCode && $discount > 0)<input type="hidden" name="coupon_code" value="{{ $couponCode }}">@endif
                     @if($vpnUsername)<input type="hidden" name="vpn_username" value="{{ $vpnUsername }}">@endif
                     @if($vpnPassword)<input type="hidden" name="vpn_password" value="{{ $vpnPassword }}">@endif
+                    @if($product->is_vpn && isset($vpnProtocol))<input type="hidden" name="vpn_protocol" value="{{ $vpnProtocol }}">@endif
+                    @if($product->is_vpn && isset($vpnDays))<input type="hidden" name="vpn_days" value="{{ $vpnDays }}">@endif
+                    @if($product->is_vpn && !empty($vpnServerId))<input type="hidden" name="vpn_server_id" value="{{ $vpnServerId }}">@endif
                     @if($product->is_vpn && isset($vpnSniMode))<input type="hidden" name="vpn_sni_mode" value="{{ $vpnSniMode }}">@endif
                     @if($product->is_vcc && !empty($vccServices))
                         @foreach($vccServices as $srv)

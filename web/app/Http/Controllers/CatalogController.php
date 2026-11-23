@@ -85,14 +85,23 @@ class CatalogController extends Controller
 
     public function show($id)
     {
-        $product = Product::with('creator')->findOrFail($id);
+        $product = Product::with(['creator', 'vpnServer'])->findOrFail($id);
 
         if ($product->is_suspended) {
             return redirect()->route('catalog.index')->with('error', __('Produk tidak tersedia.'));
         }
 
+        $availableVpnServers = collect();
         if ($product->is_vpn) {
             $stockCount = 999;
+            if ($product->vpnServer && $product->vpnServer->is_active) {
+                $availableVpnServers = collect([$product->vpnServer]);
+            } else {
+                $availableVpnServers = \App\Models\VpnServer::where('is_active', true)
+                    ->orderByDesc('is_default')
+                    ->orderBy('name')
+                    ->get();
+            }
         } else {
             $stockCount = StockUnit::where('product_id', $product->id)
                 ->where('is_sold', false)
@@ -107,7 +116,7 @@ class CatalogController extends Controller
         
         $product->sales_count = max($stockSold, $orderSold);
 
-        return view('catalog.show', compact('product', 'stockCount'));
+        return view('catalog.show', compact('product', 'stockCount', 'availableVpnServers'));
     }
 
     /**
@@ -157,14 +166,16 @@ class CatalogController extends Controller
             ], 422);
         }
 
-        $res = app(\App\Services\VpnService::class)->checkUsername($username, $product->vpn_protocol, null, $product);
+        $reqServerId = $request->query('server_id');
+        $targetServer = $reqServerId ? \App\Models\VpnServer::where('is_active', true)->find((int) $reqServerId) : null;
+        $res = app(\App\Services\VpnService::class)->checkUsername($username, null, $targetServer, $product);
 
         return response()->json([
             'success' => !empty($res['success']),
             'available' => (bool) ($res['available'] ?? false),
             'exists' => (bool) ($res['exists'] ?? false),
             'message' => !empty($res['success'])
-                ? (!empty($res['available']) ? __('Username tersedia.') : __('Username sudah terpakai di server VPN.'))
+                ? (!empty($res['available']) ? __('Username tersedia.') : __('Username sudah terpakai.'))
                 : ($res['message'] ?? __('Gagal memeriksa ketersediaan username.')),
         ]);
     }

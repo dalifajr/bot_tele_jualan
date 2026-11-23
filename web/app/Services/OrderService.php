@@ -258,12 +258,25 @@ class OrderService
                 }
             }
 
-            // 5. Stage VPN Account rows inside transaction (external HTTP/SSH provisioning runs POST-COMMIT!)
+            // 5. Stage VPN Account creations or renewals inside transaction (external HTTP/SSH runs POST-COMMIT!)
             $order->load('items.product.vpnServer');
             $vpnService = app(\App\Services\VpnService::class);
             $stagedVpnProvisions = [];
+            $stagedVpnRenews = [];
             foreach ($order->items as $item) {
                 $meta = is_array($item->vpn_meta) ? $item->vpn_meta : [];
+                $isVpnRenew = ($meta['action'] ?? '') === 'renew' && !empty($meta['vpn_account_id']);
+                if ($isVpnRenew) {
+                    $existingVpn = \App\Models\VpnAccount::with('vpnServer')->find((int) $meta['vpn_account_id']);
+                    if ($existingVpn) {
+                        $stagedVpnRenews[] = [
+                            'account' => $existingVpn,
+                            'days' => max(1, (int) ($meta['days'] ?? 30)),
+                        ];
+                    }
+                    continue;
+                }
+
                 $isVpnItem = ($item->product && $item->product->is_vpn) || !empty($meta['protocol']);
                 if ($isVpnItem) {
                     $metaServer = !empty($meta['server_id']) ? \App\Models\VpnServer::find((int) $meta['server_id']) : null;
@@ -321,8 +334,37 @@ class OrderService
 
             DB::commit();
 
-            // 7. Post-Commit VPN Provisioning (never holds DB transaction locks & uses Idempotency-Key)
+            // 7. Post-Commit VPN Provisioning & Renewals (never holds DB transaction locks & uses Idempotency-Key)
             $vpnDetails = [];
+            foreach ($stagedVpnRenews as $renewEntry) {
+                try {
+                    /** @var \App\Models\VpnAccount $vpnAcc */
+                    $vpnAcc = $renewEntry['account'];
+                    $res = $vpnService->renewAccount($vpnAcc, $renewEntry['days']);
+                    if (!empty($res['success'])) {
+                        $vpnAcc->refresh();
+                        $vpnDetails[] = sprintf(
+                            "=== PERPANJANGAN VPN BERHASIL ===\nUsername : %s\nProtokol : %s\nTambahan : +%d Hari\nExpired  : %s",
+                            $vpnAcc->username,
+                            strtoupper($vpnAcc->protocol),
+                            $renewEntry['days'],
+                            $vpnAcc->expired_at ? $vpnAcc->expired_at->format('d M Y') : '-'
+                        );
+                    } else {
+                        \Log::error('Post-commit VPN renewal failed', [
+                            'order_ref' => $order->order_ref,
+                            'vpn_account_id' => $vpnAcc->id,
+                            'message' => $res['message'] ?? 'Unknown error',
+                        ]);
+                    }
+                } catch (\Throwable $vpnErr) {
+                    \Log::error('Post-commit VPN renewal error: ' . $vpnErr->getMessage(), [
+                        'order_ref' => $order->order_ref,
+                        'vpn_account_id' => $renewEntry['account']->id ?? null,
+                    ]);
+                }
+            }
+
             foreach ($stagedVpnProvisions as $entry) {
                 try {
                     /** @var \App\Models\VpnAccount $vpnAcc */

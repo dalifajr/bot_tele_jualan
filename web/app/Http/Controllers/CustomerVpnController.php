@@ -2,12 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BotSetting;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\Payment;
 use App\Models\Product;
 use App\Models\User;
 use App\Models\VpnAccount;
+use App\Models\VpnServer;
 use App\Models\WalletTransaction;
+use App\Notifications\OrderCreatedNotification;
+use App\Services\TelegramService;
 use App\Services\VpnService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -101,11 +106,10 @@ class CustomerVpnController extends Controller
         return Product::with('vpnServer')
             ->where('is_vpn', true)
             ->where('is_suspended', false)
-            ->whereIn('vpn_protocol', ['ssh', 'vmess', 'vless', 'trojan', 'shadowsocks'])
             ->where('vpn_duration_days', '>', 0)
             ->orderBy('price')
             ->get()
-            ->filter(fn (Product $p) => $vpnService->resolveServer(null, $p) !== null)
+            ->filter(fn (Product $p) => count($p->getAvailableVpnProtocols()) > 0 && $vpnService->resolveServer(null, $p) !== null)
             ->values();
     }
 
@@ -120,8 +124,9 @@ class CustomerVpnController extends Controller
 
         $validated = $request->validate([
             'product_id' => 'required|exists:products,id',
+            'protocol' => 'nullable|in:ssh,vmess,vless,trojan,shadowsocks',
             'username' => ['required', 'string', 'regex:/^[a-zA-Z0-9_-]{3,24}$/'],
-            'password' => 'nullable|string|min:4|max:64',
+            'password' => ['nullable', 'string', 'min:3', 'max:64', 'regex:/^[^\r\n\0\s]+$/'],
             'sni_mode' => 'nullable|in:1,2,3',
         ]);
 
@@ -130,7 +135,12 @@ class CustomerVpnController extends Controller
             return back()->with('error', __('Produk VPN yang dipilih tidak tersedia.'));
         }
 
-        if ($product->vpn_protocol === 'ssh' && empty($validated['password'])) {
+        $allowedProtos = $product->getAvailableVpnProtocols();
+        $chosenProto = !empty($validated['protocol']) && in_array($validated['protocol'], $allowedProtos, true)
+            ? $validated['protocol']
+            : ($allowedProtos[0] ?? 'vmess');
+
+        if ($chosenProto === 'ssh' && empty($validated['password'])) {
             return back()->with('error', __('Password wajib diisi untuk akun SSH.'))->withInput();
         }
 
@@ -139,10 +149,10 @@ class CustomerVpnController extends Controller
             return back()->with('error', __('Server VPN untuk layanan ini sedang tidak tersedia. Hubungi Admin.'));
         }
 
-        // Pre-flight check username availability on panel
-        $check = $vpnService->checkUsername($validated['username'], $product->vpn_protocol, $server, $product);
+        // Pre-flight global username availability check across all protocols
+        $check = $vpnService->checkUsername($validated['username'], null, $server, $product);
         if (!empty($check['success']) && empty($check['available'])) {
-            return back()->with('error', __('Username :user sudah terpakai di server VPN. Silakan pilih username lain.', ['user' => $validated['username']]))->withInput();
+            return back()->with('error', __('Username sudah terpakai.'))->withInput();
         }
 
         $userId = Auth::id();
@@ -160,7 +170,7 @@ class CustomerVpnController extends Controller
 
         try {
             DB::transaction(function () use (
-                $userId, $product, $server, $validated, $price, $days, $quotaGb, $ipLimit, $orderRef, &$vpnAccount
+                $userId, $product, $server, $validated, $price, $days, $quotaGb, $ipLimit, $orderRef, $chosenProto, $sniMode, &$vpnAccount
             ) {
                 $lockedUser = User::where('id', $userId)->lockForUpdate()->firstOrFail();
                 $balance = (int) ($lockedUser->customer_wallet_balance ?? 0);
@@ -187,6 +197,12 @@ class CustomerVpnController extends Controller
                     'unit_price' => $price,
                     'vpn_username' => $validated['username'],
                     'vpn_password' => $validated['password'] ?? null,
+                    'vpn_meta' => [
+                        'label' => $product->name . ' — ' . strtoupper($chosenProto) . ' (' . $validated['username'] . ') ' . $days . ' Hari',
+                        'protocol' => $chosenProto,
+                        'days' => $days,
+                        'sni_mode' => $sniMode,
+                    ],
                 ]);
 
                 if ($price > 0) {
@@ -203,7 +219,7 @@ class CustomerVpnController extends Controller
                         'balance_after' => $newBalance,
                         'reference' => $orderRef,
                         'description' => __('Buat Akun VPN :proto (:user)', [
-                            'proto' => strtoupper($product->vpn_protocol),
+                            'proto' => strtoupper($chosenProto),
                             'user' => $validated['username'],
                         ]),
                     ]);
@@ -213,7 +229,7 @@ class CustomerVpnController extends Controller
                     'user_id' => $lockedUser->id,
                     'order_id' => $order->id,
                     'vpn_server_id' => $server->exists ? $server->id : null,
-                    'protocol' => $product->vpn_protocol,
+                    'protocol' => $chosenProto,
                     'username' => $validated['username'],
                     'password' => $validated['password'] ?? null,
                     'quota_gb' => $quotaGb,
@@ -291,14 +307,88 @@ class CustomerVpnController extends Controller
 
         $validated = $request->validate([
             'days' => 'required|integer|min:1|max:365',
+            'payment_method' => 'nullable|in:wallet,qris',
         ]);
 
         $days = (int) $validated['days'];
+        $paymentMethod = (string) ($validated['payment_method'] ?? 'wallet');
         $renewCost = $this->calculateRenewCost($account, $days);
         $userId = Auth::id();
 
         if ($renewCost === null || $renewCost <= 0) {
             return back()->with('error', __('Tarif perpanjangan untuk akun VPN ini belum diatur oleh Admin. Silakan hubungi Admin melalui Chat untuk perpanjangan.'));
+        }
+
+        // QRIS payment mode: create pending Order + Payment -> redirect to QRIS checkout.success; auto-renew runs on confirmPayment()!
+        if ($paymentMethod === 'qris') {
+            $pendingCount = Order::where('customer_id', $userId)->where('status', 'pending_payment')->count();
+            if ($pendingCount >= 5) {
+                return back()->with('error', __('Anda memiliki terlalu banyak pesanan yang menunggu pembayaran. Silakan selesaikan atau batalkan pesanan sebelumnya.'));
+            }
+
+            try {
+                DB::beginTransaction();
+
+                $uniqueCode = rand(1, 200);
+                $totalAmount = $renewCost + $uniqueCode;
+                $orderRef = 'ORD' . now()->format('ymdHis') . strtoupper(substr(md5(uniqid('', true)), 0, 5));
+                $expiryMinutes = (int) (BotSetting::where('key', 'checkout_expiry_minutes')->value('value') ?? 15);
+
+                $order = Order::create([
+                    'order_ref' => $orderRef,
+                    'customer_id' => $userId,
+                    'subtotal' => $renewCost,
+                    'discount_amount' => 0,
+                    'unique_code' => $uniqueCode,
+                    'total_amount' => $totalAmount,
+                    'status' => 'pending_payment',
+                    'expires_at' => now()->addMinutes($expiryMinutes),
+                ]);
+
+                $resolvedProductId = $this->resolveRenewProductId($account);
+
+                OrderItem::create([
+                    'order_id' => $order->id,
+                    'product_id' => $resolvedProductId,
+                    'quantity' => 1,
+                    'unit_price' => $renewCost,
+                    'vpn_username' => $account->username,
+                    'vpn_meta' => [
+                        'action' => 'renew',
+                        'vpn_account_id' => $account->id,
+                        'label' => 'Perpanjang VPN ' . strtoupper($account->protocol) . ' (' . $account->username . ') +' . $days . ' Hari',
+                        'server_id' => $account->vpn_server_id,
+                        'protocol' => $account->protocol,
+                        'days' => $days,
+                    ],
+                ]);
+
+                Payment::create([
+                    'order_id' => $order->id,
+                    'payment_ref' => 'PAY-' . $orderRef,
+                    'expected_amount' => $totalAmount,
+                    'status' => 'pending',
+                ]);
+
+                DB::commit();
+
+                try {
+                    TelegramService::notifyAdminNewOrder($order);
+                    User::where('role', 'admin')->get()->each(fn ($a) => $a->notify(new OrderCreatedNotification($order)));
+                } catch (\Throwable $e) {
+                    \Log::warning('Customer VPN QRIS renew notification error: ' . $e->getMessage());
+                }
+
+                return redirect()->route('checkout.success', ['order_ref' => $orderRef])
+                    ->with('checkout_new', true)
+                    ->with('success', __('Tagihan QRIS perpanjangan akun VPN :user (+:days hari) berhasil dibuat. Masa aktif akan bertambah otomatis begitu pembayaran lunas.', [
+                        'user' => $account->username,
+                        'days' => $days,
+                    ]));
+            } catch (\Throwable $e) {
+                DB::rollBack();
+                return back()->with('error', __('Gagal membuat tagihan QRIS perpanjangan: :err', ['err' => $e->getMessage()]));
+            }
         }
 
         try {
@@ -535,6 +625,52 @@ class CustomerVpnController extends Controller
         }
 
         return null;
+    }
+
+    private function resolveRenewProductId(VpnAccount $account): int
+    {
+        if ($account->order && $account->order->items) {
+            $originItem = $account->order->items->first(fn ($i) => !empty($i->product_id));
+            if ($originItem && Product::withTrashed()->where('id', $originItem->product_id)->exists()) {
+                return (int) $originItem->product_id;
+            }
+        }
+
+        $matchingId = Product::where('is_vpn', true)
+            ->where('is_suspended', false)
+            ->where('vpn_protocol', strtolower($account->protocol))
+            ->value('id');
+        if ($matchingId) {
+            return (int) $matchingId;
+        }
+
+        $systemProduct = Product::withTrashed()
+            ->where('name', 'Layanan VPN Custom (Tagihan Admin)')
+            ->where('is_vpn', true)
+            ->where('is_suspended', true)
+            ->where('vpn_duration_days', 0)
+            ->first();
+
+        if ($systemProduct) {
+            if ($systemProduct->trashed()) {
+                $systemProduct->restore();
+            }
+            return (int) $systemProduct->id;
+        }
+
+        return (int) Product::create([
+            'name' => 'Layanan VPN Custom (Tagihan Admin)',
+            'price' => 0,
+            'description' => 'Produk sistem internal otomatis untuk tagihan VPN manual Admin (tidak tampil di katalog publik).',
+            'is_suspended' => true,
+            'creator_id' => null,
+            'is_vpn' => true,
+            'vpn_protocol' => 'vmess',
+            'vpn_duration_days' => 0,
+            'vpn_quota_gb' => 0,
+            'vpn_ip_limit' => 1,
+            'vpn_sni_mode' => '3',
+        ])->id;
     }
 
     private function calculateRenewCost(VpnAccount $account, int $days): ?int
