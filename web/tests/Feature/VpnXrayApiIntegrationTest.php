@@ -649,4 +649,121 @@ class VpnXrayApiIntegrationTest extends TestCase
             ])
             ->assertSessionHas('error');
     }
+
+    public function test_desktop_dropdown_preserved_mobile_sheet_and_sni_preset_across_all_create_flows(): void
+    {
+        $capturedSniModes = [];
+
+        Http::fake([
+            'https://sg1.vpnpanel.test/api/v1/vpn/check-username*' => Http::response([
+                'success' => true,
+                'message' => 'Available',
+                'data' => ['available' => true, 'exists' => false],
+            ], 200),
+            'https://sg1.vpnpanel.test/api/v1/vpn/accounts' => function (HttpClientRequest $req) use (&$capturedSniModes) {
+                $body = json_decode((string) $req->body(), true) ?: [];
+                $capturedSniModes[$body['username'] ?? 'unknown'] = (string) ($body['sni_mode'] ?? '');
+                return Http::response([
+                    'success' => true,
+                    'message' => 'Created',
+                    'data' => [
+                        'protocol' => $body['protocol'] ?? 'vmess',
+                        'username' => $body['username'] ?? 'user',
+                        'domain' => 'sg1.vpnpanel.test',
+                        'uuid' => '77777777-8888-9999-aaaa-bbbbbbbbbbbb',
+                        'sni_mode' => (string) ($body['sni_mode'] ?? '3'),
+                        'status' => 'active',
+                        'expired_at' => now()->addDays(30)->format('Y-m-d'),
+                        'links' => ['tls' => 'vmess://em9vbQ=='],
+                        'formatted_text' => 'VMESS ' . ($body['username'] ?? ''),
+                    ],
+                ], 201);
+            },
+        ]);
+
+        // 1. Admin manual create with Zoom preset (sni_mode = 1)
+        $this->actingAs($this->admin)
+            ->post(route('admin.vpn-accounts.store'), [
+                'assign_target' => 'customer',
+                'customer_id' => $this->customer->id,
+                'vpn_server_id' => $this->server->id,
+                'protocol' => 'vmess',
+                'username' => 'admin_zoom_01',
+                'days' => 30,
+                'quota_gb' => 50,
+                'ip_limit' => 2,
+                'sni_mode' => '1',
+                'is_paid' => 1,
+            ])
+            ->assertSessionHas('success');
+
+        $this->assertSame('1', $capturedSniModes['admin_zoom_01'] ?? null);
+        $adminAcc = VpnAccount::where('username', 'admin_zoom_01')->firstOrFail();
+        $this->assertSame('1', (string) ($adminAcc->config_payload['sni_mode'] ?? ''));
+
+        // Verify Admin page renders Desktop Dropdown (strategy: fixed) AND keeps Mobile Sheet + SNI selectors
+        $this->actingAs($this->admin)
+            ->get(route('admin.vpn-accounts.index'))
+            ->assertStatus(200)
+            ->assertSee('data-bs-toggle="dropdown"', false)
+            ->assertSee('data-bs-popper-config=\'{"strategy": "fixed"}\'', false)
+            ->assertSee('btn-open-admin-vpn-sheet')
+            ->assertSee('adminCreateSniMode')
+            ->assertSee('vpnConfigSniSelect');
+
+        // 2. Customer /my-vpn create with Iflix preset (sni_mode = 2)
+        $this->actingAs($this->customer)
+            ->post(route('vpn.store'), [
+                'product_id' => $this->vpnProduct->id,
+                'username' => 'cust_iflix_01',
+                'sni_mode' => '2',
+            ])
+            ->assertRedirect(route('vpn.my-accounts'))
+            ->assertSessionHas('success');
+
+        $this->assertSame('2', $capturedSniModes['cust_iflix_01'] ?? null);
+
+        // Verify /my-vpn renders Desktop Dropdown AND keeps Mobile Sheet + SNI selectors
+        $this->actingAs($this->customer)
+            ->get(route('vpn.my-accounts'))
+            ->assertStatus(200)
+            ->assertSee('data-bs-toggle="dropdown"', false)
+            ->assertSee('data-bs-popper-config=\'{"strategy": "fixed"}\'', false)
+            ->assertSee('btn-open-my-vpn-sheet')
+            ->assertSee('custCreateSniMode')
+            ->assertSee('myVpnConfigSniSelect');
+
+        // 3. Catalog show -> Checkout review -> Checkout store -> OrderService forwards Zoom preset (vpn_sni_mode = 1)
+        $this->actingAs($this->customer)
+            ->get(route('catalog.show', $this->vpnProduct->id))
+            ->assertStatus(200)
+            ->assertSee('name="vpn_sni_mode"', false)
+            ->assertSee('support.zoom.us');
+
+        $this->actingAs($this->customer)
+            ->get(route('checkout.review', [
+                'product' => $this->vpnProduct->id,
+                'vpn_username' => 'cat_zoom_01',
+                'vpn_sni_mode' => '1',
+            ]))
+            ->assertStatus(200)
+            ->assertSee('Zoom (support.zoom.us)')
+            ->assertSee('name="vpn_sni_mode" value="1"', false);
+
+        $this->actingAs($this->customer)
+            ->post(route('checkout.store', $this->vpnProduct->id), [
+                'quantity' => 1,
+                'vpn_username' => 'cat_zoom_01',
+                'vpn_sni_mode' => '1',
+                'payment_method' => 'qris',
+            ])
+            ->assertRedirect();
+
+        $order = Order::where('customer_id', $this->customer->id)->latest('id')->firstOrFail();
+        $item = $order->items()->firstOrFail();
+        $this->assertSame('1', (string) ($item->vpn_meta['sni_mode'] ?? ''));
+
+        app(OrderService::class)->confirmPayment($order, 'qris_auto', $this->admin->id);
+        $this->assertSame('1', $capturedSniModes[$item->vpn_username] ?? null);
+    }
 }
