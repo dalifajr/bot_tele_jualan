@@ -582,10 +582,17 @@ class ResellerApiController extends Controller
         ])->values()->all();
 
         $vpnAccounts = $order->vpnAccounts->map(fn ($vpn) => [
+            'id' => $vpn->id,
             'protocol' => $vpn->protocol,
             'username' => $vpn->username,
             'password' => $vpn->password,
+            'uuid' => $vpn->uuid,
+            'server' => $vpn->display_domain,
+            'quota_gb' => (int) ($vpn->quota_gb ?? 0),
+            'ip_limit' => (int) ($vpn->ip_limit ?? 1),
+            'status' => $vpn->status,
             'config' => $vpn->config_payload ?? null,
+            'config_text' => $vpn->config_link ?? null,
             'expired_at' => optional($vpn->expired_at)->toIso8601String(),
         ])->values()->all();
 

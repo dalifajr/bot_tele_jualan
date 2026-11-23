@@ -279,8 +279,11 @@
                                 
                                 <div class="mb-2">
                                     <label class="form-label text-body small fw-bold mb-1">{{ __('Username VPN') }} <span class="text-danger">*</span></label>
-                                    <input type="text" name="vpn_username" class="form-control form-control-sm px-3" required placeholder="{{ __('Contoh: user123') }}" pattern="[a-zA-Z0-9_-]+" title="{{ __('Hanya huruf, angka, dash, dan underscore') }}">
-                                    <div class="form-text text-muted" style="font-size: 0.68rem;">{{ __('(Sistem akan menambahkan 4 karakter acak untuk mencegah duplikasi)') }}</div>
+                                    <div class="input-group input-group-sm">
+                                        <input type="text" name="vpn_username" id="catalogVpnUsername" class="form-control px-3" required placeholder="{{ __('Contoh: user123') }}" pattern="[a-zA-Z0-9_-]{3,24}" title="{{ __('3–24 karakter: huruf, angka, dash, dan underscore') }}">
+                                        <button type="button" class="btn btn-outline-primary" id="btnCheckCatalogVpnUser">{{ __('Cek') }}</button>
+                                    </div>
+                                    <div id="catalogVpnUserStatus" class="form-text text-muted" style="font-size: 0.72rem;">{{ __('(Klik Cek untuk memverifikasi ketersediaan username langsung di server VPN)') }}</div>
                                 </div>
                                 
                                 @if($product->vpn_protocol === 'ssh')
@@ -290,8 +293,18 @@
                                 </div>
                                 @endif
 
-                                <div class="badge bg-primary text-white rounded-pill px-2.5 py-1 mt-1" style="font-size: 0.72rem;">
-                                    <i class="far fa-calendar-check me-1"></i>{{ __('Masa Aktif:') }} {{ $product->vpn_duration_days }} {{ __('Hari') }}
+                                <div class="d-flex flex-wrap gap-1 mt-1">
+                                    <span class="badge bg-primary text-white rounded-pill px-2.5 py-1" style="font-size: 0.72rem;">
+                                        <i class="far fa-calendar-check me-1"></i>{{ __('Masa Aktif:') }} {{ $product->vpn_duration_days }} {{ __('Hari') }}
+                                    </span>
+                                    <span class="badge bg-body text-body border rounded-pill px-2.5 py-1" style="font-size: 0.72rem;">
+                                        <i class="fas fa-gauge-high me-1 text-primary"></i>{{ ($product->vpn_quota_gb ?? 0) > 0 ? $product->vpn_quota_gb . ' GB' : 'Unlimited' }} &bull; {{ max(1, (int) ($product->vpn_ip_limit ?? 1)) }} IP
+                                    </span>
+                                    @if($product->vpnServer)
+                                    <span class="badge bg-body text-body border rounded-pill px-2.5 py-1" style="font-size: 0.72rem;">
+                                        <i class="fas fa-server me-1 text-info"></i>{{ $product->vpnServer->name }}
+                                    </span>
+                                    @endif
                                 </div>
                             </div>
                         @endif
@@ -719,6 +732,34 @@
                 } else {
                     // Scroll into view if invalid fields exist
                     mainBuyForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            });
+        }
+
+        // Real-time VPN username availability check on catalog page
+        const btnCheckCatalogVpn = document.getElementById('btnCheckCatalogVpnUser');
+        const inputCatalogVpnUser = document.getElementById('catalogVpnUsername');
+        const statusCatalogVpnUser = document.getElementById('catalogVpnUserStatus');
+        if (btnCheckCatalogVpn && inputCatalogVpnUser && statusCatalogVpnUser) {
+            btnCheckCatalogVpn.addEventListener('click', async function() {
+                const username = inputCatalogVpnUser.value.trim();
+                if (username.length < 3) {
+                    statusCatalogVpnUser.className = 'form-text text-warning fw-semibold';
+                    statusCatalogVpnUser.textContent = '{{ __("Username minimal 3 karakter.") }}';
+                    return;
+                }
+                statusCatalogVpnUser.className = 'form-text text-muted';
+                statusCatalogVpnUser.textContent = '{{ __("Memeriksa ke server VPN...") }}';
+                try {
+                    const res = await fetch("{{ route('catalog.check-vpn-username', $product->id) }}?username=" + encodeURIComponent(username), {
+                        headers: { 'Accept': 'application/json' }
+                    });
+                    const data = await res.json();
+                    statusCatalogVpnUser.className = 'form-text ' + (data.available ? 'text-success fw-semibold' : 'text-danger fw-semibold');
+                    statusCatalogVpnUser.textContent = data.message || (data.available ? '{{ __("Username tersedia.") }}' : '{{ __("Username sudah terpakai.") }}');
+                } catch (err) {
+                    statusCatalogVpnUser.className = 'form-text text-danger';
+                    statusCatalogVpnUser.textContent = '{{ __("Gagal memeriksa username.") }}';
                 }
             });
         }

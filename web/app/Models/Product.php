@@ -23,6 +23,10 @@ class Product extends Model
         'is_vpn',
         'vpn_protocol',
         'vpn_duration_days',
+        'vpn_server_id',
+        'vpn_quota_gb',
+        'vpn_ip_limit',
+        'vpn_sni_mode',
         'is_vcc',
         'vcc_services',
     ];
@@ -34,9 +38,17 @@ class Product extends Model
         'warranty_days' => 'integer',
         'is_vpn' => 'boolean',
         'vpn_duration_days' => 'integer',
+        'vpn_server_id' => 'integer',
+        'vpn_quota_gb' => 'integer',
+        'vpn_ip_limit' => 'integer',
         'is_vcc' => 'boolean',
         'vcc_services' => 'array',
     ];
+
+    public function vpnServer()
+    {
+        return $this->belongsTo(VpnServer::class, 'vpn_server_id');
+    }
 
     public function orders()
     {

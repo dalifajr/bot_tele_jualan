@@ -137,4 +137,35 @@ class CatalogController extends Controller
             ]
         ]);
     }
+
+    /**
+     * Real-time AJAX availability check for a requested VPN username on the product's target VPN server.
+     */
+    public function checkVpnUsername(Request $request, $id)
+    {
+        $product = Product::with('vpnServer')->findOrFail($id);
+        if (!$product->is_vpn) {
+            return response()->json(['success' => false, 'message' => __('Produk ini bukan layanan VPN.')], 400);
+        }
+
+        $username = trim((string) $request->query('username', ''));
+        if (!preg_match('/^[a-zA-Z0-9_-]{3,24}$/', $username)) {
+            return response()->json([
+                'success' => false,
+                'available' => false,
+                'message' => __('Username harus 3–24 karakter (huruf, angka, _ atau -).'),
+            ], 422);
+        }
+
+        $res = app(\App\Services\VpnService::class)->checkUsername($username, $product->vpn_protocol, null, $product);
+
+        return response()->json([
+            'success' => !empty($res['success']),
+            'available' => (bool) ($res['available'] ?? false),
+            'exists' => (bool) ($res['exists'] ?? false),
+            'message' => !empty($res['success'])
+                ? (!empty($res['available']) ? __('Username tersedia.') : __('Username sudah terpakai di server VPN.'))
+                : ($res['message'] ?? __('Gagal memeriksa ketersediaan username.')),
+        ]);
+    }
 }

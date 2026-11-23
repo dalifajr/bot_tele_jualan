@@ -252,21 +252,64 @@
 
                     @if($order->vpnAccounts && $order->vpnAccounts->count() > 0)
                     <hr>
-                    <h6 class="fw-bold mb-3 text-body"><i class="fas fa-network-wired text-primary me-2"></i>{{ __('Konfigurasi Akun VPN') }}</h6>
+                    <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+                        <h6 class="fw-bold mb-0 text-body"><i class="fas fa-network-wired text-primary me-2"></i>{{ __('Konfigurasi Akun VPN') }}</h6>
+                        <a href="{{ route('vpn.my-accounts') }}" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-semibold">
+                            <i class="fas fa-sliders me-1"></i>{{ __('Kelola di Akun VPN Saya') }}
+                        </a>
+                    </div>
+                    @php $orderDefaultAdminId = \App\Models\User::where('role', 'admin')->value('id'); @endphp
                     @foreach($order->vpnAccounts as $vpn)
+                        @php $vpnLinks = is_array($vpn->config_payload['links'] ?? null) ? $vpn->config_payload['links'] : []; @endphp
                         <div class="card mb-3 overflow-hidden">
-                            <div class="card-header bg-primary-subtle border-bottom">
+                            <div class="card-header bg-primary-subtle border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
                                 <h6 class="mb-0 fw-bold text-primary">{{ __('Protokol:') }} {{ strtoupper($vpn->protocol) }} ({{ $vpn->username }})</h6>
+                                <span class="badge {{ $vpn->status === 'active' ? 'bg-success text-white' : ($vpn->status === 'suspended' ? 'bg-warning text-dark' : 'bg-danger text-white') }} rounded-pill px-2.5">{{ ucfirst($vpn->status) }}</span>
                             </div>
                             <div class="card-body">
-                                <div class="mb-2">
-                                    <span class="text-muted small">{{ __('Masa Aktif:') }}</span>
-                                    <strong class="d-block text-body">{{ $vpn->expired_at ? $vpn->expired_at->format('d M Y') : '-' }}</strong>
+                                <div class="row g-2 mb-2 small">
+                                    <div class="col-6 col-sm-4">
+                                        <span class="text-muted d-block">{{ __('Server / Domain:') }}</span>
+                                        <strong class="text-body font-monospace">{{ $vpn->display_domain }}</strong>
+                                    </div>
+                                    <div class="col-6 col-sm-4">
+                                        <span class="text-muted d-block">{{ __('Masa Aktif:') }}</span>
+                                        <strong class="text-body">{{ $vpn->expired_at ? $vpn->expired_at->format('d M Y') : '-' }}</strong>
+                                    </div>
+                                    <div class="col-12 col-sm-4">
+                                        <span class="text-muted d-block">{{ __('Kuota / Limit IP:') }}</span>
+                                        <strong class="text-body">{{ ($vpn->quota_gb ?? 0) > 0 ? $vpn->quota_gb . ' GB' : 'Unlimited' }} &bull; {{ max(1, (int) ($vpn->ip_limit ?? 1)) }} IP</strong>
+                                    </div>
                                 </div>
-                                <div class="mb-2">
-                                    <span class="text-muted small">{{ __('Status:') }}</span>
-                                    <span class="badge {{ $vpn->status === 'active' ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger' }}">{{ ucfirst($vpn->status) }}</span>
-                                </div>
+
+                                @if($vpn->isAdminSuspended())
+                                    <div class="alert alert-danger border-0 py-2 px-3 small mb-2" style="border-radius: 12px;">
+                                        <div class="fw-bold"><i class="fas fa-lock me-1"></i>{{ __('Akun ini disuspend oleh Admin.') }}</div>
+                                        @if($vpn->suspended_reason)<div>{{ __('Alasan:') }} {{ $vpn->suspended_reason }}</div>@endif
+                                        @if($vpn->suspended_by_user_id ?: $orderDefaultAdminId)
+                                        <a href="{{ route('chat.index', ['contact_id' => $vpn->suspended_by_user_id ?: $orderDefaultAdminId]) }}" class="btn btn-danger btn-sm rounded-pill mt-2 px-3 fw-semibold">
+                                            <i class="fas fa-comments me-1"></i>{{ __('Minta Buka Suspend via Chat Admin') }}
+                                        </a>
+                                        @endif
+                                    </div>
+                                @endif
+
+                                @if(!empty($vpnLinks))
+                                    <div class="d-flex flex-column gap-1.5 mb-2">
+                                        @foreach($vpnLinks as $linkType => $linkVal)
+                                            @if($linkVal)
+                                            <div class="d-flex align-items-center gap-2 p-2 rounded-3 border">
+                                                <span class="badge bg-primary-subtle text-primary text-uppercase">{{ $linkType }}</span>
+                                                <input type="text" class="form-control form-control-sm font-monospace border-0 bg-transparent p-0" value="{{ $linkVal }}" readonly>
+                                                <button type="button" class="btn btn-sm btn-light border rounded-pill px-2.5 flex-shrink-0" onclick="navigator.clipboard?.writeText(@js($linkVal)); this.innerHTML='<i class=\'fas fa-check text-success\'></i>';">
+                                                    <i class="fas fa-copy"></i>
+                                                </button>
+                                            </div>
+                                            @endif
+                                        @endforeach
+                                    </div>
+                                @endif
+
                                 <hr>
                                 <span class="text-muted small d-block mb-2">{{ __('Konfigurasi Output / Link:') }}</span>
                                 <div class="m3-tonal-item p-3 text-break font-monospace" style="max-height: 250px; overflow-y: auto; white-space: pre-wrap; font-size: 0.85rem;">{{ $vpn->config_link ?: __('Tidak ada konfigurasi ditemukan.') }}</div>

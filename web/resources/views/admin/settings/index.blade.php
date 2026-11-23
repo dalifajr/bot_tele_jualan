@@ -284,12 +284,26 @@
 
             {{-- TAB: VPN SERVER --}}
             <div class="tab-pane fade" id="vpn" role="tabpanel">
+                <div class="alert alert-primary border-0 mb-3 d-flex flex-wrap align-items-center justify-content-between gap-2" style="border-radius: 16px;">
+                    <div class="small">
+                        <div class="fw-bold"><i class="fas fa-bolt me-1"></i>{{ __('Integrasi REST API v1 vpnxray-main (Multi-Server) Sudah Tersedia!') }}</div>
+                        <div>{{ __('Direkomendasikan mengelola server & akun VPN via REST API terenkripsi HMAC-SHA256 (mendukung Create, Renew, Suspend, Unsuspend, Sync & Delete). Form SSH di bawah hanya fallback untuk VPS lawas.') }}</div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a href="{{ route('admin.vpn-servers.index') }}" class="btn btn-primary btn-sm rounded-pill px-3 fw-semibold">
+                            <i class="fas fa-server me-1"></i>{{ __('Kelola Server VPN (API)') }}
+                        </a>
+                        <a href="{{ route('admin.vpn-accounts.index') }}" class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-semibold">
+                            <i class="fas fa-network-wired me-1"></i>{{ __('Kelola Akun VPN') }}
+                        </a>
+                    </div>
+                </div>
                 <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
                     <div class="card-body p-4">
                         <form action="{{ route('admin.settings.update') }}" method="POST">
                             @csrf
-                            <h5 class="fw-bold mb-1 text-primary"><i class="fas fa-server me-2"></i>{{ __('Konfigurasi Server VPN (Xray)') }}</h5>
-                            <p class="text-muted small mb-4">{{ __('Atur koneksi SSH menuju server VPS VPN Anda. Web Jualan ini akan membuat akun VPN secara otomatis di server tersebut.') }}</p>
+                            <h5 class="fw-bold mb-1 text-primary"><i class="fas fa-terminal me-2"></i>{{ __('Konfigurasi Fallback Legacy SSH (VPS Lawas)') }}</h5>
+                            <p class="text-muted small mb-4">{{ __('Hanya digunakan otomatis jika belum ada Server VPN aktif di menu Server VPN (API).') }}</p>
 
                             <div class="row g-3 mb-3">
                                 <div class="col-md-8">

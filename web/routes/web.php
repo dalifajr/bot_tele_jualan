@@ -26,6 +26,7 @@ Route::middleware(\App\Http\Middleware\TrackVisitor::class)->group(function () {
     Route::get('/sellers/{user}', [\App\Http\Controllers\SellerProfileController::class, 'show'])->name('sellers.show');
 });
 Route::get('/catalog/{id}/vcc-info', [CatalogController::class, 'vccInfo'])->name('catalog.vcc-info');
+Route::get('/catalog/{id}/check-vpn-username', [CatalogController::class, 'checkVpnUsername'])->name('catalog.check-vpn-username')->middleware('throttle:30,1');
 
 Route::post('/api/payment/midtrans/callback', [\App\Http\Controllers\MidtransController::class, 'callback'])->name('payment.midtrans.callback');
 
@@ -202,6 +203,17 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
     Route::post('/wallet/topup', [\App\Http\Controllers\WalletController::class, 'createTopup'])->name('wallet.topup.store')->middleware('throttle:10,1');
     Route::get('/wallet/topup/{id}/status', [\App\Http\Controllers\WalletController::class, 'topupStatus'])->name('wallet.topup.status');
     Route::post('/wallet/topup/{id}/cancel', [\App\Http\Controllers\WalletController::class, 'cancelTopup'])->name('wallet.topup.cancel');
+
+    // Customer My VPN Accounts (Self-Service CRUD; Admin-Suspended accounts locked -> Chat Admin)
+    Route::prefix('my-vpn')->name('vpn.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\CustomerVpnController::class, 'index'])->name('my-accounts');
+        Route::post('/', [\App\Http\Controllers\CustomerVpnController::class, 'store'])->name('store')->middleware('throttle:15,1');
+        Route::post('/{id}/renew', [\App\Http\Controllers\CustomerVpnController::class, 'renew'])->whereNumber('id')->name('renew')->middleware('throttle:15,1');
+        Route::post('/{id}/suspend', [\App\Http\Controllers\CustomerVpnController::class, 'suspend'])->whereNumber('id')->name('suspend');
+        Route::post('/{id}/unsuspend', [\App\Http\Controllers\CustomerVpnController::class, 'unsuspend'])->whereNumber('id')->name('unsuspend');
+        Route::post('/{id}/sync', [\App\Http\Controllers\CustomerVpnController::class, 'sync'])->whereNumber('id')->name('sync');
+        Route::delete('/{id}', [\App\Http\Controllers\CustomerVpnController::class, 'destroy'])->whereNumber('id')->name('destroy');
+    });
 
     // Reseller H2H Developer API Portal
     Route::prefix('developer/api')->name('developer.api.')->group(function () {
@@ -445,6 +457,28 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
         Route::get('/system/health/task-status', [\App\Http\Controllers\Admin\SystemHealthController::class, 'taskStatus'])->name('system.health.task-status');
         Route::post('/system/health/turnstile', [\App\Http\Controllers\Admin\SystemHealthController::class, 'updateTurnstile'])->name('system.health.turnstile');
         Route::post('/system/health/reset-admin-password', [\App\Http\Controllers\Admin\SystemHealthController::class, 'resetAdminPassword'])->name('system.health.reset-admin-password');
+
+        // Admin VPN Multi-Server & Account Management (REST API vpnxray-main + Legacy SSH)
+        Route::prefix('vpn-servers')->name('vpn-servers.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\VpnServerController::class, 'index'])->name('index');
+            Route::post('/', [\App\Http\Controllers\Admin\VpnServerController::class, 'store'])->name('store');
+            Route::put('/{id}', [\App\Http\Controllers\Admin\VpnServerController::class, 'update'])->whereNumber('id')->name('update');
+            Route::post('/{id}/default', [\App\Http\Controllers\Admin\VpnServerController::class, 'setDefault'])->whereNumber('id')->name('default');
+            Route::post('/{id}/ping', [\App\Http\Controllers\Admin\VpnServerController::class, 'ping'])->whereNumber('id')->name('ping');
+            Route::delete('/{id}', [\App\Http\Controllers\Admin\VpnServerController::class, 'destroy'])->whereNumber('id')->name('destroy');
+        });
+
+        Route::prefix('vpn-accounts')->name('vpn-accounts.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\VpnAccountController::class, 'index'])->name('index');
+            Route::post('/', [\App\Http\Controllers\Admin\VpnAccountController::class, 'store'])->name('store');
+            Route::post('/sync-server', [\App\Http\Controllers\Admin\VpnAccountController::class, 'syncServer'])->name('sync-server');
+            Route::post('/{id}/renew', [\App\Http\Controllers\Admin\VpnAccountController::class, 'renew'])->whereNumber('id')->name('renew');
+            Route::post('/{id}/suspend', [\App\Http\Controllers\Admin\VpnAccountController::class, 'suspend'])->whereNumber('id')->name('suspend');
+            Route::post('/{id}/unsuspend', [\App\Http\Controllers\Admin\VpnAccountController::class, 'unsuspend'])->whereNumber('id')->name('unsuspend');
+            Route::post('/{id}/retry', [\App\Http\Controllers\Admin\VpnAccountController::class, 'retry'])->whereNumber('id')->name('retry');
+            Route::post('/{id}/sync', [\App\Http\Controllers\Admin\VpnAccountController::class, 'sync'])->whereNumber('id')->name('sync');
+            Route::delete('/{id}', [\App\Http\Controllers\Admin\VpnAccountController::class, 'destroy'])->whereNumber('id')->name('destroy');
+        });
 
         Route::get('/security/firewall', [\App\Http\Controllers\Admin\FirewallController::class, 'index'])->name('security.firewall');
         Route::post('/security/firewall', [\App\Http\Controllers\Admin\FirewallController::class, 'store'])->name('security.firewall.store');

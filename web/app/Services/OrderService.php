@@ -258,37 +258,44 @@ class OrderService
                 }
             }
 
-            // 5. Create VPN Accounts (if any)
-            $order->load('items.product');
-            $vpnDetails = [];
+            // 5. Stage VPN Account rows inside transaction (external HTTP/SSH provisioning runs POST-COMMIT!)
+            $order->load('items.product.vpnServer');
+            $vpnService = app(\App\Services\VpnService::class);
+            $stagedVpnProvisions = [];
             foreach ($order->items as $item) {
                 if ($item->product && $item->product->is_vpn) {
-                    $vpnService = app(\App\Services\VpnService::class);
-                    
+                    $resolvedServer = $vpnService->resolveServer(null, $item->product);
+                    $durationDays = max(1, (int) ($item->product->vpn_duration_days ?: 30));
+                    $quotaGb = max(0, (int) ($item->product->vpn_quota_gb ?? 0));
+                    $ipLimit = max(1, (int) ($item->product->vpn_ip_limit ?? 1));
+                    $sniMode = (string) ($item->product->vpn_sni_mode ?? '3');
+
                     for ($i = 0; $i < $item->quantity; $i++) {
                         $username = $item->vpn_username;
                         if ($item->quantity > 1) {
                             $username .= '_' . ($i + 1);
                         }
-                        
-                        $res = $vpnService->createVpnAccount(
-                            $item->product->vpn_protocol,
-                            $username,
-                            $item->vpn_password,
-                            $item->product->vpn_duration_days
-                        );
-                        
+
                         $vpn = \App\Models\VpnAccount::create([
                             'user_id' => $order->customer_id,
                             'order_id' => $order->id,
+                            'vpn_server_id' => ($resolvedServer && $resolvedServer->exists) ? $resolvedServer->id : null,
+                            'server_ip' => $resolvedServer?->ssh_host ?: ($resolvedServer ? parse_url((string) $resolvedServer->base_url, PHP_URL_HOST) : null),
                             'protocol' => $item->product->vpn_protocol,
                             'username' => $username,
                             'password' => $item->vpn_password,
-                            'config_link' => $res['output'] ?? 'Failed to generate',
-                            'expired_at' => now()->addDays($item->product->vpn_duration_days),
-                            'status' => $res['success'] ? 'active' : 'failed'
+                            'quota_gb' => $quotaGb,
+                            'ip_limit' => $ipLimit,
+                            'external_ref' => $order->order_ref,
+                            'expired_at' => now()->addDays($durationDays),
+                            'status' => 'provisioning',
                         ]);
-                        $vpnDetails[] = $vpn->config_link;
+
+                        $stagedVpnProvisions[] = [
+                            'account' => $vpn,
+                            'days' => $durationDays,
+                            'sni_mode' => $sniMode,
+                        ];
                     }
                 }
             }
@@ -305,6 +312,29 @@ class OrderService
             ]);
 
             DB::commit();
+
+            // 7. Post-Commit VPN Provisioning (never holds DB transaction locks & uses Idempotency-Key)
+            $vpnDetails = [];
+            foreach ($stagedVpnProvisions as $entry) {
+                try {
+                    /** @var \App\Models\VpnAccount $vpnAcc */
+                    $vpnAcc = $entry['account'];
+                    $provisioned = $vpnService->provisionAccount(
+                        $vpnAcc,
+                        $entry['days'],
+                        "order-{$order->order_ref}-acct-{$vpnAcc->id}",
+                        $entry['sni_mode']
+                    );
+                    if (!empty($provisioned->config_link)) {
+                        $vpnDetails[] = $provisioned->config_link;
+                    }
+                } catch (\Throwable $vpnErr) {
+                    \Log::error('Post-commit VPN provisioning error: ' . $vpnErr->getMessage(), [
+                        'order_ref' => $order->order_ref,
+                        'vpn_account_id' => $entry['account']->id ?? null,
+                    ]);
+                }
+            }
 
             try {
                 \App\Services\TelegramService::notifyCustomerOrderDelivered($order, $reservedStock, $vpnDetails);

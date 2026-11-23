@@ -288,7 +288,34 @@
                                         <span class="input-group-text bg-white text-muted">{{ __('hari') }}</span>
                                     </div>
                                 </div>
-                                <div class="form-text text-muted small"><i class="fas fa-info-circle"></i> {{ __('Stok untuk produk VPN tidak perlu ditambahkan secara manual. Saat pembeli melakukan checkout, sistem akan meng-generate akun secara otomatis di VPS sesuai durasi ini.') }}</div>
+                                <div class="mb-2">
+                                    <label class="form-label text-muted small fw-bold">{{ __('Target Server VPN') }}</label>
+                                    <select name="vpn_server_id" class="form-select">
+                                        <option value="">{{ __('Otomatis (Server Default)') }}</option>
+                                        @foreach(($vpnServers ?? collect()) as $vs)
+                                            <option value="{{ $vs->id }}">{{ $vs->name }} ({{ strtoupper($vs->driver === 'vpnxray_api' ? 'API' : 'SSH') }}{{ $vs->region ? ' • ' . $vs->region : '' }})</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="row g-2 mb-2">
+                                    <div class="col-4">
+                                        <label class="form-label text-muted small fw-bold">{{ __('Kuota (GB)') }}</label>
+                                        <input type="number" name="vpn_quota_gb" class="form-control" value="0" min="0" max="10000">
+                                    </div>
+                                    <div class="col-4">
+                                        <label class="form-label text-muted small fw-bold">{{ __('Limit IP') }}</label>
+                                        <input type="number" name="vpn_ip_limit" class="form-control" value="1" min="1" max="50">
+                                    </div>
+                                    <div class="col-4">
+                                        <label class="form-label text-muted small fw-bold">{{ __('Mode SNI') }}</label>
+                                        <select name="vpn_sni_mode" class="form-select">
+                                            <option value="3" selected>{{ __('Default') }}</option>
+                                            <option value="1">Zoom</option>
+                                            <option value="2">Iflix</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-text text-muted small"><i class="fas fa-info-circle"></i> {{ __('Stok untuk produk VPN tidak perlu ditambahkan secara manual. Saat pembeli melakukan checkout, sistem akan meng-generate akun secara otomatis melalui REST API panel vpnxray-main.') }}</div>
                             </div>
 
                             <div class="form-check form-switch mb-3 border-top pt-3">
@@ -429,6 +456,33 @@
                                     <div class="input-group">
                                         <input type="number" name="vpn_duration_days" class="form-control" value="{{ $product->vpn_duration_days > 0 ? $product->vpn_duration_days : '' }}" min="1">
                                         <span class="input-group-text bg-white text-muted">{{ __('hari') }}</span>
+                                    </div>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label text-muted small fw-bold">{{ __('Target Server VPN') }}</label>
+                                    <select name="vpn_server_id" class="form-select">
+                                        <option value="">{{ __('Otomatis (Server Default)') }}</option>
+                                        @foreach(($vpnServers ?? collect()) as $vs)
+                                            <option value="{{ $vs->id }}" {{ (int) $product->vpn_server_id === (int) $vs->id ? 'selected' : '' }}>{{ $vs->name }} ({{ strtoupper($vs->driver === 'vpnxray_api' ? 'API' : 'SSH') }}{{ $vs->region ? ' • ' . $vs->region : '' }})</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="row g-2">
+                                    <div class="col-4">
+                                        <label class="form-label text-muted small fw-bold">{{ __('Kuota (GB)') }}</label>
+                                        <input type="number" name="vpn_quota_gb" class="form-control" value="{{ $product->vpn_quota_gb ?? 0 }}" min="0" max="10000">
+                                    </div>
+                                    <div class="col-4">
+                                        <label class="form-label text-muted small fw-bold">{{ __('Limit IP') }}</label>
+                                        <input type="number" name="vpn_ip_limit" class="form-control" value="{{ max(1, (int) ($product->vpn_ip_limit ?? 1)) }}" min="1" max="50">
+                                    </div>
+                                    <div class="col-4">
+                                        <label class="form-label text-muted small fw-bold">{{ __('Mode SNI') }}</label>
+                                        <select name="vpn_sni_mode" class="form-select">
+                                            <option value="3" {{ ($product->vpn_sni_mode ?? '3') == '3' ? 'selected' : '' }}>{{ __('Default') }}</option>
+                                            <option value="1" {{ ($product->vpn_sni_mode ?? '3') == '1' ? 'selected' : '' }}>Zoom</option>
+                                            <option value="2" {{ ($product->vpn_sni_mode ?? '3') == '2' ? 'selected' : '' }}>Iflix</option>
+                                        </select>
                                     </div>
                                 </div>
                             </div>

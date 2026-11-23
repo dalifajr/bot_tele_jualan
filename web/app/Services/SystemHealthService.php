@@ -300,8 +300,7 @@ class SystemHealthService
             : 0;
 
         // 5. Integrations & Settings
-        $vpnConfigured = !empty(BotSetting::where('key', 'vpn_server_ip')->value('value'))
-            && !empty(BotSetting::where('key', 'vpn_server_ssh_key_raw')->value('value'));
+        $vpnConfigured = app(VpnService::class)->isConfigured();
         $telegramConfigured = !empty(config('telegram.bot_token'));
         $maintenanceActive = BotSetting::where('key', 'maintenance_mode')->value('value') === '1';
         $turnstileSiteKey = (string) ($this->readEnvValue($this->webEnvPath(), 'CLOUDFLARE_TURNSTILE_SITE_KEY') ?? config('services.turnstile.site_key', ''));
@@ -470,62 +469,13 @@ class SystemHealthService
 
     public function pingVpn(): array
     {
-        $ip = (string) (BotSetting::where('key', 'vpn_server_ip')->value('value') ?? '');
-        $port = (int) (BotSetting::where('key', 'vpn_server_port')->value('value') ?? 22);
-        $username = (string) (BotSetting::where('key', 'vpn_server_username')->value('value') ?? 'root');
-        $rawKey = (string) (BotSetting::where('key', 'vpn_server_ssh_key_raw')->value('value') ?? '');
-
-        if ($ip === '' || $rawKey === '') {
-            return [
-                'ok' => false,
-                'status' => 422,
-                'message' => __('Konfigurasi SSH Server VPN belum lengkap di Pengaturan Sistem.'),
-            ];
-        }
-
-        $start = microtime(true);
-        try {
-            $keyPath = storage_path('app/vpn_ssh_key.pem');
-            if (!is_dir(dirname($keyPath))) {
-                mkdir(dirname($keyPath), 0755, true);
-            }
-            file_put_contents($keyPath, str_replace("\r\n", "\n", trim($rawKey)) . "\n");
-            @chmod($keyPath, 0600);
-
-            $ssh = Ssh::create($username, $ip, $port)
-                ->usePrivateKey($keyPath)
-                ->disableStrictHostKeyChecking()
-                ->setTimeout(6);
-
-            $process = $ssh->execute('echo VPN_SSH_OK');
-            $latency = round((microtime(true) - $start) * 1000, 1);
-
-            if ($process->isSuccessful() && str_contains($process->getOutput(), 'VPN_SSH_OK')) {
-                return [
-                    'ok' => true,
-                    'status' => 200,
-                    'latency_ms' => $latency,
-                    'message' => __('Koneksi SSH VPN ke :ip::port berhasil (:ms ms).', [
-                        'ip' => $ip,
-                        'port' => $port,
-                        'ms' => $latency,
-                    ]),
-                ];
-            }
-
-            return [
-                'ok' => false,
-                'status' => 502,
-                'latency_ms' => $latency,
-                'message' => __('Koneksi SSH VPN gagal: :err', ['err' => trim($process->getErrorOutput() ?: $process->getOutput() ?: 'Timeout/Auth error')]),
-            ];
-        } catch (\Throwable $e) {
-            return [
-                'ok' => false,
-                'status' => 502,
-                'message' => __('Gagal menguji SSH VPN: :err', ['err' => $e->getMessage()]),
-            ];
-        }
+        $res = app(VpnService::class)->healthCheck();
+        return [
+            'ok' => !empty($res['ok']),
+            'status' => !empty($res['ok']) ? 200 : ($res['status'] ?? 502),
+            'latency_ms' => $res['latency_ms'] ?? null,
+            'message' => (string) ($res['message'] ?? __('Gagal menguji koneksi Server VPN.')),
+        ];
     }
 
     public function runArtisanAction(string $actionKey): array

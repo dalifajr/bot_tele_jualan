@@ -1139,6 +1139,10 @@
                             <div class="menu-icon-box"><i class="fas fa-wallet text-primary"></i></div>
                             <span class="menu-label-text">{{ __('Dompet Saldo') }}</span>
                         </a>
+                        <a href="{{ route('vpn.my-accounts') }}" @guest data-guest-modal="true" data-feature-name="{{ __('akun vpn saya') }}" @endguest class="menu-item {{ request()->routeIs('vpn.*') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fas fa-network-wired text-info"></i></div>
+                            <span class="menu-label-text">{{ __('Akun VPN Saya') }}</span>
+                        </a>
                         <a href="{{ route('wishlist.index') }}" @guest data-guest-modal="true" data-feature-name="{{ __('produk favorit') }}" @endguest class="menu-item {{ request()->routeIs('wishlist.*') ? 'active' : '' }}">
                             <div class="menu-icon-box"><i class="fas fa-heart text-danger"></i></div>
                             <span class="menu-label-text">{{ __('Favorit & Alert') }}</span>
@@ -1287,6 +1291,14 @@
                             @if(isset($adminEscrowCount) && $adminEscrowCount > 0)
                                 <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.7rem;">{{ $adminEscrowCount }}</span>
                             @endif
+                        </a>
+                        <a href="{{ route('admin.vpn-servers.index') }}" class="menu-item {{ request()->routeIs('admin.vpn-servers.*') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fas fa-server text-primary"></i></div>
+                            <span class="menu-label-text">{{ __('Server VPN (API)') }}</span>
+                        </a>
+                        <a href="{{ route('admin.vpn-accounts.index') }}" class="menu-item {{ request()->routeIs('admin.vpn-accounts.*') ? 'active' : '' }}">
+                            <div class="menu-icon-box"><i class="fas fa-network-wired text-info"></i></div>
+                            <span class="menu-label-text">{{ __('Kelola Akun VPN') }}</span>
                         </a>
                         <a href="{{ route('admin.remote-control.index') }}" class="menu-item {{ request()->routeIs('admin.remote-control*') ? 'active' : '' }}">
                             <div class="menu-icon-box"><i class="fas fa-mobile-screen-button text-primary"></i></div>
