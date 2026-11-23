@@ -338,25 +338,98 @@
                                     </div>
                                 @endif
 
-                                @if(!empty($vpnLinks))
-                                    <div class="d-flex flex-column gap-1.5 mb-2">
-                                        @foreach($vpnLinks as $linkType => $linkVal)
-                                            @if($linkVal)
-                                            <div class="d-flex align-items-center gap-2 p-2 rounded-3 border">
-                                                <span class="badge bg-primary-subtle text-primary text-uppercase">{{ $linkType }}</span>
-                                                <input type="text" class="form-control form-control-sm font-monospace border-0 bg-transparent p-0" value="{{ $linkVal }}" readonly>
-                                                <button type="button" class="btn btn-sm btn-light border rounded-pill px-2.5 flex-shrink-0" onclick="navigator.clipboard?.writeText(@js($linkVal)); this.innerHTML='<i class=\'fas fa-check text-success\'></i>';">
-                                                    <i class="fas fa-copy"></i>
-                                                </button>
+                                @if($vpn->protocol === 'ssh')
+                                    @php
+                                        $sshInfo = is_array($vpn->config_payload['ssh_info'] ?? null) ? $vpn->config_payload['ssh_info'] : [];
+                                        $sshHost = $sshInfo['host'] ?? $vpn->display_domain ?? '-';
+                                        $sshUser = $sshInfo['username'] ?? $vpn->username;
+                                        $sshPass = $sshInfo['password'] ?? $vpn->password ?? '';
+                                        $sshPorts = is_array($sshInfo['ports'] ?? null) ? $sshInfo['ports'] : [
+                                            'openssh' => 22,
+                                            'ws_tls' => 443,
+                                            'ws_ntls' => 80,
+                                            'dropbear' => '109, 143',
+                                            'udp_custom' => '1-65535',
+                                        ];
+                                        $sshPayload = $sshInfo['ws_payload'] ?? "GET / HTTP/1.1[crlf]Host: {$sshHost}[crlf]Upgrade: websocket[crlf][crlf]";
+                                        $sshHcTls = $sshPass !== '' ? "{$sshHost}:443@{$sshUser}:{$sshPass}" : "{$sshHost}:443@{$sshUser}";
+                                    @endphp
+                                    <div class="rounded-4 border overflow-hidden mb-3" style="background: var(--surface-container-low);">
+                                        <div class="d-flex align-items-center justify-content-between gap-2 py-2 px-3 border-bottom">
+                                            <div class="min-w-0">
+                                                <div class="text-muted" style="font-size: 0.7rem;">{{ __('Host / Domain') }}</div>
+                                                <div class="font-monospace fw-semibold text-body small text-break">{{ $sshHost }}</div>
                                             </div>
-                                            @endif
+                                            <button type="button" class="btn btn-sm btn-light border rounded-pill px-2.5 flex-shrink-0" onclick="navigator.clipboard?.writeText(@js($sshHost)); this.innerHTML='<i class=\'fas fa-check text-success\'></i>';"><i class="fas fa-copy"></i></button>
+                                        </div>
+                                        <div class="d-flex align-items-center justify-content-between gap-2 py-2 px-3 border-bottom">
+                                            <div class="min-w-0">
+                                                <div class="text-muted" style="font-size: 0.7rem;">{{ __('Username') }}</div>
+                                                <div class="font-monospace fw-semibold text-body small text-break">{{ $sshUser }}</div>
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-light border rounded-pill px-2.5 flex-shrink-0" onclick="navigator.clipboard?.writeText(@js($sshUser)); this.innerHTML='<i class=\'fas fa-check text-success\'></i>';"><i class="fas fa-copy"></i></button>
+                                        </div>
+                                        @if($sshPass !== '')
+                                        <div class="d-flex align-items-center justify-content-between gap-2 py-2 px-3 border-bottom">
+                                            <div class="min-w-0">
+                                                <div class="text-muted" style="font-size: 0.7rem;">{{ __('Password') }}</div>
+                                                <div class="font-monospace fw-semibold text-body small text-break">{{ $sshPass }}</div>
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-light border rounded-pill px-2.5 flex-shrink-0" onclick="navigator.clipboard?.writeText(@js($sshPass)); this.innerHTML='<i class=\'fas fa-check text-success\'></i>';"><i class="fas fa-copy"></i></button>
+                                        </div>
+                                        @endif
+                                        <div class="d-flex align-items-center justify-content-between gap-2 py-2 px-3">
+                                            <div class="min-w-0">
+                                                <div class="text-muted" style="font-size: 0.7rem;">{{ __('Format Cepat (WS TLS 443)') }}</div>
+                                                <div class="font-monospace fw-semibold text-body small text-break">{{ $sshHcTls }}</div>
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-light border rounded-pill px-2.5 flex-shrink-0" onclick="navigator.clipboard?.writeText(@js($sshHcTls)); this.innerHTML='<i class=\'fas fa-check text-success\'></i>';"><i class="fas fa-copy"></i></button>
+                                        </div>
+                                    </div>
+                                    <div class="row g-1.5 mb-3">
+                                        @foreach(['OpenSSH' => ($sshPorts['openssh'] ?? 22), 'WS TLS' => ($sshPorts['ws_tls'] ?? 443), 'WS Non-TLS' => ($sshPorts['ws_ntls'] ?? 80), 'Dropbear' => ($sshPorts['dropbear'] ?? '109, 143'), 'UDP Custom' => ($sshPorts['udp_custom'] ?? '1-65535')] as $pLabel => $pVal)
+                                        <div class="col-6 col-sm-4">
+                                            <div class="p-2 rounded-3 border d-flex align-items-center justify-content-between gap-1" style="background: var(--surface-container-lowest);">
+                                                <span class="text-muted" style="font-size: 0.72rem;">{{ $pLabel }}</span>
+                                                <span class="font-monospace fw-bold text-body" style="font-size: 0.78rem;">{{ $pVal }}</span>
+                                            </div>
+                                        </div>
                                         @endforeach
                                     </div>
-                                @endif
+                                    <div class="p-2.5 rounded-4 border mb-2" style="background: var(--surface-container-low);">
+                                        <div class="d-flex align-items-center justify-content-between gap-2 mb-1.5">
+                                            <span class="small fw-bold text-muted"><i class="fas fa-bolt text-warning me-1"></i>{{ __('Payload WebSocket (WS)') }}</span>
+                                            <button type="button" class="btn btn-sm btn-light border rounded-pill px-2.5 py-0.5 small fw-semibold" onclick="navigator.clipboard?.writeText(@js($sshPayload)); this.innerHTML='<i class=\'fas fa-check text-success\'></i>';">
+                                                <i class="fas fa-copy me-1"></i>{{ __('Salin Payload') }}
+                                            </button>
+                                        </div>
+                                        <div class="font-monospace small p-2 rounded-3 bg-white border text-break" style="font-size: 0.76rem;">{{ $sshPayload }}</div>
+                                    </div>
+                                    <details class="small">
+                                        <summary class="text-muted fw-semibold" style="cursor: pointer;">{{ __('Lihat Teks Mentah') }}</summary>
+                                        <div class="m3-tonal-item p-3 mt-2 text-break font-monospace" style="max-height: 220px; overflow-y: auto; white-space: pre-wrap; font-size: 0.8rem;">{{ $vpn->config_link ?: __('Tidak ada konfigurasi ditemukan.') }}</div>
+                                    </details>
+                                @else
+                                    @if(!empty($vpnLinks))
+                                        <div class="d-flex flex-column gap-1.5 mb-2">
+                                            @foreach($vpnLinks as $linkType => $linkVal)
+                                                @if($linkVal)
+                                                <div class="d-flex align-items-center gap-2 p-2 rounded-3 border">
+                                                    <span class="badge bg-primary-subtle text-primary text-uppercase">{{ $linkType }}</span>
+                                                    <input type="text" class="form-control form-control-sm font-monospace border-0 bg-transparent p-0" value="{{ $linkVal }}" readonly>
+                                                    <button type="button" class="btn btn-sm btn-light border rounded-pill px-2.5 flex-shrink-0" onclick="navigator.clipboard?.writeText(@js($linkVal)); this.innerHTML='<i class=\'fas fa-check text-success\'></i>';">
+                                                        <i class="fas fa-copy"></i>
+                                                    </button>
+                                                </div>
+                                                @endif
+                                            @endforeach
+                                        </div>
+                                    @endif
 
-                                <hr>
-                                <span class="text-muted small d-block mb-2">{{ __('Konfigurasi Output / Link:') }}</span>
-                                <div class="m3-tonal-item p-3 text-break font-monospace" style="max-height: 250px; overflow-y: auto; white-space: pre-wrap; font-size: 0.85rem;">{{ $vpn->config_link ?: __('Tidak ada konfigurasi ditemukan.') }}</div>
+                                    <hr>
+                                    <span class="text-muted small d-block mb-2">{{ __('Konfigurasi Output / Link:') }}</span>
+                                    <div class="m3-tonal-item p-3 text-break font-monospace" style="max-height: 250px; overflow-y: auto; white-space: pre-wrap; font-size: 0.85rem;">{{ $vpn->config_link ?: __('Tidak ada konfigurasi ditemukan.') }}</div>
+                                @endif
                             </div>
                         </div>
                     @endforeach

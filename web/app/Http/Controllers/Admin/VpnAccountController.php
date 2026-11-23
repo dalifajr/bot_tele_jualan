@@ -167,10 +167,20 @@ class VpnAccountController extends Controller
             $account->refresh();
         }
 
+        $payload = is_array($account->config_payload) ? $account->config_payload : null;
+        if ($account->protocol === 'ssh' && !empty($account->password)) {
+            $payload = is_array($payload) ? $payload : ['protocol' => 'ssh', 'username' => $account->username, 'domain' => $account->display_domain];
+            $sshInfo = is_array($payload['ssh_info'] ?? null) ? $payload['ssh_info'] : ['host' => $account->display_domain, 'username' => $account->username];
+            if (empty($sshInfo['password'])) {
+                $sshInfo['password'] = $account->password;
+            }
+            $payload['ssh_info'] = $sshInfo;
+        }
+
         return response()->json([
             'success' => true,
             'title' => strtoupper($account->protocol) . ' — ' . $account->username,
-            'config_payload' => $account->config_payload,
+            'config_payload' => $payload,
             'config_link' => $account->config_link ?: __('Konfigurasi belum tersedia dari server VPN.'),
         ]);
     }
@@ -385,17 +395,28 @@ class VpnAccountController extends Controller
 
     public function suspend(Request $request, $id, VpnService $vpnService)
     {
-        $account = VpnAccount::with('vpnServer')->findOrFail($id);
+        $account = VpnAccount::with(['vpnServer', 'user'])->findOrFail($id);
         $reason = trim((string) $request->input('reason', ''));
+        $effectiveReason = $reason !== '' ? $reason : __('Ditangguhkan oleh Admin');
 
         $res = $vpnService->suspendAccount(
             $account,
             'admin',
             Auth::id(),
-            $reason !== '' ? $reason : __('Ditangguhkan oleh Admin')
+            $effectiveReason
         );
 
         $this->logAudit('admin_vpn_suspend', $account, "reason={$reason}; success=" . (!empty($res['success']) ? '1' : '0'));
+
+        if (!empty($res['success']) && $account->user) {
+            try {
+                $account->refresh();
+                $account->user->notify(new \App\Notifications\VpnStatusNotification($account, 'suspended', $effectiveReason));
+                TelegramService::notifyVpnStatusChanged($account, 'suspended', $effectiveReason);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('VPN suspend notification error: ' . $e->getMessage());
+            }
+        }
 
         return back()->with(
             !empty($res['success']) ? 'success' : 'error',
@@ -407,10 +428,20 @@ class VpnAccountController extends Controller
 
     public function unsuspend($id, VpnService $vpnService)
     {
-        $account = VpnAccount::with('vpnServer')->findOrFail($id);
+        $account = VpnAccount::with(['vpnServer', 'user'])->findOrFail($id);
         $res = $vpnService->unsuspendAccount($account);
 
         $this->logAudit('admin_vpn_unsuspend', $account, 'success=' . (!empty($res['success']) ? '1' : '0'));
+
+        if (!empty($res['success']) && $account->user) {
+            try {
+                $account->refresh();
+                $account->user->notify(new \App\Notifications\VpnStatusNotification($account, 'unsuspended'));
+                TelegramService::notifyVpnStatusChanged($account, 'unsuspended');
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('VPN unsuspend notification error: ' . $e->getMessage());
+            }
+        }
 
         return back()->with(
             !empty($res['success']) ? 'success' : 'error',

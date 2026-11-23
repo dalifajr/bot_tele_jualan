@@ -733,26 +733,171 @@ class TelegramService
     }
 
     /**
-     * Helper to send Telegram message.
+     * Notify customer via Telegram when Admin suspends or unsuspends their VPN account.
+     */
+    public static function notifyVpnStatusChanged(\App\Models\VpnAccount $account, string $action, ?string $reason = null): bool
+    {
+        $botToken = config('services.telegram.bot_token');
+        if (empty($botToken)) {
+            return false;
+        }
+
+        $account->loadMissing(['user', 'vpnServer']);
+        $user = $account->user;
+        if (!$user || empty($user->telegram_id)) {
+            return false;
+        }
+
+        $proto = strtoupper((string) $account->protocol);
+        $uname = e((string) $account->username);
+        $srv = e((string) ($account->vpnServer?->name ?: $account->display_domain ?: 'Default'));
+        $baseDomain = self::resolveBaseDomain();
+
+        if ($action === 'suspended') {
+            $reasonClean = trim((string) ($reason ?? ''));
+            $adminId = $account->suspended_by_user_id
+                ?: User::where('role', 'admin')->orderBy('id')->value('id');
+            $chatUrl = $adminId ? "{$baseDomain}/chat?contact_id={$adminId}" : "{$baseDomain}/my-vpn";
+
+            $text = "🚫 <b>Akun VPN Anda Disuspend oleh Admin</b>\n\n"
+                . "Protokol: <b>{$proto}</b>\n"
+                . "Username: <code>{$uname}</code>\n"
+                . "Server: {$srv}\n"
+                . ($reasonClean !== '' ? "Alasan: " . e($reasonClean) . "\n" : '')
+                . "\n<i>Akun terkunci sementara dan tidak dapat diaktifkan mandiri. Silakan hubungi Admin melalui Chat untuk informasi atau pengaktifan kembali.</i>";
+
+            return self::sendMessage($user->telegram_id, $text, [
+                'inline_keyboard' => [
+                    [
+                        ['text' => '💬 Chat Admin', 'url' => $chatUrl],
+                        ['text' => '📋 Akun VPN Saya', 'url' => "{$baseDomain}/my-vpn"],
+                    ],
+                ],
+            ]);
+        }
+
+        $expFmt = $account->expired_at ? $account->expired_at->format('d M Y, H:i') . ' WIB' : '-';
+        $text = "✅ <b>Suspend Akun VPN Anda Telah Dibuka!</b>\n\n"
+            . "Protokol: <b>{$proto}</b>\n"
+            . "Username: <code>{$uname}</code>\n"
+            . "Server: {$srv}\n"
+            . "Aktif Hingga: <b>{$expFmt}</b>\n\n"
+            . "<i>Akun VPN Anda kini aktif kembali dan siap digunakan.</i>";
+
+        return self::sendMessage($user->telegram_id, $text, [
+            'inline_keyboard' => [
+                [
+                    ['text' => '🚀 Buka Akun VPN Saya', 'url' => "{$baseDomain}/my-vpn"],
+                ],
+            ],
+        ]);
+    }
+
+    /**
+     * Send QRIS wallet top-up invoice (with dynamic QRIS photo when available) to customer Telegram bot.
+     */
+    public static function notifyCustomerWalletTopupCreated(\App\Models\WalletTopup $topup, ?string $dynamicQris): bool
+    {
+        $botToken = config('services.telegram.bot_token');
+        if (empty($botToken)) {
+            return false;
+        }
+
+        $topup->loadMissing('user');
+        $user = $topup->user;
+        if (!$user || empty($user->telegram_id)) {
+            return false;
+        }
+
+        $amountFmt = number_format((int) $topup->amount, 0, ',', '.');
+        $totalFmt = number_format((int) $topup->total_pay, 0, ',', '.');
+        $uniqueCode = (int) ($topup->unique_code ?? 0);
+        $expiresAt = $topup->expires_at ? $topup->expires_at->format('d M Y, H:i') : '-';
+        $walletUrl = self::resolveBaseDomain() . '/wallet';
+
+        $text = "💳 <b>Tagihan Top-Up Dompet Saldo (QRIS)</b>\n\n"
+            . "Referensi: <code>{$topup->topup_ref}</code>\n"
+            . "Nominal Saldo: <b>Rp {$amountFmt}</b>\n"
+            . "Kode Unik: <code>+{$uniqueCode}</code>\n"
+            . "Total Bayar Tepat: <b>Rp {$totalFmt}</b>\n"
+            . "Batas Pembayaran: {$expiresAt} WIB\n\n";
+
+        $replyMarkup = [
+            'inline_keyboard' => [
+                [
+                    ['text' => '💼 Buka Halaman Dompet', 'url' => $walletUrl],
+                ],
+            ],
+        ];
+
+        if (!empty($dynamicQris)) {
+            $text .= "👇 <b>Scan QRIS di atas dengan nominal tepat Rp {$totalFmt}</b>.\n"
+                . "<i>Saldo dompet akan masuk otomatis segera setelah pembayaran terdeteksi.</i>";
+            $qrImageUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=' . urlencode($dynamicQris);
+
+            try {
+                $response = Http::timeout(10)->post("https://api.telegram.org/bot{$botToken}/sendPhoto", [
+                    'chat_id' => (string) $user->telegram_id,
+                    'photo' => $qrImageUrl,
+                    'caption' => $text,
+                    'parse_mode' => 'HTML',
+                    'reply_markup' => json_encode($replyMarkup),
+                ]);
+
+                if ($response->successful()) {
+                    return true;
+                }
+                Log::warning("Telegram wallet topup QRIS photo failed for chat {$user->telegram_id}: " . $response->body());
+            } catch (\Throwable $e) {
+                Log::warning("Telegram wallet topup QRIS photo error for chat {$user->telegram_id}: " . $e->getMessage());
+            }
+        }
+
+        $text .= "<i>Silakan selesaikan pembayaran melalui halaman Dompet di website.</i>";
+        return self::sendMessage($user->telegram_id, $text, $replyMarkup);
+    }
+
+    /**
+     * Send an HTML Telegram message (with optional inline keyboard reply_markup).
+     */
+    public static function sendMessage(string|int $chatId, string $text, ?array $replyMarkup = null): bool
+    {
+        $botToken = config('services.telegram.bot_token');
+        $chatIdStr = trim((string) $chatId);
+        if (empty($botToken) || $chatIdStr === '') {
+            return false;
+        }
+
+        $payload = [
+            'chat_id' => $chatIdStr,
+            'text' => $text,
+            'parse_mode' => 'HTML',
+            'disable_web_page_preview' => true,
+        ];
+        if (!empty($replyMarkup)) {
+            $payload['reply_markup'] = json_encode($replyMarkup);
+        }
+
+        try {
+            $response = Http::timeout(10)->post("https://api.telegram.org/bot{$botToken}/sendMessage", $payload);
+
+            if (!$response->successful()) {
+                Log::warning("Telegram API failed for chat {$chatIdStr}: " . $response->body());
+                return false;
+            }
+            return true;
+        } catch (\Throwable $e) {
+            Log::error("Gagal mengirim pesan Telegram ke {$chatIdStr}: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Helper to send Telegram message (legacy alias for sendMessage).
      */
     public static function sendTelegramMessage(string $chatId, string $text)
     {
-        $botToken = config('services.telegram.bot_token');
-        if (empty($botToken)) return;
-
-        try {
-            $response = Http::post("https://api.telegram.org/bot{$botToken}/sendMessage", [
-                'chat_id' => $chatId,
-                'text' => $text,
-                'parse_mode' => 'HTML',
-            ]);
-            
-            if (!$response->successful()) {
-                Log::warning("Telegram API failed for chat {$chatId}: " . $response->body());
-            }
-        } catch (\Exception $e) {
-            Log::error("Gagal mengirim pesan Telegram ke {$chatId}: " . $e->getMessage());
-        }
+        return self::sendMessage($chatId, $text);
     }
 }
 

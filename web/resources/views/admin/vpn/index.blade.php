@@ -1577,9 +1577,17 @@
                             <option value="2">Iflix (live.iflix.com)</option>
                         </select>
                     </div>
+                    <div id="vpnSshStructured" class="d-none mb-3"></div>
                     <div id="vpnLinksContainer" class="d-flex flex-column gap-2 mb-3"></div>
-                    <label class="form-label small fw-bold text-muted">{{ __('Teks Konfigurasi Lengkap') }}</label>
-                    <textarea id="vpnConfigFullText" class="form-control font-monospace small" rows="6" readonly></textarea>
+                    <div id="vpnRawTextWrap">
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <label class="form-label small fw-bold text-muted mb-0" id="vpnRawTextLabel">{{ __('Teks Konfigurasi Lengkap') }}</label>
+                            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none small fw-semibold d-none" id="btnToggleVpnRawText">
+                                <i class="fas fa-code me-1"></i><span>{{ __('Lihat Teks Mentah') }}</span>
+                            </button>
+                        </div>
+                        <textarea id="vpnConfigFullText" class="form-control font-monospace small" rows="6" readonly></textarea>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer border-0 pt-1 d-flex justify-content-between">
@@ -1955,12 +1963,148 @@ document.addEventListener('DOMContentLoaded', function () {
         return lines.join('\n');
     }
 
+    function parseSshDetails(payload, fullText) {
+        const text = String(fullText || '');
+        const matchLine = (label) => {
+            const re = new RegExp('^\\s*' + label + '\\s*:\\s*(.+)$', 'im');
+            const m = text.match(re);
+            return m ? m[1].trim() : '';
+        };
+        const sshInfo = (payload && payload.ssh_info && typeof payload.ssh_info === 'object') ? payload.ssh_info : {};
+        const portsObj = (sshInfo.ports && typeof sshInfo.ports === 'object')
+            ? sshInfo.ports
+            : ((payload && payload.ports && typeof payload.ports === 'object') ? payload.ports : {});
+
+        let wsPayload = sshInfo.ws_payload || '';
+        if (!wsPayload) {
+            const pm = text.match(/Payload\s+WS\s*:\s*\r?\n([^\r\n]+)/i);
+            if (pm) wsPayload = pm[1].trim();
+        }
+        const host = sshInfo.host || (payload && payload.domain) || matchLine('Host') || '-';
+        if (!wsPayload && host && host !== '-') {
+            wsPayload = `GET / HTTP/1.1[crlf]Host: ${host}[crlf]Upgrade: websocket[crlf][crlf]`;
+        }
+
+        return {
+            host,
+            username: sshInfo.username || (payload && payload.username) || matchLine('Username') || '-',
+            password: sshInfo.password || matchLine('Password') || '',
+            ipLimit: (payload && payload.ip_limit) ? (payload.ip_limit + ' IP') : (matchLine('IP\\s+Limit') || ''),
+            expiredAt: (payload && payload.expired_at) || matchLine('Expired') || '',
+            ports: [
+                { label: 'OpenSSH', val: String(portsObj.openssh ?? (matchLine('OpenSSH') || '22')) },
+                { label: 'WS TLS', val: String(portsObj.ws_tls ?? (matchLine('WS\\s+TLS') || '443')) },
+                { label: 'WS Non-TLS', val: String(portsObj.ws_ntls ?? (matchLine('WS\\s+NTLS') || '80')) },
+                { label: 'Dropbear', val: String(portsObj.dropbear ?? (matchLine('Dropbear') || '109, 143')) },
+                { label: 'UDP Custom', val: String(portsObj.udp_custom ?? (matchLine('UDP') || '1-65535')) },
+            ],
+            wsPayload,
+        };
+    }
+
+    function renderSshStructuredCard(container, payload, fullText) {
+        const d = parseSshDetails(payload, fullText);
+        const hcTls = d.password ? `${d.host}:443@${d.username}:${d.password}` : `${d.host}:443@${d.username}`;
+        const hcNtls = d.password ? `${d.host}:80@${d.username}:${d.password}` : `${d.host}:80@${d.username}`;
+
+        const metaBadges = [];
+        metaBadges.push('<span class="badge bg-primary-subtle text-primary rounded-pill px-2.5 py-1"><i class="fas fa-terminal me-1"></i>SSH</span>');
+        if (d.ipLimit) metaBadges.push(`<span class="badge bg-secondary-subtle text-body rounded-pill px-2.5 py-1"><i class="fas fa-laptop me-1"></i>${escHtml(d.ipLimit)}</span>`);
+        if (d.expiredAt) metaBadges.push(`<span class="badge bg-success-subtle text-success rounded-pill px-2.5 py-1"><i class="fas fa-calendar-check me-1"></i>Exp: ${escHtml(d.expiredAt)}</span>`);
+
+        const credRow = (label, value, isPass = false) => `
+            <div class="d-flex align-items-center justify-content-between gap-2 py-2 px-3 border-bottom ssh-cred-row">
+                <div class="min-w-0 flex-grow-1">
+                    <div class="text-muted" style="font-size: 0.7rem;">${escHtml(label)}</div>
+                    <div class="font-monospace fw-semibold text-body small text-break ${isPass ? 'ssh-pass-val' : ''}" data-raw="${escHtml(value)}" data-masked="${isPass ? '1' : '0'}">${isPass ? '••••••••' : escHtml(value)}</div>
+                </div>
+                <div class="d-flex align-items-center gap-1 flex-shrink-0">
+                    ${isPass ? '<button type="button" class="btn btn-sm btn-light border rounded-pill px-2 btn-ssh-toggle-pass" title="{{ __("Tampilkan/Sembunyikan") }}"><i class="fas fa-eye"></i></button>' : ''}
+                    <button type="button" class="btn btn-sm btn-light border rounded-pill px-2.5 btn-ssh-copy-val" data-copy="${escHtml(value)}" title="{{ __("Salin") }}"><i class="fas fa-copy"></i></button>
+                </div>
+            </div>
+        `;
+
+        container.innerHTML = `
+            <div class="d-flex flex-wrap align-items-center gap-1.5 mb-2.5">${metaBadges.join('')}</div>
+            <div class="rounded-4 border overflow-hidden mb-3" style="background: var(--surface-container-low);">
+                ${credRow('{{ __("Host / Domain") }}', d.host)}
+                ${credRow('{{ __("Username") }}', d.username)}
+                ${d.password ? credRow('{{ __("Password") }}', d.password, true) : ''}
+                ${credRow('{{ __("Format Cepat (WS TLS 443)") }}', hcTls)}
+                ${credRow('{{ __("Format Cepat (WS Non-TLS 80)") }}', hcNtls)}
+            </div>
+            <div class="mb-3">
+                <div class="small fw-bold text-muted mb-1.5"><i class="fas fa-plug text-primary me-1"></i>{{ __("Port Layanan") }}</div>
+                <div class="row g-1.5">
+                    ${d.ports.map(p => `
+                        <div class="col-6 col-sm-4">
+                            <div class="p-2 rounded-3 border d-flex align-items-center justify-content-between gap-1" style="background: var(--surface-container-lowest);">
+                                <span class="text-muted" style="font-size: 0.72rem;">${escHtml(p.label)}</span>
+                                <span class="font-monospace fw-bold text-body" style="font-size: 0.78rem;">${escHtml(p.val)}</span>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            ${d.wsPayload ? `
+            <div class="p-2.5 rounded-4 border" style="background: var(--surface-container-low);">
+                <div class="d-flex align-items-center justify-content-between gap-2 mb-1.5">
+                    <span class="small fw-bold text-muted"><i class="fas fa-bolt text-warning me-1"></i>{{ __("Payload WebSocket (WS)") }}</span>
+                    <button type="button" class="btn btn-sm btn-light border rounded-pill px-2.5 py-0.5 small fw-semibold btn-ssh-copy-val" data-copy="${escHtml(d.wsPayload)}">
+                        <i class="fas fa-copy me-1"></i>{{ __("Salin Payload") }}
+                    </button>
+                </div>
+                <div class="font-monospace small p-2 rounded-3 bg-white border text-break" style="font-size: 0.76rem; line-height: 1.45;">${escHtml(d.wsPayload)}</div>
+            </div>` : ''}
+        `;
+
+        const lastRow = container.querySelector('.ssh-cred-row:last-child');
+        if (lastRow) lastRow.classList.remove('border-bottom');
+
+        container.querySelectorAll('.btn-ssh-copy-val').forEach(btn => {
+            btn.addEventListener('click', function () {
+                navigator.clipboard?.writeText(this.dataset.copy || '');
+                const orig = this.innerHTML;
+                this.innerHTML = '<i class="fas fa-check text-success"></i>';
+                setTimeout(() => { this.innerHTML = orig; }, 1400);
+            });
+        });
+
+        container.querySelectorAll('.btn-ssh-toggle-pass').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const row = this.closest('.ssh-cred-row');
+                const valEl = row?.querySelector('.ssh-pass-val');
+                if (!valEl) return;
+                const masked = valEl.dataset.masked === '1';
+                valEl.textContent = masked ? (valEl.dataset.raw || '') : '••••••••';
+                valEl.dataset.masked = masked ? '0' : '1';
+                this.innerHTML = masked ? '<i class="fas fa-eye-slash"></i>' : '<i class="fas fa-eye"></i>';
+            });
+        });
+    }
+
+    const vpnRawTextarea = document.getElementById('vpnConfigFullText');
+    const btnToggleVpnRaw = document.getElementById('btnToggleVpnRawText');
+    btnToggleVpnRaw?.addEventListener('click', function () {
+        if (!vpnRawTextarea) return;
+        const hidden = vpnRawTextarea.classList.toggle('d-none');
+        this.querySelector('span').textContent = hidden ? '{{ __("Lihat Teks Mentah") }}' : '{{ __("Sembunyikan Teks Mentah") }}';
+    });
+
     function renderVpnConfigPayload(title, payload, fullText, overrideSni = null) {
         document.getElementById('vpnConfigViewerTitle').textContent = title || 'VPN Config';
         activeConfigState = { title, payload, fullText };
 
         let linksObj = (payload && payload.links && typeof payload.links === 'object') ? payload.links : null;
         let textToShow = fullText || '';
+
+        const isSsh = !!(
+            (payload && String(payload.protocol || '').toLowerCase() === 'ssh') ||
+            (payload && payload.ssh_info) ||
+            /^SSH\b/i.test(String(title || '')) ||
+            /===\s*SSH ACCOUNT\s*===/i.test(textToShow)
+        );
 
         const canSwitchSni = !!(payload && payload.protocol && payload.protocol !== 'ssh' && payload.domain && payload.uuid);
         if (configSniWrap && configSniSelect) {
@@ -1980,10 +2124,32 @@ document.addEventListener('DOMContentLoaded', function () {
 
         document.getElementById('vpnConfigFullText').value = textToShow;
 
+        const sshWrap = document.getElementById('vpnSshStructured');
         const linksWrap = document.getElementById('vpnLinksContainer');
         const qrWrap = document.getElementById('vpnQrContainer');
         const qrCanvas = document.getElementById('vpnConfigQrCanvas');
         linksWrap.innerHTML = '';
+
+        if (isSsh && sshWrap) {
+            qrWrap.classList.add('d-none');
+            linksWrap.classList.add('d-none');
+            sshWrap.classList.remove('d-none');
+            renderSshStructuredCard(sshWrap, payload, textToShow);
+            if (vpnRawTextarea) vpnRawTextarea.classList.add('d-none');
+            if (btnToggleVpnRaw) {
+                btnToggleVpnRaw.classList.remove('d-none');
+                btnToggleVpnRaw.querySelector('span').textContent = '{{ __("Lihat Teks Mentah") }}';
+            }
+            return;
+        }
+
+        if (sshWrap) {
+            sshWrap.classList.add('d-none');
+            sshWrap.innerHTML = '';
+        }
+        linksWrap.classList.remove('d-none');
+        if (vpnRawTextarea) vpnRawTextarea.classList.remove('d-none');
+        if (btnToggleVpnRaw) btnToggleVpnRaw.classList.add('d-none');
 
         let primaryLink = '';
         if (linksObj && typeof linksObj === 'object') {

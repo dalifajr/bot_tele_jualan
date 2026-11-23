@@ -138,7 +138,7 @@ class WalletController extends Controller
         $ref = 'TOP' . now()->format('ymdHis') . strtoupper(substr(md5(uniqid('', true)), 0, 4));
         $expiryMinutes = max(15, (int) (BotSetting::where('key', 'checkout_expiry_minutes')->value('value') ?? 30));
 
-        WalletTopup::create([
+        $topup = WalletTopup::create([
             'user_id' => $user->id,
             'topup_ref' => $ref,
             'amount' => $amount,
@@ -148,6 +148,17 @@ class WalletController extends Controller
             'status' => 'pending',
             'expires_at' => now()->addMinutes($expiryMinutes),
         ]);
+
+        // Send QRIS invoice to customer's linked Telegram bot
+        try {
+            $staticQris = BotSetting::where('key', 'qris_static_payload')->value('value');
+            $dynamicQris = (!empty($staticQris) && $totalPay > 0)
+                ? QrisService::buildDynamicPayload($staticQris, $totalPay)
+                : null;
+            TelegramService::notifyCustomerWalletTopupCreated($topup, $dynamicQris);
+        } catch (\Throwable $e) {
+            Log::warning("Wallet topup QRIS Telegram notify error for {$ref}: " . $e->getMessage());
+        }
 
         return redirect()->route('wallet.index')
             ->with('success', __('Permintaan top-up :ref dibuat. Scan QRIS atau transfer tepat Rp:total untuk verifikasi otomatis.', [
@@ -338,6 +349,20 @@ class WalletController extends Controller
             'created_at' => now(),
         ]);
 
+        // Always notify customer in Website Notification Hub
+        try {
+            $targetUser->refresh();
+            $targetUser->notify(new \App\Notifications\WalletActivityNotification(
+                $actionType === 'debit' ? 'admin_debit' : 'admin_credit',
+                $amount,
+                (int) $targetUser->customer_wallet_balance,
+                $ref,
+                $note
+            ));
+        } catch (\Throwable $e) {
+            Log::warning('Notification Hub error on admin wallet inject/adjust: ' . $e->getMessage());
+        }
+
         if ($shouldNotify) {
             try {
                 if (!empty($targetUser->telegram_id)) {
@@ -383,12 +408,32 @@ class WalletController extends Controller
 
     public function adminRejectTopup($id)
     {
-        $topup = WalletTopup::findOrFail($id);
+        $topup = WalletTopup::with('user')->findOrFail($id);
         if ($topup->status !== 'pending') {
             return redirect()->back()->with('error', __('Permintaan top-up ini sudah diproses sebelumnya.'));
         }
 
         $topup->update(['status' => 'cancelled']);
+
+        if ($topup->user) {
+            try {
+                $amountFmt = number_format((int) $topup->amount, 0, ',', '.');
+                $topup->user->notify(new \App\Notifications\WalletActivityNotification(
+                    'topup_rejected',
+                    (int) $topup->amount,
+                    (int) ($topup->user->customer_wallet_balance ?? 0),
+                    (string) $topup->topup_ref
+                ));
+                if (!empty($topup->user->telegram_id)) {
+                    TelegramService::sendMessage(
+                        $topup->user->telegram_id,
+                        "❌ <b>Permintaan Top-Up Dibatalkan oleh Admin</b>\n\nReferensi: <code>{$topup->topup_ref}</code>\nNominal: <b>Rp {$amountFmt}</b>\n\nSilakan buat permintaan top-up baru di menu Dompet bila diperlukan."
+                    );
+                }
+            } catch (\Throwable $e) {
+                Log::warning('Wallet topup reject notify error: ' . $e->getMessage());
+            }
+        }
 
         return redirect()->back()->with('success', __('Permintaan top-up :ref dibatalkan oleh Admin.', ['ref' => $topup->topup_ref]));
     }

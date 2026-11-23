@@ -144,19 +144,27 @@ class WalletService
             return $locked->fresh('user');
         });
 
-        // Notify user via Telegram if linked
+        // Notify user via Website Notification Hub & Telegram if linked
         try {
             $user = $topup->user;
-            if ($user && !empty($user->telegram_id)) {
-                $amountFmt = number_format((int) $topup->amount, 0, ',', '.');
-                $balanceFmt = number_format((int) ($user->customer_wallet_balance ?? 0), 0, ',', '.');
-                TelegramService::sendMessage(
-                    $user->telegram_id,
-                    "✅ <b>Top-Up Dompet Saldo Berhasil!</b>\n\nReferensi: <code>{$topup->topup_ref}</code>\nNominal Masuk: <b>Rp {$amountFmt}</b>\nSaldo Dompet Sekarang: <b>Rp {$balanceFmt}</b>\n\nSaldo siap digunakan untuk checkout instan 1-klik."
-                );
+            if ($user) {
+                $user->notify(new \App\Notifications\WalletActivityNotification(
+                    'topup_paid',
+                    (int) $topup->amount,
+                    (int) ($user->customer_wallet_balance ?? 0),
+                    (string) $topup->topup_ref
+                ));
+                if (!empty($user->telegram_id)) {
+                    $amountFmt = number_format((int) $topup->amount, 0, ',', '.');
+                    $balanceFmt = number_format((int) ($user->customer_wallet_balance ?? 0), 0, ',', '.');
+                    TelegramService::sendMessage(
+                        $user->telegram_id,
+                        "✅ <b>Top-Up Dompet Saldo Berhasil!</b>\n\nReferensi: <code>{$topup->topup_ref}</code>\nNominal Masuk: <b>Rp {$amountFmt}</b>\nSaldo Dompet Sekarang: <b>Rp {$balanceFmt}</b>\n\nSaldo siap digunakan untuk checkout instan 1-klik."
+                    );
+                }
             }
         } catch (\Throwable $e) {
-            Log::warning('Failed to notify Telegram on wallet topup confirmation: ' . $e->getMessage());
+            Log::warning('Failed to notify user on wallet topup confirmation: ' . $e->getMessage());
         }
 
         return $topup;

@@ -662,9 +662,6 @@
             <form action="{{ route('vpn.store') }}" method="POST">
                 @csrf
                 <div class="modal-body pt-2">
-                    <div class="alert alert-info border-0 py-2 px-3 small mb-3" style="border-radius: 12px;">
-                        <i class="fas fa-wallet me-1"></i>{{ __('Pembayaran instan memotong Saldo Dompet Anda:') }} <strong>Rp {{ number_format((int) (Auth::user()->customer_wallet_balance ?? 0), 0, ',', '.') }}</strong>.
-                    </div>
                     <div class="mb-2.5">
                         <label class="form-label small fw-bold">{{ __('Pilih Paket VPN') }} <span class="text-danger">*</span></label>
                         <select name="product_id" id="custCreateProduct" class="form-select" required>
@@ -674,6 +671,7 @@
                                         data-protocol="{{ $vpProtos[0] ?? $vp->vpn_protocol }}"
                                         data-protocols='@json($vpProtos)'
                                         data-sni-mode="{{ $vp->vpn_sni_mode ?? '3' }}"
+                                        data-price="{{ max(0, (int) $vp->price) }}"
                                         data-check-url="{{ route('catalog.check-vpn-username', $vp->id) }}">
                                     {{ $vp->name }} — {{ strtoupper(implode('/', $vpProtos)) }} ({{ $vp->vpn_duration_days }} {{ __('hari') }}) — {{ $vp->formatted_price }}
                                 </option>
@@ -698,7 +696,7 @@
                         <label class="form-label small fw-bold">{{ __('Password SSH') }} <span class="text-danger">*</span></label>
                         <input type="text" name="password" id="custSshPassword" class="form-control font-monospace" minlength="3" maxlength="64" placeholder="{{ __('Minimal 3 karakter, tanpa spasi') }}">
                     </div>
-                    <div class="mb-0" id="custSniWrap">
+                    <div class="mb-3" id="custSniWrap">
                         <label class="form-label small fw-bold">{{ __('Preset / Custom SNI') }}</label>
                         <select name="sni_mode" id="custCreateSniMode" class="form-select">
                             <option value="3">{{ __('Tanpa Konfigurasi (Default SNI)') }}</option>
@@ -706,6 +704,49 @@
                             <option value="2">Iflix (live.iflix.com)</option>
                         </select>
                         <div class="form-text small">{{ __('Pilih profil SNI sesuai kebutuhan koneksi Anda.') }}</div>
+                    </div>
+
+                    {{-- Cost Summary + Payment Method (Wallet vs Direct QRIS) --}}
+                    <div class="p-3 rounded-4 border small d-flex flex-column gap-1.5 mb-2.5" style="background: var(--surface-container-low);">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <span class="text-muted">{{ __('Harga Paket:') }}</span>
+                            <strong class="text-primary fs-6" id="custCreateCostPreview">-</strong>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between border-top pt-1.5 mt-0.5">
+                            <span class="text-muted">{{ __('Saldo Dompet Anda:') }}</span>
+                            <span class="fw-semibold text-body">Rp {{ number_format((int) (Auth::user()->customer_wallet_balance ?? 0), 0, ',', '.') }}</span>
+                        </div>
+                    </div>
+
+                    <div id="custCreatePayMethodWrap" class="mb-2">
+                        <label class="form-label small fw-bold mb-1.5">{{ __('Metode Pembayaran') }} <span class="text-danger">*</span></label>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <label class="d-flex align-items-start gap-2 p-2.5 rounded-4 border h-100" id="custCreateWalletCard" style="cursor: pointer; background: var(--surface-container-lowest);">
+                                    <input class="form-check-input mt-0.5 flex-shrink-0" type="radio" name="payment_method" id="custCreatePayWallet" value="wallet" checked>
+                                    <span class="min-w-0">
+                                        <span class="d-block small fw-bold text-body"><i class="fas fa-wallet text-primary me-1"></i>{{ __('Dompet Saldo') }}</span>
+                                        <span class="d-block text-muted" style="font-size: 0.72rem;" id="custCreateWalletHint">{{ __('Langsung aktif instan') }}</span>
+                                    </span>
+                                </label>
+                            </div>
+                            <div class="col-6">
+                                <label class="d-flex align-items-start gap-2 p-2.5 rounded-4 border h-100" id="custCreateQrisCard" style="cursor: pointer; background: var(--surface-container-lowest);">
+                                    <input class="form-check-input mt-0.5 flex-shrink-0" type="radio" name="payment_method" id="custCreatePayQris" value="qris">
+                                    <span class="min-w-0">
+                                        <span class="d-block small fw-bold text-body"><i class="fas fa-qrcode text-success me-1"></i>{{ __('Bayar QRIS') }}</span>
+                                        <span class="d-block text-muted" style="font-size: 0.72rem;">{{ __('Scan QRIS otomatis') }}</span>
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="custCreateLowBalanceAlert" class="alert alert-info border-0 py-2 px-3 small d-none mb-0" style="border-radius: 12px;">
+                        <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
+                            <span><i class="fas fa-info-circle me-1"></i>{{ __('Saldo dompet kurang untuk paket ini. Gunakan Bayar QRIS langsung atau isi saldo.') }}</span>
+                            <a href="{{ route('wallet.index') }}" class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-semibold">{{ __('Isi Saldo') }}</a>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer border-0 pt-1">
@@ -834,9 +875,17 @@
                             <option value="2">Iflix (live.iflix.com)</option>
                         </select>
                     </div>
+                    <div id="myVpnSshStructured" class="d-none mb-3"></div>
                     <div id="myVpnLinksWrap" class="d-flex flex-column gap-2 mb-3"></div>
-                    <label class="form-label small fw-bold text-muted">{{ __('Detail Konfigurasi') }}</label>
-                    <textarea id="myVpnFullText" class="form-control font-monospace small" rows="6" readonly></textarea>
+                    <div id="myVpnRawTextWrap">
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <label class="form-label small fw-bold text-muted mb-0">{{ __('Detail Konfigurasi') }}</label>
+                            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none small fw-semibold d-none" id="btnToggleMyVpnRawText">
+                                <i class="fas fa-code me-1"></i><span>{{ __('Lihat Teks Mentah') }}</span>
+                            </button>
+                        </div>
+                        <textarea id="myVpnFullText" class="form-control font-monospace small" rows="6" readonly></textarea>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer border-0 pt-1 d-flex justify-content-between">
@@ -964,10 +1013,56 @@ document.addEventListener('DOMContentLoaded', function () {
         }, 450);
     };
 
+    const custWalletBalance = {{ (int) (Auth::user()->customer_wallet_balance ?? 0) }};
+    const custCreateCostEl = document.getElementById('custCreateCostPreview');
+    const custCreatePayWrap = document.getElementById('custCreatePayMethodWrap');
+    const custCreatePayWallet = document.getElementById('custCreatePayWallet');
+    const custCreatePayQris = document.getElementById('custCreatePayQris');
+    const custCreateWalletCard = document.getElementById('custCreateWalletCard');
+    const custCreateQrisCard = document.getElementById('custCreateQrisCard');
+    const custCreateWalletHint = document.getElementById('custCreateWalletHint');
+    const custCreateLowBalAlert = document.getElementById('custCreateLowBalanceAlert');
+
+    const syncCreatePaymentUI = (autoSwitch = false) => {
+        if (!prodSelect) return;
+        const opt = prodSelect.options[prodSelect.selectedIndex];
+        const price = Math.max(0, parseInt(opt?.dataset?.price || '0', 10) || 0);
+        if (custCreateCostEl) {
+            custCreateCostEl.textContent = price > 0 ? ('Rp ' + price.toLocaleString('id-ID')) : '{{ __("Gratis") }}';
+        }
+        const insufficient = price > 0 && custWalletBalance < price;
+        if (custCreatePayWrap) custCreatePayWrap.classList.toggle('d-none', price <= 0);
+        if (custCreateWalletHint) {
+            custCreateWalletHint.textContent = insufficient ? '{{ __("Saldo kurang") }}' : '{{ __("Langsung aktif instan") }}';
+            custCreateWalletHint.className = 'd-block ' + (insufficient ? 'text-danger fw-semibold' : 'text-muted');
+        }
+        if (autoSwitch && insufficient && custCreatePayQris) {
+            custCreatePayQris.checked = true;
+        } else if (autoSwitch && !insufficient && custCreatePayWallet) {
+            custCreatePayWallet.checked = true;
+        }
+        const useQris = price > 0 && !!(custCreatePayQris && custCreatePayQris.checked);
+        custCreateWalletCard?.classList.toggle('border-primary', !useQris);
+        custCreateQrisCard?.classList.toggle('border-success', useQris);
+        custCreateLowBalAlert?.classList.toggle('d-none', !insufficient);
+        if (custCreateSubmitBtn) {
+            custCreateSubmitBtn.textContent = useQris ? '{{ __("Bayar via QRIS") }}' : '{{ __("Buat & Aktifkan") }}';
+        }
+    };
+
+    custCreatePayWallet?.addEventListener('change', () => syncCreatePaymentUI(false));
+    custCreatePayQris?.addEventListener('change', () => syncCreatePaymentUI(false));
+
     if (prodSelect) {
-        prodSelect.addEventListener('change', function () { syncProductProtocols(); toggleSsh(); triggerCustUsernameCheck(); });
+        prodSelect.addEventListener('change', function () {
+            syncProductProtocols();
+            toggleSsh();
+            syncCreatePaymentUI(true);
+            triggerCustUsernameCheck();
+        });
         syncProductProtocols();
         toggleSsh();
+        syncCreatePaymentUI(true);
     }
     custProtoSelect?.addEventListener('change', function () { toggleSsh(); triggerCustUsernameCheck(); });
     custUserInput?.addEventListener('input', triggerCustUsernameCheck);
@@ -976,7 +1071,6 @@ document.addEventListener('DOMContentLoaded', function () {
     let custRenewBaseExpiry = null;
     let custRenewBasePrice = 0;
     let custRenewBaseDays = 30;
-    const custWalletBalance = {{ (int) (Auth::user()->customer_wallet_balance ?? 0) }};
     const custRenewDays = document.getElementById('custRenewDaysInput');
     const custRenewPreview = document.getElementById('custRenewExpiryPreview');
     const custRenewCostEl = document.getElementById('custRenewCostPreview');
@@ -1162,12 +1256,148 @@ document.addEventListener('DOMContentLoaded', function () {
         return lines.join('\n');
     }
 
+    function parseMySshDetails(payload, fullText) {
+        const text = String(fullText || '');
+        const matchLine = (label) => {
+            const re = new RegExp('^\\s*' + label + '\\s*:\\s*(.+)$', 'im');
+            const m = text.match(re);
+            return m ? m[1].trim() : '';
+        };
+        const sshInfo = (payload && payload.ssh_info && typeof payload.ssh_info === 'object') ? payload.ssh_info : {};
+        const portsObj = (sshInfo.ports && typeof sshInfo.ports === 'object')
+            ? sshInfo.ports
+            : ((payload && payload.ports && typeof payload.ports === 'object') ? payload.ports : {});
+
+        let wsPayload = sshInfo.ws_payload || '';
+        if (!wsPayload) {
+            const pm = text.match(/Payload\s+WS\s*:\s*\r?\n([^\r\n]+)/i);
+            if (pm) wsPayload = pm[1].trim();
+        }
+        const host = sshInfo.host || (payload && payload.domain) || matchLine('Host') || '-';
+        if (!wsPayload && host && host !== '-') {
+            wsPayload = `GET / HTTP/1.1[crlf]Host: ${host}[crlf]Upgrade: websocket[crlf][crlf]`;
+        }
+
+        return {
+            host,
+            username: sshInfo.username || (payload && payload.username) || matchLine('Username') || '-',
+            password: sshInfo.password || matchLine('Password') || '',
+            ipLimit: (payload && payload.ip_limit) ? (payload.ip_limit + ' IP') : (matchLine('IP\\s+Limit') || ''),
+            expiredAt: (payload && payload.expired_at) || matchLine('Expired') || '',
+            ports: [
+                { label: 'OpenSSH', val: String(portsObj.openssh ?? (matchLine('OpenSSH') || '22')) },
+                { label: 'WS TLS', val: String(portsObj.ws_tls ?? (matchLine('WS\\s+TLS') || '443')) },
+                { label: 'WS Non-TLS', val: String(portsObj.ws_ntls ?? (matchLine('WS\\s+NTLS') || '80')) },
+                { label: 'Dropbear', val: String(portsObj.dropbear ?? (matchLine('Dropbear') || '109, 143')) },
+                { label: 'UDP Custom', val: String(portsObj.udp_custom ?? (matchLine('UDP') || '1-65535')) },
+            ],
+            wsPayload,
+        };
+    }
+
+    function renderMySshStructuredCard(container, payload, fullText) {
+        const d = parseMySshDetails(payload, fullText);
+        const hcTls = d.password ? `${d.host}:443@${d.username}:${d.password}` : `${d.host}:443@${d.username}`;
+        const hcNtls = d.password ? `${d.host}:80@${d.username}:${d.password}` : `${d.host}:80@${d.username}`;
+
+        const metaBadges = [];
+        metaBadges.push('<span class="badge bg-primary-subtle text-primary rounded-pill px-2.5 py-1"><i class="fas fa-terminal me-1"></i>SSH</span>');
+        if (d.ipLimit) metaBadges.push(`<span class="badge bg-secondary-subtle text-body rounded-pill px-2.5 py-1"><i class="fas fa-laptop me-1"></i>${escHtml(d.ipLimit)}</span>`);
+        if (d.expiredAt) metaBadges.push(`<span class="badge bg-success-subtle text-success rounded-pill px-2.5 py-1"><i class="fas fa-calendar-check me-1"></i>Exp: ${escHtml(d.expiredAt)}</span>`);
+
+        const credRow = (label, value, isPass = false) => `
+            <div class="d-flex align-items-center justify-content-between gap-2 py-2 px-3 border-bottom my-ssh-cred-row">
+                <div class="min-w-0 flex-grow-1">
+                    <div class="text-muted" style="font-size: 0.7rem;">${escHtml(label)}</div>
+                    <div class="font-monospace fw-semibold text-body small text-break ${isPass ? 'my-ssh-pass-val' : ''}" data-raw="${escHtml(value)}" data-masked="${isPass ? '1' : '0'}">${isPass ? '••••••••' : escHtml(value)}</div>
+                </div>
+                <div class="d-flex align-items-center gap-1 flex-shrink-0">
+                    ${isPass ? '<button type="button" class="btn btn-sm btn-light border rounded-pill px-2 btn-my-ssh-toggle-pass" title="{{ __("Tampilkan/Sembunyikan") }}"><i class="fas fa-eye"></i></button>' : ''}
+                    <button type="button" class="btn btn-sm btn-light border rounded-pill px-2.5 btn-my-ssh-copy-val" data-copy="${escHtml(value)}" title="{{ __("Salin") }}"><i class="fas fa-copy"></i></button>
+                </div>
+            </div>
+        `;
+
+        container.innerHTML = `
+            <div class="d-flex flex-wrap align-items-center gap-1.5 mb-2.5">${metaBadges.join('')}</div>
+            <div class="rounded-4 border overflow-hidden mb-3" style="background: var(--surface-container-low);">
+                ${credRow('{{ __("Host / Domain") }}', d.host)}
+                ${credRow('{{ __("Username") }}', d.username)}
+                ${d.password ? credRow('{{ __("Password") }}', d.password, true) : ''}
+                ${credRow('{{ __("Format Cepat (WS TLS 443)") }}', hcTls)}
+                ${credRow('{{ __("Format Cepat (WS Non-TLS 80)") }}', hcNtls)}
+            </div>
+            <div class="mb-3">
+                <div class="small fw-bold text-muted mb-1.5"><i class="fas fa-plug text-primary me-1"></i>{{ __("Port Layanan") }}</div>
+                <div class="row g-1.5">
+                    ${d.ports.map(p => `
+                        <div class="col-6 col-sm-4">
+                            <div class="p-2 rounded-3 border d-flex align-items-center justify-content-between gap-1" style="background: var(--surface-container-lowest);">
+                                <span class="text-muted" style="font-size: 0.72rem;">${escHtml(p.label)}</span>
+                                <span class="font-monospace fw-bold text-body" style="font-size: 0.78rem;">${escHtml(p.val)}</span>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            ${d.wsPayload ? `
+            <div class="p-2.5 rounded-4 border" style="background: var(--surface-container-low);">
+                <div class="d-flex align-items-center justify-content-between gap-2 mb-1.5">
+                    <span class="small fw-bold text-muted"><i class="fas fa-bolt text-warning me-1"></i>{{ __("Payload WebSocket (WS)") }}</span>
+                    <button type="button" class="btn btn-sm btn-light border rounded-pill px-2.5 py-0.5 small fw-semibold btn-my-ssh-copy-val" data-copy="${escHtml(d.wsPayload)}">
+                        <i class="fas fa-copy me-1"></i>{{ __("Salin Payload") }}
+                    </button>
+                </div>
+                <div class="font-monospace small p-2 rounded-3 bg-white border text-break" style="font-size: 0.76rem; line-height: 1.45;">${escHtml(d.wsPayload)}</div>
+            </div>` : ''}
+        `;
+
+        const lastRow = container.querySelector('.my-ssh-cred-row:last-child');
+        if (lastRow) lastRow.classList.remove('border-bottom');
+
+        container.querySelectorAll('.btn-my-ssh-copy-val').forEach(btn => {
+            btn.addEventListener('click', function () {
+                navigator.clipboard?.writeText(this.dataset.copy || '');
+                const orig = this.innerHTML;
+                this.innerHTML = '<i class="fas fa-check text-success"></i>';
+                setTimeout(() => { this.innerHTML = orig; }, 1400);
+            });
+        });
+
+        container.querySelectorAll('.btn-my-ssh-toggle-pass').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const row = this.closest('.my-ssh-cred-row');
+                const valEl = row?.querySelector('.my-ssh-pass-val');
+                if (!valEl) return;
+                const masked = valEl.dataset.masked === '1';
+                valEl.textContent = masked ? (valEl.dataset.raw || '') : '••••••••';
+                valEl.dataset.masked = masked ? '0' : '1';
+                this.innerHTML = masked ? '<i class="fas fa-eye-slash"></i>' : '<i class="fas fa-eye"></i>';
+            });
+        });
+    }
+
+    const myRawTextarea = document.getElementById('myVpnFullText');
+    const btnToggleMyRaw = document.getElementById('btnToggleMyVpnRawText');
+    btnToggleMyRaw?.addEventListener('click', function () {
+        if (!myRawTextarea) return;
+        const hidden = myRawTextarea.classList.toggle('d-none');
+        this.querySelector('span').textContent = hidden ? '{{ __("Lihat Teks Mentah") }}' : '{{ __("Sembunyikan Teks Mentah") }}';
+    });
+
     function renderMyVpnConfig(title, payload, fullText, overrideSni = null) {
         document.getElementById('myVpnConfigTitle').textContent = title || 'VPN Config';
         activeMyConfigState = { title, payload, fullText };
 
         let linksObj = (payload && payload.links && typeof payload.links === 'object') ? payload.links : null;
         let textToShow = fullText || '';
+
+        const isSsh = !!(
+            (payload && String(payload.protocol || '').toLowerCase() === 'ssh') ||
+            (payload && payload.ssh_info) ||
+            /^SSH\b/i.test(String(title || '')) ||
+            /===\s*SSH ACCOUNT\s*===/i.test(textToShow)
+        );
 
         const canSwitchSni = !!(payload && payload.protocol && payload.protocol !== 'ssh' && payload.domain && payload.uuid);
         if (myConfigSniWrap && myConfigSniSelect) {
@@ -1187,10 +1417,32 @@ document.addEventListener('DOMContentLoaded', function () {
 
         document.getElementById('myVpnFullText').value = textToShow;
 
+        const sshWrap = document.getElementById('myVpnSshStructured');
         const linksWrap = document.getElementById('myVpnLinksWrap');
         const qrWrap = document.getElementById('myVpnQrWrap');
         const qrCanvas = document.getElementById('myVpnQrCanvas');
         linksWrap.innerHTML = '';
+
+        if (isSsh && sshWrap) {
+            qrWrap.classList.add('d-none');
+            linksWrap.classList.add('d-none');
+            sshWrap.classList.remove('d-none');
+            renderMySshStructuredCard(sshWrap, payload, textToShow);
+            if (myRawTextarea) myRawTextarea.classList.add('d-none');
+            if (btnToggleMyRaw) {
+                btnToggleMyRaw.classList.remove('d-none');
+                btnToggleMyRaw.querySelector('span').textContent = '{{ __("Lihat Teks Mentah") }}';
+            }
+            return;
+        }
+
+        if (sshWrap) {
+            sshWrap.classList.add('d-none');
+            sshWrap.innerHTML = '';
+        }
+        linksWrap.classList.remove('d-none');
+        if (myRawTextarea) myRawTextarea.classList.remove('d-none');
+        if (btnToggleMyRaw) btnToggleMyRaw.classList.add('d-none');
 
         let primaryLink = '';
         if (linksObj && typeof linksObj === 'object') {

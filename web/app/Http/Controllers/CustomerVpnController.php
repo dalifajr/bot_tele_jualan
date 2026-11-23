@@ -124,10 +124,20 @@ class CustomerVpnController extends Controller
             $account->refresh();
         }
 
+        $payload = is_array($account->config_payload) ? $account->config_payload : null;
+        if ($account->protocol === 'ssh' && !empty($account->password)) {
+            $payload = is_array($payload) ? $payload : ['protocol' => 'ssh', 'username' => $account->username, 'domain' => $account->display_domain];
+            $sshInfo = is_array($payload['ssh_info'] ?? null) ? $payload['ssh_info'] : ['host' => $account->display_domain, 'username' => $account->username];
+            if (empty($sshInfo['password'])) {
+                $sshInfo['password'] = $account->password;
+            }
+            $payload['ssh_info'] = $sshInfo;
+        }
+
         return response()->json([
             'success' => true,
             'title' => strtoupper($account->protocol) . ' — ' . $account->username,
-            'config_payload' => $account->config_payload,
+            'config_payload' => $payload,
             'config_link' => $account->config_link ?: __('Konfigurasi belum tersedia dari server VPN.'),
         ]);
     }
@@ -159,6 +169,7 @@ class CustomerVpnController extends Controller
             'username' => ['required', 'string', 'regex:/^[a-zA-Z0-9_-]{3,24}$/'],
             'password' => ['nullable', 'string', 'min:3', 'max:64', 'regex:/^[^\r\n\0\s]+$/'],
             'sni_mode' => 'nullable|in:1,2,3',
+            'payment_method' => 'nullable|in:wallet,qris',
         ]);
 
         $product = Product::with('vpnServer')->findOrFail($validated['product_id']);
@@ -194,6 +205,85 @@ class CustomerVpnController extends Controller
         $sniMode = (string) ($validated['sni_mode'] ?? $product->vpn_sni_mode ?? '3');
         if (!in_array($sniMode, ['1', '2', '3'], true)) {
             $sniMode = '3';
+        }
+        $paymentMethod = (string) ($validated['payment_method'] ?? 'wallet');
+
+        // Direct QRIS payment mode: create pending Order + Payment -> redirect to QRIS checkout.success; auto-provision runs on confirmPayment()!
+        if ($paymentMethod === 'qris' && $price > 0) {
+            $pendingCount = Order::where('customer_id', $userId)->where('status', 'pending_payment')->count();
+            if ($pendingCount >= 5) {
+                return back()->with('error', __('Anda memiliki terlalu banyak pesanan yang menunggu pembayaran. Silakan selesaikan atau batalkan pesanan sebelumnya.'));
+            }
+
+            try {
+                DB::beginTransaction();
+
+                $uniqueCode = rand(1, 200);
+                $totalAmount = $price + $uniqueCode;
+                $orderRef = 'ORD' . now()->format('ymdHis') . strtoupper(substr(md5(uniqid('', true)), 0, 5));
+                $expiryMinutes = (int) (BotSetting::where('key', 'checkout_expiry_minutes')->value('value') ?? 15);
+
+                $order = Order::create([
+                    'order_ref' => $orderRef,
+                    'customer_id' => $userId,
+                    'subtotal' => $price,
+                    'discount_amount' => 0,
+                    'unique_code' => $uniqueCode,
+                    'total_amount' => $totalAmount,
+                    'status' => 'pending_payment',
+                    'expires_at' => now()->addMinutes($expiryMinutes),
+                ]);
+
+                OrderItem::create([
+                    'order_id' => $order->id,
+                    'product_id' => $product->id,
+                    'quantity' => 1,
+                    'unit_price' => $price,
+                    'vpn_username' => $validated['username'],
+                    'vpn_password' => $validated['password'] ?? null,
+                    'vpn_meta' => [
+                        'label' => $product->name . ' — ' . strtoupper($chosenProto) . ' (' . $validated['username'] . ') ' . $days . ' Hari',
+                        'server_id' => $server->exists ? $server->id : null,
+                        'protocol' => $chosenProto,
+                        'days' => $days,
+                        'quota_gb' => $quotaGb,
+                        'ip_limit' => $ipLimit,
+                        'sni_mode' => $sniMode,
+                    ],
+                ]);
+
+                Payment::create([
+                    'order_id' => $order->id,
+                    'payment_ref' => 'PAY-' . $orderRef,
+                    'expected_amount' => $totalAmount,
+                    'status' => 'pending',
+                ]);
+
+                DB::commit();
+
+                try {
+                    $order->load(['customer', 'items.product']);
+                    $staticQris = BotSetting::where('key', 'qris_static_payload')->value('value');
+                    $dynamicQris = (!empty($staticQris) && $totalAmount > 0)
+                        ? \App\Services\QrisService::buildDynamicPayload($staticQris, $totalAmount)
+                        : null;
+                    TelegramService::notifyAdminNewOrder($order);
+                    TelegramService::notifyCustomerNewOrder($order, $dynamicQris);
+                    User::where('role', 'admin')->get()->each(fn ($a) => $a->notify(new OrderCreatedNotification($order)));
+                } catch (\Throwable $e) {
+                    \Log::warning('Customer VPN QRIS create notification error: ' . $e->getMessage());
+                }
+
+                return redirect()->route('checkout.success', ['order_ref' => $orderRef])
+                    ->with('checkout_new', true)
+                    ->with('success', __('Tagihan QRIS untuk akun VPN :user (:proto) berhasil dibuat. Akun akan otomatis aktif segera setelah pembayaran lunas.', [
+                        'user' => $validated['username'],
+                        'proto' => strtoupper($chosenProto),
+                    ]));
+            } catch (\Throwable $e) {
+                DB::rollBack();
+                return back()->with('error', __('Gagal membuat tagihan QRIS: :err', ['err' => $e->getMessage()]))->withInput();
+            }
         }
 
         $orderRef = 'VPN-' . strtoupper(Str::random(10));
@@ -404,7 +494,13 @@ class CustomerVpnController extends Controller
                 DB::commit();
 
                 try {
+                    $order->load(['customer', 'items.product']);
+                    $staticQris = BotSetting::where('key', 'qris_static_payload')->value('value');
+                    $dynamicQris = (!empty($staticQris) && $totalAmount > 0)
+                        ? \App\Services\QrisService::buildDynamicPayload($staticQris, $totalAmount)
+                        : null;
                     TelegramService::notifyAdminNewOrder($order);
+                    TelegramService::notifyCustomerNewOrder($order, $dynamicQris);
                     User::where('role', 'admin')->get()->each(fn ($a) => $a->notify(new OrderCreatedNotification($order)));
                 } catch (\Throwable $e) {
                     \Log::warning('Customer VPN QRIS renew notification error: ' . $e->getMessage());

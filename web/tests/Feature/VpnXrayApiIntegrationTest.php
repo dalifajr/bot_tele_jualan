@@ -1817,4 +1817,179 @@ class VpnXrayApiIntegrationTest extends TestCase
         $unit->refresh();
         $this->assertSame($digitalProd->id, (int) $unit->product_id);
     }
+
+    public function test_ssh_structured_detail_qris_create_in_my_vpn_and_vpn_wallet_telegram_notifications(): void
+    {
+        config(['services.telegram.bot_token' => 'test-bot-token-123']);
+        \App\Models\BotSetting::updateOrCreate(['key' => 'qris_static_payload'], ['value' => '0002010102115802ID5910TEST STORE6007JAKARTA6304ABCD']);
+
+        $this->customer->update(['telegram_id' => '777888999', 'customer_wallet_balance' => 5000]);
+
+        Http::fake([
+            'https://sg1.vpnpanel.test/api/v1/vpn/check-username*' => Http::response([
+                'success' => true,
+                'message' => 'Available',
+                'data' => ['available' => true, 'exists' => false],
+            ], 200),
+            'https://sg1.vpnpanel.test/api/v1/vpn/accounts' => Http::response([
+                'success' => true,
+                'message' => 'Created',
+                'data' => [
+                    'protocol' => 'ssh',
+                    'username' => 'ssh_qris01',
+                    'domain' => 'dev.serverope.tech',
+                    'status' => 'active',
+                    'expired_at' => now()->addDays(30)->format('Y-m-d'),
+                    'ssh_info' => [
+                        'host' => 'dev.serverope.tech',
+                        'username' => 'ssh_qris01',
+                        'password' => 'pass123',
+                        'ports' => ['openssh' => 22, 'ws_tls' => 443, 'ws_ntls' => 80, 'dropbear' => '109, 143', 'udp_custom' => '1-65535'],
+                        'ws_payload' => 'GET / HTTP/1.1[crlf]Host: dev.serverope.tech[crlf]Upgrade: websocket[crlf][crlf]',
+                    ],
+                    'formatted_text' => "=== SSH ACCOUNT ===\nHost : dev.serverope.tech\nUsername : ssh_qris01\nPassword : pass123",
+                ],
+            ], 201),
+            'https://sg1.vpnpanel.test/api/v1/vpn/accounts/ssh/ssh_qris01/suspend' => Http::response([
+                'success' => true,
+                'message' => 'Suspended',
+            ], 200),
+            'https://sg1.vpnpanel.test/api/v1/vpn/accounts/ssh/ssh_qris01/unsuspend' => Http::response([
+                'success' => true,
+                'message' => 'Unsuspended',
+            ], 200),
+            'https://api.telegram.org/*' => Http::response(['ok' => true, 'result' => ['message_id' => 101]], 200),
+        ]);
+
+        // 1. Customer creates SSH VPN account directly in /my-vpn using QRIS (even when wallet balance is low!)
+        $sshProd = Product::create([
+            'name' => 'Paket SSH Premium',
+            'price' => 15000,
+            'is_suspended' => false,
+            'is_vpn' => true,
+            'vpn_server_id' => $this->server->id,
+            'vpn_protocol' => 'ssh',
+            'vpn_duration_days' => 30,
+            'vpn_ip_limit' => 2,
+        ]);
+
+        $this->actingAs($this->customer)
+            ->get(route('vpn.my-accounts'))
+            ->assertStatus(200)
+            ->assertSee('custCreatePayQris')
+            ->assertSee('myVpnSshStructured');
+
+        $resp = $this->actingAs($this->customer)
+            ->post(route('vpn.store'), [
+                'product_id' => $sshProd->id,
+                'protocol' => 'ssh',
+                'username' => 'ssh_qris01',
+                'password' => 'pass123',
+                'payment_method' => 'qris',
+            ]);
+        $resp->assertRedirect();
+        $this->assertStringContainsString('/checkout/success/', (string) $resp->headers->get('Location'));
+
+        $order = Order::where('customer_id', $this->customer->id)->latest('id')->firstOrFail();
+        $this->assertSame('pending_payment', $order->status);
+
+        // Confirm QRIS payment -> auto-provisions SSH account
+        app(\App\Services\OrderService::class)->confirmPayment($order, $this->admin->id, 'TEST_QRIS');
+
+        $sshAcc = VpnAccount::where('username', 'ssh_qris01')->firstOrFail();
+        $this->assertSame('active', $sshAcc->status);
+        $this->assertSame('ssh', $sshAcc->protocol);
+
+        // 2. Verify structured SSH detail renders on /orders/{id}, /admin/vpn-accounts, and fetchConfig enriches password
+        $this->actingAs($this->customer)
+            ->get(route('orders.show', $order->id))
+            ->assertStatus(200)
+            ->assertSee('dev.serverope.tech:443@ssh_qris01:pass123')
+            ->assertSee('Payload WebSocket (WS)');
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.vpn-accounts.index'))
+            ->assertStatus(200)
+            ->assertSee('vpnSshStructured');
+
+        // Simulate panel sync clearing ssh_info.password -> fetchConfig still fills it from local password column
+        $payloadWithoutPass = $sshAcc->config_payload;
+        $payloadWithoutPass['ssh_info']['password'] = null;
+        $sshAcc->update(['config_payload' => $payloadWithoutPass]);
+
+        $this->actingAs($this->customer)
+            ->getJson(route('vpn.config', $sshAcc->id))
+            ->assertStatus(200)
+            ->assertJsonPath('config_payload.ssh_info.password', 'pass123');
+
+        // 3. Admin Suspend & Unsuspend VPN -> sends BOTH Notification Hub AND Telegram Bot messages
+        $this->actingAs($this->admin)
+            ->post(route('admin.vpn-accounts.suspend', $sshAcc->id), ['reason' => 'Multi login terdeteksi'])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->actingAs($this->admin)
+            ->post(route('admin.vpn-accounts.unsuspend', $sshAcc->id))
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $notifTypes = $this->customer->notifications()->get()->pluck('data.type')->all();
+        $this->assertContains('vpn_admin_suspended', $notifTypes);
+        $this->assertContains('vpn_admin_unsuspended', $notifTypes);
+
+        Http::assertSent(fn ($req) => str_contains($req->url(), '/sendMessage')
+            && str_contains((string) ($req['text'] ?? ''), 'Disuspend oleh Admin')
+            && str_contains((string) ($req['text'] ?? ''), 'Multi login terdeteksi'));
+
+        Http::assertSent(fn ($req) => str_contains($req->url(), '/sendMessage')
+            && str_contains((string) ($req['text'] ?? ''), 'Suspend Akun VPN Anda Telah Dibuka'));
+
+        // 4. Wallet QRIS Top-Up Create, Top-Up Confirm, Admin Credit, and Admin Debit -> ALL fire Telegram + Notification Hub!
+        $this->actingAs($this->customer)
+            ->post(route('wallet.topup.store'), ['amount' => 25000])
+            ->assertRedirect(route('wallet.index'));
+
+        $topup = \App\Models\WalletTopup::where('user_id', $this->customer->id)->latest('id')->firstOrFail();
+
+        Http::assertSent(fn ($req) => (str_contains($req->url(), '/sendPhoto') || str_contains($req->url(), '/sendMessage'))
+            && str_contains((string) ($req['caption'] ?? $req['text'] ?? ''), $topup->topup_ref));
+
+        app(\App\Services\WalletService::class)->confirmTopup($topup->id, $this->admin->id, 'TEST_WEBHOOK');
+
+        Http::assertSent(fn ($req) => str_contains($req->url(), '/sendMessage')
+            && str_contains((string) ($req['text'] ?? ''), 'Top-Up Dompet Saldo Berhasil'));
+
+        $this->actingAs($this->admin)
+            ->post(route('admin.wallet.manual-credit'), [
+                'user_id' => $this->customer->id,
+                'action_type' => 'credit',
+                'amount' => 10000,
+                'note' => 'Bonus loyalitas',
+                'notify_telegram' => 1,
+            ])
+            ->assertRedirect();
+
+        $this->actingAs($this->admin)
+            ->post(route('admin.wallet.manual-credit'), [
+                'user_id' => $this->customer->id,
+                'action_type' => 'debit',
+                'amount' => 5000,
+                'note' => 'Koreksi saldo',
+                'notify_telegram' => 1,
+            ])
+            ->assertRedirect();
+
+        Http::assertSent(fn ($req) => str_contains($req->url(), '/sendMessage')
+            && str_contains((string) ($req['text'] ?? ''), 'Saldo Dompet Ditambahkan oleh Admin')
+            && str_contains((string) ($req['text'] ?? ''), 'Bonus loyalitas'));
+
+        Http::assertSent(fn ($req) => str_contains($req->url(), '/sendMessage')
+            && str_contains((string) ($req['text'] ?? ''), 'Penyesuaian Saldo Dompet oleh Admin')
+            && str_contains((string) ($req['text'] ?? ''), 'Koreksi saldo'));
+
+        $allNotifTypes = $this->customer->notifications()->get()->pluck('data.type')->all();
+        $this->assertContains('wallet_topup_paid', $allNotifTypes);
+        $this->assertContains('wallet_admin_credit', $allNotifTypes);
+        $this->assertContains('wallet_admin_debit', $allNotifTypes);
+    }
 }
