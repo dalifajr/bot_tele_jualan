@@ -307,11 +307,11 @@
                                         <input type="number" name="vpn_ip_limit" class="form-control" value="1" min="1" max="50">
                                     </div>
                                     <div class="col-4">
-                                        <label class="form-label text-muted small fw-bold">{{ __('Mode SNI') }}</label>
+                                        <label class="form-label text-muted small fw-bold">{{ __('Preset SNI') }}</label>
                                         <select name="vpn_sni_mode" class="form-select">
                                             <option value="3" selected>{{ __('Default') }}</option>
-                                            <option value="1">Zoom</option>
-                                            <option value="2">Iflix</option>
+                                            <option value="1">Zoom (support.zoom.us)</option>
+                                            <option value="2">Iflix (live.iflix.com)</option>
                                         </select>
                                     </div>
                                 </div>
@@ -477,11 +477,11 @@
                                         <input type="number" name="vpn_ip_limit" class="form-control" value="{{ max(1, (int) ($product->vpn_ip_limit ?? 1)) }}" min="1" max="50">
                                     </div>
                                     <div class="col-4">
-                                        <label class="form-label text-muted small fw-bold">{{ __('Mode SNI') }}</label>
+                                        <label class="form-label text-muted small fw-bold">{{ __('Preset SNI') }}</label>
                                         <select name="vpn_sni_mode" class="form-select">
                                             <option value="3" {{ ($product->vpn_sni_mode ?? '3') == '3' ? 'selected' : '' }}>{{ __('Default') }}</option>
-                                            <option value="1" {{ ($product->vpn_sni_mode ?? '3') == '1' ? 'selected' : '' }}>Zoom</option>
-                                            <option value="2" {{ ($product->vpn_sni_mode ?? '3') == '2' ? 'selected' : '' }}>Iflix</option>
+                                            <option value="1" {{ ($product->vpn_sni_mode ?? '3') == '1' ? 'selected' : '' }}>Zoom (support.zoom.us)</option>
+                                            <option value="2" {{ ($product->vpn_sni_mode ?? '3') == '2' ? 'selected' : '' }}>Iflix (live.iflix.com)</option>
                                         </select>
                                     </div>
                                 </div>

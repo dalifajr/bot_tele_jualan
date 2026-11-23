@@ -95,6 +95,8 @@ class CheckoutController extends Controller
 
         $vpnUsername = $request->input('vpn_username');
         $vpnPassword = $request->input('vpn_password');
+        $rawSni = (string) $request->input('vpn_sni_mode', $product->vpn_sni_mode ?? '3');
+        $vpnSniMode = in_array($rawSni, ['1', '2', '3'], true) ? $rawSni : '3';
 
         $subtotal = $product->price * $quantity;
 
@@ -136,6 +138,7 @@ class CheckoutController extends Controller
             'availableStockCount',
             'vpnUsername',
             'vpnPassword',
+            'vpnSniMode',
             'vccServices',
             'subtotal',
             'discount',
@@ -190,6 +193,7 @@ class CheckoutController extends Controller
                 'vpn_password' => $product->vpn_protocol === 'ssh'
                     ? ['required', 'string', 'min:4', 'max:30', 'regex:/^[a-zA-Z0-9@#$%^&*_+=!-]+$/']
                     : ['nullable', 'string', 'max:30'],
+                'vpn_sni_mode' => ['nullable', 'in:1,2,3'],
             ], [
                 'vpn_username.regex' => __('Username VPN hanya boleh berisi huruf, angka, garis bawah (_), atau tanda hubung (-).'),
                 'vpn_password.regex' => __('Password VPN hanya boleh berisi huruf, angka, atau simbol aman (@#$%^&*_+=!-) tanpa spasi.'),
@@ -298,6 +302,11 @@ class CheckoutController extends Controller
                 $vpnUsername = $request->vpn_username . '-' . strtolower(\Illuminate\Support\Str::random(4));
             }
 
+            $vpnSniMode = (string) ($request->input('vpn_sni_mode') ?: ($product->vpn_sni_mode ?? '3'));
+            if (!in_array($vpnSniMode, ['1', '2', '3'], true)) {
+                $vpnSniMode = '3';
+            }
+
             // 2. Create OrderItem
             OrderItem::create([
                 'order_id' => $order->id,
@@ -307,6 +316,7 @@ class CheckoutController extends Controller
                 'discount_amount' => $discount,
                 'vpn_username' => $vpnUsername,
                 'vpn_password' => $product->is_vpn ? $request->vpn_password : null,
+                'vpn_meta' => $product->is_vpn ? ['sni_mode' => $vpnSniMode] : null,
                 'vcc_services' => $product->is_vcc ? $vccServices : null,
             ]);
 

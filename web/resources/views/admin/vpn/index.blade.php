@@ -3,6 +3,12 @@
 @section('title', __('Kelola VPN'))
 @section('page_subtitle', __('Manajemen Akun VPN & Koneksi Multi-Server REST API'))
 
+@push('styles')
+<style>
+    .dropdown-menu { z-index: 1060 !important; }
+</style>
+@endpush
+
 @section('content')
 @php
     $isServerTab = ($activeTab ?? 'accounts') === 'servers';
@@ -251,26 +257,84 @@
                                             </button>
                                         @endif
 
-                                        {{-- Single Hamburger Menu Button -> Opens M3 Action Sheet Modal --}}
-                                        <button type="button" class="btn btn-sm btn-light border rounded-pill px-2.5 btn-open-admin-vpn-sheet"
-                                                data-id="{{ $acc->id }}"
-                                                data-username="{{ $acc->username }}"
-                                                data-protocol="{{ strtoupper($acc->protocol) }}"
-                                                data-server="{{ $acc->vpnServer?->name ?: __('Legacy/Default') }}"
-                                                data-status="{{ $acc->status }}"
-                                                data-status-label="{{ $badge['label'] }}"
-                                                data-config-url="{{ route('admin.vpn-accounts.config', $acc->id) }}"
-                                                data-payload='@json($acc->config_payload)'
-                                                data-text="{{ $acc->config_link }}"
-                                                data-suspend-url="{{ route('admin.vpn-accounts.suspend', $acc->id) }}"
-                                                data-unsuspend-url="{{ route('admin.vpn-accounts.unsuspend', $acc->id) }}"
-                                                data-sync-url="{{ route('admin.vpn-accounts.sync', $acc->id) }}"
-                                                data-retry-url="{{ route('admin.vpn-accounts.retry', $acc->id) }}"
-                                                data-delete-url="{{ route('admin.vpn-accounts.destroy', $acc->id) }}"
-                                                aria-label="{{ __('Menu Aksi') }}"
-                                                title="{{ __('Menu Aksi Lainnya') }}">
-                                            <i class="fas fa-bars"></i>
-                                        </button>
+                                        {{-- Desktop Hamburger Dropdown Menu (strategy: fixed prevents table-responsive clipping) --}}
+                                        <div class="dropdown d-inline-block">
+                                            <button type="button"
+                                                    class="btn btn-sm btn-light border rounded-pill px-2.5"
+                                                    data-bs-toggle="dropdown"
+                                                    data-bs-popper-config='{"strategy": "fixed"}'
+                                                    aria-expanded="false"
+                                                    aria-label="{{ __('Menu Aksi') }}"
+                                                    title="{{ __('Menu Aksi Lainnya') }}">
+                                                <i class="fas fa-bars"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end shadow-sm border py-1.5" style="border-radius: 14px; min-width: 225px; z-index: 1060;">
+                                                <li>
+                                                    <button type="button"
+                                                            class="dropdown-item py-2 d-flex align-items-center gap-2 btn-direct-vpn-config"
+                                                            data-title="{{ strtoupper($acc->protocol) }} — {{ $acc->username }}"
+                                                            data-config-url="{{ route('admin.vpn-accounts.config', $acc->id) }}"
+                                                            data-payload='@json($acc->config_payload)'
+                                                            data-text="{{ $acc->config_link }}">
+                                                        <i class="fas fa-qrcode text-info fa-fw"></i>
+                                                        <span>{{ __('Lihat Config & QR Code') }}</span>
+                                                    </button>
+                                                </li>
+                                                @if(!$isFailedOrProv)
+                                                    @if($acc->status === 'suspended')
+                                                    <li>
+                                                        <form action="{{ route('admin.vpn-accounts.unsuspend', $acc->id) }}" method="POST" class="m-0">
+                                                            @csrf
+                                                            <button type="submit" class="dropdown-item py-2 d-flex align-items-center gap-2 text-success">
+                                                                <i class="fas fa-play fa-fw"></i>
+                                                                <span>{{ __('Aktifkan Kembali') }}</span>
+                                                            </button>
+                                                        </form>
+                                                    </li>
+                                                    @else
+                                                    <li>
+                                                        <button type="button"
+                                                                class="dropdown-item py-2 d-flex align-items-center gap-2 text-warning-emphasis btn-direct-vpn-suspend"
+                                                                data-action="{{ route('admin.vpn-accounts.suspend', $acc->id) }}"
+                                                                data-username="{{ $acc->username }}">
+                                                            <i class="fas fa-ban text-warning fa-fw"></i>
+                                                            <span>{{ __('Suspend (Kunci Admin)') }}</span>
+                                                        </button>
+                                                    </li>
+                                                    @endif
+                                                    <li>
+                                                        <form action="{{ route('admin.vpn-accounts.sync', $acc->id) }}" method="POST" class="m-0">
+                                                            @csrf
+                                                            <button type="submit" class="dropdown-item py-2 d-flex align-items-center gap-2">
+                                                                <i class="fas fa-rotate text-secondary fa-fw"></i>
+                                                                <span>{{ __('Sync dari Panel VPN') }}</span>
+                                                            </button>
+                                                        </form>
+                                                    </li>
+                                                @else
+                                                    <li>
+                                                        <form action="{{ route('admin.vpn-accounts.retry', $acc->id) }}" method="POST" class="m-0">
+                                                            @csrf
+                                                            <button type="submit" class="dropdown-item py-2 d-flex align-items-center gap-2 text-warning-emphasis">
+                                                                <i class="fas fa-redo text-warning fa-fw"></i>
+                                                                <span>{{ __('Retry Provisioning') }}</span>
+                                                            </button>
+                                                        </form>
+                                                    </li>
+                                                @endif
+                                                <li><hr class="dropdown-divider my-1"></li>
+                                                <li>
+                                                    <form action="{{ route('admin.vpn-accounts.destroy', $acc->id) }}" method="POST" class="m-0" onsubmit="return confirm('{{ __('Hapus permanen akun VPN ini dari server VPS & database?') }}')">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger">
+                                                            <i class="fas fa-trash fa-fw"></i>
+                                                            <span>{{ __('Hapus Permanen') }}</span>
+                                                        </button>
+                                                    </form>
+                                                </li>
+                                            </ul>
+                                        </div>
                                     </div>
                                 </td>
                             </tr>
@@ -813,6 +877,7 @@
                                         data-days="{{ $vp->vpn_duration_days ?: 30 }}"
                                         data-quota="{{ $vp->vpn_quota_gb ?? 0 }}"
                                         data-ip="{{ max(1, (int) ($vp->vpn_ip_limit ?? 2)) }}"
+                                        data-sni-mode="{{ $vp->vpn_sni_mode ?? '3' }}"
                                         data-price="{{ (int) $vp->price }}">
                                     {{ $vp->name }} — {{ strtoupper($vp->vpn_protocol) }} ({{ $vp->vpn_duration_days }} {{ __('hari') }}) — {{ $vp->formatted_price }}
                                 </option>
@@ -863,6 +928,16 @@
                     <div class="mb-2.5 d-none" id="adminCreateSshPassWrap">
                         <label class="form-label small fw-bold">{{ __('Password SSH') }} <span class="text-danger">*</span></label>
                         <input type="text" name="password" id="adminCreateSshPass" class="form-control font-monospace" placeholder="{{ __('Minimal 4 karakter') }}">
+                    </div>
+
+                    <div class="mb-2.5" id="adminCreateSniWrap">
+                        <label class="form-label small fw-bold">{{ __('Preset / Custom SNI') }}</label>
+                        <select name="sni_mode" id="adminCreateSniMode" class="form-select">
+                            <option value="3" selected>{{ __('Tanpa Konfigurasi (Default SNI)') }}</option>
+                            <option value="1">Zoom (support.zoom.us — Wildcard)</option>
+                            <option value="2">Iflix (live.iflix.com)</option>
+                        </select>
+                        <div class="form-text small">{{ __('Pilih profil SNI untuk konfigurasi koneksi Xray (sama seperti panel vpnxray-main).') }}</div>
                     </div>
 
                     <div class="row g-2 mb-3">
@@ -1048,6 +1123,14 @@
                 <div id="vpnConfigBodyContent">
                     <div id="vpnQrContainer" class="text-center mb-3 d-none">
                         <canvas id="vpnConfigQrCanvas" width="210" height="210" class="rounded-4 border p-2 bg-white"></canvas>
+                    </div>
+                    <div id="vpnConfigSniWrap" class="mb-3 d-none">
+                        <label class="form-label small fw-bold text-muted mb-1"><i class="fas fa-sliders text-primary me-1"></i>{{ __('Preset Mode SNI / Payload') }}</label>
+                        <select id="vpnConfigSniSelect" class="form-select form-select-sm">
+                            <option value="3">{{ __('Tanpa Konfigurasi (Default SNI)') }}</option>
+                            <option value="1">Zoom (support.zoom.us — Wildcard)</option>
+                            <option value="2">Iflix (live.iflix.com)</option>
+                        </select>
                     </div>
                     <div id="vpnLinksContainer" class="d-flex flex-column gap-2 mb-3"></div>
                     <label class="form-label small fw-bold text-muted">{{ __('Teks Konfigurasi Lengkap') }}</label>
@@ -1347,16 +1430,110 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // =========================================================================
-    // 2. CONFIG & QR VIEWER WITH LAZY AUTO-FETCH
+    // 2. CONFIG & QR VIEWER WITH LAZY AUTO-FETCH + LIVE PRESET SNI SWITCHER
     // =========================================================================
     let currentConfigUrl = '';
+    let activeConfigState = null;
     const configModalEl = document.getElementById('vpnConfigViewerModal');
     const configLoadingEl = document.getElementById('vpnConfigLoading');
     const configBodyEl = document.getElementById('vpnConfigBodyContent');
+    const configSniWrap = document.getElementById('vpnConfigSniWrap');
+    const configSniSelect = document.getElementById('vpnConfigSniSelect');
 
-    function renderVpnConfigPayload(title, payload, fullText) {
+    function encodeB64Utf8(str) {
+        try { return btoa(unescape(encodeURIComponent(str))); } catch (e) { return btoa(str); }
+    }
+
+    function buildXrayLinksForSni(protocol, domain, uuid, username, sniMode) {
+        if (!domain || !uuid || !protocol || protocol === 'ssh') return null;
+        let addr = domain, host = domain, sni = domain, label = username;
+        if (sniMode === '1') {
+            addr = 'support.zoom.us';
+            host = 'support.zoom.us.' + domain;
+            sni = host;
+            label = username + ' (Zoom)';
+        } else if (sniMode === '2') {
+            sni = 'live.iflix.com';
+            label = username + ' (Iflix)';
+        }
+        const encLabel = encodeURIComponent(label);
+        if (protocol === 'vmess') {
+            const tlsObj = { v: '2', ps: label, add: addr, port: '443', id: uuid, aid: '0', net: 'ws', path: '/vmess', type: 'none', host: host, tls: 'tls', sni: sni, allowInsecure: true };
+            const ntlsObj = { v: '2', ps: label, add: addr, port: '80', id: uuid, aid: '0', net: 'ws', path: '/vmess', type: 'none', host: host, tls: 'none' };
+            const grpcObj = { v: '2', ps: label + ' gRPC', add: addr, port: '443', id: uuid, aid: '0', net: 'grpc', path: 'vmess-grpc', type: 'none', host: host, tls: 'tls', sni: sni };
+            return {
+                tls: 'vmess://' + encodeB64Utf8(JSON.stringify(tlsObj)),
+                ntls: 'vmess://' + encodeB64Utf8(JSON.stringify(ntlsObj)),
+                grpc: 'vmess://' + encodeB64Utf8(JSON.stringify(grpcObj)),
+            };
+        }
+        if (protocol === 'vless') {
+            return {
+                tls: `vless://${uuid}@${addr}:443?path=/vless&security=tls&encryption=none&type=ws&host=${host}&sni=${sni}#${encLabel}`,
+                ntls: `vless://${uuid}@${addr}:80?path=/vless&encryption=none&type=ws&host=${host}#${encLabel}`,
+                grpc: `vless://${uuid}@${addr}:443?mode=gun&security=tls&encryption=none&type=grpc&serviceName=vless-grpc&sni=${sni}#${encLabel}`,
+            };
+        }
+        if (protocol === 'trojan') {
+            return {
+                tls: `trojan://${uuid}@${addr}:443?path=/trojan-ws&security=tls&type=ws&host=${host}&sni=${sni}#${encLabel}`,
+                grpc: `trojan://${uuid}@${addr}:443?mode=gun&security=tls&type=grpc&serviceName=trojan-grpc&sni=${sni}#${encLabel}`,
+            };
+        }
+        if (protocol === 'shadowsocks') {
+            const ssCred = btoa('aes-128-gcm:' + uuid);
+            return {
+                tls: `ss://${ssCred}@${addr}:443?path=/ss-ws&security=tls&host=${host}&type=ws&sni=${sni}#${encLabel}`,
+                grpc: `ss://${ssCred}@${addr}:443?mode=gun&security=tls&type=grpc&serviceName=ss-grpc&sni=${sni}#${encLabel}`,
+            };
+        }
+        return null;
+    }
+
+    function formatXrayTextForSni(payload, links, sniMode) {
+        const protoUpper = String(payload.protocol || '').toUpperCase();
+        const quotaText = (Number(payload.quota_gb || 0) > 0) ? (payload.quota_gb + ' GB') : 'Unlimited';
+        const presetName = sniMode === '1' ? 'Zoom (support.zoom.us)' : (sniMode === '2' ? 'Iflix (live.iflix.com)' : 'Default SNI');
+        const lines = [
+            `=== ${protoUpper} ACCOUNT ===`,
+            `Username : ${payload.username || '-'}`,
+            `Domain   : ${payload.domain || '-'}`,
+            `UUID     : ${payload.uuid || '-'}`,
+            `Preset   : ${presetName}`,
+            `Quota    : ${quotaText}`,
+            `IP Limit : ${Math.max(1, Number(payload.ip_limit || 1))} IP`,
+            `Expired  : ${payload.expired_at || '-'}`,
+        ];
+        if (links.tls) lines.push('', 'Link TLS (443):', links.tls);
+        if (links.ntls) lines.push('', 'Link Non-TLS (80):', links.ntls);
+        if (links.grpc) lines.push('', 'Link gRPC (443):', links.grpc);
+        return lines.join('\n');
+    }
+
+    function renderVpnConfigPayload(title, payload, fullText, overrideSni = null) {
         document.getElementById('vpnConfigViewerTitle').textContent = title || 'VPN Config';
-        document.getElementById('vpnConfigFullText').value = fullText || '';
+        activeConfigState = { title, payload, fullText };
+
+        let linksObj = (payload && payload.links && typeof payload.links === 'object') ? payload.links : null;
+        let textToShow = fullText || '';
+
+        const canSwitchSni = !!(payload && payload.protocol && payload.protocol !== 'ssh' && payload.domain && payload.uuid);
+        if (configSniWrap && configSniSelect) {
+            configSniWrap.classList.toggle('d-none', !canSwitchSni);
+            if (canSwitchSni) {
+                const chosenSni = overrideSni || String(payload.sni_mode || '3');
+                configSniSelect.value = ['1', '2', '3'].includes(chosenSni) ? chosenSni : '3';
+                if (overrideSni !== null) {
+                    const regenerated = buildXrayLinksForSni(String(payload.protocol).toLowerCase(), payload.domain, payload.uuid, payload.username || '', configSniSelect.value);
+                    if (regenerated) {
+                        linksObj = regenerated;
+                        textToShow = formatXrayTextForSni(payload, regenerated, configSniSelect.value);
+                    }
+                }
+            }
+        }
+
+        document.getElementById('vpnConfigFullText').value = textToShow;
 
         const linksWrap = document.getElementById('vpnLinksContainer');
         const qrWrap = document.getElementById('vpnQrContainer');
@@ -1364,8 +1541,8 @@ document.addEventListener('DOMContentLoaded', function () {
         linksWrap.innerHTML = '';
 
         let primaryLink = '';
-        if (payload && payload.links && typeof payload.links === 'object') {
-            Object.entries(payload.links).filter(([, v]) => !!v).forEach(([key, val]) => {
+        if (linksObj && typeof linksObj === 'object') {
+            Object.entries(linksObj).filter(([, v]) => !!v).forEach(([key, val]) => {
                 if (!primaryLink) primaryLink = val;
                 const row = document.createElement('div');
                 row.className = 'd-flex align-items-center gap-2 p-2 rounded-3 border';
@@ -1390,6 +1567,11 @@ document.addEventListener('DOMContentLoaded', function () {
             qrWrap.classList.add('d-none');
         }
     }
+
+    configSniSelect?.addEventListener('change', function () {
+        if (!activeConfigState || !activeConfigState.payload) return;
+        renderVpnConfigPayload(activeConfigState.title, activeConfigState.payload, activeConfigState.fullText, this.value);
+    });
 
     async function openVpnConfigModal(title, payload, fullText, configUrl, forceRefresh = false) {
         currentConfigUrl = configUrl || '';
@@ -1446,8 +1628,25 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // Direct buttons inside Desktop Dropdown menu
+    document.querySelectorAll('.btn-direct-vpn-config').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            let parsedPayload = null;
+            try { parsedPayload = JSON.parse(this.dataset.payload || 'null'); } catch (e) {}
+            openVpnConfigModal(this.dataset.title || 'VPN Config', parsedPayload, this.dataset.text || '', this.dataset.configUrl || '', false);
+        });
+    });
+
+    document.querySelectorAll('.btn-direct-vpn-suspend').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            document.getElementById('adminSuspendForm').action = this.dataset.action || '';
+            document.getElementById('suspendModalUsername').value = this.dataset.username || '';
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('adminSuspendVpnModal')).show();
+        });
+    });
+
     // =========================================================================
-    // 3. ADMIN ACTION SHEET MODAL (HAMBURGER BUTTON)
+    // 3. ADMIN ACTION SHEET MODAL (SMARTPHONE / MOBILE ONLY)
     // =========================================================================
     const sheetModalEl = document.getElementById('adminVpnActionSheetModal');
     let activeSheetData = null;
@@ -1648,11 +1847,14 @@ document.addEventListener('DOMContentLoaded', function () {
     const serverSelect = document.getElementById('adminCreateServer');
     const passWrap = document.getElementById('adminCreateSshPassWrap');
     const passInput = document.getElementById('adminCreateSshPass');
+    const sniWrap = document.getElementById('adminCreateSniWrap');
+    const sniSelect = document.getElementById('adminCreateSniMode');
 
     function syncSshPasswordVisibility() {
         const isSsh = protoSelect && protoSelect.value === 'ssh';
         if (passWrap) passWrap.classList.toggle('d-none', !isSsh);
         if (passInput) passInput.required = isSsh;
+        if (sniWrap) sniWrap.classList.toggle('d-none', isSsh);
     }
 
     if (tplSelect) {
@@ -1664,6 +1866,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (opt.dataset.days) document.getElementById('adminCreateDays').value = opt.dataset.days;
             if (opt.dataset.quota !== undefined) document.getElementById('adminCreateQuota').value = opt.dataset.quota;
             if (opt.dataset.ip) document.getElementById('adminCreateIp').value = opt.dataset.ip;
+            if (opt.dataset.sniMode && sniSelect) sniSelect.value = opt.dataset.sniMode;
             if (opt.dataset.price && parseInt(opt.dataset.price, 10) > 0) {
                 document.getElementById('adminBillingAmount').value = opt.dataset.price;
             }

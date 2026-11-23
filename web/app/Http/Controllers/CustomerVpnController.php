@@ -117,6 +117,7 @@ class CustomerVpnController extends Controller
             'product_id' => 'required|exists:products,id',
             'username' => ['required', 'string', 'regex:/^[a-zA-Z0-9_-]{3,24}$/'],
             'password' => 'nullable|string|min:4|max:64',
+            'sni_mode' => 'nullable|in:1,2,3',
         ]);
 
         $product = Product::with('vpnServer')->findOrFail($validated['product_id']);
@@ -144,7 +145,10 @@ class CustomerVpnController extends Controller
         $days = max(1, (int) ($product->vpn_duration_days ?: 30));
         $quotaGb = max(0, (int) ($product->vpn_quota_gb ?? 0));
         $ipLimit = max(1, (int) ($product->vpn_ip_limit ?? 1));
-        $sniMode = (string) ($product->vpn_sni_mode ?? '3');
+        $sniMode = (string) ($validated['sni_mode'] ?? $product->vpn_sni_mode ?? '3');
+        if (!in_array($sniMode, ['1', '2', '3'], true)) {
+            $sniMode = '3';
+        }
 
         $orderRef = 'VPN-' . strtoupper(Str::random(10));
         $vpnAccount = null;

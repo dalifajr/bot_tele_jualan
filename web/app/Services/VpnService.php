@@ -272,6 +272,10 @@ class VpnService
 
         if (!empty($res['success'])) {
             $data = is_array($res['data'] ?? null) ? $res['data'] : [];
+            $resolvedSni = in_array($sniMode, ['1', '2', '3'], true) ? $sniMode : '3';
+            if ($account->protocol !== 'ssh' && empty($data['sni_mode'])) {
+                $data['sni_mode'] = $resolvedSni;
+            }
             $expiredAt = !empty($data['expired_at'])
                 ? Carbon::parse($data['expired_at'])->endOfDay()
                 : now()->addDays(max(1, $days));

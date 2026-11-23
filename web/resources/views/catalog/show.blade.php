@@ -293,6 +293,16 @@
                                     <label class="form-label text-body small fw-bold mb-1">{{ __('Password SSH') }} <span class="text-danger">*</span></label>
                                     <input type="password" name="vpn_password" class="form-control form-control-sm px-3" required placeholder="{{ __('Masukkan password') }}">
                                 </div>
+                                @else
+                                <div class="mb-2">
+                                    <label class="form-label text-body small fw-bold mb-1">{{ __('Preset / Custom SNI') }}</label>
+                                    <select name="vpn_sni_mode" class="form-select form-select-sm">
+                                        <option value="3" {{ ($product->vpn_sni_mode ?? '3') == '3' ? 'selected' : '' }}>{{ __('Tanpa Konfigurasi (Default SNI)') }}</option>
+                                        <option value="1" {{ ($product->vpn_sni_mode ?? '3') == '1' ? 'selected' : '' }}>Zoom (support.zoom.us)</option>
+                                        <option value="2" {{ ($product->vpn_sni_mode ?? '3') == '2' ? 'selected' : '' }}>Iflix (live.iflix.com)</option>
+                                    </select>
+                                    <div class="form-text text-muted" style="font-size: 0.72rem;">{{ __('Pilih profil SNI sesuai kebutuhan koneksi Anda.') }}</div>
+                                </div>
                                 @endif
 
                                 <div class="d-flex flex-wrap gap-1 mt-1">

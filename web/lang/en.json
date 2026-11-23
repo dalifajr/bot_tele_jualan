@@ -4503,5 +4503,13 @@
     "Akun VPN :user (:proto) berhasil dibuat dan langsung muncul di menu Akun VPN Saya milik :owner.": "VPN account :user (:proto) created and now visible in :owner's My VPN Accounts menu.",
     "Sinkronisasi server :name selesai: :synced diperbarui, :imported akun baru diimpor lengkap dengan detail konfigurasinya.": "Server :name sync finished: :synced updated, :imported new accounts imported with full configuration details.",
     "Tarik seluruh daftar akun beserta detail konfigurasinya dari panel vpnxray-main untuk memperbarui status, masa aktif, kuota, dan mengimpor akun yang belum tercatat di website jualan.": "Pull all accounts with their full configuration details from vpnxray-main panel to update status, expiry, quota, and import accounts not yet recorded in the store.",
-    "Akun VPN yang dibuat otomatis dari pesanan, sinkronisasi panel, atau dibuat manual akan muncul di sini.": "VPN accounts created automatically from orders, panel sync, or manually will appear here."
+    "Akun VPN yang dibuat otomatis dari pesanan, sinkronisasi panel, atau dibuat manual akan muncul di sini.": "VPN accounts created automatically from orders, panel sync, or manually will appear here.",
+    "Preset / Custom SNI": "SNI / Payload Preset",
+    "Preset SNI": "SNI Preset",
+    "Preset Mode SNI / Payload": "SNI / Payload Preset Mode",
+    "Tanpa Konfigurasi (Default SNI)": "No Custom Config (Default SNI)",
+    "Default SNI": "Default SNI",
+    "Pilih profil SNI untuk konfigurasi koneksi Xray (sama seperti panel vpnxray-main).": "Select an SNI profile for Xray connection configuration (matches vpnxray-main panel).",
+    "Pilih profil SNI sesuai kebutuhan koneksi Anda.": "Select an SNI profile suited to your connection needs.",
+    "Suspend (Kunci Admin)": "Suspend (Admin Lock)"
 }
