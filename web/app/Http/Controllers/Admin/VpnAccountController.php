@@ -170,6 +170,7 @@ class VpnAccountController extends Controller
             'sni_mode' => 'nullable|in:1,2,3',
             'is_paid' => 'nullable|boolean',
             'billing_amount' => 'nullable|integer|min:0|max:100000000',
+            'purchase_price' => 'nullable|integer|min:0|max:100000000',
         ]);
 
         $admin = Auth::user();
@@ -288,6 +289,14 @@ class VpnAccountController extends Controller
         }
 
         // Paid mode: provision VPN account immediately & deliver directly to target user's /my-vpn
+        $paidPurchasePrice = (int) ($validated['purchase_price'] ?? 0);
+        if ($paidPurchasePrice <= 0 && !empty($validated['billing_amount'])) {
+            $paidPurchasePrice = (int) $validated['billing_amount'];
+        }
+        if ($paidPurchasePrice <= 0 && $product && (int) $product->price > 0) {
+            $paidPurchasePrice = (int) $product->price;
+        }
+
         $account = VpnAccount::create([
             'user_id' => $targetUser->id,
             'vpn_server_id' => $server->exists ? $server->id : null,
@@ -296,6 +305,8 @@ class VpnAccountController extends Controller
             'password' => $validated['password'] ?? null,
             'quota_gb' => (int) ($validated['quota_gb'] ?? 0),
             'ip_limit' => max(1, (int) ($validated['ip_limit'] ?? 1)),
+            'purchase_price' => $paidPurchasePrice > 0 ? $paidPurchasePrice : null,
+            'purchase_days' => (int) $validated['days'],
             'external_ref' => 'admin_manual_' . $admin->id,
             'expired_at' => now()->addDays((int) $validated['days']),
             'status' => 'provisioning',

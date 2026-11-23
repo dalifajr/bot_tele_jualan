@@ -22,6 +22,8 @@ class VpnAccount extends Model
         'uuid',
         'quota_gb',
         'ip_limit',
+        'purchase_price',
+        'purchase_days',
         'config_link',
         'config_payload',
         'external_ref',
@@ -38,6 +40,8 @@ class VpnAccount extends Model
     protected $casts = [
         'quota_gb' => 'integer',
         'ip_limit' => 'integer',
+        'purchase_price' => 'integer',
+        'purchase_days' => 'integer',
         'config_payload' => 'array',
         'expired_at' => 'datetime',
         'suspended_at' => 'datetime',

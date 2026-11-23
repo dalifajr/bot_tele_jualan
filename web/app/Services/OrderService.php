@@ -280,6 +280,8 @@ class OrderService
                             $username .= '_' . ($i + 1);
                         }
 
+                        $unitPurchasePrice = max(0, (int) ($item->unit_price ?: ($item->product?->price ?? 0)));
+
                         $vpn = \App\Models\VpnAccount::create([
                             'user_id' => $order->customer_id,
                             'order_id' => $order->id,
@@ -290,6 +292,8 @@ class OrderService
                             'password' => $item->vpn_password,
                             'quota_gb' => $quotaGb,
                             'ip_limit' => $ipLimit,
+                            'purchase_price' => $unitPurchasePrice > 0 ? $unitPurchasePrice : null,
+                            'purchase_days' => $durationDays,
                             'external_ref' => $order->order_ref,
                             'expired_at' => now()->addDays($durationDays),
                             'status' => 'provisioning',

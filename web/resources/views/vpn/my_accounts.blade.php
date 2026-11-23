@@ -6,6 +6,72 @@
 @push('styles')
 <style>
     .dropdown-menu { z-index: 1060 !important; }
+    .m3-vpn-avatar {
+        position: relative;
+        width: 40px;
+        height: 40px;
+        border-radius: 14px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        background: var(--bs-primary-bg-subtle);
+        color: var(--bs-primary);
+        font-size: 0.95rem;
+    }
+    .m3-sheet-action-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .m3-sheet-action-tile {
+        appearance: none;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 14px;
+        border-radius: 16px;
+        border: 1px solid var(--outline-variant, var(--bs-border-color));
+        background: var(--surface-container-low, var(--bs-body-bg));
+        color: var(--on-surface, var(--bs-body-color));
+        text-align: left;
+        cursor: pointer;
+        transition: background-color 0.15s ease, transform 0.12s ease;
+    }
+    .m3-sheet-action-tile:active { transform: scale(0.985); }
+    .m3-sheet-action-tile:hover { background: var(--surface-container, var(--bs-tertiary-bg)); }
+    .m3-sheet-action-tile.is-danger {
+        border-color: rgba(220, 53, 69, 0.25);
+        background: rgba(220, 53, 69, 0.06);
+        color: var(--bs-danger);
+    }
+    .m3-sheet-action-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 12px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        font-size: 0.95rem;
+    }
+    .m3-sheet-action-text {
+        flex: 1 1 auto;
+        min-width: 0;
+        line-height: 1.3;
+    }
+    .m3-sheet-action-title {
+        font-weight: 700;
+        font-size: 0.88rem;
+        display: block;
+    }
+    .m3-sheet-action-sub {
+        font-size: 0.74rem;
+        opacity: 0.75;
+        display: block;
+        margin-top: 2px;
+    }
 </style>
 @endpush
 
@@ -207,11 +273,14 @@
                                 <span class="badge bg-danger-subtle text-danger rounded-pill px-3 py-1.5">{{ __('Hubungi Admin') }}</span>
                                 @endif
                             @else
+                                @php $accPricing = $renewPricing[$acc->id] ?? null; @endphp
                                 <div class="d-inline-flex align-items-center justify-content-end gap-1.5">
                                     <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-2.5 fw-semibold btn-renew-my-vpn"
                                             data-action="{{ route('vpn.renew', $acc->id) }}"
                                             data-username="{{ $acc->username }}"
                                             data-expired-iso="{{ $acc->expired_at ? $acc->expired_at->toIso8601String() : '' }}"
+                                            data-base-price="{{ (int) ($accPricing['base_price'] ?? 0) }}"
+                                            data-base-days="{{ (int) ($accPricing['base_days'] ?? 30) }}"
                                             title="{{ __('Perpanjang') }}">
                                         <i class="fas fa-calendar-plus me-1"></i>{{ __('Perpanjang') }}
                                     </button>
@@ -270,7 +339,7 @@
                                             </li>
                                             <li><hr class="dropdown-divider my-1"></li>
                                             <li>
-                                                <form action="{{ route('vpn.destroy', $acc->id) }}" method="POST" class="m-0" onsubmit="return confirm('{{ __('Hapus permanen akun VPN ini? Tindakan ini tidak dapat dibatalkan.') }}')">
+                                                <form action="{{ route('vpn.destroy', $acc->id) }}" method="POST" class="m-0" onsubmit="confirmAction(event, @js(__('Hapus permanen akun VPN ini? Tindakan ini tidak dapat dibatalkan.')), @js(__('Hapus Akun VPN?')))">
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit" class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger">
@@ -312,14 +381,18 @@
                 default => __('Aktif'),
             };
         @endphp
+        @php $accPricing = $renewPricing[$acc->id] ?? null; @endphp
         <div class="m3-collapsible-card">
             <div class="m3-compact-row">
                 <button type="button" class="m3-compact-trigger collapsed" data-bs-toggle="collapse" data-bs-target="#myVpnCollapse{{ $acc->id }}" aria-expanded="false">
-                    <span class="m3-status-dot {{ $dotColor }}"></span>
+                    <span class="m3-vpn-avatar">
+                        <i class="fas fa-shield-halved"></i>
+                        <span class="m3-status-dot {{ $dotColor }}"></span>
+                    </span>
                     <div class="min-w-0 flex-grow-1 text-start">
-                        <div class="fw-bold text-body font-monospace text-truncate" style="font-size: 0.9rem;">
-                            {{ $acc->username }}
-                            <span class="badge bg-primary-subtle text-primary ms-1" style="font-size: 0.62rem;">{{ strtoupper($acc->protocol) }}</span>
+                        <div class="fw-bold text-body font-monospace text-truncate d-flex align-items-center gap-1.5" style="font-size: 0.9rem;">
+                            <span class="text-truncate">{{ $acc->username }}</span>
+                            <span class="badge bg-primary-subtle text-primary rounded-pill flex-shrink-0" style="font-size: 0.62rem;">{{ strtoupper($acc->protocol) }}</span>
                         </div>
                         <div class="text-muted text-truncate" style="font-size: 0.74rem;">
                             @if($adminSuspended)
@@ -331,35 +404,16 @@
                     </div>
                     <i class="fas fa-chevron-down m3-compact-chevron"></i>
                 </button>
-                @if($adminSuspended && $chatTargetId)
-                    <a href="{{ route('chat.index', ['contact_id' => $chatTargetId]) }}" class="m3-compact-action-btn" title="{{ __('Chat Admin') }}">
-                        <i class="fas fa-comments text-danger"></i>
-                    </a>
-                @elseif(!$adminSuspended)
-                    <button type="button" class="m3-compact-action-btn btn-open-my-vpn-sheet"
-                            data-username="{{ $acc->username }}"
-                            data-protocol="{{ strtoupper($acc->protocol) }}"
-                            data-server="{{ $acc->vpnServer?->name ?: __('Server VPN') }}"
-                            data-status="{{ $acc->status }}"
-                            data-status-label="{{ $statusLabel }}"
-                            data-config-url="{{ route('vpn.config', $acc->id) }}"
-                            data-payload='@json($acc->config_payload)'
-                            data-text="{{ $acc->config_link }}"
-                            data-suspend-url="{{ route('vpn.suspend', $acc->id) }}"
-                            data-unsuspend-url="{{ route('vpn.unsuspend', $acc->id) }}"
-                            data-sync-url="{{ route('vpn.sync', $acc->id) }}"
-                            data-delete-url="{{ route('vpn.destroy', $acc->id) }}"
-                            title="{{ __('Menu Aksi') }}">
-                        <i class="fas fa-bars text-primary"></i>
-                    </button>
-                @endif
             </div>
             <div id="myVpnCollapse{{ $acc->id }}" class="collapse" data-bs-parent="#customerVpnAccordion">
                 <div class="m3-collapsible-body">
-                    <div class="small mb-2.5">
-                        <div><span class="text-muted">{{ __('Server:') }}</span> <strong>{{ $acc->vpnServer?->name ?: __('Server VPN') }}</strong> ({{ $acc->display_domain }})</div>
+                    <div class="small mb-2.5 d-flex flex-column gap-1">
+                        <div><span class="text-muted">{{ __('Server:') }}</span> <strong>{{ $acc->vpnServer?->name ?: __('Server VPN') }}</strong> <span class="font-monospace text-muted">({{ $acc->display_domain }})</span></div>
                         <div><span class="text-muted">{{ __('Limit:') }}</span> {{ ($acc->quota_gb ?? 0) > 0 ? $acc->quota_gb . ' GB' : 'Unlimited' }} &bull; {{ max(1, (int) ($acc->ip_limit ?? 1)) }} IP</div>
                         <div><span class="text-muted">{{ __('Berakhir:') }}</span> {{ $acc->expired_at ? $acc->expired_at->format('d M Y H:i') : '-' }}</div>
+                        @if($accPricing && ($accPricing['base_price'] ?? 0) > 0)
+                        <div><span class="text-muted">{{ __('Tarif Acuan:') }}</span> <strong class="text-primary">Rp {{ number_format($accPricing['base_price'], 0, ',', '.') }} / {{ $accPricing['base_days'] }} {{ __('hari') }}</strong></div>
+                        @endif
                     </div>
 
                     @if($adminSuspended)
@@ -376,14 +430,16 @@
                         </a>
                         @endif
                     @else
-                        <div class="d-flex flex-wrap gap-1.5">
-                            <button type="button" class="btn btn-sm btn-primary rounded-pill flex-grow-1 fw-semibold btn-renew-my-vpn"
+                        <div class="d-flex align-items-center gap-2">
+                            <button type="button" class="btn btn-sm btn-primary rounded-pill flex-grow-1 fw-semibold py-2 btn-renew-my-vpn"
                                     data-action="{{ route('vpn.renew', $acc->id) }}"
                                     data-username="{{ $acc->username }}"
-                                    data-expired-iso="{{ $acc->expired_at ? $acc->expired_at->toIso8601String() : '' }}">
+                                    data-expired-iso="{{ $acc->expired_at ? $acc->expired_at->toIso8601String() : '' }}"
+                                    data-base-price="{{ (int) ($accPricing['base_price'] ?? 0) }}"
+                                    data-base-days="{{ (int) ($accPricing['base_days'] ?? 30) }}">
                                 <i class="fas fa-calendar-plus me-1"></i>{{ __('Perpanjang') }}
                             </button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-semibold btn-open-my-vpn-sheet"
+                            <button type="button" class="btn btn-sm btn-light border rounded-pill px-3 py-2 fw-semibold d-inline-flex align-items-center gap-1.5 flex-shrink-0 btn-open-my-vpn-sheet"
                                     data-username="{{ $acc->username }}"
                                     data-protocol="{{ strtoupper($acc->protocol) }}"
                                     data-server="{{ $acc->vpnServer?->name ?: __('Server VPN') }}"
@@ -396,7 +452,8 @@
                                     data-unsuspend-url="{{ route('vpn.unsuspend', $acc->id) }}"
                                     data-sync-url="{{ route('vpn.sync', $acc->id) }}"
                                     data-delete-url="{{ route('vpn.destroy', $acc->id) }}">
-                                <i class="fas fa-bars me-1"></i>{{ __('Aksi') }}
+                                <i class="fas fa-bars"></i>
+                                <span>{{ __('Menu') }}</span>
                             </button>
                         </div>
                     @endif
@@ -427,68 +484,73 @@
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body pt-1 pb-3">
-                <div class="d-grid gap-2">
-                    <button type="button" class="btn btn-light border text-start rounded-4 px-3 py-2.5 d-flex align-items-center gap-3" id="mySheetBtnConfig">
-                        <span class="rounded-circle bg-info-subtle text-info d-inline-flex align-items-center justify-content-center flex-shrink-0" style="width: 36px; height: 36px;">
+            <div class="modal-body pt-1 pb-4">
+                <div class="m3-sheet-action-list">
+                    <button type="button" class="m3-sheet-action-tile" id="mySheetBtnConfig">
+                        <span class="m3-sheet-action-icon bg-info-subtle text-info">
                             <i class="fas fa-qrcode"></i>
                         </span>
-                        <div>
-                            <div class="fw-bold small text-body">{{ __('Lihat Config & QR Code') }}</div>
-                            <div class="text-muted" style="font-size: 0.72rem;">{{ __('Salin link konfigurasi atau pindai QR Code') }}</div>
-                        </div>
+                        <span class="m3-sheet-action-text">
+                            <span class="m3-sheet-action-title">{{ __('Lihat Config & QR Code') }}</span>
+                            <span class="m3-sheet-action-sub">{{ __('Salin link konfigurasi atau pindai QR Code') }}</span>
+                        </span>
+                        <i class="fas fa-chevron-right text-muted small"></i>
                     </button>
 
                     <form id="mySheetFormSuspend" method="POST" class="m-0">
                         @csrf
-                        <button type="submit" class="btn btn-light border text-start rounded-4 px-3 py-2.5 d-flex align-items-center gap-3 w-100">
-                            <span class="rounded-circle bg-warning-subtle text-warning-emphasis d-inline-flex align-items-center justify-content-center flex-shrink-0" style="width: 36px; height: 36px;">
+                        <button type="submit" class="m3-sheet-action-tile">
+                            <span class="m3-sheet-action-icon bg-warning-subtle text-warning-emphasis">
                                 <i class="fas fa-pause"></i>
                             </span>
-                            <div>
-                                <div class="fw-bold small text-body">{{ __('Tangguhkan Sementara') }}</div>
-                                <div class="text-muted" style="font-size: 0.72rem;">{{ __('Nonaktifkan sementara, bisa diaktifkan lagi kapan saja') }}</div>
-                            </div>
+                            <span class="m3-sheet-action-text">
+                                <span class="m3-sheet-action-title">{{ __('Tangguhkan Sementara') }}</span>
+                                <span class="m3-sheet-action-sub">{{ __('Nonaktifkan sementara, bisa diaktifkan lagi kapan saja') }}</span>
+                            </span>
+                            <i class="fas fa-chevron-right text-muted small"></i>
                         </button>
                     </form>
 
                     <form id="mySheetFormUnsuspend" method="POST" class="d-none m-0">
                         @csrf
-                        <button type="submit" class="btn btn-light border text-start rounded-4 px-3 py-2.5 d-flex align-items-center gap-3 w-100">
-                            <span class="rounded-circle bg-success-subtle text-success d-inline-flex align-items-center justify-content-center flex-shrink-0" style="width: 36px; height: 36px;">
+                        <button type="submit" class="m3-sheet-action-tile">
+                            <span class="m3-sheet-action-icon bg-success-subtle text-success">
                                 <i class="fas fa-play"></i>
                             </span>
-                            <div>
-                                <div class="fw-bold small text-body">{{ __('Aktifkan Kembali') }}</div>
-                                <div class="text-muted" style="font-size: 0.72rem;">{{ __('Pulihkan akses koneksi akun VPN Anda') }}</div>
-                            </div>
+                            <span class="m3-sheet-action-text">
+                                <span class="m3-sheet-action-title">{{ __('Aktifkan Kembali') }}</span>
+                                <span class="m3-sheet-action-sub">{{ __('Pulihkan akses koneksi akun VPN Anda') }}</span>
+                            </span>
+                            <i class="fas fa-chevron-right text-muted small"></i>
                         </button>
                     </form>
 
                     <form id="mySheetFormSync" method="POST" class="m-0">
                         @csrf
-                        <button type="submit" class="btn btn-light border text-start rounded-4 px-3 py-2.5 d-flex align-items-center gap-3 w-100">
-                            <span class="rounded-circle bg-secondary-subtle text-secondary d-inline-flex align-items-center justify-content-center flex-shrink-0" style="width: 36px; height: 36px;">
+                        <button type="submit" class="m3-sheet-action-tile">
+                            <span class="m3-sheet-action-icon bg-secondary-subtle text-secondary">
                                 <i class="fas fa-rotate"></i>
                             </span>
-                            <div>
-                                <div class="fw-bold small text-body">{{ __('Sync dari Server') }}</div>
-                                <div class="text-muted" style="font-size: 0.72rem;">{{ __('Perbarui detail konfigurasi terbaru dari server VPN') }}</div>
-                            </div>
+                            <span class="m3-sheet-action-text">
+                                <span class="m3-sheet-action-title">{{ __('Sync dari Server') }}</span>
+                                <span class="m3-sheet-action-sub">{{ __('Perbarui detail konfigurasi terbaru dari server VPN') }}</span>
+                            </span>
+                            <i class="fas fa-chevron-right text-muted small"></i>
                         </button>
                     </form>
 
-                    <form id="mySheetFormDelete" method="POST" class="m-0" onsubmit="return confirm('{{ __('Hapus permanen akun VPN ini? Tindakan ini tidak dapat dibatalkan.') }}')">
+                    <form id="mySheetFormDelete" method="POST" class="m-0" onsubmit="bootstrap.Modal.getInstance(document.getElementById('myVpnActionSheetModal'))?.hide(); confirmAction(event, @js(__('Hapus permanen akun VPN ini? Tindakan ini tidak dapat dibatalkan.')), @js(__('Hapus Akun VPN?')))">
                         @csrf
                         @method('DELETE')
-                        <button type="submit" class="btn btn-outline-danger text-start rounded-4 px-3 py-2.5 d-flex align-items-center gap-3 w-100">
-                            <span class="rounded-circle bg-danger-subtle text-danger d-inline-flex align-items-center justify-content-center flex-shrink-0" style="width: 36px; height: 36px;">
+                        <button type="submit" class="m3-sheet-action-tile is-danger">
+                            <span class="m3-sheet-action-icon bg-danger-subtle text-danger">
                                 <i class="fas fa-trash"></i>
                             </span>
-                            <div>
-                                <div class="fw-bold small">{{ __('Hapus Akun Permanen') }}</div>
-                                <div class="small opacity-75" style="font-size: 0.72rem;">{{ __('Menghapus akun dari server dan daftar Anda') }}</div>
-                            </div>
+                            <span class="m3-sheet-action-text">
+                                <span class="m3-sheet-action-title">{{ __('Hapus Akun Permanen') }}</span>
+                                <span class="m3-sheet-action-sub">{{ __('Menghapus akun dari server dan daftar Anda') }}</span>
+                            </span>
+                            <i class="fas fa-chevron-right small opacity-75"></i>
                         </button>
                     </form>
                 </div>
@@ -586,16 +648,41 @@
                             </button>
                             @endforeach
                         </div>
-                        <div class="p-2.5 rounded-3 border small d-flex align-items-center justify-content-between mb-2" style="background: var(--surface-container-low);">
-                            <span class="text-muted">{{ __('Estimasi Expired Baru:') }}</span>
-                            <strong class="text-primary" id="custRenewExpiryPreview">-</strong>
+                        <div class="p-3 rounded-4 border small d-flex flex-column gap-1.5 mb-2" style="background: var(--surface-container-low);">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <span class="text-muted">{{ __('Estimasi Expired Baru:') }}</span>
+                                <strong class="text-body" id="custRenewExpiryPreview">-</strong>
+                            </div>
+                            <div class="d-flex align-items-center justify-content-between">
+                                <span class="text-muted">{{ __('Biaya Perpanjangan:') }}</span>
+                                <strong class="text-primary fs-6" id="custRenewCostPreview">-</strong>
+                            </div>
+                            <div class="d-flex align-items-center justify-content-between border-top pt-1.5 mt-0.5">
+                                <span class="text-muted">{{ __('Saldo Dompet Anda:') }}</span>
+                                <span class="fw-semibold text-body">Rp {{ number_format((int) (Auth::user()->customer_wallet_balance ?? 0), 0, ',', '.') }}</span>
+                            </div>
                         </div>
-                        <div class="form-text small">{{ __('Biaya perpanjangan dihitung proporsional dari harga paket dan memotong saldo dompet Anda.') }}</div>
+                        <div id="custRenewNoPriceAlert" class="alert alert-warning border-0 py-2 px-3 small d-none mb-2" style="border-radius: 12px;">
+                            <div class="fw-bold"><i class="fas fa-circle-info me-1"></i>{{ __('Tarif perpanjangan belum ditetapkan Admin') }}</div>
+                            <div class="mt-0.5">{{ __('Silakan hubungi Admin melalui Chat untuk memperpanjang akun VPN ini.') }}</div>
+                            @if($defaultAdminId)
+                            <a href="{{ route('chat.index', ['contact_id' => $defaultAdminId]) }}" class="btn btn-warning btn-sm rounded-pill mt-2 px-3 fw-semibold">
+                                <i class="fas fa-comments me-1"></i>{{ __('Chat Admin') }}
+                            </a>
+                            @endif
+                        </div>
+                        <div id="custRenewLowBalanceAlert" class="alert alert-danger border-0 py-2 px-3 small d-none mb-2" style="border-radius: 12px;">
+                            <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
+                                <span><i class="fas fa-wallet me-1"></i>{{ __('Saldo Dompet tidak mencukupi.') }}</span>
+                                <a href="{{ route('wallet.index') }}" class="btn btn-danger btn-sm rounded-pill px-3 fw-semibold">{{ __('Isi Saldo') }}</a>
+                            </div>
+                        </div>
+                        <div class="form-text small">{{ __('Biaya perpanjangan dihitung proporsional dari harga pembelian akun dan memotong saldo dompet Anda.') }}</div>
                     </div>
                 </div>
                 <div class="modal-footer border-0 pt-1">
                     <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">{{ __('Batal') }}</button>
-                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold">{{ __('Perpanjang Sekarang') }}</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold" id="btnSubmitCustRenew">{{ __('Perpanjang Sekarang') }}</button>
                 </div>
             </form>
         </div>
@@ -747,10 +834,17 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     custUserInput?.addEventListener('input', triggerCustUsernameCheck);
 
-    // 2. Renew Modal with Quick Presets (+1, +7, +30, +60) & Live Expiry Preview
+    // 2. Renew Modal with Quick Presets (+1, +7, +30, +60), Live Expiry & Live Cost Calculation
     let custRenewBaseExpiry = null;
+    let custRenewBasePrice = 0;
+    let custRenewBaseDays = 30;
+    const custWalletBalance = {{ (int) (Auth::user()->customer_wallet_balance ?? 0) }};
     const custRenewDays = document.getElementById('custRenewDaysInput');
     const custRenewPreview = document.getElementById('custRenewExpiryPreview');
+    const custRenewCostEl = document.getElementById('custRenewCostPreview');
+    const custRenewNoPriceAlert = document.getElementById('custRenewNoPriceAlert');
+    const custRenewLowBalAlert = document.getElementById('custRenewLowBalanceAlert');
+    const custRenewSubmitBtn = document.getElementById('btnSubmitCustRenew');
 
     function updateCustRenewPreview() {
         if (!custRenewDays || !custRenewPreview) return;
@@ -759,6 +853,21 @@ document.addEventListener('DOMContentLoaded', function () {
         const base = (custRenewBaseExpiry && custRenewBaseExpiry > now) ? new Date(custRenewBaseExpiry.getTime()) : now;
         base.setDate(base.getDate() + days);
         custRenewPreview.textContent = base.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+
+        if (custRenewBasePrice > 0 && custRenewBaseDays > 0) {
+            const cost = Math.max(1, Math.round((custRenewBasePrice / custRenewBaseDays) * days));
+            if (custRenewCostEl) custRenewCostEl.textContent = 'Rp ' + new Intl.NumberFormat('id-ID').format(cost);
+            if (custRenewNoPriceAlert) custRenewNoPriceAlert.classList.add('d-none');
+            const insufficient = cost > custWalletBalance;
+            if (custRenewLowBalAlert) custRenewLowBalAlert.classList.toggle('d-none', !insufficient);
+            if (custRenewSubmitBtn) custRenewSubmitBtn.disabled = insufficient;
+        } else {
+            if (custRenewCostEl) custRenewCostEl.textContent = @js(__('Belum diatur'));
+            if (custRenewNoPriceAlert) custRenewNoPriceAlert.classList.remove('d-none');
+            if (custRenewLowBalAlert) custRenewLowBalAlert.classList.add('d-none');
+            if (custRenewSubmitBtn) custRenewSubmitBtn.disabled = true;
+        }
+
         document.querySelectorAll('.btn-cust-renew-preset').forEach(function (b) {
             b.classList.toggle('active', parseInt(b.dataset.days, 10) === days);
         });
@@ -779,6 +888,8 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('customerRenewForm').action = this.dataset.action;
             document.getElementById('custRenewUsername').value = this.dataset.username || '';
             custRenewBaseExpiry = this.dataset.expiredIso ? new Date(this.dataset.expiredIso) : null;
+            custRenewBasePrice = parseInt(this.dataset.basePrice || '0', 10) || 0;
+            custRenewBaseDays = Math.max(1, parseInt(this.dataset.baseDays || '30', 10) || 30);
             if (custRenewDays) custRenewDays.value = 30;
             updateCustRenewPreview();
             bootstrap.Modal.getOrCreateInstance(document.getElementById('customerRenewVpnModal')).show();

@@ -679,7 +679,7 @@ class AdminController extends Controller
 
     public function showOrder($id)
     {
-        $order = Order::with(['customer', 'items.product.creator', 'stockUnits.seller', 'complaintCase', 'complaints.product', 'complaints.seller', 'payment', 'vpnAccounts'])
+        $order = Order::with(['customer', 'items.product.creator', 'stockUnits.seller', 'complaintCase', 'complaints.product', 'complaints.seller', 'payment', 'vpnAccounts.vpnServer'])
             ->findOrFail($id);
 
         return view('admin.orders.show', compact('order'));

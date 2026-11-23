@@ -88,7 +88,7 @@ class OrderController extends Controller
             'complaints.product',
             'complaints.seller',
             'complaints.orderItem',
-            'vpnAccounts',
+            'vpnAccounts.vpnServer',
         ]);
 
         return view('orders.show', compact('order'));

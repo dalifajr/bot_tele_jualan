@@ -82,11 +82,36 @@
                                 @endif
                             </div>
                             <div class="flex-grow-1 min-w-0">
-                                @php $adminItemLabel = $item->vpn_meta['label'] ?? ($item->product->name ?? '-'); @endphp
+                                @php
+                                    $adminItemLabel = $item->vpn_meta['label'] ?? ($item->product->name ?? '-');
+                                    $itemVpnMeta = is_array($item->vpn_meta) ? $item->vpn_meta : [];
+                                    $isItemVpn = ($item->product && $item->product->is_vpn) || !empty($itemVpnMeta['protocol']) || !empty($item->vpn_username);
+                                    $itemVpnProto = strtolower((string) ($itemVpnMeta['protocol'] ?? $item->product?->vpn_protocol ?? ''));
+                                    $itemSniCode = (string) ($itemVpnMeta['sni_mode'] ?? $item->product?->vpn_sni_mode ?? '3');
+                                    $itemSniLabel = match($itemSniCode) {
+                                        '1' => 'Zoom (support.zoom.us)',
+                                        '2' => 'Iflix (live.iflix.com)',
+                                        default => __('Default SNI'),
+                                    };
+                                @endphp
                                 <h6 class="fw-bold text-body mb-1 text-truncate" style="font-size: 0.92rem;" title="{{ $adminItemLabel }}">{{ $adminItemLabel }}</h6>
                                 <div class="text-muted small" style="font-size: 0.78rem;">
                                     {{ $item->quantity }} unit &times; Rp {{ number_format($item->unit_price, 0, ',', '.') }}
                                 </div>
+                                @if($isItemVpn)
+                                <div class="mt-1 d-flex flex-wrap gap-1 align-items-center">
+                                    @if($itemVpnProto)
+                                    <span class="badge bg-primary-subtle text-primary rounded-pill" style="font-size: 0.68rem;">
+                                        <i class="fas fa-network-wired me-1"></i>{{ strtoupper($itemVpnProto) }}@if($item->vpn_username) &bull; {{ $item->vpn_username }}@endif
+                                    </span>
+                                    @endif
+                                    @if($itemVpnProto !== 'ssh')
+                                    <span class="badge bg-info-subtle text-info-emphasis rounded-pill" style="font-size: 0.68rem;">
+                                        <i class="fas fa-sliders me-1"></i>{{ __('Preset:') }} {{ $itemSniLabel }}
+                                    </span>
+                                    @endif
+                                </div>
+                                @endif
                             </div>
                         </div>
                         <div class="text-end d-flex justify-content-between justify-content-sm-end align-items-center pt-2 pt-sm-0 border-top border-sm-top-0 flex-shrink-0">
@@ -200,6 +225,97 @@
                     </div>
                 </div>
                 @endif
+            </div>
+        </div>
+        @endif
+
+        {{-- Provisioned VPN Accounts Card (Admin View with Preset SNI & QR Code Modal) --}}
+        @if($order->vpnAccounts && $order->vpnAccounts->count() > 0)
+        <div class="card border-0 shadow-sm mb-3" style="border-radius: 16px;">
+            <div class="card-header bg-transparent border-0 pt-3 pt-md-4 px-3 px-md-4 pb-0 d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <div>
+                    <h6 class="fw-bold text-body mb-0">
+                        <i class="fas fa-network-wired text-primary me-2"></i>{{ __('Detail Akun VPN Terkirim') }} ({{ $order->vpnAccounts->count() }})
+                    </h6>
+                    <small class="text-muted">{{ __('Konfigurasi, preset SNI, dan kode QR akun VPN yang dibuat untuk pesanan ini') }}</small>
+                </div>
+                <a href="{{ route('admin.vpn-accounts.index', ['tab' => 'accounts', 'search' => $order->vpnAccounts->first()->username]) }}" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-semibold">
+                    <i class="fas fa-sliders me-1"></i>{{ __('Kelola di Kelola VPN') }}
+                </a>
+            </div>
+            <div class="card-body p-3 p-md-4">
+                @foreach($order->vpnAccounts as $vpn)
+                    @php
+                        $vpnLinks = is_array($vpn->config_payload['links'] ?? null) ? $vpn->config_payload['links'] : [];
+                        $matchedItem = $order->items->first(fn ($it) => strtolower((string) $it->vpn_username) === strtolower((string) $vpn->username)) ?? $order->items->first();
+                        $vpnSniCode = (string) ($vpn->config_payload['sni_mode'] ?? ($matchedItem?->vpn_meta['sni_mode'] ?? ($matchedItem?->product?->vpn_sni_mode ?? '3')));
+                        $vpnSniLabel = match($vpnSniCode) {
+                            '1' => 'Zoom (support.zoom.us)',
+                            '2' => 'Iflix (live.iflix.com)',
+                            default => __('Default SNI'),
+                        };
+                        $vpnPayloadForModal = is_array($vpn->config_payload) ? array_merge(['sni_mode' => $vpnSniCode], $vpn->config_payload) : null;
+                    @endphp
+                    <div class="card border mb-3 overflow-hidden" style="border-radius: 14px;">
+                        <div class="card-header bg-primary-subtle border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2 py-2.5 px-3">
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <span class="fw-bold text-primary font-monospace">{{ strtoupper($vpn->protocol) }} &mdash; {{ $vpn->username }}</span>
+                                <span class="badge {{ $vpn->status === 'active' ? 'bg-success text-white' : ($vpn->status === 'suspended' ? 'bg-warning text-dark' : 'bg-danger text-white') }} rounded-pill px-2.5">{{ ucfirst($vpn->status) }}</span>
+                            </div>
+                            <div class="d-flex align-items-center gap-1.5">
+                                @if($vpn->protocol !== 'ssh')
+                                <button type="button"
+                                        class="btn btn-sm btn-primary rounded-pill px-3 fw-semibold btn-order-vpn-qr"
+                                        data-title="{{ strtoupper($vpn->protocol) }} — {{ $vpn->username }}"
+                                        data-sni-mode="{{ $vpnSniCode }}"
+                                        data-payload='@json($vpnPayloadForModal)'
+                                        data-text="{{ $vpn->config_link }}">
+                                    <i class="fas fa-qrcode me-1"></i>{{ __('Lihat Kode QR') }}
+                                </button>
+                                @endif
+                            </div>
+                        </div>
+                        <div class="card-body p-3">
+                            <div class="row g-2 mb-3 small">
+                                <div class="col-6 col-md-3">
+                                    <span class="text-muted d-block">{{ __('Server / Domain:') }}</span>
+                                    <strong class="text-body font-monospace text-break">{{ $vpn->display_domain }}</strong>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <span class="text-muted d-block">{{ __('Masa Aktif:') }}</span>
+                                    <strong class="text-body">{{ $vpn->expired_at ? $vpn->expired_at->format('d M Y') : '-' }}</strong>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <span class="text-muted d-block">{{ __('Kuota / Limit IP:') }}</span>
+                                    <strong class="text-body">{{ ($vpn->quota_gb ?? 0) > 0 ? $vpn->quota_gb . ' GB' : 'Unlimited' }} &bull; {{ max(1, (int) ($vpn->ip_limit ?? 1)) }} IP</strong>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <span class="text-muted d-block">{{ __('Preset SNI:') }}</span>
+                                    <strong class="text-primary">{{ $vpn->protocol === 'ssh' ? 'SSH' : $vpnSniLabel }}</strong>
+                                </div>
+                            </div>
+
+                            @if(!empty($vpnLinks))
+                                <div class="d-flex flex-column gap-1.5 mb-2.5">
+                                    @foreach($vpnLinks as $linkType => $linkVal)
+                                        @if($linkVal)
+                                        <div class="d-flex align-items-center gap-2 p-2 rounded-3 border bg-light">
+                                            <span class="badge bg-primary-subtle text-primary text-uppercase">{{ $linkType }}</span>
+                                            <input type="text" class="form-control form-control-sm font-monospace border-0 bg-transparent p-0" value="{{ $linkVal }}" readonly>
+                                            <button type="button" class="btn btn-sm btn-light border rounded-pill px-2.5 flex-shrink-0" onclick="navigator.clipboard?.writeText(@js($linkVal)); this.innerHTML='<i class=\'fas fa-check text-success\'></i>';">
+                                                <i class="fas fa-copy"></i>
+                                            </button>
+                                        </div>
+                                        @endif
+                                    @endforeach
+                                </div>
+                            @endif
+
+                            <span class="text-muted small d-block mb-1.5">{{ __('Konfigurasi Output / Link:') }}</span>
+                            <div class="p-3 rounded-3 border bg-light text-break font-monospace" style="max-height: 220px; overflow-y: auto; white-space: pre-wrap; font-size: 0.82rem;">{{ $vpn->config_link ?: __('Tidak ada konfigurasi ditemukan.') }}</div>
+                        </div>
+                    </div>
+                @endforeach
             </div>
         </div>
         @endif
@@ -483,6 +599,44 @@
         </div>
     </div>
 </div>
+
+{{-- Order VPN QR & Live Preset SNI Modal --}}
+@if($order->vpnAccounts && $order->vpnAccounts->count() > 0)
+<div class="modal fade" id="orderVpnQrModal" tabindex="-1" aria-hidden="true" style="z-index: 1060;">
+    <div class="modal-dialog modal-dialog-centered m3-sheet-modal">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 24px;">
+            <div class="m3-sheet-handle d-md-none"></div>
+            <div class="modal-header border-0 pb-1">
+                <h5 class="modal-title fw-bold d-flex align-items-center gap-2">
+                    <i class="fas fa-qrcode text-primary"></i>
+                    <span id="orderVpnQrTitle">{{ __('Kode QR Konfigurasi VPN') }}</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body pt-2">
+                <div id="orderVpnQrCanvasWrap" class="text-center mb-3 d-none">
+                    <canvas id="orderVpnQrCanvas" width="220" height="220" class="rounded-4 border p-2 bg-white"></canvas>
+                </div>
+                <div id="orderVpnQrSniWrap" class="mb-3 d-none">
+                    <label class="form-label small fw-bold text-muted mb-1"><i class="fas fa-sliders text-primary me-1"></i>{{ __('Preset Mode SNI / Payload') }}</label>
+                    <select id="orderVpnQrSniSelect" class="form-select form-select-sm">
+                        <option value="3">{{ __('Tanpa Konfigurasi (Default SNI)') }}</option>
+                        <option value="1">Zoom (support.zoom.us — Wildcard)</option>
+                        <option value="2">Iflix (live.iflix.com)</option>
+                    </select>
+                </div>
+                <div id="orderVpnQrLinksWrap" class="d-flex flex-column gap-2 mb-3"></div>
+                <label class="form-label small fw-bold text-muted">{{ __('Teks Konfigurasi Lengkap') }}</label>
+                <textarea id="orderVpnQrFullText" class="form-control font-monospace small" rows="5" readonly></textarea>
+            </div>
+            <div class="modal-footer border-0 pt-1">
+                <button type="button" class="btn btn-outline-primary rounded-pill px-3" id="btnCopyOrderVpnQrAll"><i class="fas fa-copy me-1"></i>{{ __('Salin Semua') }}</button>
+                <button type="button" class="btn btn-primary rounded-pill px-4" data-bs-dismiss="modal">{{ __('Tutup') }}</button>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
 @endpush
 
 @push('scripts')
@@ -596,5 +750,139 @@
         document.body.appendChild(form);
         form.submit();
     }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const qrModalEl = document.getElementById('orderVpnQrModal');
+        if (!qrModalEl) return;
+
+        const escHtml = (s) => String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+        const b64Utf8 = (s) => { try { return btoa(unescape(encodeURIComponent(s))); } catch (e) { return btoa(s); } };
+        const sniWrap = document.getElementById('orderVpnQrSniWrap');
+        const sniSelect = document.getElementById('orderVpnQrSniSelect');
+        let activeOrderQrState = null;
+
+        function buildOrderXrayLinks(protocol, domain, uuid, username, sniMode) {
+            if (!domain || !uuid || !protocol || protocol === 'ssh') return null;
+            let addr = domain, host = domain, sni = domain, label = username;
+            if (sniMode === '1') { addr = 'support.zoom.us'; host = 'support.zoom.us.' + domain; sni = host; label = username + ' (Zoom)'; }
+            else if (sniMode === '2') { sni = 'live.iflix.com'; label = username + ' (Iflix)'; }
+            const enc = encodeURIComponent(label);
+            if (protocol === 'vmess') {
+                return {
+                    tls: 'vmess://' + b64Utf8(JSON.stringify({ v:'2', ps:label, add:addr, port:'443', id:uuid, aid:'0', net:'ws', path:'/vmess', type:'none', host, tls:'tls', sni, allowInsecure:true })),
+                    ntls: 'vmess://' + b64Utf8(JSON.stringify({ v:'2', ps:label, add:addr, port:'80', id:uuid, aid:'0', net:'ws', path:'/vmess', type:'none', host, tls:'none' })),
+                    grpc: 'vmess://' + b64Utf8(JSON.stringify({ v:'2', ps:label + ' gRPC', add:addr, port:'443', id:uuid, aid:'0', net:'grpc', path:'vmess-grpc', type:'none', host, tls:'tls', sni })),
+                };
+            }
+            if (protocol === 'vless') {
+                return {
+                    tls: `vless://${uuid}@${addr}:443?path=/vless&security=tls&encryption=none&type=ws&host=${host}&sni=${sni}#${enc}`,
+                    ntls: `vless://${uuid}@${addr}:80?path=/vless&encryption=none&type=ws&host=${host}#${enc}`,
+                    grpc: `vless://${uuid}@${addr}:443?mode=gun&security=tls&encryption=none&type=grpc&serviceName=vless-grpc&sni=${sni}#${enc}`,
+                };
+            }
+            if (protocol === 'trojan') {
+                return {
+                    tls: `trojan://${uuid}@${addr}:443?path=/trojan-ws&security=tls&type=ws&host=${host}&sni=${sni}#${enc}`,
+                    grpc: `trojan://${uuid}@${addr}:443?mode=gun&security=tls&type=grpc&serviceName=trojan-grpc&sni=${sni}#${enc}`,
+                };
+            }
+            if (protocol === 'shadowsocks') {
+                const cred = btoa('aes-128-gcm:' + uuid);
+                return {
+                    tls: `ss://${cred}@${addr}:443?path=/ss-ws&security=tls&host=${host}&type=ws&sni=${sni}#${enc}`,
+                    grpc: `ss://${cred}@${addr}:443?mode=gun&security=tls&type=grpc&serviceName=ss-grpc&sni=${sni}#${enc}`,
+                };
+            }
+            return null;
+        }
+
+        function renderOrderQrModal(title, payload, fullText, overrideSni = null) {
+            document.getElementById('orderVpnQrTitle').textContent = title || 'VPN QR';
+            activeOrderQrState = { title, payload, fullText };
+            let linksObj = (payload && payload.links && typeof payload.links === 'object') ? payload.links : null;
+            let txt = fullText || '';
+
+            const canSwitch = !!(payload && payload.protocol && payload.protocol !== 'ssh' && payload.domain && payload.uuid);
+            if (sniWrap && sniSelect) {
+                sniWrap.classList.toggle('d-none', !canSwitch);
+                if (canSwitch) {
+                    const chosen = overrideSni || String(payload.sni_mode || '3');
+                    sniSelect.value = ['1', '2', '3'].includes(chosen) ? chosen : '3';
+                    if (overrideSni !== null) {
+                        const regen = buildOrderXrayLinks(String(payload.protocol).toLowerCase(), payload.domain, payload.uuid, payload.username || '', sniSelect.value);
+                        if (regen) {
+                            linksObj = regen;
+                            const presetLabel = sniSelect.value === '1' ? 'Zoom (support.zoom.us)' : (sniSelect.value === '2' ? 'Iflix (live.iflix.com)' : 'Default SNI');
+                            const lines = [
+                                `=== ${String(payload.protocol).toUpperCase()} ACCOUNT ===`,
+                                `Username : ${payload.username || '-'}`,
+                                `Domain   : ${payload.domain || '-'}`,
+                                `UUID     : ${payload.uuid || '-'}`,
+                                `Preset   : ${presetLabel}`,
+                                `Expired  : ${payload.expired_at || '-'}`,
+                            ];
+                            if (regen.tls) lines.push('', 'Link TLS (443):', regen.tls);
+                            if (regen.ntls) lines.push('', 'Link Non-TLS (80):', regen.ntls);
+                            if (regen.grpc) lines.push('', 'Link gRPC (443):', regen.grpc);
+                            txt = lines.join('\n');
+                        }
+                    }
+                }
+            }
+
+            document.getElementById('orderVpnQrFullText').value = txt;
+            const linksWrap = document.getElementById('orderVpnQrLinksWrap');
+            const qrWrap = document.getElementById('orderVpnQrCanvasWrap');
+            const qrCanvas = document.getElementById('orderVpnQrCanvas');
+            linksWrap.innerHTML = '';
+
+            let primaryLink = '';
+            if (linksObj) {
+                Object.entries(linksObj).filter(([, v]) => !!v).forEach(([k, v]) => {
+                    if (!primaryLink) primaryLink = v;
+                    const row = document.createElement('div');
+                    row.className = 'd-flex align-items-center gap-2 p-2 rounded-3 border';
+                    row.innerHTML = `<span class="badge bg-primary-subtle text-primary text-uppercase">${escHtml(k)}</span>
+                        <input type="text" class="form-control form-control-sm font-monospace border-0 bg-transparent p-0" value="${escHtml(v)}" readonly>
+                        <button type="button" class="btn btn-sm btn-light border rounded-pill px-2.5 flex-shrink-0"><i class="fas fa-copy"></i></button>`;
+                    row.querySelector('button').addEventListener('click', function () {
+                        navigator.clipboard?.writeText(v);
+                        this.innerHTML = '<i class="fas fa-check text-success"></i>';
+                        setTimeout(() => { this.innerHTML = '<i class="fas fa-copy"></i>'; }, 1500);
+                    });
+                    linksWrap.appendChild(row);
+                });
+            }
+
+            if (primaryLink && typeof window.renderLocalQrToCanvas === 'function') {
+                qrWrap.classList.remove('d-none');
+                window.renderLocalQrToCanvas(qrCanvas, primaryLink, 220);
+            } else {
+                qrWrap.classList.add('d-none');
+            }
+        }
+
+        sniSelect?.addEventListener('change', function () {
+            if (!activeOrderQrState || !activeOrderQrState.payload) return;
+            renderOrderQrModal(activeOrderQrState.title, activeOrderQrState.payload, activeOrderQrState.fullText, this.value);
+        });
+
+        document.querySelectorAll('.btn-order-vpn-qr').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                let payload = null;
+                try { payload = JSON.parse(this.dataset.payload || 'null'); } catch (e) {}
+                renderOrderQrModal(this.dataset.title || 'VPN QR', payload, this.dataset.text || '', null);
+                bootstrap.Modal.getOrCreateInstance(qrModalEl).show();
+            });
+        });
+
+        document.getElementById('btnCopyOrderVpnQrAll')?.addEventListener('click', function () {
+            navigator.clipboard?.writeText(document.getElementById('orderVpnQrFullText').value);
+            const orig = this.innerHTML;
+            this.innerHTML = '<i class="fas fa-check text-success me-1"></i>' + @js(__('Tersalin!'));
+            setTimeout(() => { this.innerHTML = orig; }, 1500);
+        });
+    });
 </script>
 @endpush

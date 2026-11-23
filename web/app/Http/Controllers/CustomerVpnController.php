@@ -63,7 +63,12 @@ class CustomerVpnController extends Controller
                 ->count(),
         ];
 
-        return view('vpn.my_accounts', compact('accounts', 'vpnProducts', 'defaultAdminId', 'stats'));
+        $renewPricing = [];
+        foreach ($accounts as $acc) {
+            $renewPricing[$acc->id] = $this->resolveRenewPricing($acc);
+        }
+
+        return view('vpn.my_accounts', compact('accounts', 'vpnProducts', 'defaultAdminId', 'stats', 'renewPricing'));
     }
 
     public function fetchConfig(Request $request, $id, VpnService $vpnService)
@@ -213,6 +218,8 @@ class CustomerVpnController extends Controller
                     'password' => $validated['password'] ?? null,
                     'quota_gb' => $quotaGb,
                     'ip_limit' => $ipLimit,
+                    'purchase_price' => $price > 0 ? $price : null,
+                    'purchase_days' => $days,
                     'external_ref' => $orderRef,
                     'expired_at' => now()->addDays($days),
                     'status' => 'provisioning',
@@ -290,41 +297,43 @@ class CustomerVpnController extends Controller
         $renewCost = $this->calculateRenewCost($account, $days);
         $userId = Auth::id();
 
-        if ($renewCost > 0) {
-            try {
-                DB::transaction(function () use ($userId, $renewCost, $account, $days) {
-                    $lockedUser = User::where('id', $userId)->lockForUpdate()->firstOrFail();
-                    $before = (int) ($lockedUser->customer_wallet_balance ?? 0);
-                    if ($before < $renewCost) {
-                        throw new \RuntimeException('INSUFFICIENT_BALANCE');
-                    }
-                    $after = $before - $renewCost;
-                    $lockedUser->customer_wallet_balance = $after;
-                    $lockedUser->save();
+        if ($renewCost === null || $renewCost <= 0) {
+            return back()->with('error', __('Tarif perpanjangan untuk akun VPN ini belum diatur oleh Admin. Silakan hubungi Admin melalui Chat untuk perpanjangan.'));
+        }
 
-                    WalletTransaction::create([
-                        'user_id' => $lockedUser->id,
-                        'type' => 'debit',
-                        'category' => 'purchase',
-                        'amount' => $renewCost,
-                        'balance_before' => $before,
-                        'balance_after' => $after,
-                        'reference' => 'VPN-RENEW-' . $account->id,
-                        'description' => __('Perpanjang VPN :proto (:user) :days hari', [
-                            'proto' => strtoupper($account->protocol),
-                            'user' => $account->username,
-                            'days' => $days,
-                        ]),
-                    ]);
-                });
-            } catch (\RuntimeException $e) {
-                if ($e->getMessage() === 'INSUFFICIENT_BALANCE') {
-                    return back()->with('error', __('Saldo Dompet tidak mencukupi untuk perpanjangan (butuh Rp :amount).', [
-                        'amount' => number_format($renewCost, 0, ',', '.'),
-                    ]));
+        try {
+            DB::transaction(function () use ($userId, $renewCost, $account, $days) {
+                $lockedUser = User::where('id', $userId)->lockForUpdate()->firstOrFail();
+                $before = (int) ($lockedUser->customer_wallet_balance ?? 0);
+                if ($before < $renewCost) {
+                    throw new \RuntimeException('INSUFFICIENT_BALANCE');
                 }
-                throw $e;
+                $after = $before - $renewCost;
+                $lockedUser->customer_wallet_balance = $after;
+                $lockedUser->save();
+
+                WalletTransaction::create([
+                    'user_id' => $lockedUser->id,
+                    'type' => 'debit',
+                    'category' => 'purchase',
+                    'amount' => $renewCost,
+                    'balance_before' => $before,
+                    'balance_after' => $after,
+                    'reference' => 'VPN-RENEW-' . $account->id,
+                    'description' => __('Perpanjang VPN :proto (:user) :days hari', [
+                        'proto' => strtoupper($account->protocol),
+                        'user' => $account->username,
+                        'days' => $days,
+                    ]),
+                ]);
+            });
+        } catch (\RuntimeException $e) {
+            if ($e->getMessage() === 'INSUFFICIENT_BALANCE') {
+                return back()->with('error', __('Saldo Dompet tidak mencukupi untuk perpanjangan (butuh Rp :amount).', [
+                    'amount' => number_format($renewCost, 0, ',', '.'),
+                ]));
             }
+            throw $e;
         }
 
         $res = $vpnService->renewAccount($account, $days);
@@ -466,32 +475,75 @@ class CustomerVpnController extends Controller
         return back()->with('error', $msg);
     }
 
-    private function calculateRenewCost(VpnAccount $account, int $days): int
+    private function resolveRenewPricing(VpnAccount $account): ?array
     {
-        $product = null;
-        if ($account->order) {
-            $vpnItem = $account->order->items->first(fn ($i) => $i->product && $i->product->is_vpn);
-            $product = $vpnItem?->product;
+        // Priority 1: Explicit purchase price & days stored on the VPN account itself
+        if ((int) ($account->purchase_price ?? 0) > 0 && (int) ($account->purchase_days ?? 0) > 0) {
+            return [
+                'base_price' => (int) $account->purchase_price,
+                'base_days' => max(1, (int) $account->purchase_days),
+            ];
         }
+
+        // Priority 2: Originating order item (covers both catalog purchases & Admin manual billing orders like unit_price > 0)
+        if ($account->order && $account->order->items) {
+            $vpnItem = $account->order->items->first(function ($i) use ($account) {
+                $meta = is_array($i->vpn_meta) ? $i->vpn_meta : [];
+                $matchesUser = !empty($i->vpn_username) && strtolower((string) $i->vpn_username) === strtolower((string) $account->username);
+                $isVpn = ($i->product && $i->product->is_vpn) || !empty($meta['protocol']);
+                return $matchesUser || $isVpn;
+            });
+
+            if ($vpnItem) {
+                $meta = is_array($vpnItem->vpn_meta) ? $vpnItem->vpn_meta : [];
+                $itemPrice = (int) ($vpnItem->unit_price ?: ($vpnItem->product?->price ?? 0));
+                $itemDays = max(1, (int) ($meta['days'] ?? $vpnItem->product?->vpn_duration_days ?: 30));
+                if ($itemPrice > 0) {
+                    return [
+                        'base_price' => $itemPrice,
+                        'base_days' => $itemDays,
+                    ];
+                }
+            }
+        }
+
+        // Priority 3: Active catalog VPN product matching protocol (+ server)
+        $product = Product::where('is_vpn', true)
+            ->where('is_suspended', false)
+            ->where('price', '>', 0)
+            ->where('vpn_duration_days', '>', 0)
+            ->where('vpn_protocol', $account->protocol)
+            ->when($account->vpn_server_id, fn ($q) => $q->where('vpn_server_id', $account->vpn_server_id))
+            ->orderBy('price')
+            ->first();
+
         if (!$product) {
             $product = Product::where('is_vpn', true)
-                ->where('vpn_protocol', $account->protocol)
-                ->when($account->vpn_server_id, fn ($q) => $q->where('vpn_server_id', $account->vpn_server_id))
-                ->orderBy('price')
-                ->first();
-        }
-        if (!$product) {
-            $product = Product::where('is_vpn', true)
+                ->where('is_suspended', false)
+                ->where('price', '>', 0)
+                ->where('vpn_duration_days', '>', 0)
                 ->where('vpn_protocol', $account->protocol)
                 ->orderBy('price')
                 ->first();
         }
 
-        if (!$product || $product->price <= 0) {
-            return 0;
+        if ($product && (int) $product->price > 0) {
+            return [
+                'base_price' => (int) $product->price,
+                'base_days' => max(1, (int) ($product->vpn_duration_days ?: 30)),
+            ];
         }
 
-        $baseDays = max(1, (int) ($product->vpn_duration_days ?: 30));
-        return (int) round(($product->price / $baseDays) * $days);
+        return null;
+    }
+
+    private function calculateRenewCost(VpnAccount $account, int $days): ?int
+    {
+        $pricing = $this->resolveRenewPricing($account);
+        if (!$pricing || $pricing['base_price'] <= 0) {
+            return null;
+        }
+
+        return max(1, (int) round(($pricing['base_price'] / $pricing['base_days']) * max(1, $days)));
     }
 }

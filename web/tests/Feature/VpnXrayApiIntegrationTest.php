@@ -856,6 +856,134 @@ class VpnXrayApiIntegrationTest extends TestCase
             'username' => 'iann_billing01',
             'protocol' => 'vmess',
             'status' => 'active',
+            'purchase_price' => 10000,
+            'purchase_days' => 30,
         ]);
+
+        // Both Admin Order Detail and Customer Order Detail display VPN details, Zoom Preset SNI, and QR button/modal
+        $this->actingAs($this->admin)
+            ->get(route('admin.orders.show', $order->id))
+            ->assertStatus(200)
+            ->assertSee('Detail Akun VPN Terkirim')
+            ->assertSee('iann_billing01')
+            ->assertSee('Zoom (support.zoom.us)')
+            ->assertSee('Lihat Kode QR')
+            ->assertSee('orderVpnQrModal');
+
+        $this->actingAs($this->customer)
+            ->get(route('orders.show', $order->id))
+            ->assertStatus(200)
+            ->assertSee('Konfigurasi Akun VPN')
+            ->assertSee('Zoom (support.zoom.us)')
+            ->assertSee('Lihat Kode QR')
+            ->assertSee('orderVpnQrModal');
+    }
+
+    public function test_customer_renew_charges_purchase_price_and_blocks_free_renew_when_unpriced(): void
+    {
+        // Delete all catalog products to guarantee pricing is NOT falling back to catalog
+        Product::query()->forceDelete();
+
+        Http::fake([
+            'https://sg1.vpnpanel.test/api/v1/vpn/accounts/vmess/billed_renew01/renew' => Http::response([
+                'success' => true,
+                'message' => 'Renewed',
+                'data' => ['expired_at' => now()->addDays(60)->format('Y-m-d')],
+            ], 200),
+            'https://sg1.vpnpanel.test/api/v1/vpn/accounts/vmess/paid_manual01/renew' => Http::response([
+                'success' => true,
+                'message' => 'Renewed',
+                'data' => ['expired_at' => now()->addDays(37)->format('Y-m-d')],
+            ], 200),
+        ]);
+
+        // Case 1: Legacy order-billed account (purchase_price null, but order_items.unit_price = 1000 / 30 days)
+        $sysProd = Product::create([
+            'name' => 'Layanan VPN Custom (Tagihan Admin)',
+            'price' => 0,
+            'is_suspended' => true,
+            'is_vpn' => true,
+            'vpn_protocol' => 'vmess',
+            'vpn_duration_days' => 0,
+        ]);
+        $legacyOrder = Order::create([
+            'order_ref' => 'ORD-LEG-953',
+            'customer_id' => $this->customer->id,
+            'subtotal' => 1000,
+            'discount_amount' => 0,
+            'unique_code' => 152,
+            'total_amount' => 1152,
+            'status' => 'delivered',
+            'delivered_at' => now(),
+        ]);
+        OrderItem::create([
+            'order_id' => $legacyOrder->id,
+            'product_id' => $sysProd->id,
+            'quantity' => 1,
+            'unit_price' => 1000,
+            'vpn_username' => 'billed_renew01',
+            'vpn_meta' => ['protocol' => 'vmess', 'days' => 30, 'sni_mode' => '1'],
+        ]);
+        $billedAcc = VpnAccount::create([
+            'user_id' => $this->customer->id,
+            'order_id' => $legacyOrder->id,
+            'vpn_server_id' => $this->server->id,
+            'protocol' => 'vmess',
+            'username' => 'billed_renew01',
+            'status' => 'active',
+            'expired_at' => now()->addDays(30),
+        ]);
+
+        $balanceBefore = (int) $this->customer->customer_wallet_balance; // 100000
+        $this->actingAs($this->customer)
+            ->post(route('vpn.renew', $billedAcc->id), ['days' => 30])
+            ->assertSessionHas('success');
+        $this->customer->refresh();
+        $this->assertSame($balanceBefore - 1000, (int) $this->customer->customer_wallet_balance);
+
+        // Case 2: Admin manual paid account with explicit purchase_price = 15000 / 30 days -> +7 days = Rp 3.500
+        $manualAcc = VpnAccount::create([
+            'user_id' => $this->customer->id,
+            'vpn_server_id' => $this->server->id,
+            'protocol' => 'vmess',
+            'username' => 'paid_manual01',
+            'purchase_price' => 15000,
+            'purchase_days' => 30,
+            'status' => 'active',
+            'expired_at' => now()->addDays(30),
+        ]);
+
+        $balanceBeforeManual = (int) $this->customer->customer_wallet_balance; // 99000
+        $this->actingAs($this->customer)
+            ->post(route('vpn.renew', $manualAcc->id), ['days' => 7])
+            ->assertSessionHas('success');
+        $this->customer->refresh();
+        $this->assertSame($balanceBeforeManual - 3500, (int) $this->customer->customer_wallet_balance);
+
+        // Case 3: Unpriced account (no purchase_price, no order, no catalog VPN product) -> MUST BLOCK free renew!
+        $unpricedAcc = VpnAccount::create([
+            'user_id' => $this->customer->id,
+            'vpn_server_id' => $this->server->id,
+            'protocol' => 'vmess',
+            'username' => 'unpriced_sync01',
+            'status' => 'active',
+            'expired_at' => now()->addDays(30),
+        ]);
+
+        $balanceBeforeBlocked = (int) $this->customer->customer_wallet_balance;
+        $this->actingAs($this->customer)
+            ->post(route('vpn.renew', $unpricedAcc->id), ['days' => 30])
+            ->assertSessionHas('error');
+        $this->customer->refresh();
+        $this->assertSame($balanceBeforeBlocked, (int) $this->customer->customer_wallet_balance);
+
+        // Verify /my-vpn uses Material You confirmAction, clean M3 action tiles, live cost preview, and zero native confirm()
+        $this->actingAs($this->customer)
+            ->get(route('vpn.my-accounts'))
+            ->assertStatus(200)
+            ->assertSee('m3-sheet-action-tile')
+            ->assertSee('custRenewCostPreview')
+            ->assertSee('confirmAction(event')
+            ->assertDontSee('return confirm(');
     }
 }
