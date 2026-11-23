@@ -473,35 +473,17 @@ function initSidebar() {
     }
 }
 
-/* === TOP PROGRESS BAR LOADER === */
-let topBarEl = null;
-
+/* === TOP PROGRESS BAR LOADER (DISABLED PER USER REQUEST — SAFE NO-OPS FOR BACKWARD COMPATIBILITY) === */
 function getTopLoadingBar() {
-    if (!topBarEl) {
-        topBarEl = document.createElement('div');
-        topBarEl.className = 'top-loading-bar';
-        document.body.appendChild(topBarEl);
-    }
-    return topBarEl;
+    return null;
 }
 
 function startTopLoadingBar() {
-    const bar = getTopLoadingBar();
-    bar.className = 'top-loading-bar start';
-    setTimeout(() => {
-        if (bar.classList.contains('start')) {
-            bar.className = 'top-loading-bar middle';
-        }
-    }, 400);
+    // No-op: top loading bar removed per user preference
 }
 
 function finishTopLoadingBar() {
-    const bar = getTopLoadingBar();
-    bar.className = 'top-loading-bar finish';
-    setTimeout(() => {
-        bar.className = 'top-loading-bar';
-        bar.style.opacity = '0';
-    }, 300);
+    // No-op: top loading bar removed per user preference
 }
 
 /* === MOBILE BOTTOM NAV OPTIMISTIC PILL FEEDBACK & BFCACHE SYNC === */
@@ -515,12 +497,13 @@ function initMobileNavFeedback() {
     navLinks.forEach(link => {
         link.addEventListener('click', (e) => {
             if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0) return;
-            navLinks.forEach(item => item.classList.remove('active'));
-            link.classList.add('active');
+            navLinks.forEach(item => item.classList.remove('active', 'is-pill-animating'));
+            link.classList.add('active', 'is-pill-animating');
         });
     });
 
     window.addEventListener('pageshow', (e) => {
+        navLinks.forEach(item => item.classList.remove('is-pill-animating'));
         if (e.persisted && initialActive) {
             navLinks.forEach(item => item.classList.remove('active'));
             initialActive.classList.add('active');
@@ -658,7 +641,7 @@ function initPageLoader() {
     // Hide loader immediately on DOMContentLoaded
     hideLoader();
 
-    // Show top progress bar on navigation (skip downloads, modals, tabs, and prevented clicks)
+    // Show delayed loader overlay on slow navigations (skip downloads, modals, tabs, and prevented clicks)
     document.querySelectorAll('a[href]:not([target="_blank"]):not([href^="#"]):not([href^="javascript"]):not([download]):not([data-bs-toggle]):not([data-guest-modal]):not([data-confirm]):not(.no-loader)').forEach(link => {
         link.addEventListener('click', (e) => {
             if (e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0) return;
@@ -668,7 +651,6 @@ function initPageLoader() {
             }
             setTimeout(() => {
                 if (e.defaultPrevented) return;
-                startTopLoadingBar();
                 scheduleLoaderOverlay();
             }, 0);
         });
@@ -684,7 +666,6 @@ function initPageLoader() {
             }
             setTimeout(() => {
                 if (e.defaultPrevented) return;
-                startTopLoadingBar();
                 scheduleLoaderOverlay();
             }, 0);
         });
@@ -694,7 +675,6 @@ function initPageLoader() {
     window.addEventListener('pageswap', hideLoader);
     window.addEventListener('pagehide', hideLoader);
     window.addEventListener('pageshow', () => {
-        finishTopLoadingBar();
         hideLoader();
     });
 }

@@ -1183,22 +1183,7 @@ a:hover {
     }
 
     .m3-collapsible-card .collapsing {
-        transition: height 260ms var(--md-sys-motion-easing-emphasized) !important;
-    }
-
-    .m3-collapsible-card .collapse.show .m3-collapsible-body {
-        animation: m3CollapsibleBodyReveal 210ms var(--md-sys-motion-easing-emphasized-decelerate) both;
-    }
-}
-
-@keyframes m3CollapsibleBodyReveal {
-    from {
-        opacity: 0;
-        transform: translateY(-5px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
+        transition: height 240ms var(--md-sys-motion-easing-emphasized) !important;
     }
 }
 
@@ -2434,23 +2419,6 @@ ul.nav-pills,
         border-radius: 14px;
     }
 
-    @media (prefers-reduced-motion: no-preference) {
-        .mobile-nav-item.active i {
-            animation: m3NavPillExpand 240ms var(--md-sys-motion-easing-emphasized-decelerate) both;
-        }
-    }
-
-    @keyframes m3NavPillExpand {
-        0% {
-            transform: scaleX(0.52);
-            opacity: 0.7;
-        }
-        100% {
-            transform: scaleX(1);
-            opacity: 1;
-        }
-    }
-
     .mobile-nav-badge {
         position: absolute;
         top: 4px;
@@ -3169,45 +3137,13 @@ ul.nav-pills,
     border: 3px solid rgba(var(--primary-rgb), 0.28);
 }
 
-/* === M3 EXPRESSIVE ENTRANCE MOTION (EXCLUDING NESTED OVERLAY CARDS) === */
-/* Uses `backwards` + `transform: none` at completion so parent cards never trap `position: fixed` dropdowns/modals */
-.stat-card,
-.quick-action-btn,
-.product-card,
-.main-content > .container-fluid > .card,
-.main-content > .container-fluid > .row > div > .card {
-    animation: m3CardReveal 240ms var(--md-sys-motion-easing-emphasized-decelerate) backwards;
-}
-
+/* === M3 CARD SURFACE (ZERO POST-LOAD BLINK / ZERO STAGGER RESET) === */
 .modal .card,
 .dropdown-menu .card,
 .collapse .card,
 .swal2-container .card {
     animation: none !important;
 }
-
-@keyframes m3CardReveal {
-    from {
-        opacity: 0;
-        transform: translateY(8px) scale(0.992);
-    }
-    to {
-        opacity: 1;
-        transform: none;
-    }
-}
-
-/* Subtle M3 stagger for top summary grids */
-.row > div:nth-child(2) .stat-card,
-.row > div:nth-child(2) > .card { animation-delay: 35ms; }
-.row > div:nth-child(3) .stat-card,
-.row > div:nth-child(3) > .card { animation-delay: 70ms; }
-.row > div:nth-child(4) .stat-card,
-.row > div:nth-child(4) > .card { animation-delay: 105ms; }
-.row > div:nth-child(5) .stat-card,
-.row > div:nth-child(5) > .card { animation-delay: 140ms; }
-.row > div:nth-child(6) .stat-card,
-.row > div:nth-child(6) > .card { animation-delay: 175ms; }
 
 /* Modal Z-Index Fix */
 .modal {
@@ -3217,35 +3153,9 @@ ul.nav-pills,
     z-index: 1050 !important;
 }
 
-/* === TOP PROGRESS BAR (M3 LINEAR PROGRESS SYNCED TO DYNAMIC PALETTE — GPU COMPOSITED) === */
+/* === TOP PROGRESS BAR (DISABLED — REMOVED PER USER REQUEST) === */
 .top-loading-bar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    height: 3.5px;
-    width: 100%;
-    transform: scaleX(0);
-    transform-origin: left center;
-    will-change: transform, opacity;
-    background: linear-gradient(90deg, var(--primary) 0%, var(--tertiary, var(--primary)) 100%);
-    z-index: 99999;
-    transition: transform 360ms var(--md-sys-motion-easing-emphasized-decelerate), opacity 180ms ease;
-    box-shadow: none;
-    opacity: 0;
-    pointer-events: none;
-}
-.top-loading-bar.start {
-    transform: scaleX(0.32);
-    opacity: 1;
-}
-.top-loading-bar.middle {
-    transform: scaleX(0.72);
-    opacity: 1;
-}
-.top-loading-bar.finish {
-    transform: scaleX(1);
-    opacity: 1;
-    transition: transform 180ms var(--md-sys-motion-easing-emphasized-decelerate), opacity 200ms ease 160ms;
+    display: none !important;
 }
 
 /* === SIDEBAR COLLAPSE (GOOGLE CLOUD CONSOLE 64PX RAIL MODE DESKTOP) === */
@@ -3668,53 +3578,26 @@ ul.nav-pills,
     animation: badgePop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-/* Content Smooth Reveal Animation & M3 Component Micro-Reveals */
+/* Content Smooth Reveal (Fallback only for legacy browsers without View Transitions) & M3 Tactile States */
 @keyframes contentReveal {
     0% {
         opacity: 0;
-        transform: translateY(10px);
     }
     100% {
         opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@keyframes m3TabPaneReveal {
-    0% {
-        opacity: 0;
-        transform: translateY(6px);
-    }
-    100% {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@keyframes m3DropdownPopIn {
-    0% {
-        opacity: 0;
-        transform: scale(0.95) translateY(-4px);
-    }
-    100% {
-        opacity: 1;
-        transform: scale(1) translateY(0);
     }
 }
 
 @media (prefers-reduced-motion: no-preference) {
-    html:not(:active-view-transition) .main-content,
-    html:not(:active-view-transition) main.flex-grow-1 {
-        animation: contentReveal 240ms var(--md-sys-motion-easing-emphasized-decelerate) both;
+    @supports not (view-transition-name: none) {
+        .main-content,
+        main.flex-grow-1 {
+            animation: contentReveal 180ms var(--md-sys-motion-easing-standard) both;
+        }
     }
 
-    .tab-pane.fade.show.active {
-        animation: m3TabPaneReveal 220ms var(--md-sys-motion-easing-emphasized-decelerate) both;
-    }
-
-    .dropdown-menu.show {
-        animation: m3DropdownPopIn 180ms var(--md-sys-motion-easing-emphasized-decelerate) both;
-        transform-origin: top center;
+    .tab-pane.fade {
+        transition: opacity 160ms var(--md-sys-motion-easing-standard) !important;
     }
 
     .m3-filter-chip:active,
@@ -5696,19 +5579,14 @@ body.swal2-shown:not(.swal2-toast-shown) .swal2-container:not(.swal2-toast-conta
     -webkit-backdrop-filter: none !important;
 }
 
-    /* 5. Accessibility: Respect OS Reduced Motion Preference Globally */
+    /* 5. Accessibility: Respect OS Reduced Motion Preference Without Jarring 0.01ms Flash */
     @media (prefers-reduced-motion: reduce) {
-        *,
-        *::before,
-        *::after {
-            animation-duration: 0.01ms !important;
-            animation-iteration-count: 1 !important;
-            transition-duration: 0.01ms !important;
+        html {
             scroll-behavior: auto !important;
         }
     }
 
-    /* 6. Android 17 Bottom Navigation Bar Pill Indicator (56x32px Expressive Expand) */
+    /* 6. Android 17 Bottom Navigation Bar Pill Indicator (56x32px — Animates ONLY on User Tap, Never Blinks on Load) */
     @media (max-width: 991.98px) {
         .mobile-nav-item i {
             width: 56px !important;
@@ -5719,18 +5597,21 @@ body.swal2-shown:not(.swal2-toast-shown) .swal2-container:not(.swal2-toast-conta
         .mobile-nav-item.active i {
             background: var(--secondary-container) !important;
             color: var(--on-secondary-container) !important;
-            animation: m3NavPillExpand 220ms var(--md-sys-motion-easing-emphasized-decelerate) both;
+        }
+
+        @media (prefers-reduced-motion: no-preference) {
+            .mobile-nav-item.is-pill-animating i {
+                animation: m3NavPillExpand 200ms var(--md-sys-motion-easing-emphasized-decelerate) both;
+            }
         }
     }
 
     @keyframes m3NavPillExpand {
         0% {
-            transform: scaleX(0.55);
-            opacity: 0.7;
+            transform: scaleX(0.6);
         }
         100% {
-            transform: scaleX(1);
-            opacity: 1;
+            transform: none;
         }
     }
 
@@ -5837,33 +5718,37 @@ body.swal2-shown:not(.swal2-toast-shown) .swal2-container:not(.swal2-toast-conta
             navigation: auto;
         }
 
+        ::view-transition {
+            background-color: var(--background);
+        }
+
         ::view-transition-group(root) {
-            animation-duration: 240ms;
+            animation-duration: 210ms;
             animation-timing-function: var(--md-sys-motion-easing-emphasized);
         }
 
         ::view-transition-old(root) {
-            animation: m3PageFadeOut 170ms var(--md-sys-motion-easing-emphasized-accelerate) both;
+            animation: m3PageFadeOut 150ms var(--md-sys-motion-easing-standard-accelerate) both;
         }
 
         ::view-transition-new(root) {
-            animation: m3PageFadeIn 250ms var(--md-sys-motion-easing-emphasized-decelerate) both;
+            animation: m3PageFadeIn 210ms var(--md-sys-motion-easing-standard-decelerate) both;
         }
 
         html:active-view-transition-type(m3-slide-forward)::view-transition-old(root) {
-            animation: m3VtSlideOutForward 180ms var(--md-sys-motion-easing-emphasized-accelerate) both;
+            animation: m3VtSlideOutForward 160ms var(--md-sys-motion-easing-emphasized-accelerate) both;
         }
 
         html:active-view-transition-type(m3-slide-forward)::view-transition-new(root) {
-            animation: m3VtSlideInForward 270ms var(--md-sys-motion-easing-emphasized-decelerate) both;
+            animation: m3VtSlideInForward 230ms var(--md-sys-motion-easing-emphasized-decelerate) both;
         }
 
         html:active-view-transition-type(m3-slide-backward)::view-transition-old(root) {
-            animation: m3VtSlideOutBackward 180ms var(--md-sys-motion-easing-emphasized-accelerate) both;
+            animation: m3VtSlideOutBackward 160ms var(--md-sys-motion-easing-emphasized-accelerate) both;
         }
 
         html:active-view-transition-type(m3-slide-backward)::view-transition-new(root) {
-            animation: m3VtSlideInBackward 270ms var(--md-sys-motion-easing-emphasized-decelerate) both;
+            animation: m3VtSlideInBackward 230ms var(--md-sys-motion-easing-emphasized-decelerate) both;
         }
     }
 
@@ -5878,36 +5763,38 @@ body.swal2-shown:not(.swal2-toast-shown) .swal2-container:not(.swal2-toast-conta
     }
 
     @keyframes m3PageFadeOut {
-        from { opacity: 1; transform: scale(1); }
-        to { opacity: 0; transform: scale(0.988); }
+        from { opacity: 1; }
+        to { opacity: 0; }
     }
 
     @keyframes m3PageFadeIn {
-        from { opacity: 0; transform: scale(0.988); }
-        to { opacity: 1; transform: scale(1); }
+        from { opacity: 0; }
+        to { opacity: 1; }
     }
 
     @keyframes m3VtSlideOutForward {
-        from { opacity: 1; transform: translateX(0); }
-        to { opacity: 0; transform: translateX(-20px); }
+        from { opacity: 1; transform: none; }
+        to { opacity: 0; transform: translateX(-14px); }
     }
 
     @keyframes m3VtSlideInForward {
-        from { opacity: 0; transform: translateX(24px); }
-        to { opacity: 1; transform: translateX(0); }
+        from { opacity: 0; transform: translateX(16px); }
+        to { opacity: 1; transform: none; }
     }
 
     @keyframes m3VtSlideOutBackward {
-        from { opacity: 1; transform: translateX(0); }
-        to { opacity: 0; transform: translateX(20px); }
+        from { opacity: 1; transform: none; }
+        to { opacity: 0; transform: translateX(14px); }
     }
 
     @keyframes m3VtSlideInBackward {
-        from { opacity: 0; transform: translateX(-24px); }
-        to { opacity: 1; transform: translateX(0); }
+        from { opacity: 0; transform: translateX(-16px); }
+        to { opacity: 1; transform: none; }
     }
 
     /* Pin Persistent App Shell Across Smartphone & Desktop Viewports */
+    nav.navbar.fixed-top,
+    .pcc-platform-bar,
     .top-navbar {
         view-transition-name: m3-top-navbar;
     }
