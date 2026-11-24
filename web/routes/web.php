@@ -95,7 +95,7 @@ Route::get('/lang/{locale}', function ($locale) {
 // Telegram Login Flow
 Route::post('/auth/telegram/request', [TelegramAuthController::class, 'requestLogin'])->name('auth.telegram.request')->middleware('throttle:5,1');
 Route::get('/auth/telegram/callback', [TelegramAuthController::class, 'callback'])->name('auth.telegram.callback');
-Route::post('/auth/telegram/webapp', [TelegramAuthController::class, 'webAppLogin'])->name('auth.telegram.webapp');
+Route::post('/auth/telegram/webapp', [TelegramAuthController::class, 'webAppLogin'])->name('auth.telegram.webapp')->middleware('throttle:12,1');
 Route::post('/logout', [TelegramAuthController::class, 'logout'])->name('logout');
 
 // Public Escrow Room (Accessible by external seller/buyer via token link)

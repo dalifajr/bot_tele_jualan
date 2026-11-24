@@ -88,25 +88,65 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            const GUARD_KEY = 'tg_webapp_auth_guard';
             if (window.Telegram && window.Telegram.WebApp) {
                 const tg = window.Telegram.WebApp;
                 tg.ready();
                 if (tg.initData) {
+                    const now = Date.now();
+                    let state = { count: 0, ts: now };
+                    try {
+                        const raw = sessionStorage.getItem(GUARD_KEY);
+                        if (raw) {
+                            const parsed = JSON.parse(raw);
+                            if (parsed && (now - Number(parsed.ts || 0)) < 60000) {
+                                state = parsed;
+                            }
+                        }
+                    } catch (e) {}
+
+                    if (state.count >= 2) {
+                        console.warn('Telegram WebApp login loop prevented on login page.');
+                        const formWrap = document.querySelector('.login-section');
+                        if (formWrap && !document.getElementById('tgLoginCookieFallback')) {
+                            const alertEl = document.createElement('div');
+                            alertEl.id = 'tgLoginCookieFallback';
+                            alertEl.className = 'alert alert-warning border-0 small rounded-3 mb-3 d-flex align-items-center justify-content-between gap-2';
+                            alertEl.innerHTML = '<span><i class="fas fa-cookie-bite me-1"></i>{{ __("Sesi otomatis Telegram diblokir oleh cookie browser. Silakan login manual atau buka di browser eksternal.") }}</span>'
+                                + '<button type="button" class="btn btn-sm btn-warning rounded-pill px-3 fw-semibold flex-shrink-0" id="btnTgLoginOpenExt">{{ __("Buka Browser") }}</button>';
+                            formWrap.prepend(alertEl);
+                            document.getElementById('btnTgLoginOpenExt')?.addEventListener('click', function() {
+                                if (typeof tg.openLink === 'function') {
+                                    tg.openLink(window.location.href);
+                                } else {
+                                    window.open(window.location.href, '_blank');
+                                }
+                            });
+                        }
+                        return;
+                    }
+
+                    state.count += 1;
+                    state.ts = now;
+                    try { sessionStorage.setItem(GUARD_KEY, JSON.stringify(state)); } catch (e) {}
+
                     // Show loader overlay
                     const loader = document.getElementById('pageLoader');
                     if(loader) loader.classList.remove('fade-out');
 
                     fetch('/auth/telegram/webapp', {
                         method: 'POST',
+                        credentials: 'same-origin',
                         headers: {
                             'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
                         },
                         body: JSON.stringify({ init_data: tg.initData })
                     })
-                    .then(res => res.json())
+                    .then(res => res.ok ? res.json() : null)
                     .then(data => {
-                        if (data.success) {
+                        if (data && data.success) {
                             window.location.href = data.redirect_url || '/dashboard';
                         } else {
                             if(loader) loader.classList.add('fade-out');

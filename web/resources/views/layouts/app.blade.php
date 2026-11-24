@@ -432,25 +432,69 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script nonce="{{ $cspNonce ?? '' }}">
         window.isAuthenticated = @json(auth()->check());
-        
+
         document.addEventListener('DOMContentLoaded', function() {
+            const GUARD_KEY = 'tg_webapp_auth_guard';
+            if (window.isAuthenticated) {
+                try { sessionStorage.removeItem(GUARD_KEY); } catch (e) {}
+            }
+
             if (window.Telegram && window.Telegram.WebApp) {
                 const tg = window.Telegram.WebApp;
                 tg.ready();
                 tg.expand();
-                
+
                 if (!window.isAuthenticated && tg.initData) {
+                    const now = Date.now();
+                    let state = { count: 0, ts: now };
+                    try {
+                        const raw = sessionStorage.getItem(GUARD_KEY);
+                        if (raw) {
+                            const parsed = JSON.parse(raw);
+                            if (parsed && (now - Number(parsed.ts || 0)) < 60000) {
+                                state = parsed;
+                            }
+                        }
+                    } catch (e) {}
+
+                    if (state.count >= 2) {
+                        console.warn('Telegram WebApp auto-login loop prevented (iframe cookie blocked).');
+                        if (!document.getElementById('tgCookieFallbackBanner')) {
+                            const bar = document.createElement('div');
+                            bar.id = 'tgCookieFallbackBanner';
+                            bar.className = 'alert alert-warning border-0 shadow-sm d-flex align-items-center justify-content-between gap-2 m-3 small';
+                            bar.style.borderRadius = '14px';
+                            bar.innerHTML = '<span><i class="fas fa-cookie-bite me-1"></i>{{ __("Browser Telegram memblokir penyimpanan sesi di iframe. Buka halaman di browser eksternal untuk login.") }}</span>'
+                                + '<button type="button" class="btn btn-sm btn-warning rounded-pill px-3 fw-semibold flex-shrink-0" id="btnTgOpenExternal">{{ __("Buka di Browser") }}</button>';
+                            document.body.prepend(bar);
+                            document.getElementById('btnTgOpenExternal')?.addEventListener('click', function() {
+                                if (typeof tg.openLink === 'function') {
+                                    tg.openLink(window.location.href);
+                                } else {
+                                    window.open(window.location.href, '_blank');
+                                }
+                            });
+                        }
+                        return;
+                    }
+
+                    state.count += 1;
+                    state.ts = now;
+                    try { sessionStorage.setItem(GUARD_KEY, JSON.stringify(state)); } catch (e) {}
+
                     fetch('/auth/telegram/webapp', {
                         method: 'POST',
+                        credentials: 'same-origin',
                         headers: {
                             'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
                         },
                         body: JSON.stringify({ init_data: tg.initData })
                     })
-                    .then(res => res.json())
+                    .then(res => res.ok ? res.json() : null)
                     .then(data => {
-                        if (data.success) {
+                        if (data && data.success) {
                             window.location.reload();
                         }
                     }).catch(err => console.error("WebApp Login Error:", err));

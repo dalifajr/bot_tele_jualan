@@ -4688,5 +4688,15 @@
     "Penyesuaian Saldo -Rp :amount oleh Admin": "Balance Adjustment -Rp :amount by Admin",
     "Saldo Dompet dikurangi Rp :amount oleh Admin (Ref: :ref).:note Saldo sekarang: Rp :balance.": "Wallet balance deducted by Rp :amount by Admin (Ref: :ref).:note Current balance: Rp :balance.",
     "Saldo +Rp :amount Ditambahkan oleh Admin": "Balance +Rp :amount Added by Admin",
-    "Admin menambahkan Rp :amount ke Dompet Anda (Ref: :ref).:note Saldo sekarang: Rp :balance.": "Admin added Rp :amount to your wallet (Ref: :ref).:note Current balance: Rp :balance."
+    "Admin menambahkan Rp :amount ke Dompet Anda (Ref: :ref).:note Saldo sekarang: Rp :balance.": "Admin added Rp :amount to your wallet (Ref: :ref).:note Current balance: Rp :balance.",
+    "Browser Telegram memblokir penyimpanan sesi di iframe. Buka halaman di browser eksternal untuk login.": "Telegram browser blocked session storage inside the iframe. Open this page in an external browser to log in.",
+    "Buka di Browser": "Open in Browser",
+    "Sesi otomatis Telegram diblokir oleh cookie browser. Silakan login manual atau buka di browser eksternal.": "Automatic Telegram login was blocked by browser cookies. Please sign in manually or open in an external browser.",
+    "Buka Browser": "Open Browser",
+    "Diganti oleh Admin": "Replaced by Admin",
+    "dari stok": "from stock",
+    "Akun Pengganti Baru (Diganti Admin)": "New Replacement Account (Replaced by Admin)",
+    "Akun pada Pesanan #:ref Telah Diganti Admin": "Account in Order #:ref Replaced by Admin",
+    "Admin telah mengganti :count detail akun (:product) pada pesanan #:ref. Klik untuk melihat detail akun pengganti yang baru.": "Admin replaced :count account detail(s) (:product) in order #:ref. Click to view your new replacement account details.",
+    "Produk Pesanan": "Order Product"
 }

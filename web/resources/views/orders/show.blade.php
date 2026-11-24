@@ -251,14 +251,26 @@
                                 <span class="badge bg-primary-subtle text-primary mb-2 fw-bold" style="font-size: 0.85rem;">{{ $productName }}</span>
                                 <div class="d-flex flex-column gap-2">
                                     @foreach($units as $unit)
-                                    <div>
-                                        @if($unit->vcc_service)
-                                            <span class="badge bg-primary-subtle text-primary mb-1 fw-bold">
-                                                <i class="fas fa-credit-card me-1"></i>{{ __('VCC Layanan:') }} {{ $unit->vcc_service }}
-                                            </span>
-                                        @elseif($units->count() > 1)
-                                            <span class="badge bg-secondary-subtle text-secondary mb-1">{{ __('Unit') }} #{{ $loop->iteration }}</span>
-                                        @endif
+                                    <div class="{{ $unit->is_replaced ? 'p-2.5 rounded-4 border border-info bg-info-subtle bg-opacity-10' : '' }}">
+                                        <div class="d-flex flex-wrap align-items-center gap-1.5 mb-1">
+                                            @if($unit->vcc_service)
+                                                <span class="badge bg-primary-subtle text-primary fw-bold">
+                                                    <i class="fas fa-credit-card me-1"></i>{{ __('VCC Layanan:') }} {{ $unit->vcc_service }}
+                                                </span>
+                                            @elseif($units->count() > 1)
+                                                <span class="badge bg-secondary-subtle text-secondary">{{ __('Unit') }} #{{ $loop->iteration }}</span>
+                                            @endif
+                                            @if($unit->is_replaced)
+                                                <span class="badge bg-info text-dark rounded-pill px-2.5 py-1 fw-semibold" style="font-size: 0.72rem;">
+                                                    <i class="fas fa-sync-alt me-1"></i>{{ __('Akun Pengganti Baru (Diganti Admin)') }}
+                                                </span>
+                                                @if($unit->replaced_at)
+                                                    <span class="text-muted" style="font-size: 0.72rem;">
+                                                        <i class="far fa-clock me-1"></i>{{ $unit->replaced_at->format('d M Y, H:i') }}
+                                                    </span>
+                                                @endif
+                                            @endif
+                                        </div>
                                         <x-account-credential-viewer :rawText="$unit->raw_text" />
                                     </div>
                                     @endforeach

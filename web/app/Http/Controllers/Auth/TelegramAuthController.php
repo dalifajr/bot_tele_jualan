@@ -250,6 +250,15 @@ class TelegramAuthController extends Controller
             return response()->json(['success' => false, 'message' => 'Akun Anda ditangguhkan oleh Admin.'], 403);
         }
 
+        // Idempotent shortcut: if this session is already authenticated as the same user, skip duplicate login log & session churn
+        if (Auth::check() && (int) Auth::id() === (int) $user->id) {
+            return response()->json([
+                'success' => true,
+                'already_authenticated' => true,
+                'redirect_url' => $request->session()->pull('url.intended', route('dashboard')),
+            ]);
+        }
+
         // Login session
         Auth::login($user, true);
         

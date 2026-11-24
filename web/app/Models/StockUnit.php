@@ -18,6 +18,9 @@ class StockUnit extends Model
         'is_sold',
         'sold_order_id',
         'stock_status',
+        'is_replaced',
+        'replaced_at',
+        'replaced_from_stock_id',
         'vcc_service',
         'vcc_group_id',
         'available_at',
@@ -28,6 +31,8 @@ class StockUnit extends Model
 
     protected $casts = [
         'is_sold' => 'boolean',
+        'is_replaced' => 'boolean',
+        'replaced_at' => 'datetime',
         'available_at' => 'datetime',
     ];
 

@@ -186,8 +186,25 @@
                             <span class="badge bg-primary-subtle text-primary mb-2 fw-bold" style="font-size: 0.85rem;">{{ $productName }}</span>
                             <div class="d-flex flex-column gap-2">
                                 @foreach($units as $unit)
-                                <div class="p-3 bg-light rounded-3 border d-flex justify-content-between align-items-center gap-3">
-                                    <div class="text-break flex-grow-1" style="font-family: monospace; white-space: pre-wrap; font-size: 0.85rem;">{!! trim(\App\Services\TwoFactorService::renderWith2fa($unit->raw_text, true)) !!}</div>
+                                <div class="p-3 rounded-3 border d-flex justify-content-between align-items-center gap-3 {{ $unit->is_replaced ? 'border-info bg-info-subtle bg-opacity-25' : 'bg-light' }}">
+                                    <div class="flex-grow-1 min-w-0">
+                                        @if($unit->is_replaced)
+                                        <div class="d-flex flex-wrap align-items-center gap-1.5 mb-1.5">
+                                            <span class="badge bg-info text-dark rounded-pill px-2.5 py-1 fw-semibold" style="font-size: 0.72rem;">
+                                                <i class="fas fa-sync-alt me-1"></i>{{ __('Diganti oleh Admin') }}
+                                            </span>
+                                            @if($unit->replaced_at)
+                                            <span class="text-muted small" style="font-size: 0.72rem;">
+                                                <i class="far fa-clock me-1"></i>{{ $unit->replaced_at->format('d M Y, H:i') }}
+                                            </span>
+                                            @endif
+                                            @if($unit->replaced_from_stock_id)
+                                            <span class="text-muted font-monospace" style="font-size: 0.7rem;">({{ __('dari stok') }} #{{ $unit->replaced_from_stock_id }})</span>
+                                            @endif
+                                        </div>
+                                        @endif
+                                        <div class="text-break" style="font-family: monospace; white-space: pre-wrap; font-size: 0.85rem;">{!! trim(\App\Services\TwoFactorService::renderWith2fa($unit->raw_text, true)) !!}</div>
+                                    </div>
                                     @if($order->status === 'delivered')
                                     <div class="flex-shrink-0">
                                         @if($isMultiUnit)

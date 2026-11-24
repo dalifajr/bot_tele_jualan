@@ -49,6 +49,26 @@ trait LogsLogin
         $deviceFingerprint = $request->input('device_fingerprint') ?: ($request->cookie('_sec_device_fp') ?: $request->header('X-Device-Fingerprint'));
         $deviceId = $request->input('device_id') ?: ($request->cookie('_sec_device_id') ?: $request->header('X-Device-ID'));
 
+        // Deduplicate rapid identical successful logins (e.g., WebApp iframe reload / double-submit) within 60s.
+        // Failed logins are ALWAYS recorded to preserve brute-force detection accuracy.
+        if ($isSuccessful) {
+            $recentDup = LoginLog::query()
+                ->where('is_successful', true)
+                ->where('ip_address', $ip)
+                ->where('browser', $browser)
+                ->where('created_at', '>=', now()->subSeconds(60))
+                ->when(
+                    $userId,
+                    fn ($q) => $q->where('user_id', $userId),
+                    fn ($q) => $q->where('username_or_email', $loginValue)
+                )
+                ->exists();
+
+            if ($recentDup) {
+                return;
+            }
+        }
+
         LoginLog::create([
             'user_id' => $userId,
             'ip_address' => $ip,

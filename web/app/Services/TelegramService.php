@@ -858,6 +858,46 @@ class TelegramService
     }
 
     /**
+     * Notify customer via Telegram with a direct MiniApp (web_app) button when Admin replaces
+     * one or more account credentials in their delivered order.
+     */
+    public static function notifyCustomerOrderStockReplaced(Order $order, int $replacedCount = 1, array $productNames = []): bool
+    {
+        $botToken = config('services.telegram.bot_token');
+        if (empty($botToken)) {
+            return false;
+        }
+
+        $order->loadMissing('customer');
+        $customer = $order->customer;
+        $chatId = $customer?->telegram_id ?: $order->checkout_chat_id;
+        if (empty($chatId)) {
+            return false;
+        }
+
+        $baseDomain = self::resolveBaseDomain();
+        $accessToken = $order->generateTelegramAccessToken();
+        $orderDetailUrl = "{$baseDomain}/orders/{$order->id}?token={$accessToken}";
+
+        $prodList = array_values(array_unique(array_filter($productNames)));
+        $prodText = !empty($prodList) ? e(implode(', ', $prodList)) : 'Produk Pesanan';
+
+        $text = "🔄 <b>Detail Akun pada Pesanan Anda Telah Diganti!</b>\n\n"
+            . "Order Ref: <code>{$order->order_ref}</code>\n"
+            . "Produk: <b>{$prodText}</b>\n"
+            . "Jumlah Akun Diganti: <b>{$replacedCount} unit</b>\n\n"
+            . "<i>Admin telah mengganti detail akun pada pesanan Anda dengan stok pengganti baru. Klik tombol di bawah untuk langsung melihat akun pengganti yang sudah ditandai.</i>";
+
+        $btn = str_starts_with($orderDetailUrl, 'https://')
+            ? ['text' => '📱 Buka Pesanan di MiniApp', 'web_app' => ['url' => $orderDetailUrl]]
+            : ['text' => '🌐 Cek Detail Pesanan', 'url' => $orderDetailUrl];
+
+        return self::sendMessage($chatId, $text, [
+            'inline_keyboard' => [[$btn]],
+        ]);
+    }
+
+    /**
      * Send an HTML Telegram message (with optional inline keyboard reply_markup).
      */
     public static function sendMessage(string|int $chatId, string $text, ?array $replyMarkup = null): bool

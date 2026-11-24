@@ -20,11 +20,15 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $trustedProxies = env('TRUSTED_PROXIES', '127.0.0.1,::1');
         $middleware->trustProxies(at: $trustedProxies === '*' ? '*' : array_map('trim', explode(',', $trustedProxies)));
+        $middleware->prepend(\App\Http\Middleware\ResolveCloudflareRealIp::class);
         $middleware->validateCsrfTokens(except: [
             'api/payment/midtrans/callback',
             'listener/*',
         ]);
         $middleware->web(
+            prepend: [
+                \App\Http\Middleware\ConfigureWebAppSessionCookie::class,
+            ],
             append: [
                 \App\Http\Middleware\SecurityHeaders::class,
                 \App\Http\Middleware\SetLocale::class,

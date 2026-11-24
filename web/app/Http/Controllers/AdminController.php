@@ -3983,11 +3983,17 @@ class AdminController extends Controller
             $problemUnit->sold_order_id = null;
             $problemUnit->stock_status = 'saved_for_verification';
             $problemUnit->available_at = now()->addHours($saveHours);
+            $problemUnit->is_replaced = false;
+            $problemUnit->replaced_at = null;
+            $problemUnit->replaced_from_stock_id = null;
             $problemUnit->save();
 
-            // Assign new replacement unit to order
+            // Assign new replacement unit to order and mark it clearly as replaced by Admin
             $newUnit->is_sold = true;
             $newUnit->sold_order_id = $orderId;
+            $newUnit->is_replaced = true;
+            $newUnit->replaced_at = now();
+            $newUnit->replaced_from_stock_id = $problemUnit->id;
             $newUnit->save();
 
             // Audit Log
@@ -4001,6 +4007,18 @@ class AdminController extends Controller
             ]);
 
             \Illuminate\Support\Facades\DB::commit();
+
+            // Notify customer via Website Notification Hub & Telegram Bot (MiniApp link directly to the order)
+            try {
+                $order->loadMissing('customer');
+                $prodName = $problemUnit->product?->name ?? __('Produk');
+                if ($order->customer) {
+                    $order->customer->notify(new \App\Notifications\OrderStockReplacedNotification($order, 1, [$prodName]));
+                }
+                \App\Services\TelegramService::notifyCustomerOrderStockReplaced($order, 1, [$prodName]);
+            } catch (\Throwable $notifyErr) {
+                \Log::warning("Gagal kirim notifikasi ganti akun untuk order {$order->order_ref}: " . $notifyErr->getMessage());
+            }
 
             return redirect()->back()->with('success', __('Akun berhasil diganti dengan stok baru dari seller.'));
         } catch (\Exception $e) {
@@ -4127,9 +4145,10 @@ class AdminController extends Controller
 
             $assignedReplacementIds = [];
             $replacedCount = 0;
+            $replacedProductNames = [];
 
             foreach ($stockUnitIds as $stockUnitId) {
-                $problemUnit = \App\Models\StockUnit::where('id', $stockUnitId)
+                $problemUnit = \App\Models\StockUnit::with('product')->where('id', $stockUnitId)
                     ->where('sold_order_id', $orderId)
                     ->where('is_sold', true)
                     ->first();
@@ -4161,14 +4180,23 @@ class AdminController extends Controller
                 $problemUnit->sold_order_id = null;
                 $problemUnit->stock_status = 'saved_for_verification';
                 $problemUnit->available_at = now()->addHours($saveHours);
+                $problemUnit->is_replaced = false;
+                $problemUnit->replaced_at = null;
+                $problemUnit->replaced_from_stock_id = null;
                 $problemUnit->save();
 
-                // Assign new replacement unit to order
+                // Assign new replacement unit to order and mark it clearly as replaced by Admin
                 $newUnit->is_sold = true;
                 $newUnit->sold_order_id = $orderId;
+                $newUnit->is_replaced = true;
+                $newUnit->replaced_at = now();
+                $newUnit->replaced_from_stock_id = $problemUnit->id;
                 $newUnit->save();
 
                 $replacedCount++;
+                if ($problemUnit->product?->name) {
+                    $replacedProductNames[] = $problemUnit->product->name;
+                }
 
                 // Audit Log
                 \Illuminate\Support\Facades\DB::table('audit_logs')->insert([
@@ -4182,6 +4210,19 @@ class AdminController extends Controller
             }
 
             \Illuminate\Support\Facades\DB::commit();
+
+            // Notify customer via Website Notification Hub & Telegram Bot (MiniApp link directly to the order)
+            if ($replacedCount > 0) {
+                try {
+                    $order->loadMissing('customer');
+                    if ($order->customer) {
+                        $order->customer->notify(new \App\Notifications\OrderStockReplacedNotification($order, $replacedCount, $replacedProductNames));
+                    }
+                    \App\Services\TelegramService::notifyCustomerOrderStockReplaced($order, $replacedCount, $replacedProductNames);
+                } catch (\Throwable $notifyErr) {
+                    \Log::warning("Gagal kirim notifikasi ganti akun masal untuk order {$order->order_ref}: " . $notifyErr->getMessage());
+                }
+            }
 
             return redirect()->back()->with('success', __("Berhasil mengganti :replacedCount akun terpilih.", ["replacedCount" => $replacedCount]));
         } catch (\Exception $e) {
