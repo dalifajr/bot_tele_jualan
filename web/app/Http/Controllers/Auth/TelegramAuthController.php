@@ -116,6 +116,19 @@ class TelegramAuthController extends Controller
             return redirect()->route('login')->with('error', __('Akun Telegram tidak ditemukan. Pastikan Anda sudah pernah berinteraksi dengan bot.'));
         }
 
+        if ($user->is_suspended) {
+            $this->recordLoginLog($request, $user->username, false, 'Telegram Browser');
+            return redirect()->route('login')->with('error', __('Akun Anda telah disuspen.'));
+        }
+
+        $isMaintenance = \App\Models\BotSetting::where('key', 'maintenance_mode')->value('value') === '1';
+        if ($isMaintenance && $user->role !== 'admin') {
+            $this->recordLoginLog($request, $user->username, false, 'Telegram Browser');
+            $maintenanceMessage = __(\App\Models\BotSetting::where('key', 'maintenance_message')->value('value')
+                ?: 'Website sedang dalam pemeliharaan sistem (Maintenance). Hanya Admin yang dapat login.');
+            return redirect()->route('login')->with('error', $maintenanceMessage);
+        }
+
         // Login with remember_me (30 days)
         $rememberDays = (int) config('telegram.remember_me_days', 30);
         Auth::login($user, true);
@@ -203,15 +216,28 @@ class TelegramAuthController extends Controller
 
         $telegramId = $telegramUser['id'];
 
+        $isMaintenance = \App\Models\BotSetting::where('key', 'maintenance_mode')->value('value') === '1';
+
         // Find or create user
         $user = User::where('telegram_id', $telegramId)->first();
+        if (!$user && !empty($telegramUser['username'])) {
+            $user = User::where('username', $telegramUser['username'])->first();
+        }
+
+        if ($isMaintenance && ($user ? $user->role !== 'admin' : true)) {
+            $identifier = $user ? $user->username : ('TG_ID:' . $telegramId);
+            $this->recordLoginLog($request, $identifier, false, 'Telegram WebApp');
+            $maintenanceMessage = __(\App\Models\BotSetting::where('key', 'maintenance_message')->value('value')
+                ?: 'Website sedang dalam pemeliharaan sistem (Maintenance Mode).');
+            return response()->json([
+                'success' => false,
+                'maintenance' => true,
+                'message' => $maintenanceMessage,
+            ], 503);
+        }
+
         if (!$user) {
             $rawUsername = $telegramUser['username'] ?? null;
-
-            // Check if user already exists by username (e.g., admin created a seller account without telegram_id)
-            if (!empty($rawUsername)) {
-                $user = User::where('username', $rawUsername)->first();
-            }
 
             if ($user) {
                 // Safely link telegram_id to existing account preserving their role (seller/admin/customer)
@@ -262,7 +288,7 @@ class TelegramAuthController extends Controller
         // Login session
         Auth::login($user, true);
         
-        $this->recordLoginLog($request, $user->username, true, 'Telegram Browser');
+        $this->recordLoginLog($request, $user->username, true, 'Telegram WebApp');
         
         $intendedUrl = $request->session()->pull('url.intended', route('dashboard'));
 

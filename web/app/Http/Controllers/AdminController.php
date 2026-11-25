@@ -3402,6 +3402,8 @@ class AdminController extends Controller
             ]);
         }
 
+        \Illuminate\Support\Facades\Cache::forget('nav:global_settings');
+
         return back()->with('success', __('Konfigurasi berhasil disimpan!'));
     }
 

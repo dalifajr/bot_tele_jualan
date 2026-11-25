@@ -850,7 +850,7 @@
         <i class="fas fa-exclamation-triangle"></i> 
         <span><strong>{{ __('MODE MAINTENANCE AKTIF:') }}</strong> {{ __('Pengguna non-admin diblokir dari login dan akses web.') }}</span>
     </div>
-    <a href="{{ route('admin.settings.index') }}" class="btn btn-xs btn-light text-danger rounded-pill px-3 py-0 fw-bold" style="font-size: 0.75rem; line-height: 1.6;">
+    <a href="{{ route('admin.settings.index') }}#maintenance" class="btn btn-xs btn-light text-danger rounded-pill px-3 py-0 fw-bold" style="font-size: 0.75rem; line-height: 1.6;">
         <i class="fas fa-cog me-1"></i> {{ __('Kelola Maintenance') }}
     </a>
 </div>

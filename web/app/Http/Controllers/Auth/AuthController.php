@@ -138,6 +138,7 @@ class AuthController extends Controller
             $isMaintenance = \App\Models\BotSetting::where('key', 'maintenance_mode')->value('value') === '1';
             if ($isMaintenance && $user->role !== 'admin') {
                 Auth::logout();
+                $this->recordLoginLog($request, $request->login, false);
                 $maintenanceMessage = __(\App\Models\BotSetting::where('key', 'maintenance_message')->value('value')
                     ?: 'Website sedang dalam pemeliharaan sistem (Maintenance). Hanya Admin yang dapat login.');
 
@@ -147,8 +148,6 @@ class AuthController extends Controller
             }
 
             RateLimiter::clear($throttleKey);
-
-            $this->recordLoginLog($request, $request->login, true);
 
             // Check if 2FA (TOTP Authenticator or Telegram OTP) is enabled
             if ($user->hasAnyTwoFactorEnabled()) {
@@ -183,6 +182,9 @@ class AuthController extends Controller
 
                 return redirect()->route('auth.two-factor');
             }
+
+            // Only record successful login here for users WITHOUT 2FA
+            $this->recordLoginLog($request, $request->login, true);
 
             // Record login IP country
             $this->recordLoginCountry($user, $request);
@@ -394,6 +396,16 @@ class AuthController extends Controller
             return redirect()->route('login')->with('error', __('Pengguna tidak ditemukan.'));
         }
 
+        $isMaintenance = \App\Models\BotSetting::where('key', 'maintenance_mode')->value('value') === '1';
+        if ($isMaintenance && $user->role !== 'admin') {
+            $request->session()->forget(['2fa_user_id', '2fa_remember']);
+            $this->recordLoginLog($request, $user->username, false);
+            $maintenanceMessage = __(\App\Models\BotSetting::where('key', 'maintenance_message')->value('value')
+                ?: 'Website sedang dalam pemeliharaan sistem (Maintenance). Hanya Admin yang dapat login.');
+
+            return redirect()->route('login')->with('error', $maintenanceMessage);
+        }
+
         $inputCode = trim((string) $request->input('code'));
         $verified = false;
         $usedRecoveryCode = false;
@@ -431,6 +443,7 @@ class AuthController extends Controller
         }
 
         if (!$verified) {
+            $this->recordLoginLog($request, $user->username, false);
             RateLimiter::hit($attemptKey, 300);
             if (RateLimiter::tooManyAttempts($attemptKey, 5)) {
                 $user->update([
@@ -455,6 +468,8 @@ class AuthController extends Controller
         $remember = $request->session()->get('2fa_remember', false);
         $request->session()->forget(['2fa_user_id', '2fa_remember']);
         Auth::login($user, $remember);
+
+        $this->recordLoginLog($request, $user->username, true);
 
         // Record login IP country
         $this->recordLoginCountry($user, $request);

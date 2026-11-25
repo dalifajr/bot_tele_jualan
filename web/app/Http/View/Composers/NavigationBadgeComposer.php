@@ -17,7 +17,7 @@ class NavigationBadgeComposer
 {
     public function compose(View $view): void
     {
-        $globalSettings = Cache::remember('nav:global_settings', 30, function () {
+        $globalSettings = Cache::remember('nav:global_settings', 10, function () {
             $settings = BotSetting::whereIn('key', ['maintenance_mode', 'tool_2fa_access_mode'])
                 ->pluck('value', 'key');
 

@@ -26,7 +26,8 @@ class EnsureTelegramAuthenticated
 
             if ($order && $order->verifyTelegramAccessToken($request->query('token'))) {
                 $customer = $order->customer;
-                if ($customer && !$customer->is_suspended) {
+                $isMaintenance = \App\Models\BotSetting::where('key', 'maintenance_mode')->value('value') === '1';
+                if ($customer && !$customer->is_suspended && (!$isMaintenance || $customer->role === 'admin')) {
                     if (!Auth::check() || (Auth::id() !== $customer->id && Auth::user()->role !== 'admin')) {
                         Auth::login($customer, true);
                     }

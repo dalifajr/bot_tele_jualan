@@ -41,8 +41,8 @@ class CheckMaintenanceMode
             return $next($request);
         }
 
-        // Allow login routes so Admin can log in
-        if ($request->routeIs('login') || $request->routeIs('login.post') || $request->is('login*')) {
+        // Allow login and 2FA routes so Admin can log in
+        if ($request->routeIs('login') || $request->routeIs('login.post') || $request->is('login*') || $request->routeIs('auth.two-factor*') || $request->is('two-factor*')) {
             return $next($request);
         }
 
