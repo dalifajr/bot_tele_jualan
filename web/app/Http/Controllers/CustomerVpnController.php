@@ -25,6 +25,9 @@ class CustomerVpnController extends Controller
     {
         $user = Auth::user();
 
+        // Auto-refresh traffic for customer's VPN accounts from active VPN servers with cooldown
+        $this->autoSyncUserTraffic($vpnService, $user->id);
+
         $query = VpnAccount::with(['vpnServer', 'order.items.product', 'suspendedBy'])
             ->where('user_id', $user->id)
             ->orderByDesc('created_at');
@@ -808,5 +811,33 @@ class CustomerVpnController extends Controller
         }
 
         return max(1, (int) round(($pricing['base_price'] / $pricing['base_days']) * max(1, $days)));
+    }
+
+    private function autoSyncUserTraffic(VpnService $vpnService, int $userId): void
+    {
+        $cacheKey = "vpn_customer_traffic_cooldown_{$userId}";
+        if (\Illuminate\Support\Facades\Cache::has($cacheKey)) {
+            return;
+        }
+        \Illuminate\Support\Facades\Cache::put($cacheKey, true, 30); // 30 seconds cooldown
+
+        try {
+            $serverIds = VpnAccount::where('user_id', $userId)
+                ->whereNotNull('vpn_server_id')
+                ->pluck('vpn_server_id')
+                ->unique();
+
+            if ($serverIds->isNotEmpty()) {
+                $servers = \App\Models\VpnServer::whereIn('id', $serverIds)
+                    ->where('is_active', true)
+                    ->get();
+
+                foreach ($servers as $server) {
+                    $vpnService->syncServerTraffic($server);
+                }
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning("Customer auto traffic sync issue: " . $e->getMessage());
+        }
     }
 }

@@ -19,6 +19,8 @@ class SellerController extends Controller
     // ==========================================
     public function dashboard(Request $request)
     {
+        \App\Services\HeldFundService::runOpportunisticRelease();
+
         $sellerId = Auth::id();
         $user = Auth::user();
         $productId = $request->query('product_id');
@@ -1048,6 +1050,8 @@ class SellerController extends Controller
     // ==========================================
     public function finance(Request $request)
     {
+        \App\Services\HeldFundService::runOpportunisticRelease();
+
         $sellerId = Auth::id();
         $user = Auth::user();
 

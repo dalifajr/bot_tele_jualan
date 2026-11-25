@@ -397,6 +397,18 @@ systemctl restart jualan-bot.service jualan-api.service jualan-backup.timer
 # Create alias link
 ln -sf "${PROJECT_DIR}/ops/jualan" /usr/local/bin/jualan
 
+# 11. Setup Laravel Scheduler Cron Job
+log_step "Mengonfigurasi cron job Laravel scheduler (pelepasan dana seller, expired orders, dll)..."
+CRON_FILE="/etc/cron.d/jualan-web"
+cat > "${CRON_FILE}" <<EOF
+# Cron job Laravel Scheduler untuk website jualan
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+* * * * * root cd ${WEB_DIR} && php artisan schedule:run >> /dev/null 2>&1
+EOF
+chmod 644 "${CRON_FILE}"
+systemctl reload cron 2>/dev/null || systemctl restart cron 2>/dev/null || true
+
 log_step "INSTALASI BERHASIL!"
 echo "========================================================="
 echo "Website Jualan: https://${WEBSITE_DOMAIN}"

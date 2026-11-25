@@ -418,6 +418,21 @@ class VpnXrayApiDriver implements VpnProviderInterface
         return $this->request('POST', "/accounts/{$proto}/{$user}/renew", $body, [], $idempotencyKey);
     }
 
+    public function reduceAccount(string $protocol, string $username, int $days, ?int $quotaGb = null, ?int $ipLimit = null): array
+    {
+        $proto = rawurlencode(strtolower($protocol));
+        $user = rawurlencode($username);
+        $body = ['days' => max(1, min(365, $days))];
+        if ($quotaGb !== null) {
+            $body['quota_gb'] = max(0, $quotaGb);
+        }
+        if ($ipLimit !== null) {
+            $body['ip_limit'] = max(1, $ipLimit);
+        }
+
+        return $this->request('POST', "/accounts/{$proto}/{$user}/reduce", $body);
+    }
+
     public function suspendAccount(string $protocol, string $username, ?string $reason = null, bool $adminSuspended = true): array
     {
         $proto = rawurlencode(strtolower($protocol));

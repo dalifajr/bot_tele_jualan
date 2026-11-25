@@ -23,16 +23,18 @@ class CheckMaintenanceMode
             return $next($request);
         }
 
-        // If user is authenticated and is an admin, allow full access
-        if (Auth::check() && Auth::user()->role === 'admin') {
+        // If user is authenticated and is an admin (or an admin impersonating another user), allow full access
+        if (Auth::check() && (Auth::user()->role === 'admin' || session()->has('admin_impersonator_id'))) {
             return $next($request);
         }
 
         $maintenanceMessage = BotSetting::where('key', 'maintenance_message')->value('value')
             ?: 'Website sedang dalam pemeliharaan sistem (Maintenance). Silakan kembali beberapa saat lagi.';
 
-        // Allow logout and language switcher even during maintenance
-        if ($request->routeIs('logout') || $request->is('logout') || $request->routeIs('lang.switch') || $request->is('lang/*')) {
+        // Allow logout, language switcher, and stop-impersonating even during maintenance
+        if ($request->routeIs('logout') || $request->is('logout') ||
+            $request->routeIs('lang.switch') || $request->is('lang/*') ||
+            $request->routeIs('admin.users.stop-impersonating') || $request->is('admin/stop-impersonating*')) {
             return $next($request);
         }
 

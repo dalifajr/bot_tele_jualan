@@ -65,6 +65,15 @@
                     </a>
                     @endif
 
+                    @if(session()->has('admin_impersonator_id'))
+                    <form method="POST" action="{{ route('admin.users.stop-impersonating') }}" class="m-0 mt-1">
+                        @csrf
+                        <button type="submit" class="btn btn-warning rounded-pill py-2 w-100 fw-semibold">
+                            <i class="fas fa-user-shield me-2"></i>{{ __('Kembali ke Akun Admin') }}
+                        </button>
+                    </form>
+                    @endif
+
                     @if(Auth::check())
                     <form method="POST" action="{{ route('logout') }}" class="m-0 mt-1">
                         @csrf

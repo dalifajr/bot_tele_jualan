@@ -37,6 +37,11 @@ interface VpnProviderInterface
     /**
      * @return array{success: bool, data?: array, message: string}
      */
+    public function reduceAccount(string $protocol, string $username, int $days, ?int $quotaGb = null, ?int $ipLimit = null): array;
+
+    /**
+     * @return array{success: bool, data?: array, message: string}
+     */
     public function suspendAccount(string $protocol, string $username, ?string $reason = null, bool $adminSuspended = true): array;
 
     /**

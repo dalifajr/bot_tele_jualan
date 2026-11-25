@@ -193,11 +193,23 @@
                                 @else
                                     <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-2.5 btn-open-renew"
                                             data-action="{{ route('admin.vpn-accounts.renew', $acc->id) }}"
+                                            data-action-reduce="{{ route('admin.vpn-accounts.reduce-duration', $acc->id) }}"
                                             data-username="{{ $acc->username }}"
                                             data-quota="{{ $acc->quota_gb ?? 0 }}"
                                             data-ip="{{ max(1, (int) ($acc->ip_limit ?? 1)) }}"
-                                            title="{{ __('Perpanjang') }}">
+                                            data-expired="{{ $acc->expired_at ? $acc->expired_at->format('Y-m-d H:i:s') : '' }}"
+                                            title="{{ __('Perpanjang Durasi') }}">
                                         <i class="fas fa-calendar-plus"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-2.5 btn-open-reduce"
+                                            data-action="{{ route('admin.vpn-accounts.renew', $acc->id) }}"
+                                            data-action-reduce="{{ route('admin.vpn-accounts.reduce-duration', $acc->id) }}"
+                                            data-username="{{ $acc->username }}"
+                                            data-quota="{{ $acc->quota_gb ?? 0 }}"
+                                            data-ip="{{ max(1, (int) ($acc->ip_limit ?? 1)) }}"
+                                            data-expired="{{ $acc->expired_at ? $acc->expired_at->format('Y-m-d H:i:s') : '' }}"
+                                            title="{{ __('Kurangi Masa Aktif') }}">
+                                        <i class="fas fa-calendar-minus"></i>
                                     </button>
                                     @if($acc->status === 'suspended')
                                         <form action="{{ route('admin.vpn-accounts.unsuspend', $acc->id) }}" method="POST" class="d-inline">
@@ -291,10 +303,21 @@
                         @else
                             <button type="button" class="btn btn-sm btn-outline-primary rounded-pill flex-grow-1 btn-open-renew"
                                     data-action="{{ route('admin.vpn-accounts.renew', $acc->id) }}"
+                                    data-action-reduce="{{ route('admin.vpn-accounts.reduce-duration', $acc->id) }}"
                                     data-username="{{ $acc->username }}"
                                     data-quota="{{ $acc->quota_gb ?? 0 }}"
-                                    data-ip="{{ max(1, (int) ($acc->ip_limit ?? 1)) }}">
+                                    data-ip="{{ max(1, (int) ($acc->ip_limit ?? 1)) }}"
+                                    data-expired="{{ $acc->expired_at ? $acc->expired_at->format('Y-m-d H:i:s') : '' }}">
                                 <i class="fas fa-calendar-plus me-1"></i>{{ __('Renew') }}
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-danger rounded-pill flex-grow-1 btn-open-reduce"
+                                    data-action="{{ route('admin.vpn-accounts.renew', $acc->id) }}"
+                                    data-action-reduce="{{ route('admin.vpn-accounts.reduce-duration', $acc->id) }}"
+                                    data-username="{{ $acc->username }}"
+                                    data-quota="{{ $acc->quota_gb ?? 0 }}"
+                                    data-ip="{{ max(1, (int) ($acc->ip_limit ?? 1)) }}"
+                                    data-expired="{{ $acc->expired_at ? $acc->expired_at->format('Y-m-d H:i:s') : '' }}">
+                                <i class="fas fa-calendar-minus me-1"></i>{{ __('Kurangi') }}
                             </button>
                             @if($acc->status === 'suspended')
                                 <form action="{{ route('admin.vpn-accounts.unsuspend', $acc->id) }}" method="POST" class="flex-grow-1">
@@ -400,26 +423,64 @@
     </div>
 </div>
 
-{{-- Renew Modal --}}
+{{-- Renew & Reduce Modal --}}
 <div class="modal fade" id="adminRenewVpnModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered m3-sheet-modal">
         <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
             <div class="m3-sheet-handle d-md-none"></div>
             <div class="modal-header border-0 pb-1">
-                <h5 class="modal-title fw-bold"><i class="fas fa-calendar-plus text-primary me-2"></i>{{ __('Perpanjang Akun VPN') }}</h5>
+                <h5 class="modal-title fw-bold" id="renewModalTitle">
+                    <i class="fas fa-calendar-plus text-success me-2" id="renewModalIcon"></i><span id="renewModalTitleText">{{ __('Perpanjang Akun VPN') }}</span>
+                </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form id="adminRenewForm" method="POST">
                 @csrf
+                <input type="hidden" name="action_type" id="renewActionType" value="add">
                 <div class="modal-body pt-2">
+                    {{-- Segmented Mode Toggle --}}
+                    <div class="d-flex p-1 bg-light rounded-pill mb-3 border">
+                        <button type="button" class="btn btn-sm rounded-pill flex-grow-1 fw-semibold py-1.5 transition-all" id="renewTabAddBtn">
+                            <i class="fas fa-plus-circle me-1 text-success"></i>{{ __('Tambah Durasi') }}
+                        </button>
+                        <button type="button" class="btn btn-sm rounded-pill flex-grow-1 fw-semibold py-1.5 text-muted transition-all" id="renewTabReduceBtn">
+                            <i class="fas fa-minus-circle me-1 text-danger"></i>{{ __('Kurangi Masa Aktif') }}
+                        </button>
+                    </div>
+
                     <div class="mb-2.5">
                         <label class="form-label small fw-bold">{{ __('Username') }}</label>
                         <input type="text" id="renewModalUsername" class="form-control font-monospace" readonly>
                     </div>
-                    <div class="mb-2.5">
-                        <label class="form-label small fw-bold">{{ __('Tambah Durasi (Hari)') }} <span class="text-danger">*</span></label>
-                        <input type="number" name="days" class="form-control" value="30" min="1" max="365" required>
+
+                    <div class="mb-2">
+                        <label class="form-label small fw-bold" id="renewDaysLabel">{{ __('Tambah Durasi (Hari)') }} <span class="text-danger">*</span></label>
+                        <input type="number" name="days" id="renewModalDays" class="form-control" value="1" min="1" max="365" required>
                     </div>
+
+                    {{-- Presets: Tambah Durasi --}}
+                    <div id="renewAddPresets" class="d-flex flex-wrap gap-1.5 mb-2.5">
+                        <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-3 fw-semibold preset-day-btn" data-days="1">+1 Hari</button>
+                        <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-3 fw-semibold preset-day-btn" data-days="7">+7 Hari</button>
+                        <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-3 fw-semibold preset-day-btn" data-days="30">+30 Hari</button>
+                        <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-3 fw-semibold preset-day-btn" data-days="60">+60 Hari</button>
+                    </div>
+
+                    {{-- Presets: Kurangi Durasi --}}
+                    <div id="renewReducePresets" class="d-flex flex-wrap gap-1.5 mb-2.5 d-none">
+                        <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-semibold preset-day-btn" data-days="1">-1 Hari</button>
+                        <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-semibold preset-day-btn" data-days="3">-3 Hari</button>
+                        <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-semibold preset-day-btn" data-days="7">-7 Hari</button>
+                        <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-semibold preset-day-btn" data-days="14">-14 Hari</button>
+                        <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-semibold preset-day-btn" data-days="30">-30 Hari</button>
+                    </div>
+
+                    {{-- Estimasi Expired Baru --}}
+                    <div class="p-2.5 rounded-3 bg-light border d-flex justify-content-between align-items-center mb-3">
+                        <span class="small text-muted" id="renewExpiryLabel">{{ __('Estimasi Expired Baru:') }}</span>
+                        <span class="small fw-bold font-monospace text-body" id="renewEstimatedExpiry">--</span>
+                    </div>
+
                     <div class="row g-2">
                         <div class="col-6">
                             <label class="form-label small fw-bold">{{ __('Kuota (GB)') }}</label>
@@ -433,7 +494,7 @@
                 </div>
                 <div class="modal-footer border-0 pt-1">
                     <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">{{ __('Batal') }}</button>
-                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold">{{ __('Perpanjang Sekarang') }}</button>
+                    <button type="submit" class="btn btn-success rounded-pill px-4 fw-semibold" id="renewSubmitBtn">{{ __('Perpanjang Sekarang') }}</button>
                 </div>
             </form>
         </div>
@@ -539,12 +600,131 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    let currentAccountExpired = '';
+    let currentActionUrl = '';
+    let currentActionReduceUrl = '';
+
+    const renewForm = document.getElementById('adminRenewForm');
+    const renewActionType = document.getElementById('renewActionType');
+    const renewModalTitle = document.getElementById('renewModalTitleText');
+    const renewModalIcon = document.getElementById('renewModalIcon');
+    const renewDaysLabel = document.getElementById('renewDaysLabel');
+    const renewDaysInput = document.getElementById('renewModalDays');
+    const renewAddPresets = document.getElementById('renewAddPresets');
+    const renewReducePresets = document.getElementById('renewReducePresets');
+    const renewTabAddBtn = document.getElementById('renewTabAddBtn');
+    const renewTabReduceBtn = document.getElementById('renewTabReduceBtn');
+    const renewSubmitBtn = document.getElementById('renewSubmitBtn');
+    const renewEstimatedExpiry = document.getElementById('renewEstimatedExpiry');
+
+    function formatIndoDate(date) {
+        if (!date || isNaN(date.getTime())) return '-';
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = months[date.getMonth()];
+        const year = date.getFullYear();
+        return `${day} ${month} ${year}`;
+    }
+
+    function calculateEstimatedExpiry() {
+        if (!renewEstimatedExpiry) return;
+        const days = parseInt(renewDaysInput?.value, 10) || 0;
+        const isReduce = renewActionType?.value === 'reduce';
+
+        let base = currentAccountExpired ? new Date(currentAccountExpired.replace(/-/g, '/')) : new Date();
+        if (isNaN(base.getTime())) base = new Date();
+        const now = new Date();
+
+        if (isReduce) {
+            let target = new Date(base.getTime() - (days * 86400000));
+            if (target <= now) {
+                renewEstimatedExpiry.innerHTML = `<span class="text-danger fw-bold">${formatIndoDate(now)} (Kadaluarsa Hari Ini)</span>`;
+            } else {
+                renewEstimatedExpiry.textContent = formatIndoDate(target);
+            }
+        } else {
+            if (base < now) base = now;
+            let target = new Date(base.getTime() + (days * 86400000));
+            renewEstimatedExpiry.textContent = formatIndoDate(target);
+        }
+    }
+
+    function setRenewMode(mode) {
+        if (!renewForm) return;
+        if (mode === 'reduce') {
+            renewActionType.value = 'reduce';
+            renewForm.action = currentActionReduceUrl || currentActionUrl;
+            renewModalTitle.textContent = '{{ __("Kurangi Masa Aktif Akun VPN") }}';
+            renewModalIcon.className = 'fas fa-calendar-minus text-danger me-2';
+            renewDaysLabel.innerHTML = '{{ __("Kurangi Durasi (Hari)") }} <span class="text-danger">*</span>';
+            renewAddPresets?.classList.add('d-none');
+            renewReducePresets?.classList.remove('d-none');
+            renewTabAddBtn?.classList.remove('bg-white', 'shadow-sm');
+            renewTabAddBtn?.classList.add('text-muted');
+            renewTabReduceBtn?.classList.add('bg-white', 'shadow-sm');
+            renewTabReduceBtn?.classList.remove('text-muted');
+            renewSubmitBtn.className = 'btn btn-danger rounded-pill px-4 fw-semibold';
+            renewSubmitBtn.textContent = '{{ __("Kurangi Masa Aktif") }}';
+        } else {
+            renewActionType.value = 'add';
+            renewForm.action = currentActionUrl;
+            renewModalTitle.textContent = '{{ __("Perpanjang Akun VPN") }}';
+            renewModalIcon.className = 'fas fa-calendar-plus text-success me-2';
+            renewDaysLabel.innerHTML = '{{ __("Tambah Durasi (Hari)") }} <span class="text-danger">*</span>';
+            renewAddPresets?.classList.remove('d-none');
+            renewReducePresets?.classList.add('d-none');
+            renewTabAddBtn?.classList.add('bg-white', 'shadow-sm');
+            renewTabAddBtn?.classList.remove('text-muted');
+            renewTabReduceBtn?.classList.remove('bg-white', 'shadow-sm');
+            renewTabReduceBtn?.classList.add('text-muted');
+            renewSubmitBtn.className = 'btn btn-success rounded-pill px-4 fw-semibold';
+            renewSubmitBtn.textContent = '{{ __("Perpanjang Sekarang") }}';
+        }
+        calculateEstimatedExpiry();
+    }
+
+    if (renewTabAddBtn && renewTabReduceBtn) {
+        renewTabAddBtn.addEventListener('click', () => setRenewMode('add'));
+        renewTabReduceBtn.addEventListener('click', () => setRenewMode('reduce'));
+    }
+
+    if (renewDaysInput) {
+        renewDaysInput.addEventListener('input', calculateEstimatedExpiry);
+    }
+
+    document.querySelectorAll('.preset-day-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            if (renewDaysInput) {
+                renewDaysInput.value = this.dataset.days || 1;
+                calculateEstimatedExpiry();
+            }
+        });
+    });
+
     document.querySelectorAll('.btn-open-renew').forEach(function (btn) {
         btn.addEventListener('click', function () {
-            document.getElementById('adminRenewForm').action = this.dataset.action;
+            currentActionUrl = this.dataset.action;
+            currentActionReduceUrl = this.dataset.actionReduce || this.dataset.action;
+            currentAccountExpired = this.dataset.expired || '';
             document.getElementById('renewModalUsername').value = this.dataset.username || '';
             document.getElementById('renewModalQuota').value = this.dataset.quota || 0;
             document.getElementById('renewModalIp').value = this.dataset.ip || 1;
+            if (renewDaysInput) renewDaysInput.value = 1;
+            setRenewMode('add');
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('adminRenewVpnModal')).show();
+        });
+    });
+
+    document.querySelectorAll('.btn-open-reduce').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            currentActionUrl = this.dataset.action;
+            currentActionReduceUrl = this.dataset.actionReduce || this.dataset.action;
+            currentAccountExpired = this.dataset.expired || '';
+            document.getElementById('renewModalUsername').value = this.dataset.username || '';
+            document.getElementById('renewModalQuota').value = this.dataset.quota || 0;
+            document.getElementById('renewModalIp').value = this.dataset.ip || 1;
+            if (renewDaysInput) renewDaysInput.value = 1;
+            setRenewMode('reduce');
             bootstrap.Modal.getOrCreateInstance(document.getElementById('adminRenewVpnModal')).show();
         });
     });

@@ -219,6 +219,14 @@ class LegacySshVpnDriver implements VpnProviderInterface
         ];
     }
 
+    public function reduceAccount(string $protocol, string $username, int $days, ?int $quotaGb = null, ?int $ipLimit = null): array
+    {
+        return [
+            'success' => false,
+            'message' => __('Pengurangan durasi jarak jauh memerlukan driver REST API vpnxray-main.'),
+        ];
+    }
+
     public function suspendAccount(string $protocol, string $username, ?string $reason = null, bool $adminSuspended = true): array
     {
         return [

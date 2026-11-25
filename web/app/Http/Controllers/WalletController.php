@@ -369,15 +369,27 @@ class WalletController extends Controller
                     $targetUser->refresh();
                     $balanceFmt = number_format((int) $targetUser->customer_wallet_balance, 0, ',', '.');
                     $amountFmt = number_format($amount, 0, ',', '.');
+                    $baseDomain = TelegramService::resolveBaseDomain();
+                    $walletUrl = "{$baseDomain}/wallet";
+                    $walletBtn = str_starts_with($walletUrl, 'https://')
+                        ? ['text' => '💼 Buka Dompet Saldo', 'web_app' => ['url' => $walletUrl]]
+                        : ['text' => '💼 Buka Dompet Saldo', 'url' => $walletUrl];
+
                     if ($actionType === 'debit') {
                         TelegramService::sendMessage(
                             $targetUser->telegram_id,
-                            "ℹ️ <b>Penyesuaian Saldo Dompet oleh Admin</b>\n\nReferensi: <code>{$ref}</code>\nPotongan: <b>-Rp {$amountFmt}</b>\nCatatan: " . e($note) . "\nSaldo Sekarang: <b>Rp {$balanceFmt}</b>"
+                            "ℹ️ <b>Penyesuaian Saldo Dompet oleh Admin</b>\n\nReferensi: <code>{$ref}</code>\nPotongan: <b>-Rp {$amountFmt}</b>\nCatatan: " . e($note) . "\nSaldo Sekarang: <b>Rp {$balanceFmt}</b>",
+                            [
+                                'inline_keyboard' => [[$walletBtn]],
+                            ]
                         );
                     } else {
                         TelegramService::sendMessage(
                             $targetUser->telegram_id,
-                            "✅ <b>Saldo Dompet Ditambahkan oleh Admin</b>\n\nReferensi: <code>{$ref}</code>\nNominal: <b>+Rp {$amountFmt}</b>\nCatatan: " . e($note) . "\nSaldo Sekarang: <b>Rp {$balanceFmt}</b>"
+                            "✅ <b>Saldo Dompet Ditambahkan oleh Admin</b>\n\nReferensi: <code>{$ref}</code>\nNominal: <b>+Rp {$amountFmt}</b>\nCatatan: " . e($note) . "\nSaldo Sekarang: <b>Rp {$balanceFmt}</b>",
+                            [
+                                'inline_keyboard' => [[$walletBtn]],
+                            ]
                         );
                     }
                 }

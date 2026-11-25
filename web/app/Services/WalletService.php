@@ -157,9 +157,18 @@ class WalletService
                 if (!empty($user->telegram_id)) {
                     $amountFmt = number_format((int) $topup->amount, 0, ',', '.');
                     $balanceFmt = number_format((int) ($user->customer_wallet_balance ?? 0), 0, ',', '.');
+                    $baseDomain = TelegramService::resolveBaseDomain();
+                    $walletUrl = "{$baseDomain}/wallet";
+                    $walletBtn = str_starts_with($walletUrl, 'https://')
+                        ? ['text' => '💼 Buka Dompet Saldo', 'web_app' => ['url' => $walletUrl]]
+                        : ['text' => '💼 Buka Dompet Saldo', 'url' => $walletUrl];
+
                     TelegramService::sendMessage(
                         $user->telegram_id,
-                        "✅ <b>Top-Up Dompet Saldo Berhasil!</b>\n\nReferensi: <code>{$topup->topup_ref}</code>\nNominal Masuk: <b>Rp {$amountFmt}</b>\nSaldo Dompet Sekarang: <b>Rp {$balanceFmt}</b>\n\nSaldo siap digunakan untuk checkout instan 1-klik."
+                        "✅ <b>Top-Up Dompet Saldo Berhasil!</b>\n\nReferensi: <code>{$topup->topup_ref}</code>\nNominal Masuk: <b>Rp {$amountFmt}</b>\nSaldo Dompet Sekarang: <b>Rp {$balanceFmt}</b>\n\nSaldo siap digunakan untuk checkout instan 1-klik.",
+                        [
+                            'inline_keyboard' => [[$walletBtn]],
+                        ]
                     );
                 }
             }

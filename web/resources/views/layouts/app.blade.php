@@ -813,6 +813,9 @@
     <div class="d-flex align-items-center gap-2">
         <i class="fas fa-user-secret"></i> 
         <span>{{ __('Anda sedang login sebagai') }} <strong>{{ Auth::user()->full_name ?? Auth::user()->username }}</strong> ({{ __('Sesi Admin') }})</span>
+        @if($globalMaintenanceActive ?? false)
+        <span class="badge bg-danger text-white ms-2" style="font-size: 0.72rem; vertical-align: middle;"><i class="fas fa-screwdriver-wrench me-1"></i>{{ __('Maintenance Aktif') }}</span>
+        @endif
     </div>
     <form action="{{ route('admin.users.stop-impersonating') }}" method="POST" class="m-0">
         @csrf

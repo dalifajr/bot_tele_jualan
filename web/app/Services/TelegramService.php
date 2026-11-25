@@ -703,10 +703,14 @@ class TelegramService
               . "Segera perpanjang agar koneksi VPN Anda tidak terputus.";
 
         $renewUrl = self::resolveBaseDomain() . '/my-vpn?renew=' . $account->id;
+        $renewBtn = str_starts_with($renewUrl, 'https://')
+            ? ['text' => '🔄 Renew Sekarang', 'web_app' => ['url' => $renewUrl]]
+            : ['text' => '🔄 Renew Sekarang', 'url' => $renewUrl];
+
         $keyboard = [
             'inline_keyboard' => [
                 [
-                    ['text' => '🔄 Renew Sekarang', 'url' => $renewUrl],
+                    $renewBtn,
                 ],
             ],
         ];
@@ -758,6 +762,7 @@ class TelegramService
             $adminId = $account->suspended_by_user_id
                 ?: User::where('role', 'admin')->orderBy('id')->value('id');
             $chatUrl = $adminId ? "{$baseDomain}/chat?contact_id={$adminId}" : "{$baseDomain}/my-vpn";
+            $vpnUrl = "{$baseDomain}/my-vpn";
 
             $text = "🚫 <b>Akun VPN Anda Disuspend oleh Admin</b>\n\n"
                 . "Protokol: <b>{$proto}</b>\n"
@@ -766,11 +771,19 @@ class TelegramService
                 . ($reasonClean !== '' ? "Alasan: " . e($reasonClean) . "\n" : '')
                 . "\n<i>Akun terkunci sementara dan tidak dapat diaktifkan mandiri. Silakan hubungi Admin melalui Chat untuk informasi atau pengaktifan kembali.</i>";
 
+            $chatBtn = str_starts_with($chatUrl, 'https://')
+                ? ['text' => '💬 Chat Admin', 'web_app' => ['url' => $chatUrl]]
+                : ['text' => '💬 Chat Admin', 'url' => $chatUrl];
+
+            $vpnBtn = str_starts_with($vpnUrl, 'https://')
+                ? ['text' => '📋 Akun VPN Saya', 'web_app' => ['url' => $vpnUrl]]
+                : ['text' => '📋 Akun VPN Saya', 'url' => $vpnUrl];
+
             return self::sendMessage($user->telegram_id, $text, [
                 'inline_keyboard' => [
                     [
-                        ['text' => '💬 Chat Admin', 'url' => $chatUrl],
-                        ['text' => '📋 Akun VPN Saya', 'url' => "{$baseDomain}/my-vpn"],
+                        $chatBtn,
+                        $vpnBtn,
                     ],
                 ],
             ]);
@@ -784,10 +797,15 @@ class TelegramService
             . "Aktif Hingga: <b>{$expFmt}</b>\n\n"
             . "<i>Akun VPN Anda kini aktif kembali dan siap digunakan.</i>";
 
+        $vpnUrl = "{$baseDomain}/my-vpn";
+        $vpnBtn = str_starts_with($vpnUrl, 'https://')
+            ? ['text' => '🚀 Buka Akun VPN Saya', 'web_app' => ['url' => $vpnUrl]]
+            : ['text' => '🚀 Buka Akun VPN Saya', 'url' => $vpnUrl];
+
         return self::sendMessage($user->telegram_id, $text, [
             'inline_keyboard' => [
                 [
-                    ['text' => '🚀 Buka Akun VPN Saya', 'url' => "{$baseDomain}/my-vpn"],
+                    $vpnBtn,
                 ],
             ],
         ]);
@@ -822,10 +840,14 @@ class TelegramService
             . "Total Bayar Tepat: <b>Rp {$totalFmt}</b>\n"
             . "Batas Pembayaran: {$expiresAt} WIB\n\n";
 
+        $walletBtn = str_starts_with($walletUrl, 'https://')
+            ? ['text' => '💼 Buka Halaman Dompet', 'web_app' => ['url' => $walletUrl]]
+            : ['text' => '💼 Buka Halaman Dompet', 'url' => $walletUrl];
+
         $replyMarkup = [
             'inline_keyboard' => [
                 [
-                    ['text' => '💼 Buka Halaman Dompet', 'url' => $walletUrl],
+                    $walletBtn,
                 ],
             ],
         ];

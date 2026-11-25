@@ -243,4 +243,146 @@ class MaintenanceModeAndLoginAccuracyTest extends TestCase
         $this->assertStringContainsString('top: var(--banner-height) !important;', $cssContent);
         $this->assertStringContainsString('height: calc(100vh - var(--banner-height)) !important;', $cssContent);
     }
+
+    public function test_admin_impersonating_user_during_maintenance_is_not_blocked_by_503(): void
+    {
+        BotSetting::updateOrCreate(['key' => 'maintenance_mode'], ['value' => '1']);
+
+        $admin = $this->createUser(['role' => 'admin', 'username' => 'admin_super']);
+        $customer = $this->createUser(['role' => 'customer', 'username' => 'target_cust']);
+
+        // Admin impersonates customer
+        $response = $this->actingAs($admin)->post(route('admin.users.impersonate', ['id' => $customer->id]));
+        $response->assertRedirect(route('dashboard'));
+
+        // Customer access with admin_impersonator_id session must return 200 during maintenance (NOT 503)
+        $dashboardResponse = $this->actingAs($customer)
+            ->withSession(['admin_impersonator_id' => $admin->id])
+            ->get(route('dashboard'));
+
+        $this->assertNotEquals(503, $dashboardResponse->getStatusCode());
+        $dashboardResponse->assertOk();
+
+        // Customer without admin_impersonator_id must be blocked by 503
+        $this->flushSession();
+        $blockedResponse = $this->actingAs($customer)->get(route('dashboard'));
+        $blockedResponse->assertStatus(503);
+    }
+
+    public function test_admin_impersonating_can_stop_impersonating_during_maintenance(): void
+    {
+        BotSetting::updateOrCreate(['key' => 'maintenance_mode'], ['value' => '1']);
+
+        $admin = $this->createUser(['role' => 'admin', 'username' => 'admin_revert']);
+        $customer = $this->createUser(['role' => 'customer', 'username' => 'target_cust_revert']);
+
+        // Stop impersonating request
+        $response = $this->actingAs($customer)
+            ->withSession(['admin_impersonator_id' => $admin->id])
+            ->post(route('admin.users.stop-impersonating'));
+
+        $response->assertRedirect(route('admin.users.index'));
+        $this->assertAuthenticatedAs($admin);
+        $this->assertNull(session('admin_impersonator_id'));
+    }
+
+    public function test_auto_release_held_funds_when_expired_and_no_active_complaints(): void
+    {
+        $seller = $this->createUser(['role' => 'seller', 'username' => 'seller_funds']);
+        $seller->wallet_balance = 10000;
+        $seller->save();
+
+        $product = \App\Models\Product::create([
+            'name' => 'Akun Garansi Test',
+            'price' => 50000,
+            'creator_id' => $seller->id,
+            'warranty_days' => 3,
+        ]);
+
+        $order = \App\Models\Order::create([
+            'order_ref' => 'ORD-TEST-001',
+            'customer_id' => $seller->id,
+            'subtotal' => 50000,
+            'unique_code' => 0,
+            'total_amount' => 50000,
+            'status' => 'delivered',
+            'created_at' => now()->subDays(5),
+        ]);
+
+        $fund = \App\Models\HeldFund::create([
+            'seller_id' => $seller->id,
+            'order_id' => $order->id,
+            'product_id' => $product->id,
+            'amount' => 45000,
+            'status' => 'held',
+            'release_at' => now()->subHour(),
+        ]);
+
+        $result = \App\Services\HeldFundService::releaseEligibleFunds();
+
+        $this->assertEquals(1, $result['released_count']);
+        $this->assertEquals(45000, $result['released_amount']);
+        $this->assertEquals(0, $result['skipped_complaints']);
+
+        $fund->refresh();
+        $this->assertEquals('released', $fund->status);
+
+        $seller->refresh();
+        $this->assertEquals(55000, $seller->wallet_balance);
+    }
+
+    public function test_auto_release_skips_held_funds_with_active_complaint(): void
+    {
+        $seller = $this->createUser(['role' => 'seller', 'username' => 'seller_dispute']);
+        $seller->wallet_balance = 0;
+        $seller->save();
+
+        $product = \App\Models\Product::create([
+            'name' => 'Akun Garansi Dispute',
+            'price' => 30000,
+            'creator_id' => $seller->id,
+            'warranty_days' => 3,
+        ]);
+
+        $order = \App\Models\Order::create([
+            'order_ref' => 'ORD-DISPUTE-001',
+            'customer_id' => $seller->id,
+            'subtotal' => 30000,
+            'unique_code' => 0,
+            'total_amount' => 30000,
+            'status' => 'delivered',
+            'created_at' => now()->subDays(5),
+        ]);
+
+        $fund = \App\Models\HeldFund::create([
+            'seller_id' => $seller->id,
+            'order_id' => $order->id,
+            'product_id' => $product->id,
+            'amount' => 25000,
+            'status' => 'held',
+            'release_at' => now()->subHour(),
+        ]);
+
+        // Active complaint exists
+        \App\Models\ComplaintCase::create([
+            'complaint_ref' => 'CMP-001',
+            'customer_id' => $seller->id,
+            'customer_telegram_id' => '123456789',
+            'order_id' => $order->id,
+            'order_ref_snapshot' => $order->order_ref,
+            'status' => 'open',
+            'complaint_text' => 'Akun bermasalah',
+        ]);
+
+        $result = \App\Services\HeldFundService::releaseEligibleFunds();
+
+        $this->assertEquals(0, $result['released_count']);
+        $this->assertEquals(1, $result['skipped_complaints']);
+
+        $fund->refresh();
+        $this->assertEquals('held', $fund->status);
+
+        $seller->refresh();
+        $this->assertEquals(0, $seller->wallet_balance);
+    }
 }

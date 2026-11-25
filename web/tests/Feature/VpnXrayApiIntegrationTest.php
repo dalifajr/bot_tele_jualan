@@ -1992,4 +1992,132 @@ class VpnXrayApiIntegrationTest extends TestCase
         $this->assertContains('wallet_admin_credit', $allNotifTypes);
         $this->assertContains('wallet_admin_debit', $allNotifTypes);
     }
+
+    public function test_vpn_reduce_duration_miniapp_buttons_and_auto_sync_on_page_load(): void
+    {
+        $this->customer->update(['telegram_id' => '123456789']);
+
+        $vpnAccount = VpnAccount::create([
+            'user_id' => $this->customer->id,
+            'vpn_server_id' => $this->server->id,
+            'protocol' => 'vmess',
+            'username' => 'red_user_01',
+            'status' => 'active',
+            'expired_at' => now()->addDays(20),
+            'quota_gb' => 50,
+            'ip_limit' => 2,
+        ]);
+
+        Http::fake([
+            'https://sg1.vpnpanel.test/api/v1/vpn/accounts/vmess/red_user_01/reduce' => Http::sequence()
+                ->push([
+                    'success' => true,
+                    'data' => [
+                        'username' => 'red_user_01',
+                        'protocol' => 'vmess',
+                        'expired_at' => now()->addDays(15)->toDateTimeString(),
+                        'quota_gb' => 50,
+                        'limit_ip' => 2,
+                    ],
+                ], 200)
+                ->push([
+                    'success' => true,
+                    'data' => [
+                        'username' => 'red_user_01',
+                        'protocol' => 'vmess',
+                        'expired_at' => now()->addDays(12)->toDateTimeString(),
+                        'quota_gb' => 50,
+                        'limit_ip' => 2,
+                    ],
+                ], 200),
+            'https://sg1.vpnpanel.test/api/v1/vpn/traffic' => Http::response([
+                'success' => true,
+                'data' => [
+                    'traffic' => [
+                        'vmess' => [
+                            'red_user_01' => [
+                                'uplink' => 1048576,
+                                'downlink' => 2097152,
+                                'total' => 3145728,
+                            ],
+                        ],
+                    ],
+                ],
+            ], 200),
+            'https://sg1.vpnpanel.test/api/v1/vpn/accounts' => Http::response([
+                'success' => true,
+                'data' => [
+                    'accounts' => [
+                        [
+                            'username' => 'red_user_01',
+                            'protocol' => 'vmess',
+                            'expired_at' => now()->addDays(15)->format('Y-m-d'),
+                            'quota_gb' => 50,
+                            'limit_ip' => 2,
+                            'status' => 'active',
+                        ],
+                    ],
+                ],
+            ], 200),
+            'https://api.telegram.org/*' => Http::response([
+                'ok' => true,
+                'result' => ['message_id' => 999],
+            ], 200),
+        ]);
+
+        // 1. Admin reduces duration via dedicated route
+        $resp = $this->actingAs($this->admin)->post(route('admin.vpn-accounts.reduce-duration', $vpnAccount->id), [
+            'days' => 5,
+        ]);
+        $resp->assertSessionHas('success');
+        $vpnAccount->refresh();
+        $this->assertEquals(15, (int) round(now()->diffInDays($vpnAccount->expired_at)));
+
+        // 2. Admin reduces duration via renew route with action_type=reduce
+        $resp2 = $this->actingAs($this->admin)->post(route('admin.vpn-accounts.renew', $vpnAccount->id), [
+            'action_type' => 'reduce',
+            'days' => 3,
+        ]);
+        $resp2->assertSessionHas('success');
+        $vpnAccount->refresh();
+        $this->assertEquals(12, (int) round(now()->diffInDays($vpnAccount->expired_at)));
+
+        // 3. Telegram notifications use MiniApp web_app buttons
+        $telegramService = app(\App\Services\TelegramService::class);
+        $telegramService->notifyVpnStatusChanged($vpnAccount, 'suspended', 'Pelanggaran kuota');
+
+        Http::assertSent(function ($request) {
+            if (!str_contains($request->url(), '/sendMessage')) {
+                return false;
+            }
+            $data = $request->data();
+            $markup = $data['reply_markup'] ?? null;
+            if (is_string($markup)) {
+                $markup = json_decode($markup, true);
+            }
+            $buttons = $markup['inline_keyboard'][0] ?? [];
+            if (empty($buttons)) {
+                return false;
+            }
+            // Check if buttons use web_app key
+            $hasWebApp = false;
+            foreach ($buttons as $btn) {
+                if (isset($btn['web_app']['url'])) {
+                    $hasWebApp = true;
+                    $this->assertStringStartsWith('https://', $btn['web_app']['url']);
+                }
+            }
+            return $hasWebApp;
+        });
+
+        // 4. Auto-sync on Admin VPN Index & Customer VPN Index
+        \Illuminate\Support\Facades\Cache::forget('admin_vpn_auto_sync_cooldown');
+        \Illuminate\Support\Facades\Cache::forget("vpn_customer_traffic_cooldown_{$this->customer->id}");
+
+        $this->actingAs($this->admin)->get(route('admin.vpn-accounts.index'))->assertOk();
+        $this->assertTrue(\Illuminate\Support\Facades\Cache::has('admin_vpn_auto_sync_cooldown'));
+
+        $this->actingAs($this->customer)->get(route('vpn.my-accounts'))->assertOk();
+        $this->assertTrue(\Illuminate\Support\Facades\Cache::has("vpn_customer_traffic_cooldown_{$this->customer->id}"));
+    }
 }

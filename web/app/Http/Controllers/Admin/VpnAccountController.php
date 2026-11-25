@@ -27,6 +27,9 @@ class VpnAccountController extends Controller
         $vpnService = $vpnService ?? app(VpnService::class);
         $activeTab = $request->query('tab') === 'servers' ? 'servers' : 'accounts';
 
+        // Auto-refresh traffic & sync accounts from active VPN servers with cooldown
+        $this->autoSyncActiveServers($vpnService);
+
         $query = VpnAccount::with(['user', 'order', 'vpnServer', 'suspendedBy'])
             ->orderByDesc('created_at');
 
@@ -368,6 +371,10 @@ class VpnAccountController extends Controller
 
     public function renew(Request $request, $id, VpnService $vpnService)
     {
+        if ($request->input('action_type') === 'reduce') {
+            return $this->reduceDuration($request, $id, $vpnService);
+        }
+
         $account = VpnAccount::with('vpnServer')->findOrFail($id);
 
         $validated = $request->validate([
@@ -390,6 +397,33 @@ class VpnAccountController extends Controller
             !empty($res['success'])
                 ? __('Akun VPN :user berhasil diperpanjang :days hari.', ['user' => $account->username, 'days' => $validated['days']])
                 : ($res['message'] ?? __('Gagal memperpanjang akun VPN.'))
+        );
+    }
+
+    public function reduceDuration(Request $request, $id, VpnService $vpnService)
+    {
+        $account = VpnAccount::with('vpnServer')->findOrFail($id);
+
+        $validated = $request->validate([
+            'days' => 'required|integer|min:1|max:365',
+            'quota_gb' => 'nullable|integer|min:0|max:10000',
+            'ip_limit' => 'nullable|integer|min:1|max:50',
+        ]);
+
+        $res = $vpnService->reduceAccount(
+            $account,
+            (int) $validated['days'],
+            $request->filled('quota_gb') ? (int) $validated['quota_gb'] : null,
+            $request->filled('ip_limit') ? (int) $validated['ip_limit'] : null
+        );
+
+        $this->logAudit('admin_vpn_reduce_duration', $account, "days={$validated['days']}; success=" . (!empty($res['success']) ? '1' : '0'));
+
+        return back()->with(
+            !empty($res['success']) ? 'success' : 'error',
+            !empty($res['success'])
+                ? __('Masa aktif akun VPN :user berhasil dikurangi :days hari.', ['user' => $account->username, 'days' => $validated['days']])
+                : ($res['message'] ?? __('Gagal mengurangi masa aktif akun VPN.'))
         );
     }
 
@@ -845,5 +879,44 @@ class VpnAccountController extends Controller
             'detail' => AuditLog::maskSensitiveData($detail),
             'created_at' => now(),
         ]);
+    }
+
+    private function autoSyncActiveServers(VpnService $vpnService): void
+    {
+        $cacheKey = 'admin_vpn_auto_sync_cooldown';
+        if (\Illuminate\Support\Facades\Cache::has($cacheKey)) {
+            return;
+        }
+        \Illuminate\Support\Facades\Cache::put($cacheKey, true, 45); // 45 seconds cooldown
+
+        try {
+            $servers = VpnServer::where('is_active', true)->get();
+            foreach ($servers as $server) {
+                // 1. Sync live traffic stats (Upload/Download)
+                $vpnService->syncServerTraffic($server);
+
+                // 2. Sync remote accounts if API driver
+                if ($server->isApiDriver()) {
+                    $remote = $vpnService->listRemoteAccounts($server, null, null, null, true);
+                    if (!empty($remote['success']) && !empty($remote['accounts'])) {
+                        foreach ($remote['accounts'] as $remoteAcc) {
+                            $protocol = strtolower((string) ($remoteAcc['protocol'] ?? ''));
+                            $username = (string) ($remoteAcc['username'] ?? '');
+                            if ($protocol === '' || $username === '') {
+                                continue;
+                            }
+                            $local = VpnAccount::where('protocol', $protocol)
+                                ->where('username', $username)
+                                ->first();
+                            if ($local) {
+                                $vpnService->syncAccountFromPanel($local);
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning("Auto-sync admin VPN servers encountered an issue: " . $e->getMessage());
+        }
     }
 }

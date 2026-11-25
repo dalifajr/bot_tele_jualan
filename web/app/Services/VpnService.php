@@ -395,6 +395,69 @@ class VpnService
         return $res;
     }
 
+    public function reduceAccount(
+        VpnAccount $account,
+        int $days,
+        ?int $quotaGb = null,
+        ?int $ipLimit = null
+    ): array {
+        $server = $this->resolveServer($account->vpnServer);
+        if (!$server) {
+            return ['success' => false, 'message' => __('Server VPN untuk akun ini tidak ditemukan.')];
+        }
+
+        $res = $this->driverFor($server)->reduceAccount(
+            $account->protocol,
+            $account->username,
+            $days,
+            $quotaGb,
+            $ipLimit
+        );
+
+        if (!empty($res['success'])) {
+            $data = is_array($res['data'] ?? null) ? $res['data'] : [];
+            $detail = is_array($data['detail'] ?? null) ? $data['detail'] : null;
+            $newExp = !empty($data['expired_at'])
+                ? Carbon::parse($data['expired_at'])->endOfDay()
+                : ($account->expired_at
+                    ? $account->expired_at->copy()->subDays($days)
+                    : now());
+
+            $newStatus = $newExp->isPast() ? 'expired' : $account->status;
+
+            $update = [
+                'expired_at' => $newExp,
+                'status' => $newStatus,
+                'quota_gb' => $quotaGb ?? (int) ($data['quota_gb'] ?? $account->quota_gb),
+                'ip_limit' => $ipLimit ?? max(1, (int) ($data['ip_limit'] ?? $account->ip_limit)),
+                'last_synced_at' => now(),
+                'last_error' => null,
+            ];
+
+            if ($detail) {
+                $update['config_payload'] = $detail;
+                if (!empty($detail['formatted_text'])) {
+                    $update['config_link'] = $detail['formatted_text'];
+                }
+                if (!empty($detail['uuid'])) {
+                    $update['uuid'] = $detail['uuid'];
+                }
+            }
+
+            $account->forceFill($update)->save();
+
+            return [
+                'success' => true,
+                'message' => __('Masa aktif akun :user berhasil dikurangi :days hari.', ['user' => $account->username, 'days' => $days]),
+                'data' => array_merge($data, ['expired_at' => $newExp->toDateTimeString()]),
+            ];
+        } else {
+            $account->forceFill(['last_error' => Str::limit((string) ($res['message'] ?? 'Reduce duration failed'), 1000)])->save();
+        }
+
+        return $res;
+    }
+
     public function suspendAccount(VpnAccount $account, string $actorRole, ?int $actorUserId = null, ?string $reason = null): array
     {
         $server = $this->resolveServer($account->vpnServer);
