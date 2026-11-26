@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script>
+    <style nonce="{{ $cspNonce ?? '' }}">@view-transition { navigation: auto; }</style>
+    <script data-cfasync="false" nonce="{{ $cspNonce ?? '' }}">
         (function() {
             try {
                 var savedTheme = localStorage.getItem('jualan-theme') || (document.cookie.match(/(?:^|; )jualan-theme=([^;]*)/) || [])[1] || 'light';
@@ -351,9 +352,8 @@
     {{-- Custom SIMAK-style CSS --}}
     <link href="{{ asset('css/app.css') }}?v={{ filemtime(public_path('css/app.css')) }}" rel="stylesheet">
 
-    {{-- Render-blocking expectation & directional MPA view transition classifier + zero-blink fallback --}}
-    <link rel="expect" href="#m3MainContent" blocking="render">
-    <script nonce="{{ $cspNonce ?? '' }}">
+    {{-- Directional MPA view transition classifier + ready.catch() directional fallback (Cloudflare-safe) --}}
+    <script data-cfasync="false" nonce="{{ $cspNonce ?? '' }}">
         (function () {
             var REDUCED_MOTION = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 
@@ -409,11 +409,14 @@
                 return 'm3-slide-forward';
             }
 
-            function setMainVtName(active) {
-                var mainEl = document.getElementById('m3MainContent');
-                if (mainEl) {
-                    mainEl.style.viewTransitionName = active ? 'm3-main-content' : '';
-                }
+            function resolveRevealDirection() {
+                var act = window.navigation && window.navigation.activation;
+                var fromUrl = (act && act.from && act.from.url) || document.referrer || '';
+                var toUrl = (act && act.entry && act.entry.url) || window.location.href;
+                var navType = act ? act.navigationType : '';
+                var fromIdx = act && act.from ? act.from.index : undefined;
+                var toIdx = act && act.entry ? act.entry.index : undefined;
+                return fromUrl ? computeTransitionType(fromUrl, toUrl, navType, fromIdx, toIdx) : 'm3-cross-fade';
             }
 
             function hidePageLoaderNow() {
@@ -427,13 +430,27 @@
                     clearTimeout(fallbackTimer);
                     fallbackTimer = null;
                 }
-                document.documentElement.classList.remove('m3-page-enter');
+                document.documentElement.classList.remove('m3-page-enter', 'm3-enter-forward', 'm3-enter-backward', 'm3-enter-fade');
             }
 
-            function triggerFallbackEnter() {
+            function triggerFallbackEnter(type, reason) {
+                var resolvedType = type || 'm3-cross-fade';
+                window.__m3LastTransition = {
+                    mode: 'fallback',
+                    type: resolvedType,
+                    reason: reason || 'no-vt',
+                    reducedMotion: REDUCED_MOTION
+                };
                 if (REDUCED_MOTION) return;
+
                 var root = document.documentElement;
-                root.classList.add('m3-page-enter');
+                var dirClass = resolvedType === 'm3-slide-forward'
+                    ? 'm3-enter-forward'
+                    : (resolvedType === 'm3-slide-backward' ? 'm3-enter-backward' : 'm3-enter-fade');
+
+                root.classList.remove('m3-enter-forward', 'm3-enter-backward', 'm3-enter-fade');
+                root.classList.add('m3-page-enter', dirClass);
+
                 if (fallbackTimer) clearTimeout(fallbackTimer);
                 fallbackTimer = setTimeout(clearFallbackEnter, 360);
 
@@ -457,7 +474,6 @@
                     hidePageLoaderNow();
                     clearFallbackEnter();
                     if (!REDUCED_MOTION && e.viewTransition && e.activation && e.activation.from && e.activation.entry) {
-                        setMainVtName(true);
                         var t = computeTransitionType(
                             e.activation.from.url,
                             e.activation.entry.url,
@@ -468,13 +484,6 @@
                         if (e.viewTransition.types && typeof e.viewTransition.types.add === 'function') {
                             e.viewTransition.types.add(t);
                         }
-                        if (e.viewTransition.finished && typeof e.viewTransition.finished.finally === 'function') {
-                            e.viewTransition.finished.finally(function () {
-                                setMainVtName(false);
-                            });
-                        }
-                    } else {
-                        setMainVtName(false);
                     }
                 });
             }
@@ -482,37 +491,33 @@
             if ('onpagereveal' in window) {
                 window.addEventListener('pagereveal', function (e) {
                     hidePageLoaderNow();
+                    var t = resolveRevealDirection();
                     if (!REDUCED_MOTION && e.viewTransition) {
                         clearFallbackEnter();
-                        setMainVtName(true);
-                        var act = window.navigation && window.navigation.activation;
-                        var fromUrl = (act && act.from && act.from.url) || document.referrer || '';
-                        var toUrl = (act && act.entry && act.entry.url) || window.location.href;
-                        var navType = act ? act.navigationType : '';
-                        var fromIdx = act && act.from ? act.from.index : undefined;
-                        var toIdx = act && act.entry ? act.entry.index : undefined;
-                        var t = fromUrl ? computeTransitionType(fromUrl, toUrl, navType, fromIdx, toIdx) : 'm3-cross-fade';
                         if (e.viewTransition.types && typeof e.viewTransition.types.add === 'function') {
                             e.viewTransition.types.add(t);
                         }
-                        if (e.viewTransition.finished && typeof e.viewTransition.finished.finally === 'function') {
-                            e.viewTransition.finished.finally(function () {
-                                setMainVtName(false);
+                        window.__m3LastTransition = {
+                            mode: 'native-vt',
+                            type: t,
+                            reducedMotion: false
+                        };
+                        if (e.viewTransition.ready && typeof e.viewTransition.ready.catch === 'function') {
+                            e.viewTransition.ready.catch(function () {
+                                triggerFallbackEnter(t, 'vt-ready-rejected');
                             });
                         }
                     } else {
-                        setMainVtName(false);
-                        triggerFallbackEnter();
+                        triggerFallbackEnter(t, e.viewTransition ? 'reduced-motion' : 'no-vt');
                     }
                 });
             } else {
-                triggerFallbackEnter();
+                triggerFallbackEnter(resolveRevealDirection(), 'no-pagereveal');
             }
 
             window.addEventListener('pageshow', function (e) {
                 hidePageLoaderNow();
                 if (e.persisted) {
-                    setMainVtName(false);
                     clearFallbackEnter();
                 }
             });

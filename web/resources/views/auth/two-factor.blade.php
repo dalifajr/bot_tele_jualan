@@ -32,10 +32,11 @@
     @endif
     
     {{-- Design System Stylesheets --}}
+    <style nonce="{{ $cspNonce ?? '' }}">@view-transition { navigation: auto; }</style>
     <link href="{{ asset('css/app.css') }}?v={{ filemtime(public_path('css/app.css')) }}" rel="stylesheet">
     <link href="{{ asset('css/auth.css') }}?v={{ filemtime(public_path('css/auth.css')) }}" rel="stylesheet">
 
-    <script nonce="{{ $cspNonce ?? '' }}">
+    <script data-cfasync="false" nonce="{{ $cspNonce ?? '' }}">
         (function () {
             var reduced = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
             var timer = null;
@@ -45,11 +46,13 @@
             }
             function clearEnter() {
                 if (timer) { clearTimeout(timer); timer = null; }
-                document.documentElement.classList.remove('m3-page-enter');
+                document.documentElement.classList.remove('m3-page-enter', 'm3-enter-forward', 'm3-enter-backward', 'm3-enter-fade');
             }
-            function triggerEnter() {
+            function triggerEnter(reason) {
+                window.__m3LastTransition = { mode: 'fallback', type: 'm3-cross-fade', reason: reason || 'no-vt', reducedMotion: reduced };
                 if (reduced) return;
-                document.documentElement.classList.add('m3-page-enter');
+                document.documentElement.classList.remove('m3-enter-forward', 'm3-enter-backward', 'm3-enter-fade');
+                document.documentElement.classList.add('m3-page-enter', 'm3-enter-fade');
                 if (timer) clearTimeout(timer);
                 timer = setTimeout(clearEnter, 360);
             }
@@ -70,12 +73,18 @@
                         if (e.viewTransition.types && typeof e.viewTransition.types.add === 'function') {
                             e.viewTransition.types.add('m3-cross-fade');
                         }
+                        window.__m3LastTransition = { mode: 'native-vt', type: 'm3-cross-fade', reducedMotion: false };
+                        if (e.viewTransition.ready && typeof e.viewTransition.ready.catch === 'function') {
+                            e.viewTransition.ready.catch(function () {
+                                triggerEnter('vt-ready-rejected');
+                            });
+                        }
                     } else {
-                        triggerEnter();
+                        triggerEnter(e.viewTransition ? 'reduced-motion' : 'no-vt');
                     }
                 });
             } else {
-                triggerEnter();
+                triggerEnter('no-pagereveal');
             }
             window.addEventListener('pageshow', function (e) {
                 hideLoader();

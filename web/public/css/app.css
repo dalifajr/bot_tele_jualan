@@ -3634,11 +3634,33 @@ ul.nav-pills,
     animation: badgePop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-/* Zero-Blink Fallback Page Entrance (Activated only via JS when native MPA View Transition did not run) & M3 Tactile States */
+/* Zero-Blink Directional Fallback Page Entrance (Activated only via JS when native MPA View Transition did not run or was rejected) & M3 Tactile States */
 @keyframes m3PageEnterFallback {
     0% {
         opacity: 0;
         translate: 0 12px;
+    }
+    100% {
+        opacity: 1;
+        translate: none;
+    }
+}
+
+@keyframes m3PageEnterForward {
+    0% {
+        opacity: 0;
+        translate: 24px 0;
+    }
+    100% {
+        opacity: 1;
+        translate: none;
+    }
+}
+
+@keyframes m3PageEnterBackward {
+    0% {
+        opacity: 0;
+        translate: -24px 0;
     }
     100% {
         opacity: 1;
@@ -3670,8 +3692,24 @@ ul.nav-pills,
 
 @media (prefers-reduced-motion: no-preference) {
     html.m3-page-enter #m3MainContent,
+    html.m3-page-enter.m3-enter-fade #m3MainContent,
     html.m3-page-enter .login-wrapper {
-        animation: m3PageEnterFallback 260ms var(--md-sys-motion-easing-emphasized-decelerate) backwards;
+        animation: m3PageEnterFallback 270ms var(--md-sys-motion-easing-emphasized-decelerate) backwards;
+    }
+
+    html.m3-page-enter.m3-enter-forward #m3MainContent {
+        animation: m3PageEnterForward 280ms var(--md-sys-motion-easing-emphasized-decelerate) backwards;
+    }
+
+    html.m3-page-enter.m3-enter-backward #m3MainContent {
+        animation: m3PageEnterBackward 280ms var(--md-sys-motion-easing-emphasized-decelerate) backwards;
+    }
+
+    .form-control,
+    .form-select {
+        transition: border-color 180ms var(--md-sys-motion-easing-standard),
+                    background-color 180ms var(--md-sys-motion-easing-standard),
+                    box-shadow 180ms var(--md-sys-motion-easing-standard);
     }
 
     .tab-pane.fade {
@@ -5821,62 +5859,50 @@ body.swal2-shown:not(.swal2-toast-shown) .swal2-container:not(.swal2-toast-conta
        V12: Card Keyboard Accessibility, Choice Cards & Below-the-Fold Deferral
        ========================================================================== */
 
-    /* V10.1 Cross-Document MPA View Transitions (M3 Expressive Shared-Axis X/Z + Flicker-Free Shell Pinning) */
-    @media (prefers-reduced-motion: no-preference) {
-        @view-transition {
-            navigation: auto;
-        }
+    /* V10.1 Cross-Document MPA View Transitions (Top-Level Opt-In + Viewport Root Shared-Axis X/Z + Flicker-Free Shell Pinning) */
+    @view-transition {
+        navigation: auto;
+    }
 
+    @media (prefers-reduced-motion: no-preference) {
         ::view-transition {
             background-color: var(--background);
         }
 
-        /* Root handles full-layout transitions (e.g. Login <-> Dashboard) cleanly without shifting persistent shell */
+        /* Animate viewport-bounded root (auto-excludes pinned navbar/sidebar/bottom-nav/banner; never triggers tall-element skip) */
         ::view-transition-group(root) {
-            animation-duration: 240ms;
+            animation-duration: 320ms;
             animation-timing-function: var(--md-sys-motion-easing-emphasized);
         }
 
+        /* Default / Lateral / Cross-Fade (M3 Shared-Axis Z — unmistakably fluid even without directional types) */
         ::view-transition-old(root) {
-            animation: m3PageFadeOut 160ms var(--md-sys-motion-easing-standard-accelerate) both;
+            animation: m3VtAxisZOut 170ms var(--md-sys-motion-easing-emphasized-accelerate) both;
         }
 
         ::view-transition-new(root) {
-            animation: m3PageFadeIn 240ms var(--md-sys-motion-easing-standard-decelerate) both;
+            animation: m3VtAxisZIn 300ms var(--md-sys-motion-easing-emphasized-decelerate) 20ms both;
         }
 
-        /* Primary Content Area (Dynamically scoped via pageswap/pagereveal so modals never get trapped at rest) */
-        ::view-transition-group(m3-main-content) {
-            animation-duration: 300ms;
-            animation-timing-function: var(--md-sys-motion-easing-emphasized);
-            overflow: clip;
+        /* Directional Forward (M3 Shared-Axis X) */
+        :root:active-view-transition-type(m3-slide-forward)::view-transition-old(root) {
+            animation: m3VtSlideOutForward 200ms var(--md-sys-motion-easing-emphasized-accelerate) both;
         }
 
-        ::view-transition-old(m3-main-content) {
-            animation: m3VtAxisZOut 160ms var(--md-sys-motion-easing-emphasized-accelerate) both;
+        :root:active-view-transition-type(m3-slide-forward)::view-transition-new(root) {
+            animation: m3VtSlideInForward 320ms var(--md-sys-motion-easing-emphasized-decelerate) 25ms both;
         }
 
-        ::view-transition-new(m3-main-content) {
-            animation: m3VtAxisZIn 260ms var(--md-sys-motion-easing-emphasized-decelerate) 25ms both;
+        /* Directional Backward (M3 Shared-Axis X) */
+        :root:active-view-transition-type(m3-slide-backward)::view-transition-old(root) {
+            animation: m3VtSlideOutBackward 200ms var(--md-sys-motion-easing-emphasized-accelerate) both;
         }
 
-        html:active-view-transition-type(m3-slide-forward)::view-transition-old(m3-main-content) {
-            animation: m3VtSlideOutForward 180ms var(--md-sys-motion-easing-emphasized-accelerate) both;
+        :root:active-view-transition-type(m3-slide-backward)::view-transition-new(root) {
+            animation: m3VtSlideInBackward 320ms var(--md-sys-motion-easing-emphasized-decelerate) 25ms both;
         }
 
-        html:active-view-transition-type(m3-slide-forward)::view-transition-new(m3-main-content) {
-            animation: m3VtSlideInForward 300ms var(--md-sys-motion-easing-emphasized-decelerate) 30ms both;
-        }
-
-        html:active-view-transition-type(m3-slide-backward)::view-transition-old(m3-main-content) {
-            animation: m3VtSlideOutBackward 180ms var(--md-sys-motion-easing-emphasized-accelerate) both;
-        }
-
-        html:active-view-transition-type(m3-slide-backward)::view-transition-new(m3-main-content) {
-            animation: m3VtSlideInBackward 300ms var(--md-sys-motion-easing-emphasized-decelerate) 30ms both;
-        }
-
-        /* Pin Persistent App Shell Across Smartphone & Desktop Viewports (Zero Flicker / Zero Crossfade) */
+        /* Pin Persistent App Shell Across Smartphone & Desktop Viewports (Small Fixed Elements — Zero Flicker / Zero Crossfade) */
         nav.navbar.fixed-top,
         .pcc-platform-bar,
         .top-navbar {
@@ -5943,6 +5969,9 @@ body.swal2-shown:not(.swal2-toast-shown) .swal2-container:not(.swal2-toast-conta
         }
 
         html.m3-page-enter #m3MainContent,
+        html.m3-page-enter.m3-enter-forward #m3MainContent,
+        html.m3-page-enter.m3-enter-backward #m3MainContent,
+        html.m3-page-enter.m3-enter-fade #m3MainContent,
         html.m3-page-enter .login-wrapper,
         .dropdown-menu.show,
         .m3-theme-icon-spin {
@@ -5950,43 +5979,33 @@ body.swal2-shown:not(.swal2-toast-shown) .swal2-container:not(.swal2-toast-conta
         }
     }
 
-    @keyframes m3PageFadeOut {
-        from { opacity: 1; }
-        to { opacity: 0; }
-    }
-
-    @keyframes m3PageFadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
-    }
-
     @keyframes m3VtAxisZOut {
         from { opacity: 1; transform: scale(1); }
-        to { opacity: 0; transform: scale(0.992); }
+        to { opacity: 0; transform: scale(0.99); }
     }
 
     @keyframes m3VtAxisZIn {
-        from { opacity: 0; transform: translate3d(0, 10px, 0) scale(0.992); }
+        from { opacity: 0; transform: translate3d(0, 14px, 0) scale(0.99); }
         to { opacity: 1; transform: none; }
     }
 
     @keyframes m3VtSlideOutForward {
         from { opacity: 1; transform: none; }
-        to { opacity: 0; transform: translate3d(-28px, 0, 0); }
+        to { opacity: 0; transform: translate3d(-36px, 0, 0); }
     }
 
     @keyframes m3VtSlideInForward {
-        from { opacity: 0; transform: translate3d(32px, 0, 0); }
+        from { opacity: 0; transform: translate3d(40px, 0, 0); }
         to { opacity: 1; transform: none; }
     }
 
     @keyframes m3VtSlideOutBackward {
         from { opacity: 1; transform: none; }
-        to { opacity: 0; transform: translate3d(28px, 0, 0); }
+        to { opacity: 0; transform: translate3d(36px, 0, 0); }
     }
 
     @keyframes m3VtSlideInBackward {
-        from { opacity: 0; transform: translate3d(-32px, 0, 0); }
+        from { opacity: 0; transform: translate3d(-40px, 0, 0); }
         to { opacity: 1; transform: none; }
     }
 

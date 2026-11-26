@@ -8,6 +8,7 @@ function initAll() {
     initM3SweetAlertInterceptor();
     initThemeToggle();
     initSidebar();
+    initSidebarOptimisticFeedback();
     initMobileNavFeedback();
     initModalSheetSwipeDismiss();
     initFluidTabTransitions();
@@ -488,6 +489,36 @@ function startTopLoadingBar() {
 
 function finishTopLoadingBar() {
     // No-op: top loading bar removed per user preference
+}
+
+/* === DESKTOP SIDEBAR OPTIMISTIC ACTIVE FEEDBACK & BFCACHE SYNC === */
+function initSidebarOptimisticFeedback() {
+    const sidebar = document.getElementById('sidebar');
+    if (!sidebar) return;
+
+    const menuLinks = Array.from(sidebar.querySelectorAll('a.menu-item[href]'));
+    if (menuLinks.length === 0) return;
+
+    const initialActive = sidebar.querySelector('a.menu-item.active');
+
+    menuLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0) return;
+            const href = link.getAttribute('href') || '';
+            if (!href || href.startsWith('#') || href.startsWith('javascript:') || link.getAttribute('target') === '_blank' || link.hasAttribute('download')) {
+                return;
+            }
+            menuLinks.forEach(item => item.classList.remove('active'));
+            link.classList.add('active');
+        });
+    });
+
+    window.addEventListener('pageshow', (e) => {
+        if (e.persisted && initialActive) {
+            menuLinks.forEach(item => item.classList.remove('active'));
+            initialActive.classList.add('active');
+        }
+    });
 }
 
 /* === MOBILE BOTTOM NAV OPTIMISTIC PILL FEEDBACK & BFCACHE SYNC === */
