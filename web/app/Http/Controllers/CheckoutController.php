@@ -150,7 +150,8 @@ class CheckoutController extends Controller
             }
         }
 
-        $uniqueCode = rand(1, 200);
+        $isFree = ($subtotal - $discount) <= 0;
+        $uniqueCode = $isFree ? 0 : rand(1, 200);
         $totalAmount = max(0, $subtotal - $discount) + $uniqueCode;
 
         return view('checkout.review', compact(
@@ -325,8 +326,9 @@ class CheckoutController extends Controller
                 }
             }
 
-            $payWithWallet = $request->input('payment_method') === 'wallet';
-            $uniqueCode = $payWithWallet ? 0 : rand(1, 200);
+            $isFree = ($subtotal - $discount) <= 0;
+            $payWithWallet = !$isFree && $request->input('payment_method') === 'wallet';
+            $uniqueCode = ($isFree || $payWithWallet) ? 0 : rand(1, 200);
             $totalAmount = max(0, $subtotal - $discount) + $uniqueCode;
 
             // Generate Order Ref ORD + YYMMDDHHMMSS + 5 chars random hex
@@ -461,6 +463,12 @@ class CheckoutController extends Controller
             ]);
 
             DB::commit();
+
+            if ($isFree) {
+                app(\App\Services\OrderService::class)->confirmPayment($order, 'FREE_COUPON');
+                return redirect()->route('orders.show', $order->id)
+                    ->with('success', __('Pesanan gratis (Kupon 100%) berhasil diproses! Layanan Anda telah langsung dikirim.'));
+            }
 
             if ($payWithWallet) {
                 app(\App\Services\OrderService::class)->confirmPayment($order, 'CUSTOMER_WALLET');

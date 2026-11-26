@@ -181,20 +181,22 @@
 
                 <div class="d-flex justify-content-between mb-3 text-muted small">
                     <span>{{ __('Kode Unik Pembayaran') }}</span>
-                    <span>+Rp{{ number_format($uniqueCode, 0, ',', '.') }}</span>
+                    <span>{{ $total == 0 ? __('Rp 0 (Gratis)') : '+Rp' . number_format($uniqueCode, 0, ',', '.') }}</span>
                 </div>
                 
                 <hr class="my-3">
 
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <span class="fw-bold">{{ __('Total Pembayaran') }}</span>
-                    <span class="fs-4 fw-bold text-primary">Rp{{ number_format($total, 0, ',', '.') }}</span>
+                    <span class="fs-4 fw-bold text-{{ $total == 0 ? 'success' : 'primary' }}">Rp{{ number_format($total, 0, ',', '.') }}</span>
                 </div>
 
+                @if($total > 0)
                 <div class="alert alert-warning border-0 rounded-3 mb-4 small p-2" role="alert">
                     <i class="fas fa-exclamation-triangle me-1"></i>
                     {{ __('Kode unik pembayaran digunakan untuk verifikasi otomatis. Pastikan transfer dalam nominal yang tepat.') }}
                 </div>
+                @endif
 
                 <form action="{{ route('cart.process') }}" method="POST" id="formProcessCheckout">
                     @csrf
@@ -207,27 +209,39 @@
                         $cartWalletNeed = max(0, (int) $subtotal - (int) $discount);
                         $canCartWallet = $cartWalletBal >= $cartWalletNeed && $cartWalletNeed > 0;
                     @endphp
-                    <div class="p-3 rounded-4 border mb-3" style="background: var(--surface-container-low); border-color: var(--outline-variant) !important;">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="small fw-bold text-body"><i class="fas fa-wallet text-primary me-1.5"></i>{{ __('Metode Pembayaran') }}</span>
-                            <a href="{{ route('wallet.index') }}" class="small text-decoration-none fw-semibold">{{ __('Isi Saldo') }}</a>
+                    @if($total == 0)
+                        <div class="p-3 rounded-4 border border-success bg-success-subtle mb-3 text-success-emphasis">
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <i class="fas fa-gift fs-5 text-success"></i>
+                                <span class="fw-bold small">{{ __('Pesanan Bebas Biaya (Diskon 100%)') }}</span>
+                            </div>
+                            <p class="mb-0 small" style="font-size: 0.78rem;">
+                                {{ __('Kupon memotong seluruh biaya pesanan keranjang. Pesanan akan langsung diproses dan dikirim seketika tanpa pembayaran.') }}
+                            </p>
                         </div>
-                        <div class="form-check mb-1.5">
-                            <input class="form-check-input" type="radio" name="payment_method" id="cartPayTransfer" value="transfer" checked>
-                            <label class="form-check-label small fw-semibold text-body" for="cartPayTransfer">{{ __('QRIS / Transfer Otomatis') }}</label>
+                    @else
+                        <div class="p-3 rounded-4 border mb-3" style="background: var(--surface-container-low); border-color: var(--outline-variant) !important;">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="small fw-bold text-body"><i class="fas fa-wallet text-primary me-1.5"></i>{{ __('Metode Pembayaran') }}</span>
+                                <a href="{{ route('wallet.index') }}" class="small text-decoration-none fw-semibold">{{ __('Isi Saldo') }}</a>
+                            </div>
+                            <div class="form-check mb-1.5">
+                                <input class="form-check-input" type="radio" name="payment_method" id="cartPayTransfer" value="transfer" checked>
+                                <label class="form-check-label small fw-semibold text-body" for="cartPayTransfer">{{ __('QRIS / Transfer Otomatis') }}</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="payment_method" id="cartPayWallet" value="wallet" {{ $canCartWallet ? '' : 'disabled' }}>
+                                <label class="form-check-label small fw-semibold {{ $canCartWallet ? 'text-primary' : 'text-muted' }}" for="cartPayWallet">
+                                    {{ __('Dompet Saldo Instan (1-Klik)') }}
+                                    <span class="d-block fw-normal" style="font-size: 0.72rem;">{{ __('Saldo Anda: Rp:bal', ['bal' => number_format($cartWalletBal, 0, ',', '.')]) }}</span>
+                                </label>
+                            </div>
                         </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="payment_method" id="cartPayWallet" value="wallet" {{ $canCartWallet ? '' : 'disabled' }}>
-                            <label class="form-check-label small fw-semibold {{ $canCartWallet ? 'text-primary' : 'text-muted' }}" for="cartPayWallet">
-                                {{ __('Dompet Saldo Instan (1-Klik)') }}
-                                <span class="d-block fw-normal" style="font-size: 0.72rem;">{{ __('Saldo Anda: Rp:bal', ['bal' => number_format($cartWalletBal, 0, ',', '.')]) }}</span>
-                            </label>
-                        </div>
-                    </div>
+                    @endif
                     
                     <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-success rounded-pill py-3 fw-bold btn-lg d-none d-md-block">
-                            <i class="fas fa-check-double me-2"></i>{{ __('Buat Pesanan Sekarang') }}
+                        <button type="submit" class="btn btn-{{ $total == 0 ? 'success' : 'primary' }} rounded-pill py-3 fw-bold btn-lg d-none d-md-block">
+                            <i class="fas {{ $total == 0 ? 'fa-gift' : 'fa-check-double' }} me-2"></i>{{ $total == 0 ? __('Klaim & Proses Sekarang (Gratis)') : __('Buat Pesanan Sekarang') }}
                         </button>
                         <a href="{{ route('cart.index') }}" class="btn btn-light text-primary rounded-pill py-2">
                             {{ __('Kembali ke Keranjang') }}
@@ -246,10 +260,10 @@
     <div class="d-flex align-items-center justify-content-between gap-3">
         <div>
             <span class="text-muted d-block" style="font-size: 0.68rem; line-height: 1;">{{ __('Total Bayar') }}</span>
-            <span class="fw-bold text-primary" style="font-size: 1.15rem;">Rp{{ number_format($total, 0, ',', '.') }}</span>
+            <span class="fw-bold text-{{ $total == 0 ? 'success' : 'primary' }}" style="font-size: 1.15rem;">Rp{{ number_format($total, 0, ',', '.') }}</span>
         </div>
-        <button type="button" class="btn btn-primary rounded-pill px-4 py-2 fw-bold shadow-sm d-flex align-items-center gap-2" onclick="document.getElementById('formProcessCheckout').requestSubmit()" style="font-size: 0.85rem;">
-            <i class="fas fa-check-double"></i> {{ __('Buat Pesanan') }}
+        <button type="button" class="btn btn-{{ $total == 0 ? 'success' : 'primary' }} rounded-pill px-4 py-2 fw-bold shadow-sm d-flex align-items-center gap-2" onclick="document.getElementById('formProcessCheckout').requestSubmit()" style="font-size: 0.85rem;">
+            <i class="fas {{ $total == 0 ? 'fa-gift' : 'fa-check-double' }}"></i> {{ $total == 0 ? __('Klaim Gratis') : __('Buat Pesanan') }}
         </button>
     </div>
 </div>

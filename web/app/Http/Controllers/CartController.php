@@ -293,7 +293,8 @@ class CartController extends Controller
             }
         }
 
-        $uniqueCode = rand(1, 200);
+        $isFree = ($subtotal - $discount) <= 0;
+        $uniqueCode = $isFree ? 0 : rand(1, 200);
         $total = max(0, $subtotal - $discount) + $uniqueCode;
 
         return view('cart.checkout', compact('cartItems', 'subtotal', 'discount', 'coupon', 'couponError', 'uniqueCode', 'total', 'couponCode'));
@@ -410,8 +411,9 @@ class CartController extends Controller
                 }
             }
 
-            $payWithWallet = $request->input('payment_method') === 'wallet';
-            $uniqueCode = $payWithWallet ? 0 : rand(1, 200);
+            $isFree = ($subtotal - $discount) <= 0;
+            $payWithWallet = !$isFree && $request->input('payment_method') === 'wallet';
+            $uniqueCode = ($isFree || $payWithWallet) ? 0 : rand(1, 200);
             $totalAmount = max(0, $subtotal - $discount) + $uniqueCode;
 
             // Generate Order Ref
@@ -533,6 +535,12 @@ class CartController extends Controller
             ]);
 
             DB::commit();
+
+            if ($isFree) {
+                app(\App\Services\OrderService::class)->confirmPayment($order, 'FREE_COUPON');
+                return redirect()->route('orders.show', $order->id)
+                    ->with('success', __('Pesanan keranjang gratis (Kupon 100%) berhasil diproses! Produk Anda telah langsung dikirim.'));
+            }
 
             if ($payWithWallet) {
                 app(\App\Services\OrderService::class)->confirmPayment($order, 'CUSTOMER_WALLET');

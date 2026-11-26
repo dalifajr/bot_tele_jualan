@@ -265,7 +265,7 @@
                         {{ __('Kode Unik') }} 
                         <i class="fas fa-circle-question text-secondary ms-0.5" title="{{ __('Kode unik untuk mempermudah verifikasi pembayaran otomatis') }}"></i>
                     </span>
-                    <span class="fw-semibold text-body">+Rp {{ $uniqueCode }}</span>
+                    <span class="fw-semibold text-body">{{ $totalAmount == 0 ? __('Rp 0 (Gratis)') : '+Rp ' . $uniqueCode }}</span>
                 </div>
 
                 <hr class="my-3 opacity-25">
@@ -273,9 +273,13 @@
                 <div class="d-flex justify-content-between align-items-baseline mb-4">
                     <div>
                         <span class="text-secondary fw-semibold small d-block">{{ __('Total Pembayaran') }}</span>
-                        <small class="text-muted" style="font-size: 0.7rem;">{{ __('Sudah termasuk kode unik') }}</small>
+                        @if($totalAmount == 0)
+                            <small class="text-success fw-semibold" style="font-size: 0.72rem;">{{ __('Bebas biaya (Diskon 100%)') }}</small>
+                        @else
+                            <small class="text-muted" style="font-size: 0.7rem;">{{ __('Sudah termasuk kode unik') }}</small>
+                        @endif
                     </div>
-                    <span class="fw-bold text-primary fs-4">
+                    <span class="fw-bold text-{{ $totalAmount == 0 ? 'success' : 'primary' }} fs-4">
                         Rp {{ number_format($totalAmount, 0, ',', '.') }}
                     </span>
                 </div>
@@ -303,32 +307,44 @@
                         $walletExactTotal = max(0, (int) $subtotal - (int) $discount);
                         $canPayWithWallet = $walletBalance >= $walletExactTotal && $walletExactTotal > 0;
                     @endphp
-                    <div class="p-3 rounded-4 border mb-3" style="background: var(--surface-container-low); border-color: var(--outline-variant) !important;">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="small fw-bold text-body"><i class="fas fa-wallet text-primary me-1.5"></i>{{ __('Metode Pembayaran') }}</span>
-                            <a href="{{ route('wallet.index') }}" class="small text-decoration-none fw-semibold">{{ __('Isi Saldo') }}</a>
+                    @if($totalAmount == 0)
+                        <div class="p-3 rounded-4 border border-success bg-success-subtle mb-3 text-success-emphasis">
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <i class="fas fa-gift fs-5 text-success"></i>
+                                <span class="fw-bold small">{{ __('Pesanan Bebas Biaya (Diskon 100%)') }}</span>
+                            </div>
+                            <p class="mb-0 small" style="font-size: 0.78rem;">
+                                {{ __('Kupon memotong seluruh biaya pesanan. Anda tidak perlu membayar atau mentransfer apapun, pesanan akan langsung diproses dan dikirim seketika.') }}
+                            </p>
                         </div>
-                        <div class="form-check mb-1.5">
-                            <input class="form-check-input" type="radio" name="payment_method" id="payMethodTransfer" value="transfer" checked>
-                            <label class="form-check-label small fw-semibold text-body" for="payMethodTransfer">
-                                {{ __('QRIS / Transfer Otomatis') }}
-                            </label>
+                    @else
+                        <div class="p-3 rounded-4 border mb-3" style="background: var(--surface-container-low); border-color: var(--outline-variant) !important;">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="small fw-bold text-body"><i class="fas fa-wallet text-primary me-1.5"></i>{{ __('Metode Pembayaran') }}</span>
+                                <a href="{{ route('wallet.index') }}" class="small text-decoration-none fw-semibold">{{ __('Isi Saldo') }}</a>
+                            </div>
+                            <div class="form-check mb-1.5">
+                                <input class="form-check-input" type="radio" name="payment_method" id="payMethodTransfer" value="transfer" checked>
+                                <label class="form-check-label small fw-semibold text-body" for="payMethodTransfer">
+                                    {{ __('QRIS / Transfer Otomatis') }}
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="payment_method" id="payMethodWallet" value="wallet" {{ $canPayWithWallet ? '' : 'disabled' }}>
+                                <label class="form-check-label small fw-semibold {{ $canPayWithWallet ? 'text-primary' : 'text-muted' }}" for="payMethodWallet">
+                                    {{ __('Dompet Saldo Instan (1-Klik)') }}
+                                    <span class="d-block fw-normal" style="font-size: 0.72rem;">
+                                        {{ __('Saldo Anda: Rp:bal', ['bal' => number_format($walletBalance, 0, ',', '.')]) }}
+                                        @if($canPayWithWallet) · {{ __('Tanpa kode unik') }} @else · {{ __('Saldo belum cukup') }} @endif
+                                    </span>
+                                </label>
+                            </div>
                         </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="payment_method" id="payMethodWallet" value="wallet" {{ $canPayWithWallet ? '' : 'disabled' }}>
-                            <label class="form-check-label small fw-semibold {{ $canPayWithWallet ? 'text-primary' : 'text-muted' }}" for="payMethodWallet">
-                                {{ __('Dompet Saldo Instan (1-Klik)') }}
-                                <span class="d-block fw-normal" style="font-size: 0.72rem;">
-                                    {{ __('Saldo Anda: Rp:bal', ['bal' => number_format($walletBalance, 0, ',', '.')]) }}
-                                    @if($canPayWithWallet) · {{ __('Tanpa kode unik') }} @else · {{ __('Saldo belum cukup') }} @endif
-                                </span>
-                            </label>
-                        </div>
-                    </div>
+                    @endif
 
-                    <button type="submit" id="btnConfirmPay" class="btn btn-primary btn-lg w-100 rounded-pill fw-bold shadow-sm py-3 d-flex align-items-center justify-content-center gap-2 lift-hover btn-buy-now">
-                        <i class="fas fa-lock btn-buy-icon"></i>
-                        <span class="btn-buy-text">{{ __('Konfirmasi & Bayar Sekarang') }}</span>
+                    <button type="submit" id="btnConfirmPay" class="btn btn-{{ $totalAmount == 0 ? 'success' : 'primary' }} btn-lg w-100 rounded-pill fw-bold shadow-sm py-3 d-flex align-items-center justify-content-center gap-2 lift-hover btn-buy-now">
+                        <i class="fas {{ $totalAmount == 0 ? 'fa-gift' : 'fa-lock' }} btn-buy-icon"></i>
+                        <span class="btn-buy-text">{{ $totalAmount == 0 ? __('Klaim & Proses Sekarang (Gratis)') : __('Konfirmasi & Bayar Sekarang') }}</span>
                     </button>
                 </form>
 
@@ -433,11 +449,11 @@
     <div class="d-flex align-items-center justify-content-between gap-3">
         <div>
             <span class="text-muted d-block" style="font-size: 0.68rem; line-height: 1.1;">{{ __('Total Pembayaran') }}</span>
-            <span class="fw-bold text-primary" style="font-size: 1.15rem;">Rp {{ number_format($totalAmount, 0, ',', '.') }}</span>
+            <span class="fw-bold text-{{ $totalAmount == 0 ? 'success' : 'primary' }}" style="font-size: 1.15rem;">Rp {{ number_format($totalAmount, 0, ',', '.') }}</span>
         </div>
-        <button type="button" id="btnMobilePayNow" class="btn btn-primary rounded-pill px-4 py-2 fw-bold shadow-sm d-flex align-items-center gap-2 lift-hover btn-buy-now" style="height: 44px; font-size: 0.88rem;">
-            <i class="fas fa-lock small btn-buy-icon"></i>
-            <span class="btn-buy-text">{{ __('Bayar Sekarang') }}</span>
+        <button type="button" id="btnMobilePayNow" class="btn btn-{{ $totalAmount == 0 ? 'success' : 'primary' }} rounded-pill px-4 py-2 fw-bold shadow-sm d-flex align-items-center gap-2 lift-hover btn-buy-now" style="height: 44px; font-size: 0.88rem;">
+            <i class="fas {{ $totalAmount == 0 ? 'fa-gift' : 'fa-lock' }} small btn-buy-icon"></i>
+            <span class="btn-buy-text">{{ $totalAmount == 0 ? __('Klaim Gratis') : __('Bayar Sekarang') }}</span>
         </button>
     </div>
 </div>
