@@ -340,7 +340,7 @@
 
                                 @if($vpn->isAdminSuspended())
                                     <div class="alert alert-danger border-0 py-2 px-3 small mb-2" style="border-radius: 12px;">
-                                        <div class="fw-bold"><i class="fas fa-lock me-1"></i>{{ __('Akun ini disuspend oleh Admin.') }}</div>
+                                        <div class="fw-bold"><i class="fas {{ $vpn->isSystemSuspended() ? 'fa-shield-exclamation' : 'fa-lock' }} me-1"></i>{{ $vpn->isSystemSuspended() ? __('Akun ini disuspend otomatis oleh Sistem.') : __('Akun ini disuspend oleh Admin.') }}</div>
                                         @if($vpn->suspended_reason)<div>{{ __('Alasan:') }} {{ $vpn->suspended_reason }}</div>@endif
                                         @if($vpn->suspended_by_user_id ?: $orderDefaultAdminId)
                                         <a href="{{ route('chat.index', ['contact_id' => $vpn->suspended_by_user_id ?: $orderDefaultAdminId]) }}" class="btn btn-danger btn-sm rounded-pill mt-2 px-3 fw-semibold">

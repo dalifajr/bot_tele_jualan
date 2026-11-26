@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\BotSetting;
+use App\Models\Coupon;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Payment;
@@ -87,7 +88,7 @@ class CustomerVpnController extends Controller
                 ->count(),
             'admin_suspended' => VpnAccount::where('user_id', $user->id)
                 ->where('status', 'suspended')
-                ->where('suspended_by_role', 'admin')
+                ->whereIn('suspended_by_role', ['admin', 'system'])
                 ->count(),
         ];
 
@@ -158,7 +159,83 @@ class CustomerVpnController extends Controller
     }
 
     /**
-     * Customer CREATE: purchase & provision a new VPN account directly using Wallet Balance.
+     * AJAX live coupon validation for /my-vpn Create & Renew modals.
+     */
+    public function validateCoupon(Request $request)
+    {
+        $validated = $request->validate([
+            'mode' => 'required|in:create,renew',
+            'coupon_code' => 'required|string|max:64',
+            'product_id' => 'required_if:mode,create|nullable|integer|exists:products,id',
+            'account_id' => 'required_if:mode,renew|nullable|integer',
+            'days' => 'nullable|integer|min:1|max:365',
+        ]);
+
+        $userId = (int) Auth::id();
+        $code = strtoupper(trim((string) $validated['coupon_code']));
+
+        if ($validated['mode'] === 'create') {
+            $product = Product::findOrFail((int) $validated['product_id']);
+            if (!$product->is_vpn || $product->is_suspended) {
+                return response()->json([
+                    'valid' => false,
+                    'message' => __('Produk VPN yang dipilih tidak tersedia.'),
+                ], 422);
+            }
+            $subtotal = max(0, (int) $product->price);
+        } else {
+            $account = $this->findOwnedAccount((int) $validated['account_id']);
+            if ($account->isAdminSuspended()) {
+                return response()->json([
+                    'valid' => false,
+                    'message' => __('Akun VPN ini sedang disuspend dan tidak dapat diperpanjang.'),
+                ], 403);
+            }
+            $days = max(1, min(365, (int) ($validated['days'] ?? 30)));
+            $subtotal = (int) ($this->calculateRenewCost($account, $days) ?? 0);
+            if ($subtotal <= 0) {
+                return response()->json([
+                    'valid' => false,
+                    'message' => __('Tarif perpanjangan untuk akun VPN ini belum diatur oleh Admin.'),
+                ], 422);
+            }
+            $product = $this->resolveRenewProductModel($account);
+        }
+
+        $eval = $this->evaluateVpnCoupon($code, $subtotal, $userId, $product, false);
+        if (!$eval['valid']) {
+            return response()->json([
+                'valid' => false,
+                'message' => $eval['error'],
+                'subtotal' => $subtotal,
+                'discount' => 0,
+                'final_price' => $subtotal,
+                'is_free' => $subtotal <= 0,
+            ]);
+        }
+
+        $discount = (int) $eval['discount'];
+        $finalPrice = max(0, $subtotal - $discount);
+        $appliedCode = $eval['coupon']->code;
+
+        return response()->json([
+            'valid' => true,
+            'code' => $appliedCode,
+            'subtotal' => $subtotal,
+            'discount' => $discount,
+            'final_price' => $finalPrice,
+            'is_free' => $finalPrice <= 0,
+            'message' => $finalPrice <= 0
+                ? __('Kupon :code aktif! Diskon 100% — Bebas biaya tanpa pembayaran.', ['code' => $appliedCode])
+                : __('Kupon :code diterapkan! Hemat Rp :amt.', [
+                    'code' => $appliedCode,
+                    'amt' => number_format($discount, 0, ',', '.'),
+                ]),
+        ]);
+    }
+
+    /**
+     * Customer CREATE: purchase & provision a new VPN account directly using Wallet Balance, QRIS, or 100% Free Coupon.
      */
     public function store(Request $request, VpnService $vpnService)
     {
@@ -173,6 +250,7 @@ class CustomerVpnController extends Controller
             'password' => ['nullable', 'string', 'min:3', 'max:64', 'regex:/^[^\r\n\0\s]+$/'],
             'sni_mode' => 'nullable|in:1,2,3',
             'payment_method' => 'nullable|in:wallet,qris',
+            'coupon_code' => 'nullable|string|max:64',
         ]);
 
         $product = Product::with('vpnServer')->findOrFail($validated['product_id']);
@@ -200,8 +278,8 @@ class CustomerVpnController extends Controller
             return back()->with('error', __('Username sudah terpakai.'))->withInput();
         }
 
-        $userId = Auth::id();
-        $price = max(0, (int) $product->price);
+        $userId = (int) Auth::id();
+        $basePrice = max(0, (int) $product->price);
         $days = max(1, (int) ($product->vpn_duration_days ?: 30));
         $quotaGb = max(0, (int) ($product->vpn_quota_gb ?? 0));
         $ipLimit = max(1, (int) ($product->vpn_ip_limit ?? 1));
@@ -210,9 +288,20 @@ class CustomerVpnController extends Controller
             $sniMode = '3';
         }
         $paymentMethod = (string) ($validated['payment_method'] ?? 'wallet');
+        $couponCodeInput = strtoupper(trim((string) ($validated['coupon_code'] ?? '')));
 
-        // Direct QRIS payment mode: create pending Order + Payment -> redirect to QRIS checkout.success; auto-provision runs on confirmPayment()!
-        if ($paymentMethod === 'qris' && $price > 0) {
+        $estimatedDiscount = 0;
+        if ($couponCodeInput !== '') {
+            $preEval = $this->evaluateVpnCoupon($couponCodeInput, $basePrice, $userId, $product, false);
+            if (!$preEval['valid']) {
+                return back()->with('error', $preEval['error'])->withInput();
+            }
+            $estimatedDiscount = (int) $preEval['discount'];
+        }
+        $estimatedFinal = max(0, $basePrice - $estimatedDiscount);
+
+        // Direct QRIS payment mode (ONLY when final price after coupon is > 0; 100% coupon bypasses QRIS!)
+        if ($paymentMethod === 'qris' && $estimatedFinal > 0) {
             $pendingCount = Order::where('customer_id', $userId)->where('status', 'pending_payment')->count();
             if ($pendingCount >= 5) {
                 return back()->with('error', __('Anda memiliki terlalu banyak pesanan yang menunggu pembayaran. Silakan selesaikan atau batalkan pesanan sebelumnya.'));
@@ -221,16 +310,31 @@ class CustomerVpnController extends Controller
             try {
                 DB::beginTransaction();
 
+                $discount = 0;
+                $appliedCouponCode = null;
+                if ($couponCodeInput !== '') {
+                    $lockedEval = $this->evaluateVpnCoupon($couponCodeInput, $basePrice, $userId, $product, true);
+                    if (!$lockedEval['valid']) {
+                        DB::rollBack();
+                        return back()->with('error', $lockedEval['error'])->withInput();
+                    }
+                    $discount = (int) $lockedEval['discount'];
+                    $appliedCouponCode = $lockedEval['coupon']->code;
+                    $this->recordCouponRedemption($lockedEval['coupon'], $userId);
+                }
+
+                $finalPrice = max(0, $basePrice - $discount);
                 $uniqueCode = rand(1, 200);
-                $totalAmount = $price + $uniqueCode;
+                $totalAmount = $finalPrice + $uniqueCode;
                 $orderRef = 'ORD' . now()->format('ymdHis') . strtoupper(substr(md5(uniqid('', true)), 0, 5));
                 $expiryMinutes = (int) (BotSetting::where('key', 'checkout_expiry_minutes')->value('value') ?? 15);
 
                 $order = Order::create([
                     'order_ref' => $orderRef,
                     'customer_id' => $userId,
-                    'subtotal' => $price,
-                    'discount_amount' => 0,
+                    'subtotal' => $basePrice,
+                    'coupon_code' => $appliedCouponCode,
+                    'discount_amount' => $discount,
                     'unique_code' => $uniqueCode,
                     'total_amount' => $totalAmount,
                     'status' => 'pending_payment',
@@ -241,7 +345,8 @@ class CustomerVpnController extends Controller
                     'order_id' => $order->id,
                     'product_id' => $product->id,
                     'quantity' => 1,
-                    'unit_price' => $price,
+                    'unit_price' => $basePrice,
+                    'discount_amount' => $discount,
                     'vpn_username' => $validated['username'],
                     'vpn_password' => $validated['password'] ?? null,
                     'vpn_meta' => [
@@ -291,26 +396,48 @@ class CustomerVpnController extends Controller
 
         $orderRef = 'VPN-' . strtoupper(Str::random(10));
         $vpnAccount = null;
+        $chargedCost = 0;
+        $redeemedCouponId = null;
+        $redeemedCouponUserId = null;
 
         try {
             DB::transaction(function () use (
-                $userId, $product, $server, $validated, $price, $days, $quotaGb, $ipLimit, $orderRef, $chosenProto, $sniMode, &$vpnAccount
+                $userId, $product, $server, $validated, $basePrice, $days, $quotaGb, $ipLimit, $orderRef, $chosenProto, $sniMode, $couponCodeInput,
+                &$vpnAccount, &$chargedCost, &$redeemedCouponId, &$redeemedCouponUserId
             ) {
                 $lockedUser = User::where('id', $userId)->lockForUpdate()->firstOrFail();
                 $balance = (int) ($lockedUser->customer_wallet_balance ?? 0);
 
-                if ($price > 0 && $balance < $price) {
+                $discount = 0;
+                $appliedCouponCode = null;
+                if ($couponCodeInput !== '') {
+                    $lockedEval = $this->evaluateVpnCoupon($couponCodeInput, $basePrice, $userId, $product, true);
+                    if (!$lockedEval['valid']) {
+                        throw new \RuntimeException('COUPON_INVALID:' . $lockedEval['error']);
+                    }
+                    $discount = (int) $lockedEval['discount'];
+                    $appliedCouponCode = $lockedEval['coupon']->code;
+                    $redeemedCouponId = (int) $lockedEval['coupon']->id;
+                    $redeemedCouponUserId = $this->recordCouponRedemption($lockedEval['coupon'], $userId);
+                }
+
+                $finalCost = max(0, $basePrice - $discount);
+                $chargedCost = $finalCost;
+
+                if ($finalCost > 0 && $balance < $finalCost) {
                     throw new \RuntimeException('INSUFFICIENT_BALANCE');
                 }
 
                 $order = Order::create([
                     'order_ref' => $orderRef,
                     'customer_id' => $lockedUser->id,
-                    'subtotal' => $price,
-                    'discount_amount' => 0,
+                    'subtotal' => $basePrice,
+                    'coupon_code' => $appliedCouponCode,
+                    'discount_amount' => $discount,
                     'unique_code' => 0,
-                    'total_amount' => $price,
+                    'total_amount' => $finalCost,
                     'status' => 'delivered',
+                    'paid_at' => now(),
                     'delivered_at' => now(),
                 ]);
 
@@ -318,7 +445,8 @@ class CustomerVpnController extends Controller
                     'order_id' => $order->id,
                     'product_id' => $product->id,
                     'quantity' => 1,
-                    'unit_price' => $price,
+                    'unit_price' => $basePrice,
+                    'discount_amount' => $discount,
                     'vpn_username' => $validated['username'],
                     'vpn_password' => $validated['password'] ?? null,
                     'vpn_meta' => [
@@ -329,26 +457,32 @@ class CustomerVpnController extends Controller
                     ],
                 ]);
 
-                if ($price > 0) {
-                    $newBalance = $balance - $price;
+                if ($finalCost > 0) {
+                    $newBalance = $balance - $finalCost;
                     $lockedUser->customer_wallet_balance = $newBalance;
                     $lockedUser->save();
+
+                    $desc = __('Buat Akun VPN :proto (:user)', [
+                        'proto' => strtoupper($chosenProto),
+                        'user' => $validated['username'],
+                    ]);
+                    if ($appliedCouponCode) {
+                        $desc .= ' [Kupon ' . $appliedCouponCode . ' -Rp ' . number_format($discount, 0, ',', '.') . ']';
+                    }
 
                     WalletTransaction::create([
                         'user_id' => $lockedUser->id,
                         'type' => 'debit',
                         'category' => 'purchase',
-                        'amount' => $price,
+                        'amount' => $finalCost,
                         'balance_before' => $balance,
                         'balance_after' => $newBalance,
                         'reference' => $orderRef,
-                        'description' => __('Buat Akun VPN :proto (:user)', [
-                            'proto' => strtoupper($chosenProto),
-                            'user' => $validated['username'],
-                        ]),
+                        'description' => $desc,
                     ]);
                 }
 
+                // IMPORTANT: Keep purchase_price as normal base price so future proportional renewals remain accurate even when redeemed with a 100% free coupon!
                 $vpnAccount = VpnAccount::create([
                     'user_id' => $lockedUser->id,
                     'order_id' => $order->id,
@@ -358,7 +492,7 @@ class CustomerVpnController extends Controller
                     'password' => $validated['password'] ?? null,
                     'quota_gb' => $quotaGb,
                     'ip_limit' => $ipLimit,
-                    'purchase_price' => $price > 0 ? $price : null,
+                    'purchase_price' => $basePrice > 0 ? $basePrice : null,
                     'purchase_days' => $days,
                     'external_ref' => $orderRef,
                     'expired_at' => now()->addDays($days),
@@ -366,8 +500,11 @@ class CustomerVpnController extends Controller
                 ]);
             });
         } catch (\RuntimeException $e) {
+            if (str_starts_with($e->getMessage(), 'COUPON_INVALID:')) {
+                return back()->with('error', substr($e->getMessage(), 15))->withInput();
+            }
             if ($e->getMessage() === 'INSUFFICIENT_BALANCE') {
-                return back()->with('error', __('Saldo Dompet tidak mencukupi. Silakan top-up dompet terlebih dahulu atau beli melalui Katalog dengan QRIS.'));
+                return back()->with('error', __('Saldo Dompet tidak mencukupi. Silakan top-up dompet terlebih dahulu atau gunakan Bayar QRIS.'));
             }
             throw $e;
         }
@@ -381,20 +518,28 @@ class CustomerVpnController extends Controller
         );
 
         if ($provisioned->status === 'active') {
-            return redirect()->route('vpn.my-accounts')
-                ->with('success', __('Akun VPN :user (:proto) berhasil dibuat dan langsung aktif!', [
+            $msg = $chargedCost <= 0 && $couponCodeInput !== ''
+                ? __('Akun VPN :user (:proto) berhasil diklaim gratis (Kupon :code) dan langsung aktif!', [
                     'user' => $provisioned->username,
                     'proto' => strtoupper($provisioned->protocol),
-                ]));
+                    'code' => $couponCodeInput,
+                ])
+                : __('Akun VPN :user (:proto) berhasil dibuat dan langsung aktif!', [
+                    'user' => $provisioned->username,
+                    'proto' => strtoupper($provisioned->protocol),
+                ]);
+
+            return redirect()->route('vpn.my-accounts')->with('success', $msg);
         }
 
-        // Refund wallet automatically if provisioning failed
-        if ($price > 0) {
-            DB::transaction(function () use ($userId, $price, $provisioned) {
+        // Refund wallet & rollback coupon automatically if provisioning failed
+        $this->rollbackCouponRedemption($redeemedCouponId, $redeemedCouponUserId);
+        if ($chargedCost > 0) {
+            DB::transaction(function () use ($userId, $chargedCost, $provisioned) {
                 $lockedUser = User::where('id', $userId)->lockForUpdate()->first();
                 if ($lockedUser) {
                     $before = (int) ($lockedUser->customer_wallet_balance ?? 0);
-                    $after = $before + $price;
+                    $after = $before + $chargedCost;
                     $lockedUser->customer_wallet_balance = $after;
                     $lockedUser->save();
 
@@ -402,7 +547,7 @@ class CustomerVpnController extends Controller
                         'user_id' => $lockedUser->id,
                         'type' => 'credit',
                         'category' => 'refund',
-                        'amount' => $price,
+                        'amount' => $chargedCost,
                         'balance_before' => $before,
                         'balance_after' => $after,
                         'reference' => 'VPN-REFUND-' . $provisioned->id,
@@ -413,13 +558,13 @@ class CustomerVpnController extends Controller
         }
 
         return redirect()->route('vpn.my-accounts')
-            ->with('error', __('Gagal membuat akun VPN di server (:err). Saldo Anda telah dikembalikan otomatis.', [
+            ->with('error', __('Gagal membuat akun VPN di server (:err). Saldo & kupon Anda telah dikembalikan otomatis.', [
                 'err' => $provisioned->last_error ?: 'Server error',
             ]));
     }
 
     /**
-     * Customer RENEW: extend own VPN account using Wallet Balance. Blocked if Admin-suspended!
+     * Customer RENEW: extend own VPN account using Wallet Balance, QRIS, or 100% Free Coupon. Blocked if Admin/System-suspended!
      */
     public function renew(Request $request, $id, VpnService $vpnService)
     {
@@ -432,19 +577,32 @@ class CustomerVpnController extends Controller
         $validated = $request->validate([
             'days' => 'required|integer|min:1|max:365',
             'payment_method' => 'nullable|in:wallet,qris',
+            'coupon_code' => 'nullable|string|max:64',
         ]);
 
         $days = (int) $validated['days'];
         $paymentMethod = (string) ($validated['payment_method'] ?? 'wallet');
-        $renewCost = $this->calculateRenewCost($account, $days);
-        $userId = Auth::id();
+        $baseRenewCost = $this->calculateRenewCost($account, $days);
+        $userId = (int) Auth::id();
+        $couponCodeInput = strtoupper(trim((string) ($validated['coupon_code'] ?? '')));
 
-        if ($renewCost === null || $renewCost <= 0) {
+        if ($baseRenewCost === null || $baseRenewCost <= 0) {
             return back()->with('error', __('Tarif perpanjangan untuk akun VPN ini belum diatur oleh Admin. Silakan hubungi Admin melalui Chat untuk perpanjangan.'));
         }
 
-        // QRIS payment mode: create pending Order + Payment -> redirect to QRIS checkout.success; auto-renew runs on confirmPayment()!
-        if ($paymentMethod === 'qris') {
+        $renewProduct = $this->resolveRenewProductModel($account);
+        $estimatedDiscount = 0;
+        if ($couponCodeInput !== '') {
+            $preEval = $this->evaluateVpnCoupon($couponCodeInput, $baseRenewCost, $userId, $renewProduct, false);
+            if (!$preEval['valid']) {
+                return back()->with('error', $preEval['error']);
+            }
+            $estimatedDiscount = (int) $preEval['discount'];
+        }
+        $estimatedFinal = max(0, $baseRenewCost - $estimatedDiscount);
+
+        // QRIS payment mode (ONLY when final cost after coupon > 0; 100% coupon bypasses QRIS!)
+        if ($paymentMethod === 'qris' && $estimatedFinal > 0) {
             $pendingCount = Order::where('customer_id', $userId)->where('status', 'pending_payment')->count();
             if ($pendingCount >= 5) {
                 return back()->with('error', __('Anda memiliki terlalu banyak pesanan yang menunggu pembayaran. Silakan selesaikan atau batalkan pesanan sebelumnya.'));
@@ -453,29 +611,45 @@ class CustomerVpnController extends Controller
             try {
                 DB::beginTransaction();
 
+                $discount = 0;
+                $appliedCouponCode = null;
+                if ($couponCodeInput !== '') {
+                    $lockedEval = $this->evaluateVpnCoupon($couponCodeInput, $baseRenewCost, $userId, $renewProduct, true);
+                    if (!$lockedEval['valid']) {
+                        DB::rollBack();
+                        return back()->with('error', $lockedEval['error']);
+                    }
+                    $discount = (int) $lockedEval['discount'];
+                    $appliedCouponCode = $lockedEval['coupon']->code;
+                    $this->recordCouponRedemption($lockedEval['coupon'], $userId);
+                }
+
+                $finalRenewCost = max(0, $baseRenewCost - $discount);
                 $uniqueCode = rand(1, 200);
-                $totalAmount = $renewCost + $uniqueCode;
+                $totalAmount = $finalRenewCost + $uniqueCode;
                 $orderRef = 'ORD' . now()->format('ymdHis') . strtoupper(substr(md5(uniqid('', true)), 0, 5));
                 $expiryMinutes = (int) (BotSetting::where('key', 'checkout_expiry_minutes')->value('value') ?? 15);
 
                 $order = Order::create([
                     'order_ref' => $orderRef,
                     'customer_id' => $userId,
-                    'subtotal' => $renewCost,
-                    'discount_amount' => 0,
+                    'subtotal' => $baseRenewCost,
+                    'coupon_code' => $appliedCouponCode,
+                    'discount_amount' => $discount,
                     'unique_code' => $uniqueCode,
                     'total_amount' => $totalAmount,
                     'status' => 'pending_payment',
                     'expires_at' => now()->addMinutes($expiryMinutes),
                 ]);
 
-                $resolvedProductId = $this->resolveRenewProductId($account);
+                $resolvedProductId = $renewProduct ? (int) $renewProduct->id : $this->resolveRenewProductId($account);
 
                 OrderItem::create([
                     'order_id' => $order->id,
                     'product_id' => $resolvedProductId,
                     'quantity' => 1,
-                    'unit_price' => $renewCost,
+                    'unit_price' => $baseRenewCost,
+                    'discount_amount' => $discount,
                     'vpn_username' => $account->username,
                     'vpn_meta' => [
                         'action' => 'renew',
@@ -521,36 +695,70 @@ class CustomerVpnController extends Controller
             }
         }
 
+        $chargedCost = 0;
+        $redeemedCouponId = null;
+        $redeemedCouponUserId = null;
+
         try {
-            DB::transaction(function () use ($userId, $renewCost, $account, $days) {
+            DB::transaction(function () use (
+                $userId, $baseRenewCost, $account, $days, $renewProduct, $couponCodeInput,
+                &$chargedCost, &$redeemedCouponId, &$redeemedCouponUserId
+            ) {
                 $lockedUser = User::where('id', $userId)->lockForUpdate()->firstOrFail();
                 $before = (int) ($lockedUser->customer_wallet_balance ?? 0);
-                if ($before < $renewCost) {
-                    throw new \RuntimeException('INSUFFICIENT_BALANCE');
-                }
-                $after = $before - $renewCost;
-                $lockedUser->customer_wallet_balance = $after;
-                $lockedUser->save();
 
-                WalletTransaction::create([
-                    'user_id' => $lockedUser->id,
-                    'type' => 'debit',
-                    'category' => 'purchase',
-                    'amount' => $renewCost,
-                    'balance_before' => $before,
-                    'balance_after' => $after,
-                    'reference' => 'VPN-RENEW-' . $account->id,
-                    'description' => __('Perpanjang VPN :proto (:user) :days hari', [
+                $discount = 0;
+                $appliedCouponCode = null;
+                if ($couponCodeInput !== '') {
+                    $lockedEval = $this->evaluateVpnCoupon($couponCodeInput, $baseRenewCost, $userId, $renewProduct, true);
+                    if (!$lockedEval['valid']) {
+                        throw new \RuntimeException('COUPON_INVALID:' . $lockedEval['error']);
+                    }
+                    $discount = (int) $lockedEval['discount'];
+                    $appliedCouponCode = $lockedEval['coupon']->code;
+                    $redeemedCouponId = (int) $lockedEval['coupon']->id;
+                    $redeemedCouponUserId = $this->recordCouponRedemption($lockedEval['coupon'], $userId);
+                }
+
+                $finalCost = max(0, $baseRenewCost - $discount);
+                $chargedCost = $finalCost;
+
+                if ($finalCost > 0) {
+                    if ($before < $finalCost) {
+                        throw new \RuntimeException('INSUFFICIENT_BALANCE');
+                    }
+                    $after = $before - $finalCost;
+                    $lockedUser->customer_wallet_balance = $after;
+                    $lockedUser->save();
+
+                    $desc = __('Perpanjang VPN :proto (:user) :days hari', [
                         'proto' => strtoupper($account->protocol),
                         'user' => $account->username,
                         'days' => $days,
-                    ]),
-                ]);
+                    ]);
+                    if ($appliedCouponCode) {
+                        $desc .= ' [Kupon ' . $appliedCouponCode . ' -Rp ' . number_format($discount, 0, ',', '.') . ']';
+                    }
+
+                    WalletTransaction::create([
+                        'user_id' => $lockedUser->id,
+                        'type' => 'debit',
+                        'category' => 'purchase',
+                        'amount' => $finalCost,
+                        'balance_before' => $before,
+                        'balance_after' => $after,
+                        'reference' => 'VPN-RENEW-' . $account->id,
+                        'description' => $desc,
+                    ]);
+                }
             });
         } catch (\RuntimeException $e) {
+            if (str_starts_with($e->getMessage(), 'COUPON_INVALID:')) {
+                return back()->with('error', substr($e->getMessage(), 15));
+            }
             if ($e->getMessage() === 'INSUFFICIENT_BALANCE') {
                 return back()->with('error', __('Saldo Dompet tidak mencukupi untuk perpanjangan (butuh Rp :amount).', [
-                    'amount' => number_format($renewCost, 0, ',', '.'),
+                    'amount' => number_format($chargedCost ?: $estimatedFinal, 0, ',', '.'),
                 ]));
             }
             throw $e;
@@ -559,19 +767,28 @@ class CustomerVpnController extends Controller
         $res = $vpnService->renewAccount($account, $days);
 
         if (!empty($res['success'])) {
-            return back()->with('success', __('Akun VPN :user berhasil diperpanjang :days hari.', [
-                'user' => $account->username,
-                'days' => $days,
-            ]));
+            $msg = $chargedCost <= 0 && $couponCodeInput !== ''
+                ? __('Akun VPN :user berhasil diperpanjang gratis :days hari (Kupon :code)!', [
+                    'user' => $account->username,
+                    'days' => $days,
+                    'code' => $couponCodeInput,
+                ])
+                : __('Akun VPN :user berhasil diperpanjang :days hari.', [
+                    'user' => $account->username,
+                    'days' => $days,
+                ]);
+
+            return back()->with('success', $msg);
         }
 
-        // Refund wallet if panel API call fails
-        if ($renewCost > 0) {
-            DB::transaction(function () use ($userId, $renewCost, $account) {
+        // Refund wallet & rollback coupon if panel API call fails
+        $this->rollbackCouponRedemption($redeemedCouponId, $redeemedCouponUserId);
+        if ($chargedCost > 0) {
+            DB::transaction(function () use ($userId, $chargedCost, $account) {
                 $lockedUser = User::where('id', $userId)->lockForUpdate()->first();
                 if ($lockedUser) {
                     $before = (int) ($lockedUser->customer_wallet_balance ?? 0);
-                    $after = $before + $renewCost;
+                    $after = $before + $chargedCost;
                     $lockedUser->customer_wallet_balance = $after;
                     $lockedUser->save();
 
@@ -579,7 +796,7 @@ class CustomerVpnController extends Controller
                         'user_id' => $lockedUser->id,
                         'type' => 'credit',
                         'category' => 'refund',
-                        'amount' => $renewCost,
+                        'amount' => $chargedCost,
                         'balance_before' => $before,
                         'balance_after' => $after,
                         'reference' => 'VPN-RENEW-REFUND-' . $account->id,
@@ -589,7 +806,7 @@ class CustomerVpnController extends Controller
             });
         }
 
-        return back()->with('error', __('Perpanjangan gagal (:err). Saldo telah dikembalikan.', [
+        return back()->with('error', __('Perpanjangan gagal (:err). Saldo & kupon telah dikembalikan.', [
             'err' => $res['message'] ?? 'Server error',
         ]));
     }
@@ -684,9 +901,14 @@ class CustomerVpnController extends Controller
 
     private function adminSuspendedResponse(VpnAccount $account)
     {
-        $msg = __('Akun VPN :user disuspend oleh Admin. Anda diwajibkan menghubungi Admin melalui Chat untuk meminta pembukaan akses kembali.', [
-            'user' => $account->username,
-        ]);
+        $msg = $account->isSystemSuspended()
+            ? __('Akun VPN :user disuspend otomatis oleh sistem (:reason). Anda diwajibkan menghubungi Admin melalui Chat untuk meminta pembukaan akses kembali.', [
+                'user' => $account->username,
+                'reason' => $account->suspended_reason ?: __('pelanggaran batas penggunaan'),
+            ])
+            : __('Akun VPN :user disuspend oleh Admin. Anda diwajibkan menghubungi Admin melalui Chat untuk meminta pembukaan akses kembali.', [
+                'user' => $account->username,
+            ]);
 
         if (request()->expectsJson()) {
             return response()->json(['success' => false, 'message' => $msg], 403);
@@ -755,6 +977,123 @@ class CustomerVpnController extends Controller
         }
 
         return null;
+    }
+
+    /**
+     * Evaluate a coupon code for VPN create/renew with identical business rules to CheckoutController.
+     *
+     * @return array{valid: bool, coupon: Coupon|null, discount: int, error: string|null}
+     */
+    private function evaluateVpnCoupon(string $code, int $subtotal, int $userId, ?Product $product = null, bool $lockForUpdate = false): array
+    {
+        $query = Coupon::where('code', $code);
+        if ($lockForUpdate) {
+            $query->lockForUpdate();
+        }
+        $coupon = $query->first();
+
+        if (!$coupon) {
+            return ['valid' => false, 'coupon' => null, 'discount' => 0, 'error' => __('Kode kupon tidak terdaftar.')];
+        }
+
+        if (!$coupon->is_active || ($coupon->expires_at && $coupon->expires_at->isPast()) || ($coupon->qty > 0 && $coupon->used_qty >= $coupon->qty)) {
+            return ['valid' => false, 'coupon' => null, 'discount' => 0, 'error' => __('Kupon tidak valid, kuota habis, atau sudah kedaluwarsa.')];
+        }
+
+        if ($product) {
+            if (!$coupon->appliesToProduct($product)) {
+                $err = ($coupon->user_id && $product->creator_id != $coupon->user_id)
+                    ? __('Kupon ini hanya berlaku untuk produk dari penjual toko terkait.')
+                    : __('Kupon ini tidak dapat digunakan untuk paket VPN ini.');
+                return ['valid' => false, 'coupon' => null, 'discount' => 0, 'error' => $err];
+            }
+        } elseif ($coupon->isRestrictedToProducts()) {
+            return ['valid' => false, 'coupon' => null, 'discount' => 0, 'error' => __('Kupon ini hanya berlaku untuk produk tertentu.')];
+        }
+
+        if ($subtotal < (int) $coupon->min_spend) {
+            return [
+                'valid' => false,
+                'coupon' => null,
+                'discount' => 0,
+                'error' => __('Minimum transaksi untuk kupon ini adalah Rp :min.', [
+                    'min' => number_format((int) $coupon->min_spend, 0, ',', '.'),
+                ]),
+            ];
+        }
+
+        if ($coupon->hasReachedUserLimit($userId)) {
+            return ['valid' => false, 'coupon' => null, 'discount' => 0, 'error' => $coupon->getUserLimitErrorMessage()];
+        }
+
+        $discount = $coupon->calculateDiscountForUnits($subtotal, 1);
+
+        return [
+            'valid' => true,
+            'coupon' => $coupon,
+            'discount' => max(0, min($discount, $subtotal)),
+            'error' => null,
+        ];
+    }
+
+    private function recordCouponRedemption(Coupon $coupon, int $userId): int
+    {
+        $coupon->increment('used_qty');
+        return (int) DB::table('coupon_user')->insertGetId([
+            'coupon_id' => $coupon->id,
+            'user_id' => $userId,
+            'created_at' => now(),
+        ]);
+    }
+
+    private function rollbackCouponRedemption(?int $couponId, ?int $couponUserRowId): void
+    {
+        if (!$couponId) {
+            return;
+        }
+        try {
+            DB::transaction(function () use ($couponId, $couponUserRowId) {
+                $coupon = Coupon::where('id', $couponId)->lockForUpdate()->first();
+                if ($coupon && (int) $coupon->used_qty > 0) {
+                    $coupon->decrement('used_qty');
+                }
+                if ($couponUserRowId) {
+                    DB::table('coupon_user')->where('id', $couponUserRowId)->delete();
+                }
+            });
+        } catch (\Throwable $e) {
+            \Log::warning('Failed to rollback VPN coupon redemption: ' . $e->getMessage());
+        }
+    }
+
+    private function resolveRenewProductModel(VpnAccount $account): ?Product
+    {
+        if ($account->order && $account->order->items) {
+            $originItem = $account->order->items->first(fn ($i) => !empty($i->product_id));
+            if ($originItem) {
+                $prod = Product::withTrashed()->find((int) $originItem->product_id);
+                if ($prod) {
+                    return $prod;
+                }
+            }
+        }
+
+        $matching = Product::where('is_vpn', true)
+            ->where('is_suspended', false)
+            ->where('vpn_protocol', strtolower($account->protocol))
+            ->when($account->vpn_server_id, fn ($q) => $q->where('vpn_server_id', $account->vpn_server_id))
+            ->orderBy('price')
+            ->first();
+
+        if ($matching) {
+            return $matching;
+        }
+
+        return Product::where('is_vpn', true)
+            ->where('is_suspended', false)
+            ->where('vpn_protocol', strtolower($account->protocol))
+            ->orderBy('price')
+            ->first();
     }
 
     private function resolveRenewProductId(VpnAccount $account): int
@@ -834,6 +1173,9 @@ class CustomerVpnController extends Controller
 
                 foreach ($servers as $server) {
                     $vpnService->syncServerTraffic($server);
+                    if ($server->isApiDriver()) {
+                        $vpnService->syncServerStatuses($server);
+                    }
                 }
             }
         } catch (\Throwable $e) {

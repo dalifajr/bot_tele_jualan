@@ -208,6 +208,7 @@ Route::middleware(EnsureTelegramAuthenticated::class)->group(function () {
     Route::prefix('my-vpn')->name('vpn.')->group(function () {
         Route::get('/', [\App\Http\Controllers\CustomerVpnController::class, 'index'])->name('my-accounts');
         Route::post('/', [\App\Http\Controllers\CustomerVpnController::class, 'store'])->name('store')->middleware('throttle:15,1');
+        Route::post('/validate-coupon', [\App\Http\Controllers\CustomerVpnController::class, 'validateCoupon'])->name('validate-coupon')->middleware('throttle:30,1');
         Route::post('/{id}/renew', [\App\Http\Controllers\CustomerVpnController::class, 'renew'])->whereNumber('id')->name('renew')->middleware('throttle:15,1');
         Route::post('/{id}/suspend', [\App\Http\Controllers\CustomerVpnController::class, 'suspend'])->whereNumber('id')->name('suspend');
         Route::post('/{id}/unsuspend', [\App\Http\Controllers\CustomerVpnController::class, 'unsuspend'])->whereNumber('id')->name('unsuspend');

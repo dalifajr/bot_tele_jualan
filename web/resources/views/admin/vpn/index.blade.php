@@ -307,6 +307,7 @@
                                 $badge = match(true) {
                                     $acc->status === 'failed' => ['bg' => 'danger-subtle', 'text' => 'danger', 'label' => __('Gagal')],
                                     $acc->status === 'provisioning' => ['bg' => 'info-subtle', 'text' => 'info', 'label' => __('Provisioning')],
+                                    $acc->isSystemSuspended() => ['bg' => 'danger-subtle', 'text' => 'danger', 'label' => __('Suspend Sistem')],
                                     $acc->isAdminSuspended() => ['bg' => 'danger-subtle', 'text' => 'danger', 'label' => __('Suspend Admin')],
                                     $acc->status === 'suspended' => ['bg' => 'warning-subtle', 'text' => 'warning-emphasis', 'label' => __('Suspend User')],
                                     $isExpired || $acc->status === 'expired' => ['bg' => 'secondary-subtle', 'text' => 'secondary', 'label' => __('Expired')],
@@ -541,6 +542,7 @@
                     $statusLabel = match(true) {
                         $acc->status === 'failed' => __('Gagal'),
                         $acc->status === 'provisioning' => __('Provisioning'),
+                        $acc->isSystemSuspended() => __('Suspend Sistem'),
                         $acc->isAdminSuspended() => __('Suspend Admin'),
                         $acc->status === 'suspended' => __('Suspend User'),
                         $isExpired || $acc->status === 'expired' => __('Expired'),
@@ -588,7 +590,9 @@
                                     <span class="text-info fw-semibold ms-1"><i class="fas fa-arrow-up"></i> {{ \App\Models\VpnAccount::formatBytes((int) $accTraffic['uplink']) }}</span>
                                     <span class="text-success fw-semibold ms-2"><i class="fas fa-arrow-down"></i> {{ \App\Models\VpnAccount::formatBytes((int) $accTraffic['downlink']) }}</span>
                                 </div>
-                                @if($acc->isAdminSuspended())
+                                @if($acc->isSystemSuspended())
+                                    <div class="text-danger fw-semibold mt-1"><i class="fas fa-shield-exclamation me-1"></i>{{ __('Disuspend Sistem:') }} {{ $acc->suspended_reason }}</div>
+                                @elseif($acc->isAdminSuspended())
                                     <div class="text-danger fw-semibold mt-1"><i class="fas fa-lock me-1"></i>{{ __('Disuspend Admin:') }} {{ $acc->suspended_reason }}</div>
                                 @elseif($acc->status === 'failed' && $acc->last_error)
                                     <div class="text-danger mt-1"><i class="fas fa-triangle-exclamation me-1"></i>{{ $acc->last_error }}</div>

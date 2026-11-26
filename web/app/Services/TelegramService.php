@@ -737,9 +737,9 @@ class TelegramService
     }
 
     /**
-     * Notify customer via Telegram when Admin suspends or unsuspends their VPN account.
+     * Notify customer via Telegram when Admin or System suspends or unsuspends their VPN account.
      */
-    public static function notifyVpnStatusChanged(\App\Models\VpnAccount $account, string $action, ?string $reason = null): bool
+    public static function notifyVpnStatusChanged(\App\Models\VpnAccount $account, string $action, ?string $reason = null, string $actorRole = 'admin'): bool
     {
         $botToken = config('services.telegram.bot_token');
         if (empty($botToken)) {
@@ -759,17 +759,26 @@ class TelegramService
 
         if ($action === 'suspended') {
             $reasonClean = trim((string) ($reason ?? ''));
+            $isSystem = $actorRole === 'system';
             $adminId = $account->suspended_by_user_id
                 ?: User::where('role', 'admin')->orderBy('id')->value('id');
             $chatUrl = $adminId ? "{$baseDomain}/chat?contact_id={$adminId}" : "{$baseDomain}/my-vpn";
             $vpnUrl = "{$baseDomain}/my-vpn";
 
-            $text = "🚫 <b>Akun VPN Anda Disuspend oleh Admin</b>\n\n"
+            $header = $isSystem
+                ? "⚠️ <b>Akun VPN Anda Disuspend Otomatis oleh Sistem</b>"
+                : "🚫 <b>Akun VPN Anda Disuspend oleh Admin</b>";
+
+            $footer = $isSystem
+                ? "<i>Akun dikunci otomatis oleh sistem karena terdeteksi melanggar batas penggunaan dan tidak dapat diaktifkan mandiri. Silakan hubungi Admin melalui Chat untuk informasi atau pengaktifan kembali.</i>"
+                : "<i>Akun terkunci sementara dan tidak dapat diaktifkan mandiri. Silakan hubungi Admin melalui Chat untuk informasi atau pengaktifan kembali.</i>";
+
+            $text = "{$header}\n\n"
                 . "Protokol: <b>{$proto}</b>\n"
                 . "Username: <code>{$uname}</code>\n"
                 . "Server: {$srv}\n"
                 . ($reasonClean !== '' ? "Alasan: " . e($reasonClean) . "\n" : '')
-                . "\n<i>Akun terkunci sementara dan tidak dapat diaktifkan mandiri. Silakan hubungi Admin melalui Chat untuk informasi atau pengaktifan kembali.</i>";
+                . "\n{$footer}";
 
             $chatBtn = str_starts_with($chatUrl, 'https://')
                 ? ['text' => '💬 Chat Admin', 'web_app' => ['url' => $chatUrl]]
@@ -809,6 +818,58 @@ class TelegramService
                 ],
             ],
         ]);
+    }
+
+    /**
+     * Notify all admins via Telegram when a customer VPN account is auto-suspended by the VPN server system.
+     */
+    public static function notifyAdminVpnAutoSuspended(\App\Models\VpnAccount $account, ?string $reason = null): int
+    {
+        $botToken = config('services.telegram.bot_token');
+        if (empty($botToken)) {
+            return 0;
+        }
+
+        $admins = User::where('role', 'admin')->whereNotNull('telegram_id')->get();
+        if ($admins->isEmpty()) {
+            return 0;
+        }
+
+        $account->loadMissing(['user', 'vpnServer']);
+        $proto = strtoupper((string) $account->protocol);
+        $uname = e((string) $account->username);
+        $srv = e((string) ($account->vpnServer?->name ?: $account->display_domain ?: 'Default'));
+        $owner = $account->user;
+        $ownerName = e((string) ($owner?->full_name ?: $owner?->username ?: 'Tidak diketahui'));
+        $ownerHandle = $owner?->username ? ' (@' . e($owner->username) . ')' : '';
+        $reasonClean = trim((string) ($reason ?? ''));
+
+        $baseDomain = self::resolveBaseDomain();
+        $manageUrl = "{$baseDomain}/admin/vpn-accounts?tab=accounts&search=" . urlencode((string) $account->username);
+        $manageBtn = str_starts_with($manageUrl, 'https://')
+            ? ['text' => '🔧 Kelola Akun VPN', 'web_app' => ['url' => $manageUrl]]
+            : ['text' => '🔧 Kelola Akun VPN', 'url' => $manageUrl];
+
+        $text = "🚨 <b>Auto-Suspend Sistem VPN</b>\n\n"
+            . "Pelanggan: <b>{$ownerName}</b>{$ownerHandle}\n"
+            . "Protokol: <b>{$proto}</b>\n"
+            . "Username: <code>{$uname}</code>\n"
+            . "Server: {$srv}\n"
+            . "Limit IP: " . max(1, (int) ($account->ip_limit ?? 1)) . " IP\n"
+            . ($reasonClean !== '' ? "Alasan: " . e($reasonClean) . "\n" : '')
+            . "\n<i>Akun telah dikunci otomatis & notifikasi sudah dikirim ke bot pelanggan.</i>";
+
+        $sent = 0;
+        foreach ($admins as $admin) {
+            if (empty($admin->telegram_id)) {
+                continue;
+            }
+            if (self::sendMessage($admin->telegram_id, $text, ['inline_keyboard' => [[$manageBtn]]])) {
+                $sent++;
+            }
+        }
+
+        return $sent;
     }
 
     /**

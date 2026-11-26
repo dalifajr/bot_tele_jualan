@@ -206,14 +206,19 @@ class VpnAccount extends Model
         ];
     }
 
+    public function isSystemSuspended(): bool
+    {
+        return $this->status === 'suspended' && $this->suspended_by_role === 'system';
+    }
+
     public function isAdminSuspended(): bool
     {
-        return $this->status === 'suspended' && $this->suspended_by_role === 'admin';
+        return $this->status === 'suspended' && in_array($this->suspended_by_role, ['admin', 'system'], true);
     }
 
     public function isCustomerSuspended(): bool
     {
-        return $this->status === 'suspended' && $this->suspended_by_role !== 'admin';
+        return $this->status === 'suspended' && !in_array($this->suspended_by_role, ['admin', 'system'], true);
     }
 
     public function getPrimaryLinkAttribute(): ?string

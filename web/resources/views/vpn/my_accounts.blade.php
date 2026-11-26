@@ -158,8 +158,8 @@
     <div class="d-flex align-items-start gap-2.5 small">
         <i class="fas fa-lock fs-5 mt-0.5"></i>
         <div>
-            <div class="fw-bold">{{ __('Ada :count Akun Disuspend oleh Admin', ['count' => $stats['admin_suspended']]) }}</div>
-            <div>{{ __('Akun yang ditangguhkan oleh Admin tidak dapat dibuka sendiri. Silakan hubungi Admin melalui Chat untuk meminta pembukaan akses kembali.') }}</div>
+            <div class="fw-bold">{{ __('Ada :count Akun Disuspend (Admin / Sistem)', ['count' => $stats['admin_suspended']]) }}</div>
+            <div>{{ __('Akun yang ditangguhkan oleh Admin atau Sistem (auto-limit) tidak dapat dibuka sendiri. Silakan hubungi Admin melalui Chat untuk meminta pembukaan akses kembali.') }}</div>
         </div>
     </div>
     @if($defaultAdminId)
@@ -255,6 +255,7 @@
                 <tbody>
                     @foreach($accounts as $acc)
                     @php
+                        $systemSuspended = $acc->isSystemSuspended();
                         $adminSuspended = $acc->isAdminSuspended();
                         $chatTargetId = $acc->suspended_by_user_id ?: $defaultAdminId;
                         $isExpired = $acc->expired_at && $acc->expired_at->isPast();
@@ -262,6 +263,7 @@
                         $quotaInfo = $acc->getQuotaUsage();
                         $accTraffic = $trafficSummary['per_account'][$acc->id] ?? ['uplink' => 0, 'downlink' => 0, 'total' => 0];
                         $statusLabel = match(true) {
+                            $systemSuspended => __('Disuspend Sistem'),
                             $adminSuspended => __('Disuspend Admin'),
                             $acc->status === 'suspended' => __('Ditangguhkan Mandiri'),
                             $acc->status === 'failed' => __('Gagal Provisioning'),
@@ -315,7 +317,7 @@
                         </td>
                         <td>
                             @if($adminSuspended)
-                                <span class="badge bg-danger-subtle text-danger rounded-pill px-2.5 py-1"><i class="fas fa-lock me-1"></i>{{ __('Disuspend Admin') }}</span>
+                                <span class="badge bg-danger-subtle text-danger rounded-pill px-2.5 py-1"><i class="fas {{ $systemSuspended ? 'fa-shield-exclamation' : 'fa-lock' }} me-1"></i>{{ $systemSuspended ? __('Disuspend Sistem') : __('Disuspend Admin') }}</span>
                                 @if($acc->suspended_reason)
                                     <div class="text-danger small mt-0.5" style="font-size: 0.7rem;">{{ $acc->suspended_reason }}</div>
                                 @endif
@@ -431,6 +433,7 @@
     <div class="d-lg-none m3-collapsible-list" id="customerVpnAccordion">
         @foreach($accounts as $acc)
         @php
+            $systemSuspended = $acc->isSystemSuspended();
             $adminSuspended = $acc->isAdminSuspended();
             $chatTargetId = $acc->suspended_by_user_id ?: $defaultAdminId;
             $isExpired = $acc->expired_at && $acc->expired_at->isPast();
@@ -446,6 +449,7 @@
                 default => 'bg-success',
             };
             $statusLabel = match(true) {
+                $systemSuspended => __('Disuspend Sistem'),
                 $adminSuspended => __('Disuspend Admin'),
                 $acc->status === 'suspended' => __('Ditangguhkan Mandiri'),
                 $acc->status === 'failed' => __('Gagal Provisioning'),
@@ -471,7 +475,7 @@
                         </div>
                         <div class="text-muted text-truncate" style="font-size: 0.74rem;">
                             @if($adminSuspended)
-                                <span class="text-danger fw-semibold"><i class="fas fa-lock me-1"></i>{{ __('Disuspend Admin') }}</span>
+                                <span class="text-danger fw-semibold"><i class="fas {{ $systemSuspended ? 'fa-shield-exclamation' : 'fa-lock' }} me-1"></i>{{ $systemSuspended ? __('Disuspend Sistem') : __('Disuspend Admin') }}</span>
                             @else
                                 {{ $acc->display_domain }} &bull;
                                 <span class="{{ $expHl['level'] !== 'normal' ? $expHl['text_class'] : '' }}">Exp: {{ $acc->expired_at ? $acc->expired_at->format('d M Y') : '-' }}</span>
@@ -507,7 +511,7 @@
 
                     @if($adminSuspended)
                         <div class="alert alert-danger border-0 py-2 px-3 small mb-2.5" style="border-radius: 12px;">
-                            <div class="fw-bold"><i class="fas fa-lock me-1"></i>{{ __('Akun Disuspend oleh Admin') }}</div>
+                            <div class="fw-bold"><i class="fas {{ $systemSuspended ? 'fa-shield-exclamation' : 'fa-lock' }} me-1"></i>{{ $systemSuspended ? __('Akun Disuspend Otomatis oleh Sistem') : __('Akun Disuspend oleh Admin') }}</div>
                             @if($acc->suspended_reason)
                                 <div class="mt-0.5">{{ __('Alasan:') }} {{ $acc->suspended_reason }}</div>
                             @endif
@@ -659,7 +663,7 @@
                 <h5 class="modal-title fw-bold"><i class="fas fa-plus-circle text-primary me-2"></i>{{ __('Buat Akun VPN Baru') }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form action="{{ route('vpn.store') }}" method="POST">
+            <form action="{{ route('vpn.store') }}" method="POST" id="customerCreateVpnForm">
                 @csrf
                 <div class="modal-body pt-2">
                     <div class="mb-2.5">
@@ -696,7 +700,7 @@
                         <label class="form-label small fw-bold">{{ __('Password SSH') }} <span class="text-danger">*</span></label>
                         <input type="text" name="password" id="custSshPassword" class="form-control font-monospace" minlength="3" maxlength="64" placeholder="{{ __('Minimal 3 karakter, tanpa spasi') }}">
                     </div>
-                    <div class="mb-3" id="custSniWrap">
+                    <div class="mb-2.5" id="custSniWrap">
                         <label class="form-label small fw-bold">{{ __('Preset / Custom SNI') }}</label>
                         <select name="sni_mode" id="custCreateSniMode" class="form-select">
                             <option value="3">{{ __('Tanpa Konfigurasi (Default SNI)') }}</option>
@@ -706,16 +710,41 @@
                         <div class="form-text small">{{ __('Pilih profil SNI sesuai kebutuhan koneksi Anda.') }}</div>
                     </div>
 
+                    {{-- Kode Kupon (Opsional) --}}
+                    <div class="mb-2.5">
+                        <label class="form-label small fw-bold">{{ __('Kode Kupon') }} <span class="text-muted fw-normal">({{ __('Opsional') }})</span></label>
+                        <input type="hidden" name="coupon_code" id="custCreateCouponHidden" value="">
+                        <div class="input-group">
+                            <span class="input-group-text bg-white"><i class="fas fa-ticket-alt text-primary"></i></span>
+                            <input type="text" id="custCreateCouponInput" class="form-control font-monospace text-uppercase" maxlength="64" autocomplete="off" placeholder="{{ __('Masukkan kode kupon...') }}">
+                            <button type="button" class="btn btn-outline-primary fw-semibold px-3" id="btnApplyCreateCoupon">{{ __('Terapkan') }}</button>
+                            <button type="button" class="btn btn-outline-danger px-2.5 d-none" id="btnClearCreateCoupon" title="{{ __('Hapus kupon') }}"><i class="fas fa-times"></i></button>
+                        </div>
+                        <small id="custCreateCouponFeedback" class="form-text d-none"></small>
+                    </div>
+
                     {{-- Cost Summary + Payment Method (Wallet vs Direct QRIS) --}}
                     <div class="p-3 rounded-4 border small d-flex flex-column gap-1.5 mb-2.5" style="background: var(--surface-container-low);">
                         <div class="d-flex align-items-center justify-content-between">
                             <span class="text-muted">{{ __('Harga Paket:') }}</span>
                             <strong class="text-primary fs-6" id="custCreateCostPreview">-</strong>
                         </div>
+                        <div class="d-flex align-items-center justify-content-between text-success d-none" id="custCreateDiscountRow">
+                            <span><i class="fas fa-tag me-1"></i>{{ __('Diskon Kupon:') }}</span>
+                            <strong id="custCreateDiscountPreview">-Rp 0</strong>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between d-none" id="custCreateFinalRow">
+                            <span class="fw-semibold text-body">{{ __('Total Bayar:') }}</span>
+                            <strong class="text-success fs-6" id="custCreateFinalPreview">-</strong>
+                        </div>
                         <div class="d-flex align-items-center justify-content-between border-top pt-1.5 mt-0.5">
                             <span class="text-muted">{{ __('Saldo Dompet Anda:') }}</span>
                             <span class="fw-semibold text-body">Rp {{ number_format((int) (Auth::user()->customer_wallet_balance ?? 0), 0, ',', '.') }}</span>
                         </div>
+                    </div>
+
+                    <div id="custCreateFreeBanner" class="alert alert-success border-0 py-2 px-3 small d-none mb-2" style="border-radius: 12px;">
+                        <i class="fas fa-gift me-1"></i><strong>{{ __('Diskon 100% Aktif!') }}</strong> {{ __('Bebas biaya tanpa pembayaran. Akun VPN langsung dibuat dan aktif seketika.') }}
                     </div>
 
                     <div id="custCreatePayMethodWrap" class="mb-2">
@@ -785,6 +814,20 @@
                             </button>
                             @endforeach
                         </div>
+
+                        {{-- Kode Kupon (Opsional) --}}
+                        <div class="mb-2">
+                            <label class="form-label small fw-bold">{{ __('Kode Kupon') }} <span class="text-muted fw-normal">({{ __('Opsional') }})</span></label>
+                            <input type="hidden" name="coupon_code" id="custRenewCouponHidden" value="">
+                            <div class="input-group">
+                                <span class="input-group-text bg-white"><i class="fas fa-ticket-alt text-primary"></i></span>
+                                <input type="text" id="custRenewCouponInput" class="form-control font-monospace text-uppercase" maxlength="64" autocomplete="off" placeholder="{{ __('Masukkan kode kupon...') }}">
+                                <button type="button" class="btn btn-outline-primary fw-semibold px-3" id="btnApplyRenewCoupon">{{ __('Terapkan') }}</button>
+                                <button type="button" class="btn btn-outline-danger px-2.5 d-none" id="btnClearRenewCoupon" title="{{ __('Hapus kupon') }}"><i class="fas fa-times"></i></button>
+                            </div>
+                            <small id="custRenewCouponFeedback" class="form-text d-none"></small>
+                        </div>
+
                         <div class="p-3 rounded-4 border small d-flex flex-column gap-1.5 mb-2" style="background: var(--surface-container-low);">
                             <div class="d-flex align-items-center justify-content-between">
                                 <span class="text-muted">{{ __('Estimasi Expired Baru:') }}</span>
@@ -794,10 +837,22 @@
                                 <span class="text-muted">{{ __('Biaya Perpanjangan:') }}</span>
                                 <strong class="text-primary fs-6" id="custRenewCostPreview">-</strong>
                             </div>
+                            <div class="d-flex align-items-center justify-content-between text-success d-none" id="custRenewDiscountRow">
+                                <span><i class="fas fa-tag me-1"></i>{{ __('Diskon Kupon:') }}</span>
+                                <strong id="custRenewDiscountPreview">-Rp 0</strong>
+                            </div>
+                            <div class="d-flex align-items-center justify-content-between d-none" id="custRenewFinalRow">
+                                <span class="fw-semibold text-body">{{ __('Total Bayar:') }}</span>
+                                <strong class="text-success fs-6" id="custRenewFinalPreview">-</strong>
+                            </div>
                             <div class="d-flex align-items-center justify-content-between border-top pt-1.5 mt-0.5">
                                 <span class="text-muted">{{ __('Saldo Dompet Anda:') }}</span>
                                 <span class="fw-semibold text-body">Rp {{ number_format((int) (Auth::user()->customer_wallet_balance ?? 0), 0, ',', '.') }}</span>
                             </div>
+                        </div>
+
+                        <div id="custRenewFreeBanner" class="alert alert-success border-0 py-2 px-3 small d-none mb-2" style="border-radius: 12px;">
+                            <i class="fas fa-gift me-1"></i><strong>{{ __('Diskon 100% Aktif!') }}</strong> {{ __('Perpanjangan gratis tanpa pembayaran dan tanpa memotong saldo dompet.') }}
                         </div>
                         <div id="custRenewPayMethodWrap" class="mb-2.5">
                             <label class="form-label small fw-bold mb-1.5">{{ __('Metode Pembayaran') }} <span class="text-danger">*</span></label>
@@ -1014,7 +1069,20 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     const custWalletBalance = {{ (int) (Auth::user()->customer_wallet_balance ?? 0) }};
+    const vpnValidateCouponUrl = @js(route('vpn.validate-coupon'));
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || @js(csrf_token());
+
     const custCreateCostEl = document.getElementById('custCreateCostPreview');
+    const custCreateDiscountRow = document.getElementById('custCreateDiscountRow');
+    const custCreateDiscountEl = document.getElementById('custCreateDiscountPreview');
+    const custCreateFinalRow = document.getElementById('custCreateFinalRow');
+    const custCreateFinalEl = document.getElementById('custCreateFinalPreview');
+    const custCreateFreeBanner = document.getElementById('custCreateFreeBanner');
+    const custCreateCouponHidden = document.getElementById('custCreateCouponHidden');
+    const custCreateCouponInput = document.getElementById('custCreateCouponInput');
+    const btnApplyCreateCoupon = document.getElementById('btnApplyCreateCoupon');
+    const btnClearCreateCoupon = document.getElementById('btnClearCreateCoupon');
+    const custCreateCouponFeedback = document.getElementById('custCreateCouponFeedback');
     const custCreatePayWrap = document.getElementById('custCreatePayMethodWrap');
     const custCreatePayWallet = document.getElementById('custCreatePayWallet');
     const custCreatePayQris = document.getElementById('custCreatePayQris');
@@ -1023,15 +1091,55 @@ document.addEventListener('DOMContentLoaded', function () {
     const custCreateWalletHint = document.getElementById('custCreateWalletHint');
     const custCreateLowBalAlert = document.getElementById('custCreateLowBalanceAlert');
 
+    let createCouponState = { code: '', discount: 0 };
+
+    const setCreateCouponFeedback = (msg, type = 'muted') => {
+        if (!custCreateCouponFeedback) return;
+        if (!msg) {
+            custCreateCouponFeedback.classList.add('d-none');
+            custCreateCouponFeedback.textContent = '';
+            return;
+        }
+        custCreateCouponFeedback.classList.remove('d-none');
+        custCreateCouponFeedback.className = 'form-text fw-semibold ' + (type === 'success' ? 'text-success' : (type === 'danger' ? 'text-danger' : 'text-muted'));
+        custCreateCouponFeedback.textContent = msg;
+    };
+
+    const resetCreateCoupon = (clearInput = true) => {
+        createCouponState = { code: '', discount: 0 };
+        if (custCreateCouponHidden) custCreateCouponHidden.value = '';
+        if (clearInput && custCreateCouponInput) custCreateCouponInput.value = '';
+        btnClearCreateCoupon?.classList.add('d-none');
+        setCreateCouponFeedback('');
+        syncCreatePaymentUI(true);
+    };
+
     const syncCreatePaymentUI = (autoSwitch = false) => {
         if (!prodSelect) return;
         const opt = prodSelect.options[prodSelect.selectedIndex];
-        const price = Math.max(0, parseInt(opt?.dataset?.price || '0', 10) || 0);
+        const basePrice = Math.max(0, parseInt(opt?.dataset?.price || '0', 10) || 0);
+        const discount = createCouponState.code ? Math.min(basePrice, Math.max(0, createCouponState.discount)) : 0;
+        const finalPrice = Math.max(0, basePrice - discount);
+        const isFreeByCoupon = createCouponState.code !== '' && basePrice > 0 && finalPrice === 0;
+
         if (custCreateCostEl) {
-            custCreateCostEl.textContent = price > 0 ? ('Rp ' + price.toLocaleString('id-ID')) : '{{ __("Gratis") }}';
+            custCreateCostEl.textContent = basePrice > 0 ? ('Rp ' + basePrice.toLocaleString('id-ID')) : '{{ __("Gratis") }}';
+            custCreateCostEl.classList.toggle('text-decoration-line-through', discount > 0);
+            custCreateCostEl.classList.toggle('text-muted', discount > 0);
+            custCreateCostEl.classList.toggle('text-primary', discount <= 0);
         }
-        const insufficient = price > 0 && custWalletBalance < price;
-        if (custCreatePayWrap) custCreatePayWrap.classList.toggle('d-none', price <= 0);
+        custCreateDiscountRow?.classList.toggle('d-none', discount <= 0);
+        if (custCreateDiscountEl && discount > 0) {
+            custCreateDiscountEl.textContent = '-Rp ' + discount.toLocaleString('id-ID');
+        }
+        custCreateFinalRow?.classList.toggle('d-none', discount <= 0);
+        if (custCreateFinalEl && discount > 0) {
+            custCreateFinalEl.textContent = finalPrice > 0 ? ('Rp ' + finalPrice.toLocaleString('id-ID')) : '{{ __("Rp 0 (Gratis)") }}';
+        }
+        custCreateFreeBanner?.classList.toggle('d-none', !isFreeByCoupon);
+
+        const insufficient = finalPrice > 0 && custWalletBalance < finalPrice;
+        if (custCreatePayWrap) custCreatePayWrap.classList.toggle('d-none', finalPrice <= 0);
         if (custCreateWalletHint) {
             custCreateWalletHint.textContent = insufficient ? '{{ __("Saldo kurang") }}' : '{{ __("Langsung aktif instan") }}';
             custCreateWalletHint.className = 'd-block ' + (insufficient ? 'text-danger fw-semibold' : 'text-muted');
@@ -1041,14 +1149,87 @@ document.addEventListener('DOMContentLoaded', function () {
         } else if (autoSwitch && !insufficient && custCreatePayWallet) {
             custCreatePayWallet.checked = true;
         }
-        const useQris = price > 0 && !!(custCreatePayQris && custCreatePayQris.checked);
+        const useQris = finalPrice > 0 && !!(custCreatePayQris && custCreatePayQris.checked);
         custCreateWalletCard?.classList.toggle('border-primary', !useQris);
         custCreateQrisCard?.classList.toggle('border-success', useQris);
         custCreateLowBalAlert?.classList.toggle('d-none', !insufficient);
         if (custCreateSubmitBtn) {
-            custCreateSubmitBtn.textContent = useQris ? '{{ __("Bayar via QRIS") }}' : '{{ __("Buat & Aktifkan") }}';
+            if (isFreeByCoupon) {
+                custCreateSubmitBtn.className = 'btn btn-success rounded-pill px-4 fw-semibold';
+                custCreateSubmitBtn.textContent = '{{ __("Klaim & Aktifkan Gratis") }}';
+            } else {
+                custCreateSubmitBtn.className = 'btn btn-primary rounded-pill px-4 fw-semibold';
+                custCreateSubmitBtn.textContent = useQris ? '{{ __("Bayar via QRIS") }}' : '{{ __("Buat & Aktifkan") }}';
+            }
         }
     };
+
+    const applyCreateCoupon = async (silentOnEmpty = false) => {
+        if (!prodSelect || !custCreateCouponInput) return;
+        const code = custCreateCouponInput.value.trim().toUpperCase();
+        custCreateCouponInput.value = code;
+        if (!code) {
+            if (!silentOnEmpty) resetCreateCoupon(false);
+            return;
+        }
+
+        const origBtnHtml = btnApplyCreateCoupon?.innerHTML;
+        if (btnApplyCreateCoupon) {
+            btnApplyCreateCoupon.disabled = true;
+            btnApplyCreateCoupon.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        }
+        try {
+            const res = await fetch(vpnValidateCouponUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: JSON.stringify({
+                    mode: 'create',
+                    coupon_code: code,
+                    product_id: parseInt(prodSelect.value, 10),
+                }),
+            });
+            const data = await res.json();
+            if (data.valid) {
+                createCouponState = { code: data.code || code, discount: parseInt(data.discount || '0', 10) || 0 };
+                if (custCreateCouponHidden) custCreateCouponHidden.value = createCouponState.code;
+                btnClearCreateCoupon?.classList.remove('d-none');
+                setCreateCouponFeedback(data.message || '{{ __("Kupon berhasil diterapkan.") }}', 'success');
+                syncCreatePaymentUI(true);
+            } else {
+                createCouponState = { code: '', discount: 0 };
+                if (custCreateCouponHidden) custCreateCouponHidden.value = '';
+                btnClearCreateCoupon?.classList.remove('d-none');
+                setCreateCouponFeedback(data.message || '{{ __("Kupon tidak valid.") }}', 'danger');
+                syncCreatePaymentUI(true);
+            }
+        } catch (e) {
+            setCreateCouponFeedback('{{ __("Gagal memvalidasi kupon. Coba lagi.") }}', 'danger');
+        } finally {
+            if (btnApplyCreateCoupon) {
+                btnApplyCreateCoupon.disabled = false;
+                btnApplyCreateCoupon.innerHTML = origBtnHtml;
+            }
+        }
+    };
+
+    btnApplyCreateCoupon?.addEventListener('click', () => applyCreateCoupon(false));
+    btnClearCreateCoupon?.addEventListener('click', () => resetCreateCoupon(true));
+    custCreateCouponInput?.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            applyCreateCoupon(false);
+        }
+    });
+    document.getElementById('customerCreateVpnForm')?.addEventListener('submit', function () {
+        if (custCreateCouponHidden && custCreateCouponInput && !custCreateCouponHidden.value && custCreateCouponInput.value.trim()) {
+            custCreateCouponHidden.value = custCreateCouponInput.value.trim().toUpperCase();
+        }
+    });
 
     custCreatePayWallet?.addEventListener('change', () => syncCreatePaymentUI(false));
     custCreatePayQris?.addEventListener('change', () => syncCreatePaymentUI(false));
@@ -1059,6 +1240,9 @@ document.addEventListener('DOMContentLoaded', function () {
             toggleSsh();
             syncCreatePaymentUI(true);
             triggerCustUsernameCheck();
+            if (createCouponState.code) {
+                applyCreateCoupon(true);
+            }
         });
         syncProductProtocols();
         toggleSsh();
@@ -1067,13 +1251,27 @@ document.addEventListener('DOMContentLoaded', function () {
     custProtoSelect?.addEventListener('change', function () { toggleSsh(); triggerCustUsernameCheck(); });
     custUserInput?.addEventListener('input', triggerCustUsernameCheck);
 
-    // 2. Renew Modal with Quick Presets (+1, +7, +30, +60), Live Expiry, Live Cost & Wallet/QRIS Payment Selector
+    // 2. Renew Modal with Quick Presets (+1, +7, +30, +60), Live Expiry, Live Cost, Coupon & Wallet/QRIS Payment Selector
+    let custRenewAccountId = null;
     let custRenewBaseExpiry = null;
     let custRenewBasePrice = 0;
     let custRenewBaseDays = 30;
+    let renewCouponState = { code: '', discount: 0 };
+    let renewCouponRevalTimer = null;
+
     const custRenewDays = document.getElementById('custRenewDaysInput');
     const custRenewPreview = document.getElementById('custRenewExpiryPreview');
     const custRenewCostEl = document.getElementById('custRenewCostPreview');
+    const custRenewDiscountRow = document.getElementById('custRenewDiscountRow');
+    const custRenewDiscountEl = document.getElementById('custRenewDiscountPreview');
+    const custRenewFinalRow = document.getElementById('custRenewFinalRow');
+    const custRenewFinalEl = document.getElementById('custRenewFinalPreview');
+    const custRenewFreeBanner = document.getElementById('custRenewFreeBanner');
+    const custRenewCouponHidden = document.getElementById('custRenewCouponHidden');
+    const custRenewCouponInput = document.getElementById('custRenewCouponInput');
+    const btnApplyRenewCoupon = document.getElementById('btnApplyRenewCoupon');
+    const btnClearRenewCoupon = document.getElementById('btnClearRenewCoupon');
+    const custRenewCouponFeedback = document.getElementById('custRenewCouponFeedback');
     const custRenewPayWrap = document.getElementById('custRenewPayMethodWrap');
     const custRenewPayWallet = document.getElementById('custRenewPayWallet');
     const custRenewPayQris = document.getElementById('custRenewPayQris');
@@ -1084,8 +1282,44 @@ document.addEventListener('DOMContentLoaded', function () {
     const custRenewLowBalAlert = document.getElementById('custRenewLowBalanceAlert');
     const custRenewSubmitBtn = document.getElementById('btnSubmitCustRenew');
 
-    function syncRenewPayCardState(cost) {
-        const insufficient = cost > custWalletBalance;
+    function setRenewCouponFeedback(msg, type = 'muted') {
+        if (!custRenewCouponFeedback) return;
+        if (!msg) {
+            custRenewCouponFeedback.classList.add('d-none');
+            custRenewCouponFeedback.textContent = '';
+            return;
+        }
+        custRenewCouponFeedback.classList.remove('d-none');
+        custRenewCouponFeedback.className = 'form-text fw-semibold ' + (type === 'success' ? 'text-success' : (type === 'danger' ? 'text-danger' : 'text-muted'));
+        custRenewCouponFeedback.textContent = msg;
+    }
+
+    function resetRenewCoupon(clearInput = true) {
+        renewCouponState = { code: '', discount: 0 };
+        if (custRenewCouponHidden) custRenewCouponHidden.value = '';
+        if (clearInput && custRenewCouponInput) custRenewCouponInput.value = '';
+        btnClearRenewCoupon?.classList.add('d-none');
+        setRenewCouponFeedback('');
+        updateCustRenewPreview(false);
+    }
+
+    function syncRenewPayCardState(effectiveCost, isFreeByCoupon) {
+        if (isFreeByCoupon) {
+            custRenewPayWrap?.classList.add('d-none');
+            custRenewLowBalAlert?.classList.add('d-none');
+            custRenewFreeBanner?.classList.remove('d-none');
+            if (custRenewSubmitBtn) {
+                custRenewSubmitBtn.disabled = false;
+                custRenewSubmitBtn.className = 'btn btn-success rounded-pill px-4 fw-semibold';
+                custRenewSubmitBtn.textContent = @js(__('Perpanjang Gratis Sekarang'));
+            }
+            return;
+        }
+
+        custRenewFreeBanner?.classList.add('d-none');
+        custRenewPayWrap?.classList.remove('d-none');
+
+        const insufficient = effectiveCost > custWalletBalance;
         if (custRenewPayWallet) {
             custRenewPayWallet.disabled = insufficient;
             if (insufficient && custRenewPayWallet.checked && custRenewPayQris) {
@@ -1107,12 +1341,13 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         const isQris = !!(custRenewPayQris && custRenewPayQris.checked);
         if (custRenewSubmitBtn) {
+            custRenewSubmitBtn.className = 'btn btn-primary rounded-pill px-4 fw-semibold';
             custRenewSubmitBtn.disabled = (!isQris && insufficient);
             custRenewSubmitBtn.textContent = isQris ? @js(__('Bayar & Perpanjang via QRIS')) : @js(__('Perpanjang Sekarang'));
         }
     }
 
-    function updateCustRenewPreview() {
+    function updateCustRenewPreview(triggerCouponReval = false) {
         if (!custRenewDays || !custRenewPreview) return;
         const days = Math.max(1, parseInt(custRenewDays.value || '0', 10) || 0);
         const now = new Date();
@@ -1121,18 +1356,45 @@ document.addEventListener('DOMContentLoaded', function () {
         custRenewPreview.textContent = base.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
 
         if (custRenewBasePrice > 0 && custRenewBaseDays > 0) {
-            const cost = Math.max(1, Math.round((custRenewBasePrice / custRenewBaseDays) * days));
-            if (custRenewCostEl) custRenewCostEl.textContent = 'Rp ' + new Intl.NumberFormat('id-ID').format(cost);
+            const baseCost = Math.max(1, Math.round((custRenewBasePrice / custRenewBaseDays) * days));
+            const discount = renewCouponState.code ? Math.min(baseCost, Math.max(0, renewCouponState.discount)) : 0;
+            const effectiveCost = Math.max(0, baseCost - discount);
+            const isFreeByCoupon = renewCouponState.code !== '' && effectiveCost === 0;
+
+            if (custRenewCostEl) {
+                custRenewCostEl.textContent = 'Rp ' + new Intl.NumberFormat('id-ID').format(baseCost);
+                custRenewCostEl.classList.toggle('text-decoration-line-through', discount > 0);
+                custRenewCostEl.classList.toggle('text-muted', discount > 0);
+                custRenewCostEl.classList.toggle('text-primary', discount <= 0);
+            }
+            custRenewDiscountRow?.classList.toggle('d-none', discount <= 0);
+            if (custRenewDiscountEl && discount > 0) {
+                custRenewDiscountEl.textContent = '-Rp ' + new Intl.NumberFormat('id-ID').format(discount);
+            }
+            custRenewFinalRow?.classList.toggle('d-none', discount <= 0);
+            if (custRenewFinalEl && discount > 0) {
+                custRenewFinalEl.textContent = effectiveCost > 0
+                    ? ('Rp ' + new Intl.NumberFormat('id-ID').format(effectiveCost))
+                    : @js(__('Rp 0 (Gratis)'));
+            }
             if (custRenewNoPriceAlert) custRenewNoPriceAlert.classList.add('d-none');
-            if (custRenewPayWrap) custRenewPayWrap.classList.remove('d-none');
-            syncRenewPayCardState(cost);
+            syncRenewPayCardState(effectiveCost, isFreeByCoupon);
+
+            if (triggerCouponReval && renewCouponState.code) {
+                clearTimeout(renewCouponRevalTimer);
+                renewCouponRevalTimer = setTimeout(() => applyRenewCoupon(true), 250);
+            }
         } else {
             if (custRenewCostEl) custRenewCostEl.textContent = @js(__('Belum diatur'));
+            custRenewDiscountRow?.classList.add('d-none');
+            custRenewFinalRow?.classList.add('d-none');
+            custRenewFreeBanner?.classList.add('d-none');
             if (custRenewNoPriceAlert) custRenewNoPriceAlert.classList.remove('d-none');
             if (custRenewPayWrap) custRenewPayWrap.classList.add('d-none');
             if (custRenewLowBalAlert) custRenewLowBalAlert.classList.add('d-none');
             if (custRenewSubmitBtn) {
                 custRenewSubmitBtn.disabled = true;
+                custRenewSubmitBtn.className = 'btn btn-primary rounded-pill px-4 fw-semibold';
                 custRenewSubmitBtn.textContent = @js(__('Perpanjang Sekarang'));
             }
         }
@@ -1142,14 +1404,86 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    custRenewPayWallet?.addEventListener('change', updateCustRenewPreview);
-    custRenewPayQris?.addEventListener('change', updateCustRenewPreview);
-    custRenewDays?.addEventListener('input', updateCustRenewPreview);
+    async function applyRenewCoupon(silentOnEmpty = false) {
+        if (!custRenewAccountId || !custRenewCouponInput) return;
+        const code = custRenewCouponInput.value.trim().toUpperCase();
+        custRenewCouponInput.value = code;
+        if (!code) {
+            if (!silentOnEmpty) resetRenewCoupon(false);
+            return;
+        }
+        const days = Math.max(1, parseInt(custRenewDays?.value || '30', 10) || 30);
+
+        const origBtnHtml = btnApplyRenewCoupon?.innerHTML;
+        if (btnApplyRenewCoupon) {
+            btnApplyRenewCoupon.disabled = true;
+            btnApplyRenewCoupon.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        }
+        try {
+            const res = await fetch(vpnValidateCouponUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: JSON.stringify({
+                    mode: 'renew',
+                    coupon_code: code,
+                    account_id: custRenewAccountId,
+                    days: days,
+                }),
+            });
+            const data = await res.json();
+            if (data.valid) {
+                renewCouponState = { code: data.code || code, discount: parseInt(data.discount || '0', 10) || 0 };
+                if (custRenewCouponHidden) custRenewCouponHidden.value = renewCouponState.code;
+                btnClearRenewCoupon?.classList.remove('d-none');
+                setRenewCouponFeedback(data.message || @js(__('Kupon berhasil diterapkan.')), 'success');
+                if (parseInt(data.final_price || '0', 10) <= custWalletBalance && custRenewPayWallet) {
+                    custRenewPayWallet.checked = true;
+                }
+                updateCustRenewPreview(false);
+            } else {
+                renewCouponState = { code: '', discount: 0 };
+                if (custRenewCouponHidden) custRenewCouponHidden.value = '';
+                btnClearRenewCoupon?.classList.remove('d-none');
+                setRenewCouponFeedback(data.message || @js(__('Kupon tidak valid.')), 'danger');
+                updateCustRenewPreview(false);
+            }
+        } catch (e) {
+            setRenewCouponFeedback(@js(__('Gagal memvalidasi kupon. Coba lagi.')), 'danger');
+        } finally {
+            if (btnApplyRenewCoupon) {
+                btnApplyRenewCoupon.disabled = false;
+                btnApplyRenewCoupon.innerHTML = origBtnHtml;
+            }
+        }
+    }
+
+    btnApplyRenewCoupon?.addEventListener('click', () => applyRenewCoupon(false));
+    btnClearRenewCoupon?.addEventListener('click', () => resetRenewCoupon(true));
+    custRenewCouponInput?.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            applyRenewCoupon(false);
+        }
+    });
+    document.getElementById('customerRenewForm')?.addEventListener('submit', function () {
+        if (custRenewCouponHidden && custRenewCouponInput && !custRenewCouponHidden.value && custRenewCouponInput.value.trim()) {
+            custRenewCouponHidden.value = custRenewCouponInput.value.trim().toUpperCase();
+        }
+    });
+
+    custRenewPayWallet?.addEventListener('change', () => updateCustRenewPreview(false));
+    custRenewPayQris?.addEventListener('change', () => updateCustRenewPreview(false));
+    custRenewDays?.addEventListener('input', () => updateCustRenewPreview(true));
     document.querySelectorAll('.btn-cust-renew-preset').forEach(function (b) {
         b.addEventListener('click', function () {
             if (custRenewDays) {
                 custRenewDays.value = this.dataset.days;
-                updateCustRenewPreview();
+                updateCustRenewPreview(true);
             }
         });
     });
@@ -1158,12 +1492,13 @@ document.addEventListener('DOMContentLoaded', function () {
         btn.addEventListener('click', function () {
             document.getElementById('customerRenewForm').action = this.dataset.action;
             document.getElementById('custRenewUsername').value = this.dataset.username || '';
+            custRenewAccountId = parseInt(this.dataset.accountId || '0', 10) || null;
             custRenewBaseExpiry = this.dataset.expiredIso ? new Date(this.dataset.expiredIso) : null;
             custRenewBasePrice = parseInt(this.dataset.basePrice || '0', 10) || 0;
             custRenewBaseDays = Math.max(1, parseInt(this.dataset.baseDays || '30', 10) || 30);
             if (custRenewDays) custRenewDays.value = 30;
             if (custRenewPayWallet) custRenewPayWallet.checked = true;
-            updateCustRenewPreview();
+            resetRenewCoupon(true);
             bootstrap.Modal.getOrCreateInstance(document.getElementById('customerRenewVpnModal')).show();
         });
     });

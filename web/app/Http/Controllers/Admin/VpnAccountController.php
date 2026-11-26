@@ -579,7 +579,6 @@ class VpnAccountController extends Controller
 
             if ($existing) {
                 $update = [
-                    'status' => $status,
                     'expired_at' => $expiredAt ?: $existing->expired_at,
                     'quota_gb' => (int) ($remote['quota_gb'] ?? $existing->quota_gb),
                     'ip_limit' => max(1, (int) ($remote['ip_limit'] ?? $existing->ip_limit)),
@@ -597,10 +596,19 @@ class VpnAccountController extends Controller
                         $update['server_ip'] = $inlinePayload['domain'];
                     }
                 }
-                $existing->forceFill($update)->save();
+                $vpnService->applyRemoteStatusUpdate($existing, array_merge($remote, ['status' => $status]), $update);
                 $accountModel = $existing;
                 $synced++;
             } else {
+                $rawReason = trim((string) ($remote['suspend_reason'] ?? ''));
+                $isAutoSusp = $status === 'suspended' && (!empty($remote['auto_suspended']) || str_starts_with(strtolower($rawReason), 'auto-'));
+                $suspRole = $isAutoSusp
+                    ? 'system'
+                    : (($status === 'suspended' && !empty($remote['admin_suspended'])) ? 'admin' : null);
+                $suspReason = $status === 'suspended' && ($isAutoSusp || $rawReason !== '')
+                    ? $vpnService->formatSuspendReason($rawReason, $isAutoSusp)
+                    : null;
+
                 $accountModel = VpnAccount::create([
                     'user_id' => $adminId,
                     'vpn_server_id' => $server->id,
@@ -614,7 +622,9 @@ class VpnAccountController extends Controller
                     'config_link' => $inlinePayload['formatted_text'] ?? null,
                     'expired_at' => $expiredAt,
                     'status' => $status,
-                    'suspended_by_role' => ($status === 'suspended' && !empty($remote['admin_suspended'])) ? 'admin' : null,
+                    'suspended_by_role' => $suspRole,
+                    'suspended_reason' => $suspReason,
+                    'suspended_at' => $status === 'suspended' ? now() : null,
                     'external_ref' => 'panel_sync',
                     'last_synced_at' => now(),
                 ]);
@@ -895,24 +905,9 @@ class VpnAccountController extends Controller
                 // 1. Sync live traffic stats (Upload/Download)
                 $vpnService->syncServerTraffic($server);
 
-                // 2. Sync remote accounts if API driver
+                // 2. Bulk sync remote account statuses (1 lightweight API call + auto-suspend transition notifications)
                 if ($server->isApiDriver()) {
-                    $remote = $vpnService->listRemoteAccounts($server, null, null, null, true);
-                    if (!empty($remote['success']) && !empty($remote['accounts'])) {
-                        foreach ($remote['accounts'] as $remoteAcc) {
-                            $protocol = strtolower((string) ($remoteAcc['protocol'] ?? ''));
-                            $username = (string) ($remoteAcc['username'] ?? '');
-                            if ($protocol === '' || $username === '') {
-                                continue;
-                            }
-                            $local = VpnAccount::where('protocol', $protocol)
-                                ->where('username', $username)
-                                ->first();
-                            if ($local) {
-                                $vpnService->syncAccountFromPanel($local);
-                            }
-                        }
-                    }
+                    $vpnService->syncServerStatuses($server);
                 }
             }
         } catch (\Throwable $e) {

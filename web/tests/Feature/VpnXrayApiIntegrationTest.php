@@ -2071,7 +2071,7 @@ class VpnXrayApiIntegrationTest extends TestCase
         ]);
         $resp->assertSessionHas('success');
         $vpnAccount->refresh();
-        $this->assertEquals(15, (int) round(now()->diffInDays($vpnAccount->expired_at)));
+        $this->assertEquals(15, (int) now()->startOfDay()->diffInDays($vpnAccount->expired_at->copy()->startOfDay()));
 
         // 2. Admin reduces duration via renew route with action_type=reduce
         $resp2 = $this->actingAs($this->admin)->post(route('admin.vpn-accounts.renew', $vpnAccount->id), [
@@ -2080,7 +2080,7 @@ class VpnXrayApiIntegrationTest extends TestCase
         ]);
         $resp2->assertSessionHas('success');
         $vpnAccount->refresh();
-        $this->assertEquals(12, (int) round(now()->diffInDays($vpnAccount->expired_at)));
+        $this->assertEquals(12, (int) now()->startOfDay()->diffInDays($vpnAccount->expired_at->copy()->startOfDay()));
 
         // 3. Telegram notifications use MiniApp web_app buttons
         $telegramService = app(\App\Services\TelegramService::class);

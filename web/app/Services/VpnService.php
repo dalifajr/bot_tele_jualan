@@ -571,13 +571,277 @@ class VpnService
         if (!empty($data['expired_at'])) {
             $update['expired_at'] = Carbon::parse($data['expired_at'])->endOfDay();
         }
-        if (!empty($data['status']) && in_array($data['status'], ['active', 'suspended', 'expired'], true)) {
-            $update['status'] = $data['status'];
-        }
 
-        $account->forceFill($update)->save();
+        $this->applyRemoteStatusUpdate($account, $data, $update);
 
         return ['success' => true, 'message' => __('Konfigurasi akun berhasil disinkronkan dari panel VPN.'), 'data' => $data];
+    }
+
+    /**
+     * Format raw VPS suspend reason (e.g. "auto-limit:vless:ip=3/1:strike=2") into clear Indonesian copy.
+     */
+    public function formatSuspendReason(?string $rawReason, bool $isAuto = false): string
+    {
+        $raw = trim((string) ($rawReason ?? ''));
+        $lower = strtolower($raw);
+
+        if (preg_match('/^auto-limit:[^:]+:ip=(\d+)\/(\d+)(?::strike=(\d+))?/i', $raw, $m)) {
+            $detected = (int) $m[1];
+            $limit = max(1, (int) $m[2]);
+            return __('Pelanggaran batas multi-login (:detected IP terdeteksi, batas maksimal :limit IP)', [
+                'detected' => $detected,
+                'limit' => $limit,
+            ]);
+        }
+
+        if (str_starts_with($lower, 'auto-quota')) {
+            return __('Kuota data akun VPN telah habis');
+        }
+
+        if ($isAuto || str_starts_with($lower, 'auto-')) {
+            return $raw !== '' && !in_array($lower, ['auto', 'auto-limit'], true)
+                ? __('Pelanggaran batas penggunaan otomatis (:raw)', ['raw' => Str::limit($raw, 120)])
+                : __('Pelanggaran batas penggunaan otomatis oleh sistem');
+        }
+
+        if ($raw === '' || in_array($lower, ['manual', 'admin_suspend'], true)) {
+            return __('Ditangguhkan oleh Admin');
+        }
+
+        if ($lower === 'customer_suspend') {
+            return __('Ditangguhkan mandiri oleh pemilik');
+        }
+
+        return Str::limit($raw, 240);
+    }
+
+    /**
+     * Atomically apply remote panel status & metadata updates to a local VpnAccount.
+     * Detects active -> suspended (auto-suspend or remote admin suspend) and suspended -> active transitions,
+     * updating lock metadata and sending anti-spam Telegram + Website notifications once per transition.
+     *
+     * @return array{status_changed: bool, action: string|null, actor_role: string|null}
+     */
+    public function applyRemoteStatusUpdate(VpnAccount $account, array $remote, array $extraUpdate = []): array
+    {
+        $remoteStatus = isset($remote['status']) && in_array($remote['status'], ['active', 'suspended', 'expired'], true)
+            ? (string) $remote['status']
+            : null;
+        $rawReason = trim((string) ($remote['suspend_reason'] ?? ''));
+        $isAuto = !empty($remote['auto_suspended']) || str_starts_with(strtolower($rawReason), 'auto-');
+        $isRemoteAdminSusp = !empty($remote['admin_suspended']);
+
+        $notifyAction = null;
+        $notifyRole = 'admin';
+        $notifyReason = null;
+        $lockedAccount = null;
+
+        \Illuminate\Support\Facades\DB::transaction(function () use (
+            $account,
+            $extraUpdate,
+            $remoteStatus,
+            $rawReason,
+            $isAuto,
+            $isRemoteAdminSusp,
+            &$notifyAction,
+            &$notifyRole,
+            &$notifyReason,
+            &$lockedAccount
+        ) {
+            $locked = VpnAccount::with(['user', 'vpnServer'])
+                ->where('id', $account->id)
+                ->lockForUpdate()
+                ->first();
+
+            if (!$locked) {
+                return;
+            }
+
+            $previousStatus = (string) $locked->status;
+            $effectiveStatus = $remoteStatus ?: $previousStatus;
+
+            $update = array_merge([
+                'last_synced_at' => now(),
+                'last_error' => null,
+            ], $extraUpdate);
+
+            if ($remoteStatus !== null) {
+                $update['status'] = $remoteStatus;
+            }
+
+            if ($effectiveStatus === 'suspended') {
+                if ($previousStatus !== 'suspended') {
+                    // Fresh remote suspension detected (e.g. VPS limit-ip auto-suspend or panel admin suspend)
+                    $actorRole = $isAuto ? 'system' : ($isRemoteAdminSusp || strtolower($rawReason) !== 'customer_suspend' ? 'admin' : 'customer');
+                    $humanReason = $this->formatSuspendReason($rawReason, $isAuto);
+
+                    $update['suspended_by_role'] = $actorRole;
+                    if ($actorRole === 'system') {
+                        $update['suspended_by_user_id'] = null;
+                    }
+                    $update['suspended_reason'] = $humanReason;
+                    $update['suspended_at'] = $locked->suspended_at ?: now();
+
+                    if (in_array($actorRole, ['system', 'admin'], true)) {
+                        $notifyAction = 'suspended';
+                        $notifyRole = $actorRole;
+                        $notifyReason = $humanReason;
+                    }
+                } elseif ($isAuto && $locked->suspended_by_role !== 'system') {
+                    // Backfill lock metadata if previously synced without system role (no duplicate notification)
+                    $update['suspended_by_role'] = 'system';
+                    $update['suspended_by_user_id'] = null;
+                    if (empty($locked->suspended_reason)) {
+                        $update['suspended_reason'] = $this->formatSuspendReason($rawReason, true);
+                    }
+                    if (empty($locked->suspended_at)) {
+                        $update['suspended_at'] = now();
+                    }
+                } elseif ($isRemoteAdminSusp && empty($locked->suspended_by_role)) {
+                    $update['suspended_by_role'] = 'admin';
+                }
+            } elseif ($previousStatus === 'suspended' && $effectiveStatus === 'active') {
+                $wasLockedByAdminOrSystem = in_array($locked->suspended_by_role, ['admin', 'system'], true);
+                $update['suspended_by_role'] = null;
+                $update['suspended_by_user_id'] = null;
+                $update['suspended_reason'] = null;
+                $update['suspended_at'] = null;
+
+                if ($wasLockedByAdminOrSystem) {
+                    $notifyAction = 'unsuspended';
+                    $notifyRole = 'admin';
+                }
+            }
+
+            $locked->forceFill($update)->save();
+            $lockedAccount = $locked;
+        });
+
+        $account->refresh();
+
+        if ($lockedAccount && $notifyAction !== null) {
+            try {
+                if ($notifyAction === 'suspended') {
+                    if ($lockedAccount->user) {
+                        $lockedAccount->user->notify(new \App\Notifications\VpnStatusNotification($lockedAccount, 'suspended', $notifyReason, $notifyRole));
+                    }
+                    \App\Services\TelegramService::notifyVpnStatusChanged($lockedAccount, 'suspended', $notifyReason, $notifyRole);
+
+                    if ($notifyRole === 'system') {
+                        \App\Services\TelegramService::notifyAdminVpnAutoSuspended($lockedAccount, $notifyReason);
+                    }
+
+                    \Illuminate\Support\Facades\DB::table('audit_logs')->insert([
+                        'action' => $notifyRole === 'system' ? 'vpn_auto_suspend_detected' : 'vpn_remote_suspend_detected',
+                        'actor_id' => null,
+                        'entity_type' => 'vpn_account',
+                        'entity_id' => $lockedAccount->id,
+                        'detail' => \App\Models\AuditLog::maskSensitiveData("username={$lockedAccount->username}; protocol={$lockedAccount->protocol}; role={$notifyRole}; reason={$notifyReason}"),
+                        'created_at' => now(),
+                    ]);
+                } elseif ($notifyAction === 'unsuspended') {
+                    if ($lockedAccount->user) {
+                        $lockedAccount->user->notify(new \App\Notifications\VpnStatusNotification($lockedAccount, 'unsuspended'));
+                    }
+                    \App\Services\TelegramService::notifyVpnStatusChanged($lockedAccount, 'unsuspended');
+                }
+            } catch (\Throwable $e) {
+                Log::warning('VPN remote status transition notification failed: ' . $e->getMessage(), [
+                    'vpn_account_id' => $lockedAccount->id,
+                    'action' => $notifyAction,
+                    'actor_role' => $notifyRole,
+                ]);
+            }
+        }
+
+        return [
+            'status_changed' => $notifyAction !== null,
+            'action' => $notifyAction,
+            'actor_role' => $notifyAction !== null ? $notifyRole : null,
+        ];
+    }
+
+    /**
+     * Bulk-sync account statuses (active / suspended / expired) for all local VPN accounts on a server.
+     * Single lightweight API call (include_config = false) — ideal for 1-minute cron & page auto-sync.
+     */
+    public function syncServerStatuses(VpnServer $server): array
+    {
+        if (!$server->isApiDriver()) {
+            return [
+                'success' => false,
+                'message' => __('Sinkronisasi status otomatis memerlukan driver REST API vpnxray-main.'),
+            ];
+        }
+
+        $res = $this->driverFor($server)->listAccounts(null, 'all', null, false);
+        if (empty($res['success'])) {
+            return $res;
+        }
+
+        $remoteAccounts = is_array($res['accounts'] ?? null) ? $res['accounts'] : [];
+        if (empty($remoteAccounts)) {
+            return [
+                'success' => true,
+                'checked' => 0,
+                'suspended_notified' => 0,
+                'unsuspended_notified' => 0,
+            ];
+        }
+
+        $localAccounts = VpnAccount::where('vpn_server_id', $server->id)
+            ->whereNotIn('status', ['failed', 'provisioning'])
+            ->get()
+            ->keyBy(fn (VpnAccount $a) => strtolower($a->protocol . ':' . $a->username));
+
+        $checked = 0;
+        $suspendedNotified = 0;
+        $unsuspendedNotified = 0;
+
+        foreach ($remoteAccounts as $remote) {
+            $proto = strtolower((string) ($remote['protocol'] ?? ''));
+            $uname = (string) ($remote['username'] ?? '');
+            if ($proto === '' || $uname === '') {
+                continue;
+            }
+
+            $key = strtolower($proto . ':' . $uname);
+            $local = $localAccounts->get($key);
+            if (!$local) {
+                continue;
+            }
+
+            $extra = [];
+            if (!empty($remote['expired_at'])) {
+                try {
+                    $extra['expired_at'] = Carbon::parse($remote['expired_at'])->endOfDay();
+                } catch (\Throwable $e) {
+                    // Ignore malformed date
+                }
+            }
+            if (isset($remote['quota_gb'])) {
+                $extra['quota_gb'] = (int) $remote['quota_gb'];
+            }
+            if (isset($remote['ip_limit'])) {
+                $extra['ip_limit'] = max(1, (int) $remote['ip_limit']);
+            }
+
+            $outcome = $this->applyRemoteStatusUpdate($local, $remote, $extra);
+            $checked++;
+
+            if ($outcome['action'] === 'suspended') {
+                $suspendedNotified++;
+            } elseif ($outcome['action'] === 'unsuspended') {
+                $unsuspendedNotified++;
+            }
+        }
+
+        return [
+            'success' => true,
+            'checked' => $checked,
+            'suspended_notified' => $suspendedNotified,
+            'unsuspended_notified' => $unsuspendedNotified,
+        ];
     }
 
     public function listRemoteAccounts(VpnServer $server, ?string $protocol = null, ?string $status = null, ?string $search = null, bool $includeConfig = false): array

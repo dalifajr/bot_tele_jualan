@@ -131,6 +131,7 @@
                         $badge = match(true) {
                             $acc->status === 'failed' => ['bg' => 'danger-subtle', 'text' => 'danger', 'label' => __('Gagal')],
                             $acc->status === 'provisioning' => ['bg' => 'info-subtle', 'text' => 'info', 'label' => __('Provisioning')],
+                            $acc->isSystemSuspended() => ['bg' => 'danger-subtle', 'text' => 'danger', 'label' => __('Suspend Sistem')],
                             $acc->isAdminSuspended() => ['bg' => 'danger-subtle', 'text' => 'danger', 'label' => __('Suspend Admin')],
                             $acc->status === 'suspended' => ['bg' => 'warning-subtle', 'text' => 'warning-emphasis', 'label' => __('Suspend User')],
                             $isExpired || $acc->status === 'expired' => ['bg' => 'secondary-subtle', 'text' => 'secondary', 'label' => __('Expired')],
@@ -288,7 +289,9 @@
                     <div class="small mb-2.5">
                         <div><span class="text-muted">{{ __('Server:') }}</span> <strong>{{ $acc->vpnServer?->name ?: __('Default') }}</strong> ({{ $acc->display_domain }})</div>
                         <div><span class="text-muted">{{ __('Limit:') }}</span> {{ ($acc->quota_gb ?? 0) > 0 ? $acc->quota_gb . ' GB' : 'Unlimited' }} &bull; {{ max(1, (int) ($acc->ip_limit ?? 1)) }} IP</div>
-                        @if($acc->isAdminSuspended())
+                        @if($acc->isSystemSuspended())
+                            <div class="text-danger fw-semibold mt-1"><i class="fas fa-shield-exclamation me-1"></i>{{ __('Disuspend Sistem:') }} {{ $acc->suspended_reason }}</div>
+                        @elseif($acc->isAdminSuspended())
                             <div class="text-danger fw-semibold mt-1"><i class="fas fa-lock me-1"></i>{{ __('Disuspend Admin:') }} {{ $acc->suspended_reason }}</div>
                         @elseif($acc->status === 'failed' && $acc->last_error)
                             <div class="text-danger mt-1"><i class="fas fa-triangle-exclamation me-1"></i>{{ $acc->last_error }}</div>
