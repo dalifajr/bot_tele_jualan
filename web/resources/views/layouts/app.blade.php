@@ -351,17 +351,22 @@
     {{-- Custom SIMAK-style CSS --}}
     <link href="{{ asset('css/app.css') }}?v={{ filemtime(public_path('css/app.css')) }}" rel="stylesheet">
 
-    {{-- Render-blocking expectation & directional MPA view transition classifier (Chrome Modern Web Guidance) --}}
+    {{-- Render-blocking expectation & directional MPA view transition classifier + zero-blink fallback --}}
     <link rel="expect" href="#m3MainContent" blocking="render">
-    <script blocking="render" nonce="{{ $cspNonce ?? '' }}">
+    <script nonce="{{ $cspNonce ?? '' }}">
         (function () {
+            var REDUCED_MOTION = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
             function getNavSlot(pathname) {
                 var p = (pathname || '/').replace(/\/+$/, '') || '/';
                 if (p === '/' || p === '/dashboard' || p === '/admin/dashboard' || p === '/seller/dashboard') return 0;
                 if (p.indexOf('/catalog') === 0 || p.indexOf('/admin/products') === 0 || p.indexOf('/seller/products') === 0) return 1;
-                if (p.indexOf('/cart') === 0 || p.indexOf('/orders') === 0 || p.indexOf('/admin/orders') === 0 || p.indexOf('/seller/orders') === 0) return 2;
-                if (p.indexOf('/chat') === 0 || p.indexOf('/admin/complaints') === 0 || p.indexOf('/seller/finance') === 0) return 3;
-                if (p.indexOf('/login') === 0) return 4;
+                if (p.indexOf('/admin/stock') === 0 || p.indexOf('/seller/stock') === 0) return 2;
+                if (p.indexOf('/cart') === 0 || p.indexOf('/checkout') === 0 || p.indexOf('/orders') === 0 || p.indexOf('/admin/orders') === 0 || p.indexOf('/seller/orders') === 0) return 3;
+                if (p.indexOf('/my-vpn') === 0 || p.indexOf('/vpn') === 0 || p.indexOf('/admin/vpn') === 0) return 4;
+                if (p.indexOf('/chat') === 0 || p.indexOf('/complaints') === 0 || p.indexOf('/admin/complaints') === 0 || p.indexOf('/seller/complaints') === 0 || p.indexOf('/admin/broadcast') === 0) return 5;
+                if (p.indexOf('/wallet') === 0 || p.indexOf('/admin/wallet') === 0 || p.indexOf('/admin/payouts') === 0 || p.indexOf('/seller/finance') === 0 || p.indexOf('/admin/finance') === 0 || p.indexOf('/admin/coupons') === 0 || p.indexOf('/admin/promos') === 0 || p.indexOf('/escrow') === 0 || p.indexOf('/admin/escrow') === 0) return 6;
+                if (p.indexOf('/admin/users') === 0 || p.indexOf('/admin/sellers') === 0 || p.indexOf('/admin/remote') === 0 || p.indexOf('/admin/settings') === 0 || p.indexOf('/profile') === 0 || p.indexOf('/account') === 0 || p.indexOf('/security') === 0 || p.indexOf('/login') === 0 || p.indexOf('/two-factor') === 0) return 7;
                 return -1;
             }
 
@@ -370,11 +375,20 @@
                 return clean ? clean.split('/').length : 0;
             }
 
-            function computeTransitionType(fromUrlStr, toUrlStr, navType) {
+            function computeTransitionType(fromUrlStr, toUrlStr, navType, fromIndex, toIndex) {
                 try {
                     var fromUrl = new URL(fromUrlStr, window.location.origin);
                     var toUrl = new URL(toUrlStr, window.location.origin);
-                    if (fromUrl.origin !== toUrl.origin || fromUrl.pathname === toUrl.pathname) return 'm3-cross-fade';
+                    if (fromUrl.origin !== toUrl.origin) return 'm3-cross-fade';
+
+                    if (navType === 'traverse') {
+                        if (typeof fromIndex === 'number' && typeof toIndex === 'number' && fromIndex !== toIndex) {
+                            return toIndex < fromIndex ? 'm3-slide-backward' : 'm3-slide-forward';
+                        }
+                        return 'm3-slide-backward';
+                    }
+
+                    if (fromUrl.pathname === toUrl.pathname) return 'm3-cross-fade';
 
                     var fromSlot = getNavSlot(fromUrl.pathname);
                     var toSlot = getNavSlot(toUrl.pathname);
@@ -391,40 +405,117 @@
                     if (toDepth !== fromDepth) {
                         return toDepth > fromDepth ? 'm3-slide-forward' : 'm3-slide-backward';
                     }
-
-                    if (navType === 'traverse') return 'm3-slide-backward';
                 } catch (err) {}
                 return 'm3-slide-forward';
             }
 
+            function setMainVtName(active) {
+                var mainEl = document.getElementById('m3MainContent');
+                if (mainEl) {
+                    mainEl.style.viewTransitionName = active ? 'm3-main-content' : '';
+                }
+            }
+
+            function hidePageLoaderNow() {
+                var loader = document.getElementById('pageLoader');
+                if (loader) loader.classList.add('fade-out');
+            }
+
+            var fallbackTimer = null;
+            function clearFallbackEnter() {
+                if (fallbackTimer) {
+                    clearTimeout(fallbackTimer);
+                    fallbackTimer = null;
+                }
+                document.documentElement.classList.remove('m3-page-enter');
+            }
+
+            function triggerFallbackEnter() {
+                if (REDUCED_MOTION) return;
+                var root = document.documentElement;
+                root.classList.add('m3-page-enter');
+                if (fallbackTimer) clearTimeout(fallbackTimer);
+                fallbackTimer = setTimeout(clearFallbackEnter, 360);
+
+                var bindCleanup = function () {
+                    var mainEl = document.getElementById('m3MainContent');
+                    if (mainEl) {
+                        mainEl.addEventListener('animationend', function (ev) {
+                            if (ev.target === mainEl) clearFallbackEnter();
+                        }, { once: true });
+                    }
+                };
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', bindCleanup, { once: true });
+                } else {
+                    bindCleanup();
+                }
+            }
+
             if ('onpageswap' in window) {
                 window.addEventListener('pageswap', function (e) {
-                    var loader = document.getElementById('pageLoader');
-                    if (loader) loader.classList.add('fade-out');
-                    if (e.viewTransition && e.activation && e.activation.from && e.activation.entry) {
-                        var t = computeTransitionType(e.activation.from.url, e.activation.entry.url, e.activation.navigationType);
+                    hidePageLoaderNow();
+                    clearFallbackEnter();
+                    if (!REDUCED_MOTION && e.viewTransition && e.activation && e.activation.from && e.activation.entry) {
+                        setMainVtName(true);
+                        var t = computeTransitionType(
+                            e.activation.from.url,
+                            e.activation.entry.url,
+                            e.activation.navigationType,
+                            e.activation.from.index,
+                            e.activation.entry.index
+                        );
                         if (e.viewTransition.types && typeof e.viewTransition.types.add === 'function') {
                             e.viewTransition.types.add(t);
                         }
+                        if (e.viewTransition.finished && typeof e.viewTransition.finished.finally === 'function') {
+                            e.viewTransition.finished.finally(function () {
+                                setMainVtName(false);
+                            });
+                        }
+                    } else {
+                        setMainVtName(false);
                     }
                 });
             }
 
             if ('onpagereveal' in window) {
                 window.addEventListener('pagereveal', function (e) {
-                    var loader = document.getElementById('pageLoader');
-                    if (loader) loader.classList.add('fade-out');
-                    if (!e.viewTransition) return;
-                    var act = window.navigation && window.navigation.activation;
-                    var fromUrl = (act && act.from && act.from.url) || document.referrer || '';
-                    var toUrl = (act && act.entry && act.entry.url) || window.location.href;
-                    var navType = act ? act.navigationType : '';
-                    var t = fromUrl ? computeTransitionType(fromUrl, toUrl, navType) : 'm3-cross-fade';
-                    if (e.viewTransition.types && typeof e.viewTransition.types.add === 'function') {
-                        e.viewTransition.types.add(t);
+                    hidePageLoaderNow();
+                    if (!REDUCED_MOTION && e.viewTransition) {
+                        clearFallbackEnter();
+                        setMainVtName(true);
+                        var act = window.navigation && window.navigation.activation;
+                        var fromUrl = (act && act.from && act.from.url) || document.referrer || '';
+                        var toUrl = (act && act.entry && act.entry.url) || window.location.href;
+                        var navType = act ? act.navigationType : '';
+                        var fromIdx = act && act.from ? act.from.index : undefined;
+                        var toIdx = act && act.entry ? act.entry.index : undefined;
+                        var t = fromUrl ? computeTransitionType(fromUrl, toUrl, navType, fromIdx, toIdx) : 'm3-cross-fade';
+                        if (e.viewTransition.types && typeof e.viewTransition.types.add === 'function') {
+                            e.viewTransition.types.add(t);
+                        }
+                        if (e.viewTransition.finished && typeof e.viewTransition.finished.finally === 'function') {
+                            e.viewTransition.finished.finally(function () {
+                                setMainVtName(false);
+                            });
+                        }
+                    } else {
+                        setMainVtName(false);
+                        triggerFallbackEnter();
                     }
                 });
+            } else {
+                triggerFallbackEnter();
             }
+
+            window.addEventListener('pageshow', function (e) {
+                hidePageLoaderNow();
+                if (e.persisted) {
+                    setMainVtName(false);
+                    clearFallbackEnter();
+                }
+            });
         })();
     </script>
 
@@ -809,7 +900,7 @@
 </div>
 
 @if(session()->has('admin_impersonator_id'))
-<div class="bg-warning text-warning-emphasis py-2 px-4 d-flex justify-content-between align-items-center position-fixed w-100 shadow-sm" style="z-index: 1045; top: 0; left: 0; font-size: 0.9rem; height: 40px;">
+<div class="m3-top-status-banner bg-warning text-warning-emphasis py-2 px-4 d-flex justify-content-between align-items-center position-fixed w-100 shadow-sm" style="z-index: 1045; top: 0; left: 0; font-size: 0.9rem; height: 40px;">
     <div class="d-flex align-items-center gap-2">
         <i class="fas fa-user-secret"></i> 
         <span>{{ __('Anda sedang login sebagai') }} <strong>{{ Auth::user()->full_name ?? Auth::user()->username }}</strong> ({{ __('Sesi Admin') }})</span>
@@ -848,7 +939,7 @@
 @endphp
 
 @if($globalMaintenanceActive && Auth::check() && Auth::user()->role === 'admin' && !session()->has('admin_impersonator_id'))
-<div class="bg-danger text-white py-1 px-4 d-flex justify-content-between align-items-center position-fixed w-100 shadow-sm" style="z-index: 1045; top: 0; left: 0; font-size: 0.85rem; height: 38px;">
+<div class="m3-top-status-banner bg-danger text-white py-1 px-4 d-flex justify-content-between align-items-center position-fixed w-100 shadow-sm" style="z-index: 1045; top: 0; left: 0; font-size: 0.85rem; height: 38px;">
     <div class="d-flex align-items-center gap-2">
         <i class="fas fa-exclamation-triangle"></i> 
         <span><strong>{{ __('MODE MAINTENANCE AKTIF:') }}</strong> {{ __('Pengguna non-admin diblokir dari login dan akses web.') }}</span>

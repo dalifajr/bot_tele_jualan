@@ -83,6 +83,55 @@
     <link href="{{ asset('css/app.css') }}?v={{ filemtime(public_path('css/app.css')) }}" rel="stylesheet">
     <link href="{{ asset('css/auth.css') }}?v={{ filemtime(public_path('css/auth.css')) }}" rel="stylesheet">
 
+    <script nonce="{{ $cspNonce ?? '' }}">
+        (function () {
+            var reduced = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+            var timer = null;
+            function hideLoader() {
+                var l = document.getElementById('pageLoader');
+                if (l) l.classList.add('fade-out');
+            }
+            function clearEnter() {
+                if (timer) { clearTimeout(timer); timer = null; }
+                document.documentElement.classList.remove('m3-page-enter');
+            }
+            function triggerEnter() {
+                if (reduced) return;
+                document.documentElement.classList.add('m3-page-enter');
+                if (timer) clearTimeout(timer);
+                timer = setTimeout(clearEnter, 360);
+            }
+            if ('onpageswap' in window) {
+                window.addEventListener('pageswap', function (e) {
+                    hideLoader();
+                    clearEnter();
+                    if (!reduced && e.viewTransition && e.viewTransition.types && typeof e.viewTransition.types.add === 'function') {
+                        e.viewTransition.types.add('m3-cross-fade');
+                    }
+                });
+            }
+            if ('onpagereveal' in window) {
+                window.addEventListener('pagereveal', function (e) {
+                    hideLoader();
+                    if (!reduced && e.viewTransition) {
+                        clearEnter();
+                        if (e.viewTransition.types && typeof e.viewTransition.types.add === 'function') {
+                            e.viewTransition.types.add('m3-cross-fade');
+                        }
+                    } else {
+                        triggerEnter();
+                    }
+                });
+            } else {
+                triggerEnter();
+            }
+            window.addEventListener('pageshow', function (e) {
+                hideLoader();
+                if (e.persisted) clearEnter();
+            });
+        })();
+    </script>
+
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>

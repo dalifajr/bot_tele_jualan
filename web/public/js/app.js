@@ -10,6 +10,7 @@ function initAll() {
     initSidebar();
     initMobileNavFeedback();
     initModalSheetSwipeDismiss();
+    initFluidTabTransitions();
     initPageLoader();
     initCsrfToken();
     initTelegramWebApp();
@@ -113,6 +114,9 @@ function initThemeToggle() {
         document.cookie = "jualan-theme=" + next + ";path=/;max-age=31536000;SameSite=Lax";
         
         updateThemeIcon(icon, next);
+        icon.classList.remove('m3-theme-icon-spin');
+        void icon.offsetWidth;
+        icon.classList.add('m3-theme-icon-spin');
 
         const userPalette = localStorage.getItem('user_primary_palette');
         if (userPalette && typeof window.applyMaterialYouTheme === 'function') {
@@ -614,6 +618,26 @@ function initModalSheetSwipeDismiss() {
     });
 }
 
+/* === FLUID BOOTSTRAP TAB SWITCH REVEAL (ONLY ON USER INTERACTION, ZERO LOAD BLINK) === */
+function initFluidTabTransitions() {
+    document.addEventListener('show.bs.tab', (e) => {
+        const trigger = e.target;
+        if (!trigger || typeof trigger.getAttribute !== 'function') return;
+        const targetSel = trigger.getAttribute('data-bs-target') || trigger.getAttribute('href');
+        if (!targetSel || !targetSel.startsWith('#')) return;
+        const pane = document.querySelector(targetSel);
+        if (!pane) return;
+
+        pane.classList.remove('m3-tab-entering');
+        void pane.offsetWidth;
+        pane.classList.add('m3-tab-entering');
+
+        const cleanup = () => pane.classList.remove('m3-tab-entering');
+        pane.addEventListener('animationend', cleanup, { once: true });
+        setTimeout(cleanup, 300);
+    });
+}
+
 /* === PAGE LOADER (M3 SMART NON-BLOCKING TOP PROGRESS + DELAYED OVERLAY) === */
 function initPageLoader() {
     const pageLoader = document.getElementById('pageLoader');
@@ -673,6 +697,7 @@ function initPageLoader() {
 
     // Cancel overlay before cross-document view transition snapshot & on page lifecycle events
     window.addEventListener('pageswap', hideLoader);
+    window.addEventListener('pagereveal', hideLoader);
     window.addEventListener('pagehide', hideLoader);
     window.addEventListener('pageshow', () => {
         hideLoader();

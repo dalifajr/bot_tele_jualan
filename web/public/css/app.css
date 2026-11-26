@@ -282,11 +282,34 @@ html[data-bs-theme="light"] body {
 /* Smooth transition only triggered upon manual theme toggle, never during page navigation */
 html.theme-transitioning,
 html.theme-transitioning body,
+html.theme-transitioning .main-content,
 html.theme-transitioning .navbar,
 html.theme-transitioning .sidebar,
+html.theme-transitioning .mobile-bottom-nav,
 html.theme-transitioning .card,
+html.theme-transitioning .modal-content,
+html.theme-transitioning .dropdown-menu,
 html.theme-transitioning .m3-console-header {
-    transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease !important;
+    transition: background-color 260ms var(--md-sys-motion-easing-standard),
+                color 260ms var(--md-sys-motion-easing-standard),
+                border-color 260ms var(--md-sys-motion-easing-standard) !important;
+}
+
+@keyframes m3ThemeIconSpin {
+    0% {
+        opacity: 0.45;
+        transform: rotate(-75deg) scale(0.76);
+    }
+    100% {
+        opacity: 1;
+        transform: rotate(0deg) scale(1);
+    }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .m3-theme-icon-spin {
+        animation: m3ThemeIconSpin 280ms var(--md-sys-motion-easing-emphasized-decelerate) both;
+    }
 }
 
 /* === UNIVERSAL GOOGLE SANS FAMILY ENFORCEMENT & PROPORTIONAL TYPOGRAPHY === */
@@ -631,7 +654,9 @@ a:hover {
     -ms-overflow-style: none !important;
     flex-shrink: 0;
     box-sizing: border-box;
-    transition: transform 0.25s cubic-bezier(0.2, 0, 0, 1), width 0.2s ease, background-color 0.2s cubic-bezier(0.2, 0, 0, 1);
+    transition: transform 260ms var(--md-sys-motion-easing-emphasized),
+                width 260ms var(--md-sys-motion-easing-emphasized),
+                background-color 200ms var(--md-sys-motion-easing-standard);
 }
 
 /* Sidebar Top Brand (Figma M3 Style) */
@@ -712,7 +737,15 @@ a:hover {
     border: none;
     background: transparent;
     cursor: pointer;
-    transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+    transition: background-color var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard),
+                color var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard),
+                transform var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .m3-segmented-item:active {
+        transform: scale(0.965);
+    }
 }
 
 .m3-segmented-item.active {
@@ -999,7 +1032,7 @@ a:hover {
     min-height: calc(100vh - var(--total-header-height));
     background-color: var(--cm-sys-color-surface);
     overflow: hidden;
-    transition: margin-left 0.2s ease;
+    transition: margin-left 260ms var(--md-sys-motion-easing-emphasized);
 }
 
 .container-fluid.position-relative.px-4 {
@@ -1183,7 +1216,22 @@ a:hover {
     }
 
     .m3-collapsible-card .collapsing {
-        transition: height 240ms var(--md-sys-motion-easing-emphasized) !important;
+        transition: height 260ms var(--md-sys-motion-easing-emphasized) !important;
+    }
+
+    .m3-collapsible-card .collapse.show .m3-collapsible-body {
+        animation: m3CollapsibleBodyReveal 210ms var(--md-sys-motion-easing-emphasized-decelerate) both;
+    }
+}
+
+@keyframes m3CollapsibleBodyReveal {
+    from {
+        opacity: 0;
+        translate: 0 -4px;
+    }
+    to {
+        opacity: 1;
+        translate: none;
     }
 }
 
@@ -1350,21 +1398,10 @@ a:hover {
     .modal-content:has(.m3-sheet-handle) .modal-header::before {
         display: none !important;
     }
-
-    .modal.fade .modal-dialog {
-        transform: translate3d(0, 100%, 0) !important;
-        transition: transform 220ms var(--md-sys-motion-easing-emphasized-accelerate) !important;
-        will-change: transform;
-    }
-
-    .modal.fade.show .modal-dialog {
-        transform: translate3d(0, 0, 0) !important;
-        transition: transform 320ms var(--md-sys-motion-easing-emphasized-decelerate) !important;
-    }
 }
 
 .modal-backdrop.fade {
-    transition: opacity 240ms var(--md-sys-motion-easing-standard) !important;
+    transition: opacity 220ms var(--md-sys-motion-easing-standard) !important;
 }
 
 .seller-stat-card-gradient h1,
@@ -1524,7 +1561,9 @@ a:hover {
     flex-direction: column;
     justify-content: space-between;
     text-decoration: none !important;
-    transition: background-color 0.15s ease, border-color 0.15s ease;
+    transition: background-color var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard),
+                border-color var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard),
+                transform var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-emphasized);
 }
 
 .m3-balance-card:hover {
@@ -1551,7 +1590,9 @@ a:hover {
     flex-direction: column;
     justify-content: space-between;
     height: 100%;
-    transition: background-color 0.15s ease, border-color 0.15s ease;
+    transition: background-color var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard),
+                border-color var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard),
+                transform var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-emphasized);
 }
 
 .m3-dash-metric-card:hover {
@@ -1579,7 +1620,9 @@ a:hover {
     justify-content: space-between;
     text-decoration: none !important;
     color: inherit !important;
-    transition: background-color 0.15s ease, border-color 0.15s ease;
+    transition: background-color var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard),
+                border-color var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard),
+                transform var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
 }
 
 .m3-order-row-card:hover {
@@ -1598,7 +1641,9 @@ a:hover {
     gap: 14px;
     text-decoration: none !important;
     color: inherit !important;
-    transition: background-color 0.15s ease, border-color 0.15s ease;
+    transition: background-color var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard),
+                border-color var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard),
+                transform var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
 }
 
 .m3-quick-card:hover {
@@ -1929,14 +1974,16 @@ ul.nav-pills,
     color: var(--on-surface);
     border: 1px solid var(--outline-variant);
     background: var(--surface-container-lowest);
-    transition: border-color 0.15s ease, background-color 0.15s ease;
+    transition: border-color var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard),
+                background-color var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard),
+                color var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard),
+                transform var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
 }
 
 .quick-action-btn:hover {
     background: var(--surface-container-low);
     border-color: var(--primary);
     color: var(--primary);
-    transform: none;
 }
 
 .qa-icon {
@@ -3008,19 +3055,21 @@ ul.nav-pills,
 }
 
 .dropdown-menu.show {
-    animation: m3MenuReveal 160ms var(--md-sys-motion-easing-emphasized-decelerate);
-    will-change: opacity, scale;
+    animation: m3MenuReveal 190ms var(--md-sys-motion-easing-emphasized-decelerate) both;
+    will-change: opacity, scale, translate;
 }
 
-/* Uses independent CSS `scale` property (never touches `transform`) so Popper.js translate3d(x,y,0) stays 100% intact */
+/* Uses independent CSS `scale` & `translate` (never touches `transform`) so Popper.js translate3d(x,y,0) stays 100% intact */
 @keyframes m3MenuReveal {
     0% {
         opacity: 0;
-        scale: 0.96;
+        scale: 0.95;
+        translate: 0 -6px;
     }
     100% {
         opacity: 1;
         scale: 1;
+        translate: 0 0;
     }
 }
 
@@ -3030,13 +3079,20 @@ ul.nav-pills,
     font: var(--cm-sys-type-body-medium) !important;
     color: var(--on-surface) !important;
     transition: background-color var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard),
-                color var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard);
+                color var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard),
+                transform var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
 }
 
 .dropdown-item:hover,
 .dropdown-item:focus {
     background-color: var(--secondary-container) !important;
     color: var(--on-secondary-container) !important;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .dropdown-item:active {
+        transform: scale(0.98);
+    }
 }
 
 /* === ALERTS (FLAT TONAL 16PX M3 CONTAINER) === */
@@ -3578,32 +3634,83 @@ ul.nav-pills,
     animation: badgePop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-/* Content Smooth Reveal (Fallback only for legacy browsers without View Transitions) & M3 Tactile States */
-@keyframes contentReveal {
+/* Zero-Blink Fallback Page Entrance (Activated only via JS when native MPA View Transition did not run) & M3 Tactile States */
+@keyframes m3PageEnterFallback {
     0% {
         opacity: 0;
+        translate: 0 12px;
     }
     100% {
         opacity: 1;
+        translate: none;
+    }
+}
+
+@keyframes m3TabPaneReveal {
+    0% {
+        opacity: 0;
+        translate: 0 7px;
+    }
+    100% {
+        opacity: 1;
+        translate: none;
+    }
+}
+
+@keyframes m3AlertEnter {
+    0% {
+        opacity: 0;
+        translate: 0 -6px;
+    }
+    100% {
+        opacity: 1;
+        translate: none;
     }
 }
 
 @media (prefers-reduced-motion: no-preference) {
-    @supports not (view-transition-name: none) {
-        .main-content,
-        main.flex-grow-1 {
-            animation: contentReveal 180ms var(--md-sys-motion-easing-standard) both;
-        }
+    html.m3-page-enter #m3MainContent,
+    html.m3-page-enter .login-wrapper {
+        animation: m3PageEnterFallback 260ms var(--md-sys-motion-easing-emphasized-decelerate) backwards;
     }
 
     .tab-pane.fade {
-        transition: opacity 160ms var(--md-sys-motion-easing-standard) !important;
+        transition: opacity 180ms var(--md-sys-motion-easing-standard) !important;
+    }
+
+    .tab-pane.fade.show.active.m3-tab-entering {
+        animation: m3TabPaneReveal 220ms var(--md-sys-motion-easing-emphasized-decelerate) backwards;
+    }
+
+    .main-content > .container-fluid > .alert.show {
+        animation: m3AlertEnter 240ms var(--md-sys-motion-easing-emphasized-decelerate) backwards;
+    }
+
+    .form-switch .form-check-input {
+        transition: background-position 200ms var(--md-sys-motion-easing-emphasized),
+                    background-color 180ms var(--md-sys-motion-easing-standard),
+                    border-color 180ms var(--md-sys-motion-easing-standard);
     }
 
     .m3-filter-chip:active,
     .m3-segmented-nav .nav-link:active,
+    .m3-quick-amount-chip:active:not(:disabled),
     .menu-item:active {
-        transform: scale(0.965);
+        transform: scale(0.968);
+    }
+
+    .m3-icon-btn:active,
+    .m3-user-avatar-btn:active,
+    .m3-quick-search-trigger:active {
+        transform: scale(0.95);
+    }
+
+    .m3-balance-card:active,
+    .m3-dash-metric-card:active,
+    .m3-order-row-card:active,
+    .m3-quick-card:active,
+    .quick-action-btn:active {
+        transform: scale(0.986);
     }
 }
 
@@ -4850,17 +4957,18 @@ body.swal2-shown:not(.swal2-toast-shown) .swal2-container:not(.swal2-toast-conta
 /* === BOOTSTRAP MODAL AS M3 DIALOG (DESKTOP) & M3 BOTTOM SHEET DRAWER (MOBILE) === */
 @media (min-width: 768px) {
     .modal.fade .modal-dialog {
-        transform: scale(0.92) translateY(6px) !important;
+        transform: scale(0.94) translate3d(0, 10px, 0) !important;
         opacity: 0 !important;
-        transition: transform var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-emphasized-accelerate),
-                    opacity var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-emphasized-accelerate) !important;
+        transition: transform 190ms var(--md-sys-motion-easing-emphasized-accelerate),
+                    opacity 160ms var(--md-sys-motion-easing-standard-accelerate) !important;
+        will-change: transform, opacity;
     }
 
     .modal.fade.show .modal-dialog {
-        transform: scale(1) translateY(0) !important;
+        transform: scale(1) translate3d(0, 0, 0) !important;
         opacity: 1 !important;
-        transition: transform var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-emphasized-decelerate),
-                    opacity var(--md-sys-motion-duration-medium1) var(--md-sys-motion-easing-emphasized-decelerate) !important;
+        transition: transform 280ms var(--md-sys-motion-easing-emphasized-decelerate),
+                    opacity 220ms var(--md-sys-motion-easing-standard-decelerate) !important;
     }
 
     .modal-content {
@@ -4892,13 +5000,14 @@ body.swal2-shown:not(.swal2-toast-shown) .swal2-container:not(.swal2-toast-conta
         display: flex !important;
         flex-direction: column !important;
         justify-content: flex-end !important;
-        transform: translateY(100%) !important;
-        transition: transform var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-emphasized-accelerate) !important;
+        transform: translate3d(0, 100%, 0) !important;
+        transition: transform 210ms var(--md-sys-motion-easing-emphasized-accelerate) !important;
+        will-change: transform;
     }
 
     .modal.fade.show .modal-dialog {
-        transform: translateY(0) !important;
-        transition: transform var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-emphasized-decelerate) !important;
+        transform: translate3d(0, 0, 0) !important;
+        transition: transform 320ms var(--md-sys-motion-easing-emphasized-decelerate) !important;
     }
 
     .modal-content {
@@ -5712,7 +5821,7 @@ body.swal2-shown:not(.swal2-toast-shown) .swal2-container:not(.swal2-toast-conta
        V12: Card Keyboard Accessibility, Choice Cards & Below-the-Fold Deferral
        ========================================================================== */
 
-    /* V10.1 Cross-Document MPA View Transitions (Directional Shared Axis X + Shell Pinning) */
+    /* V10.1 Cross-Document MPA View Transitions (M3 Expressive Shared-Axis X/Z + Flicker-Free Shell Pinning) */
     @media (prefers-reduced-motion: no-preference) {
         @view-transition {
             navigation: auto;
@@ -5722,33 +5831,103 @@ body.swal2-shown:not(.swal2-toast-shown) .swal2-container:not(.swal2-toast-conta
             background-color: var(--background);
         }
 
+        /* Root handles full-layout transitions (e.g. Login <-> Dashboard) cleanly without shifting persistent shell */
         ::view-transition-group(root) {
-            animation-duration: 210ms;
+            animation-duration: 240ms;
             animation-timing-function: var(--md-sys-motion-easing-emphasized);
         }
 
         ::view-transition-old(root) {
-            animation: m3PageFadeOut 150ms var(--md-sys-motion-easing-standard-accelerate) both;
+            animation: m3PageFadeOut 160ms var(--md-sys-motion-easing-standard-accelerate) both;
         }
 
         ::view-transition-new(root) {
-            animation: m3PageFadeIn 210ms var(--md-sys-motion-easing-standard-decelerate) both;
+            animation: m3PageFadeIn 240ms var(--md-sys-motion-easing-standard-decelerate) both;
         }
 
-        html:active-view-transition-type(m3-slide-forward)::view-transition-old(root) {
-            animation: m3VtSlideOutForward 160ms var(--md-sys-motion-easing-emphasized-accelerate) both;
+        /* Primary Content Area (Dynamically scoped via pageswap/pagereveal so modals never get trapped at rest) */
+        ::view-transition-group(m3-main-content) {
+            animation-duration: 300ms;
+            animation-timing-function: var(--md-sys-motion-easing-emphasized);
+            overflow: clip;
         }
 
-        html:active-view-transition-type(m3-slide-forward)::view-transition-new(root) {
-            animation: m3VtSlideInForward 230ms var(--md-sys-motion-easing-emphasized-decelerate) both;
+        ::view-transition-old(m3-main-content) {
+            animation: m3VtAxisZOut 160ms var(--md-sys-motion-easing-emphasized-accelerate) both;
         }
 
-        html:active-view-transition-type(m3-slide-backward)::view-transition-old(root) {
-            animation: m3VtSlideOutBackward 160ms var(--md-sys-motion-easing-emphasized-accelerate) both;
+        ::view-transition-new(m3-main-content) {
+            animation: m3VtAxisZIn 260ms var(--md-sys-motion-easing-emphasized-decelerate) 25ms both;
         }
 
-        html:active-view-transition-type(m3-slide-backward)::view-transition-new(root) {
-            animation: m3VtSlideInBackward 230ms var(--md-sys-motion-easing-emphasized-decelerate) both;
+        html:active-view-transition-type(m3-slide-forward)::view-transition-old(m3-main-content) {
+            animation: m3VtSlideOutForward 180ms var(--md-sys-motion-easing-emphasized-accelerate) both;
+        }
+
+        html:active-view-transition-type(m3-slide-forward)::view-transition-new(m3-main-content) {
+            animation: m3VtSlideInForward 300ms var(--md-sys-motion-easing-emphasized-decelerate) 30ms both;
+        }
+
+        html:active-view-transition-type(m3-slide-backward)::view-transition-old(m3-main-content) {
+            animation: m3VtSlideOutBackward 180ms var(--md-sys-motion-easing-emphasized-accelerate) both;
+        }
+
+        html:active-view-transition-type(m3-slide-backward)::view-transition-new(m3-main-content) {
+            animation: m3VtSlideInBackward 300ms var(--md-sys-motion-easing-emphasized-decelerate) 30ms both;
+        }
+
+        /* Pin Persistent App Shell Across Smartphone & Desktop Viewports (Zero Flicker / Zero Crossfade) */
+        nav.navbar.fixed-top,
+        .pcc-platform-bar,
+        .top-navbar {
+            view-transition-name: m3-top-navbar;
+        }
+
+        .m3-top-status-banner {
+            view-transition-name: m3-top-banner;
+        }
+
+        @media (max-width: 991.98px) {
+            #mobileBottomNav {
+                view-transition-name: m3-bottom-nav;
+            }
+        }
+
+        @media (min-width: 992px) {
+            #sidebar {
+                view-transition-name: m3-sidebar;
+            }
+        }
+
+        ::view-transition-group(m3-top-navbar),
+        ::view-transition-group(m3-bottom-nav),
+        ::view-transition-group(m3-sidebar) {
+            z-index: 100;
+            animation-duration: 0ms;
+        }
+
+        ::view-transition-group(m3-top-banner) {
+            z-index: 110;
+            animation-duration: 0ms;
+        }
+
+        ::view-transition-old(m3-top-navbar):not(:only-child),
+        ::view-transition-new(m3-top-navbar):not(:only-child),
+        ::view-transition-old(m3-bottom-nav):not(:only-child),
+        ::view-transition-new(m3-bottom-nav):not(:only-child),
+        ::view-transition-old(m3-sidebar):not(:only-child),
+        ::view-transition-new(m3-sidebar):not(:only-child),
+        ::view-transition-old(m3-top-banner):not(:only-child),
+        ::view-transition-new(m3-top-banner):not(:only-child) {
+            animation: none;
+            mix-blend-mode: normal;
+        }
+
+        ::view-transition-old(m3-top-navbar):not(:only-child),
+        ::view-transition-old(m3-bottom-nav):not(:only-child),
+        ::view-transition-old(m3-sidebar):not(:only-child),
+        ::view-transition-old(m3-top-banner):not(:only-child) {
+            display: none;
         }
     }
 
@@ -5757,7 +5936,16 @@ body.swal2-shown:not(.swal2-toast-shown) .swal2-container:not(.swal2-toast-conta
             navigation: none;
         }
 
-        ::view-transition-group(root) {
+        ::view-transition-group(*),
+        ::view-transition-old(*),
+        ::view-transition-new(*) {
+            animation: none !important;
+        }
+
+        html.m3-page-enter #m3MainContent,
+        html.m3-page-enter .login-wrapper,
+        .dropdown-menu.show,
+        .m3-theme-icon-spin {
             animation: none !important;
         }
     }
@@ -5772,49 +5960,34 @@ body.swal2-shown:not(.swal2-toast-shown) .swal2-container:not(.swal2-toast-conta
         to { opacity: 1; }
     }
 
+    @keyframes m3VtAxisZOut {
+        from { opacity: 1; transform: scale(1); }
+        to { opacity: 0; transform: scale(0.992); }
+    }
+
+    @keyframes m3VtAxisZIn {
+        from { opacity: 0; transform: translate3d(0, 10px, 0) scale(0.992); }
+        to { opacity: 1; transform: none; }
+    }
+
     @keyframes m3VtSlideOutForward {
         from { opacity: 1; transform: none; }
-        to { opacity: 0; transform: translateX(-14px); }
+        to { opacity: 0; transform: translate3d(-28px, 0, 0); }
     }
 
     @keyframes m3VtSlideInForward {
-        from { opacity: 0; transform: translateX(16px); }
+        from { opacity: 0; transform: translate3d(32px, 0, 0); }
         to { opacity: 1; transform: none; }
     }
 
     @keyframes m3VtSlideOutBackward {
         from { opacity: 1; transform: none; }
-        to { opacity: 0; transform: translateX(14px); }
+        to { opacity: 0; transform: translate3d(28px, 0, 0); }
     }
 
     @keyframes m3VtSlideInBackward {
-        from { opacity: 0; transform: translateX(-16px); }
+        from { opacity: 0; transform: translate3d(-32px, 0, 0); }
         to { opacity: 1; transform: none; }
-    }
-
-    /* Pin Persistent App Shell Across Smartphone & Desktop Viewports */
-    nav.navbar.fixed-top,
-    .pcc-platform-bar,
-    .top-navbar {
-        view-transition-name: m3-top-navbar;
-    }
-
-    @media (max-width: 991.98px) {
-        #mobileBottomNav {
-            view-transition-name: m3-bottom-nav;
-        }
-    }
-
-    @media (min-width: 992px) {
-        #sidebar {
-            view-transition-name: m3-sidebar;
-        }
-    }
-
-    ::view-transition-group(m3-top-navbar),
-    ::view-transition-group(m3-bottom-nav),
-    ::view-transition-group(m3-sidebar) {
-        z-index: 100;
     }
 
     /* V10.2 Prevent Page Scroll Under Modal Dialogs & Overlays (No Scroll Chaining) */
