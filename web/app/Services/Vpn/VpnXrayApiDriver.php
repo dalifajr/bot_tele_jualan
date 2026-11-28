@@ -403,6 +403,13 @@ class VpnXrayApiDriver implements VpnProviderInterface
         return $res;
     }
 
+    public function updateAccount(string $protocol, string $username, array $payload): array
+    {
+        $proto = rawurlencode(strtolower($protocol));
+        $user = rawurlencode($username);
+        return $this->request('POST', "/accounts/{$proto}/{$user}/update", $payload);
+    }
+
     public function renewAccount(string $protocol, string $username, int $days, ?int $quotaGb = null, ?int $ipLimit = null, ?string $idempotencyKey = null): array
     {
         $proto = rawurlencode(strtolower($protocol));

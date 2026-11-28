@@ -48,6 +48,15 @@ class VpnAccountController extends Controller
                           $q2->where('status', 'active')->whereNotNull('expired_at')->where('expired_at', '<', now());
                       });
                 });
+            } elseif ($status === 'expired_grace') {
+                $query->where('status', 'suspended')
+                    ->where('suspended_by_role', 'system')
+                    ->where(function ($q) {
+                        $q->where(function ($q2) {
+                            $q2->whereNotNull('expired_at')->where('expired_at', '<=', now());
+                        })->orWhere('suspended_reason', 'like', '%Kadaluarsa%')
+                          ->orWhere('suspended_reason', 'like', '%expired%');
+                    });
             } elseif ($status === 'expiring_soon') {
                 $query->where('status', 'active')
                     ->whereNotNull('expired_at')
@@ -107,6 +116,11 @@ class VpnAccountController extends Controller
                 ->where('expired_at', '<=', now()->addHours(72))
                 ->count(),
             'suspended' => VpnAccount::where('status', 'suspended')->count(),
+            'expired_grace' => VpnAccount::where('status', 'suspended')
+                ->where('suspended_by_role', 'system')
+                ->whereNotNull('expired_at')
+                ->where('expired_at', '<=', now())
+                ->count(),
             'failed' => VpnAccount::whereIn('status', ['failed', 'provisioning'])->count(),
         ];
 
@@ -367,6 +381,74 @@ class VpnAccountController extends Controller
 
         return redirect()->route('admin.vpn-accounts.index', ['tab' => 'accounts'])
             ->with('error', __('Akun disimpan dengan status gagal: :err', ['err' => $provisioned->last_error ?: 'Unknown error']));
+    }
+
+    public function updateInfo(Request $request, $id, VpnService $vpnService)
+    {
+        $account = VpnAccount::with(['vpnServer', 'user'])->findOrFail($id);
+
+        $validated = $request->validate([
+            'expiry_mode' => 'required|in:keep,add,reduce,set_date',
+            'days' => 'nullable|integer|min:0|max:365',
+            'expired_at' => 'nullable|date_format:Y-m-d',
+            'quota_gb' => 'nullable|integer|min:0|max:10000',
+            'ip_limit' => 'nullable|integer|min:1|max:50',
+            'password' => ['nullable', 'string', 'min:3', 'max:64', 'regex:/^[^\r\n\0\s]+$/'],
+            'purchase_price' => 'nullable|integer|min:0|max:100000000',
+            'reactivate' => 'nullable|boolean',
+        ]);
+
+        $expiryMode = (string) $validated['expiry_mode'];
+        $days = (int) ($validated['days'] ?? 0);
+        if (in_array($expiryMode, ['add', 'reduce'], true) && $days < 1) {
+            return back()->with('error', __('Jumlah hari harus minimal 1 hari untuk mode tambah/kurangi masa aktif.'));
+        }
+        if ($expiryMode === 'set_date' && empty($validated['expired_at'])) {
+            return back()->with('error', __('Tanggal expired wajib diisi untuk mode atur tanggal pasti.'));
+        }
+
+        $wasSuspended = $account->status === 'suspended';
+        $reactivate = $request->boolean('reactivate');
+
+        $payload = [
+            'expiry_mode' => $expiryMode,
+            'days' => $days,
+            'expired_at' => $validated['expired_at'] ?? null,
+            'quota_gb' => $request->filled('quota_gb') ? (int) $validated['quota_gb'] : null,
+            'ip_limit' => $request->filled('ip_limit') ? (int) $validated['ip_limit'] : null,
+            'password' => $request->filled('password') ? (string) $validated['password'] : null,
+            'purchase_price' => $request->has('purchase_price') ? ($request->filled('purchase_price') ? (int) $validated['purchase_price'] : null) : null,
+            'reactivate' => $reactivate,
+        ];
+
+        $res = $vpnService->updateAccountInfo($account, $payload);
+
+        $this->logAudit(
+            'admin_vpn_update_info',
+            $account,
+            "mode={$expiryMode}; days={$days}; expired_at=" . ($validated['expired_at'] ?? '-')
+            . "; ip_limit=" . ($payload['ip_limit'] ?? '-')
+            . "; quota_gb=" . ($payload['quota_gb'] ?? '-')
+            . "; reactivate=" . ($reactivate ? '1' : '0')
+            . "; success=" . (!empty($res['success']) ? '1' : '0')
+        );
+
+        if (!empty($res['success']) && $wasSuspended && $reactivate && $account->user) {
+            try {
+                $account->refresh();
+                $account->user->notify(new \App\Notifications\VpnStatusNotification($account, 'unsuspended'));
+                TelegramService::notifyVpnStatusChanged($account, 'unsuspended');
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('VPN updateInfo unsuspend notification error: ' . $e->getMessage());
+            }
+        }
+
+        return back()->with(
+            !empty($res['success']) ? 'success' : 'error',
+            !empty($res['success'])
+                ? __('Informasi akun VPN :user berhasil diperbarui.', ['user' => $account->username])
+                : ($res['message'] ?? __('Gagal memperbarui informasi akun VPN.'))
+        );
     }
 
     public function renew(Request $request, $id, VpnService $vpnService)

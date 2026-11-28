@@ -93,7 +93,7 @@
     {{-- Products Grid (2 Columns on Mobile, 3 on Tablet, 4 on Desktop) --}}
     <div class="row g-2 g-md-3" id="catalogProductsRow">
         @forelse($products as $product)
-        <div class="col-6 col-md-4 col-xl-3 product-item-col {{ $loop->index >= 8 ? 'm3-deferred-card' : '' }}" 
+        <div class="col-6 col-md-4 col-xl-3 product-item-col" 
              data-name="{{ strtolower($product->name) }}" 
              data-is-vpn="{{ $product->is_vpn ? '1' : '0' }}" 
              data-has-stock="{{ $product->stock_count > 0 ? '1' : '0' }}"

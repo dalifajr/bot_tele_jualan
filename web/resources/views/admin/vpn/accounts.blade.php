@@ -199,18 +199,8 @@
                                             data-quota="{{ $acc->quota_gb ?? 0 }}"
                                             data-ip="{{ max(1, (int) ($acc->ip_limit ?? 1)) }}"
                                             data-expired="{{ $acc->expired_at ? $acc->expired_at->format('Y-m-d H:i:s') : '' }}"
-                                            title="{{ __('Perpanjang Durasi') }}">
-                                        <i class="fas fa-calendar-plus"></i>
-                                    </button>
-                                    <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-2.5 btn-open-reduce"
-                                            data-action="{{ route('admin.vpn-accounts.renew', $acc->id) }}"
-                                            data-action-reduce="{{ route('admin.vpn-accounts.reduce-duration', $acc->id) }}"
-                                            data-username="{{ $acc->username }}"
-                                            data-quota="{{ $acc->quota_gb ?? 0 }}"
-                                            data-ip="{{ max(1, (int) ($acc->ip_limit ?? 1)) }}"
-                                            data-expired="{{ $acc->expired_at ? $acc->expired_at->format('Y-m-d H:i:s') : '' }}"
-                                            title="{{ __('Kurangi Masa Aktif') }}">
-                                        <i class="fas fa-calendar-minus"></i>
+                                            title="{{ __('Ubah Info Akun VPN') }}">
+                                        <i class="fas fa-sliders me-1"></i>{{ __('Ubah Info') }}
                                     </button>
                                     @if($acc->status === 'suspended')
                                         <form action="{{ route('admin.vpn-accounts.unsuspend', $acc->id) }}" method="POST" class="d-inline">

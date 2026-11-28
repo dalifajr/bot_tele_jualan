@@ -89,6 +89,14 @@ class CustomerVpnController extends Controller
             'admin_suspended' => VpnAccount::where('user_id', $user->id)
                 ->where('status', 'suspended')
                 ->whereIn('suspended_by_role', ['admin', 'system'])
+                ->get()
+                ->filter(fn (VpnAccount $a) => !$a->isExpiredGraceSuspended())
+                ->count(),
+            'expired_grace' => VpnAccount::where('user_id', $user->id)
+                ->where('status', 'suspended')
+                ->where('suspended_by_role', 'system')
+                ->get()
+                ->filter(fn (VpnAccount $a) => $a->isExpiredGraceSuspended())
                 ->count(),
         ];
 
@@ -185,7 +193,7 @@ class CustomerVpnController extends Controller
             $subtotal = max(0, (int) $product->price);
         } else {
             $account = $this->findOwnedAccount((int) $validated['account_id']);
-            if ($account->isAdminSuspended()) {
+            if (!$account->canCustomerRenew()) {
                 return response()->json([
                     'valid' => false,
                     'message' => __('Akun VPN ini sedang disuspend dan tidak dapat diperpanjang.'),
@@ -570,7 +578,7 @@ class CustomerVpnController extends Controller
     {
         $account = $this->findOwnedAccount($id);
 
-        if ($account->isAdminSuspended()) {
+        if (!$account->canCustomerRenew()) {
             return $this->adminSuspendedResponse($account);
         }
 
@@ -901,14 +909,22 @@ class CustomerVpnController extends Controller
 
     private function adminSuspendedResponse(VpnAccount $account)
     {
-        $msg = $account->isSystemSuspended()
-            ? __('Akun VPN :user disuspend otomatis oleh sistem (:reason). Anda diwajibkan menghubungi Admin melalui Chat untuk meminta pembukaan akses kembali.', [
+        if ($account->isExpiredGraceSuspended()) {
+            $remDays = $account->getGraceDaysRemaining();
+            $msg = __('Akun VPN :user sedang disuspend otomatis karena masa aktif telah kadaluarsa dan tidak dapat dibuka sendiri (akan dihapus permanen dalam :days hari). Silakan klik tombol Perpanjang untuk mengaktifkan kembali akun Anda atau hubungi Admin.', [
+                'user' => $account->username,
+                'days' => max(1, $remDays),
+            ]);
+        } elseif ($account->isSystemSuspended()) {
+            $msg = __('Akun VPN :user disuspend otomatis oleh sistem (:reason). Anda diwajibkan menghubungi Admin melalui Chat untuk meminta pembukaan akses kembali.', [
                 'user' => $account->username,
                 'reason' => $account->suspended_reason ?: __('pelanggaran batas penggunaan'),
-            ])
-            : __('Akun VPN :user disuspend oleh Admin. Anda diwajibkan menghubungi Admin melalui Chat untuk meminta pembukaan akses kembali.', [
+            ]);
+        } else {
+            $msg = __('Akun VPN :user disuspend oleh Admin. Anda diwajibkan menghubungi Admin melalui Chat untuk meminta pembukaan akses kembali.', [
                 'user' => $account->username,
             ]);
+        }
 
         if (request()->expectsJson()) {
             return response()->json(['success' => false, 'message' => $msg], 403);

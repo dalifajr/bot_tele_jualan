@@ -9,6 +9,8 @@ class VpnAccount extends Model
 {
     use HasSystemTimezone;
 
+    public const EXPIRE_GRACE_DAYS = 3;
+
     protected $table = 'vpn_accounts';
 
     protected $fillable = [
@@ -121,6 +123,19 @@ class VpnAccount extends Model
         }
 
         $now = now();
+        if ($this->isExpiredGraceSuspended()) {
+            $remDays = $this->getGraceDaysRemaining();
+            return [
+                'level' => 'expired_grace',
+                'hours_left' => 0.0,
+                'pill_class' => 'bg-danger text-white',
+                'text_class' => 'text-danger fw-bold',
+                'label' => $remDays > 0
+                    ? __('Masa Tenggang (Hapus dlm :d hari)', ['d' => $remDays])
+                    : __('Masa Tenggang (Hapus Hari Ini)'),
+            ];
+        }
+
         if ($this->expired_at->lte($now) || $this->status === 'expired') {
             return [
                 'level' => 'expired',
@@ -209,6 +224,48 @@ class VpnAccount extends Model
     public function isSystemSuspended(): bool
     {
         return $this->status === 'suspended' && $this->suspended_by_role === 'system';
+    }
+
+    public function isExpiredGraceSuspended(): bool
+    {
+        if ($this->status !== 'suspended' || $this->suspended_by_role !== 'system') {
+            return false;
+        }
+
+        $reasonLower = strtolower((string) ($this->suspended_reason ?? ''));
+        if (str_contains($reasonLower, 'kadaluarsa') || str_contains($reasonLower, 'expired') || str_contains($reasonLower, 'masa tenggang')) {
+            return true;
+        }
+
+        return $this->expired_at !== null && $this->expired_at->lte(now());
+    }
+
+    public function getGraceDeleteAt(): ?\Carbon\Carbon
+    {
+        return $this->expired_at ? $this->expired_at->copy()->addDays(self::EXPIRE_GRACE_DAYS) : null;
+    }
+
+    public function getGraceDaysRemaining(): int
+    {
+        $deleteAt = $this->getGraceDeleteAt();
+        if (!$deleteAt || $deleteAt->lte(now())) {
+            return 0;
+        }
+
+        return max(1, (int) ceil(now()->diffInMinutes($deleteAt) / 1440));
+    }
+
+    /**
+     * Customer can renew normal accounts AND accounts in the 3-day expired grace period (Option B),
+     * while accounts locked by Admin or auto-limit IP abuse remain blocked from self-service.
+     */
+    public function canCustomerRenew(): bool
+    {
+        if (!$this->isAdminSuspended()) {
+            return true;
+        }
+
+        return $this->isExpiredGraceSuspended();
     }
 
     public function isAdminSuspended(): bool

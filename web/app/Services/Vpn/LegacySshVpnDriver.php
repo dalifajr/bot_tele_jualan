@@ -211,6 +211,14 @@ class LegacySshVpnDriver implements VpnProviderInterface
         }
     }
 
+    public function updateAccount(string $protocol, string $username, array $payload): array
+    {
+        return [
+            'success' => false,
+            'message' => __('Ubah info akun jarak jauh memerlukan driver REST API vpnxray-main.'),
+        ];
+    }
+
     public function renewAccount(string $protocol, string $username, int $days, ?int $quotaGb = null, ?int $ipLimit = null, ?string $idempotencyKey = null): array
     {
         return [

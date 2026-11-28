@@ -338,7 +338,15 @@
                                     </div>
                                 </div>
 
-                                @if($vpn->isAdminSuspended())
+                                @if($vpn->isExpiredGraceSuspended())
+                                    <div class="alert alert-danger border-0 py-2 px-3 small mb-2" style="border-radius: 12px;">
+                                        <div class="fw-bold"><i class="fas fa-hourglass-half me-1"></i>{{ __('Akun Kadaluarsa (Masa Tenggang 3 Hari)') }}</div>
+                                        @if($vpn->suspended_reason)<div>{{ $vpn->suspended_reason }}</div>@endif
+                                        <a href="{{ route('vpn.my-accounts', ['renew' => $vpn->id]) }}" class="btn btn-primary btn-sm rounded-pill mt-2 px-3 fw-semibold">
+                                            <i class="fas fa-calendar-plus me-1"></i>{{ __('Perpanjang') }}
+                                        </a>
+                                    </div>
+                                @elseif($vpn->isAdminSuspended())
                                     <div class="alert alert-danger border-0 py-2 px-3 small mb-2" style="border-radius: 12px;">
                                         <div class="fw-bold"><i class="fas {{ $vpn->isSystemSuspended() ? 'fa-shield-exclamation' : 'fa-lock' }} me-1"></i>{{ $vpn->isSystemSuspended() ? __('Akun ini disuspend otomatis oleh Sistem.') : __('Akun ini disuspend oleh Admin.') }}</div>
                                         @if($vpn->suspended_reason)<div>{{ __('Alasan:') }} {{ $vpn->suspended_reason }}</div>@endif
@@ -442,6 +450,62 @@
                                     <span class="text-muted small d-block mb-2">{{ __('Konfigurasi Output / Link:') }}</span>
                                     <div class="m3-tonal-item p-3 text-break font-monospace" style="max-height: 250px; overflow-y: auto; white-space: pre-wrap; font-size: 0.85rem;">{{ $vpn->config_link ?: __('Tidak ada konfigurasi ditemukan.') }}</div>
                                 @endif
+                            </div>
+                        </div>
+                    @endforeach
+                    @endif
+
+                    @php
+                        $existingVpnUsernames = ($order->vpnAccounts ?? collect())->pluck('username')->map(fn ($u) => strtolower((string) $u))->all();
+                        $deletedVpnOrderItems = $order->items->filter(function ($it) use ($existingVpnUsernames) {
+                            $meta = is_array($it->vpn_meta) ? $it->vpn_meta : [];
+                            if (($meta['action'] ?? '') === 'renew') {
+                                return false;
+                            }
+                            $isVpnItem = ($it->product && $it->product->is_vpn) || !empty($meta['protocol']) || !empty($it->vpn_username);
+                            if (!$isVpnItem) {
+                                return false;
+                            }
+                            if (!empty($meta['deleted_due_to_expiry'])) {
+                                return true;
+                            }
+                            $uname = strtolower((string) ($it->vpn_username ?? ''));
+                            return $uname !== '' && !in_array($uname, $existingVpnUsernames, true);
+                        })->values();
+                    @endphp
+                    @if($deletedVpnOrderItems->isNotEmpty())
+                    <hr>
+                    <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+                        <h6 class="fw-bold mb-0 text-body"><i class="fas fa-network-wired text-secondary me-2"></i>{{ __('Detail Akun VPN') }}</h6>
+                    </div>
+                    @foreach($deletedVpnOrderItems as $delItem)
+                        @php
+                            $delMeta = is_array($delItem->vpn_meta) ? $delItem->vpn_meta : [];
+                            $delProto = strtoupper((string) ($delMeta['deleted_protocol'] ?? $delMeta['protocol'] ?? $delItem->product?->vpn_protocol ?? 'VPN'));
+                            $delUser = (string) ($delMeta['deleted_username'] ?? $delItem->vpn_username ?? '-');
+                            $delExpDate = !empty($delMeta['expired_at']) ? \Carbon\Carbon::parse($delMeta['expired_at'])->format('d M Y') : null;
+                            $delRemovedAt = !empty($delMeta['deleted_at']) ? \Carbon\Carbon::parse($delMeta['deleted_at'])->format('d M Y H:i') : null;
+                        @endphp
+                        <div class="card mb-3 border-secondary-subtle overflow-hidden">
+                            <div class="card-header bg-secondary-subtle border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <div class="d-flex align-items-center gap-2 flex-wrap">
+                                    <h6 class="mb-0 fw-bold text-secondary">{{ __('Protokol:') }} {{ $delProto }} ({{ $delUser }})</h6>
+                                    <span class="badge bg-danger text-white rounded-pill px-2.5">{{ __('Kadaluarsa & Dihapus') }}</span>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="alert alert-secondary border-0 mb-0 small d-flex align-items-start gap-2.5" style="border-radius: 12px;">
+                                    <i class="fas fa-circle-info fs-5 mt-0.5 text-secondary"></i>
+                                    <div>
+                                        <div class="fw-bold text-body">{{ __('Akun VPN telah kadaluarsa dan sudah dihapus dari sistem.') }}</div>
+                                        <div class="text-muted mt-0.5">
+                                            {{ __('Masa aktif dan masa tenggang 3 hari untuk akun ini telah berakhir sehingga konfigurasi akun dihapus otomatis dari server.') }}
+                                            @if($delExpDate)
+                                                <span class="d-block mt-1">{{ __('Tanggal Kadaluarsa:') }} <strong>{{ $delExpDate }}</strong>@if($delRemovedAt) &bull; {{ __('Dihapus:') }} <strong>{{ $delRemovedAt }}</strong>@endif</span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     @endforeach

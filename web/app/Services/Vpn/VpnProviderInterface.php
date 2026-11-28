@@ -32,6 +32,11 @@ interface VpnProviderInterface
     /**
      * @return array{success: bool, data?: array, message: string}
      */
+    public function updateAccount(string $protocol, string $username, array $payload): array;
+
+    /**
+     * @return array{success: bool, data?: array, message: string}
+     */
     public function renewAccount(string $protocol, string $username, int $days, ?int $quotaGb = null, ?int $ipLimit = null, ?string $idempotencyKey = null): array;
 
     /**

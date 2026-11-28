@@ -5836,42 +5836,42 @@ body.swal2-shown:not(.swal2-toast-shown) .swal2-container:not(.swal2-toast-conta
     }
 
     ::view-transition-group(root) {
-        animation-duration: 230ms;
+        animation-duration: 250ms;
         animation-timing-function: var(--md-sys-motion-easing-emphasized-decelerate);
     }
 
-    /* Constant-Opacity (alpha=1.0): old(root) stays 100% opaque while new(root) glides in immediately at 0ms delay -> zero mid-transition card blink */
+    /* Constant-Opacity (alpha=1.0): old(root) stays opaque while new(root) glides in smoothly at 0ms delay -> zero mid-transition card blink */
     ::view-transition-old(root) {
-        animation: m3VtOldHold 220ms linear both;
+        animation: m3VtOldHold 240ms linear both;
         mix-blend-mode: normal;
     }
 
     ::view-transition-new(root) {
-        animation: m3VtAxisZIn 220ms var(--md-sys-motion-easing-emphasized-decelerate) both;
+        animation: m3VtAxisZIn 240ms var(--md-sys-motion-easing-emphasized-decelerate) both;
         mix-blend-mode: normal;
     }
 
     :root:active-view-transition-type(m3-slide-forward)::view-transition-old(root) {
-        animation: m3VtSlideOutForward 230ms var(--md-sys-motion-easing-emphasized) both;
+        animation: m3VtSlideOutForward 250ms var(--md-sys-motion-easing-emphasized) both;
         mix-blend-mode: normal;
     }
 
     :root:active-view-transition-type(m3-slide-forward)::view-transition-new(root) {
-        animation: m3VtSlideInForward 230ms var(--md-sys-motion-easing-emphasized-decelerate) both;
+        animation: m3VtSlideInForward 250ms var(--md-sys-motion-easing-emphasized-decelerate) both;
         mix-blend-mode: normal;
     }
 
     :root:active-view-transition-type(m3-slide-backward)::view-transition-old(root) {
-        animation: m3VtSlideOutBackward 230ms var(--md-sys-motion-easing-emphasized) both;
+        animation: m3VtSlideOutBackward 250ms var(--md-sys-motion-easing-emphasized) both;
         mix-blend-mode: normal;
     }
 
     :root:active-view-transition-type(m3-slide-backward)::view-transition-new(root) {
-        animation: m3VtSlideInBackward 230ms var(--md-sys-motion-easing-emphasized-decelerate) both;
+        animation: m3VtSlideInBackward 250ms var(--md-sys-motion-easing-emphasized-decelerate) both;
         mix-blend-mode: normal;
     }
 
-    /* Pin Persistent App Shell Across Smartphone & Desktop Viewports (Zero Flicker / Zero Crossfade) */
+    /* Pin Persistent App Shell Across Smartphone & Desktop Viewports (Zero Flicker / Zero Stretch) */
     nav.navbar.fixed-top,
     .pcc-platform-bar,
     .top-navbar {
@@ -5916,6 +5916,16 @@ body.swal2-shown:not(.swal2-toast-shown) .swal2-container:not(.swal2-toast-conta
     ::view-transition-new(m3-top-banner):not(:only-child) {
         animation: none;
         mix-blend-mode: normal;
+        height: 100%;
+        width: 100%;
+        object-fit: none;
+        object-position: bottom center;
+    }
+
+    ::view-transition-new(m3-top-navbar):not(:only-child),
+    ::view-transition-new(m3-sidebar):not(:only-child),
+    ::view-transition-new(m3-top-banner):not(:only-child) {
+        object-position: top left;
     }
 
     ::view-transition-old(m3-top-navbar):not(:only-child),
@@ -5976,28 +5986,51 @@ body.swal2-shown:not(.swal2-toast-shown) .swal2-container:not(.swal2-toast-conta
     }
 
     @keyframes m3VtAxisZIn {
-        from { opacity: 0; transform: translate3d(0, 8px, 0); }
+        from { opacity: 0; transform: translate3d(0, 10px, 0); }
         to { opacity: 1; transform: none; }
     }
 
     @keyframes m3VtSlideOutForward {
         from { opacity: 1; transform: none; }
-        to { opacity: 1; transform: translate3d(-10px, 0, 0); }
+        to { opacity: 0.96; transform: translate3d(-14px, 0, 0); }
     }
 
     @keyframes m3VtSlideInForward {
-        from { opacity: 0; transform: translate3d(16px, 0, 0); }
+        from { opacity: 0; transform: translate3d(20px, 0, 0); }
         to { opacity: 1; transform: none; }
     }
 
     @keyframes m3VtSlideOutBackward {
         from { opacity: 1; transform: none; }
-        to { opacity: 1; transform: translate3d(10px, 0, 0); }
+        to { opacity: 0.96; transform: translate3d(14px, 0, 0); }
     }
 
     @keyframes m3VtSlideInBackward {
-        from { opacity: 0; transform: translate3d(-16px, 0, 0); }
+        from { opacity: 0; transform: translate3d(-20px, 0, 0); }
         to { opacity: 1; transform: none; }
+    }
+
+    /* V10.1b Fluid M3 Expressive Micro-Interactions (Tactile Press, Chip & Nav Transitions) */
+    html:not([data-motion="reduced"]) .mobile-nav-item,
+    html:not([data-motion="reduced"]) .category-filter-chip,
+    html:not([data-motion="reduced"]) .category-scroll-container .btn,
+    html:not([data-motion="reduced"]) .m3-sheet-action-tile,
+    html:not([data-motion="reduced"]) .clickable-product-card {
+        transition:
+            transform 180ms var(--md-sys-motion-easing-emphasized-decelerate),
+            background-color 180ms var(--md-sys-motion-easing-standard),
+            border-color 180ms var(--md-sys-motion-easing-standard),
+            color 160ms var(--md-sys-motion-easing-standard);
+    }
+
+    html:not([data-motion="reduced"]) .mobile-nav-item:active,
+    html:not([data-motion="reduced"]) .category-filter-chip:active,
+    html:not([data-motion="reduced"]) .m3-sheet-action-tile:active {
+        transform: scale(0.96);
+    }
+
+    html:not([data-motion="reduced"]) .clickable-product-card:active {
+        transform: scale(0.985);
     }
 
     /* V10.2 Prevent Page Scroll Under Modal Dialogs & Overlays (No Scroll Chaining) */

@@ -15,3 +15,4 @@ Schedule::command('broadcast:calculate-reads')->everyFiveMinutes();
 Schedule::command('vpn:sync-status')->everyMinute()->withoutOverlapping();
 Schedule::command('vpn:sync-traffic')->everyFiveMinutes()->withoutOverlapping();
 Schedule::command('vpn:notify-expiring')->hourly()->withoutOverlapping();
+Schedule::command('vpn:enforce-expiry-grace')->everyFifteenMinutes()->withoutOverlapping();

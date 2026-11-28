@@ -153,6 +153,18 @@
     </div>
 </div>
 
+@if(($stats['expired_grace'] ?? 0) > 0)
+<div class="alert alert-warning border-0 mb-3 d-flex align-items-start justify-content-between flex-wrap gap-2" style="border-radius: 16px;">
+    <div class="d-flex align-items-start gap-2.5 small">
+        <i class="fas fa-hourglass-half fs-5 mt-0.5 text-warning-emphasis"></i>
+        <div>
+            <div class="fw-bold">{{ __('Ada :count Akun Kadaluarsa (Masa Tenggang 3 Hari)', ['count' => $stats['expired_grace']]) }}</div>
+            <div>{{ __('Akun yang melewati jatuh tempo otomatis disuspend oleh sistem dan tidak dapat dibuka gratis. Klik tombol Perpanjang sebelum 3 hari agar akun kembali aktif dan tidak dihapus permanen.') }}</div>
+        </div>
+    </div>
+</div>
+@endif
+
 @if($stats['admin_suspended'] > 0)
 <div class="alert alert-danger border-0 mb-3 d-flex align-items-start justify-content-between flex-wrap gap-2" style="border-radius: 16px;">
     <div class="d-flex align-items-start gap-2.5 small">
@@ -255,6 +267,7 @@
                 <tbody>
                     @foreach($accounts as $acc)
                     @php
+                        $expiredGrace = $acc->isExpiredGraceSuspended();
                         $systemSuspended = $acc->isSystemSuspended();
                         $adminSuspended = $acc->isAdminSuspended();
                         $chatTargetId = $acc->suspended_by_user_id ?: $defaultAdminId;
@@ -263,6 +276,7 @@
                         $quotaInfo = $acc->getQuotaUsage();
                         $accTraffic = $trafficSummary['per_account'][$acc->id] ?? ['uplink' => 0, 'downlink' => 0, 'total' => 0];
                         $statusLabel = match(true) {
+                            $expiredGrace => __('Suspend Kadaluarsa'),
                             $systemSuspended => __('Disuspend Sistem'),
                             $adminSuspended => __('Disuspend Admin'),
                             $acc->status === 'suspended' => __('Ditangguhkan Mandiri'),
@@ -316,7 +330,12 @@
                             @endif
                         </td>
                         <td>
-                            @if($adminSuspended)
+                            @if($expiredGrace)
+                                <span class="badge bg-danger-subtle text-danger rounded-pill px-2.5 py-1"><i class="fas fa-hourglass-half me-1"></i>{{ __('Suspend Kadaluarsa') }}</span>
+                                @if($acc->suspended_reason)
+                                    <div class="text-danger small mt-0.5" style="font-size: 0.7rem;">{{ $acc->suspended_reason }}</div>
+                                @endif
+                            @elseif($adminSuspended)
                                 <span class="badge bg-danger-subtle text-danger rounded-pill px-2.5 py-1"><i class="fas {{ $systemSuspended ? 'fa-shield-exclamation' : 'fa-lock' }} me-1"></i>{{ $systemSuspended ? __('Disuspend Sistem') : __('Disuspend Admin') }}</span>
                                 @if($acc->suspended_reason)
                                     <div class="text-danger small mt-0.5" style="font-size: 0.7rem;">{{ $acc->suspended_reason }}</div>
@@ -332,7 +351,19 @@
                             @endif
                         </td>
                         <td class="text-end pe-3">
-                            @if($adminSuspended)
+                            @if($expiredGrace)
+                                @php $accPricing = $renewPricing[$acc->id] ?? null; @endphp
+                                <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 fw-semibold btn-renew-my-vpn"
+                                        data-account-id="{{ $acc->id }}"
+                                        data-action="{{ route('vpn.renew', $acc->id) }}"
+                                        data-username="{{ $acc->username }}"
+                                        data-expired-iso="{{ $acc->expired_at ? $acc->expired_at->toIso8601String() : '' }}"
+                                        data-base-price="{{ (int) ($accPricing['base_price'] ?? 0) }}"
+                                        data-base-days="{{ (int) ($accPricing['base_days'] ?? 30) }}"
+                                        title="{{ __('Perpanjang Akun VPN') }}">
+                                    <i class="fas fa-calendar-plus me-1"></i>{{ __('Perpanjang') }}
+                                </button>
+                            @elseif($adminSuspended)
                                 @if($chatTargetId)
                                 <a href="{{ route('chat.index', ['contact_id' => $chatTargetId]) }}" class="btn btn-sm btn-danger rounded-pill px-3 fw-semibold">
                                     <i class="fas fa-comments me-1"></i>{{ __('Minta Buka Suspend via Chat Admin') }}
@@ -433,6 +464,7 @@
     <div class="d-lg-none m3-collapsible-list" id="customerVpnAccordion">
         @foreach($accounts as $acc)
         @php
+            $expiredGrace = $acc->isExpiredGraceSuspended();
             $systemSuspended = $acc->isSystemSuspended();
             $adminSuspended = $acc->isAdminSuspended();
             $chatTargetId = $acc->suspended_by_user_id ?: $defaultAdminId;
@@ -449,6 +481,7 @@
                 default => 'bg-success',
             };
             $statusLabel = match(true) {
+                $expiredGrace => __('Suspend Kadaluarsa'),
                 $systemSuspended => __('Disuspend Sistem'),
                 $adminSuspended => __('Disuspend Admin'),
                 $acc->status === 'suspended' => __('Ditangguhkan Mandiri'),
@@ -474,7 +507,9 @@
                             @endif
                         </div>
                         <div class="text-muted text-truncate" style="font-size: 0.74rem;">
-                            @if($adminSuspended)
+                            @if($expiredGrace)
+                                <span class="text-danger fw-semibold"><i class="fas fa-hourglass-half me-1"></i>{{ __('Suspend Kadaluarsa') }}</span>
+                            @elseif($adminSuspended)
                                 <span class="text-danger fw-semibold"><i class="fas {{ $systemSuspended ? 'fa-shield-exclamation' : 'fa-lock' }} me-1"></i>{{ $systemSuspended ? __('Disuspend Sistem') : __('Disuspend Admin') }}</span>
                             @else
                                 {{ $acc->display_domain }} &bull;
@@ -509,7 +544,24 @@
                         @endif
                     </div>
 
-                    @if($adminSuspended)
+                    @if($expiredGrace)
+                        <div class="alert alert-danger border-0 py-2 px-3 small mb-2.5" style="border-radius: 12px;">
+                            <div class="fw-bold"><i class="fas fa-hourglass-half me-1"></i>{{ __('Akun Kadaluarsa (Masa Tenggang)') }}</div>
+                            @if($acc->suspended_reason)
+                                <div class="mt-0.5">{{ $acc->suspended_reason }}</div>
+                            @endif
+                            <div class="mt-1">{{ __('Akun tidak dapat dibuka secara gratis dan akan dihapus otomatis setelah 3 hari. Perpanjang sekarang untuk langsung mengaktifkan kembali akun Anda.') }}</div>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-primary rounded-pill w-100 fw-semibold py-2 btn-renew-my-vpn"
+                                data-account-id="{{ $acc->id }}"
+                                data-action="{{ route('vpn.renew', $acc->id) }}"
+                                data-username="{{ $acc->username }}"
+                                data-expired-iso="{{ $acc->expired_at ? $acc->expired_at->toIso8601String() : '' }}"
+                                data-base-price="{{ (int) ($accPricing['base_price'] ?? 0) }}"
+                                data-base-days="{{ (int) ($accPricing['base_days'] ?? 30) }}">
+                            <i class="fas fa-calendar-plus me-1"></i>{{ __('Perpanjang') }}
+                        </button>
+                    @elseif($adminSuspended)
                         <div class="alert alert-danger border-0 py-2 px-3 small mb-2.5" style="border-radius: 12px;">
                             <div class="fw-bold"><i class="fas {{ $systemSuspended ? 'fa-shield-exclamation' : 'fa-lock' }} me-1"></i>{{ $systemSuspended ? __('Akun Disuspend Otomatis oleh Sistem') : __('Akun Disuspend oleh Admin') }}</div>
                             @if($acc->suspended_reason)

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style nonce="{{ $cspNonce ?? '' }}">@view-transition { navigation: auto; }</style>
+    <link rel="expect" href="#mobileBottomWrapper" blocking="render">
     <script data-cfasync="false" nonce="{{ $cspNonce ?? '' }}">
         (function() {
             try {

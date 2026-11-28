@@ -395,6 +395,116 @@ class VpnService
         return $res;
     }
 
+    public function updateAccountInfo(VpnAccount $account, array $payload): array
+    {
+        $server = $this->resolveServer($account->vpnServer);
+        if (!$server) {
+            return ['success' => false, 'message' => __('Server VPN untuk akun ini tidak ditemukan.')];
+        }
+
+        $expiryMode = in_array((string) ($payload['expiry_mode'] ?? 'keep'), ['keep', 'add', 'reduce', 'set_date'], true)
+            ? (string) ($payload['expiry_mode'] ?? 'keep')
+            : 'keep';
+        $days = max(0, min(365, (int) ($payload['days'] ?? 0)));
+        $targetDate = isset($payload['expired_at']) && trim((string) $payload['expired_at']) !== ''
+            ? trim((string) $payload['expired_at'])
+            : null;
+        $quotaGb = array_key_exists('quota_gb', $payload) && $payload['quota_gb'] !== null && $payload['quota_gb'] !== ''
+            ? max(0, min(10000, (int) $payload['quota_gb']))
+            : null;
+        $ipLimit = array_key_exists('ip_limit', $payload) && $payload['ip_limit'] !== null && $payload['ip_limit'] !== ''
+            ? max(1, min(50, (int) $payload['ip_limit']))
+            : null;
+        $password = $account->protocol === 'ssh' && isset($payload['password']) && trim((string) $payload['password']) !== ''
+            ? (string) $payload['password']
+            : null;
+        $reactivate = !empty($payload['reactivate']);
+
+        $apiBody = [
+            'expiry_mode' => $expiryMode,
+            'days' => $days,
+            'reactivate' => $reactivate,
+        ];
+        if ($targetDate !== null) {
+            $apiBody['expired_at'] = $targetDate;
+        }
+        if ($quotaGb !== null && $account->protocol !== 'ssh') {
+            $apiBody['quota_gb'] = $quotaGb;
+        }
+        if ($ipLimit !== null) {
+            $apiBody['ip_limit'] = $ipLimit;
+        }
+        if ($password !== null) {
+            $apiBody['password'] = $password;
+        }
+
+        $res = $this->driverFor($server)->updateAccount($account->protocol, $account->username, $apiBody);
+
+        if (!empty($res['success'])) {
+            $data = is_array($res['data'] ?? null) ? $res['data'] : [];
+            $detail = is_array($data['detail'] ?? null) ? $data['detail'] : null;
+
+            $newExp = $account->expired_at;
+            if (!empty($data['expired_at'])) {
+                $newExp = Carbon::parse($data['expired_at'])->endOfDay();
+            } elseif ($expiryMode === 'add' && $days > 0) {
+                $anchor = $account->expired_at && $account->expired_at->isFuture() ? $account->expired_at->copy() : now();
+                $newExp = $anchor->addDays($days)->endOfDay();
+            } elseif ($expiryMode === 'reduce' && $days > 0) {
+                $newExp = ($account->expired_at ? $account->expired_at->copy()->subDays($days) : now())->endOfDay();
+            } elseif ($expiryMode === 'set_date' && $targetDate) {
+                $newExp = Carbon::parse($targetDate)->endOfDay();
+            }
+
+            $remoteStatus = (string) ($data['status'] ?? ($reactivate ? 'active' : $account->status));
+            $update = [
+                'expired_at' => $newExp,
+                'quota_gb' => $quotaGb ?? (int) ($data['quota_gb'] ?? $account->quota_gb),
+                'ip_limit' => $ipLimit ?? max(1, (int) ($data['ip_limit'] ?? $account->ip_limit)),
+                'last_synced_at' => now(),
+                'last_error' => null,
+            ];
+
+            if ($password !== null) {
+                $update['password'] = $password;
+            }
+            if (array_key_exists('purchase_price', $payload) && $payload['purchase_price'] !== null && $payload['purchase_price'] !== '') {
+                $priceInt = max(0, (int) $payload['purchase_price']);
+                $update['purchase_price'] = $priceInt > 0 ? $priceInt : null;
+            }
+            if ($newExp && $newExp->isFuture()) {
+                $update['expiry_notified_stage'] = null;
+                $update['expiry_notified_at'] = null;
+            }
+
+            if ($reactivate || $remoteStatus === 'active') {
+                $update['status'] = 'active';
+                $update['suspended_by_role'] = null;
+                $update['suspended_by_user_id'] = null;
+                $update['suspended_reason'] = null;
+                $update['suspended_at'] = null;
+            } elseif ($remoteStatus === 'suspended') {
+                $update['status'] = 'suspended';
+            }
+
+            if ($detail) {
+                $update['config_payload'] = $detail;
+                if (!empty($detail['formatted_text'])) {
+                    $update['config_link'] = $detail['formatted_text'];
+                }
+                if (!empty($detail['uuid'])) {
+                    $update['uuid'] = $detail['uuid'];
+                }
+            }
+
+            $account->forceFill($update)->save();
+        } else {
+            $account->forceFill(['last_error' => Str::limit((string) ($res['message'] ?? 'Update info failed'), 1000)])->save();
+        }
+
+        return $res;
+    }
+
     public function reduceAccount(
         VpnAccount $account,
         int $days,
@@ -465,15 +575,20 @@ class VpnService
             return ['success' => false, 'message' => __('Server VPN untuk akun ini tidak ditemukan.')];
         }
 
-        $isAdmin = $actorRole === 'admin';
-        $res = $this->driverFor($server)->suspendAccount($account->protocol, $account->username, $reason, $isAdmin);
+        $isLockedRole = in_array($actorRole, ['admin', 'system'], true);
+        $res = $this->driverFor($server)->suspendAccount($account->protocol, $account->username, $reason, $isLockedRole);
 
         if (!empty($res['success'])) {
+            $storedRole = $actorRole === 'system' ? 'system' : ($actorRole === 'admin' ? 'admin' : 'customer');
+            $formattedReason = $storedRole === 'system'
+                ? $this->formatSuspendReason($reason, true)
+                : ($reason ?: ($storedRole === 'admin' ? __('Ditangguhkan oleh Admin') : __('Ditangguhkan mandiri oleh pemilik')));
+
             $account->forceFill([
                 'status' => 'suspended',
-                'suspended_by_role' => $isAdmin ? 'admin' : 'customer',
-                'suspended_by_user_id' => $actorUserId,
-                'suspended_reason' => $reason ?: ($isAdmin ? __('Ditangguhkan oleh Admin') : __('Ditangguhkan mandiri oleh pemilik')),
+                'suspended_by_role' => $storedRole,
+                'suspended_by_user_id' => $storedRole === 'system' ? null : $actorUserId,
+                'suspended_reason' => $formattedReason,
                 'suspended_at' => now(),
                 'last_synced_at' => now(),
                 'last_error' => null,
@@ -592,6 +707,18 @@ class VpnService
                 'detected' => $detected,
                 'limit' => $limit,
             ]);
+        }
+
+        if (preg_match('/^auto-expired:[^:]+(?::exp=([0-9-]+))?(?::grace_until=([0-9-]+))?/i', $raw, $m)) {
+            if (!empty($m[2])) {
+                try {
+                    $until = Carbon::parse($m[2])->format('d M Y');
+                    return __('Kadaluarsa — Masa tenggang hingga :until (hapus otomatis setelah 3 hari)', ['until' => $until]);
+                } catch (\Throwable $e) {
+                    // Fallback below
+                }
+            }
+            return __('Kadaluarsa — Akun disuspend otomatis (masa tenggang 3 hari sebelum dihapus permanen)');
         }
 
         if (str_starts_with($lower, 'auto-quota')) {

@@ -201,6 +201,11 @@
                 <div class="card h-100"><div class="card-body p-3">
                     <div class="text-muted small fw-semibold">{{ __('Suspend / Gagal') }}</div>
                     <div class="fs-4 fw-bold text-warning">{{ $stats['suspended'] }} <span class="fs-6 text-danger fw-semibold">/ {{ $stats['failed'] }}</span></div>
+                    @if(($stats['expired_grace'] ?? 0) > 0)
+                        <a href="{{ route('admin.vpn-accounts.index', ['tab' => 'accounts', 'status' => 'expired_grace', 'traffic_range' => $trafficRange ?? 'all']) }}" class="text-danger fw-semibold text-decoration-none d-inline-block" style="font-size: 0.7rem;">
+                            <i class="fas fa-hourglass-half me-0.5"></i>{{ __(':count masa tenggang', ['count' => $stats['expired_grace']]) }}
+                        </a>
+                    @endif
                 </div></div>
             </div>
             <div class="col col-12 col-md-6 col-xl">
@@ -247,6 +252,7 @@
                             <option value="">{{ __('Semua Status') }}</option>
                             <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>{{ __('Aktif') }}</option>
                             <option value="expiring_soon" {{ request('status') === 'expiring_soon' ? 'selected' : '' }}>{{ __('Hampir Expired (≤ 3 Hari)') }}</option>
+                            <option value="expired_grace" {{ request('status') === 'expired_grace' ? 'selected' : '' }}>{{ __('Suspend Kadaluarsa (3 Hari)') }}</option>
                             <option value="suspended" {{ request('status') === 'suspended' ? 'selected' : '' }}>{{ __('Disuspend') }}</option>
                             <option value="expired" {{ request('status') === 'expired' ? 'selected' : '' }}>{{ __('Expired') }}</option>
                             <option value="failed" {{ request('status') === 'failed' ? 'selected' : '' }}>{{ __('Gagal') }}</option>
@@ -307,6 +313,7 @@
                                 $badge = match(true) {
                                     $acc->status === 'failed' => ['bg' => 'danger-subtle', 'text' => 'danger', 'label' => __('Gagal')],
                                     $acc->status === 'provisioning' => ['bg' => 'info-subtle', 'text' => 'info', 'label' => __('Provisioning')],
+                                    $acc->isExpiredGraceSuspended() => ['bg' => 'danger-subtle', 'text' => 'danger', 'label' => __('Suspend Kadaluarsa')],
                                     $acc->isSystemSuspended() => ['bg' => 'danger-subtle', 'text' => 'danger', 'label' => __('Suspend Sistem')],
                                     $acc->isAdminSuspended() => ['bg' => 'danger-subtle', 'text' => 'danger', 'label' => __('Suspend Admin')],
                                     $acc->status === 'suspended' => ['bg' => 'warning-subtle', 'text' => 'warning-emphasis', 'label' => __('Suspend User')],
@@ -386,15 +393,19 @@
                                                 </button>
                                             </form>
                                         @else
-                                            <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-2.5 fw-semibold btn-open-renew"
-                                                    data-action="{{ route('admin.vpn-accounts.renew', $acc->id) }}"
+                                            <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-2.5 fw-semibold btn-open-edit-vpn"
+                                                    data-action="{{ route('admin.vpn-accounts.update-info', $acc->id) }}"
                                                     data-username="{{ $acc->username }}"
+                                                    data-protocol="{{ strtolower($acc->protocol) }}"
+                                                    data-status="{{ $acc->status }}"
                                                     data-quota="{{ $acc->quota_gb ?? 0 }}"
                                                     data-ip="{{ max(1, (int) ($acc->ip_limit ?? 1)) }}"
+                                                    data-purchase-price="{{ (int) ($acc->purchase_price ?? 0) }}"
                                                     data-expired-iso="{{ $acc->expired_at ? $acc->expired_at->toIso8601String() : '' }}"
+                                                    data-expired-ymd="{{ $acc->expired_at ? $acc->expired_at->format('Y-m-d') : '' }}"
                                                     data-expired-label="{{ $acc->expired_at ? $acc->expired_at->format('d M Y') : '-' }}"
-                                                    title="{{ __('Perpanjang') }}">
-                                                <i class="fas fa-calendar-plus me-1"></i>{{ __('Perpanjang') }}
+                                                    title="{{ __('Ubah Info Akun VPN') }}">
+                                                <i class="fas fa-sliders me-1"></i>{{ __('Ubah Info') }}
                                             </button>
                                         @endif
 
@@ -542,6 +553,7 @@
                     $statusLabel = match(true) {
                         $acc->status === 'failed' => __('Gagal'),
                         $acc->status === 'provisioning' => __('Provisioning'),
+                        $acc->isExpiredGraceSuspended() => __('Suspend Kadaluarsa'),
                         $acc->isSystemSuspended() => __('Suspend Sistem'),
                         $acc->isAdminSuspended() => __('Suspend Admin'),
                         $acc->status === 'suspended' => __('Suspend User'),
@@ -605,14 +617,18 @@
                                         <button type="submit" class="btn btn-sm btn-warning rounded-pill w-100 fw-semibold py-2"><i class="fas fa-redo me-1"></i>{{ __('Retry Provisioning') }}</button>
                                     </form>
                                 @else
-                                    <button type="button" class="btn btn-sm btn-primary rounded-pill flex-grow-1 fw-semibold py-2 btn-open-renew"
-                                            data-action="{{ route('admin.vpn-accounts.renew', $acc->id) }}"
+                                    <button type="button" class="btn btn-sm btn-primary rounded-pill flex-grow-1 fw-semibold py-2 btn-open-edit-vpn"
+                                            data-action="{{ route('admin.vpn-accounts.update-info', $acc->id) }}"
                                             data-username="{{ $acc->username }}"
+                                            data-protocol="{{ strtolower($acc->protocol) }}"
+                                            data-status="{{ $acc->status }}"
                                             data-quota="{{ $acc->quota_gb ?? 0 }}"
                                             data-ip="{{ max(1, (int) ($acc->ip_limit ?? 1)) }}"
+                                            data-purchase-price="{{ (int) ($acc->purchase_price ?? 0) }}"
                                             data-expired-iso="{{ $acc->expired_at ? $acc->expired_at->toIso8601String() : '' }}"
+                                            data-expired-ymd="{{ $acc->expired_at ? $acc->expired_at->format('Y-m-d') : '' }}"
                                             data-expired-label="{{ $acc->expired_at ? $acc->expired_at->format('d M Y') : '-' }}">
-                                        <i class="fas fa-calendar-plus me-1"></i>{{ __('Perpanjang') }}
+                                        <i class="fas fa-sliders me-1"></i>{{ __('Ubah Info') }}
                                     </button>
                                 @endif
                                 <button type="button" class="btn btn-sm btn-light border rounded-pill px-3 py-2 fw-semibold d-inline-flex align-items-center gap-1.5 flex-shrink-0 btn-open-admin-vpn-sheet"
@@ -1072,7 +1088,7 @@
                         <div class="col-4">
                             <div class="p-2.5 rounded-4 border text-center" style="background: var(--surface-container-low);">
                                 <div class="text-muted" style="font-size: 0.7rem;">{{ __('Strike Limit') }}</div>
-                                <div class="fs-5 fw-bold text-warning-emphasis" id="devLogStrikeCount">0 / 5</div>
+                                <div class="fs-5 fw-bold text-warning-emphasis" id="devLogStrikeCount">0 / 4</div>
                             </div>
                         </div>
                     </div>
@@ -1441,52 +1457,121 @@
 </div>
 
 {{-- ===================================================================== --}}
-{{-- RENEW MODAL WITH QUICK-PRESET (+1, +7, +30, +60) & EXPIRY PREVIEW     --}}
+{{-- EDIT VPN ACCOUNT INFO MODAL (EXPIRY MODE + LIMIT IP + QUOTA + SSH)    --}}
 {{-- ===================================================================== --}}
-<div class="modal fade" id="adminRenewVpnModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="adminEditVpnInfoModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered m3-sheet-modal">
-        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 22px;">
             <div class="m3-sheet-handle d-md-none"></div>
             <div class="modal-header border-0 pb-1">
-                <h5 class="modal-title fw-bold"><i class="fas fa-calendar-plus text-primary me-2"></i>{{ __('Perpanjang Akun VPN') }}</h5>
+                <div>
+                    <h5 class="modal-title fw-bold mb-0"><i class="fas fa-sliders text-primary me-2"></i>{{ __('Ubah Info Akun VPN') }}</h5>
+                    <div class="small text-muted" id="editVpnModalSub">-</div>
+                </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form id="adminRenewForm" method="POST">
+            <form id="adminEditVpnInfoForm" method="POST">
                 @csrf
+                <input type="hidden" name="expiry_mode" id="editVpnExpiryMode" value="keep">
                 <div class="modal-body pt-2">
-                    <div class="mb-2.5">
-                        <label class="form-label small fw-bold">{{ __('Username') }}</label>
-                        <input type="text" id="renewModalUsername" class="form-control font-monospace" readonly>
-                    </div>
-                    <div class="mb-2.5">
-                        <label class="form-label small fw-bold">{{ __('Tambah Durasi (Hari)') }} <span class="text-danger">*</span></label>
-                        <input type="number" name="days" id="adminRenewDaysInput" class="form-control mb-2" value="30" min="1" max="365" required>
-                        <div class="d-flex flex-wrap gap-1.5">
-                            @foreach([1, 7, 30, 60] as $preset)
-                            <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-semibold btn-admin-renew-preset {{ $preset === 30 ? 'active' : '' }}" data-days="{{ $preset }}">
-                                +{{ $preset }} {{ __('Hari') }}
-                            </button>
-                            @endforeach
+                    <div class="p-2.5 rounded-4 border mb-3 d-flex align-items-center justify-content-between gap-2" style="background: var(--surface-container-low);">
+                        <div class="min-w-0">
+                            <div class="text-muted" style="font-size: 0.72rem;">{{ __('Username Akun') }}</div>
+                            <div class="fw-bold text-body font-monospace" id="editVpnUsernameDisplay">-</div>
                         </div>
+                        <div class="text-end flex-shrink-0">
+                            <span class="badge bg-primary-subtle text-primary rounded-pill text-uppercase" id="editVpnProtoBadge">-</span>
+                            <div class="text-muted mt-0.5" style="font-size: 0.7rem;">Exp: <strong class="text-body" id="editVpnCurrentExpLabel">-</strong></div>
+                        </div>
+                    </div>
+
+                    {{-- Pengaturan Masa Aktif (4 Mode) --}}
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold d-block mb-1.5">{{ __('Pengaturan Masa Aktif') }}</label>
+                        <div class="row g-1.5 mb-2" role="group" aria-label="{{ __('Mode Masa Aktif') }}">
+                            <div class="col-6 col-sm-3">
+                                <button type="button" class="btn btn-sm btn-primary rounded-pill w-100 fw-semibold btn-edit-vpn-mode active" data-mode="keep">{{ __('Tetap') }}</button>
+                            </div>
+                            <div class="col-6 col-sm-3">
+                                <button type="button" class="btn btn-sm btn-light border text-body rounded-pill w-100 fw-semibold btn-edit-vpn-mode" data-mode="add"><i class="fas fa-plus me-1 text-success"></i>{{ __('Tambah') }}</button>
+                            </div>
+                            <div class="col-6 col-sm-3">
+                                <button type="button" class="btn btn-sm btn-light border text-body rounded-pill w-100 fw-semibold btn-edit-vpn-mode" data-mode="reduce"><i class="fas fa-minus me-1 text-danger"></i>{{ __('Kurangi') }}</button>
+                            </div>
+                            <div class="col-6 col-sm-3">
+                                <button type="button" class="btn btn-sm btn-light border text-body rounded-pill w-100 fw-semibold btn-edit-vpn-mode" data-mode="set_date"><i class="fas fa-calendar-day me-1 text-primary"></i>{{ __('Tanggal') }}</button>
+                            </div>
+                        </div>
+
+                        <div id="editVpnDaysWrap" class="d-none">
+                            <label class="form-label small fw-semibold mb-1" id="editVpnDaysLabel">{{ __('Jumlah Hari') }}</label>
+                            <input type="number" name="days" id="editVpnDaysInput" class="form-control mb-2" value="30" min="0" max="365">
+                            <div id="editVpnAddPresets" class="d-flex flex-wrap gap-1.5">
+                                @foreach([1, 7, 30, 60] as $preset)
+                                <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-3 fw-semibold btn-edit-vpn-preset" data-days="{{ $preset }}">+{{ $preset }} {{ __('Hari') }}</button>
+                                @endforeach
+                            </div>
+                            <div id="editVpnReducePresets" class="d-flex flex-wrap gap-1.5 d-none">
+                                @foreach([1, 3, 7, 14, 30] as $preset)
+                                <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-semibold btn-edit-vpn-preset" data-days="{{ $preset }}">-{{ $preset }} {{ __('Hari') }}</button>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        <div id="editVpnDateWrap" class="d-none">
+                            <label class="form-label small fw-semibold mb-1">{{ __('Tanggal Expired Baru') }}</label>
+                            <input type="date" name="expired_at" id="editVpnDateInput" class="form-control">
+                        </div>
+
                         <div class="mt-2 p-2.5 rounded-3 border small d-flex align-items-center justify-content-between" style="background: var(--surface-container-low);">
                             <span class="text-muted">{{ __('Estimasi Expired Baru:') }}</span>
-                            <strong class="text-primary" id="adminRenewExpiryPreview">-</strong>
+                            <strong class="text-primary" id="editVpnExpiryPreview">-</strong>
                         </div>
                     </div>
-                    <div class="row g-2">
-                        <div class="col-6">
-                            <label class="form-label small fw-bold">{{ __('Kuota (GB)') }}</label>
-                            <input type="number" name="quota_gb" id="renewModalQuota" class="form-control" min="0" max="10000">
+
+                    {{-- Limit IP & Kuota --}}
+                    <div class="row g-2 mb-2.5">
+                        <div class="col-6" id="editVpnQuotaWrap">
+                            <label class="form-label small fw-bold">{{ __('Kuota (GB, 0=Unli)') }}</label>
+                            <input type="number" name="quota_gb" id="editVpnQuotaInput" class="form-control" min="0" max="10000">
                         </div>
-                        <div class="col-6">
-                            <label class="form-label small fw-bold">{{ __('Limit IP') }}</label>
-                            <input type="number" name="ip_limit" id="renewModalIp" class="form-control" min="1" max="50">
+                        <div class="col-6" id="editVpnIpCol">
+                            <label class="form-label small fw-bold">{{ __('Limit IP / Device') }}</label>
+                            <input type="number" name="ip_limit" id="editVpnIpInput" class="form-control" min="1" max="50">
+                        </div>
+                    </div>
+
+                    {{-- Password SSH Baru (Khusus SSH) --}}
+                    <div class="mb-2.5 d-none" id="editVpnSshPassWrap">
+                        <label class="form-label small fw-bold">{{ __('Password SSH Baru (Opsional)') }}</label>
+                        <input type="text" name="password" id="editVpnSshPassInput" class="form-control font-monospace" minlength="3" maxlength="64" placeholder="{{ __('Kosongkan jika tidak ingin mengganti password') }}" autocomplete="off">
+                    </div>
+
+                    {{-- Harga Acuan Perpanjangan --}}
+                    <div class="mb-2.5">
+                        <label class="form-label small fw-bold">{{ __('Harga Acuan Perpanjangan (Rp, Opsional)') }}</label>
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text fw-bold">Rp</span>
+                            <input type="number" name="purchase_price" id="editVpnPriceInput" class="form-control" min="0" max="100000000" placeholder="{{ __('Biarkan kosong untuk ikut tarif default') }}">
+                        </div>
+                    </div>
+
+                    {{-- Toggle Aktifkan Kembali jika Suspended --}}
+                    <div id="editVpnReactivateWrap" class="p-2.5 rounded-4 border mt-2 d-none" style="background: var(--surface-container-low);">
+                        <div class="form-check form-switch mb-0">
+                            <input type="hidden" name="reactivate" value="0">
+                            <input class="form-check-input" type="checkbox" role="switch" name="reactivate" value="1" id="editVpnReactivateCheck">
+                            <label class="form-check-label small fw-semibold" for="editVpnReactivateCheck">
+                                <i class="fas fa-play text-success me-1"></i>{{ __('Aktifkan kembali akun & reset strike limit') }}
+                            </label>
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer border-0 pt-1">
                     <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">{{ __('Batal') }}</button>
-                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold">{{ __('Perpanjang Sekarang') }}</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold">
+                        <i class="fas fa-check me-1"></i>{{ __('Simpan Perubahan') }}
+                    </button>
                 </div>
             </form>
         </div>
@@ -2347,48 +2432,170 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // =========================================================================
-    // 4. RENEW MODAL WITH QUICK-PRESETS (+1, +7, +30, +60) & LIVE PREVIEW
+    // 4. EDIT VPN ACCOUNT INFO MODAL (TETAP / TAMBAH / KURANGI / TANGGAL + LIMIT)
     // =========================================================================
-    let renewBaseExpiryDate = null;
-    const renewDaysInput = document.getElementById('adminRenewDaysInput');
-    const renewPreviewEl = document.getElementById('adminRenewExpiryPreview');
+    let editVpnBaseExpiryDate = null;
+    let editVpnBaseExpiredLabel = '-';
+    const editVpnForm = document.getElementById('adminEditVpnInfoForm');
+    const editVpnModeInput = document.getElementById('editVpnExpiryMode');
+    const editVpnDaysWrap = document.getElementById('editVpnDaysWrap');
+    const editVpnDaysLabel = document.getElementById('editVpnDaysLabel');
+    const editVpnDaysInput = document.getElementById('editVpnDaysInput');
+    const editVpnAddPresets = document.getElementById('editVpnAddPresets');
+    const editVpnReducePresets = document.getElementById('editVpnReducePresets');
+    const editVpnDateWrap = document.getElementById('editVpnDateWrap');
+    const editVpnDateInput = document.getElementById('editVpnDateInput');
+    const editVpnPreviewEl = document.getElementById('editVpnExpiryPreview');
+    const editVpnReactivateWrap = document.getElementById('editVpnReactivateWrap');
+    const editVpnReactivateCheck = document.getElementById('editVpnReactivateCheck');
 
-    function updateAdminRenewPreview() {
-        if (!renewDaysInput || !renewPreviewEl) return;
-        const days = Math.max(1, parseInt(renewDaysInput.value || '0', 10) || 0);
+    function formatIdShortDate(dt) {
+        if (!dt || isNaN(dt.getTime())) return '-';
+        return dt.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+    }
+
+    function updateEditVpnPreview() {
+        if (!editVpnPreviewEl) return;
+        const mode = editVpnModeInput ? editVpnModeInput.value : 'keep';
         const now = new Date();
-        const base = (renewBaseExpiryDate && renewBaseExpiryDate > now) ? new Date(renewBaseExpiryDate.getTime()) : now;
-        base.setDate(base.getDate() + days);
-        renewPreviewEl.textContent = base.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
 
-        document.querySelectorAll('.btn-admin-renew-preset').forEach(function (pBtn) {
-            pBtn.classList.toggle('active', parseInt(pBtn.dataset.days, 10) === days);
+        if (mode === 'keep') {
+            editVpnPreviewEl.textContent = editVpnBaseExpiredLabel + ' ({{ __("Tidak berubah") }})';
+            return;
+        }
+        if (mode === 'set_date') {
+            const raw = editVpnDateInput ? editVpnDateInput.value : '';
+            if (!raw) {
+                editVpnPreviewEl.textContent = '-';
+                return;
+            }
+            const parsed = new Date(raw + 'T23:59:59');
+            editVpnPreviewEl.textContent = formatIdShortDate(parsed);
+            return;
+        }
+
+        const days = Math.max(0, parseInt(editVpnDaysInput?.value || '0', 10) || 0);
+        if (days < 1) {
+            editVpnPreviewEl.textContent = editVpnBaseExpiredLabel;
+            return;
+        }
+
+        if (mode === 'add') {
+            const base = (editVpnBaseExpiryDate && editVpnBaseExpiryDate > now) ? new Date(editVpnBaseExpiryDate.getTime()) : new Date(now.getTime());
+            base.setDate(base.getDate() + days);
+            editVpnPreviewEl.textContent = formatIdShortDate(base);
+        } else if (mode === 'reduce') {
+            const base = editVpnBaseExpiryDate ? new Date(editVpnBaseExpiryDate.getTime()) : new Date(now.getTime());
+            base.setDate(base.getDate() - days);
+            if (base < now) {
+                editVpnPreviewEl.textContent = formatIdShortDate(now) + ' ({{ __("Hari ini") }})';
+            } else {
+                editVpnPreviewEl.textContent = formatIdShortDate(base);
+            }
+        }
+    }
+
+    function setEditVpnMode(mode) {
+        if (editVpnModeInput) editVpnModeInput.value = mode;
+        document.querySelectorAll('.btn-edit-vpn-mode').forEach(function (b) {
+            const isActive = b.dataset.mode === mode;
+            b.classList.toggle('active', isActive);
+            b.classList.toggle('btn-primary', isActive);
+            b.classList.toggle('btn-light', !isActive);
+            b.classList.toggle('border', !isActive);
+            b.classList.toggle('text-body', !isActive);
         });
+
+        const isDaysMode = mode === 'add' || mode === 'reduce';
+        editVpnDaysWrap?.classList.toggle('d-none', !isDaysMode);
+        editVpnDateWrap?.classList.toggle('d-none', mode !== 'set_date');
+        editVpnAddPresets?.classList.toggle('d-none', mode !== 'add');
+        editVpnReducePresets?.classList.toggle('d-none', mode !== 'reduce');
+
+        if (editVpnDaysInput) {
+            editVpnDaysInput.required = isDaysMode;
+            editVpnDaysInput.min = isDaysMode ? '1' : '0';
+            if (isDaysMode && (!editVpnDaysInput.value || parseInt(editVpnDaysInput.value, 10) < 1)) {
+                editVpnDaysInput.value = mode === 'add' ? '30' : '7';
+            }
+        }
+        if (editVpnDaysLabel) {
+            editVpnDaysLabel.textContent = mode === 'reduce' ? '{{ __("Kurangi Masa Aktif (Hari)") }}' : '{{ __("Tambah Masa Aktif (Hari)") }}';
+        }
+        if (editVpnDateInput) {
+            editVpnDateInput.required = mode === 'set_date';
+        }
+
+        if (mode === 'add' && editVpnReactivateWrap && !editVpnReactivateWrap.classList.contains('d-none') && editVpnReactivateCheck) {
+            editVpnReactivateCheck.checked = true;
+        }
+        updateEditVpnPreview();
     }
 
-    if (renewDaysInput) {
-        renewDaysInput.addEventListener('input', updateAdminRenewPreview);
-    }
+    document.querySelectorAll('.btn-edit-vpn-mode').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            setEditVpnMode(this.dataset.mode || 'keep');
+        });
+    });
 
-    document.querySelectorAll('.btn-admin-renew-preset').forEach(function (pBtn) {
-        pBtn.addEventListener('click', function () {
-            if (renewDaysInput) {
-                renewDaysInput.value = this.dataset.days;
-                updateAdminRenewPreview();
+    document.querySelectorAll('.btn-edit-vpn-preset').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            if (editVpnDaysInput) {
+                editVpnDaysInput.value = this.dataset.days;
+                updateEditVpnPreview();
             }
         });
     });
 
-    document.querySelectorAll('.btn-open-renew').forEach(function (btn) {
+    editVpnDaysInput?.addEventListener('input', updateEditVpnPreview);
+    editVpnDateInput?.addEventListener('change', updateEditVpnPreview);
+
+    document.querySelectorAll('.btn-open-edit-vpn').forEach(function (btn) {
         btn.addEventListener('click', function () {
-            document.getElementById('adminRenewForm').action = this.dataset.action;
-            document.getElementById('renewModalUsername').value = this.dataset.username || '';
-            document.getElementById('renewModalQuota').value = this.dataset.quota || 0;
-            document.getElementById('renewModalIp').value = this.dataset.ip || 1;
-            renewBaseExpiryDate = this.dataset.expiredIso ? new Date(this.dataset.expiredIso) : null;
-            if (renewDaysInput) renewDaysInput.value = 30;
-            updateAdminRenewPreview();
-            bootstrap.Modal.getOrCreateInstance(document.getElementById('adminRenewVpnModal')).show();
+            if (!editVpnForm) return;
+            const proto = (this.dataset.protocol || '').toLowerCase();
+            const isSsh = proto === 'ssh';
+            const isSuspended = (this.dataset.status || '') === 'suspended';
+
+            editVpnForm.action = this.dataset.action || '';
+            document.getElementById('editVpnUsernameDisplay').textContent = this.dataset.username || '-';
+            document.getElementById('editVpnProtoBadge').textContent = proto.toUpperCase() || '-';
+            document.getElementById('editVpnModalSub').textContent = '{{ __("Sesuaikan masa aktif, limit perangkat, kuota, dan pengaturan akun.") }}';
+            editVpnBaseExpiredLabel = this.dataset.expiredLabel || '-';
+            document.getElementById('editVpnCurrentExpLabel').textContent = editVpnBaseExpiredLabel;
+            editVpnBaseExpiryDate = this.dataset.expiredIso ? new Date(this.dataset.expiredIso) : null;
+
+            if (editVpnDateInput) {
+                editVpnDateInput.value = this.dataset.expiredYmd || '';
+            }
+            const quotaWrap = document.getElementById('editVpnQuotaWrap');
+            const ipCol = document.getElementById('editVpnIpCol');
+            const quotaInput = document.getElementById('editVpnQuotaInput');
+            if (quotaWrap) quotaWrap.classList.toggle('d-none', isSsh);
+            if (ipCol) ipCol.className = isSsh ? 'col-12' : 'col-6';
+            if (quotaInput) quotaInput.value = this.dataset.quota || 0;
+
+            const ipInput = document.getElementById('editVpnIpInput');
+            if (ipInput) ipInput.value = this.dataset.ip || 1;
+
+            const sshWrap = document.getElementById('editVpnSshPassWrap');
+            const sshInput = document.getElementById('editVpnSshPassInput');
+            if (sshWrap) sshWrap.classList.toggle('d-none', !isSsh);
+            if (sshInput) sshInput.value = '';
+
+            const priceInput = document.getElementById('editVpnPriceInput');
+            if (priceInput) {
+                const pv = parseInt(this.dataset.purchasePrice || '0', 10) || 0;
+                priceInput.value = pv > 0 ? pv : '';
+            }
+
+            if (editVpnReactivateWrap && editVpnReactivateCheck) {
+                editVpnReactivateWrap.classList.toggle('d-none', !isSuspended);
+                editVpnReactivateCheck.checked = false;
+            }
+
+            setEditVpnMode('keep');
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('adminEditVpnInfoModal')).show();
         });
     });
 
@@ -2823,8 +3030,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
             document.getElementById('devLogRecentCount').textContent = String(data.recent_device_count || 0);
             const strikes = parseInt(data.current_strikes || 0, 10);
+            const reqStrikes = parseInt(data.required_strikes || 4, 10);
             const strikeEl = document.getElementById('devLogStrikeCount');
-            strikeEl.textContent = strikes + ' / 5';
+            strikeEl.textContent = strikes + ' / ' + reqStrikes;
             strikeEl.className = 'fs-5 fw-bold ' + (strikes > 0 ? 'text-danger' : 'text-muted');
 
             const devices = Array.isArray(data.devices) ? data.devices : [];
