@@ -156,3 +156,4 @@ class EnforceVpnExpiryGrace extends Command
         return self::SUCCESS;
     }
 }
+
