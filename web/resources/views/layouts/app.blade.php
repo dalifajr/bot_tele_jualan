@@ -10,6 +10,9 @@
                 var savedTheme = localStorage.getItem('jualan-theme') || (document.cookie.match(/(?:^|; )jualan-theme=([^;]*)/) || [])[1] || 'light';
                 document.documentElement.setAttribute('data-bs-theme', savedTheme);
                 document.documentElement.style.colorScheme = savedTheme;
+                if (localStorage.getItem('jualan-motion') === 'reduced') {
+                    document.documentElement.setAttribute('data-motion', 'reduced');
+                }
                 if (!document.cookie.includes('jualan-theme=' + savedTheme)) {
                     document.cookie = "jualan-theme=" + savedTheme + ";path=/;max-age=31536000;SameSite=Lax";
                 }
@@ -165,11 +168,6 @@
                         root.style.setProperty('--bs-border-color', 'hsl(' + h + ', 20%, 82%)');
                     }
 
-                    if (document.body) {
-                        document.body.style.backgroundColor = bgVal;
-                        document.body.style.color = onSurface;
-                    }
-
                     // 2. Legacy / Derivative Tokens (Keep canvas --surface distinct from card --surface-container-lowest)
                     root.style.setProperty('--cm-sys-color-container-primary', root.style.getPropertyValue('--primary-container'));
                     root.style.setProperty('--cm-sys-color-primary-on-container', root.style.getPropertyValue('--on-primary-container'));
@@ -181,19 +179,11 @@
                     root.style.setProperty('--cm-sys-color-outline', root.style.getPropertyValue('--outline'));
                 };
 
-                // Apply saved user palette immediately
+                // Apply saved user palette synchronously once in <head> (zero DOMContentLoaded repaint blink)
                 var userPalette = @json(Auth::check() && Auth::user()->theme_color ? Auth::user()->theme_color : null) || localStorage.getItem('user_primary_palette');
                 if (userPalette) {
                     window.applyMaterialYouTheme(userPalette, savedTheme === 'dark');
                 }
-
-                document.addEventListener('DOMContentLoaded', function() {
-                    var p = @json(Auth::check() && Auth::user()->theme_color ? Auth::user()->theme_color : null) || localStorage.getItem('user_primary_palette');
-                    if (p && typeof window.applyMaterialYouTheme === 'function') {
-                        var dark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
-                        window.applyMaterialYouTheme(p, dark);
-                    }
-                });
             } catch (e) {}
         })();
     </script>
@@ -352,10 +342,12 @@
     {{-- Custom SIMAK-style CSS --}}
     <link href="{{ asset('css/app.css') }}?v={{ filemtime(public_path('css/app.css')) }}" rel="stylesheet">
 
-    {{-- Directional MPA view transition classifier + ready.catch() directional fallback (Cloudflare-safe) --}}
+    {{-- Directional MPA view transition classifier + synchronous zero-blink fallback (Chrome Android & Cloudflare safe) --}}
     <script data-cfasync="false" nonce="{{ $cspNonce ?? '' }}">
         (function () {
-            var REDUCED_MOTION = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+            function isAppMotionReduced() {
+                return document.documentElement.getAttribute('data-motion') === 'reduced';
+            }
 
             function getNavSlot(pathname) {
                 var p = (pathname || '/').replace(/\/+$/, '') || '/';
@@ -424,6 +416,27 @@
                 if (loader) loader.classList.add('fade-out');
             }
 
+            function saveSidebarScroll() {
+                try {
+                    var sb = document.getElementById('sidebar');
+                    if (sb && window.innerWidth >= 992) {
+                        sessionStorage.setItem('m3_sidebar_scroll', String(sb.scrollTop || 0));
+                    }
+                } catch (err) {}
+            }
+
+            function restoreSidebarScroll() {
+                try {
+                    var sb = document.getElementById('sidebar');
+                    if (sb && window.innerWidth >= 992) {
+                        var saved = sessionStorage.getItem('m3_sidebar_scroll');
+                        if (saved !== null) {
+                            sb.scrollTop = parseInt(saved, 10) || 0;
+                        }
+                    }
+                } catch (err) {}
+            }
+
             var fallbackTimer = null;
             function clearFallbackEnter() {
                 if (fallbackTimer) {
@@ -434,14 +447,15 @@
             }
 
             function triggerFallbackEnter(type, reason) {
+                var reduced = isAppMotionReduced();
                 var resolvedType = type || 'm3-cross-fade';
                 window.__m3LastTransition = {
                     mode: 'fallback',
                     type: resolvedType,
                     reason: reason || 'no-vt',
-                    reducedMotion: REDUCED_MOTION
+                    reducedMotion: reduced
                 };
-                if (REDUCED_MOTION) return;
+                if (reduced) return;
 
                 var root = document.documentElement;
                 var dirClass = resolvedType === 'm3-slide-forward'
@@ -452,7 +466,7 @@
                 root.classList.add('m3-page-enter', dirClass);
 
                 if (fallbackTimer) clearTimeout(fallbackTimer);
-                fallbackTimer = setTimeout(clearFallbackEnter, 360);
+                fallbackTimer = setTimeout(clearFallbackEnter, 300);
 
                 var bindCleanup = function () {
                     var mainEl = document.getElementById('m3MainContent');
@@ -473,7 +487,12 @@
                 window.addEventListener('pageswap', function (e) {
                     hidePageLoaderNow();
                     clearFallbackEnter();
-                    if (!REDUCED_MOTION && e.viewTransition && e.activation && e.activation.from && e.activation.entry) {
+                    saveSidebarScroll();
+                    var animPills = document.querySelectorAll('.mobile-nav-item.is-pill-animating');
+                    for (var i = 0; i < animPills.length; i++) {
+                        animPills[i].classList.remove('is-pill-animating');
+                    }
+                    if (!isAppMotionReduced() && e.viewTransition && e.activation && e.activation.from && e.activation.entry) {
                         var t = computeTransitionType(
                             e.activation.from.url,
                             e.activation.entry.url,
@@ -491,8 +510,9 @@
             if ('onpagereveal' in window) {
                 window.addEventListener('pagereveal', function (e) {
                     hidePageLoaderNow();
+                    restoreSidebarScroll();
                     var t = resolveRevealDirection();
-                    if (!REDUCED_MOTION && e.viewTransition) {
+                    if (!isAppMotionReduced() && e.viewTransition) {
                         clearFallbackEnter();
                         if (e.viewTransition.types && typeof e.viewTransition.types.add === 'function') {
                             e.viewTransition.types.add(t);
@@ -502,11 +522,6 @@
                             type: t,
                             reducedMotion: false
                         };
-                        if (e.viewTransition.ready && typeof e.viewTransition.ready.catch === 'function') {
-                            e.viewTransition.ready.catch(function () {
-                                triggerFallbackEnter(t, 'vt-ready-rejected');
-                            });
-                        }
                     } else {
                         triggerFallbackEnter(t, e.viewTransition ? 'reduced-motion' : 'no-vt');
                     }
@@ -517,6 +532,7 @@
 
             window.addEventListener('pageshow', function (e) {
                 hidePageLoaderNow();
+                restoreSidebarScroll();
                 if (e.persisted) {
                     clearFallbackEnter();
                 }
@@ -1102,7 +1118,7 @@
 
         {{-- Theme Toggle --}}
         <button class="btn btn-link link-body-emphasis m3-icon-btn me-1" id="themeToggle" title="{{ __('Toggle Theme') }}" aria-label="{{ __('Ganti Tema') }}">
-            <i class="fas fa-moon" style="font-size: 0.95rem;" id="themeIcon"></i>
+            <i class="fas {{ request()->cookie('jualan-theme') === 'dark' ? 'fa-sun' : 'fa-moon' }}" style="font-size: 0.95rem;" id="themeIcon"></i>
         </button>
 
         {{-- User Avatar Dropdown (Desktop >= 992px) - Figma M3 Style --}}
@@ -1149,7 +1165,14 @@
     </div>
 </nav>
 
-<div class="app-container">
+<div class="app-container" id="m3AppContainer">
+    <script data-cfasync="false" nonce="{{ $cspNonce ?? '' }}">
+        try {
+            if (window.innerWidth >= 992 && (localStorage.getItem('jualan-sidebar-collapsed') === 'true' || localStorage.getItem('cfc_sidebar_collapsed') === '1')) {
+                document.getElementById('m3AppContainer').classList.add('sidebar-collapsed');
+            }
+        } catch (e) {}
+    </script>
     @unless($hideSidebar)
     {{-- Sidebar (Desktop Column / Mobile Card Sheet) --}}
     <div id="sidebar" class="sidebar" style="z-index: 1040; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; -ms-overflow-style: none;">
@@ -1631,6 +1654,17 @@
             </div>
         </div>
     </div>
+    <script data-cfasync="false" nonce="{{ $cspNonce ?? '' }}">
+        try {
+            if (window.innerWidth >= 992) {
+                var savedSbScroll = sessionStorage.getItem('m3_sidebar_scroll');
+                if (savedSbScroll !== null) {
+                    var sbEl = document.getElementById('sidebar');
+                    if (sbEl) sbEl.scrollTop = parseInt(savedSbScroll, 10) || 0;
+                }
+            }
+        } catch (e) {}
+    </script>
     @endunless
 
     {{-- Main Content --}}

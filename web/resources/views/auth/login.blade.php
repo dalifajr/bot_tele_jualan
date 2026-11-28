@@ -9,6 +9,9 @@
                 var savedTheme = localStorage.getItem('jualan-theme') || (document.cookie.match(/(?:^|; )jualan-theme=([^;]*)/) || [])[1] || 'light';
                 document.documentElement.setAttribute('data-bs-theme', savedTheme);
                 document.documentElement.style.colorScheme = savedTheme;
+                if (localStorage.getItem('jualan-motion') === 'reduced') {
+                    document.documentElement.setAttribute('data-motion', 'reduced');
+                }
                 if (!document.cookie.includes('jualan-theme=' + savedTheme)) {
                     document.cookie = "jualan-theme=" + savedTheme + ";path=/;max-age=31536000;SameSite=Lax";
                 }
@@ -86,7 +89,9 @@
 
     <script data-cfasync="false" nonce="{{ $cspNonce ?? '' }}">
         (function () {
-            var reduced = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+            function isReduced() {
+                return document.documentElement.getAttribute('data-motion') === 'reduced';
+            }
             var timer = null;
             function hideLoader() {
                 var l = document.getElementById('pageLoader');
@@ -97,18 +102,19 @@
                 document.documentElement.classList.remove('m3-page-enter', 'm3-enter-forward', 'm3-enter-backward', 'm3-enter-fade');
             }
             function triggerEnter(reason) {
+                var reduced = isReduced();
                 window.__m3LastTransition = { mode: 'fallback', type: 'm3-cross-fade', reason: reason || 'no-vt', reducedMotion: reduced };
                 if (reduced) return;
                 document.documentElement.classList.remove('m3-enter-forward', 'm3-enter-backward', 'm3-enter-fade');
                 document.documentElement.classList.add('m3-page-enter', 'm3-enter-fade');
                 if (timer) clearTimeout(timer);
-                timer = setTimeout(clearEnter, 360);
+                timer = setTimeout(clearEnter, 300);
             }
             if ('onpageswap' in window) {
                 window.addEventListener('pageswap', function (e) {
                     hideLoader();
                     clearEnter();
-                    if (!reduced && e.viewTransition && e.viewTransition.types && typeof e.viewTransition.types.add === 'function') {
+                    if (!isReduced() && e.viewTransition && e.viewTransition.types && typeof e.viewTransition.types.add === 'function') {
                         e.viewTransition.types.add('m3-cross-fade');
                     }
                 });
@@ -116,17 +122,12 @@
             if ('onpagereveal' in window) {
                 window.addEventListener('pagereveal', function (e) {
                     hideLoader();
-                    if (!reduced && e.viewTransition) {
+                    if (!isReduced() && e.viewTransition) {
                         clearEnter();
                         if (e.viewTransition.types && typeof e.viewTransition.types.add === 'function') {
                             e.viewTransition.types.add('m3-cross-fade');
                         }
                         window.__m3LastTransition = { mode: 'native-vt', type: 'm3-cross-fade', reducedMotion: false };
-                        if (e.viewTransition.ready && typeof e.viewTransition.ready.catch === 'function') {
-                            e.viewTransition.ready.catch(function () {
-                                triggerEnter('vt-ready-rejected');
-                            });
-                        }
                     } else {
                         triggerEnter(e.viewTransition ? 'reduced-motion' : 'no-vt');
                     }
@@ -223,7 +224,7 @@
   {{-- Theme Toggle Button --}}
   <div class="auth-theme-toggle">
     <button class="btn btn-link link-body-emphasis p-0" id="themeToggle" title="{{ __('Ganti Tema') }}" aria-label="{{ __('Ganti Tema') }}">
-        <i class="fas fa-moon fs-5" id="themeIcon"></i>
+        <i class="fas {{ request()->cookie('jualan-theme') === 'dark' ? 'fa-sun' : 'fa-moon' }} fs-5" id="themeIcon"></i>
     </button>
   </div>
 

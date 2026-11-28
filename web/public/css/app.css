@@ -306,10 +306,8 @@ html.theme-transitioning .m3-console-header {
     }
 }
 
-@media (prefers-reduced-motion: no-preference) {
-    .m3-theme-icon-spin {
-        animation: m3ThemeIconSpin 280ms var(--md-sys-motion-easing-emphasized-decelerate) both;
-    }
+html:not([data-motion="reduced"]) .m3-theme-icon-spin {
+    animation: m3ThemeIconSpin 280ms var(--md-sys-motion-easing-emphasized-decelerate) both;
 }
 
 /* === UNIVERSAL GOOGLE SANS FAMILY ENFORCEMENT & PROPORTIONAL TYPOGRAPHY === */
@@ -742,10 +740,8 @@ a:hover {
                 transform var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
 }
 
-@media (prefers-reduced-motion: no-preference) {
-    .m3-segmented-item:active {
-        transform: scale(0.965);
-    }
+html:not([data-motion="reduced"]) .m3-segmented-item:active {
+    transform: scale(0.965);
 }
 
 .m3-segmented-item.active {
@@ -1210,18 +1206,16 @@ a:hover {
     background-color: var(--surface-container-high);
 }
 
-@media (prefers-reduced-motion: no-preference) {
-    .m3-mobile-item-card.m3-collapsible-card:has(.m3-compact-trigger:active) {
-        transform: scale(0.992);
-    }
+html:not([data-motion="reduced"]) .m3-mobile-item-card.m3-collapsible-card:has(.m3-compact-trigger:active) {
+    transform: scale(0.992);
+}
 
-    .m3-collapsible-card .collapsing {
-        transition: height 260ms var(--md-sys-motion-easing-emphasized) !important;
-    }
+html:not([data-motion="reduced"]) .m3-collapsible-card .collapsing {
+    transition: height 260ms var(--md-sys-motion-easing-emphasized) !important;
+}
 
-    .m3-collapsible-card .collapse.show .m3-collapsible-body {
-        animation: m3CollapsibleBodyReveal 210ms var(--md-sys-motion-easing-emphasized-decelerate) both;
-    }
+html:not([data-motion="reduced"]) .m3-collapsible-card .collapse.show .m3-collapsible-body {
+    animation: m3CollapsibleBodyReveal 210ms var(--md-sys-motion-easing-emphasized-decelerate) both;
 }
 
 @keyframes m3CollapsibleBodyReveal {
@@ -1302,10 +1296,8 @@ a:hover {
     -webkit-tap-highlight-color: transparent;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-    .m3-compact-action-btn:active:not(:disabled) {
-        transform: scale(0.965) !important;
-    }
+html:not([data-motion="reduced"]) .m3-compact-action-btn:active:not(:disabled) {
+    transform: scale(0.965) !important;
 }
 
 .m3-quick-amount-chip {
@@ -2448,10 +2440,8 @@ ul.nav-pills,
         color: var(--on-surface);
     }
 
-    @media (prefers-reduced-motion: no-preference) {
-        .mobile-nav-item:active i {
-            transform: scale(0.9);
-        }
+    html:not([data-motion="reduced"]) .mobile-nav-item:active i {
+        transform: scale(0.9);
     }
 
     .mobile-nav-item.active {
@@ -3089,10 +3079,8 @@ ul.nav-pills,
     color: var(--on-secondary-container) !important;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-    .dropdown-item:active {
-        transform: scale(0.98);
-    }
+html:not([data-motion="reduced"]) .dropdown-item:active {
+    transform: scale(0.98);
 }
 
 /* === ALERTS (FLAT TONAL 16PX M3 CONTAINER) === */
@@ -3634,11 +3622,11 @@ ul.nav-pills,
     animation: badgePop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-/* Zero-Blink Directional Fallback Page Entrance (Activated only via JS when native MPA View Transition did not run or was rejected) & M3 Tactile States */
+/* Zero-Blink Directional Fallback Page Entrance (Activated synchronously via JS only when native MPA View Transition did not run) & M3 Tactile States */
 @keyframes m3PageEnterFallback {
     0% {
         opacity: 0;
-        translate: 0 12px;
+        translate: 0 8px;
     }
     100% {
         opacity: 1;
@@ -3649,7 +3637,7 @@ ul.nav-pills,
 @keyframes m3PageEnterForward {
     0% {
         opacity: 0;
-        translate: 24px 0;
+        translate: 14px 0;
     }
     100% {
         opacity: 1;
@@ -3660,7 +3648,7 @@ ul.nav-pills,
 @keyframes m3PageEnterBackward {
     0% {
         opacity: 0;
-        translate: -24px 0;
+        translate: -14px 0;
     }
     100% {
         opacity: 1;
@@ -3671,7 +3659,7 @@ ul.nav-pills,
 @keyframes m3TabPaneReveal {
     0% {
         opacity: 0;
-        translate: 0 7px;
+        translate: 0 6px;
     }
     100% {
         opacity: 1;
@@ -3679,77 +3667,60 @@ ul.nav-pills,
     }
 }
 
-@keyframes m3AlertEnter {
-    0% {
-        opacity: 0;
-        translate: 0 -6px;
-    }
-    100% {
-        opacity: 1;
-        translate: none;
-    }
+html:not([data-motion="reduced"]).m3-page-enter #m3MainContent,
+html:not([data-motion="reduced"]).m3-page-enter.m3-enter-fade #m3MainContent,
+html:not([data-motion="reduced"]).m3-page-enter .login-wrapper {
+    animation: m3PageEnterFallback 220ms var(--md-sys-motion-easing-emphasized-decelerate) backwards;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-    html.m3-page-enter #m3MainContent,
-    html.m3-page-enter.m3-enter-fade #m3MainContent,
-    html.m3-page-enter .login-wrapper {
-        animation: m3PageEnterFallback 270ms var(--md-sys-motion-easing-emphasized-decelerate) backwards;
-    }
+html:not([data-motion="reduced"]).m3-page-enter.m3-enter-forward #m3MainContent {
+    animation: m3PageEnterForward 220ms var(--md-sys-motion-easing-emphasized-decelerate) backwards;
+}
 
-    html.m3-page-enter.m3-enter-forward #m3MainContent {
-        animation: m3PageEnterForward 280ms var(--md-sys-motion-easing-emphasized-decelerate) backwards;
-    }
+html:not([data-motion="reduced"]).m3-page-enter.m3-enter-backward #m3MainContent {
+    animation: m3PageEnterBackward 220ms var(--md-sys-motion-easing-emphasized-decelerate) backwards;
+}
 
-    html.m3-page-enter.m3-enter-backward #m3MainContent {
-        animation: m3PageEnterBackward 280ms var(--md-sys-motion-easing-emphasized-decelerate) backwards;
-    }
+.form-control,
+.form-select {
+    transition: border-color 180ms var(--md-sys-motion-easing-standard),
+                background-color 180ms var(--md-sys-motion-easing-standard),
+                box-shadow 180ms var(--md-sys-motion-easing-standard);
+}
 
-    .form-control,
-    .form-select {
-        transition: border-color 180ms var(--md-sys-motion-easing-standard),
-                    background-color 180ms var(--md-sys-motion-easing-standard),
-                    box-shadow 180ms var(--md-sys-motion-easing-standard);
-    }
+html:not([data-motion="reduced"]) .tab-pane.fade {
+    transition: opacity 180ms var(--md-sys-motion-easing-standard) !important;
+}
 
-    .tab-pane.fade {
-        transition: opacity 180ms var(--md-sys-motion-easing-standard) !important;
-    }
+html:not([data-motion="reduced"]) .tab-pane.fade.show.active.m3-tab-entering {
+    animation: m3TabPaneReveal 210ms var(--md-sys-motion-easing-emphasized-decelerate) backwards;
+}
 
-    .tab-pane.fade.show.active.m3-tab-entering {
-        animation: m3TabPaneReveal 220ms var(--md-sys-motion-easing-emphasized-decelerate) backwards;
-    }
+html:not([data-motion="reduced"]) .form-switch .form-check-input {
+    transition: background-position 200ms var(--md-sys-motion-easing-emphasized),
+                background-color 180ms var(--md-sys-motion-easing-standard),
+                border-color 180ms var(--md-sys-motion-easing-standard);
+}
 
-    .main-content > .container-fluid > .alert.show {
-        animation: m3AlertEnter 240ms var(--md-sys-motion-easing-emphasized-decelerate) backwards;
-    }
+html:not([data-motion="reduced"]) .m3-filter-chip:active,
+html:not([data-motion="reduced"]) .m3-segmented-nav .nav-link:active,
+html:not([data-motion="reduced"]) .m3-quick-amount-chip:active:not(:disabled),
+html:not([data-motion="reduced"]) .menu-item:active {
+    transform: scale(0.968);
+}
 
-    .form-switch .form-check-input {
-        transition: background-position 200ms var(--md-sys-motion-easing-emphasized),
-                    background-color 180ms var(--md-sys-motion-easing-standard),
-                    border-color 180ms var(--md-sys-motion-easing-standard);
-    }
+html:not([data-motion="reduced"]) .m3-icon-btn:active,
+html:not([data-motion="reduced"]) .m3-user-avatar-btn:active,
+html:not([data-motion="reduced"]) .m3-quick-search-trigger:active {
+    transform: scale(0.95);
+}
 
-    .m3-filter-chip:active,
-    .m3-segmented-nav .nav-link:active,
-    .m3-quick-amount-chip:active:not(:disabled),
-    .menu-item:active {
-        transform: scale(0.968);
-    }
-
-    .m3-icon-btn:active,
-    .m3-user-avatar-btn:active,
-    .m3-quick-search-trigger:active {
-        transform: scale(0.95);
-    }
-
-    .m3-balance-card:active,
-    .m3-dash-metric-card:active,
-    .m3-order-row-card:active,
-    .m3-quick-card:active,
-    .quick-action-btn:active {
-        transform: scale(0.986);
-    }
+html:not([data-motion="reduced"]) .m3-balance-card:active,
+html:not([data-motion="reduced"]) .m3-dash-metric-card:active,
+html:not([data-motion="reduced"]) .m3-order-row-card:active,
+html:not([data-motion="reduced"]) .m3-quick-card:active,
+html:not([data-motion="reduced"]) .quick-action-btn:active {
+    transform: scale(0.986);
 }
 
 /* ==========================================================================
@@ -5726,11 +5697,9 @@ body.swal2-shown:not(.swal2-toast-shown) .swal2-container:not(.swal2-toast-conta
     -webkit-backdrop-filter: none !important;
 }
 
-    /* 5. Accessibility: Respect OS Reduced Motion Preference Without Jarring 0.01ms Flash */
-    @media (prefers-reduced-motion: reduce) {
-        html {
-            scroll-behavior: auto !important;
-        }
+    /* 5. Explicit App-Level Motion Control (Decoupled from Android Battery Saver false-positives) */
+    html[data-motion="reduced"] {
+        scroll-behavior: auto !important;
     }
 
     /* 6. Android 17 Bottom Navigation Bar Pill Indicator (56x32px — Animates ONLY on User Tap, Never Blinks on Load) */
@@ -5746,10 +5715,8 @@ body.swal2-shown:not(.swal2-toast-shown) .swal2-container:not(.swal2-toast-conta
             color: var(--on-secondary-container) !important;
         }
 
-        @media (prefers-reduced-motion: no-preference) {
-            .mobile-nav-item.is-pill-animating i {
-                animation: m3NavPillExpand 200ms var(--md-sys-motion-easing-emphasized-decelerate) both;
-            }
+        html:not([data-motion="reduced"]) .mobile-nav-item.is-pill-animating i {
+            animation: m3NavPillExpand 200ms var(--md-sys-motion-easing-emphasized-decelerate) both;
         }
     }
 
@@ -5859,153 +5826,177 @@ body.swal2-shown:not(.swal2-toast-shown) .swal2-container:not(.swal2-toast-conta
        V12: Card Keyboard Accessibility, Choice Cards & Below-the-Fold Deferral
        ========================================================================== */
 
-    /* V10.1 Cross-Document MPA View Transitions (Top-Level Opt-In + Viewport Root Shared-Axis X/Z + Flicker-Free Shell Pinning) */
+    /* V10.1 Cross-Document MPA View Transitions (Constant-Opacity Porter-Duff Alpha=1.0 + Chrome Android Safe + Flicker-Free Shell Pinning) */
     @view-transition {
         navigation: auto;
     }
 
-    @media (prefers-reduced-motion: no-preference) {
-        ::view-transition {
-            background-color: var(--background);
-        }
+    ::view-transition {
+        background-color: var(--surface);
+    }
 
-        /* Animate viewport-bounded root (auto-excludes pinned navbar/sidebar/bottom-nav/banner; never triggers tall-element skip) */
-        ::view-transition-group(root) {
-            animation-duration: 320ms;
-            animation-timing-function: var(--md-sys-motion-easing-emphasized);
-        }
+    ::view-transition-group(root) {
+        animation-duration: 230ms;
+        animation-timing-function: var(--md-sys-motion-easing-emphasized-decelerate);
+    }
 
-        /* Default / Lateral / Cross-Fade (M3 Shared-Axis Z — unmistakably fluid even without directional types) */
-        ::view-transition-old(root) {
-            animation: m3VtAxisZOut 170ms var(--md-sys-motion-easing-emphasized-accelerate) both;
-        }
+    /* Constant-Opacity (alpha=1.0): old(root) stays 100% opaque while new(root) glides in immediately at 0ms delay -> zero mid-transition card blink */
+    ::view-transition-old(root) {
+        animation: m3VtOldHold 220ms linear both;
+        mix-blend-mode: normal;
+    }
 
-        ::view-transition-new(root) {
-            animation: m3VtAxisZIn 300ms var(--md-sys-motion-easing-emphasized-decelerate) 20ms both;
-        }
+    ::view-transition-new(root) {
+        animation: m3VtAxisZIn 220ms var(--md-sys-motion-easing-emphasized-decelerate) both;
+        mix-blend-mode: normal;
+    }
 
-        /* Directional Forward (M3 Shared-Axis X) */
-        :root:active-view-transition-type(m3-slide-forward)::view-transition-old(root) {
-            animation: m3VtSlideOutForward 200ms var(--md-sys-motion-easing-emphasized-accelerate) both;
-        }
+    :root:active-view-transition-type(m3-slide-forward)::view-transition-old(root) {
+        animation: m3VtSlideOutForward 230ms var(--md-sys-motion-easing-emphasized) both;
+        mix-blend-mode: normal;
+    }
 
-        :root:active-view-transition-type(m3-slide-forward)::view-transition-new(root) {
-            animation: m3VtSlideInForward 320ms var(--md-sys-motion-easing-emphasized-decelerate) 25ms both;
-        }
+    :root:active-view-transition-type(m3-slide-forward)::view-transition-new(root) {
+        animation: m3VtSlideInForward 230ms var(--md-sys-motion-easing-emphasized-decelerate) both;
+        mix-blend-mode: normal;
+    }
 
-        /* Directional Backward (M3 Shared-Axis X) */
-        :root:active-view-transition-type(m3-slide-backward)::view-transition-old(root) {
-            animation: m3VtSlideOutBackward 200ms var(--md-sys-motion-easing-emphasized-accelerate) both;
-        }
+    :root:active-view-transition-type(m3-slide-backward)::view-transition-old(root) {
+        animation: m3VtSlideOutBackward 230ms var(--md-sys-motion-easing-emphasized) both;
+        mix-blend-mode: normal;
+    }
 
-        :root:active-view-transition-type(m3-slide-backward)::view-transition-new(root) {
-            animation: m3VtSlideInBackward 320ms var(--md-sys-motion-easing-emphasized-decelerate) 25ms both;
-        }
+    :root:active-view-transition-type(m3-slide-backward)::view-transition-new(root) {
+        animation: m3VtSlideInBackward 230ms var(--md-sys-motion-easing-emphasized-decelerate) both;
+        mix-blend-mode: normal;
+    }
 
-        /* Pin Persistent App Shell Across Smartphone & Desktop Viewports (Small Fixed Elements — Zero Flicker / Zero Crossfade) */
-        nav.navbar.fixed-top,
-        .pcc-platform-bar,
-        .top-navbar {
-            view-transition-name: m3-top-navbar;
-        }
+    /* Pin Persistent App Shell Across Smartphone & Desktop Viewports (Zero Flicker / Zero Crossfade) */
+    nav.navbar.fixed-top,
+    .pcc-platform-bar,
+    .top-navbar {
+        view-transition-name: m3-top-navbar;
+    }
 
-        .m3-top-status-banner {
-            view-transition-name: m3-top-banner;
-        }
+    .m3-top-status-banner {
+        view-transition-name: m3-top-banner;
+    }
 
-        @media (max-width: 991.98px) {
-            #mobileBottomNav {
-                view-transition-name: m3-bottom-nav;
-            }
-        }
-
-        @media (min-width: 992px) {
-            #sidebar {
-                view-transition-name: m3-sidebar;
-            }
-        }
-
-        ::view-transition-group(m3-top-navbar),
-        ::view-transition-group(m3-bottom-nav),
-        ::view-transition-group(m3-sidebar) {
-            z-index: 100;
-            animation-duration: 0ms;
-        }
-
-        ::view-transition-group(m3-top-banner) {
-            z-index: 110;
-            animation-duration: 0ms;
-        }
-
-        ::view-transition-old(m3-top-navbar):not(:only-child),
-        ::view-transition-new(m3-top-navbar):not(:only-child),
-        ::view-transition-old(m3-bottom-nav):not(:only-child),
-        ::view-transition-new(m3-bottom-nav):not(:only-child),
-        ::view-transition-old(m3-sidebar):not(:only-child),
-        ::view-transition-new(m3-sidebar):not(:only-child),
-        ::view-transition-old(m3-top-banner):not(:only-child),
-        ::view-transition-new(m3-top-banner):not(:only-child) {
-            animation: none;
-            mix-blend-mode: normal;
-        }
-
-        ::view-transition-old(m3-top-navbar):not(:only-child),
-        ::view-transition-old(m3-bottom-nav):not(:only-child),
-        ::view-transition-old(m3-sidebar):not(:only-child),
-        ::view-transition-old(m3-top-banner):not(:only-child) {
-            display: none;
+    @media (max-width: 991.98px) {
+        #mobileBottomWrapper {
+            view-transition-name: m3-bottom-nav;
         }
     }
 
+    @media (min-width: 992px) {
+        #sidebar {
+            view-transition-name: m3-sidebar;
+        }
+    }
+
+    ::view-transition-group(m3-top-navbar),
+    ::view-transition-group(m3-bottom-nav),
+    ::view-transition-group(m3-sidebar) {
+        z-index: 100;
+        animation-duration: 0ms;
+    }
+
+    ::view-transition-group(m3-top-banner) {
+        z-index: 110;
+        animation-duration: 0ms;
+    }
+
+    ::view-transition-old(m3-top-navbar):not(:only-child),
+    ::view-transition-new(m3-top-navbar):not(:only-child),
+    ::view-transition-old(m3-bottom-nav):not(:only-child),
+    ::view-transition-new(m3-bottom-nav):not(:only-child),
+    ::view-transition-old(m3-sidebar):not(:only-child),
+    ::view-transition-new(m3-sidebar):not(:only-child),
+    ::view-transition-old(m3-top-banner):not(:only-child),
+    ::view-transition-new(m3-top-banner):not(:only-child) {
+        animation: none;
+        mix-blend-mode: normal;
+    }
+
+    ::view-transition-old(m3-top-navbar):not(:only-child),
+    ::view-transition-old(m3-bottom-nav):not(:only-child),
+    ::view-transition-old(m3-sidebar):not(:only-child),
+    ::view-transition-old(m3-top-banner):not(:only-child) {
+        display: none;
+    }
+
+    /* Restore Bootstrap 5.3 component motion in Chrome Android when OS Battery Saver / Animator=0 triggers prefers-reduced-motion */
     @media (prefers-reduced-motion: reduce) {
-        @view-transition {
-            navigation: none;
+        html:not([data-motion="reduced"]) .fade {
+            transition: opacity 180ms var(--md-sys-motion-easing-standard) !important;
         }
 
-        ::view-transition-group(*),
-        ::view-transition-old(*),
-        ::view-transition-new(*) {
-            animation: none !important;
+        html:not([data-motion="reduced"]) .modal-backdrop.fade {
+            transition: opacity 220ms var(--md-sys-motion-easing-standard) !important;
         }
 
-        html.m3-page-enter #m3MainContent,
-        html.m3-page-enter.m3-enter-forward #m3MainContent,
-        html.m3-page-enter.m3-enter-backward #m3MainContent,
-        html.m3-page-enter.m3-enter-fade #m3MainContent,
-        html.m3-page-enter .login-wrapper,
-        .dropdown-menu.show,
-        .m3-theme-icon-spin {
-            animation: none !important;
+        html:not([data-motion="reduced"]) .collapsing {
+            transition: height 260ms var(--md-sys-motion-easing-emphasized) !important;
+        }
+
+        @media (min-width: 768px) {
+            html:not([data-motion="reduced"]) .modal.fade .modal-dialog {
+                transition: transform 190ms var(--md-sys-motion-easing-emphasized-accelerate),
+                            opacity 160ms var(--md-sys-motion-easing-standard-accelerate) !important;
+            }
+
+            html:not([data-motion="reduced"]) .modal.fade.show .modal-dialog {
+                transition: transform 280ms var(--md-sys-motion-easing-emphasized-decelerate),
+                            opacity 220ms var(--md-sys-motion-easing-standard-decelerate) !important;
+            }
+        }
+
+        @media (max-width: 767.98px) {
+            html:not([data-motion="reduced"]) .modal.fade .modal-dialog {
+                transition: transform 210ms var(--md-sys-motion-easing-emphasized-accelerate) !important;
+            }
+
+            html:not([data-motion="reduced"]) .modal.fade.show .modal-dialog {
+                transition: transform 320ms var(--md-sys-motion-easing-emphasized-decelerate) !important;
+            }
         }
     }
 
-    @keyframes m3VtAxisZOut {
-        from { opacity: 1; transform: scale(1); }
-        to { opacity: 0; transform: scale(0.99); }
+    /* Explicit App-Level Reduced Motion Opt-Out */
+    html[data-motion="reduced"] ::view-transition-group(*),
+    html[data-motion="reduced"] ::view-transition-old(*),
+    html[data-motion="reduced"] ::view-transition-new(*),
+    html[data-motion="reduced"] .dropdown-menu.show {
+        animation: none !important;
+    }
+
+    @keyframes m3VtOldHold {
+        from { opacity: 1; }
+        to { opacity: 1; }
     }
 
     @keyframes m3VtAxisZIn {
-        from { opacity: 0; transform: translate3d(0, 14px, 0) scale(0.99); }
+        from { opacity: 0; transform: translate3d(0, 8px, 0); }
         to { opacity: 1; transform: none; }
     }
 
     @keyframes m3VtSlideOutForward {
         from { opacity: 1; transform: none; }
-        to { opacity: 0; transform: translate3d(-36px, 0, 0); }
+        to { opacity: 1; transform: translate3d(-10px, 0, 0); }
     }
 
     @keyframes m3VtSlideInForward {
-        from { opacity: 0; transform: translate3d(40px, 0, 0); }
+        from { opacity: 0; transform: translate3d(16px, 0, 0); }
         to { opacity: 1; transform: none; }
     }
 
     @keyframes m3VtSlideOutBackward {
         from { opacity: 1; transform: none; }
-        to { opacity: 0; transform: translate3d(36px, 0, 0); }
+        to { opacity: 1; transform: translate3d(10px, 0, 0); }
     }
 
     @keyframes m3VtSlideInBackward {
-        from { opacity: 0; transform: translate3d(-40px, 0, 0); }
+        from { opacity: 0; transform: translate3d(-16px, 0, 0); }
         to { opacity: 1; transform: none; }
     }
 
@@ -6051,17 +6042,9 @@ body.swal2-shown:not(.swal2-toast-shown) .swal2-container:not(.swal2-toast-conta
         translate: 0 -8px;
     }
 
-    @media (prefers-reduced-motion: reduce) {
-        .m3-reveal-panel,
-        .m3-reveal-panel[hidden] {
-            translate: none;
-        }
-
-        @starting-style {
-            .m3-reveal-panel {
-                translate: none;
-            }
-        }
+    html[data-motion="reduced"] .m3-reveal-panel,
+    html[data-motion="reduced"] .m3-reveal-panel[hidden] {
+        translate: none;
     }
 
     /* V11.1 Typography: Targeted text-wrap balance (headings) & pretty (body copy) */

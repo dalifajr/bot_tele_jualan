@@ -135,7 +135,8 @@ function initThemeToggle() {
 }
 
 function updateThemeIcon(icon, theme) {
-    icon.className = theme === 'dark' ? 'fas fa-sun fs-5' : 'fas fa-moon fs-5';
+    const isAuthToggle = !!(icon && typeof icon.closest === 'function' && icon.closest('.auth-theme-toggle'));
+    icon.className = (theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon') + (isAuthToggle ? ' fs-5' : '');
 }
 
 /* === SIDEBAR & BOTTOM SHEET (Mobile Bottom Sheet + Interactive Realtime Drag Up/Down) === */
@@ -496,6 +497,14 @@ function initSidebarOptimisticFeedback() {
     const sidebar = document.getElementById('sidebar');
     if (!sidebar) return;
 
+    sidebar.addEventListener('scroll', () => {
+        if (window.innerWidth >= 992) {
+            try {
+                sessionStorage.setItem('m3_sidebar_scroll', String(sidebar.scrollTop || 0));
+            } catch (err) {}
+        }
+    }, { passive: true });
+
     const menuLinks = Array.from(sidebar.querySelectorAll('a.menu-item[href]'));
     if (menuLinks.length === 0) return;
 
@@ -507,6 +516,11 @@ function initSidebarOptimisticFeedback() {
             const href = link.getAttribute('href') || '';
             if (!href || href.startsWith('#') || href.startsWith('javascript:') || link.getAttribute('target') === '_blank' || link.hasAttribute('download')) {
                 return;
+            }
+            if (window.innerWidth >= 992) {
+                try {
+                    sessionStorage.setItem('m3_sidebar_scroll', String(sidebar.scrollTop || 0));
+                } catch (err) {}
             }
             menuLinks.forEach(item => item.classList.remove('active'));
             link.classList.add('active');
@@ -535,6 +549,10 @@ function initMobileNavFeedback() {
             navLinks.forEach(item => item.classList.remove('active', 'is-pill-animating'));
             link.classList.add('active', 'is-pill-animating');
         });
+    });
+
+    window.addEventListener('pageswap', () => {
+        navLinks.forEach(item => item.classList.remove('is-pill-animating'));
     });
 
     window.addEventListener('pageshow', (e) => {
